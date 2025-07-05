@@ -1,0 +1,15 @@
+# 공통
+node_modules/
+.env
+.env.local
+.env.*.local
+pnpm-lock.yaml
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# VSCode
+.vscode/
