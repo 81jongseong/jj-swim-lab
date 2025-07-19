@@ -1,5 +1,5 @@
 @echo off
-cd /d C:\»ç¿ëÀÚ\user\jj-swim-lab
+cd /d %~dp0
 
 echo ?? git pull...
 git pull --rebase
