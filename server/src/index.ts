@@ -1,19 +1,57 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import { connectDB } from './db';
 import usersRouter from './routes/users';
+import authRouter from './routes/auth';
+import dashboardRouter from './routes/dashboard';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
+// 미들웨어 설정
+app.use(cors({
+  origin: true, // 모든 origin 허용 (개발 환경)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
-app.use('/users', usersRouter);
+app.use(express.urlencoded({ extended: true }));
 
-// MongoDB 연결 후 서버 시작
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+// 라우터 설정
+app.use('/api/users', usersRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/dashboard', dashboardRouter);
+
+// 기본 라우트
+app.get('/', (req, res) => {
+  res.json({ message: 'JJ Swim Lab API 서버가 실행 중입니다.' });
+});
+
+// 헬스 체크
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: 'connecting...'
+  });
+});
+
+// 서버 시작
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  
+  // MongoDB 연결 시도 (비동기)
+  connectDB().then((success) => {
+    if (success) {
+      console.log('✅ MongoDB 연결 완료');
+    } else {
+      console.log('⚠️ MongoDB 연결 실패 (서버는 계속 실행)');
+    }
   });
 });

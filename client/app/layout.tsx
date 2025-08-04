@@ -1,5 +1,6 @@
 import './globals.css';
 import { ReactNode } from 'react';
+import Navigation from '../components/Navigation';
 
 export const metadata = {
   title: 'JJ Swim Lab',
@@ -9,7 +10,12 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <Navigation />
+        <main className="pt-16">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
