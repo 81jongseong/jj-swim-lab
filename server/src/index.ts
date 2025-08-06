@@ -9,6 +9,8 @@ import coursesRouter from './routes/courses';
 import bookingsRouter from './routes/bookings';
 import paymentsRouter from './routes/payments';
 import noticesRouter from './routes/notices';
+import centersRouter from './routes/centers';
+import progressRouter from './routes/progress';
 
 dotenv.config();
 
@@ -33,6 +35,8 @@ app.use('/api/courses', coursesRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/notices', noticesRouter);
+app.use('/api/centers', centersRouter);
+app.use('/api/progress', progressRouter);
 
 // 기본 라우트
 app.get('/', (req, res) => {

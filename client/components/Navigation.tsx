@@ -42,6 +42,7 @@ export default function Navigation() {
   const menuItems = {
     guest: [
       { href: '/', label: '홈' },
+      { href: '/centers', label: '수영장 찾기' },
       { href: '/about', label: '소개' },
       { href: '/news', label: '공지사항' },
       { href: '/guide', label: '이용안내' },
@@ -60,6 +61,7 @@ export default function Navigation() {
       { href: '/instructor/courses', label: '강습 관리' },
       { href: '/instructor/students', label: '학생 관리' },
       { href: '/instructor/schedule', label: '일정 관리' },
+      { href: '/instructor/progress', label: '진도 관리' },
       { href: '/profile', label: '프로필' },
     ],
     admin: [
@@ -75,25 +77,25 @@ export default function Navigation() {
   const currentMenu = menuItems[userType];
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
+    <nav className="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <div className="text-2xl font-bold text-blue-600">🏊‍♂️ JJ Swim Lab</div>
+              <div className="text-xl font-bold text-primary">🏊‍♂️ JJ Swim Lab</div>
             </Link>
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             {currentMenu.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   pathname === item.href
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'text-primary underline'
+                    : 'text-gray-700 hover:text-primary'
                 }`}
               >
                 {item.label}
@@ -108,7 +110,7 @@ export default function Navigation() {
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                            className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-error transition-colors"
                 >
                   로그아웃
                 </button>
@@ -145,11 +147,11 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  pathname === item.href
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
-                }`}
+                                          className={`block px-3 py-2 rounded-md text-base font-medium ${
+                            pathname === item.href
+                              ? 'text-primary underline'
+                              : 'text-gray-700 hover:text-primary'
+                          }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -167,7 +169,7 @@ export default function Navigation() {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-error transition-colors"
                 >
                   로그아웃
                 </button>

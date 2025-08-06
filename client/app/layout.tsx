@@ -1,21 +1,31 @@
-import './globals.css';
-import { ReactNode } from 'react';
-import Navigation from '../components/Navigation';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import Navigation from '../components/Navigation'
+import { ThemeProvider } from '../components/ui/ThemeProvider'
 
-export const metadata = {
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
   title: 'JJ Swim Lab',
-  description: '스윔 교육 플랫폼',
-};
+  description: 'JJ Swim Lab - 수영 강습 관리 시스템',
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="ko">
-      <body>
-        <Navigation />
-        <main className="pt-16">
-          {children}
-        </main>
+      <body className={inter.className}>
+        <ThemeProvider>
+          <Navigation />
+          <main className="pt-16">
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

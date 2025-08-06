@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import apiClient from '../../utils/api';
+import { LoadingSpinner } from '../../components/ui';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -24,7 +22,15 @@ export default function AdminDashboard() {
         const response = await apiClient.getAdminStats();
         
         if (response.data) {
-          setStats(response.data);
+          setStats({
+            totalUsers: response.data.totalUsers || 0,
+            totalInstructors: response.data.totalInstructors || 0,
+            totalMembers: response.data.totalMembers || 0,
+            totalCourses: response.data.totalCourses || 0,
+            totalBookings: response.data.totalBookings || 0,
+            totalPayments: response.data.totalPayments || 0,
+            totalNotices: response.data.totalNotices || 0,
+          });
         } else if (response.error) {
           setError(response.error);
         }
@@ -38,206 +44,50 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  const statCards = [
-    {
-      title: '전체 사용자',
-      value: stats.totalUsers,
-      icon: '👥',
-      color: 'bg-blue-500',
-      href: '/admin/users'
-    },
-    {
-      title: '강사',
-      value: stats.totalInstructors,
-      icon: '👨‍🏫',
-      color: 'bg-green-500',
-      href: '/admin/users?userType=instructor'
-    },
-    {
-      title: '회원',
-      value: stats.totalMembers,
-      icon: '👤',
-      color: 'bg-purple-500',
-      href: '/admin/users?userType=member'
-    },
-    {
-      title: '강습 과정',
-      value: stats.totalCourses,
-      icon: '📚',
-      color: 'bg-orange-500',
-      href: '/admin/courses'
-    },
-    {
-      title: '예약',
-      value: stats.totalBookings,
-      icon: '📅',
-      color: 'bg-indigo-500',
-      href: '/admin/bookings'
-    },
-    {
-      title: '결제',
-      value: stats.totalPayments,
-      icon: '💰',
-      color: 'bg-yellow-500',
-      href: '/admin/payments'
-    },
-    {
-      title: '공지사항',
-      value: stats.totalNotices,
-      icon: '📢',
-      color: 'bg-red-500',
-      href: '/admin/notices'
-    }
-  ];
-
-  const quickActions = [
-    {
-      title: '사용자 관리',
-      description: '회원 및 강사 관리',
-      icon: '👥',
-      href: '/admin/users',
-      color: 'bg-blue-500'
-    },
-    {
-      title: '강습 관리',
-      description: '강습 과정 관리',
-      icon: '📚',
-      href: '/admin/courses',
-      color: 'bg-green-500'
-    },
-    {
-      title: '예약 관리',
-      description: '예약 현황 관리',
-      icon: '📅',
-      href: '/admin/bookings',
-      color: 'bg-purple-500'
-    },
-    {
-      title: '결제 관리',
-      description: '결제 내역 관리',
-      icon: '💰',
-      href: '/admin/payments',
-      color: 'bg-orange-500'
-    },
-    {
-      title: '공지사항 관리',
-      description: '공지사항 작성 및 관리',
-      icon: '📢',
-      href: '/admin/notices',
-      color: 'bg-indigo-500'
-    },
-    {
-      title: '통계 분석',
-      description: '시스템 통계 및 분석',
-      icon: '📊',
-      href: '/admin/statistics',
-      color: 'bg-red-500'
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
-      {/* Header */}
-      <div className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white">관리자 대시보드</h1>
-              <p className="text-blue-100">JJ Swim Lab 관리 시스템</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-white">관리자님</span>
-              <button 
-                onClick={() => {
-                  apiClient.logout();
-                  window.location.href = '/';
-                }}
-                className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
-              >
-                로그아웃
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-white">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          </div>
+                      <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <LoadingSpinner size="lg" className="mx-auto" />
+                <p className="mt-4 text-gray-600">로딩 중...</p>
+              </div>
+            </div>
         ) : error ? (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-200">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
         ) : (
           <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-              {statCards.map((card, index) => (
-                <Link
-                  key={index}
-                  href={card.href}
-                  className="backdrop-blur-xl bg-white/10 rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300 group"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-8 h-8 ${card.color} rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                      <span className="text-sm">{card.icon}</span>
-                    </div>
-                    <p className="text-xs font-medium text-blue-200 mb-1">{card.title}</p>
-                    <p className="text-lg font-bold text-white">{card.value.toLocaleString()}</p>
-                  </div>
-                </Link>
-              ))}
+            {/* Page Title */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">관리자 대시보드</h1>
+              <p className="text-gray-600">JJ Swim Lab 관리 시스템의 전체 현황을 확인하세요</p>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {quickActions.map((action, index) => (
-                <Link
-                  key={index}
-                  href={action.href}
-                  className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 group"
-                >
-                  <div className="flex items-center">
-                    <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-4 group-hover:scale-110 transition-transform`}>
-                      <span className="text-lg">{action.icon}</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{action.title}</h3>
-                      <p className="text-blue-200 text-sm">{action.description}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Recent Activity */}
-            <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-semibold text-white mb-4">최근 활동</h3>
-              <div className="space-y-4">
-                <div className="flex items-center p-4 bg-white/5 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-4"></div>
-                  <div className="flex-1">
-                    <p className="text-white">새로운 회원이 가입했습니다</p>
-                    <p className="text-blue-200 text-sm">2분 전</p>
-                  </div>
-                </div>
-                <div className="flex items-center p-4 bg-white/5 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-4"></div>
-                  <div className="flex-1">
-                    <p className="text-white">새로운 강사가 등록되었습니다</p>
-                    <p className="text-blue-200 text-sm">15분 전</p>
-                  </div>
-                </div>
-                <div className="flex items-center p-4 bg-white/5 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-4"></div>
-                  <div className="flex-1">
-                    <p className="text-white">새로운 강습 과정이 추가되었습니다</p>
-                    <p className="text-blue-200 text-sm">1시간 전</p>
-                  </div>
-                </div>
+            {/* Simple Stats */}
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center">
+                <span className="text-lg mr-4">👥</span>
+                <span className="text-gray-900 font-medium">전체 사용자:</span>
+                <span className="ml-2 text-gray-900 underline">{(stats.totalUsers || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-4">👨‍🏫</span>
+                <span className="text-gray-900 font-medium">강사:</span>
+                <span className="ml-2 text-gray-900 underline">{(stats.totalInstructors || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-4">👤</span>
+                <span className="text-gray-900 font-medium">회원:</span>
+                <span className="ml-2 text-gray-900 underline">{(stats.totalMembers || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-4">📚</span>
+                <span className="text-gray-900 font-medium">강습 과정:</span>
+                <span className="ml-2 text-gray-900 underline">{(stats.totalCourses || 0).toLocaleString()}</span>
               </div>
             </div>
           </>

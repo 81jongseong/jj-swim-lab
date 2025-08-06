@@ -280,6 +280,71 @@ class ApiClient {
     return this.request('/notices/admin/stats');
   }
 
+  // 수영장 관련 API
+  async getCenters(params?: { latitude?: number; longitude?: number; radius?: number }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/centers${queryString}`);
+  }
+
+  async getCenter(id: string): Promise<ApiResponse> {
+    return this.request(`/centers/${id}`);
+  }
+
+  async getCenterHours(id: string): Promise<ApiResponse> {
+    return this.request(`/centers/${id}/hours`);
+  }
+
+  async getCenterPricing(id: string): Promise<ApiResponse> {
+    return this.request(`/centers/${id}/pricing`);
+  }
+
+  async getCenterFacilities(id: string): Promise<ApiResponse> {
+    return this.request(`/centers/${id}/facilities`);
+  }
+
+  async updateCenterCapacity(id: string, capacity: number): Promise<ApiResponse> {
+    return this.request(`/centers/${id}/capacity`, {
+      method: 'PATCH',
+      body: JSON.stringify({ currentCapacity: capacity }),
+    });
+  }
+
+  // 진도 관리 API
+  async getMyProgress(): Promise<ApiResponse> {
+    return this.request('/progress/my-progress');
+  }
+
+  async getStudentProgress(studentId: string): Promise<ApiResponse> {
+    return this.request(`/progress/student/${studentId}`);
+  }
+
+  async updateStudentProgress(studentId: string, progressData: any): Promise<ApiResponse> {
+    return this.request(`/progress/student/${studentId}`, {
+      method: 'POST',
+      body: JSON.stringify(progressData),
+    });
+  }
+
+  async getClassStudents(classId: string): Promise<ApiResponse> {
+    return this.request(`/progress/class/${classId}/students`);
+  }
+
+  async getSkillTemplates(params?: { category?: string; level?: string }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/progress/skill-templates${queryString}`);
+  }
+
+  async submitEvaluation(evaluationData: any): Promise<ApiResponse> {
+    return this.request('/progress/evaluation', {
+      method: 'POST',
+      body: JSON.stringify(evaluationData),
+    });
+  }
+
+  async getAvailableEvaluations(): Promise<ApiResponse> {
+    return this.request('/progress/evaluations/available');
+  }
+
   // 유틸리티 메서드
   isAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;

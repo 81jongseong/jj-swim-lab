@@ -4,11 +4,33 @@ JJ Swim Lab은 수영장의 모든 운영을 관리할 수 있는 종합적인 �
 
 ## 🏊‍♂️ 주요 기능
 
-### 👥 사용자 관리
-- **회원가입/로그인**: JWT 기반 인증 시스템
-- **사용자 타입**: 회원(member), 강사(instructor), 관리자(admin)
-- **프로필 관리**: 개인정보 조회 및 수정
-- **권한 관리**: 사용자 타입별 접근 권한 제어
+### 🗺️ 게스트 (Guest)
+- **지도 기반 수영장 탐색**: 근처 수영장 찾기, 실시간 입장 인원 확인
+- **수영장 상세 정보**: 운영시간, 요금, 시설 정보, 현재 상황
+- **공지사항 조회**: 최신 공지사항 확인
+- **회원가입/로그인**: 간편한 계정 생성
+
+### 👤 회원 (Member)
+- **개인 진도 대시보드**: 강사가 체크한 진도 상황 확인
+- **강습 평가**: 강습 종료 후 10일 내 평가 제출
+- **개인 일정 관리**: 예약한 강습 일정 확인
+- **결제 내역**: 수강료 및 기타 결제 내역 조회
+- **등록 센터 공지사항**: 내가 등록한 센터의 공지사항 확인
+
+### 👨‍🏫 강사 (Instructor)
+- **센터별 반 관리**: 근무하는 센터의 반 목록 관리
+- **학생 진도 체크**: 학생별 스킬 진행상황 체크 및 피드백
+- **스킬 템플릿 활용**: 관리자가 설정한 스킬 목록과 연습 드릴 활용
+- **강습 내용 관리**: 강습별 상세 내용 및 피드백 작성
+- **진도 관리**: 학생별 진도 추적 및 목표 설정
+
+### 👨‍💼 관리자 (Admin)
+- **수영장 관리**: 센터별 운영시간, 요금, 시설 정보 관리
+- **스킬 템플릿 관리**: 강사가 사용할 스킬 목록과 연습 드릴 관리
+- **사용자 관리**: 회원, 강사, 관리자 계정 관리
+- **강습 과정 관리**: 과정별 레벨, 요금, 일정 관리
+- **전체 통계**: 사용자, 강습, 결제 통계 조회
+- **공지사항 관리**: 센터별 공지사항 작성 및 발행
 
 ### 🎓 강습 과정 관리
 - **과정 생성/수정/삭제**: 강사 및 관리자만 가능
@@ -182,6 +204,23 @@ cd client && pnpm run dev
 - `GET /api/dashboard/admin/stats` - 관리자 통계
 - `GET /api/dashboard/instructor/stats` - 강사 통계
 
+### 수영장 (게스트용)
+- `GET /api/centers` - 수영장 목록 조회 (위치 기반)
+- `GET /api/centers/:id` - 수영장 상세 정보 조회
+- `GET /api/centers/:id/hours` - 운영 시간 조회
+- `GET /api/centers/:id/pricing` - 요금 정보 조회
+- `GET /api/centers/:id/facilities` - 시설 정보 조회
+- `PATCH /api/centers/:id/capacity` - 현재 입장 인원 업데이트
+
+### 진도 관리
+- `GET /api/progress/my-progress` - 내 진도 조회 (회원)
+- `GET /api/progress/student/:id` - 학생 진도 조회 (강사)
+- `POST /api/progress/student/:id` - 학생 진도 업데이트 (강사)
+- `GET /api/progress/class/:id/students` - 반별 학생 목록 조회
+- `GET /api/progress/skill-templates` - 스킬 템플릿 조회
+- `POST /api/progress/evaluation` - 강습 평가 제출 (회원)
+- `GET /api/progress/evaluations/available` - 평가 가능한 강습 목록
+
 ## 🔐 권한 시스템
 
 ### 회원 (member)
@@ -215,9 +254,25 @@ http://localhost:3000/test-api
 ```
 
 ### 기본 테스트 계정
-- **관리자**: admin / admin123
-- **강사**: instructor / instructor123
-- **회원**: member / member123
+- **관리자**: admin / password123
+- **강사**: instructor1 / password123
+- **회원**: member1 / password123
+
+### 테스트 데이터 생성
+```bash
+# 서버 디렉토리에서
+cd server
+node scripts/create-test-data.js
+```
+
+생성되는 테스트 데이터:
+- 사용자: 6명 (관리자 1, 강사 2, 회원 3)
+- 수영장: 2개 (강남점, 홍대점)
+- 강습 과정: 2개 (자유형 기초, 자유형 심화)
+- 반: 2개 (초급 A반, 중급 B반)
+- 스킬 템플릿: 2개
+- 진도 데이터: 1개
+- 공지사항: 2개
 
 ## 📝 데이터 모델
 
@@ -225,6 +280,47 @@ http://localhost:3000/test-api
 - userId, name, email, password, phone, address
 - userType (member/instructor/admin)
 - 강사 전용: experience, certifications, specialties
+
+### SwimmingCenter (수영장)
+- name, address, location (latitude, longitude)
+- phone, email, website, description
+- facilities (lanes, poolLength, poolDepth, temperature, hasSauna, hasShower, hasLocker)
+- operatingHours (요일별 운영시간)
+- pricing (freeSwim, lesson)
+- currentCapacity, maxCapacity
+
+### Course (강습 과정)
+- name, description, level, duration, price, maxStudents
+- instructor (User 참조)
+- schedule (요일별 시간)
+- enrolledStudents (수강생 목록)
+
+### Class (반)
+- name, center, instructor, course
+- level, maxStudents, currentStudents
+- schedule (요일, 시작/종료 시간)
+- startDate, endDate
+- students (학생 목록)
+
+### SkillTemplate (스킬 템플릿)
+- name, category, level, description
+- practiceDrills (연습 드릴 목록)
+- commonIssues (일반적인 문제점과 해결책)
+- prerequisites (선수 스킬)
+- createdBy (관리자)
+
+### Progress (진도)
+- student, instructor, course, center, class
+- evaluationDate, overallProgress
+- skills (스킬별 진행상황)
+- instructorComments, nextGoals
+
+### Evaluation (평가)
+- student, instructor, course, class
+- courseEndDate, evaluationDate
+- ratings (강사, 과정, 시설, 만족도)
+- comments (장점, 개선점, 추가 코멘트)
+- isAnonymous, isSubmitted
 - 관리자 전용: centerName, centerAddress, centerPhone
 
 ### Course (강습 과정)
