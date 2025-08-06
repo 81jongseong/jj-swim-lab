@@ -1,14 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import apiClient from '../utils/api';
 import '../app/globals.css';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userType, setUserType] = useState<'guest' | 'member' | 'instructor' | 'admin'>('guest');
+  const [userName, setUserName] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    // 로그인 상태 확인
+    const token = localStorage.getItem('token');
+    const storedUserType = localStorage.getItem('userType') as any;
+    const storedUserName = localStorage.getItem('userName');
+
+    if (token && storedUserType) {
+      setIsLoggedIn(true);
+      setUserType(storedUserType);
+      setUserName(storedUserName || '');
+    } else {
+      setIsLoggedIn(false);
+      setUserType('guest');
+      setUserName('');
+    }
+  }, []);
+
+  const handleLogout = () => {
+    apiClient.logout();
+    setIsLoggedIn(false);
+    setUserType('guest');
+    setUserName('');
+    router.push('/');
+  };
 
   const menuItems = {
     guest: [
@@ -21,26 +50,25 @@ export default function Navigation() {
     ],
     member: [
       { href: '/dashboard', label: '대시보드' },
-      { href: '/progress', label: '진도표' },
-      { href: '/training', label: '훈련추천' },
-      { href: '/quiz', label: '모의고사' },
-      { href: '/shop', label: '쇼핑몰' },
+      { href: '/courses', label: '강습 과정' },
+      { href: '/bookings', label: '예약 관리' },
+      { href: '/payments', label: '결제 내역' },
       { href: '/profile', label: '프로필' },
     ],
     instructor: [
       { href: '/instructor/dashboard', label: '강사 대시보드' },
-      { href: '/instructor/lessons', label: '레슨 관리' },
-      { href: '/instructor/evaluation', label: '회원 평가' },
-      { href: '/instructor/feedback', label: '피드백' },
-      { href: '/quiz', label: '모의고사' },
+      { href: '/instructor/courses', label: '강습 관리' },
+      { href: '/instructor/students', label: '학생 관리' },
+      { href: '/instructor/schedule', label: '일정 관리' },
+      { href: '/profile', label: '프로필' },
     ],
     admin: [
       { href: '/admin/dashboard', label: '관리자 대시보드' },
-      { href: '/admin/centers', label: '센터 관리' },
-      { href: '/admin/programs', label: '프로그램 관리' },
-      { href: '/admin/instructors', label: '강사 관리' },
-      { href: '/admin/content', label: '콘텐츠 관리' },
-      { href: '/admin/statistics', label: '통계' },
+      { href: '/admin/users', label: '사용자 관리' },
+      { href: '/admin/courses', label: '강습 관리' },
+      { href: '/admin/bookings', label: '예약 관리' },
+      { href: '/admin/payments', label: '결제 관리' },
+      { href: '/admin/notices', label: '공지사항 관리' },
     ],
   };
 
@@ -72,17 +100,20 @@ export default function Navigation() {
               </Link>
             ))}
             
-            {/* User Type Selector */}
-            <select
-              value={userType}
-              onChange={(e) => setUserType(e.target.value as any)}
-              className="ml-4 px-3 py-2 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="guest">게스트</option>
-              <option value="member">회원</option>
-              <option value="instructor">강사</option>
-              <option value="admin">관리자</option>
-            </select>
+            {/* User Info & Logout */}
+            {isLoggedIn && (
+              <div className="flex items-center space-x-4 ml-4">
+                <span className="text-sm text-gray-700">
+                  {userName}님 환영합니다
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  로그아웃
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -125,18 +156,23 @@ export default function Navigation() {
               </Link>
             ))}
             
-            <div className="px-3 py-2">
-              <select
-                value={userType}
-                onChange={(e) => setUserType(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              >
-                <option value="guest">게스트</option>
-                <option value="member">회원</option>
-                <option value="instructor">강사</option>
-                <option value="admin">관리자</option>
-              </select>
-            </div>
+            {/* Mobile User Info & Logout */}
+            {isLoggedIn && (
+              <div className="px-3 py-2 border-t border-gray-200">
+                <div className="text-sm text-gray-700 mb-2">
+                  {userName}님 환영합니다
+                </div>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  로그아웃
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

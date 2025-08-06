@@ -1,199 +1,152 @@
 'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import Navigation from "../../components/Navigation";
-import "../../app/globals.css";
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import apiClient from '../../utils/api';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [form, setForm] = useState({
-    userId: "",
-    password: "",
+export default function Login() {
+  const [formData, setFormData] = useState({
+    userId: '',
+    password: '',
   });
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-
-    if (!form.userId.trim()) newErrors.userId = "ID를 입력해주세요";
-    if (!form.password) newErrors.password = "비밀번호를 입력해주세요";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-
     setIsLoading(true);
+    setError('');
+
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        // 로그인 성공
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+      const response = await apiClient.login({ userId: formData.userId, password: formData.password });
+      
+      if (response.data?.token) {
+        // 토큰을 로컬 스토리지에 저장
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userType', response.data.user.userType);
+        localStorage.setItem('userId', response.data.user.userId);
+        localStorage.setItem('userName', response.data.user.name);
         
-        // 사용자 유형에 따라 리다이렉트
-        const redirectPath = data.user.userType === 'admin' ? '/admin/dashboard' : 
-                           data.user.userType === 'instructor' ? '/instructor/dashboard' : 
-                           '/dashboard';
-        router.push(redirectPath);
-      } else {
-        setError(data.error || '로그인에 실패했습니다.');
+        // 사용자 타입에 따라 리다이렉트
+        switch (response.data.user.userType) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'instructor':
+            router.push('/instructor/dashboard');
+            break;
+          case 'member':
+            router.push('/dashboard');
+            break;
+          default:
+            router.push('/dashboard');
+        }
+      } else if (response.error) {
+        setError(response.error);
       }
-    } catch (err) {
-      console.error('로그인 오류:', err);
-      setError('네트워크 오류가 발생했습니다.');
+    } catch (error: any) {
+      setError(error.message || '로그인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialLogin = (provider: 'google' | 'kakao') => {
-    // 소셜 로그인 구현 (추후 OAuth 연동)
-    alert(`${provider} 로그인은 추후 구현 예정입니다.`);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="pt-16 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-sm">
-          {/* 로그인 카드 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            {/* 헤더 */}
-            <div className="text-center mb-6">
-              <div className="mx-auto h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-xl">🏊‍♂️</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-white/10">
+            <span className="text-2xl">🏊‍♂️</span>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            JJ Swim Lab 로그인
+          </h2>
+          <p className="mt-2 text-center text-sm text-blue-200">
+            계정이 없으신가요?{' '}
+            <Link href="/auth/signup" className="font-medium text-blue-300 hover:text-blue-200">
+              회원가입
+            </Link>
+          </p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-8 border border-white/20">
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm">
+                {error}
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                로그인
-              </h2>
-              <p className="text-gray-600 text-sm">
-                JJ Swim Lab에 오신 것을 환영합니다
-              </p>
-            </div>
-
-            {/* 폼 */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* ID 입력 */}
+            )}
+            
+            <div className="space-y-4">
               <div>
-                <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="userId" className="block text-sm font-medium text-blue-200">
                   아이디
                 </label>
                 <input
-                  type="text"
                   id="userId"
                   name="userId"
-                  value={form.userId}
+                  type="text"
+                  required
+                  value={formData.userId}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.userId ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className="mt-1 block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="아이디를 입력하세요"
                 />
-                {errors.userId && (
-                  <p className="text-red-500 text-xs mt-1">{errors.userId}</p>
-                )}
               </div>
-
-              {/* 비밀번호 입력 */}
+              
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-blue-200">
                   비밀번호
                 </label>
                 <input
-                  type="password"
                   id="password"
                   name="password"
-                  value={form.password}
+                  type="password"
+                  required
+                  value={formData.password}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className="mt-1 block w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="비밀번호를 입력하세요"
                 />
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-                )}
               </div>
+            </div>
 
-              {/* 에러 메시지 */}
-              {error && (
-                <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg">
-                  {error}
-                </div>
-              )}
-
-              {/* 로그인 버튼 */}
+            <div className="mt-6">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-blue-900 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isLoading ? '로그인 중...' : '로그인'}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    로그인 중...
+                  </div>
+                ) : (
+                  '로그인'
+                )}
               </button>
-            </form>
-
-            {/* 소셜 로그인 */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">또는</span>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleSocialLogin('google')}
-                  className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-sm">Google</span>
-                </button>
-                <button
-                  onClick={() => handleSocialLogin('kakao')}
-                  className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-sm">Kakao</span>
-                </button>
-              </div>
             </div>
 
-            {/* 회원가입 링크 */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                계정이 없으신가요?{' '}
-                <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-                  회원가입
-                </Link>
-              </p>
+            <div className="mt-4 text-center">
+              <Link href="/auth/forgot-password" className="text-sm text-blue-300 hover:text-blue-200">
+                비밀번호를 잊으셨나요?
+              </Link>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -5,17 +5,21 @@ import { connectDB } from './db';
 import usersRouter from './routes/users';
 import authRouter from './routes/auth';
 import dashboardRouter from './routes/dashboard';
+import coursesRouter from './routes/courses';
+import bookingsRouter from './routes/bookings';
+import paymentsRouter from './routes/payments';
+import noticesRouter from './routes/notices';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 // 미들웨어 설정
 app.use(cors({
   origin: true, // 모든 origin 허용 (개발 환경)
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
@@ -25,6 +29,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/courses', coursesRouter);
+app.use('/api/bookings', bookingsRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/notices', noticesRouter);
 
 // 기본 라우트
 app.get('/', (req, res) => {

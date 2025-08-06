@@ -51,7 +51,7 @@ class ApiClient {
     });
   }
 
-  async login(credentials: { email: string; password: string }): Promise<ApiResponse> {
+  async login(credentials: { userId: string; password: string }): Promise<ApiResponse> {
     const response = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -98,16 +98,186 @@ class ApiClient {
   }
 
   // 대시보드 API
-  async getAdminStats(): Promise<ApiResponse> {
-    return this.request('/dashboard/admin/stats');
+  async getDashboard(): Promise<ApiResponse> {
+    return this.request('/dashboard');
   }
 
-  async getMemberDashboard(): Promise<ApiResponse> {
-    return this.request('/dashboard/member');
+  async getAdminStats(period?: string): Promise<ApiResponse> {
+    const queryString = period ? `?period=${period}` : '';
+    return this.request(`/dashboard/admin/stats${queryString}`);
   }
 
-  async getInstructorDashboard(): Promise<ApiResponse> {
-    return this.request('/dashboard/instructor');
+  async getInstructorStats(): Promise<ApiResponse> {
+    return this.request('/dashboard/instructor/stats');
+  }
+
+  // 강습 과정 API
+  async getCourses(params?: { level?: string; instructor?: string; isActive?: boolean }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/courses${queryString}`);
+  }
+
+  async getCourse(id: string): Promise<ApiResponse> {
+    return this.request(`/courses/${id}`);
+  }
+
+  async createCourse(courseData: any): Promise<ApiResponse> {
+    return this.request('/courses', {
+      method: 'POST',
+      body: JSON.stringify(courseData),
+    });
+  }
+
+  async updateCourse(id: string, courseData: any): Promise<ApiResponse> {
+    return this.request(`/courses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(courseData),
+    });
+  }
+
+  async deleteCourse(id: string): Promise<ApiResponse> {
+    return this.request(`/courses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async enrollCourse(id: string): Promise<ApiResponse> {
+    return this.request(`/courses/${id}/enroll`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelCourse(id: string): Promise<ApiResponse> {
+    return this.request(`/courses/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  // 예약 API
+  async getBookings(params?: { date?: string; status?: string; user?: string }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/bookings${queryString}`);
+  }
+
+  async getBooking(id: string): Promise<ApiResponse> {
+    return this.request(`/bookings/${id}`);
+  }
+
+  async createBooking(bookingData: any): Promise<ApiResponse> {
+    return this.request('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(bookingData),
+    });
+  }
+
+  async updateBooking(id: string, bookingData: any): Promise<ApiResponse> {
+    return this.request(`/bookings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(bookingData),
+    });
+  }
+
+  async cancelBooking(id: string): Promise<ApiResponse> {
+    return this.request(`/bookings/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async updateBookingStatus(id: string, status: string): Promise<ApiResponse> {
+    return this.request(`/bookings/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getAvailableSlots(date: string, laneNumber?: number): Promise<ApiResponse> {
+    const queryString = laneNumber ? `?laneNumber=${laneNumber}` : '';
+    return this.request(`/bookings/available/${date}${queryString}`);
+  }
+
+  // 결제 API
+  async getPayments(params?: { status?: string; purpose?: string; startDate?: string; endDate?: string }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/payments${queryString}`);
+  }
+
+  async getPayment(id: string): Promise<ApiResponse> {
+    return this.request(`/payments/${id}`);
+  }
+
+  async createPayment(paymentData: any): Promise<ApiResponse> {
+    return this.request('/payments', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  }
+
+  async completePayment(id: string, receiptUrl?: string): Promise<ApiResponse> {
+    return this.request(`/payments/${id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ receiptUrl }),
+    });
+  }
+
+  async refundPayment(id: string, reason?: string): Promise<ApiResponse> {
+    return this.request(`/payments/${id}/refund`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getPaymentStats(startDate?: string, endDate?: string): Promise<ApiResponse> {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const queryString = Object.keys(params).length > 0 ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.request(`/payments/stats/summary${queryString}`);
+  }
+
+  // 공지사항 API
+  async getNotices(params?: { category?: string; priority?: string; tag?: string }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/notices${queryString}`);
+  }
+
+  async getNotice(id: string): Promise<ApiResponse> {
+    return this.request(`/notices/${id}`);
+  }
+
+  async createNotice(noticeData: any): Promise<ApiResponse> {
+    return this.request('/notices', {
+      method: 'POST',
+      body: JSON.stringify(noticeData),
+    });
+  }
+
+  async updateNotice(id: string, noticeData: any): Promise<ApiResponse> {
+    return this.request(`/notices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(noticeData),
+    });
+  }
+
+  async deleteNotice(id: string): Promise<ApiResponse> {
+    return this.request(`/notices/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async publishNotice(id: string, isPublished: boolean): Promise<ApiResponse> {
+    return this.request(`/notices/${id}/publish`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPublished }),
+    });
+  }
+
+  async getAdminNotices(params?: { category?: string; priority?: string; isPublished?: boolean }): Promise<ApiResponse> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/notices/admin/all${queryString}`);
+  }
+
+  async getNoticeStats(): Promise<ApiResponse> {
+    return this.request('/notices/admin/stats');
   }
 
   // 유틸리티 메서드
