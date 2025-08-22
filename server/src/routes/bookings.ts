@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { Booking } from '../models/Booking';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
+import { auth as authenticateToken, requireRole } from '../middleware/auth';
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -11,40 +11,12 @@ interface AuthRequest extends Request {
 
 const router: Router = Router();
 
-// 인증 미들웨어
-const authenticateToken = (req: AuthRequest, res: Response, next: Function) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    req.user = decoded;
-    return next();
-  } catch (error) {
-    return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });
-  }
-};
-
-// 관리자 권한 확인
-const requireAdmin = async (req: AuthRequest, res: Response, next: Function) => {
-  try {
-    const user = await User.findById(req.user.userId);
-    if (!user || user.userType !== 'admin') {
-      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
-    }
-    return next();
-  } catch (error) {
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
-  }
-};
+// 공통 인증/권한 미들웨어 사용
 
 // 모든 예약 조회
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { date, status, user } = req.query;
+    const { date, status, user, instructor } = req.query as any;
     const filter: any = {};
     
     if (date) {
@@ -57,11 +29,14 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     if (status) filter.status = status;
     
     // 일반 사용자는 본인 예약만 조회 가능
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin') {
-      filter.user = req.user.userId;
-    } else if (user) {
-      filter.user = user;
+    const currentUser = (req as any).user;
+    if (currentUser?.userType === 'superAdmin') {
+      if (user) filter.user = user;
+      if (instructor) filter.instructor = instructor;
+    } else if (currentUser?.userType === 'instructor') {
+      filter.instructor = currentUser._id;
+    } else {
+      filter.user = currentUser._id;
     }
 
     const bookings = await Booking.find(filter)
@@ -90,8 +65,8 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
     }
 
     // 본인 예약이거나 관리자인지 확인
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin' && booking.user.toString() !== req.user.userId) {
+    const currentUser = (req as any).user;
+    if (currentUser?.userType !== 'superAdmin' && booking.user.toString() !== String(currentUser._id)) {
       return res.status(403).json({ error: '조회 권한이 없습니다.' });
     }
 
@@ -143,7 +118,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     }
 
     const bookingData = {
-      user: req.user.userId,
+      user: (req as any).user._id,
       date: bookingDate,
       startTime,
       endTime,
@@ -161,6 +136,15 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       .populate('user', 'name userId')
       .populate('instructor', 'name userId')
       .populate('course', 'name');
+
+    // notify user
+    try {
+      const io = (req as any).app.get('io');
+      if (io) io.to(`user:${String((req as any).user._id)}`).emit('notification', {
+        type: 'booking:created',
+        message: '예약이 생성되었습니다.',
+      });
+    } catch {}
 
     return res.status(201).json({
       message: '예약이 생성되었습니다.',
@@ -182,8 +166,8 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
     }
 
     // 본인 예약이거나 관리자인지 확인
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin' && booking.user.toString() !== req.user.userId) {
+    const currentUser = (req as any).user;
+    if (currentUser?.userType !== 'superAdmin' && booking.user.toString() !== String(currentUser._id)) {
       return res.status(403).json({ error: '수정 권한이 없습니다.' });
     }
 
@@ -199,6 +183,15 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
     ).populate('user', 'name userId')
      .populate('instructor', 'name userId')
      .populate('course', 'name');
+
+    // notify owner
+    try {
+      const io = (req as any).app.get('io');
+      if (io && updatedBooking) io.to(`user:${String(updatedBooking.user)}`).emit('notification', {
+        type: 'booking:updated',
+        message: '예약 정보가 업데이트되었습니다.',
+      });
+    } catch {}
 
     return res.json({
       message: '예약이 수정되었습니다.',
@@ -220,8 +213,8 @@ router.post('/:id/cancel', authenticateToken, async (req: AuthRequest, res: Resp
     }
 
     // 본인 예약이거나 관리자인지 확인
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin' && booking.user.toString() !== req.user.userId) {
+    const currentUser = (req as any).user;
+    if (currentUser?.userType !== 'superAdmin' && booking.user.toString() !== String(currentUser._id)) {
       return res.status(403).json({ error: '취소 권한이 없습니다.' });
     }
 
@@ -232,6 +225,15 @@ router.post('/:id/cancel', authenticateToken, async (req: AuthRequest, res: Resp
     booking.status = 'cancelled';
     await booking.save();
 
+    // notify owner
+    try {
+      const io = (req as any).app.get('io');
+      if (io) io.to(`user:${String(booking.user)}`).emit('notification', {
+        type: 'booking:cancelled',
+        message: '예약이 취소되었습니다.',
+      });
+    } catch {}
+
     return res.json({ message: '예약이 취소되었습니다.' });
   } catch (error) {
     console.error('예약 취소 오류:', error);
@@ -240,7 +242,7 @@ router.post('/:id/cancel', authenticateToken, async (req: AuthRequest, res: Resp
 });
 
 // 예약 상태 변경 (관리자만)
-router.patch('/:id/status', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/status', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.body;
     
@@ -259,6 +261,15 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req: AuthReq
     if (!booking) {
       return res.status(404).json({ error: '예약을 찾을 수 없습니다.' });
     }
+
+    // notify owner
+    try {
+      const io = (req as any).app.get('io');
+      if (io && booking) io.to(`user:${String(booking.user)}`).emit('notification', {
+        type: 'booking:statusChanged',
+        message: `예약 상태가 '${status}'로 변경되었습니다.`,
+      });
+    } catch {}
 
     return res.json({
       message: '예약 상태가 변경되었습니다.',
@@ -324,6 +335,381 @@ router.get('/available/:date', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('예약 가능 시간 조회 오류:', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// 강습 과정별 예약 현황 조회
+router.get('/course/:courseId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { date } = req.query;
+
+    let filter: any = { course: courseId };
+    
+    if (date) {
+      const startDate = new Date(date as string);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      filter.date = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    const bookings = await Booking.find(filter)
+      .populate('user', 'name email')
+      .populate('instructor', 'name')
+      .populate('course', 'name level')
+      .sort({ date: 1, startTime: 1 });
+
+    res.json({
+      success: true,
+      message: '강습 과정별 예약 현황 조회 성공',
+      data: {
+        courseId,
+        totalBookings: bookings.length,
+        bookings
+      }
+    });
+  } catch (error) {
+    console.error('강습 과정별 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
+  }
+});
+
+// 학생별 강습 과정 예약 현황 조회
+router.get('/student/:studentId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== studentId && 
+        req.user.userType !== 'instructor' && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 학생이 등록한 강습 과정의 예약 현황
+    const bookings = await Booking.find({ 
+      user: studentId,
+      course: { $exists: true, $ne: null }
+    })
+    .populate('course', 'name level instructor')
+    .populate('instructor', 'name')
+    .sort({ date: 1, startTime: 1 });
+
+    // 강습 과정별로 그룹화
+    const courseBookings = new Map();
+    
+    bookings.forEach(booking => {
+      if (booking.course) {
+        const course = booking.course as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!courseBookings.has(courseId)) {
+          courseBookings.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level
+            },
+            totalBookings: 0,
+            completedBookings: 0,
+            upcomingBookings: 0,
+            bookings: []
+          });
+        }
+        
+        const courseInfo = courseBookings.get(courseId);
+        courseInfo.totalBookings++;
+        courseInfo.bookings.push(booking);
+        
+        if (booking.status === 'completed') {
+          courseInfo.completedBookings++;
+        } else if (new Date(booking.date) > new Date()) {
+          courseInfo.upcomingBookings++;
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '학생별 강습 과정 예약 현황 조회 성공',
+      data: {
+        studentId,
+        totalCourses: courseBookings.size,
+        courseBookings: Array.from(courseBookings.values())
+      }
+    });
+  } catch (error) {
+    console.error('학생별 강습 과정 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
+  }
+});
+
+// 강사별 강습 과정 예약 현황 조회
+router.get('/instructor/:instructorId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== instructorId && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 강사가 담당하는 강습 과정의 예약 현황
+    const bookings = await Booking.find({ 
+      instructor: instructorId,
+      course: { $exists: true, $ne: null }
+    })
+    .populate('course', 'name level')
+    .populate('user', 'name email studentInfo')
+    .sort({ date: 1, startTime: 1 });
+
+    // 강습 과정별로 그룹화
+    const courseBookings = new Map();
+    
+    bookings.forEach(booking => {
+      if (booking.course) {
+        const course = booking.course as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!courseBookings.has(courseId)) {
+          courseBookings.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level
+            },
+            totalBookings: 0,
+            todayBookings: 0,
+            thisWeekBookings: 0,
+            bookings: []
+          });
+        }
+        
+        const courseInfo = courseBookings.get(courseId);
+        courseInfo.totalBookings++;
+        courseInfo.bookings.push(booking);
+        
+        const bookingDate = new Date(booking.date);
+        const today = new Date();
+        const thisWeek = new Date();
+        thisWeek.setDate(thisWeek.getDate() + 7);
+        
+        if (bookingDate.toDateString() === today.toDateString()) {
+          courseInfo.todayBookings++;
+        }
+        
+        if (bookingDate >= today && bookingDate <= thisWeek) {
+          courseInfo.thisWeekBookings++;
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '강사별 강습 과정 예약 현황 조회 성공',
+      data: {
+        instructorId,
+        totalCourses: courseBookings.size,
+        courseBookings: Array.from(courseBookings.values())
+      }
+    });
+  } catch (error) {
+    console.error('강사별 강습 과정 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
+  }
+});
+
+router.get('/course/:courseId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { date } = req.query;
+
+    let filter: any = { course: courseId };
+    
+    if (date) {
+      const startDate = new Date(date as string);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      filter.date = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    const bookings = await Booking.find(filter)
+      .populate('user', 'name email')
+      .populate('instructor', 'name')
+      .populate('course', 'name level')
+      .sort({ date: 1, startTime: 1 });
+
+    res.json({
+      success: true,
+      message: '강습 과정별 예약 현황 조회 성공',
+      data: {
+        courseId,
+        totalBookings: bookings.length,
+        bookings
+      }
+    });
+  } catch (error) {
+    console.error('강습 과정별 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
+  }
+});
+
+// 학생별 강습 과정 예약 현황 조회
+router.get('/student/:studentId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== studentId && 
+        req.user.userType !== 'instructor' && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 학생이 등록한 강습 과정의 예약 현황
+    const bookings = await Booking.find({ 
+      user: studentId,
+      course: { $exists: true, $ne: null }
+    })
+    .populate('course', 'name level instructor')
+    .populate('instructor', 'name')
+    .sort({ date: 1, startTime: 1 });
+
+    // 강습 과정별로 그룹화
+    const courseBookings = new Map();
+    
+    bookings.forEach(booking => {
+      if (booking.course) {
+        const course = booking.course as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!courseBookings.has(courseId)) {
+          courseBookings.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level
+            },
+            totalBookings: 0,
+            completedBookings: 0,
+            upcomingBookings: 0,
+            bookings: []
+          });
+        }
+        
+        const courseInfo = courseBookings.get(courseId);
+        courseInfo.totalBookings++;
+        courseInfo.bookings.push(booking);
+        
+        if (booking.status === 'completed') {
+          courseInfo.completedBookings++;
+        } else if (new Date(booking.date) > new Date()) {
+          courseInfo.upcomingBookings++;
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '학생별 강습 과정 예약 현황 조회 성공',
+      data: {
+        studentId,
+        totalCourses: courseBookings.size,
+        courseBookings: Array.from(courseBookings.values())
+      }
+    });
+  } catch (error) {
+    console.error('학생별 강습 과정 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
+  }
+});
+
+// 강사별 강습 과정 예약 현황 조회
+router.get('/instructor/:instructorId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== instructorId && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 강사가 담당하는 강습 과정의 예약 현황
+    const bookings = await Booking.find({ 
+      instructor: instructorId,
+      course: { $exists: true, $ne: null }
+    })
+    .populate('course', 'name level')
+    .populate('user', 'name email studentInfo')
+    .sort({ date: 1, startTime: 1 });
+
+    // 강습 과정별로 그룹화
+    const courseBookings = new Map();
+    
+    bookings.forEach(booking => {
+      if (booking.course) {
+        const course = booking.course as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!courseBookings.has(courseId)) {
+          courseBookings.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level
+            },
+            totalBookings: 0,
+            todayBookings: 0,
+            thisWeekBookings: 0,
+            bookings: []
+          });
+        }
+        
+        const courseInfo = courseBookings.get(courseId);
+        courseInfo.totalBookings++;
+        courseInfo.bookings.push(booking);
+        
+        const bookingDate = new Date(booking.date);
+        const today = new Date();
+        const thisWeek = new Date();
+        thisWeek.setDate(thisWeek.getDate() + 7);
+        
+        if (bookingDate.toDateString() === today.toDateString()) {
+          courseInfo.todayBookings++;
+        }
+        
+        if (bookingDate >= today && bookingDate <= thisWeek) {
+          courseInfo.thisWeekBookings++;
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '강사별 강습 과정 예약 현황 조회 성공',
+      data: {
+        instructorId,
+        totalCourses: courseBookings.size,
+        courseBookings: Array.from(courseBookings.values())
+      }
+    });
+  } catch (error) {
+    console.error('강사별 강습 과정 예약 현황 조회 오류:', error);
+    res.status(500).json({ error: '예약 현황 조회에 실패했습니다.' });
   }
 });
 

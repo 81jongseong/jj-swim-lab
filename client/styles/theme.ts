@@ -102,7 +102,7 @@ export type ColorKey = keyof typeof theme.colors;
 export type ColorShade = keyof typeof theme.colors.primary;
 
 // 유틸리티 함수들
-export const getColor = (color: ColorKey, shade: ColorShade = '600') => {
+export const getColor = (color: ColorKey, shade: ColorShade = '600' as unknown as ColorShade) => {
   return theme.colors[color][shade];
 };
 

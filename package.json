@@ -4,15 +4,52 @@
   "description": "JJ Swim Lab - 수영 교육 플랫폼",
   "private": true,
   "scripts": {
-    "dev": "pnpm run --parallel dev",
-    "dev:client": "cd client && pnpm dev",
-    "dev:server": "cd server && pnpm dev",
-    "build": "pnpm run --recursive build",
-    "start": "pnpm run --recursive start",
-    "install:all": "pnpm install && cd client && pnpm install && cd ../server && pnpm install"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "start:prod": "npm run start:server && npm run start:client",
+    "start:server": "cd server && npm run start:prod",
+    "start:client": "cd client && npm run start:prod",
+    "clean": "rimraf server/dist client/.next client/out",
+    "lint": "npm run lint:server && npm run lint:client",
+    "lint:server": "cd server && npm run lint",
+    "lint:client": "cd client && npm run lint",
+    "type-check": "npm run type-check:server && npm run type-check:client",
+    "type-check:server": "cd server && npm run type-check",
+    "type-check:client": "cd client && npm run type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky install"
   },
-  "keywords": ["swimming", "education", "platform"],
+  "keywords": [
+    "swimming",
+    "education",
+    "platform"
+  ],
   "author": "JJ Swim Lab",
   "license": "MIT",
-  "packageManager": "pnpm@10.12.4"
+  "packageManager": "pnpm@10.12.4",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "concurrently": "^9.2.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
 }

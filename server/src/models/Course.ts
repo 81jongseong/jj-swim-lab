@@ -31,6 +31,30 @@ const courseSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  // 반 정보 추가
+  classInfo: {
+    className: { type: String, required: true }, // 예: "자유형 기초반 A"
+    classType: { 
+      type: String, 
+      enum: ['regular', 'intensive', 'private'], 
+      default: 'regular',
+      required: true
+    },
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
+    maxCapacity: { type: Number, required: true },
+    currentEnrollment: { type: Number, default: 0 }
+  },
+  // 강습법 체크리스트 연결
+  teachingMethods: [{
+    methodId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TeachingMethod',
+      required: true
+    },
+    order: { type: Number, required: true },
+    isRequired: { type: Boolean, default: true }
+  }],
   schedule: [{
     day: {
       type: String,
@@ -54,6 +78,7 @@ const courseSchema = new mongoose.Schema({
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: true
     },
     enrolledAt: {
       type: Date,
@@ -64,6 +89,17 @@ const courseSchema = new mongoose.Schema({
       enum: ['active', 'completed', 'dropped'],
       default: 'active',
     },
+    progress: {
+      percentage: { type: Number, default: 0 },
+      completedSteps: [{ 
+        methodId: { type: mongoose.Schema.Types.ObjectId, ref: 'TeachingMethod' },
+        stepName: { type: String, required: true },
+        completedAt: { type: Date, default: Date.now },
+        notes: { type: String, default: '' }
+      }] as any,
+      lastUpdated: { type: Date, default: Date.now },
+      notes: { type: String, default: '' }
+    }
   }],
 }, { 
   timestamps: true 

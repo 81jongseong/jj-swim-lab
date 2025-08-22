@@ -1,166 +1,341 @@
-import Link from 'next/link';
+'use client';
 
-export default function Home() {
+import React from 'react';
+import { motion } from 'framer-motion';
+import { motionPresets, staggerContainer } from '@/lib/motion';
+import HeroWave from '@/components/HeroWave';
+import WaterRippleBackground from '@/components/WaterRippleBackground';
+import ThreeSplash from '@/components/ThreeSplash';
+import LottiePlayer from '@/components/LottiePlayer';
+
+export default function LandingPage() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-500 to-blue-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            🏊‍♂️ JJ Swim Lab
-          </h1>
-          <p className="text-xl md:text-2xl mb-8">
-            수영 교육의 새로운 기준
-          </p>
-          <p className="text-lg mb-12 max-w-3xl mx-auto">
-            체계적인 수영 교육 시스템으로 당신의 수영 실력을 한 단계 끌어올리세요.
-            전문 강사진과 함께하는 맞춤형 레슨, AI 기반 학습 시스템을 경험해보세요.
-          </p>
-          
-          {/* User Type Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Link href="/auth/signup?type=member" 
-                  className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              👤 회원 가입
-            </Link>
-            <Link href="/auth/signup?type=instructor" 
-                  className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              👨‍🏫 강사 등록
-            </Link>
-            <Link href="/auth/signup?type=admin" 
-                  className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              🏢 센터 등록
-            </Link>
+    <div className="min-h-screen bg-background">
+      {/* 히어로 섹션 */}
+      <HeroWave
+        title="JJ Swim Lab"
+        subtitle="AI 기반 수영 교육 플랫폼"
+        description="개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요"
+        ctaPrimary={{
+          text: "수강생 시작하기",
+          href: "/auth/signup?type=student"
+        }}
+        ctaSecondary={{
+          text: "강사 등록하기",
+          href: "/auth/signup?type=instructor"
+        }}
+      />
+
+      {/* 기능 소개 섹션 */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.h2
+              variants={motionPresets.slideUp}
+              className="text-4xl md:text-5xl font-bold text-foreground mb-6"
+            >
+              <span className="bg-gradient-text">왜 JJ Swim Lab인가요?</span>
+            </motion.h2>
+            <motion.p
+              variants={motionPresets.slideUp}
+              className="text-xl text-muted-foreground max-w-3xl mx-auto"
+            >
+              AI 기술과 전문 지식을 결합하여 개인 맞춤형 수영 교육을 제공합니다
+            </motion.p>
+          </motion.div>
+
+          {/* 기능 카드 그리드 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* AI 기반 강습법 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
+                <span className="text-3xl">🤖</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">AI 기반 강습법</h3>
+              <p className="text-muted-foreground mb-6">
+                개인 수준과 목표에 맞는 맞춤형 수영 강습법을 AI가 추천합니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+                  개인 맞춤형
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 인터랙티브 퀴즈 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-secondary/20 transition-colors">
+                <span className="text-3xl">❓</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">인터랙티브 퀴즈</h3>
+              <p className="text-muted-foreground mb-6">
+                수영 이론과 실기를 재미있게 학습할 수 있는 다양한 퀴즈를 제공합니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/10 text-secondary">
+                  학습 효과 증대
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 진도 관리 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-info/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-info/20 transition-colors">
+                <span className="text-3xl">📊</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">체계적 진도 관리</h3>
+              <p className="text-muted-foreground mb-6">
+                개인의 수영 실력 향상을 체계적으로 추적하고 관리합니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-info/10 text-info">
+                  체계적 관리
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 전문가 네트워크 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-accent/20 transition-colors">
+                <span className="text-3xl">👨‍🏫</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">전문가 네트워크</h3>
+              <p className="text-muted-foreground mb-6">
+                검증된 수영 강사들과 연결하여 전문적인 지도를 받을 수 있습니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/10 text-accent">
+                  전문가 연결
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 실시간 피드백 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-success/20 transition-colors">
+                <span className="text-3xl">⚡</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">실시간 피드백</h3>
+              <p className="text-muted-foreground mb-6">
+                수영 자세와 기술을 실시간으로 분석하고 즉시 피드백을 제공합니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success/10 text-success">
+                  즉시 피드백
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 커뮤니티 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-warning/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-warning/20 transition-colors">
+                <span className="text-3xl">💬</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">활발한 커뮤니티</h3>
+              <p className="text-muted-foreground mb-6">
+                수영 애호가들과 정보를 공유하고 경험을 나눌 수 있습니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning/10 text-warning">
+                  정보 공유
+                </span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">주요 기능</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold mb-4">체계적인 진도 관리</h3>
-              <p className="text-gray-600">
-                수영 레벨별 세부 평가와 진도표를 통한 체계적인 학습 관리
+      {/* 3D 효과 데모 섹션 */}
+      <section className="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="container mx-auto px-6">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.h2
+              variants={motionPresets.slideUp}
+              className="text-4xl md:text-5xl font-bold text-foreground mb-6"
+            >
+              <span className="bg-gradient-text">최신 기술로 구현된</span>
+            </motion.h2>
+            <motion.p
+              variants={motionPresets.slideUp}
+              className="text-xl text-muted-foreground max-w-3xl mx-auto"
+            >
+              Three.js와 Framer Motion을 활용한 인터랙티브한 수영 시뮬레이션
+            </motion.p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* 3D 파티클 시스템 */}
+            <motion.div
+              variants={motionPresets.slideLeft}
+              className="h-96 rounded-3xl overflow-hidden shadow-deep"
+            >
+              <ThreeSplash
+                intensity="medium"
+                color="primary"
+                onLoad={() => console.log('3D 효과 로드 완료')}
+              />
+            </motion.div>
+
+            {/* 설명 */}
+            <motion.div
+              variants={motionPresets.slideRight}
+              className="space-y-6"
+            >
+              <h3 className="text-2xl font-bold text-foreground">3D 파티클 시스템</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                수영의 물결과 움직임을 3D로 시각화하여 더 직관적인 학습 경험을 제공합니다.
+                WebGL 기술을 활용하여 부드럽고 반응성 있는 애니메이션을 구현했습니다.
               </p>
-            </div>
-            <div className="text-center p-6">
-              <div className="text-4xl mb-4">🧠</div>
-              <h3 className="text-xl font-semibold mb-4">AI 기반 학습</h3>
-              <p className="text-gray-600">
-                모의고사와 퀴즈를 통한 이론 학습, AI가 추천하는 맞춤형 훈련
-              </p>
-            </div>
-            <div className="text-center p-6">
-              <div className="text-4xl mb-4">👨‍🏫</div>
-              <h3 className="text-xl font-semibold mb-4">전문 강사 매칭</h3>
-              <p className="text-gray-600">
-                자격증을 보유한 전문 강사와의 1:1 맞춤 레슨
-              </p>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  Three.js
+                </span>
+                <span className="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-sm font-medium">
+                  WebGL
+                </span>
+                <span className="px-3 py-1 bg-info/10 text-info rounded-full text-sm font-medium">
+                  파티클 시스템
+                </span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* News Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">📢 공지사항</h2>
-            <Link href="/news" className="text-blue-600 hover:text-blue-700 font-semibold">
-              전체보기 →
-            </Link>
+      {/* 물결 배경 데모 섹션 */}
+      <section className="py-20">
+        <WaterRippleBackground intensity="medium" color="secondary">
+          <div className="container mx-auto px-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <motion.h2
+                variants={motionPresets.slideUp}
+                className="text-4xl md:text-5xl font-bold text-white mb-6"
+              >
+                <span className="bg-gradient-to-r from-white to-secondary-200 bg-clip-text text-transparent">
+                  물결 효과 시스템
+                </span>
+              </motion.h2>
+              <motion.p
+                variants={motionPresets.slideUp}
+                className="text-xl text-white/90 max-w-3xl mx-auto"
+              >
+                Canvas API를 활용한 저비용 물결 애니메이션으로 수영의 자연스러운 움직임을 표현합니다
+              </motion.p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <motion.div
+                variants={motionPresets.scaleIn}
+                className="text-center text-white"
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">저비용 구현</h3>
+                <p className="text-white/80">GPU 가속을 활용한 효율적인 렌더링</p>
+              </motion.div>
+
+              <motion.div
+                variants={motionPresets.scaleIn}
+                className="text-center text-white"
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📱</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">반응형 디자인</h3>
+                <p className="text-white/80">모든 디바이스에서 최적화된 성능</p>
+              </motion.div>
+
+              <motion.div
+                variants={motionPresets.scaleIn}
+                className="text-center text-white"
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">실시간 애니메이션</h3>
+                <p className="text-white/80">부드럽고 자연스러운 물결 효과</p>
+              </motion.div>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-sm text-gray-500 mb-2">2025.01.15</div>
-              <h3 className="font-semibold mb-2">시스템 업데이트 안내</h3>
-              <p className="text-gray-600 text-sm">
-                새로운 AI 기반 학습 시스템이 업데이트되었습니다.
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-sm text-gray-500 mb-2">2025.01.10</div>
-              <h3 className="font-semibold mb-2">수영 대회 일정</h3>
-              <p className="text-gray-600 text-sm">
-                2025년 상반기 수영 대회 일정이 공개되었습니다.
-              </p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="text-sm text-gray-500 mb-2">2025.01.05</div>
-              <h3 className="font-semibold mb-2">새로운 강사 등록</h3>
-              <p className="text-gray-600 text-sm">
-                경력 10년 이상의 전문 강사가 새롭게 등록되었습니다.
-              </p>
-            </div>
-          </div>
-        </div>
+        </WaterRippleBackground>
       </section>
 
-      {/* Membership Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">멤버십 안내</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="border border-gray-200 rounded-lg p-6 text-center">
-              <h3 className="text-xl font-semibold mb-4">기본</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-4">무료</div>
-              <ul className="text-gray-600 space-y-2 mb-6">
-                <li>• 기본 진도 관리</li>
-                <li>• 공지사항 확인</li>
-                <li>• 기본 퀴즈</li>
-              </ul>
-              <Link href="/auth/signup" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                가입하기
-              </Link>
-            </div>
-            <div className="border border-blue-500 rounded-lg p-6 text-center bg-blue-50">
-              <h3 className="text-xl font-semibold mb-4">플러스</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-4">월 29,900원</div>
-              <ul className="text-gray-600 space-y-2 mb-6">
-                <li>• AI 기반 훈련 추천</li>
-                <li>• 상세한 진도 분석</li>
-                <li>• 전문 강사 상담</li>
-              </ul>
-              <Link href="/auth/signup" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                가입하기
-              </Link>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-6 text-center">
-              <h3 className="text-xl font-semibold mb-4">프리미엄</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-4">월 59,900원</div>
-              <ul className="text-gray-600 space-y-2 mb-6">
-                <li>• 1:1 전문 강사 레슨</li>
-                <li>• 영상 분석 서비스</li>
-                <li>• 우선 예약권</li>
-              </ul>
-              <Link href="/auth/signup" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                가입하기
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-6">지금 시작하세요!</h2>
-          <p className="text-xl mb-8">
-            JJ Swim Lab과 함께 수영의 새로운 세계를 경험해보세요.
-          </p>
-          <div className="space-x-4">
-            <Link href="/guide" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              이용안내 보기
-            </Link>
-            <Link href="/auth/signup" className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-              회원가입
-            </Link>
-          </div>
+      {/* CTA 섹션 */}
+      <section className="py-20 bg-gradient-to-r from-primary to-secondary">
+        <div className="container mx-auto px-6 text-center">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            <motion.h2
+              variants={motionPresets.slideUp}
+              className="text-4xl md:text-5xl font-bold text-white mb-6"
+            >
+              지금 시작하세요
+            </motion.h2>
+            <motion.p
+              variants={motionPresets.slideUp}
+              className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
+            >
+              AI 기반 수영 교육의 새로운 경험을 지금 바로 체험해보세요
+            </motion.p>
+            <motion.div
+              variants={motionPresets.slideUp}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <a
+                href="/auth/signup?type=student"
+                className="px-8 py-4 bg-white text-primary font-semibold rounded-2xl hover:bg-gray-100 transition-colors duration-300"
+              >
+                수강생으로 시작하기
+              </a>
+              <a
+                href="/auth/signup?type=instructor"
+                className="px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white hover:text-primary transition-colors duration-300"
+              >
+                강사로 등록하기
+              </a>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </div>

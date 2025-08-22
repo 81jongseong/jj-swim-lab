@@ -1,0 +1,65 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Payment = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
+const paymentSchema = new mongoose_1.default.Schema({
+    user: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    amount: {
+        type: Number,
+        required: true,
+    },
+    currency: {
+        type: String,
+        default: 'KRW',
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['card', 'cash', 'transfer', 'online'],
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'failed', 'refunded'],
+        default: 'pending',
+    },
+    purpose: {
+        type: String,
+        enum: ['course', 'booking', 'membership', 'other'],
+        required: true,
+    },
+    relatedCourse: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Course',
+    },
+    relatedBooking: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Booking',
+    },
+    transactionId: {
+        type: String,
+        unique: true,
+    },
+    receiptUrl: {
+        type: String,
+    },
+    notes: {
+        type: String,
+        default: '',
+    },
+    processedAt: {
+        type: Date,
+    },
+}, {
+    timestamps: true
+});
+paymentSchema.index({ user: 1, createdAt: -1 });
+paymentSchema.index({ status: 1, createdAt: -1 });
+exports.Payment = mongoose_1.default.model('Payment', paymentSchema);
+//# sourceMappingURL=Payment.js.map

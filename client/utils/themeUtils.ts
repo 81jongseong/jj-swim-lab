@@ -1,7 +1,7 @@
 import { theme } from '../styles/theme';
 
 // 테마 색상 유틸리티 함수들
-export const getThemeColor = (color: keyof typeof theme.colors, shade: keyof typeof theme.colors.primary = '600') => {
+export const getThemeColor = (color: keyof typeof theme.colors, shade: keyof typeof theme.colors.primary = '600' as unknown as keyof typeof theme.colors.primary) => {
   return theme.colors[color][shade];
 };
 

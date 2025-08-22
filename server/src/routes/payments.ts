@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { Payment } from '../models/Payment';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
+import { auth as authenticateToken, requireRole } from '../middleware/auth';
+import mongoose from 'mongoose';
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -12,35 +13,7 @@ interface AuthRequest extends Request {
 
 const router: Router = Router();
 
-// 인증 미들웨어
-const authenticateToken = (req: AuthRequest, res: Response, next: Function) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    req.user = decoded;
-    return next();
-  } catch (error) {
-    return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });
-  }
-};
-
-// 관리자 권한 확인
-const requireAdmin = async (req: AuthRequest, res: Response, next: Function) => {
-  try {
-    const user = await User.findById(req.user.userId);
-    if (!user || user.userType !== 'admin') {
-      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
-    }
-    return next();
-  } catch (error) {
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
-  }
-};
+// 공통 인증/권한 미들웨어 사용
 
 // 모든 결제 내역 조회
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
@@ -59,9 +32,9 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     }
 
     // 일반 사용자는 본인 결제만 조회 가능
-    const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin') {
-      filter.user = req.user.userId;
+    const currentUser = (req as any).user;
+    if (currentUser?.userType !== 'superAdmin') {
+      filter.user = currentUser._id;
     }
 
     const payments = await Payment.find(filter)
@@ -91,7 +64,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 
     // 본인 결제이거나 관리자인지 확인
     const currentUser = await User.findById(req.user.userId);
-    if (currentUser?.userType !== 'admin' && payment.user.toString() !== req.user.userId) {
+    if (currentUser?.userType !== 'superAdmin' && payment.user.toString() !== req.user.userId) {
       return res.status(403).json({ error: '조회 권한이 없습니다.' });
     }
 
@@ -137,7 +110,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     const transactionId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const paymentData = {
-      user: req.user.userId,
+      user: (req as any).user._id,
       amount,
       paymentMethod,
       purpose,
@@ -156,6 +129,15 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       .populate('relatedCourse', 'name')
       .populate('relatedBooking', 'date startTime endTime');
 
+    // notify user
+    try {
+      const io = (req as any).app.get('io');
+      if (io) io.to(`user:${String((req as any).user._id)}`).emit('notification', {
+        type: 'payment:created',
+        message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
+      });
+    } catch {}
+
     return res.status(201).json({
       message: '결제가 생성되었습니다.',
       payment: populatedPayment
@@ -167,7 +149,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 });
 
 // 결제 완료 처리
-router.post('/:id/complete', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/:id/complete', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { receiptUrl } = req.body;
     
@@ -213,6 +195,15 @@ router.post('/:id/complete', authenticateToken, requireAdmin, async (req: AuthRe
       .populate('relatedCourse', 'name')
       .populate('relatedBooking', 'date startTime endTime');
 
+    // notify user
+    try {
+      const io = (req as any).app.get('io');
+      if (io && updatedPayment) io.to(`user:${String(updatedPayment.user)}`).emit('notification', {
+        type: 'payment:completed',
+        message: '결제가 완료되었습니다.',
+      });
+    } catch {}
+
     return res.json({
       message: '결제가 완료되었습니다.',
       payment: updatedPayment
@@ -224,7 +215,7 @@ router.post('/:id/complete', authenticateToken, requireAdmin, async (req: AuthRe
 });
 
 // 결제 취소/환불
-router.post('/:id/refund', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/:id/refund', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { reason } = req.body;
     
@@ -262,6 +253,15 @@ router.post('/:id/refund', authenticateToken, requireAdmin, async (req: AuthRequ
       .populate('relatedCourse', 'name')
       .populate('relatedBooking', 'date startTime endTime');
 
+    // notify user
+    try {
+      const io = (req as any).app.get('io');
+      if (io && updatedPayment) io.to(`user:${String(updatedPayment.user)}`).emit('notification', {
+        type: 'payment:refunded',
+        message: '결제가 환불되었습니다.',
+      });
+    } catch {}
+
     return res.json({
       message: '결제가 환불되었습니다.',
       payment: updatedPayment
@@ -273,7 +273,7 @@ router.post('/:id/refund', authenticateToken, requireAdmin, async (req: AuthRequ
 });
 
 // 결제 통계 (관리자만)
-router.get('/stats/summary', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/stats/summary', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
     const filter: any = { status: 'completed' };
@@ -308,6 +308,518 @@ router.get('/stats/summary', authenticateToken, requireAdmin, async (req: AuthRe
   } catch (error) {
     console.error('결제 통계 조회 오류:', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// 강습 과정별 결제 통계 조회
+router.get('/course/:courseId/stats', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { period = 'month' } = req.query;
+
+    // 기간별 필터 설정
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // 강습 과정별 결제 통계
+    const stats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalPayments: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+          averageAmount: { $avg: '$amount' },
+          paymentMethods: { $addToSet: '$paymentMethod' }
+        }
+      }
+    ]);
+
+    // 월별 결제 추이
+    const monthlyTrend = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 },
+          amount: { $sum: '$amount' }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // 결제 수단별 통계
+    const methodStats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: '강습 과정별 결제 통계 조회 성공',
+      data: {
+        courseId,
+        period,
+        overview: stats[0] || {
+          totalPayments: 0,
+          totalAmount: 0,
+          averageAmount: 0,
+          paymentMethods: []
+        },
+        monthlyTrend,
+        methodStats
+      }
+    });
+  } catch (error) {
+    console.error('강습 과정별 결제 통계 조회 오류:', error);
+    res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
+  }
+});
+
+// 학생별 강습 과정 결제 내역 조회
+router.get('/student/:studentId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== studentId && 
+        req.user.userType !== 'instructor' && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 학생이 등록한 강습 과정의 결제 내역
+    const payments = await Payment.find({ 
+      user: studentId,
+      relatedCourse: { $exists: true, $ne: null }
+    })
+    .populate('relatedCourse', 'name level price')
+    .sort({ createdAt: -1 });
+
+    // 강습 과정별로 그룹화
+    const coursePayments = new Map();
+    
+    payments.forEach(payment => {
+      if (payment.relatedCourse) {
+        const course = payment.relatedCourse as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!coursePayments.has(courseId)) {
+          coursePayments.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level,
+              price: course.price
+            },
+            totalPayments: 0,
+            totalAmount: 0,
+            payments: []
+          });
+        }
+        
+        const courseInfo = coursePayments.get(courseId);
+        courseInfo.totalPayments++;
+        courseInfo.totalAmount += payment.amount;
+        courseInfo.payments.push(payment);
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '학생별 강습 과정 결제 내역 조회 성공',
+      data: {
+        studentId,
+        totalCourses: coursePayments.size,
+        coursePayments: Array.from(coursePayments.values())
+      }
+    });
+  } catch (error) {
+    console.error('학생별 강습 과정 결제 내역 조회 오류:', error);
+    res.status(500).json({ error: '결제 내역 조회에 실패했습니다.' });
+  }
+});
+
+// 강사별 강습 과정 결제 통계 조회
+router.get('/instructor/:instructorId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    const { period = 'month' } = req.query;
+
+    // 기간별 필터 설정
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // 강사가 담당하는 강습 과정의 결제 통계
+    const courseIds = await Course.find({ instructor: instructorId }).distinct('_id');
+    
+    const stats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: { $in: courseIds },
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $lookup: {
+          from: 'courses',
+          localField: 'relatedCourse',
+          foreignField: '_id',
+          as: 'course'
+        }
+      },
+      {
+        $unwind: '$course'
+      },
+      {
+        $group: {
+          _id: '$relatedCourse',
+          courseName: { $first: '$course.name' },
+          courseLevel: { $first: '$course.level' },
+          totalPayments: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+          averageAmount: { $avg: '$amount' }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: '강사별 강습 과정 결제 통계 조회 성공',
+      data: {
+        instructorId,
+        period,
+        totalCourses: stats.length,
+        courseStats: stats
+      }
+    });
+  } catch (error) {
+    console.error('강사별 강습 과정 결제 통계 조회 오류:', error);
+    res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
+  }
+});
+
+// 강습 과정별 결제 통계 조회
+router.get('/course/:courseId/stats', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { period = 'month' } = req.query;
+
+    // 기간별 필터 설정
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // 강습 과정별 결제 통계
+    const stats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalPayments: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+          averageAmount: { $avg: '$amount' },
+          paymentMethods: { $addToSet: '$paymentMethod' }
+        }
+      }
+    ]);
+
+    // 월별 결제 추이
+    const monthlyTrend = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 },
+          amount: { $sum: '$amount' }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // 결제 수단별 통계
+    const methodStats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: new mongoose.Types.ObjectId(courseId),
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: '강습 과정별 결제 통계 조회 성공',
+      data: {
+        courseId,
+        period,
+        overview: stats[0] || {
+          totalPayments: 0,
+          totalAmount: 0,
+          averageAmount: 0,
+          paymentMethods: []
+        },
+        monthlyTrend,
+        methodStats
+      }
+    });
+  } catch (error) {
+    console.error('강습 과정별 결제 통계 조회 오류:', error);
+    res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
+  }
+});
+
+// 학생별 강습 과정 결제 내역 조회
+router.get('/student/:studentId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    
+    // 권한 확인: 본인이거나 관리자
+    if (req.user._id !== studentId && 
+        req.user.userType !== 'instructor' && 
+        req.user.userType !== 'centerAdmin' && 
+        req.user.userType !== 'superAdmin') {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    // 학생이 등록한 강습 과정의 결제 내역
+    const payments = await Payment.find({ 
+      user: studentId,
+      relatedCourse: { $exists: true, $ne: null }
+    })
+    .populate('relatedCourse', 'name level price')
+    .sort({ createdAt: -1 });
+
+    // 강습 과정별로 그룹화
+    const coursePayments = new Map();
+    
+    payments.forEach(payment => {
+      if (payment.relatedCourse) {
+        const course = payment.relatedCourse as any; // populate 후 타입 캐스팅
+        const courseId = course._id.toString();
+        
+        if (!coursePayments.has(courseId)) {
+          coursePayments.set(courseId, {
+            course: {
+              _id: course._id,
+              name: course.name,
+              level: course.level,
+              price: course.price
+            },
+            totalPayments: 0,
+            totalAmount: 0,
+            payments: []
+          });
+        }
+        
+        const courseInfo = coursePayments.get(courseId);
+        courseInfo.totalPayments++;
+        courseInfo.totalAmount += payment.amount;
+        courseInfo.payments.push(payment);
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '학생별 강습 과정 결제 내역 조회 성공',
+      data: {
+        studentId,
+        totalCourses: coursePayments.size,
+        coursePayments: Array.from(coursePayments.values())
+      }
+    });
+  } catch (error) {
+    console.error('학생별 강습 과정 결제 내역 조회 오류:', error);
+    res.status(500).json({ error: '결제 내역 조회에 실패했습니다.' });
+  }
+});
+
+// 강사별 강습 과정 결제 통계 조회
+router.get('/instructor/:instructorId/courses', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    const { period = 'month' } = req.query;
+
+    // 기간별 필터 설정
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // 강사가 담당하는 강습 과정의 결제 통계
+    const courseIds = await Course.find({ instructor: instructorId }).distinct('_id');
+    
+    const stats = await Payment.aggregate([
+      {
+        $match: {
+          relatedCourse: { $in: courseIds },
+          status: 'completed',
+          createdAt: { $gte: startDate }
+        }
+      },
+      {
+        $lookup: {
+          from: 'courses',
+          localField: 'relatedCourse',
+          foreignField: '_id',
+          as: 'course'
+        }
+      },
+      {
+        $unwind: '$course'
+      },
+      {
+        $group: {
+          _id: '$relatedCourse',
+          courseName: { $first: '$course.name' },
+          courseLevel: { $first: '$course.level' },
+          totalPayments: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+          averageAmount: { $avg: '$amount' }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: '강사별 강습 과정 결제 통계 조회 성공',
+      data: {
+        instructorId,
+        period,
+        totalCourses: stats.length,
+        courseStats: stats
+      }
+    });
+  } catch (error) {
+    console.error('강사별 강습 과정 결제 통계 조회 오류:', error);
+    res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
   }
 });
 

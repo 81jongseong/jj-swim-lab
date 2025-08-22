@@ -126,6 +126,18 @@ const swimmingCenterSchema = new mongoose.Schema({
     url: String,
     caption: String,
   }],
+  admins: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  instructors: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  students: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 }, { 
   timestamps: true 
 });

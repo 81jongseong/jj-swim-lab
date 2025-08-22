@@ -1,124 +1,310 @@
-import Link from 'next/link';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+
+interface CenterInfo {
+  name: string;
+  shortDescription: string;
+  description: string;
+  address: string;
+  phone: string;
+  email: string;
+  website?: string;
+  businessHours: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  };
+  facilities: string[];
+  features: string[];
+  instructors: Array<{
+    name: string;
+    specialty: string;
+    experience: string;
+    image?: string;
+  }>;
+  courses: Array<{
+    name: string;
+    description: string;
+    level: string;
+    duration: string;
+    price: string;
+  }>;
+}
+
+// 게스트용 센터 정보 뷰
+const GuestCenterView: React.FC<{ centerInfo: CenterInfo }> = ({ centerInfo }) => (
+  <div className="space-y-8">
+    <div className="text-center">
+      <h1 className="text-4xl font-bold text-gray-900 mb-4">{centerInfo.name}</h1>
+      <p className="text-xl text-gray-600 max-w-3xl mx-auto">{centerInfo.shortDescription}</p>
+    </div>
+
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">센터 소개</h2>
+      <p className="text-gray-700 leading-relaxed">{centerInfo.description}</p>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">연락처</h3>
+        <div className="space-y-2 text-gray-700">
+          <p><strong>주소:</strong> {centerInfo.address}</p>
+          <p><strong>전화:</strong> {centerInfo.phone}</p>
+          <p><strong>이메일:</strong> {centerInfo.email}</p>
+          {centerInfo.website && <p><strong>웹사이트:</strong> <a href={centerInfo.website} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{centerInfo.website}</a></p>}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">운영시간</h3>
+        <div className="space-y-2 text-gray-700">
+          <p><strong>월요일:</strong> {centerInfo.businessHours.monday}</p>
+          <p><strong>화요일:</strong> {centerInfo.businessHours.tuesday}</p>
+          <p><strong>수요일:</strong> {centerInfo.businessHours.wednesday}</p>
+          <p><strong>목요일:</strong> {centerInfo.businessHours.thursday}</p>
+          <p><strong>금요일:</strong> {centerInfo.businessHours.friday}</p>
+          <p><strong>토요일:</strong> {centerInfo.businessHours.saturday}</p>
+          <p><strong>일요일:</strong> {centerInfo.businessHours.sunday}</p>
+        </div>
+      </div>
+    </div>
+
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">시설 및 특징</h2>
+      <div className="grid md:grid-cols-2 gap-8">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">시설</h3>
+          <ul className="list-disc list-inside space-y-2 text-gray-700">
+            {centerInfo.facilities.map((facility, index) => (
+              <li key={index}>{facility}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">특징</h3>
+          <ul className="list-disc list-inside space-y-2 text-gray-700">
+            {centerInfo.features.map((feature, index) => (
+              <li key={index}>{feature}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">강사진</h2>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {centerInfo.instructors.map((instructor, index) => (
+          <div key={index} className="text-center p-4 border rounded-lg">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+              {instructor.image ? (
+                <img src={instructor.image} alt={instructor.name} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span className="text-2xl text-gray-500">👤</span>
+              )}
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-2">{instructor.name}</h4>
+            <p className="text-sm text-gray-600 mb-1">{instructor.specialty}</p>
+            <p className="text-xs text-gray-500">{instructor.experience}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">강습 과정</h2>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {centerInfo.courses.map((course, index) => (
+          <div key={index} className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
+            <h4 className="font-semibold text-gray-900 mb-2">{course.name}</h4>
+            <p className="text-sm text-gray-600 mb-3">{course.description}</p>
+            <div className="space-y-1 text-xs text-gray-500">
+              <p><strong>난이도:</strong> {course.level}</p>
+              <p><strong>기간:</strong> {course.duration}</p>
+              <p><strong>가격:</strong> {course.price}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// 학생용 센터 정보 뷰
+const StudentCenterView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => (
+  <div className="space-y-8">
+    <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+      <p className="text-blue-700">
+        안녕하세요, <strong>{user.name}</strong>님! {centerInfo.name}에 오신 것을 환영합니다.
+      </p>
+    </div>
+    <GuestCenterView centerInfo={centerInfo} />
+  </div>
+);
+
+// 강사용 센터 정보 뷰
+const InstructorCenterView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => (
+  <div className="space-y-8">
+    <div className="bg-green-50 border-l-4 border-green-400 p-4">
+      <p className="text-green-700">
+        안녕하세요, <strong>{user.name}</strong> 강사님! {centerInfo.name}에서 함께 일하게 되어 기쁩니다.
+      </p>
+    </div>
+    <GuestCenterView centerInfo={centerInfo} />
+  </div>
+);
+
+// 센터 관리자용 센터 정보 뷰
+const CenterAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => (
+  <div className="space-y-8">
+    <div className="bg-purple-50 border-l-4 border-purple-400 p-4">
+      <p className="text-purple-700">
+        안녕하세요, <strong>{user.name}</strong> 관리자님! {centerInfo.name}의 운영을 책임지고 계시는군요.
+      </p>
+    </div>
+    <GuestCenterView centerInfo={centerInfo} />
+  </div>
+);
+
+// 최고 관리자용 센터 정보 뷰
+const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => (
+  <div className="space-y-8">
+    <div className="bg-red-50 border-l-4 border-red-400 p-4">
+      <p className="text-red-700">
+        안녕하세요, <strong>{user.name}</strong> 최고 관리자님! 전체 시스템을 관리하고 계시는군요.
+      </p>
+    </div>
+    <GuestCenterView centerInfo={centerInfo} />
+  </div>
+);
 
 export default function AboutPage() {
+  const { user, loading } = useAuth();
+  const [centerInfo, setCenterInfo] = useState<CenterInfo>({
+    name: 'JJ Swim Lab',
+    shortDescription: '수영 교육의 새로운 패러다임을 제시하는 프리미엄 수영 교육 센터',
+    description: 'JJ Swim Lab은 최신 기술과 전통적인 수영 교육 방법을 결합하여 모든 연령대와 수준의 학생들에게 맞춤형 수영 교육을 제공합니다. 우리는 단순히 수영을 가르치는 것이 아니라, 학생 개개인의 잠재력을 최대한 끌어올리고 수영을 통해 건강한 삶을 살 수 있도록 돕습니다.',
+    address: '서울특별시 강남구 테헤란로 123',
+    phone: '02-1234-5678',
+    email: 'info@jjswimlab.com',
+    website: 'https://jjswimlab.com',
+    businessHours: {
+      monday: '09:00 - 21:00',
+      tuesday: '09:00 - 21:00',
+      wednesday: '09:00 - 21:00',
+      thursday: '09:00 - 21:00',
+      friday: '09:00 - 21:00',
+      saturday: '09:00 - 18:00',
+      sunday: '10:00 - 17:00'
+    },
+    facilities: [
+      '25m 6레인 수영장',
+      '어린이 전용 수영장',
+      '사우나 및 샤워 시설',
+      '주차장 (무료)',
+      '카페테리아',
+      '프로샵'
+    ],
+    features: [
+      'AI 기반 수영 자세 분석',
+      '개인별 맞춤 교육 프로그램',
+      '소수 정원제 수업',
+      '전문 강사진',
+      '체계적인 진도 관리',
+      '안전 교육 시스템'
+    ],
+    instructors: [
+      {
+        name: '김수영',
+        specialty: '자유형 전문',
+        experience: '15년 경력, 국가대표 선수 출신',
+        image: '/api/placeholder/100/100'
+      },
+      {
+        name: '박철수',
+        specialty: '초급자 교육 전문',
+        experience: '10년 경력, 어린이 수영 교육 전문가',
+        image: '/api/placeholder/100/100'
+      }
+    ],
+    courses: [
+      {
+        name: '자유형 초급 과정',
+        description: '수영을 처음 시작하는 분들을 위한 기초 과정',
+        level: '초급',
+        duration: '8주',
+        price: '₩200,000'
+      },
+      {
+        name: '자유형 중급 과정',
+        description: '기초를 마친 분들을 위한 심화 과정',
+        level: '중급',
+        duration: '8주',
+        price: '₩250,000'
+      },
+      {
+        name: '배영 과정',
+        description: '자유형을 마친 분들을 위한 배영 전용 과정',
+        level: '중급',
+        duration: '6주',
+        price: '₩200,000'
+      },
+      {
+        name: '평영 과정',
+        description: '평영의 정확한 자세와 기술을 익히는 과정',
+        level: '중급',
+        duration: '6주',
+        price: '₩200,000'
+      }
+    ]
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">로딩 중...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 사용자 타입별로 다른 컴포넌트 렌더링
+  const renderUserSpecificContent = () => {
+    if (!user) {
+      return <GuestCenterView centerInfo={centerInfo} />;
+    }
+
+    switch (user.userType) {
+      case 'student':
+        return <StudentCenterView centerInfo={centerInfo} user={user} />;
+      case 'instructor':
+        return <InstructorCenterView centerInfo={centerInfo} user={user} />;
+      case 'centerAdmin':
+        return <CenterAdminView centerInfo={centerInfo} user={user} />;
+      case 'superAdmin':
+        return <SuperAdminView centerInfo={centerInfo} user={user} />;
+      default:
+        return <GuestCenterView centerInfo={centerInfo} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            JJ Swim Lab 소개
-          </h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            수영 교육의 새로운 기준을 제시하는 JJ Swim Lab은 
-            체계적인 학습 시스템과 전문 강사진을 통해 
-            모든 연령대의 수영 실력 향상을 도와드립니다.
-          </p>
-        </div>
-      </section>
-
-      {/* Mission & Vision */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">미션</h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                JJ Swim Lab은 모든 사람이 안전하고 즐겁게 수영을 배울 수 있도록 
-                체계적인 교육 시스템을 제공합니다. 개인별 맞춤형 레슨과 
-                AI 기반 학습 시스템을 통해 누구나 자신의 페이스에 맞춰 
-                수영 실력을 향상시킬 수 있습니다.
-              </p>
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold mb-6">비전</h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                수영 교육의 디지털 혁신을 선도하여, 전국민이 
-                건강하고 안전한 수영 문화를 누릴 수 있는 
-                플랫폼으로 성장하겠습니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">핵심 특징</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-xl font-semibold mb-4">체계적인 진도 관리</h3>
-              <p className="text-gray-600">
-                수영 레벨별 세부 평가와 진도표를 통한 체계적인 학습 관리 시스템
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="text-4xl mb-4">🤖</div>
-              <h3 className="text-xl font-semibold mb-4">AI 기반 학습</h3>
-              <p className="text-gray-600">
-                개인별 학습 데이터를 분석하여 맞춤형 훈련 프로그램 추천
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="text-4xl mb-4">👨‍🏫</div>
-              <h3 className="text-xl font-semibold mb-4">전문 강사 매칭</h3>
-              <p className="text-gray-600">
-                자격증을 보유한 전문 강사와의 1:1 맞춤 레슨
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">팀 소개</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-4xl">👨‍💼</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">CEO</h3>
-              <p className="text-gray-600">수영 교육 전문가</p>
-            </div>
-            <div className="text-center">
-              <div className="w-32 h-32 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-4xl">👩‍💻</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">CTO</h3>
-              <p className="text-gray-600">기술 개발 전문가</p>
-            </div>
-            <div className="text-center">
-              <div className="w-32 h-32 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-4xl">👨‍🏫</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">교육 총괄</h3>
-              <p className="text-gray-600">수영 지도 전문가</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-6">지금 시작하세요!</h2>
-          <p className="text-xl mb-8">
-            JJ Swim Lab과 함께 수영의 새로운 세계를 경험해보세요.
-          </p>
-          <div className="space-x-4">
-            <Link href="/auth/signup" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              회원가입
-            </Link>
-            <Link href="/guide" className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
-              이용안내
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderUserSpecificContent()}
+      </div>
     </div>
   );
 } 

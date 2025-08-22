@@ -39,18 +39,23 @@ router.post('/signup', async (req: Request, res: Response) => {
       password: hashedPassword,
       phone,
       address,
-      userType: userType || 'member'
+      // 서버 스키마(enum)와 일치하도록 기본값 및 값 보정
+      userType: ['student', 'instructor', 'centerAdmin', 'superAdmin'].includes(userType)
+        ? userType
+        : 'student'
     };
 
     // 사용자 타입별 추가 필드
-    if (userType === 'instructor') {
+    if (userData.userType === 'instructor') {
       userData.experience = req.body.experience || '';
       userData.certifications = req.body.certifications || [];
       userData.specialties = req.body.specialties || [];
-    } else if (userType === 'admin') {
-      userData.centerName = req.body.centerName || '';
-      userData.centerAddress = req.body.centerAddress || '';
-      userData.centerPhone = req.body.centerPhone || '';
+    } else if (userData.userType === 'centerAdmin') {
+      userData.centerAdminInfo = {
+        managedCenters: req.body.managedCenters || [],
+        adminLevel: req.body.adminLevel || 'assistant',
+        permissions: req.body.permissions || undefined,
+      };
     }
 
     const user = new User(userData);
@@ -80,24 +85,95 @@ router.post('/signup', async (req: Request, res: Response) => {
   }
 });
 
+// 토큰 검증
+router.get('/verify', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+      const user = await User.findById(decoded.userId).select('-password');
+      
+      if (!user) {
+        return res.status(401).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({ error: '비활성화된 계정입니다.' });
+      }
+
+      return res.status(200).json({ 
+        message: '토큰이 유효합니다.',
+        user: {
+          _id: user._id,
+          userId: user.userId,
+          name: user.name,
+          email: user.email,
+          userType: user.userType,
+          level: user.level,
+          isActive: user.isActive
+        }
+      });
+    } catch (jwtError) {
+      return res.status(401).json({ error: '토큰이 만료되었거나 유효하지 않습니다.' });
+    }
+  } catch (error) {
+    console.error('토큰 검증 오류:', error);
+    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
 // 로그인
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { userId, password } = req.body;
+    console.log('🔍 로그인 요청 받음:', { body: req.body });
+    
+    // 클라이언트에서 잘못된 필드명으로 전달될 수 있어 userId 우선, 없으면 email을 userId처럼 허용
+    const { userId, email, password } = req.body;
+
+    console.log('🔍 요청 데이터 파싱:', { userId, email, password: password ? '***' : 'undefined' });
 
     // 필수 필드 검증
-    if (!userId || !password) {
+    if (!(userId || email) || !password) {
+      console.log('❌ 필수 필드 누락:', { userId: !!userId, email: !!email, password: !!password });
       return res.status(400).json({ error: 'ID와 비밀번호를 입력해주세요.' });
     }
 
-    // 사용자 찾기 (userId로 검색)
-    const user = await User.findOne({ userId });
+    // 사용자 찾기 (username, userId, email 순서로 검색)
+    let user = null;
+    let searchQuery = {};
+    
+    if (userId) {
+      searchQuery = { $or: [{ userId }, { username: userId }, { email: userId }] };
+      console.log('🔍 userId로 검색:', searchQuery);
+    } else if (email) {
+      searchQuery = { $or: [{ email }, { username: email }] };
+      console.log('🔍 email로 검색:', searchQuery);
+    }
+    
+    user = await User.findOne(searchQuery);
+    console.log('🔍 사용자 검색 결과:', user ? { userId: user.userId, email: user.email, userType: user.userType } : '사용자 없음');
+    
     if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음');
       return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
     }
 
-    // 비밀번호 확인
+    // 비밀번호 확인 (디버깅 로그 추가)
+    console.log('🔍 비밀번호 검증 디버깅:');
+    console.log('  - 입력된 비밀번호:', password);
+    console.log('  - 저장된 해시:', user.password);
+    console.log('  - 사용자 정보:', { userId: user.userId, email: user.email });
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('  - bcrypt.compare 결과:', isPasswordValid);
+    
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
     }
@@ -114,19 +190,31 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     return res.json({
+      success: true,
       message: '로그인이 완료되었습니다.',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         userId: user.userId,
         name: user.name,
         email: user.email,
-        userType: user.userType
+        userType: user.userType,
+        level: user.level,
+        isActive: user.isActive,
+        lastLoginAt: user.lastLoginAt,
+        studentInfo: user.studentInfo,
+        instructorInfo: user.instructorInfo,
+        centerAdminInfo: user.centerAdminInfo,
+        superAdminInfo: user.superAdminInfo
       }
     });
   } catch (error) {
-    console.error('로그인 오류:', error);
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    console.error('❌ 로그인 오류 상세:', error);
+    console.error('❌ 오류 스택:', error instanceof Error ? error.stack : '스택 없음');
+    return res.status(500).json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

@@ -1,0 +1,28 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts", "**/*.log", "**/*.tmp"],
+  "exec": "ts-node --transpile-only --ignore false src/index.ts",
+  "legacyWatch": true,
+  "quiet": false,
+  "verbose": false,
+  "delay": 1000,
+  "stdout": true,
+  "stderr": true,
+  "signal": "SIGINT",
+  "restartable": "rs",
+  "ignoreRoot": [".git", "node_modules/", "dist/"],
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "events": {
+    "restart": "echo 'Restarting...'",
+    "crash": "echo 'Crashed!'"
+  },
+  "exitcrash": false,
+  "kill": false,
+  "raw": false,
+  "handleInput": false
+}
+
+

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import { auth as authenticateToken, requireRole } from '../middleware/auth';
 import { Notice } from '../models/Notice';
 import { User } from '../models/User';
 
@@ -10,35 +10,7 @@ interface AuthRequest extends Request {
 
 const router: Router = Router();
 
-// 인증 미들웨어
-const authenticateToken = (req: AuthRequest, res: Response, next: Function) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    req.user = decoded;
-    return next();
-  } catch (error) {
-    return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });
-  }
-};
-
-// 관리자 권한 확인
-const requireAdmin = async (req: AuthRequest, res: Response, next: Function) => {
-  try {
-    const user = await User.findById(req.user.userId);
-    if (!user || user.userType !== 'admin') {
-      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
-    }
-    return next();
-  } catch (error) {
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
-  }
-};
+// 공통 인증/권한 미들웨어 사용
 
 // 모든 공지사항 조회 (공개된 것만)
 router.get('/', async (req: Request, res: Response) => {
@@ -79,20 +51,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     // 공개되지 않은 공지사항은 관리자만 조회 가능
     if (!notice.isPublished) {
-      const token = req.header('Authorization')?.replace('Bearer ', '');
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-          const user = await User.findById(decoded.userId);
-          if (!user || user.userType !== 'admin') {
-            return res.status(403).json({ error: '조회 권한이 없습니다.' });
-          }
-        } catch (error) {
-          return res.status(403).json({ error: '조회 권한이 없습니다.' });
-        }
-      } else {
-        return res.status(403).json({ error: '조회 권한이 없습니다.' });
-      }
+      return res.status(403).json({ error: '조회 권한이 없습니다.' });
     }
 
     // 조회수 증가
@@ -107,7 +66,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // 공지사항 생성 (관리자만)
-router.post('/', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { 
       title, 
@@ -128,7 +87,7 @@ router.post('/', authenticateToken, requireAdmin, async (req: AuthRequest, res: 
     const noticeData = {
       title,
       content,
-      author: req.user.userId,
+      author: (req as any).user._id,
       category: category || 'general',
       priority: priority || 'medium',
       isPublished: isPublished || false,
@@ -154,7 +113,7 @@ router.post('/', authenticateToken, requireAdmin, async (req: AuthRequest, res: 
 });
 
 // 공지사항 수정 (관리자만)
-router.put('/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const notice = await Notice.findById(req.params.id);
     
@@ -179,7 +138,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res
 });
 
 // 공지사항 삭제 (관리자만)
-router.delete('/:id', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const notice = await Notice.findById(req.params.id);
     
@@ -197,7 +156,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req: AuthRequest, 
 });
 
 // 공지사항 발행/비발행 (관리자만)
-router.patch('/:id/publish', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/publish', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { isPublished } = req.body;
     
@@ -229,7 +188,7 @@ router.patch('/:id/publish', authenticateToken, requireAdmin, async (req: AuthRe
 });
 
 // 관리자용 전체 공지사항 조회
-router.get('/admin/all', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/admin/all', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { category, priority, isPublished } = req.query;
     const filter: any = {};
@@ -250,7 +209,7 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req: AuthReques
 });
 
 // 공지사항 통계 (관리자만)
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/admin/stats', authenticateToken, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const totalNotices = await Notice.countDocuments();
     const publishedNotices = await Notice.countDocuments({ isPublished: true });

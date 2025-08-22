@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+'use client';
+
+import * as React from 'react';
+import { useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -50,9 +53,7 @@ const Modal: React.FC<ModalProps> = ({
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           </div>
         )}
-        <div className="px-6 py-4">
-          {children}
-        </div>
+        {children}
       </div>
     </div>
   );

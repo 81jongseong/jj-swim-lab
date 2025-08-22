@@ -2,7 +2,6 @@
 module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
@@ -86,6 +85,12 @@ module.exports = {
         'medium': '500',
         'semibold': '600',
         'bold': '700',
+      },
+      maxWidth: {
+        'text-sm': '150px',
+        'text-md': '200px',
+        'text-lg': '300px',
+        'text-xl': '400px',
       }
     },
   },

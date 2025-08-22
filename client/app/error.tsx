@@ -14,42 +14,21 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-500/20">
-            <span className="text-2xl">⚠️</span>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            오류가 발생했습니다
-          </h2>
-          <p className="mt-2 text-center text-sm text-blue-200">
-            {error.message || '예상치 못한 오류가 발생했습니다.'}
-          </p>
-        </div>
-        
-        <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-8 border border-white/20">
-          <div className="space-y-4">
-            <p className="text-blue-200 text-sm">
-              문제가 지속되면 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.
-            </p>
-            
-            <div className="flex space-x-4">
-              <button
-                onClick={reset}
-                className="flex-1 bg-white text-blue-900 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-              >
-                다시 시도
-              </button>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg font-medium hover:bg-white/30 transition-colors"
-              >
-                홈으로
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 text-center">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          문제가 발생했습니다
+        </h2>
+        <p className="text-gray-600 mb-6">
+          예상치 못한 오류가 발생했습니다. 다시 시도해주세요.
+        </p>
+        <button
+          onClick={reset}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          다시 시도
+        </button>
       </div>
     </div>
   );
