@@ -28,7 +28,7 @@ jobs:
     - name: 📦 클라이언트 의존성 설치
       run: |
         cd client
-        npm ci
+        npm ci --legacy-peer-deps
         
     - name: 🏗️ 클라이언트 빌드
       run: |
