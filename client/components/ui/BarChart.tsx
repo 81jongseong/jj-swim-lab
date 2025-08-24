@@ -56,3 +56,4 @@ export default function BarChart({ data, maxValue, height = 160 }: { data: DataP
 
 
 
+
