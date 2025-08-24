@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Progress } from '@/components/ui/Progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Progress } from '@/components/ui';
 
 interface PerformanceMetrics {
   fcp: number; // First Contentful Paint

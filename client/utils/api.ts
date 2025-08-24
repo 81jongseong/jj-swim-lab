@@ -431,6 +431,20 @@ class ApiClient {
   async getExerciseStats(userId: string, period: string): Promise<any> {
     return this.request(`/api/exercise/stats/${userId}?period=${period}`);
   }
+
+  // ===== 예약 관리 API =====
+  async cancelBooking(bookingId: string): Promise<any> {
+    return this.request(`/api/bookings/${bookingId}/cancel`, {
+      method: 'PATCH',
+    });
+  }
+
+  async updateBookingStatus(bookingId: string, status: string): Promise<any> {
+    return this.request(`/api/bookings/${bookingId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
 }
 
 // API 클라이언트 인스턴스 생성 및 내보내기
