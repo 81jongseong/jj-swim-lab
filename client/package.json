@@ -25,7 +25,9 @@
     "start:standalone": "next start --experimental-standalone",
     "performance": "node scripts/performance-check.js",
     "bundle:analyze": "npm run build:analyze && open .next/bundle-report.html",
-    "bundle:size": "npm run build && node scripts/performance-check.js"
+    "bundle:size": "npm run build && node scripts/performance-check.js",
+    "optimize": "npm run build:analyze && npm run performance",
+    "lighthouse": "npx lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html"
   },
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
