@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from './ui/Modal';
-import { Badge } from './ui/Badge';
-import { Button } from './ui/Button';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 
 interface TeachingMethod {
   _id: string;
@@ -208,15 +208,6 @@ const TeachingMethodDetailModal: React.FC<TeachingMethodDetailModalProps> = ({
         {/* 푸터 */}
         <div className="flex justify-end mt-6 pt-4 border-t">
           <Button onClick={onClose} variant="outline">
-            닫기
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-export default TeachingMethodDetailModal;
             닫기
           </Button>
         </div>

@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Pose } from '@mediapipe/pose';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { PoseConnections } from '@mediapipe/pose';
+import { POSE_CONNECTIONS } from '@mediapipe/pose';
 
 interface SwimmingPoseAnalysisProps {
   onAnalysisComplete?: (results: any) => void;
@@ -319,7 +319,7 @@ export function SwimmingPoseAnalysis({
     if (results.poseLandmarks) {
       const styleColor = swimmingStyles[swimmingStyle].color;
       
-      drawConnectors(ctx, results.poseLandmarks, PoseConnections.POSE_POSE, {
+      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
         color: styleColor,
         lineWidth: 3
       });

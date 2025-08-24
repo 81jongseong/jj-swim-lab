@@ -58,7 +58,7 @@ interface LessonPlan {
 }
 
 const ChecklistManager = () => {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(true);

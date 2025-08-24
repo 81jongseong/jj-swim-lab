@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Pose } from '@mediapipe/pose';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { PoseConnections } from '@mediapipe/pose';
+import { POSE_CONNECTIONS } from '@mediapipe/pose';
 
 interface PoseAnalysisProps {
   onAnalysisComplete?: (results: any) => void;
@@ -22,7 +22,6 @@ interface PoseLandmark {
 interface PoseResults {
   poseLandmarks: PoseLandmark[];
   poseWorldLandmarks: PoseLandmark[];
-  image: HTMLCanvasElement;
 }
 
 export function RealTimePoseAnalysis({ 
@@ -75,8 +74,7 @@ export function RealTimePoseAnalysis({
         if (results.poseLandmarks) {
           setPoseResults({
             poseLandmarks: results.poseLandmarks,
-            poseWorldLandmarks: results.poseWorldLandmarks || [],
-            image: results.image
+            poseWorldLandmarks: results.poseWorldLandmarks || []
           });
 
           // 자세 분석 수행
@@ -217,7 +215,7 @@ export function RealTimePoseAnalysis({
 
     // 자세 랜드마크 그리기
     if (results.poseLandmarks) {
-      drawConnectors(ctx, results.poseLandmarks, PoseConnections.POSE_POSE, {
+      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
         color: '#00FF00',
         lineWidth: 2
       });

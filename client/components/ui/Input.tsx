@@ -12,6 +12,12 @@ interface InputProps {
   className?: string;
   required?: boolean;
   defaultValue?: string;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 const Input: React.FC<InputProps> = ({ 
@@ -23,7 +29,13 @@ const Input: React.FC<InputProps> = ({
   placeholder,
   className = '',
   required = false,
-  defaultValue
+  defaultValue,
+  min,
+  max,
+  step,
+  onKeyPress,
+  onKeyDown,
+  onKeyUp
 }) => {
   return (
     <input
@@ -35,6 +47,12 @@ const Input: React.FC<InputProps> = ({
       placeholder={placeholder}
       required={required}
       defaultValue={defaultValue}
+      min={min}
+      max={max}
+      step={step}
+      onKeyPress={onKeyPress}
+      onKeyDown={onKeyDown}
+      onKeyUp={onKeyUp}
       className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
     />
   );

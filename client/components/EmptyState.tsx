@@ -12,6 +12,7 @@ interface EmptyStateProps {
   variant?: 'default' | 'search' | 'error' | 'success' | 'loading';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  children?: React.ReactNode;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
@@ -22,6 +23,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   variant = 'default',
   size = 'md',
   className = '',
+  children,
 }) => {
   // 기본 아이콘 설정
   const getDefaultIcon = () => {
@@ -94,6 +96,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         )}
         
         {action && <div className="mt-6">{action}</div>}
+        
+        {/* children 렌더링 */}
+        {children}
       </motion.div>
     );
   }
@@ -142,6 +147,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           {action}
         </motion.div>
       )}
+
+      {/* children 렌더링 */}
+      {children}
 
       {/* 추가 시각적 요소 */}
       <motion.div

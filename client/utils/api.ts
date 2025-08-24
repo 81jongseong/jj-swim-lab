@@ -46,32 +46,32 @@ class ApiClient {
   }
 
   // ===== 범용 HTTP 메소드 =====
-  async get(endpoint: string): Promise<any> {
+  async get<T = any>(endpoint: string): Promise<T> {
     return this.request(endpoint, { method: 'GET' });
   }
 
-  async post(endpoint: string, data?: any): Promise<any> {
+  async post<T = any>(endpoint: string, data?: any): Promise<T> {
     return this.request(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async put(endpoint: string, data?: any): Promise<any> {
+  async put<T = any>(endpoint: string, data?: any): Promise<T> {
     return this.request(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async patch(endpoint: string, data?: any): Promise<any> {
+  async patch<T = any>(endpoint: string, data?: any): Promise<T> {
     return this.request(endpoint, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async delete(endpoint: string): Promise<any> {
+  async delete<T = any>(endpoint: string): Promise<T> {
     return this.request(endpoint, { method: 'DELETE' });
   }
 
@@ -300,12 +300,14 @@ class ApiClient {
   }
 
   // ===== 센터 정보 API =====
-  async getCenterInfo(): Promise<any> {
-    return this.request('/api/center-info');
+  async getCenterInfo(centerId?: string): Promise<any> {
+    const endpoint = centerId ? `/api/centers/${centerId}` : '/api/center-info';
+    return this.request(endpoint);
   }
 
-  async updateCenterInfo(centerData: any): Promise<any> {
-    return this.request('/api/center-info', {
+  async updateCenterInfo(centerData: any, centerId?: string): Promise<any> {
+    const endpoint = centerId ? `/api/centers/${centerId}` : '/api/center-info';
+    return this.request(endpoint, {
       method: 'PUT',
       body: JSON.stringify(centerData),
     });
@@ -315,6 +317,11 @@ class ApiClient {
   async getNotices(params?: { category?: string; isActive?: boolean }): Promise<any> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     return this.request(`/api/notices${queryString}`);
+  }
+
+  async getAdminNotices(params?: { category?: string; isActive?: boolean }): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/api/admin/notices${queryString}`);
   }
 
   async createNotice(noticeData: any): Promise<any> {
@@ -334,6 +341,13 @@ class ApiClient {
   async deleteNotice(id: string): Promise<any> {
     return this.request(`/api/notices/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async toggleNoticePublish(id: string, isPublished: boolean): Promise<any> {
+    return this.request(`/api/notices/${id}/toggle-publish`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPublished }),
     });
   }
 
@@ -387,6 +401,28 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
+  }
+
+  async getShopOrders(params?: { limit?: number; status?: string; userId?: string }): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/api/shop/orders${queryString}`);
+  }
+
+  async updateShopOrder(id: string, orderData: any): Promise<any> {
+    return this.request(`/api/shop/orders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(orderData),
+    });
+  }
+
+  async deleteShopOrder(id: string): Promise<any> {
+    return this.request(`/api/shop/orders/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getShopOrderById(id: string): Promise<any> {
+    return this.request(`/api/shop/orders/${id}`);
   }
 
   // ===== 수업 계획 API =====
@@ -443,6 +479,134 @@ class ApiClient {
     return this.request(`/api/bookings/${bookingId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    });
+  }
+
+  async refundPayment(paymentId: string, reason: string): Promise<any> {
+    return this.request(`/api/payments/${paymentId}/refund`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async updatePaymentStatus(paymentId: string, status: string): Promise<any> {
+    return this.request(`/api/payments/${paymentId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // ===== 신고 관리 API =====
+  async getReports(params?: { limit?: number; status?: string; type?: string }): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/api/reports${queryString}`);
+  }
+
+  async updateReport(reportId: string, reportData: any): Promise<any> {
+    return this.request(`/api/reports/${reportId}`, {
+      method: 'PUT',
+      body: JSON.stringify(reportData),
+    });
+  }
+
+  async updateReportStatus(reportId: string, status: string): Promise<any> {
+    return this.request(`/api/reports/${reportId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async deleteReport(reportId: string): Promise<any> {
+    return this.request(`/api/reports/${reportId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ===== 리뷰 관리 API =====
+  async getReviewQueue(params?: { status?: string; limit?: number; instructorId?: string }): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/api/reviews/queue${queryString}`);
+  }
+
+  async updateReviewStatus(reviewId: string, status: string): Promise<any> {
+    return this.request(`/api/reviews/${reviewId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async approveReview(reviewId: string): Promise<any> {
+    return this.request(`/api/reviews/${reviewId}/approve`, {
+      method: 'PATCH',
+    });
+  }
+
+  async rejectReview(reviewId: string, reason?: string): Promise<any> {
+    return this.request(`/api/reviews/${reviewId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async reviewUpload(reviewId: string, reviewData: { status: string; feedback: string; visibility?: string }): Promise<any> {
+    return this.request(`/api/reviews/${reviewId}/upload`, {
+      method: 'PATCH',
+      body: JSON.stringify(reviewData),
+    });
+  }
+
+  // ===== 업로드 관리 API =====
+  async getMyUploads(params?: { page?: number; limit?: number; status?: string }): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+    return this.request(`/api/uploads/my${queryString}`);
+  }
+
+  async uploadFile(fileData: FormData): Promise<any> {
+    return this.request('/api/uploads', {
+      method: 'POST',
+      body: fileData,
+      headers: {
+        // FormData를 사용할 때는 Content-Type을 설정하지 않음
+      },
+    });
+  }
+
+  async deleteUpload(uploadId: string): Promise<any> {
+    return this.request(`/api/uploads/${uploadId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateUploadStatus(uploadId: string, status: string): Promise<any> {
+    return this.request(`/api/uploads/${uploadId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async uploadCenterMainImage(centerId: string, imageData: FormData): Promise<any> {
+    return this.request(`/api/centers/${centerId}/main-image`, {
+      method: 'POST',
+      body: imageData,
+      headers: {
+        // FormData를 사용할 때는 Content-Type을 설정하지 않음
+      },
+    });
+  }
+
+  async uploadCenterGalleryImages(centerId: string, imageData: FormData): Promise<any> {
+    return this.request(`/api/centers/${centerId}/gallery`, {
+      method: 'POST',
+      body: imageData,
+      headers: {
+        // FormData를 사용할 때는 Content-Type을 설정하지 않음
+      },
+    });
+  }
+
+  async deleteCenterImage(centerId: string, imageId: string): Promise<any> {
+    return this.request(`/api/centers/${centerId}/images/${imageId}`, {
+      method: 'DELETE',
     });
   }
 }

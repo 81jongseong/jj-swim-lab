@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
-import { PoseNet } from '@tensorflow-models/posenet';
+import { createDetector, SupportedModels } from '@tensorflow-models/pose-detection';
 
 interface PoseLandmark {
   x: number;
@@ -33,7 +33,7 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<PoseAnalysis | null>(null);
   const [fps, setFps] = useState(0);
-  const [model, setModel] = useState<PoseNet | null>(null);
+  const [model, setModel] = useState<any | null>(null);
 
   // TensorFlow.js 초기화
   useEffect(() => {
@@ -44,13 +44,16 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
         console.log('TensorFlow.js WebGL 백엔드 초기화 완료');
         
         // PoseNet 모델 로드
-        const posenetModel = await PoseNet.load({
-          architecture: 'MobileNetV1',
-          outputStride: 16,
-          inputResolution: { width: 257, height: 257 },
-          multiplier: 0.75,
-          quantBytes: 2
-        });
+        const posenetModel = await createDetector(
+          SupportedModels.PoseNet,
+          {
+            architecture: 'MobileNetV1',
+            outputStride: 16,
+            inputResolution: { width: 257, height: 257 },
+            multiplier: 0.75,
+            quantBytes: 2
+          }
+        );
         
         setModel(posenetModel);
         setIsInitialized(true);

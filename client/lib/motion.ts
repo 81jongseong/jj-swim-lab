@@ -96,6 +96,16 @@ export const motionPresets = {
     exit: { opacity: 0, y: 0, rotate: 0 },
   },
   
+  // 펄스 애니메이션
+  pulse: {
+    initial: { opacity: 0, scale: 0.8 },
+    animate: { 
+      opacity: [0, 1, 0.8, 1],
+      scale: [0.8, 1, 0.95, 1],
+    },
+    exit: { opacity: 0, scale: 0.8 },
+  },
+  
   // 수영 특화 잠수 애니메이션
   dive: {
     initial: { opacity: 0, y: -50, scale: 0.8 },
@@ -231,18 +241,7 @@ export const loadingSpinner: Variants = {
   },
 };
 
-// 펄스 애니메이션
-export const pulse: Variants = {
-  animate: {
-    scale: [1, 1.05, 1],
-    opacity: [1, 0.8, 1],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-};
+
 
 // 수영 특화 물방울 애니메이션
 export const waterDrop: Variants = {

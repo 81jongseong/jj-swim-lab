@@ -10,10 +10,10 @@ interface HealthProfile {
   height?: number;
   weight?: number;
   bmi?: number;
-  bloodType?: string;
+  bloodType?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
   allergies?: string[];
   fitnessGoals?: string[];
-  activityLevel?: string;
+  activityLevel?: "sedentary" | "lightly_active" | "moderately_active" | "very_active" | "extremely_active";
   targetWeight?: number;
   targetBMI?: number;
   emergencyContact?: {

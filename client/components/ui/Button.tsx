@@ -6,7 +6,7 @@ interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'default';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   disabled?: boolean;
@@ -34,7 +34,8 @@ const Button: React.FC<ButtonProps> = ({
     secondary: 'bg-gray-300 text-gray-700 hover:bg-gray-400 focus:ring-gray-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
     outline: 'bg-transparent text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500'
+    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+    default: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500'
   };
 
   const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';

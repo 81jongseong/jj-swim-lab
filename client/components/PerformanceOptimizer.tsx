@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import Progress from '@/components/ui/Progress';
+import { Progress } from '@/components/ui/Progress';
 import Badge from '@/components/ui/Badge';
 import Tabs, { TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
@@ -14,6 +14,8 @@ interface PerformanceMetrics {
   imageLoadTime: number;
   bundleSize: number;
   cacheHitRate: number;
+  fps: number;
+  renderTime: number;
 }
 
 interface OptimizationSuggestion {
@@ -25,14 +27,20 @@ interface OptimizationSuggestion {
   implemented: boolean;
 }
 
-function PerformanceOptimizer() {
+interface PerformanceOptimizerProps {
+  onOptimizationComplete?: (metrics: PerformanceMetrics) => void;
+}
+
+function PerformanceOptimizer({ onOptimizationComplete }: PerformanceOptimizerProps) {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     memoryUsage: 0,
     cpuUsage: 0,
     networkLatency: 0,
     imageLoadTime: 0,
     bundleSize: 0,
-    cacheHitRate: 0
+    cacheHitRate: 0,
+    fps: 0,
+    renderTime: 0
   });
 
   const [suggestions, setSuggestions] = useState<OptimizationSuggestion[]>([
@@ -109,6 +117,12 @@ function PerformanceOptimizer() {
       
       // 캐시 히트율 (임의 생성)
       const cacheHitRate = Math.random() * 40 + 60;
+      
+      // FPS (임의 생성)
+      const fps = Math.random() * 30 + 30;
+      
+      // 렌더링 시간 (임의 생성)
+      const renderTime = Math.random() * 16 + 8;
 
       setMetrics({
         memoryUsage,
@@ -116,7 +130,9 @@ function PerformanceOptimizer() {
         networkLatency,
         imageLoadTime,
         bundleSize,
-        cacheHitRate
+        cacheHitRate,
+        fps,
+        renderTime
       });
     } catch (error) {
       console.error('메트릭 수집 중 오류:', error);
@@ -165,8 +181,13 @@ function PerformanceOptimizer() {
     setTimeout(() => {
       collectMetrics();
       setIsOptimizing(false);
+      
+      // 최적화 완료 콜백 호출
+      if (onOptimizationComplete) {
+        onOptimizationComplete(metrics);
+      }
     }, 1000);
-  }, [suggestions, collectMetrics]);
+  }, [suggestions, collectMetrics, onOptimizationComplete, metrics]);
 
   useEffect(() => {
     collectMetrics();

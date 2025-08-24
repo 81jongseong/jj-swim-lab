@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
-import { Button } from './ui/Button';
-import { Input } from './ui/Input';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 interface QuizQuestion {
   question: string;
@@ -348,7 +348,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
               </label>
               <Input
                 type="number"
-                value={formData.timeLimit || ''}
+                                 value={formData.timeLimit?.toString() || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, timeLimit: e.target.value ? Number(e.target.value) : undefined }))}
                 placeholder="제한없음"
                 min="1"
@@ -362,7 +362,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
               </label>
               <Input
                 type="number"
-                value={formData.passingScore || 70}
+                                 value={formData.passingScore?.toString() || '70'}
                 onChange={(e) => setFormData(prev => ({ ...prev, passingScore: Number(e.target.value) }))}
                 min="0"
                 max="100"
@@ -375,7 +375,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
               </label>
               <Input
                 type="number"
-                value={formData.maxAttempts || 3}
+                                 value={formData.maxAttempts?.toString() || '3'}
                 onChange={(e) => setFormData(prev => ({ ...prev, maxAttempts: Number(e.target.value) }))}
                 min="1"
                 max="10"
@@ -465,7 +465,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
                           <label className="block text-sm font-medium text-gray-700 mb-1">배점</label>
                           <Input
                             type="number"
-                            value={question.points}
+                            value={question.points.toString()}
                             onChange={(e) => updateQuestion(index, 'points', Number(e.target.value))}
                             min="1"
                             max="10"
@@ -561,7 +561,7 @@ const QuizForm: React.FC<QuizFormProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">배점</label>
                   <Input
                     type="number"
-                    value={newQuestion.points || 1}
+                                         value={newQuestion.points?.toString() || '1'}
                     onChange={(e) => updateNewQuestion('points', Number(e.target.value))}
                     min="1"
                     max="10"

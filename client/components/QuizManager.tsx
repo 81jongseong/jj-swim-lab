@@ -46,7 +46,7 @@ interface QuizAttempt {
 }
 
 const QuizManager = () => {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -402,7 +402,7 @@ const QuizManager = () => {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">퀴즈 시스템</h2>
-        {['superAdmin', 'centerAdmin', 'instructor'].includes(userRole) && (
+        {['superAdmin', 'centerAdmin', 'instructor'].includes(user?.userType || '') && (
           <button
             onClick={() => setShowForm(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"

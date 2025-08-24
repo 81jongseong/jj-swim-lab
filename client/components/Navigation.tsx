@@ -13,7 +13,7 @@ export default function Navigation() {
   const { user, logout, hasPermission, hasUserType } = useAuth();
   const isLoggedIn = !!user;
   const userName = user?.name || '';
-  const userRole = (user?.userType as 'student' | 'instructor' | 'centerAdmin' | 'superAdmin') || 'guest';
+
 
   const handleLogout = () => {
     logout();
@@ -21,8 +21,8 @@ export default function Navigation() {
   };
 
   // 권한 기반 메뉴 필터링 함수
-  const filterMenuByPermissions = (menuItems: any[], userRole: string) => {
-    if (userRole === 'guest') return menuItems;
+  const filterMenuByPermissions = (menuItems: any[], userType: string) => {
+    if (userType === 'guest') return menuItems;
     
     return menuItems.filter(item => {
       // 특별한 권한이 필요한 메뉴들
@@ -126,7 +126,7 @@ export default function Navigation() {
     ],
   };
 
-  const currentMenu = filterMenuByPermissions(menuItems[userRole] || menuItems.guest, userRole);
+        const currentMenu = filterMenuByPermissions(menuItems[user?.userType || 'guest'] || menuItems.guest, user?.userType || 'guest');
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
@@ -163,7 +163,7 @@ export default function Navigation() {
               <>
                 <div className="hidden md:flex items-center space-x-2">
                   <NotificationsBell />
-                  <SmartNotifications userId={user?._id || ''} userType={userRole} />
+                  <SmartNotifications userId={user?._id || ''} userType={user?.userType || 'guest'} />
                 </div>
                 <div className="hidden md:flex items-center space-x-2">
                   <span className="text-sm text-gray-700">{userName}님</span>
@@ -175,7 +175,7 @@ export default function Navigation() {
                   </button>
                 </div>
               </>
-            ) : userRole === 'guest' ? (
+            ) : (user?.userType || 'guest') === 'guest' ? (
               <div className="hidden md:flex items-center space-x-3">
                 <Link
                   href="/auth/login"
@@ -232,7 +232,7 @@ export default function Navigation() {
                   </div>
                   <div className="flex items-center space-x-2 mb-2">
                     <NotificationsBell />
-                    <SmartNotifications userId={user?._id || ''} userType={userRole} />
+                    <SmartNotifications userId={user?._id || ''} userType={user?.userType || 'guest'} />
                   </div>
                   <button
                     onClick={() => {
@@ -244,7 +244,7 @@ export default function Navigation() {
                     로그아웃
                   </button>
                 </div>
-              ) : userRole === 'guest' ? (
+              ) : (user?.userType || 'guest') === 'guest' ? (
                 <div className="px-3 py-2 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg mx-2 mb-2">
                   <div className="text-center text-sm text-gray-600 mb-3 py-2">
                     🎯 더 많은 기능을 체험해보세요!

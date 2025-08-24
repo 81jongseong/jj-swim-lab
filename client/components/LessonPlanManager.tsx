@@ -85,7 +85,7 @@ interface LessonPlanFormData {
 }
 
 const LessonPlanManager = () => {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -150,26 +150,26 @@ const LessonPlanManager = () => {
     }));
   };
 
-  const handleArrayInputChange = (field: string, index: number, value: string) => {
+  const handleArrayInputChange = (field: keyof Pick<LessonPlanFormData, 'objectives' | 'prerequisites' | 'materials' | 'tags'>, index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field as keyof LessonPlanFormData].map((item: any, i: number) => 
+      [field]: (prev[field] as string[]).map((item: string, i: number) => 
         i === index ? value : item
       )
     }));
   };
 
-  const addArrayItem = (field: string) => {
+  const addArrayItem = (field: keyof Pick<LessonPlanFormData, 'objectives' | 'prerequisites' | 'materials' | 'tags'>) => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field as keyof LessonPlanFormData], '']
+      [field]: [...(prev[field] as string[]), '']
     }));
   };
 
-  const removeArrayItem = (field: string, index: number) => {
+  const removeArrayItem = (field: keyof Pick<LessonPlanFormData, 'objectives' | 'prerequisites' | 'materials' | 'tags'>, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field as keyof LessonPlanFormData].filter((_: any, i: number) => i !== index)
+      [field]: (prev[field] as string[]).filter((_: string, i: number) => i !== index)
     }));
   };
 

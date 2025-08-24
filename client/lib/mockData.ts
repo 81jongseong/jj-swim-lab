@@ -1,7 +1,6 @@
-import { faker } from '@faker-js/faker/locale/ko';
+import { faker } from '@faker-js/faker';
 
-// 한국어 설정
-faker.setLocale('ko');
+// 기본 영어 로케일 사용 (최신 버전에서는 자동으로 영어 데이터 생성)
 
 // 수영 관련 더미 데이터 생성 유틸리티
 export const generateMockData = {
@@ -12,15 +11,15 @@ export const generateMockData = {
     
     return Array.from({ length: count }, (_, i) => ({
       id: faker.string.uuid(),
-      userId: faker.internet.userName(),
+      userId: faker.internet.username(),
       name: faker.person.fullName(),
       email: faker.internet.email(),
-      phone: faker.phone.number('010-####-####'),
+      phone: faker.phone.number(),
       userType: userTypes[i % userTypes.length],
       center: centers[i % centers.length],
       createdAt: faker.date.past(),
       lastLogin: faker.date.recent(),
-      isActive: faker.datatype.boolean(0.9),
+      isActive: faker.datatype.boolean(),
       profileImage: faker.image.avatar(),
       bio: faker.lorem.sentence(),
       level: faker.number.int({ min: 1, max: 10 }),
@@ -49,7 +48,7 @@ export const generateMockData = {
       tips: Array.from({ length: faker.number.int({ min: 2, max: 5 }) }, () => faker.lorem.sentence()),
       videoUrl: faker.internet.url(),
       imageUrl: faker.image.url(),
-      isActive: faker.datatype.boolean(0.9),
+      isActive: faker.datatype.boolean(),
       createdBy: faker.person.fullName(),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
@@ -88,7 +87,7 @@ export const generateMockData = {
       timeLimit: faker.number.int({ min: 10, max: 60 }),
       passingScore: faker.number.int({ min: 60, max: 90 }),
       maxAttempts: faker.number.int({ min: 1, max: 5 }),
-      isActive: faker.datatype.boolean(0.9),
+      isActive: faker.datatype.boolean(),
       createdBy: faker.person.fullName(),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
@@ -106,14 +105,14 @@ export const generateMockData = {
       answers: Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, (_, j) => ({
         questionIndex: j,
         selectedAnswer: faker.number.int({ min: 0, max: 3 }),
-        isCorrect: faker.datatype.boolean(0.7),
+        isCorrect: faker.datatype.boolean(),
         pointsEarned: faker.number.int({ min: 1, max: 5 }),
         timeSpent: faker.number.int({ min: 10, max: 120 }),
       })),
       totalScore: faker.number.int({ min: 0, max: 100 }),
       maxPossibleScore: 100,
       percentage: faker.number.int({ min: 0, max: 100 }),
-      passed: faker.datatype.boolean(0.8),
+      passed: faker.datatype.boolean(),
       timeSpent: faker.number.int({ min: 300, max: 1800 }),
       completedAt: faker.date.recent(),
       startedAt: faker.date.recent(),
@@ -172,7 +171,7 @@ export const generateMockData = {
       paymentStatus: faker.helpers.arrayElement(['미결제', '결제완료', '환불요청', '환불완료']),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
-      notes: faker.datatype.boolean(0.3) ? faker.lorem.sentence() : '',
+      notes: faker.datatype.boolean() ? faker.lorem.sentence() : '',
     }));
   },
 
@@ -193,8 +192,8 @@ export const generateMockData = {
       transactionId: faker.string.alphanumeric(16).toUpperCase(),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
-      completedAt: faker.datatype.boolean(0.8) ? faker.date.recent() : null,
-      failureReason: faker.datatype.boolean(0.1) ? faker.lorem.sentence() : null,
+      completedAt: faker.datatype.boolean() ? faker.date.recent() : null,
+      failureReason: faker.datatype.boolean() ? faker.lorem.sentence() : null,
     }));
   },
 
@@ -211,13 +210,13 @@ export const generateMockData = {
       priority: priorities[i % priorities.length],
       author: faker.person.fullName(),
       center: faker.helpers.arrayElement(['전체', '서울수영장', '강남수영장', '홍대수영장', '잠실수영장']),
-      isPublished: faker.datatype.boolean(0.9),
-      isPinned: faker.datatype.boolean(0.2),
+      isPublished: faker.datatype.boolean(),
+      isPinned: faker.datatype.boolean(),
       views: faker.number.int({ min: 0, max: 5000 }),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
       publishedAt: faker.date.recent(),
-      expiresAt: faker.datatype.boolean(0.3) ? faker.date.future() : null,
+      expiresAt: faker.datatype.boolean() ? faker.date.future() : null,
       tags: faker.helpers.arrayElements(['공지', '이벤트', '안내', '긴급'], { min: 1, max: 3 }),
     }));
   },
@@ -239,8 +238,8 @@ export const generateMockData = {
       center: faker.helpers.arrayElement(['서울수영장', '강남수영장', '홍대수영장', '잠실수영장']),
       startDate: faker.date.past(),
       targetDate: faker.date.future(),
-      completedDate: faker.datatype.boolean(0.3) ? faker.date.recent() : null,
-      notes: faker.datatype.boolean(0.4) ? faker.lorem.sentence() : '',
+      completedDate: faker.datatype.boolean() ? faker.date.recent() : null,
+      notes: faker.datatype.boolean() ? faker.lorem.sentence() : '',
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
     }));
@@ -287,7 +286,7 @@ export const generateMockData = {
       id: faker.string.uuid(),
       name: `${cities[i % cities.length]}수영장`,
       address: `${cities[i % cities.length]} ${districts[i % districts.length]} ${faker.location.street()}`,
-      phone: faker.phone.number('02-####-####'),
+      phone: faker.phone.number(),
       email: faker.internet.email(),
       website: faker.internet.url(),
       description: faker.lorem.paragraph(),
@@ -305,9 +304,9 @@ export const generateMockData = {
       },
       capacity: faker.number.int({ min: 50, max: 200 }),
       currentMembers: faker.number.int({ min: 20, max: 150 }),
-      rating: faker.number.float({ min: 3.0, max: 5.0, precision: 0.1 }),
+      rating: faker.number.float({ min: 3.0, max: 5.0, fractionDigits: 1 }),
       reviewCount: faker.number.int({ min: 10, max: 500 }),
-      isActive: faker.datatype.boolean(0.95),
+      isActive: faker.datatype.boolean(),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
     }));
@@ -339,7 +338,7 @@ export const generateMockData = {
     revenue: {
       thisMonth: faker.number.int({ min: 50000000, max: 500000000 }),
       lastMonth: faker.number.int({ min: 45000000, max: 450000000 }),
-      growth: faker.number.float({ min: -20, max: 50, precision: 0.1 }),
+      growth: faker.number.float({ min: -20, max: 50, fractionDigits: 1 }),
       byCenter: Array.from({ length: 5 }, () => ({
         name: faker.company.name(),
         amount: faker.number.int({ min: 5000000, max: 50000000 }),
@@ -347,8 +346,8 @@ export const generateMockData = {
     },
     engagement: {
       averageSessionTime: faker.number.int({ min: 30, max: 120 }),
-      completionRate: faker.number.float({ min: 70, max: 95, precision: 0.1 }),
-      satisfactionScore: faker.number.float({ min: 3.5, max: 5.0, precision: 0.1 }),
+      completionRate: faker.number.float({ min: 70, max: 95, fractionDigits: 1 }),
+      satisfactionScore: faker.number.float({ min: 3.5, max: 5.0, fractionDigits: 1 }),
       activeUsers: faker.number.int({ min: 500, max: 5000 }),
     },
   }),
@@ -359,9 +358,9 @@ export const generateMockData = {
     monthlyUserGrowth: () => {
       const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
       return months.map((month, i) => ({
-        month,
-        users: faker.number.int({ min: 50, max: 500 }),
-        growth: faker.number.float({ min: -20, max: 50, precision: 0.1 }),
+              month,
+      users: faker.number.int({ min: 50, max: 500 }),
+      growth: faker.number.float({ min: -20, max: 50, fractionDigits: 1 }),
       }));
     },
 
@@ -369,35 +368,35 @@ export const generateMockData = {
     dailyBookings: () => {
       const days = ['월', '화', '수', '목', '금', '토', '일'];
       return days.map(day => ({
-        day,
-        bookings: faker.number.int({ min: 10, max: 100 }),
-        completed: faker.number.int({ min: 5, max: 80 }),
-        cancelled: faker.number.int({ min: 0, max: 20 }),
-      }));
-    },
+              day,
+      bookings: faker.number.int({ min: 10, max: 100 }),
+      completed: faker.number.int({ min: 5, max: 80 }),
+      cancelled: faker.number.int({ min: 0, max: 20 }),
+    }));
+  },
 
-    // 강습법별 인기도
-    teachingMethodPopularity: () => {
-      const methods = ['자유형', '배영', '평영', '접영', '기본기', '턴', '스타트'];
-      return methods.map(method => ({
-        method,
-        views: faker.number.int({ min: 100, max: 10000 }),
-        likes: faker.number.int({ min: 10, max: 1000 }),
-        shares: faker.number.int({ min: 0, max: 100 }),
-      }));
-    },
+  // 강습법별 인기도
+  teachingMethodPopularity: () => {
+    const methods = ['자유형', '배영', '평영', '접영', '기본기', '턴', '스타트'];
+    return methods.map(method => ({
+      method,
+      views: faker.number.int({ min: 100, max: 10000 }),
+      likes: faker.number.int({ min: 10, max: 1000 }),
+      shares: faker.number.int({ min: 0, max: 100 }),
+    }));
+  },
 
-    // 센터별 성과
-    centerPerformance: () => {
-      const centers = ['서울수영장', '강남수영장', '홍대수영장', '잠실수영장', '올림픽수영장'];
-      return centers.map(center => ({
-        center,
-        revenue: faker.number.int({ min: 10000000, max: 100000000 }),
-        students: faker.number.int({ min: 100, max: 1000 }),
-        satisfaction: faker.number.float({ min: 3.5, max: 5.0, precision: 0.1 }),
-        completionRate: faker.number.float({ min: 70, max: 95, precision: 0.1 }),
-      }));
-    },
+  // 센터별 성과
+  centerPerformance: () => {
+    const centers = ['서울수영장', '강남수영장', '홍대수영장', '잠실수영장', '올림픽수영장'];
+    return centers.map(center => ({
+      center,
+      revenue: faker.number.int({ min: 10000000, max: 100000000 }),
+      students: faker.number.int({ min: 100, max: 1000 }),
+      satisfaction: faker.number.float({ min: 3.5, max: 5.0, fractionDigits: 1 }),
+      completionRate: faker.number.float({ min: 70, max: 95, fractionDigits: 1 }),
+    }));
+  },
   },
 };
 

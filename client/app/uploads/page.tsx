@@ -20,7 +20,12 @@ export default function UploadsPage() {
 
   const submit = async () => {
     if (!file) return;
-    const res = await apiClient.uploadFile(file);
+    
+    // File을 FormData로 변환
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await apiClient.uploadFile(formData);
     if (res.error) setMessage(res.error);
     else {
       setMessage('업로드 완료: ' + (res.data as any).id);

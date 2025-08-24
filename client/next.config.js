@@ -14,6 +14,14 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   
+  // PWA 지원 활성화
+  pwa: {
+    dest: 'public',
+    register: true,
+    skipWaiting: true,
+    disable: process.env.NODE_ENV === 'development',
+  },
+  
   // 번들 분석기
   webpack: (config, { isServer, dev }) => {
     // 번들 분석기 (개발 환경에서만)
@@ -44,12 +52,27 @@ const nextConfig = {
   // 정적 최적화
   swcMinify: true,
   
-  // PWA 지원 (선택사항)
-  // pwa: {
-  //   dest: 'public',
-  //   register: true,
-  //   skipWaiting: true,
-  // },
+  // 모바일 최적화
+  poweredByHeader: false,
+  
+  // 보안 헤더
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
