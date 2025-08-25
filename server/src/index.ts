@@ -35,6 +35,7 @@ import checklistRoutes from './routes/checklist';
 import checklistTemplateRoutes from './routes/checklist-template';
 import classChecklistRoutes from './routes/class-checklist';
 import notificationRoutes from './routes/notifications';
+import centerLevelRoutes from './routes/center-levels';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 import './models/Checklist';
@@ -61,6 +62,7 @@ import './models/ShopOrder';
 import './models/AIConfig';
 import './models/CenterInfo';
 import './models/Notification';
+import './models/CenterLevel';
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -243,6 +245,7 @@ app.use('/api/checklist', checklistRoutes);
 app.use('/api/checklist-template', checklistTemplateRoutes);
 app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/center-levels', centerLevelRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

@@ -86,19 +86,14 @@ function AdminUsersPage() {
         ...(filters.status !== 'all' && { status: filters.status }),
       });
 
-      const res = await apiClient.getUsers({
-        page,
-        limit: pagination.limit,
-        role: filters.userType,
-        centerId: filters.level
-      });
-      if (res.data?.users) {
-        setUsers(res.data.users);
+      const res = await apiClient.get(`/api/users?${queryParams.toString()}`);
+      if (res.users && Array.isArray(res.users)) {
+        setUsers(res.users);
         setPagination(prev => ({
           ...prev,
           page,
-          total: res.data.pagination?.total || 0,
-          pages: res.data.pagination?.pages || 0,
+          total: res.pagination?.total || 0,
+          pages: res.pagination?.pages || 0,
         }));
       }
     } catch (error) {
@@ -292,8 +287,6 @@ function AdminUsersPage() {
                 <option value="">전체</option>
                 <option value="student">수강생</option>
                 <option value="instructor">강사</option>
-                <option value="centerAdmin">센터 관리자</option>
-                <option value="superAdmin">시스템 관리자</option>
               </select>
             </div>
             

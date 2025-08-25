@@ -11,7 +11,7 @@ const router: Router = express.Router();
 // 모든 강습법 조회 (공개)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { category, level, search } = req.query;
+    const { category, level, difficulty, search } = req.query;
     
     let query: any = {};
     
@@ -19,9 +19,12 @@ router.get('/', async (req: Request, res: Response) => {
       query.category = category;
     }
     
-          if (level) {
-        query.level = level;
-      }
+    // difficulty 파라미터를 level로 매핑 (클라이언트 호환성)
+    if (difficulty) {
+      query.level = difficulty;
+    } else if (level) {
+      query.level = level;
+    }
     
     if (search) {
       query.$or = [

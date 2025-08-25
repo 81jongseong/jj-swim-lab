@@ -17,10 +17,23 @@ interface ApiCourse {
   schedule?: string[];
 }
 
+interface Instructor {
+  _id: string;
+  name: string;
+  email: string;
+  instructorInfo?: {
+    instructorLevel?: string;
+    experience?: string;
+    specialties?: string[];
+  };
+}
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<ApiCourse[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
+  const [selectedInstructor, setSelectedInstructor] = useState<string>("all");
 
   const loadCourses = async () => {
     setLoading(true);
@@ -29,15 +42,43 @@ export default function CoursesPage() {
     setLoading(false);
   };
 
+  const loadInstructors = async () => {
+    try {
+      // 센터 계정인 경우 해당 센터의 강사만 조회
+      const res = await apiClient.get('/users?userType=instructor');
+      if (res.success && res.users) {
+        setInstructors(res.users);
+      }
+    } catch (error) {
+      console.error('강사 목록 로드 실패:', error);
+    }
+  };
+
   useEffect(() => {
     loadCourses();
+    loadInstructors();
   }, []);
 
   const filteredCourses = useMemo(() => {
-    return selectedLevel === "all"
-      ? courses
-      : courses.filter((c) => c.level === (selectedLevel as any));
-  }, [courses, selectedLevel]);
+    let filtered = courses;
+    
+    // 레벨별 필터링
+    if (selectedLevel !== "all") {
+      filtered = filtered.filter((c) => c.level === (selectedLevel as any));
+    }
+    
+    // 강사별 필터링
+    if (selectedInstructor !== "all") {
+      filtered = filtered.filter((c) => {
+        if (typeof c.instructor === 'object') {
+          return c.instructor.userId === selectedInstructor;
+        }
+        return c.instructor === selectedInstructor;
+      });
+    }
+    
+    return filtered;
+  }, [courses, selectedLevel, selectedInstructor]);
 
   const getLevelText = (level: string) => {
     switch (level) {
@@ -102,32 +143,68 @@ export default function CoursesPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-single-line">강습 과정</h1>
 
-        <div className="mb-6">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedLevel("all")}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                selectedLevel === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              전체
-            </button>
-            {["beginner", "intermediate", "advanced"].map((level) => (
+        <div className="mb-6 space-y-4">
+          {/* 레벨별 필터 */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">레벨별 필터</h3>
+            <div className="flex gap-2">
               <button
-                key={level}
-                onClick={() => setSelectedLevel(level)}
+                onClick={() => setSelectedLevel("all")}
                 className={`px-4 py-2 rounded-md transition-colors ${
-                  selectedLevel === level
+                  selectedLevel === "all"
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
-                {getLevelText(level)}
+                전체
               </button>
-            ))}
+              {["beginner", "intermediate", "advanced"].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setSelectedLevel(level)}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    selectedLevel === level
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {getLevelText(level)}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* 강사별 필터 */}
+          {instructors.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">강사별 필터</h3>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setSelectedInstructor("all")}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    selectedInstructor === "all"
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  전체 강사
+                </button>
+                {instructors.map((instructor) => (
+                  <button
+                    key={instructor._id}
+                    onClick={() => setSelectedInstructor(instructor._id)}
+                    className={`px-4 py-2 rounded-md transition-colors ${
+                      selectedInstructor === instructor._id
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {instructor.name} 강사
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

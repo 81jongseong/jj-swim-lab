@@ -4,7 +4,7 @@ export interface ITeachingMethod extends Document {
   name: string;
   description: string;
   category: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: string; // 자유로운 레벨 설정 (입문, 기초, 초급, 중급, 상급, 마스터 등)
   steps: string[];
   tips: string[];
   videoUrl?: string;
@@ -34,8 +34,9 @@ const TeachingMethodSchema = new Schema<ITeachingMethod>({
   },
   level: {
     type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
-    default: 'beginner'
+    required: true,
+    trim: true,
+    default: '초급'
   },
   steps: [{
     type: String,

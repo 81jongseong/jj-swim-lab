@@ -157,7 +157,7 @@ router.post('/login', async (req: Request, res: Response) => {
       console.log('🔍 email로 검색:', searchQuery);
     }
     
-    user = await User.findOne(searchQuery);
+    user = await User.findOne(searchQuery).select('+centerId');
     console.log('🔍 사용자 검색 결과:', user ? { userId: user.userId, email: user.email, userType: user.userType } : '사용자 없음');
     
     if (!user) {
@@ -183,8 +183,28 @@ router.post('/login', async (req: Request, res: Response) => {
     await user.save();
 
     // JWT 토큰 생성
+    const tokenPayload: any = { userId: user._id };
+    
+    // centerAdmin인 경우 centerId 포함
+    if (user.userType === 'centerAdmin' && user.centerId) {
+      tokenPayload.centerId = user.centerId;
+      console.log('🔍 JWT 토큰에 centerId 포함:', {
+        centerId: user.centerId,
+        centerIdType: typeof user.centerId,
+        centerIdConstructor: user.centerId?.constructor?.name
+      });
+    } else {
+      console.log('⚠️ JWT 토큰에 centerId 미포함:', {
+        userType: user.userType,
+        centerId: user.centerId,
+        centerIdExists: !!user.centerId
+      });
+    }
+    
+    console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
+    
     const token = jwt.sign(
-      { userId: user._id },
+      tokenPayload,
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     );

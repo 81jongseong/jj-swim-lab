@@ -10,6 +10,7 @@ interface IUser extends mongoose.Document {
   address: string;
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   level: string;
+  centerId?: mongoose.Types.ObjectId;
   studentInfo?: {
     age?: number;
     emergencyContact?: string;
@@ -212,6 +213,11 @@ const userSchema = new mongoose.Schema({
     }
   },
   // 공통 필드
+  centerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SwimmingCenter',
+    default: null,
+  },
   isActive: {
     type: Boolean,
     default: true,

@@ -91,10 +91,16 @@ export default function TeachingMethodsPage() {
         console.log('🔄 변환된 강습법 데이터:', apiMethods);
         
         if (Array.isArray(apiMethods)) {
+          console.log(`📊 API 응답 데이터 개수: ${apiMethods.length}`);
+          console.log('📋 첫 번째 강습법 샘플:', apiMethods[0]);
+          console.log('📋 마지막 강습법 샘플:', apiMethods[apiMethods.length - 1]);
+          
           setMethods(apiMethods);
           console.log(`✅ ${apiMethods.length}개의 강습법을 성공적으로 로드했습니다.`);
+          console.log('🔍 methods 상태 업데이트 완료');
         } else {
           console.error('❌ API 응답이 배열이 아닙니다:', typeof apiMethods);
+          console.error('❌ API 응답 내용:', apiMethods);
           setMethods([]);
         }
       } else {
@@ -125,6 +131,8 @@ export default function TeachingMethodsPage() {
       selectedLevel
     });
     
+    console.log('📋 methods 배열 내용:', methods);
+    
     let filtered = methods;
 
     if (searchTerm) {
@@ -139,7 +147,13 @@ export default function TeachingMethodsPage() {
       filtered = filtered.filter(method => method.level === selectedLevel);
     }
 
-    console.log('🔍 필터링 결과:', {
+    // 레벨별로 정렬 (초급 → 중급 → 상급 순서)
+    filtered.sort((a, b) => {
+      const levelOrder = { 'beginner': 1, 'intermediate': 2, 'advanced': 3 };
+      return levelOrder[a.level] - levelOrder[b.level];
+    });
+
+    console.log('🔍 필터링 및 정렬 결과:', {
       filteredCount: filtered.length,
       filteredMethods: filtered
     });
@@ -166,23 +180,35 @@ export default function TeachingMethodsPage() {
     // 서버 응답 구조 분석
     const result = data?.data || data;
     console.log('🔄 서버 응답 결과:', result);
+    console.log('🔍 savedCount 확인:', result?.savedCount);
+    console.log('🔍 errorCount 확인:', result?.errorCount);
     
     if (result && result.savedCount > 0) {
       // 성공 메시지
       alert(`Excel 업로드 성공! ${result.savedCount}개의 강습법이 데이터베이스에 저장되었습니다.`);
       
       // 데이터베이스에서 최신 데이터 가져오기
-      console.log('🔄 데이터베이스에서 최신 데이터 가져오기...');
-      fetchTeachingMethods();
+      console.log('🔄 데이터베이스에서 최신 데이터 가져오기 시작...');
+      console.log('🔍 fetchTeachingMethods 함수 호출 전');
+      
+      // 약간의 지연 후 데이터 새로고침 (서버 처리 시간 고려)
+      setTimeout(() => {
+        console.log('🔄 fetchTeachingMethods 함수 호출 시작...');
+        fetchTeachingMethods();
+      }, 1000);
       
     } else if (result && result.errorCount > 0) {
       alert(`Excel 업로드 완료! ${result.savedCount}개 저장, ${result.errorCount}개 오류`);
       
       // 저장된 데이터가 있으면 새로고침
       if (result.savedCount > 0) {
-        fetchTeachingMethods();
+        console.log('🔄 에러가 있지만 저장된 데이터가 있음, 데이터 새로고침...');
+        setTimeout(() => {
+          fetchTeachingMethods();
+        }, 1000);
       }
     } else {
+      console.warn('⚠️ Excel 데이터 처리 결과가 예상과 다름:', result);
       alert('Excel 데이터를 처리할 수 없습니다.');
     }
     
@@ -375,7 +401,7 @@ export default function TeachingMethodsPage() {
                 <option value="all">모든 난이도</option>
                 <option value="beginner">초급</option>
                 <option value="intermediate">중급</option>
-                <option value="advanced">고급</option>
+                <option value="advanced">상급</option>
               </select>
             </div>
             <Button
@@ -469,10 +495,10 @@ export default function TeachingMethodsPage() {
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                     method.level === 'beginner' ? 'bg-green-100 text-green-800' :
                     method.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
+                    'bg-red-200 text-red-900'
                   }`}>
                     {method.level === 'beginner' ? '초급' :
-                     method.level === 'intermediate' ? '중급' : '고급'}
+                     method.level === 'intermediate' ? '중급' : '상급'}
                   </span>
                 </div>
 
@@ -629,7 +655,7 @@ export default function TeachingMethodsPage() {
                       >
                         <option value="beginner">초급</option>
                         <option value="intermediate">중급</option>
-                        <option value="advanced">고급</option>
+                        <option value="advanced">상급</option>
                       </select>
                     </div>
                   </div>
@@ -852,10 +878,10 @@ export default function TeachingMethodsPage() {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         selectedMethod.level === 'beginner' ? 'bg-green-100 text-green-800' :
                         selectedMethod.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                        'bg-red-200 text-red-900'
                       }`}>
                         {selectedMethod.level === 'beginner' ? '초급' :
-                         selectedMethod.level === 'intermediate' ? '중급' : '고급'}
+                         selectedMethod.level === 'intermediate' ? '중급' : '상급'}
                       </span>
                     </div>
                     <div>

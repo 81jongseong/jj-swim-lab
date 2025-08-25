@@ -123,22 +123,40 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
             };
             
             // 첫 번째 행이 헤더인지 확인
+            console.log('🔍 헤더 확인 시작...');
+            console.log('📋 첫 번째 행 내용:', firstRow);
+            console.log('📋 두 번째 행 내용:', secondRow);
+            
             const isFirstRowHeader = firstRow.some((cell: any) => 
               typeof cell === 'string' && 
               Object.keys(headerMapping).includes(cell)
             );
+            
+            console.log('🔍 첫 번째 행이 헤더인가?', isFirstRowHeader);
+            console.log('🔍 매칭되는 헤더들:', firstRow.filter((cell: any) => 
+              typeof cell === 'string' && 
+              Object.keys(headerMapping).includes(cell)
+            ));
             
             let headers: string[];
             let dataStartIndex: number;
             
             if (isFirstRowHeader) {
               // 첫 번째 행이 헤더
-              headers = firstRow.map((header: string) => headerMapping[header] || header);
+              headers = firstRow.map((header: string) => {
+                const mappedHeader = headerMapping[header] || header;
+                console.log(`🔍 헤더 매핑: "${header}" → "${mappedHeader}"`);
+                return mappedHeader;
+              });
               dataStartIndex = 1;
               console.log('✅ 첫 번째 행을 헤더로 사용 (매핑됨):', headers);
             } else {
               // 첫 번째 행이 데이터, 두 번째 행이 헤더
-              headers = secondRow.map((header: string) => headerMapping[header] || header);
+              headers = secondRow.map((header: string) => {
+                const mappedHeader = headerMapping[header] || header;
+                console.log(`🔍 헤더 매핑: "${header}" → "${mappedHeader}"`);
+                return mappedHeader;
+              });
               dataStartIndex = 2;
               console.log('✅ 두 번째 행을 헤더로 사용 (매핑됨):', headers);
             }
@@ -161,20 +179,45 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
               
               // 빈 행이 아닌 경우만 추가
               if (Object.keys(rowData).length > 0 && Object.values(rowData).some(val => val !== '' && val !== null && val !== undefined)) {
-                // 급수에서 앞 두 글자만 추출하여 난이도 결정
+                // 급수에서 난이도 결정 (한국어 레벨을 영어로 변환)
                 const levelFromGrade = (grade: string) => {
-                  if (!grade || typeof grade !== 'string') return 'beginner';
-                  const firstTwoChars = grade.substring(0, 2);
-                  if (firstTwoChars.includes('초') || firstTwoChars.includes('기본')) return 'beginner';
-                  if (firstTwoChars.includes('중') || firstTwoChars.includes('기술')) return 'intermediate';
-                  if (firstTwoChars.includes('고') || firstTwoChars.includes('전문')) return 'advanced';
+                  console.log(`🔍 레벨 변환 시작: 원본 값 = "${grade}"`);
+                  
+                  if (!grade || typeof grade !== 'string') {
+                    console.log(`⚠️ 레벨 값이 유효하지 않음: ${grade}, 기본값 'beginner' 반환`);
+                    return 'beginner';
+                  }
+                  
+                  // 전체 문자열에서 레벨 확인
+                  const gradeLower = grade.toLowerCase();
+                  console.log(`🔍 소문자 변환 후: "${gradeLower}"`);
+                  
+                  if (gradeLower.includes('초급') || gradeLower.includes('기본') || gradeLower.includes('초')) {
+                    console.log(`✅ '초급' 패턴 매칭: 'beginner' 반환`);
+                    return 'beginner';
+                  }
+                  if (gradeLower.includes('중급') || gradeLower.includes('기술') || gradeLower.includes('중')) {
+                    console.log(`✅ '중급' 패턴 매칭: 'intermediate' 반환`);
+                    return 'intermediate';
+                  }
+                  if (gradeLower.includes('고급') || gradeLower.includes('상급') || gradeLower.includes('전문') || gradeLower.includes('고') || gradeLower.includes('상')) {
+                    console.log(`✅ '상급' 패턴 매칭: 'advanced' 반환`);
+                    return 'advanced';
+                  }
+                  
+                  console.log(`⚠️ 매칭되는 패턴 없음, 기본값 'beginner' 반환`);
                   return 'beginner';
                 };
+                
+                const originalLevel = rowData['level'];
+                const convertedLevel = levelFromGrade(originalLevel);
+                
+                console.log(`🔍 레벨 변환 결과: "${originalLevel}" → "${convertedLevel}"`);
                 
                 const teachingMethod = {
                   name: rowData['name'] || '강습법',
                   description: rowData['description'] || '설명 없음',
-                  level: levelFromGrade(rowData['level']),
+                  level: convertedLevel,
                   category: rowData['category'] || '기본',
                   steps: rowData['steps'] || '단계 없음',
                   tips: rowData['tips'] || '팁 없음',
@@ -182,7 +225,13 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
                   imageUrl: rowData['imageUrl'] || ''
                 };
                 
-                console.log(`✅ ${i}번째 행 변환 완료:`, teachingMethod);
+                console.log(`✅ ${i}번째 행 변환 완료:`, {
+                  name: teachingMethod.name,
+                  level: teachingMethod.level,
+                  category: teachingMethod.category,
+                  originalLevel: originalLevel,
+                  convertedLevel: convertedLevel
+                });
                 parsedData.push(teachingMethod);
                 console.log(`📊 현재 parsedData 길이: ${parsedData.length}`);
               } else {
@@ -285,8 +334,21 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
       try {
         // TeachingMethod 모델 가져오기
         console.log('🔍 TeachingMethod 모델 가져오기 시도...');
-        const TeachingMethod = require('../models/TeachingMethod').default;
-        console.log('✅ TeachingMethod 모델 로드 성공');
+        let TeachingMethod;
+        try {
+          // 모델을 직접 import
+          const TeachingMethodModule = require('../models/TeachingMethod');
+          TeachingMethod = TeachingMethodModule.default;
+          
+          if (!TeachingMethod) {
+            throw new Error('TeachingMethod 모델을 찾을 수 없습니다');
+          }
+          console.log('✅ TeachingMethod 모델 로드 성공:', typeof TeachingMethod);
+          console.log('🔍 TeachingMethod 모델 이름:', TeachingMethod.modelName);
+        } catch (modelError) {
+          console.error('❌ TeachingMethod 모델 로드 실패:', modelError);
+          throw new Error('TeachingMethod 모델을 로드할 수 없습니다');
+        }
         
         for (const methodData of parsedData) {
           try {
@@ -311,6 +373,7 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
             }
             
             // 새 강습법 생성
+            console.log('🔧 TeachingMethod 인스턴스 생성 중...');
             const newMethod = new TeachingMethod({
               name: methodData.name,
               description: methodData.description,
@@ -325,9 +388,17 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
             });
             
             console.log('💾 TeachingMethod 인스턴스 생성 완료, 저장 시도...');
+            console.log('📊 저장할 인스턴스:', {
+              name: newMethod.name,
+              level: newMethod.level,
+              category: newMethod.category,
+              stepsCount: newMethod.steps.length,
+              tipsCount: newMethod.tips.length
+            });
+            
             await newMethod.save();
             savedCount++;
-            console.log(`✅ 저장 완료: ${methodData.name}`);
+            console.log(`✅ 저장 완료: ${methodData.name} (ID: ${newMethod._id})`);
             
           } catch (saveError) {
             console.error(`❌ 저장 실패: ${methodData.name}`, saveError);

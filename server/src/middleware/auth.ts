@@ -25,6 +25,21 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       return res.status(403).json({ error: '비활성화된 계정입니다.' });
     }
     
+    // JWT 토큰에서 centerId를 사용자 객체에 설정
+    if (decoded.centerId) {
+      user.centerId = decoded.centerId;
+    }
+    
+    // centerId 필드가 있는지 확인 (디버깅용)
+    if (user.userType === 'centerAdmin') {
+      console.log('🔍 auth 미들웨어 - 센터 관리자 centerId:', {
+        centerId: user.centerId,
+        centerIdType: typeof user.centerId,
+        centerIdConstructor: user.centerId?.constructor?.name,
+        fromJWT: !!decoded.centerId
+      });
+    }
+    
     req.user = user;
     return next();
   } catch (error) {

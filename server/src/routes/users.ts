@@ -1,4 +1,5 @@
 import express, { Request, Response, Router } from 'express';
+import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { 
   auth, 
@@ -13,6 +14,104 @@ interface AuthRequest extends Request {
 
 const router: Router = express.Router();
 
+// 센터 계정 전용 사용자 조회 (해당 센터의 강사와 회원만)
+router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { page = 1, limit = 20, userType, level, search, status } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    let query: any = {};
+    
+    // 센터 관리자는 자신의 센터에 속한 사용자만 조회
+    const centerId = (req as any).user.centerId;
+    if (!centerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '센터 정보를 찾을 수 없습니다.' 
+      });
+    }
+    
+    // 센터에 속한 사용자들만 조회
+    query['$or'] = [
+      { 'instructorInfo.assignedCenters': centerId },
+      { 'studentInfo.enrolledCenters': centerId }
+    ];
+    
+    // 사용자 유형별 필터링
+    if (userType) {
+      query.userType = userType;
+    }
+    
+    // 레벨별 필터링
+    if (level) {
+      if (userType === 'student' || !userType) {
+        query['$or'] = [
+          { 'studentInfo.swimmingLevel': level },
+          { level: level }
+        ];
+      }
+      if (userType === 'instructor' || !userType) {
+        query['$or'] = [
+          { 'instructorInfo.instructorLevel': level },
+          { level: level }
+        ];
+      }
+    }
+    
+    // 상태별 필터링
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        query.isActive = true;
+      } else if (status === 'inactive') {
+        query.isActive = false;
+      }
+    }
+    
+    // 검색 필터링
+    if (search) {
+      query.$and = [
+        query.$or, // 기존 센터 필터 유지
+        {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } }
+          ]
+        }
+      ];
+      delete query.$or; // $or를 $and로 대체
+    }
+    
+    const users = await User.find(query)
+      .select('-password')
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+    
+    const total = await User.countDocuments(query);
+    
+    return res.json({
+      success: true,
+      message: '센터 사용자 목록 조회 성공!',
+      data: {
+        users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      }
+    });
+  } catch (err) {
+    console.error('센터 사용자 목록 조회 오류:', err);
+    return res.status(500).json({ 
+      success: false,
+      message: '센터 사용자 목록을 불러오는 데 실패했습니다.' 
+    });
+  }
+});
+
 // 전체 사용자 조회 (권한별 필터링)
 router.get('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
@@ -23,12 +122,40 @@ router.get('/', auth, requirePermission('userManagement'), async (req: AuthReque
     
     // 사용자 유형별 권한에 따른 필터링
     if ((req as any).user.userType === 'centerAdmin') {
-      // 센터 관리자는 자신이 관리하는 센터의 사용자만 조회 가능
-      if (centerId) {
+      // 센터 관리자는 자신이 관리하는 센터의 강사와 회원만 조회 가능
+      const adminCenterId = (req as any).user.centerId;
+      console.log('🔍 센터 관리자 요청:', {
+        userType: (req as any).user.userType,
+        adminCenterId: adminCenterId,
+        userId: (req as any).user._id
+      });
+      
+      if (adminCenterId) {
+        // centerId를 ObjectId로 변환
+        const centerIdObjectId = new mongoose.Types.ObjectId(adminCenterId);
+        console.log('🔍 ObjectId 변환 디버깅:', {
+          originalCenterId: adminCenterId,
+          centerIdType: typeof adminCenterId,
+          centerIdConstructor: adminCenterId?.constructor?.name,
+          convertedObjectId: centerIdObjectId,
+          convertedType: typeof centerIdObjectId,
+          convertedConstructor: centerIdObjectId?.constructor?.name
+        });
+        
         query['$or'] = [
-          { 'instructorInfo.assignedCenters': centerId },
-          { 'studentInfo.enrolledCourses': { $in: await getCenterCourses(centerId as string) } }
+          { 'instructorInfo.assignedCenters': centerIdObjectId },
+          { 'studentInfo.enrolledCenters': centerIdObjectId }
         ];
+        // 센터 관리자는 강사와 회원만 조회 가능
+        query.userType = { $in: ['instructor', 'student'] };
+        console.log('🔍 센터 필터링 쿼리:', {
+          $or: query['$or'],
+          userType: query.userType
+        });
+      } else {
+        console.log('⚠️ 센터 관리자에게 centerId가 없음');
+        // centerId가 없으면 모든 강사와 회원 반환 (임시)
+        query.userType = { $in: ['instructor', 'student'] };
       }
     } else if ((req as any).user.userType === 'instructor') {
       // 강사는 자신의 학생들만 조회 가능
@@ -66,6 +193,8 @@ router.get('/', auth, requirePermission('userManagement'), async (req: AuthReque
       ];
     }
     
+    console.log('🔍 실제 쿼리 실행:', query);
+    
     const users = await User.find(query)
       .select('-password')
       .skip(skip)
@@ -73,6 +202,17 @@ router.get('/', auth, requirePermission('userManagement'), async (req: AuthReque
       .sort({ createdAt: -1 });
     
     const total = await User.countDocuments(query);
+    
+    console.log('🔍 쿼리 실행 결과:', {
+      count: users.length,
+      total,
+      firstUser: users[0] ? {
+        userId: users[0].userId,
+        userType: users[0].userType,
+        instructorInfo: users[0].instructorInfo,
+        studentInfo: users[0].studentInfo
+      } : null
+    });
     
     return res.json({
       users,
