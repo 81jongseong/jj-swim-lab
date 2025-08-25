@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { motionPresets, heroAnimation, createWaveAnimation } from '@/lib/motion';
 
@@ -27,8 +27,14 @@ const HeroWave: React.FC<HeroWaveProps> = ({
   ctaSecondary,
   backgroundImage,
 }) => {
+  const [isMounted, setIsMounted] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<any[]>([]);
+
+  // Hydration 방지
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 수면 파티클 애니메이션
   useEffect(() => {
@@ -243,26 +249,28 @@ const HeroWave: React.FC<HeroWaveProps> = ({
       </div>
       
       {/* 수면 파티클 효과 */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
-        {Array.from({ length: 20 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-white/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            variants={motionPresets.particle}
-            initial="initial"
-            animate="animate"
-            transition={{
-              delay: i * 0.1,
-              duration: 8,
-              repeat: Infinity,
-            }}
-          />
-        ))}
-      </div>
+      {isMounted && (
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-white/20 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              variants={motionPresets.particle}
+              initial="initial"
+              animate="animate"
+              transition={{
+                delay: i * 0.1,
+                duration: 8,
+                repeat: Infinity,
+              }}
+            />
+          ))}
+        </div>
+      )}
       
       {/* 스크롤 인디케이터 */}
       <motion.div

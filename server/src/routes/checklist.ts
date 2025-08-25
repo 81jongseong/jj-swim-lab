@@ -88,8 +88,8 @@ router.get('/student/:studentId/course/:courseId', auth, requireRole(['instructo
     const checklist = await Checklist.findOne({ studentId, courseId })
       .populate('studentId', 'name email')
       .populate('courseId', 'name')
-      .populate('instructorId', 'name email')
-      .populate('teachingMethodId', 'name');
+      .populate('instructorId', 'name email');
+      // teachingMethodId populate 제거 - 해당 필드가 더 이상 존재하지 않음
     
     if (!checklist) {
       return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
@@ -105,9 +105,9 @@ router.get('/student/:studentId/course/:courseId', auth, requireRole(['instructo
 // 체크리스트 생성
 router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
-    const { studentId, courseId, teachingMethodId } = req.body;
+    const { studentId, courseId, studentLevel } = req.body;
     
-    if (!studentId || !courseId || !teachingMethodId) {
+    if (!studentId || !courseId || !studentLevel) {
       return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
     }
     
@@ -117,28 +117,40 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
       return res.status(400).json({ error: '이미 체크리스트가 존재합니다.' });
     }
     
-    // 강습법 정보 가져오기
-    const teachingMethod = await TeachingMethod.findById(teachingMethodId);
-    if (!teachingMethod) {
-      return res.status(404).json({ error: '강습법을 찾을 수 없습니다.' });
+    // 강습법 정보 가져오기 (레벨별로 모든 강습법 가져오기)
+    const englishLevel = studentLevel === '초급' ? 'beginner' : 
+                        studentLevel === '중급' ? 'intermediate' : 
+                        studentLevel === '고급' ? 'advanced' : 'beginner';
+    
+    const teachingMethods = await TeachingMethod.find({ level: englishLevel });
+    if (!teachingMethods || teachingMethods.length === 0) {
+      return res.status(404).json({ error: '해당 레벨의 강습법을 찾을 수 없습니다.' });
     }
     
-    // 체크리스트 아이템 생성
-    const items = teachingMethod.steps.map((step: any, index: number) => ({
-      stepName: step.name || `단계 ${index + 1}`,
-      stepOrder: index + 1,
-      category: step.category || 'general',
-      difficulty: step.difficulty || 'beginner',
-      tips: step.tips || '',
-      isCompleted: false
-    }));
+    // 모든 강습법의 단계를 하나의 체크리스트로 통합
+    let allItems: any[] = [];
+    let stepOrder = 1;
+    
+    teachingMethods.forEach((method, methodIndex) => {
+      method.steps.forEach((step: string, stepIndex: number) => {
+        allItems.push({
+          stepName: step,
+          stepOrder: stepOrder++,
+          category: method.category || 'general',
+          difficulty: method.level || 'beginner',
+          tips: method.tips[stepIndex] || '',
+          teachingMethodId: method._id, // 어떤 강습법에서 온 것인지 추적
+          isCompleted: false
+        });
+      });
+    });
     
     const checklist = new Checklist({
       studentId,
       courseId,
       instructorId: (req as any).user._id,
-      teachingMethodId,
-      items,
+      // teachingMethodId 제거 - items에 이미 포함되어 있음
+      items: allItems,
       overallProgress: 0,
       status: 'active',
       startDate: new Date()
@@ -160,8 +172,8 @@ router.get('/:checklistId', auth, async (req: express.Request, res: express.Resp
     const checklist = await Checklist.findById(req.params.checklistId)
       .populate('studentId', 'name email')
       .populate('courseId', 'name')
-      .populate('instructorId', 'name email')
-      .populate('teachingMethodId', 'name');
+      .populate('instructorId', 'name email');
+      // teachingMethodId populate 제거 - 해당 필드가 더 이상 존재하지 않음
     
     if (!checklist) {
       return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });

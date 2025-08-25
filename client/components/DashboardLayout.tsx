@@ -42,7 +42,7 @@ export default function DashboardLayout({
 
   const navigationItems = [
     { name: '대시보드', href: '/dashboard', icon: '📊' },
-    { name: '강습 과정', href: '/courses', icon: '🏊‍♂️' },
+            { name: '강습 과정', href: '/courses', icon: '/icons/manifest-icon-192.maskable.png' },
     { name: '예약 관리', href: '/bookings', icon: '📅' },
     { name: '진도 관리', href: '/progress', icon: '📈' },
     { name: '결제 내역', href: '/payments', icon: '💳' },

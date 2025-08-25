@@ -135,8 +135,12 @@ export default function Navigation() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl font-bold">🏊‍♂️</span>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/icons/manifest-icon-192.maskable.png" 
+                  alt="JJ Swim Lab" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="text-xl font-bold text-gray-900">JJ Swim Lab</span>
             </Link>

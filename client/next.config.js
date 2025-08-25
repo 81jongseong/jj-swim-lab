@@ -2,7 +2,6 @@
 const nextConfig = {
   // 성능 최적화
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
   },
   
@@ -14,13 +13,7 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   
-  // PWA 지원 활성화
-  pwa: {
-    dest: 'public',
-    register: true,
-    skipWaiting: true,
-    disable: process.env.NODE_ENV === 'development',
-  },
+
   
   // 번들 분석기
   webpack: (config, { isServer, dev }) => {
@@ -35,13 +28,6 @@ const nextConfig = {
         })
       );
     }
-    
-    // Tree Shaking 최적화
-    config.optimization = {
-      ...config.optimization,
-      usedExports: true,
-      sideEffects: false,
-    };
     
     return config;
   },

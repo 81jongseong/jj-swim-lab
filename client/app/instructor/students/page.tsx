@@ -28,18 +28,33 @@ interface Class {
 }
 
 interface ChecklistItem {
+  teachingMethodId?: string;
   stepName: string;
+  stepOrder: number;
   isCompleted: boolean;
   completedAt?: string;
+  category?: string;
+  difficulty?: string;
   tips?: string;
+  notes?: string;
+  instructorNotes?: string;
+  instructorComment?: string; // 강사 코멘트 추가
+  commentDate?: string; // 코멘트 작성일
 }
 
 interface Checklist {
   _id: string;
   studentId: string;
   courseId: string;
+  instructorId: string;
+  teachingMethodId: string;
   items: ChecklistItem[];
   overallProgress: number;
+  lastUpdated: string;
+  startDate: string;
+  targetCompletionDate?: string;
+  status: 'active' | 'completed' | 'paused';
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +69,9 @@ function InstructorStudentsPage() {
   const [checklistData, setChecklistData] = useState<Checklist | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedChecklistItem, setSelectedChecklistItem] = useState<{index: number, item: ChecklistItem} | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
     loadClasses();
@@ -65,7 +83,7 @@ function InstructorStudentsPage() {
       // 실제로는 API 호출
       const mockClasses: Class[] = [
         {
-          _id: '1',
+          _id: '507f1f77bcf86cd799439011',
           name: '초급 자유형 A반',
           level: '초급',
           instructor: '김강사',
@@ -73,7 +91,7 @@ function InstructorStudentsPage() {
           schedule: '월,수,금 14:00-16:00',
           students: [
             {
-              _id: '1',
+              _id: '507f1f77bcf86cd799439012',
               name: '김수영',
               email: 'kim@example.com',
               phone: '010-1234-5678',
@@ -86,7 +104,7 @@ function InstructorStudentsPage() {
               notes: '호흡법에 어려움을 겪고 있음'
             },
             {
-              _id: '2',
+              _id: '507f1f77bcf86cd799439013',
               name: '이영희',
               email: 'lee@example.com',
               phone: '010-2345-6789',
@@ -101,7 +119,7 @@ function InstructorStudentsPage() {
           ]
         },
         {
-          _id: '2',
+          _id: '507f1f77bcf86cd799439014',
           name: '중급 접영 B반',
           level: '중급',
           instructor: '김강사',
@@ -109,7 +127,7 @@ function InstructorStudentsPage() {
           schedule: '화,목 16:00-18:00',
           students: [
             {
-              _id: '3',
+              _id: '507f1f77bcf86cd799439015',
               name: '박철수',
               email: 'park@example.com',
               phone: '010-3456-7890',
@@ -141,6 +159,11 @@ function InstructorStudentsPage() {
   const handleStudentClick = (student: Student) => {
     setSelectedStudent(student);
     setShowStudentModal(true);
+    
+    // 학생 선택 시 체크리스트 자동 로드
+    if (selectedClass) {
+      loadStudentChecklist(student._id, selectedClass._id);
+    }
   };
 
   const handleEditStudent = (student: Student) => {
@@ -163,51 +186,118 @@ function InstructorStudentsPage() {
     setEditingStudent(null);
   };
 
+  // 레벨 변환 함수
+  const convertLevelToEnglish = (koreanLevel: string): string => {
+    const levelMap: { [key: string]: string } = {
+      '초급': 'beginner',
+      '중급': 'intermediate',
+      '고급': 'advanced'
+    };
+    return levelMap[koreanLevel] || 'beginner';
+  };
+
+  const loadTeachingMethodCheckpoints = async (level: string) => {
+    try {
+      console.log('🔍 강습법 체크포인트 로드:', level);
+      
+      // 한국어 레벨을 영어로 변환
+      const englishLevel = convertLevelToEnglish(level);
+      console.log('🌐 변환된 레벨:', englishLevel);
+      
+      // 실제 API 호출로 변경
+      const response = await fetch(`http://localhost:5000/api/teaching-methods?level=${englishLevel}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 API 응답 데이터:', data);
+        return data.data || [];
+      } else {
+        console.log('📋 강습법 데이터를 가져올 수 없습니다.');
+        return [];
+      }
+    } catch (error) {
+      console.error('강습법 로드 오류:', error);
+      return [];
+    }
+  };
+
   const handleGenerateChecklist = async (student: Student) => {
     try {
       console.log('🔧 체크리스트 생성:', student);
       
-      // 실제로는 API 호출
-      const mockChecklist: Checklist = {
-        _id: '68a85b959b3caf2f85bde33a',
+      // 1. 학생 레벨에 맞는 강습법 체크포인트 가져오기
+      const teachingMethods = await loadTeachingMethodCheckpoints(student.level);
+      
+      if (teachingMethods.length === 0) {
+        alert('해당 레벨의 강습법이 설정되지 않았습니다. 최고관리자에게 문의하세요.');
+        return;
+      }
+
+      // 2. 강습법을 체크리스트 아이템으로 변환 (서버에서 처리됨)
+      // 클라이언트에서는 아이템을 미리 생성하지 않고 서버에 위임
+
+      // 3. 체크리스트 생성 (서버에서 처리)
+      const checklistData = {
         studentId: student._id,
         courseId: selectedClass?._id || '',
-        items: [
-          {
-            stepName: '기본 자세 익히기',
-            isCompleted: student.progress >= 20,
-            completedAt: student.progress >= 20 ? '2025-01-15' : undefined,
-            tips: '어깨를 이완하고 팔을 자연스럽게 뻗으세요'
-          },
-          {
-            stepName: '발 딛기 연습',
-            isCompleted: student.progress >= 40,
-            completedAt: student.progress >= 40 ? '2025-01-17' : undefined,
-            tips: '무릎을 약간 구부리고 발끝으로 물을 밀어내세요'
-          },
-          {
-            stepName: '호흡법 연습',
-            isCompleted: student.progress >= 60,
-            completedAt: student.progress >= 60 ? '2025-01-19' : undefined,
-            tips: '고개를 돌릴 때 입을 벌려 빠르게 숨을 들이쉬세요'
-          },
-          {
-            stepName: '기본 스트로크 연습',
-            isCompleted: student.progress >= 80,
-            completedAt: student.progress >= 80 ? '2025-01-20' : undefined,
-            tips: '팔을 물속에서 S자로 움직이세요'
-          }
-        ],
-        overallProgress: student.progress,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        studentLevel: student.level // 학생 레벨만 전송
       };
 
-      setChecklistData(mockChecklist);
-      setShowChecklistModal(true);
+      // 4. 체크리스트를 서버에 저장
+      const savedChecklist = await saveChecklistToServer(checklistData);
+      
+      if (savedChecklist) {
+        // 새로 생성된 체크리스트를 상태에 설정
+        setChecklistData(savedChecklist);
+        setShowChecklistModal(true);
+        console.log('✅ 최고관리자 강습법 기반 체크리스트 생성 및 저장 완료');
+        
+        // 체크리스트 데이터를 다시 로드하여 최신 상태 유지
+        await loadStudentChecklist(student._id, selectedClass?._id || '');
+      } else {
+        alert('체크리스트 저장에 실패했습니다.');
+      }
     } catch (error) {
       console.error('체크리스트 생성 오류:', error);
       alert('체크리스트 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 체크리스트를 서버에 저장하는 함수
+  const saveChecklistToServer = async (checklistData: { studentId: string; courseId: string; studentLevel: string }): Promise<Checklist | null> => {
+    try {
+      console.log('💾 체크리스트 서버 저장:', checklistData);
+      
+      const response = await fetch('http://localhost:5000/api/checklist/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          studentId: checklistData.studentId,
+          courseId: checklistData.courseId,
+          studentLevel: checklistData.studentLevel
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ 체크리스트 저장 성공:', data);
+        return data.checklist;
+      } else {
+        const errorData = await response.json();
+        console.error('❌ 체크리스트 저장 실패:', errorData);
+        return null;
+      }
+    } catch (error) {
+      console.error('체크리스트 저장 오류:', error);
+      return null;
     }
   };
 
@@ -228,6 +318,7 @@ function InstructorStudentsPage() {
         ...checklistData,
         items: updatedItems,
         overallProgress,
+        lastUpdated: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
@@ -260,6 +351,60 @@ function InstructorStudentsPage() {
     } catch (error) {
       console.error('체크리스트 로드 오류:', error);
       setChecklistData(null);
+    }
+  };
+
+  // 강사 코멘트 추가 함수
+  const handleAddComment = (index: number, item: ChecklistItem) => {
+    setSelectedChecklistItem({ index, item });
+    setCommentText(item.instructorComment || '');
+    setShowCommentModal(true);
+  };
+
+  // 강사 코멘트 저장 함수
+  const handleSaveComment = async () => {
+    if (!selectedChecklistItem || !checklistData) return;
+
+    try {
+                   const updatedItems = [...checklistData.items];
+             updatedItems[selectedChecklistItem.index] = {
+               ...updatedItems[selectedChecklistItem.index],
+               instructorNotes: commentText, // 서버 모델과 일치
+               instructorComment: commentText, // 클라이언트 호환성
+               commentDate: new Date().toISOString()
+             };
+
+             const updatedChecklist: Checklist = {
+               ...checklistData,
+               items: updatedItems,
+               lastUpdated: new Date().toISOString(),
+               updatedAt: new Date().toISOString()
+             };
+
+      // 서버에 업데이트된 체크리스트 저장
+      const response = await fetch(`http://localhost:5000/api/checklist/${checklistData._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          items: updatedItems
+        })
+      });
+
+      if (response.ok) {
+        setChecklistData(updatedChecklist);
+        setShowCommentModal(false);
+        setSelectedChecklistItem(null);
+        setCommentText('');
+        console.log('✅ 강사 코멘트 저장 완료');
+      } else {
+        alert('코멘트 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('코멘트 저장 오류:', error);
+      alert('코멘트 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -642,7 +787,7 @@ function InstructorStudentsPage() {
                           <span className="text-blue-700">반:</span> {selectedClass?.name}
                         </div>
                         <div>
-                          <span className="text-blue-700">생성일:</span> {new Date(checklistData.createdAt).toLocaleDateString()}
+                          <span className="text-blue-700">생성일:</span> {new Date(checklistData.startDate || checklistData.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
@@ -664,13 +809,32 @@ function InstructorStudentsPage() {
                                   {item.stepName}
                                 </span>
                               </div>
-                              <div className="text-xs text-gray-500">
-                                {item.isCompleted ? `완료: ${new Date(item.completedAt!).toLocaleDateString()}` : '미완료'}
+                              <div className="flex items-center space-x-2">
+                                <div className="text-xs text-gray-500">
+                                  {item.isCompleted ? `완료: ${new Date(item.completedAt!).toLocaleDateString()}` : '미완료'}
+                                </div>
+                                <button
+                                  onClick={() => handleAddComment(index, item)}
+                                  className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-300 hover:border-blue-500"
+                                >
+                                  💬 코멘트
+                                </button>
                               </div>
                             </div>
                             {item.tips && (
-                              <div className="ml-6 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                              <div className="ml-6 text-xs text-blue-600 bg-blue-50 p-2 rounded mb-2">
                                 💡 {item.tips}
+                              </div>
+                            )}
+                            {(item.instructorComment || item.instructorNotes) && (
+                              <div className="ml-6 text-xs text-green-700 bg-green-50 p-2 rounded border-l-2 border-green-300">
+                                <div className="font-medium mb-1">강사 코멘트:</div>
+                                <div>{item.instructorComment || item.instructorNotes}</div>
+                                {item.commentDate && (
+                                  <div className="text-gray-500 text-xs mt-1">
+                                    {new Date(item.commentDate).toLocaleDateString()}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -733,6 +897,69 @@ function InstructorStudentsPage() {
                   >
                     닫기
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 강사 코멘트 입력 모달 */}
+        {showCommentModal && selectedChecklistItem && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    강사 코멘트 추가
+                  </h3>
+                  <button
+                    onClick={() => setShowCommentModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      체크리스트 항목
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                      {selectedChecklistItem.item.stepName}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      강사 코멘트
+                    </label>
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      rows={4}
+                      placeholder="학생에게 전달할 코멘트를 입력하세요..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowCommentModal(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSaveComment}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      저장
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -17,7 +17,7 @@ export interface IChecklist extends Document {
   studentId: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId;
   instructorId: mongoose.Types.ObjectId;
-  teachingMethodId: mongoose.Types.ObjectId;
+  // teachingMethodId 제거 - items에 이미 포함되어 있음
   items: IChecklistItem[];
   overallProgress: number;
   lastUpdated: Date;
@@ -90,11 +90,7 @@ const ChecklistSchema = new Schema<IChecklist>({
     ref: 'User',
     required: true
   },
-  teachingMethodId: {
-    type: Schema.Types.ObjectId,
-    ref: 'TeachingMethod',
-    required: true
-  },
+  // teachingMethodId 제거 - items에 이미 포함되어 있음
   items: {
     type: [ChecklistItemSchema],
     default: []

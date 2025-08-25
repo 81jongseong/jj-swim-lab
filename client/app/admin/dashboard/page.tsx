@@ -134,7 +134,11 @@ export default function AdminDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
-                <span className="text-2xl">🏊‍♂️</span>
+                <img 
+                  src="/icons/manifest-icon-192.maskable.png" 
+                  alt="수영" 
+                  className="w-8 h-8 object-cover"
+                />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">강습 과정</p>

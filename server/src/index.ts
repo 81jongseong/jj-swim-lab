@@ -33,11 +33,14 @@ import systemRoutes from './routes/system';
 import centerInfoRoutes from './routes/center-info';
 import checklistRoutes from './routes/checklist';
 import checklistTemplateRoutes from './routes/checklist-template';
+import classChecklistRoutes from './routes/class-checklist';
 import notificationRoutes from './routes/notifications';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 import './models/Checklist';
 import './models/ChecklistTemplate';
+import './models/ClassChecklist';
+import './models/StudentProgress';
 import './models/User';
 import './models/Quiz';
 import './models/QuizAttempt';
@@ -238,6 +241,7 @@ app.use('/api/system', systemRoutes);
 app.use('/api/center-info', centerInfoRoutes);
 app.use('/api/checklist', checklistRoutes);
 app.use('/api/checklist-template', checklistTemplateRoutes);
+app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // 404 처리
