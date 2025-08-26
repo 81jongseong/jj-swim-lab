@@ -1,9 +1,10 @@
-import * as express from 'express';
+import express from 'express';
+import mongoose from 'mongoose';
 import { auth, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
-import Checklist from '../models/Checklist';
-import TeachingMethod from '../models/TeachingMethod';
+import { Checklist } from '../models/Checklist';
+import { TeachingMethod } from '../models/TeachingMethod';
 import { Course } from '../models/Course';
 
 const router: express.Router = express.Router();

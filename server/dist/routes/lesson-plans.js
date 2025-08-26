@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const LessonPlan_1 = __importDefault(require("../models/LessonPlan"));
+const LessonPlan_1 = require("../models/LessonPlan");
 const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
                 { description: { $regex: search, $options: 'i' } }
             ];
         }
-        const lessonPlans = await LessonPlan_1.default.find(filter)
+        const lessonPlans = await LessonPlan_1.LessonPlan.find(filter)
             .populate('createdBy', 'name email')
             .sort({ createdAt: -1 });
         res.json({ success: true, data: lessonPlans });
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const lessonPlan = await LessonPlan_1.default.findById(id)
+        const lessonPlan = await LessonPlan_1.LessonPlan.findById(id)
             .populate('createdBy', 'name email');
         if (!lessonPlan) {
             return res.status(404).json({
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
                 message: '필수 필드를 모두 입력해주세요.'
             });
         }
-        const lessonPlan = new LessonPlan_1.default({
+        const lessonPlan = new LessonPlan_1.LessonPlan({
             title,
             description,
             stroke,
@@ -83,7 +83,7 @@ router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const lessonPlan = await LessonPlan_1.default.findByIdAndUpdate(id, { ...updateData, updatedAt: new Date() }, { new: true, runValidators: true });
+        const lessonPlan = await LessonPlan_1.LessonPlan.findByIdAndUpdate(id, { ...updateData, updatedAt: new Date() }, { new: true, runValidators: true });
         if (!lessonPlan) {
             return res.status(404).json({
                 success: false,
@@ -100,7 +100,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const lessonPlan = await LessonPlan_1.default.findByIdAndUpdate(id, { isActive: false, updatedAt: new Date() }, { new: true });
+        const lessonPlan = await LessonPlan_1.LessonPlan.findByIdAndUpdate(id, { isActive: false, updatedAt: new Date() }, { new: true });
         if (!lessonPlan) {
             return res.status(404).json({
                 success: false,

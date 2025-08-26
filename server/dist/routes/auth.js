@@ -124,7 +124,7 @@ router.post('/login', async (req, res) => {
             searchQuery = { $or: [{ email }, { username: email }] };
             console.log('🔍 email로 검색:', searchQuery);
         }
-        user = await User_1.User.findOne(searchQuery);
+        user = await User_1.User.findOne(searchQuery).select('+centerId');
         console.log('🔍 사용자 검색 결과:', user ? { userId: user.userId, email: user.email, userType: user.userType } : '사용자 없음');
         if (!user) {
             console.log('❌ 사용자를 찾을 수 없음');
@@ -140,8 +140,45 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
         }
         user.lastLoginAt = new Date();
-        await user.save();
-        const token = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
+        if (user.studentInfo) {
+            if (Array.isArray(user.studentInfo.enrolledCourses) &&
+                user.studentInfo.enrolledCourses.length > 0 &&
+                typeof user.studentInfo.enrolledCourses[0] === 'string') {
+                console.log('🔧 enrolledCourses 데이터 정리:', user.studentInfo.enrolledCourses);
+                user.studentInfo.enrolledCourses = [];
+            }
+            if (Array.isArray(user.studentInfo.completedCourses) &&
+                user.studentInfo.completedCourses.length > 0 &&
+                typeof user.studentInfo.completedCourses[0] === 'string') {
+                console.log('🔧 completedCourses 데이터 정리:', user.studentInfo.completedCourses);
+                user.studentInfo.completedCourses = [];
+            }
+        }
+        try {
+            await user.save();
+            console.log('✅ 사용자 정보 저장 성공');
+        }
+        catch (saveError) {
+            console.warn('⚠️ 사용자 정보 저장 실패, 로그인은 계속 진행:', saveError.message);
+        }
+        const tokenPayload = { userId: user._id };
+        if (user.userType === 'centerAdmin' && user.centerId) {
+            tokenPayload.centerId = user.centerId;
+            console.log('🔍 JWT 토큰에 centerId 포함:', {
+                centerId: user.centerId,
+                centerIdType: typeof user.centerId,
+                centerIdConstructor: user.centerId?.constructor?.name
+            });
+        }
+        else {
+            console.log('⚠️ JWT 토큰에 centerId 미포함:', {
+                userType: user.userType,
+                centerId: user.centerId,
+                centerIdExists: !!user.centerId
+            });
+        }
+        console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
+        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
         return res.json({
             success: true,
             message: '로그인이 완료되었습니다.',

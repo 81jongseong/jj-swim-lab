@@ -4,20 +4,127 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
+router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+    try {
+        const { page = 1, limit = 20, userType, level, search, status } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+        let query = {};
+        const centerId = req.user.centerId;
+        if (!centerId) {
+            return res.status(400).json({
+                success: false,
+                message: '센터 정보를 찾을 수 없습니다.'
+            });
+        }
+        query['$or'] = [
+            { 'instructorInfo.assignedCenters': centerId },
+            { 'studentInfo.enrolledCenters': centerId }
+        ];
+        if (userType) {
+            query.userType = userType;
+        }
+        if (level) {
+            if (userType === 'student' || !userType) {
+                query['$or'] = [
+                    { 'studentInfo.swimmingLevel': level },
+                    { level: level }
+                ];
+            }
+            if (userType === 'instructor' || !userType) {
+                query['$or'] = [
+                    { 'instructorInfo.instructorLevel': level },
+                    { level: level }
+                ];
+            }
+        }
+        if (status && status !== 'all') {
+            if (status === 'active') {
+                query.isActive = true;
+            }
+            else if (status === 'inactive') {
+                query.isActive = false;
+            }
+        }
+        if (search) {
+            query.$and = [
+                query.$or,
+                {
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } },
+                        { phone: { $regex: search, $options: 'i' } }
+                    ]
+                }
+            ];
+            delete query.$or;
+        }
+        const users = await User_1.User.find(query)
+            .select('-password')
+            .skip(skip)
+            .limit(Number(limit))
+            .sort({ createdAt: -1 });
+        const total = await User_1.User.countDocuments(query);
+        return res.json({
+            success: true,
+            message: '센터 사용자 목록 조회 성공!',
+            data: {
+                users,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    pages: Math.ceil(total / Number(limit))
+                }
+            }
+        });
+    }
+    catch (err) {
+        console.error('센터 사용자 목록 조회 오류:', err);
+        return res.status(500).json({
+            success: false,
+            message: '센터 사용자 목록을 불러오는 데 실패했습니다.'
+        });
+    }
+});
 router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         let query = {};
         if (req.user.userType === 'centerAdmin') {
-            if (centerId) {
+            const adminCenterId = req.user.centerId;
+            console.log('🔍 센터 관리자 요청:', {
+                userType: req.user.userType,
+                adminCenterId: adminCenterId,
+                userId: req.user._id
+            });
+            if (adminCenterId) {
+                const centerIdObjectId = new mongoose_1.default.Types.ObjectId(adminCenterId);
+                console.log('🔍 ObjectId 변환 디버깅:', {
+                    originalCenterId: adminCenterId,
+                    centerIdType: typeof adminCenterId,
+                    centerIdConstructor: adminCenterId?.constructor?.name,
+                    convertedObjectId: centerIdObjectId,
+                    convertedType: typeof centerIdObjectId,
+                    convertedConstructor: centerIdObjectId?.constructor?.name
+                });
                 query['$or'] = [
-                    { 'instructorInfo.assignedCenters': centerId },
-                    { 'studentInfo.enrolledCourses': { $in: await getCenterCourses(centerId) } }
+                    { 'instructorInfo.assignedCenters': centerIdObjectId },
+                    { 'studentInfo.enrolledCenters': centerIdObjectId }
                 ];
+                query.userType = { $in: ['instructor', 'student'] };
+                console.log('🔍 센터 필터링 쿼리:', {
+                    $or: query['$or'],
+                    userType: query.userType
+                });
+            }
+            else {
+                console.log('⚠️ 센터 관리자에게 centerId가 없음');
+                query.userType = { $in: ['instructor', 'student'] };
             }
         }
         else if (req.user.userType === 'instructor') {
@@ -50,12 +157,23 @@ router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), as
                 { phone: { $regex: search, $options: 'i' } }
             ];
         }
+        console.log('🔍 실제 쿼리 실행:', query);
         const users = await User_1.User.find(query)
             .select('-password')
             .skip(skip)
             .limit(Number(limit))
             .sort({ createdAt: -1 });
         const total = await User_1.User.countDocuments(query);
+        console.log('🔍 쿼리 실행 결과:', {
+            count: users.length,
+            total,
+            firstUser: users[0] ? {
+                userId: users[0].userId,
+                userType: users[0].userType,
+                instructorInfo: users[0].instructorInfo,
+                studentInfo: users[0].studentInfo
+            } : null
+        });
         return res.json({
             users,
             pagination: {

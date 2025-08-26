@@ -1,117 +1,82 @@
-# 🏊‍♂️ JJ Swim Lab - AI 기반 수영 교육 플랫폼
+# JJ Swim Lab 🏊‍♂️
 
-**수영 교육을 위한 혁신적인 AI 기반 학습 플랫폼**
+**AI 기반 수영 교육 플랫폼** - 개인 맞춤형 수영 강습법, 퀴즈, 진도 관리를 제공합니다.
 
-## ✨ 주요 기능
+## 🚀 **최근 업데이트 (2024년 12월)**
 
-### 🎯 **센터별 맞춤형 교육 시스템**
-- **센터별 커스텀 레벨**: 각 수영장마다 고유한 레벨 체계 설정
-- **레벨 순서 관리**: 레벨 간 순서 조정 및 활성화/비활성화
-- **강습법과 연동**: 센터별 레벨을 강습법 관리에서 활용
+### **✅ 주요 개선사항**
+- **동적 네비게이션 시스템**: 사용자 권한에 따른 맞춤형 UI
+- **환경 호환성 향상**: 데스크탑-노트북 간 환경 일치
+- **TypeScript 안정성**: 컴파일 오류 해결 및 타입 안전성 강화
+- **데이터베이스 연결**: MongoDB Atlas 클라우드 데이터베이스 연동
 
-### 👥 **역할 기반 권한 관리 (RBAC)**
-- **Super Admin**: 전체 시스템 관리
-- **Center Admin**: 센터별 사용자 및 레벨 관리, 강사 기능 사용 가능
-- **Instructor**: 학생 관리 및 레벨 변경
-- **Student**: 개인 학습 진행 상황 확인
+### **🔧 해결된 문제들**
+- 네비게이션 중복 렌더링 문제
+- TypeScript 컴파일 오류
+- 패키지 버전 불일치
+- 포트 충돌 문제
 
-### 📚 **학생 레벨 관리 시스템**
-- **레벨 변경 기능**: 센터 관리자와 강사가 학생 레벨 조정
-- **상세 이력 관리**: 누가, 언제, 왜 레벨을 변경했는지 기록
-- **센터별 통계**: 각 센터의 학생 레벨 분포 현황
-
-### 🎨 **개선된 사용자 인터페이스**
-- **그룹화된 네비게이션**: 관리자용 드롭다운 메뉴로 기능 분류
-- **반응형 디자인**: 데스크톱과 모바일 모두 최적화
-- **직관적인 메뉴 구조**: 사용자 역할에 따른 맞춤형 메뉴
-
-### 📱 **PWA (Progressive Web App) 기능**
-- **오프라인 지원**: 네트워크 없이도 기본 기능 사용 가능
-- **앱 설치**: 모바일/데스크톱에 네이티브 앱처럼 설치
-- **로컬 데이터 저장**: IndexedDB를 활용한 오프라인 데이터 관리
-
-## 🚀 기술 스택
-
-### **Frontend**
-- **Next.js 14.2.5**: React 기반 풀스택 프레임워크
-- **TypeScript**: 타입 안전성과 개발 생산성 향상
-- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **PWA**: Service Worker, IndexedDB, Manifest
-
-### **Backend**
-- **Node.js**: 서버 사이드 JavaScript 런타임
-- **Express.js**: 웹 애플리케이션 프레임워크
-- **MongoDB Atlas**: 클라우드 기반 NoSQL 데이터베이스
-- **WebSocket**: 실시간 양방향 통신
-
-### **AI & ML**
-- **TensorFlow.js**: 클라이언트 사이드 머신러닝
-- **Pose Detection**: 수영 자세 분석 및 피드백
-
-## 📁 프로젝트 구조
+## 🏗️ **프로젝트 구조**
 
 ```
 jj-swim-lab/
-├── client/                 # Next.js 클라이언트
-│   ├── app/               # App Router 구조
-│   │   ├── admin/         # 관리자 페이지
-│   │   │   ├── center-levels/    # 센터별 레벨 관리
-│   │   │   ├── student-levels/   # 학생 레벨 관리
-│   │   │   └── teaching-methods/ # 강습법 관리
-│   │   ├── offline/       # 오프라인 페이지
-│   │   └── install/       # PWA 설치 가이드
-│   ├── components/        # 재사용 가능한 컴포넌트
+├── client/                 # Next.js 프론트엔드 (포트 3000)
+│   ├── app/               # App Router 페이지
+│   ├── components/        # React 컴포넌트
+│   │   ├── Navigation.tsx        # 일반 사용자용 네비게이션
 │   │   ├── TopNavigation.tsx     # 관리자용 네비게이션
-│   │   ├── SimpleNavigation.tsx  # 일반 페이지 네비게이션
-│   │   └── ui/            # UI 기본 컴포넌트
-│   ├── hooks/             # 커스텀 React 훅
-│   │   └── useEnhancedOffline.ts # 오프라인 기능 관리
-│   ├── lib/               # 유틸리티 라이브러리
-│   │   └── offlineDB.ts   # IndexedDB 래퍼
-│   └── public/            # 정적 파일
-│       ├── sw.js          # Service Worker
-│       └── manifest.json  # PWA 매니페스트
-├── server/                # Express.js 서버
+│   │   └── DynamicNavigation.tsx # 권한 기반 네비게이션 선택
+│   ├── hooks/            # 커스텀 훅
+│   └── package.json      # 클라이언트 의존성
+├── server/                # Express.js 백엔드 (포트 5000)
 │   ├── src/
-│   │   ├── models/        # MongoDB 스키마
-│   │   ├── routes/        # API 엔드포인트
-│   │   │   └── student-levels.ts # 학생 레벨 관리 API
-│   │   └── index.ts       # 서버 진입점
-│   └── .env               # 환경 변수
-└── docs/                  # 프로젝트 문서
-    └── 현재-작업-상황.md   # 개발 진행 상황
+│   │   ├── models/       # Mongoose 모델
+│   │   ├── routes/       # API 라우트
+│   │   └── middleware/   # 미들웨어
+│   └── package.json      # 서버 의존성
+└── package.json           # 루트 의존성 (모노레포)
 ```
 
-## 🛠️ 설치 및 실행
+## 🛠️ **기술 스택**
 
-### **필수 요구사항**
-- Node.js 18+ 
-- npm 또는 yarn
-- MongoDB Atlas 계정
+### **프론트엔드**
+- **Next.js**: 14.2.5 (App Router)
+- **React**: 18.3.1
+- **TypeScript**: 5.x
+- **Tailwind CSS**: 3.3.0
+- **Framer Motion**: 애니메이션
 
-### **1. 저장소 클론**
+### **백엔드**
+- **Express.js**: 4.18.2
+- **MongoDB**: Atlas (클라우드)
+- **Mongoose**: ODM
+- **TypeScript**: 5.3.2
+- **Socket.io**: 실시간 통신
+
+### **개발 도구**
+- **Node.js**: 18+ (권장: 22.17.0)
+- **pnpm**: 10.12.4 (패키지 매니저)
+- **ESLint**: 코드 품질
+- **Prettier**: 코드 포맷팅
+
+## 📋 **설치 및 실행**
+
+### **1. 환경 요구사항**
 ```bash
-git clone https://github.com/your-username/jj-swim-lab.git
+Node.js: 18+ (권장: 22.17.0)
+pnpm: 10.12.4
+```
+
+### **2. 프로젝트 클론 및 설치**
+```bash
+git clone <repository-url>
 cd jj-swim-lab
-```
-
-### **2. 의존성 설치**
-```bash
-# 루트 디렉토리
-npm install
-
-# 클라이언트 디렉토리
-cd client
-npm install
-
-# 서버 디렉토리
-cd ../server
-npm install
+pnpm install
 ```
 
 ### **3. 환경 변수 설정**
 ```bash
-# server/.env 파일 생성
+# server/.env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 PORT=5000
 NODE_ENV=development
@@ -119,90 +84,152 @@ NODE_ENV=development
 
 ### **4. 개발 서버 실행**
 ```bash
-# 루트 디렉토리에서
-npm run dev
+# 전체 프로젝트 실행 (클라이언트 + 서버)
+pnpm run dev
+
+# 개별 실행
+pnpm run dev:client    # 클라이언트 (포트 3000)
+pnpm run dev:server    # 서버 (포트 5000)
 ```
 
-**클라이언트**: http://localhost:3000  
-**서버**: http://localhost:5000
+## 🔐 **사용자 권한 시스템**
 
-## 🔐 기본 계정 정보
+### **권한 레벨**
+1. **superAdmin**: 전체 시스템 관리
+2. **centerAdmin**: 센터별 관리
+3. **instructor**: 강사 기능
+4. **student**: 수강생 기능
+5. **guest**: 비로그인 사용자
 
-### **Super Admin**
-- **ID**: admin@jjswim.com
-- **Password**: 101010
+### **동적 네비게이션**
+- **관리자**: TopNavigation (고급 관리 기능)
+- **일반 사용자**: Navigation (로그인, 회원가입 등)
 
-### **Center Admin**
-- **ID**: center@jjswim.com  
-- **Password**: 101010
+## 🗄️ **데이터베이스 구조**
 
-### **Instructor**
-- **ID**: instructor@jjswim.com
-- **Password**: 101010
+### **주요 모델**
+- **User**: 사용자 정보 및 권한
+- **TeachingMethod**: 수영 강습법
+- **Course**: 강습 과정
+- **Checklist**: 체크리스트
+- **Quiz**: 퀴즈 및 평가
 
-## 📱 PWA 설치 방법
+### **연결 정보**
+- **데이터베이스**: MongoDB Atlas
+- **연결 상태**: ✅ 정상 연결
+- **모델 등록**: ✅ 모든 모델 정상 등록
 
-### **Android**
-1. Chrome 브라우저에서 사이트 접속
-2. 주소창 옆 "설치" 버튼 클릭
-3. "설치" 선택
+## 🚀 **개발 워크플로우**
 
-### **iOS**
-1. Safari에서 사이트 접속
-2. 공유 버튼 → "홈 화면에 추가"
-3. "추가" 선택
+### **1. 코드 수정**
+```bash
+# TypeScript 컴파일 확인
+pnpm run type-check
 
-### **Desktop**
-1. Chrome에서 사이트 접속
-2. 주소창 옆 "설치" 버튼 클릭
-3. "설치" 선택
+# 린팅 및 포맷팅
+pnpm run lint
+pnpm run format
+```
 
-## 🔄 최근 업데이트
+### **2. 빌드 및 테스트**
+```bash
+# 클라이언트 빌드
+pnpm run build:client
 
-### **v1.2.0** (2025-01-26)
-- ✅ 센터별 커스텀 레벨 시스템 구현
-- ✅ 학생 레벨 변경 및 이력 관리 기능
-- ✅ 권한 시스템 개선 (센터 관리자 권한 확장)
-- ✅ 네비게이션 시스템 대폭 개선
-- ✅ PWA 오프라인 기능 구현
-- ✅ TypeScript 설정 최적화
+# 서버 빌드
+pnpm run build:server
 
-### **v1.1.0** (이전)
-- ✅ 기본 사용자 관리 시스템
-- ✅ 강습법 관리 기능
-- ✅ 코스 관리 시스템
+# 전체 빌드
+pnpm run build
+```
 
-## 🚧 현재 개발 중인 기능
+### **3. 배포**
+```bash
+# 프로덕션 빌드
+pnpm run build:prod
 
-### **PWA 안정성 개선**
-- Service Worker 등록 및 캐싱 로직 최적화
-- 오프라인 데이터 동기화 안정성 향상
-- 브라우저 호환성 테스트 및 개선
+# 프로덕션 시작
+pnpm run start:prod
+```
 
-### **AI 기능 강화**
-- 수영 자세 분석 정확도 향상
-- 개인별 맞춤형 피드백 시스템
-- 학습 진행 상황 AI 분석
+## 🔍 **문제 해결 가이드**
 
-## 🤝 기여하기
+### **일반적인 문제들**
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+#### **1. 포트 충돌**
+```bash
+# 포트 사용 중인 프로세스 확인
+netstat -ano | findstr :3000
 
-## 📄 라이선스
+# 프로세스 종료
+taskkill /PID <process-id> /F
+```
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
+#### **2. TypeScript 컴파일 오류**
+```bash
+# 타입 체크
+pnpm run type-check
 
-## 📞 연락처
+# 의존성 재설치
+rm -rf node_modules
+pnpm install
+```
 
-**JJ Swim Lab Team**  
-- **Email**: contact@jjswim.com
-- **Website**: https://jj-swim-lab.vercel.app
-- **GitHub**: https://github.com/your-username/jj-swim-lab
+#### **3. 데이터베이스 연결 문제**
+```bash
+# .env 파일 확인
+# MongoDB Atlas 연결 문자열 확인
+# 네트워크 연결 상태 확인
+```
+
+## 📚 **추가 문서**
+
+### **프로젝트 문서**
+- [현재 작업 상황](./docs/현재-작업-상황.md)
+- [프로젝트 가이드](./docs/프로젝트-가이드.md)
+- [프로젝트 구조](./docs/프로젝트-구조.md)
+- [API 문서](./docs/API-문서.md)
+
+### **유용한 링크**
+- [Next.js 공식 문서](https://nextjs.org/docs)
+- [React 공식 문서](https://react.dev/)
+- [MongoDB Atlas](https://www.mongodb.com/atlas)
+- [Express.js 공식 문서](https://expressjs.com/)
+
+## 🤝 **기여 가이드**
+
+### **코드 스타일**
+- TypeScript 사용
+- ESLint 규칙 준수
+- Prettier 포맷팅 적용
+- 의미있는 커밋 메시지
+
+### **브랜치 전략**
+- `main`: 프로덕션 코드
+- `develop`: 개발 브랜치
+- `feature/*`: 기능 개발
+- `hotfix/*`: 긴급 수정
+
+## 📊 **프로젝트 상태**
+
+### **현재 상태**
+- ✅ **클라이언트**: Next.js 14.2.5 실행 중 (포트 3000)
+- ✅ **서버**: Express.js 서버 실행 중 (포트 5000)
+- ✅ **데이터베이스**: MongoDB Atlas 연결 성공
+- ✅ **네비게이션**: 동적 권한 기반 시스템 작동
+- ✅ **TypeScript**: 컴파일 오류 해결 완료
+
+### **다음 단계**
+- 🔍 데이터 동기화 문제 진단
+- 🧪 사용자 권한 시스템 테스트
+- 🚀 전체 시스템 통합 테스트
 
 ---
 
-**🏊‍♂️ 수영 교육의 미래를 만들어갑니다!**
+**마지막 업데이트**: 2024년 12월  
+**작성자**: AI Assistant  
+**상태**: 프로젝트 안정화 및 문서화 완료
+
+---
+
+**JJ Swim Lab과 함께 수영 교육의 미래를 만들어가세요! 🏊‍♂️✨**

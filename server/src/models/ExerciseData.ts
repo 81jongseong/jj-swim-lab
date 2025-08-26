@@ -467,6 +467,4 @@ exerciseDataSchema.statics.generateAIRecommendations = async function(userId: st
   return recommendations;
 };
 
-const ExerciseData = mongoose.model<IExerciseData>('ExerciseData', exerciseDataSchema);
-
-export default ExerciseData;
+export const ExerciseData = mongoose.model<IExerciseData>('ExerciseData', exerciseDataSchema);

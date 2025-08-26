@@ -5,7 +5,7 @@ import { logInfo, logError } from '../utils/logger';
 import { ClassChecklist } from '../models/ClassChecklist';
 import { TeachingMethod } from '../models/TeachingMethod';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // 반 체크리스트 생성
 router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {

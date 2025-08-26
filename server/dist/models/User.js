@@ -51,8 +51,17 @@ const userSchema = new mongoose_1.default.Schema({
             enum: ['beginner', 'intermediate', 'advanced', 'expert'],
             default: 'beginner'
         },
-        enrolledCourses: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Course' }],
-        completedCourses: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Course' }],
+        enrolledCourses: [{ type: mongoose_1.default.Schema.Types.Mixed, ref: 'Course' }],
+        completedCourses: [{ type: mongoose_1.default.Schema.Types.Mixed, ref: 'Course' }],
+        levelChangeHistory: [{
+                fromLevel: { type: String, required: true },
+                toLevel: { type: String, required: true },
+                changedBy: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User', required: true },
+                changedByType: { type: String, enum: ['instructor', 'centerAdmin', 'superAdmin'], required: true },
+                reason: { type: String, default: '' },
+                changedAt: { type: Date, default: Date.now }
+            }],
+        currentLevel: { type: String, default: 'beginner' }
     },
     instructorInfo: {
         experience: { type: String, default: '' },
@@ -96,6 +105,11 @@ const userSchema = new mongoose_1.default.Schema({
             enum: ['admin', 'superAdmin', 'systemAdmin'],
             default: 'admin'
         }
+    },
+    centerId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'SwimmingCenter',
+        default: null,
     },
     isActive: {
         type: Boolean,

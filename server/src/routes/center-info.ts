@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
-import CenterInfo from '../models/CenterInfo';
+import { CenterInfo } from '../models/CenterInfo';
 import multer from 'multer';
 import path from 'path';
 

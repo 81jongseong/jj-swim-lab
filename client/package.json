@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3000",
     "dev:nodemon": "nodemon --watch . --ext js,ts,tsx,jsx --exec \"next dev\"",
     "dev:fast": "next dev --port 3001",
     "dev:analyze": "set ANALYZE=true && next dev",

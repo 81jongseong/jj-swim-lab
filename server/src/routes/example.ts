@@ -1,13 +1,13 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { auth as authenticateToken } from '../middleware/auth';
 import { Class } from '../models/Class';
 
-interface AuthRequest extends Request { user?: any }
+interface AuthRequest extends express.Request { user?: any }
 
-const router: Router = Router();
+const router: express.Router = express.Router();
 
 // 총관리자: 반(Class) 생성 및 강사/코스/센터 배정
-router.post('/classes', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post('/classes', authenticateToken, async (req: AuthRequest, res: express.Response) => {
   try {
     if (req.user?.userType !== 'superAdmin') {
       return res.status(403).json({ error: '총관리자 권한이 필요합니다.' });
@@ -37,7 +37,7 @@ router.post('/classes', authenticateToken, async (req: AuthRequest, res: Respons
 });
 
 // 총관리자: 반에 학생 등록 (배정)
-router.post('/classes/:id/enroll', authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post('/classes/:id/enroll', authenticateToken, async (req: AuthRequest, res: express.Response) => {
   try {
     if (req.user?.userType !== 'superAdmin') {
       return res.status(403).json({ error: '총관리자 권한이 필요합니다.' });

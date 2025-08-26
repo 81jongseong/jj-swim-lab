@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireRole } from '../middleware/auth';
-import ExerciseData from '../models/ExerciseData';
+import { ExerciseData } from '../models/ExerciseData';
 import { User } from '../models/User';
 import { Request, Response } from 'express';
 

@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
-import TeachingMethod from '../models/TeachingMethod';
+import { TeachingMethod } from '../models/TeachingMethod';
 
 interface AuthRequest extends Request {
   user?: any;

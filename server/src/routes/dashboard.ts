@@ -395,13 +395,14 @@ async function getStudentDashboard(user: any) {
       .sort({ dueDate: 1 });
 
     // 체크리스트 완료율 계산
-    const totalChecklistItems = checklists.reduce((total, checklist) => {
-      return total + (checklist.checklistItems?.length || 0);
-    }, 0);
-
-    const completedChecklistItems = checklists.reduce((total, checklist) => {
-      return total + (checklist.checklistItems?.filter(item => item.isCompleted).length || 0);
-    }, 0);
+    let totalChecklistItems = 0;
+    let completedChecklistItems = 0;
+    
+    for (const checklist of checklists) {
+      const items = (checklist as any).checklistItems || [];
+      totalChecklistItems += items.length;
+      completedChecklistItems += items.filter((item: any) => item.isCompleted).length;
+    }
 
     const checklistCompletionRate = totalChecklistItems > 0 
       ? Math.round((completedChecklistItems / totalChecklistItems) * 100) 

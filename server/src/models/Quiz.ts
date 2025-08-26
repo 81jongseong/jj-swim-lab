@@ -122,4 +122,4 @@ QuizSchema.index({ title: 'text', description: 'text', category: 1 });
 QuizSchema.index({ createdBy: 1, isActive: 1 });
 QuizSchema.index({ difficulty: 1, category: 1 });
 
-export default mongoose.model<IQuiz>('Quiz', QuizSchema); 
+export const Quiz = mongoose.model<IQuiz>('Quiz', QuizSchema); 

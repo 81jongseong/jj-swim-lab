@@ -70,5 +70,5 @@ lessonPlanSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.model('LessonPlan', lessonPlanSchema);
+export const LessonPlan = mongoose.model('LessonPlan', lessonPlanSchema);
 

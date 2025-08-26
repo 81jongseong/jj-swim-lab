@@ -57,4 +57,4 @@ centerLevelSchema.index({ centerId: 1, name: 1 }, { unique: true });
 // 센터별로 정렬 순서도 유일해야 함
 centerLevelSchema.index({ centerId: 1, order: 1 }, { unique: true });
 
-export default mongoose.model<ICenterLevel>('CenterLevel', centerLevelSchema);
+export const CenterLevel = mongoose.model<ICenterLevel>('CenterLevel', centerLevelSchema);

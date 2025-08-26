@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const ExerciseData_1 = __importDefault(require("../models/ExerciseData"));
+const ExerciseData_1 = require("../models/ExerciseData");
 const User_1 = require("../models/User");
 const router = express_1.default.Router();
 router.post('/session/start', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
@@ -13,7 +13,7 @@ router.post('/session/start', (0, auth_1.requireRole)(['student', 'instructor'])
         const { exerciseType, notes } = req.body;
         const userId = req.user._id;
         const sessionId = `session_${Date.now()}_${userId}`;
-        const exerciseSession = new ExerciseData_1.default({
+        const exerciseSession = new ExerciseData_1.ExerciseData({
             userId,
             sessionId,
             exerciseType,
@@ -63,7 +63,7 @@ router.put('/session/:sessionId/update', (0, auth_1.requireRole)(['student', 'in
         const { sessionId } = req.params;
         const { intensity, heartRate, movementSpeed, calories: caloriesData, poseData } = req.body;
         const userId = req.user._id;
-        const exerciseSession = await ExerciseData_1.default.findOne({ sessionId, userId });
+        const exerciseSession = await ExerciseData_1.ExerciseData.findOne({ sessionId, userId });
         if (!exerciseSession) {
             return res.status(404).json({
                 success: false,
@@ -116,7 +116,7 @@ router.put('/session/:sessionId/complete', (0, auth_1.requireRole)(['student', '
         const { sessionId } = req.params;
         const { endTime, notes, tags } = req.body;
         const userId = req.user._id;
-        const exerciseSession = await ExerciseData_1.default.findOne({ sessionId, userId });
+        const exerciseSession = await ExerciseData_1.ExerciseData.findOne({ sessionId, userId });
         if (!exerciseSession) {
             return res.status(404).json({
                 success: false,
@@ -166,7 +166,7 @@ router.get('/stats', (0, auth_1.requireRole)(['student', 'instructor']), async (
             totalCalories: 0,
             averageIntensity: 0
         };
-        const recentSessions = await ExerciseData_1.default.find({ userId })
+        const recentSessions = await ExerciseData_1.ExerciseData.find({ userId })
             .sort({ startTime: -1 })
             .limit(10)
             .select('exerciseType startTime duration intensityData.averageIntensity poseAnalysis.overallScore');
@@ -209,12 +209,12 @@ router.get('/history', (0, auth_1.requireRole)(['student', 'instructor']), async
         }
         const skip = (Number(page) - 1) * Number(limit);
         const [sessions, total] = await Promise.all([
-            ExerciseData_1.default.find(query)
+            ExerciseData_1.ExerciseData.find(query)
                 .sort({ startTime: -1 })
                 .skip(skip)
                 .limit(Number(limit))
                 .select('-intensityData.intensityHistory -poseAnalysis.landmarks'),
-            ExerciseData_1.default.countDocuments(query)
+            ExerciseData_1.ExerciseData.countDocuments(query)
         ]);
         res.json({
             success: true,
@@ -239,7 +239,7 @@ router.get('/session/:sessionId', (0, auth_1.requireRole)(['student', 'instructo
     try {
         const { sessionId } = req.params;
         const userId = req.user._id;
-        const exerciseSession = await ExerciseData_1.default.findOne({ sessionId, userId });
+        const exerciseSession = await ExerciseData_1.ExerciseData.findOne({ sessionId, userId });
         if (!exerciseSession) {
             return res.status(404).json({
                 success: false,
@@ -263,7 +263,7 @@ router.delete('/session/:sessionId', (0, auth_1.requireRole)(['student', 'instru
     try {
         const { sessionId } = req.params;
         const userId = req.user._id;
-        const exerciseSession = await ExerciseData_1.default.findOneAndDelete({ sessionId, userId });
+        const exerciseSession = await ExerciseData_1.ExerciseData.findOneAndDelete({ sessionId, userId });
         if (!exerciseSession) {
             return res.status(404).json({
                 success: false,

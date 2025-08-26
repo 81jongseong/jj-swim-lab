@@ -5,16 +5,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const TeachingMethod_1 = __importDefault(require("../models/TeachingMethod"));
+const TeachingMethod_1 = require("../models/TeachingMethod");
 const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
-        const { category, level, search } = req.query;
+        const { category, level, difficulty, search } = req.query;
         let query = {};
         if (category) {
             query.category = category;
         }
-        if (level) {
+        if (difficulty) {
+            query.level = difficulty;
+        }
+        else if (level) {
             query.level = level;
         }
         if (search) {
@@ -25,7 +28,7 @@ router.get('/', async (req, res) => {
             ];
         }
         console.log('🔍 강습법 조회 쿼리:', JSON.stringify(query, null, 2));
-        const methods = await TeachingMethod_1.default.find(query)
+        const methods = await TeachingMethod_1.TeachingMethod.find(query)
             .sort({ order: 1, createdAt: 1 })
             .select('-__v');
         console.log(`📊 쿼리 결과: ${methods.length}개의 강습법 발견`);
@@ -56,7 +59,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const method = await TeachingMethod_1.default.findById(id).select('-__v');
+        const method = await TeachingMethod_1.TeachingMethod.findById(id).select('-__v');
         if (!method) {
             return res.status(404).json({
                 success: false,
@@ -86,7 +89,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
                 message: '필수 필드가 누락되었습니다.'
             });
         }
-        const newMethod = new TeachingMethod_1.default({
+        const newMethod = new TeachingMethod_1.TeachingMethod({
             name,
             description,
             category,
@@ -118,7 +121,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
     try {
         const { id } = req.params;
         const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
-        const method = await TeachingMethod_1.default.findById(id);
+        const method = await TeachingMethod_1.TeachingMethod.findById(id);
         if (!method) {
             return res.status(404).json({
                 success: false,
@@ -171,7 +174,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
     try {
         const { id } = req.params;
         console.log(`🗑️ 강습법 삭제 요청: ${id}`);
-        const method = await TeachingMethod_1.default.findById(id);
+        const method = await TeachingMethod_1.TeachingMethod.findById(id);
         if (!method) {
             console.log(`❌ 강습법을 찾을 수 없음: ${id}`);
             return res.status(404).json({
@@ -189,7 +192,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
                 message: '삭제 권한이 없습니다.'
             });
         }
-        const deleteResult = await TeachingMethod_1.default.findByIdAndDelete(id);
+        const deleteResult = await TeachingMethod_1.TeachingMethod.findByIdAndDelete(id);
         console.log(`✅ 강습법 삭제 완료: ${id}, 결과:`, deleteResult);
         res.json({
             success: true,
@@ -206,7 +209,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
 });
 router.get('/stats/categories', async (req, res) => {
     try {
-        const stats = await TeachingMethod_1.default.aggregate([
+        const stats = await TeachingMethod_1.TeachingMethod.aggregate([
             { $match: { isActive: true } },
             {
                 $group: {
@@ -233,7 +236,7 @@ router.get('/stats/categories', async (req, res) => {
 });
 router.get('/stats/difficulties', async (req, res) => {
     try {
-        const stats = await TeachingMethod_1.default.aggregate([
+        const stats = await TeachingMethod_1.TeachingMethod.aggregate([
             { $match: { isActive: true } },
             {
                 $group: {

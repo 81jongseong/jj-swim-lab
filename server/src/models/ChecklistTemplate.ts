@@ -107,7 +107,7 @@ checklistTemplateSchema.index({ level: 1, category: 1 });
 checklistTemplateSchema.index({ isActive: 1, createdBy: 1 });
 checklistTemplateSchema.index({ tags: 1 });
 
-export default mongoose.model<IChecklistTemplate>('ChecklistTemplate', checklistTemplateSchema);
+export const ChecklistTemplate = mongoose.model<IChecklistTemplate>('ChecklistTemplate', checklistTemplateSchema);
 
 
 

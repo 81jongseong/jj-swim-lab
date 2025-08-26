@@ -1,48 +1,15 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express = __importStar(require("express"));
+const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const cache_1 = require("../middleware/cache");
 const logger_1 = require("../utils/logger");
-const Checklist_1 = __importDefault(require("../models/Checklist"));
-const TeachingMethod_1 = __importDefault(require("../models/TeachingMethod"));
-const router = express.Router();
+const Checklist_1 = require("../models/Checklist");
+const TeachingMethod_1 = require("../models/TeachingMethod");
+const router = express_1.default.Router();
 router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
     try {
         const { page = 1, limit = 20, status, studentId, courseId } = req.query;
@@ -54,7 +21,7 @@ router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) 
             filter.studentId = studentId;
         if (courseId)
             filter.courseId = courseId;
-        const checklists = await Checklist_1.default.find(filter)
+        const checklists = await Checklist_1.Checklist.find(filter)
             .populate('studentId', 'name email')
             .populate('courseId', 'name')
             .populate('instructorId', 'name email')
@@ -62,7 +29,7 @@ router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) 
             .skip(skip)
             .limit(Number(limit))
             .sort({ lastUpdated: -1 });
-        const total = await Checklist_1.default.countDocuments(filter);
+        const total = await Checklist_1.Checklist.countDocuments(filter);
         res.json({
             checklists,
             pagination: {
@@ -86,14 +53,14 @@ router.get('/instructor/:instructorId', auth_1.auth, (0, auth_1.requireRole)(['i
         const filter = { instructorId };
         if (status)
             filter.status = status;
-        const checklists = await Checklist_1.default.find(filter)
+        const checklists = await Checklist_1.Checklist.find(filter)
             .populate('studentId', 'name email')
             .populate('courseId', 'name')
             .populate('teachingMethodId', 'name')
             .skip(skip)
             .limit(Number(limit))
             .sort({ lastUpdated: -1 });
-        const total = await Checklist_1.default.countDocuments(filter);
+        const total = await Checklist_1.Checklist.countDocuments(filter);
         res.json({
             checklists,
             pagination: {
@@ -112,11 +79,10 @@ router.get('/instructor/:instructorId', auth_1.auth, (0, auth_1.requireRole)(['i
 router.get('/student/:studentId/course/:courseId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, courseId } = req.params;
-        const checklist = await Checklist_1.default.findOne({ studentId, courseId })
+        const checklist = await Checklist_1.Checklist.findOne({ studentId, courseId })
             .populate('studentId', 'name email')
             .populate('courseId', 'name')
-            .populate('instructorId', 'name email')
-            .populate('teachingMethodId', 'name');
+            .populate('instructorId', 'name email');
         if (!checklist) {
             return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
         }
@@ -129,32 +95,41 @@ router.get('/student/:studentId/course/:courseId', auth_1.auth, (0, auth_1.requi
 });
 router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
-        const { studentId, courseId, teachingMethodId } = req.body;
-        if (!studentId || !courseId || !teachingMethodId) {
+        const { studentId, courseId, studentLevel } = req.body;
+        if (!studentId || !courseId || !studentLevel) {
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
         }
-        const existingChecklist = await Checklist_1.default.findOne({ studentId, courseId });
+        const existingChecklist = await Checklist_1.Checklist.findOne({ studentId, courseId });
         if (existingChecklist) {
             return res.status(400).json({ error: '이미 체크리스트가 존재합니다.' });
         }
-        const teachingMethod = await TeachingMethod_1.default.findById(teachingMethodId);
-        if (!teachingMethod) {
-            return res.status(404).json({ error: '강습법을 찾을 수 없습니다.' });
+        const englishLevel = studentLevel === '초급' ? 'beginner' :
+            studentLevel === '중급' ? 'intermediate' :
+                studentLevel === '고급' ? 'advanced' : 'beginner';
+        const teachingMethods = await TeachingMethod_1.TeachingMethod.find({ level: englishLevel });
+        if (!teachingMethods || teachingMethods.length === 0) {
+            return res.status(404).json({ error: '해당 레벨의 강습법을 찾을 수 없습니다.' });
         }
-        const items = teachingMethod.steps.map((step, index) => ({
-            stepName: step.name || `단계 ${index + 1}`,
-            stepOrder: index + 1,
-            category: step.category || 'general',
-            difficulty: step.difficulty || 'beginner',
-            tips: step.tips || '',
-            isCompleted: false
-        }));
-        const checklist = new Checklist_1.default({
+        let allItems = [];
+        let stepOrder = 1;
+        teachingMethods.forEach((method, methodIndex) => {
+            method.steps.forEach((step, stepIndex) => {
+                allItems.push({
+                    stepName: step,
+                    stepOrder: stepOrder++,
+                    category: method.category || 'general',
+                    difficulty: method.level || 'beginner',
+                    tips: method.tips[stepIndex] || '',
+                    teachingMethodId: method._id,
+                    isCompleted: false
+                });
+            });
+        });
+        const checklist = new Checklist_1.Checklist({
             studentId,
             courseId,
             instructorId: req.user._id,
-            teachingMethodId,
-            items,
+            items: allItems,
             overallProgress: 0,
             status: 'active',
             startDate: new Date()
@@ -170,11 +145,10 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
 });
 router.get('/:checklistId', auth_1.auth, async (req, res) => {
     try {
-        const checklist = await Checklist_1.default.findById(req.params.checklistId)
+        const checklist = await Checklist_1.Checklist.findById(req.params.checklistId)
             .populate('studentId', 'name email')
             .populate('courseId', 'name')
-            .populate('instructorId', 'name email')
-            .populate('teachingMethodId', 'name');
+            .populate('instructorId', 'name email');
         if (!checklist) {
             return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
         }
@@ -189,7 +163,7 @@ router.patch('/:checklistId/items/:itemIndex', auth_1.auth, (0, auth_1.requireRo
     try {
         const { checklistId, itemIndex } = req.params;
         const { isCompleted, notes } = req.body;
-        const checklist = await Checklist_1.default.findById(checklistId);
+        const checklist = await Checklist_1.Checklist.findById(checklistId);
         if (!checklist) {
             return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
         }
@@ -229,7 +203,7 @@ router.patch('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor'
             updateData.notes = notes;
         if (targetCompletionDate !== undefined)
             updateData.targetCompletionDate = targetCompletionDate;
-        const checklist = await Checklist_1.default.findByIdAndUpdate(req.params.checklistId, updateData, { new: true });
+        const checklist = await Checklist_1.Checklist.findByIdAndUpdate(req.params.checklistId, updateData, { new: true });
         if (!checklist) {
             return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
         }
@@ -243,7 +217,7 @@ router.patch('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor'
 });
 router.delete('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
-        const checklist = await Checklist_1.default.findByIdAndDelete(req.params.checklistId);
+        const checklist = await Checklist_1.Checklist.findByIdAndDelete(req.params.checklistId);
         if (!checklist) {
             return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
         }

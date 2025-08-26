@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const Quiz_1 = __importDefault(require("../models/Quiz"));
-const QuizAttempt_1 = __importDefault(require("../models/QuizAttempt"));
+const Quiz_1 = require("../models/Quiz");
+const QuizAttempt_1 = require("../models/QuizAttempt");
 const router = express_1.default.Router();
 router.get('/', auth_1.auth, async (req, res) => {
     try {
@@ -34,12 +34,12 @@ router.get('/', auth_1.auth, async (req, res) => {
         if (search) {
             query.$text = { $search: search };
         }
-        const quizzes = await Quiz_1.default.find(query)
+        const quizzes = await Quiz_1.Quiz.find(query)
             .populate('createdBy', 'name email')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(Number(limit));
-        const total = await Quiz_1.default.countDocuments(query);
+        const total = await Quiz_1.Quiz.countDocuments(query);
         res.json({
             success: true,
             message: '퀴즈 목록 조회 성공!',
@@ -72,13 +72,13 @@ router.get('/attempts/user', auth_1.auth, async (req, res) => {
             query.quizId = quizId;
         if (passed !== undefined)
             query.passed = passed === 'true';
-        const attempts = await QuizAttempt_1.default.find(query)
+        const attempts = await QuizAttempt_1.QuizAttempt.find(query)
             .populate('quizId', 'title category')
             .populate('userId', 'name email')
             .sort({ completedAt: -1 })
             .skip(skip)
             .limit(Number(limit));
-        const total = await QuizAttempt_1.default.countDocuments(query);
+        const total = await QuizAttempt_1.QuizAttempt.countDocuments(query);
         res.json({
             success: true,
             message: '퀴즈 시도 기록 조회 성공!',
@@ -98,7 +98,7 @@ router.get('/attempts/user', auth_1.auth, async (req, res) => {
 });
 router.get('/:id', auth_1.auth, async (req, res) => {
     try {
-        const quiz = await Quiz_1.default.findById(req.params.id)
+        const quiz = await Quiz_1.Quiz.findById(req.params.id)
             .populate('createdBy', 'name email')
             .populate('assignedTo', 'name email');
         if (!quiz) {
@@ -166,7 +166,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
                 }
             }
         }
-        const quiz = new Quiz_1.default({
+        const quiz = new Quiz_1.Quiz({
             title,
             description,
             category,
@@ -203,7 +203,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        const quiz = await Quiz_1.default.findById(req.params.id);
+        const quiz = await Quiz_1.Quiz.findById(req.params.id);
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -216,7 +216,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
                 message: '이 퀴즈를 수정할 권한이 없습니다.'
             });
         }
-        const updatedQuiz = await Quiz_1.default.findByIdAndUpdate(req.params.id, { ...req.body, updatedAt: new Date() }, { new: true, runValidators: true });
+        const updatedQuiz = await Quiz_1.Quiz.findByIdAndUpdate(req.params.id, { ...req.body, updatedAt: new Date() }, { new: true, runValidators: true });
         res.json({
             success: true,
             message: '퀴즈가 성공적으로 수정되었습니다!',
@@ -239,7 +239,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        const quiz = await Quiz_1.default.findById(req.params.id);
+        const quiz = await Quiz_1.Quiz.findById(req.params.id);
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -282,7 +282,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor'
         else if (req.user.userType === 'centerAdmin') {
             query.centerId = req.user.centerId;
         }
-        const stats = await Quiz_1.default.aggregate([
+        const stats = await Quiz_1.Quiz.aggregate([
             { $match: query },
             {
                 $group: {
@@ -296,7 +296,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor'
                 }
             }
         ]);
-        const categoryStats = await Quiz_1.default.aggregate([
+        const categoryStats = await Quiz_1.Quiz.aggregate([
             { $match: query },
             {
                 $group: {
@@ -306,7 +306,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor'
             },
             { $sort: { count: -1 } }
         ]);
-        const difficultyStats = await Quiz_1.default.aggregate([
+        const difficultyStats = await Quiz_1.Quiz.aggregate([
             { $match: query },
             {
                 $group: {
@@ -348,14 +348,14 @@ router.post('/:id/copy', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        const originalQuiz = await Quiz_1.default.findById(req.params.id);
+        const originalQuiz = await Quiz_1.Quiz.findById(req.params.id);
         if (!originalQuiz) {
             return res.status(404).json({
                 success: false,
                 message: '원본 퀴즈를 찾을 수 없습니다.'
             });
         }
-        const copiedQuiz = new Quiz_1.default({
+        const copiedQuiz = new Quiz_1.Quiz({
             ...originalQuiz.toObject(),
             _id: undefined,
             title: `${originalQuiz.title} (복사본)`,

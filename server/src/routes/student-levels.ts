@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
-import User from '../models/User';
+import { User } from '../models/User';
 
 interface AuthRequest extends Request {
   user?: any;

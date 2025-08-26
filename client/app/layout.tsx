@@ -8,6 +8,7 @@ import TopNavigation from '../components/TopNavigation'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'
 // import ServiceWorkerRegistration from './sw-register'
 import './globals.css'
+import DynamicNavigation from '../components/DynamicNavigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -124,7 +125,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <TopNavigation />
+          <DynamicNavigation />
           <main>
             {children}
           </main>

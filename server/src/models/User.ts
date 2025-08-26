@@ -16,8 +16,17 @@ interface IUser extends mongoose.Document {
     emergencyContact?: string;
     medicalConditions?: string;
     swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    currentLevel?: string; // 현재 레벨 추가
     enrolledCourses?: mongoose.Types.ObjectId[];
     completedCourses?: mongoose.Types.ObjectId[];
+    levelChangeHistory?: Array<{ // 레벨 변경 이력 추가
+      fromLevel: string;
+      toLevel: string;
+      changedBy: mongoose.Types.ObjectId;
+      changedByType: string;
+      reason?: string;
+      changedAt: Date;
+    }>;
     // 건강상태 정보 추가
     healthProfile?: {
       height?: number; // cm

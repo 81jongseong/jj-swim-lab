@@ -1,5 +1,5 @@
 import express from 'express';
-import LessonPlan from '../models/LessonPlan';
+import { LessonPlan } from '../models/LessonPlan';
 
 const router: express.Router = express.Router();
 

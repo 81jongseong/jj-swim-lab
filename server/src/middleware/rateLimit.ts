@@ -81,7 +81,7 @@ export const uploadLimiter = rateLimit({
 });
 
 // 속도 제한 (점진적 속도 감소)
-export const speedLimiter = slowDown({
+export const speedLimiter: any = slowDown({
   windowMs: 15 * 60 * 1000, // 15분
   delayAfter: 100, // 100회 요청 후부터 지연 시작
   delayMs: 500, // 500ms씩 지연 증가

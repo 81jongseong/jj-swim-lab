@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
-import CenterLevel from '../models/CenterLevel';
+import { CenterLevel } from '../models/CenterLevel';
 
 interface AuthRequest extends Request {
   user?: any;

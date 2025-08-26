@@ -34,9 +34,14 @@ const system_1 = __importDefault(require("./routes/system"));
 const center_info_1 = __importDefault(require("./routes/center-info"));
 const checklist_1 = __importDefault(require("./routes/checklist"));
 const checklist_template_1 = __importDefault(require("./routes/checklist-template"));
+const class_checklist_1 = __importDefault(require("./routes/class-checklist"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
+const center_levels_1 = __importDefault(require("./routes/center-levels"));
+const student_levels_1 = __importDefault(require("./routes/student-levels"));
 require("./models/Checklist");
 require("./models/ChecklistTemplate");
+require("./models/ClassChecklist");
+require("./models/StudentProgress");
 require("./models/User");
 require("./models/Quiz");
 require("./models/QuizAttempt");
@@ -57,6 +62,7 @@ require("./models/ShopOrder");
 require("./models/AIConfig");
 require("./models/CenterInfo");
 require("./models/Notification");
+require("./models/CenterLevel");
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
     console.log('🔍 모델 등록 상태 확인:');
@@ -197,7 +203,10 @@ app.use('/api/system', system_1.default);
 app.use('/api/center-info', center_info_1.default);
 app.use('/api/checklist', checklist_1.default);
 app.use('/api/checklist-template', checklist_template_1.default);
+app.use('/api/class-checklist', class_checklist_1.default);
 app.use('/api/notifications', notifications_1.default);
+app.use('/api/center-levels', center_levels_1.default);
+app.use('/api/student-levels', student_levels_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,

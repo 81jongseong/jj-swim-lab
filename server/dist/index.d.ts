@@ -1,5 +1,7 @@
 import './models/Checklist';
 import './models/ChecklistTemplate';
+import './models/ClassChecklist';
+import './models/StudentProgress';
 import './models/User';
 import './models/Quiz';
 import './models/QuizAttempt';
@@ -20,4 +22,5 @@ import './models/ShopOrder';
 import './models/AIConfig';
 import './models/CenterInfo';
 import './models/Notification';
+import './models/CenterLevel';
 //# sourceMappingURL=index.d.ts.map

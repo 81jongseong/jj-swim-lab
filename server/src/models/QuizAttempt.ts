@@ -89,5 +89,5 @@ QuizAttemptSchema.index({ quizId: 1, userId: 1 });
 QuizAttemptSchema.index({ userId: 1, completedAt: -1 });
 QuizAttemptSchema.index({ quizId: 1, completedAt: -1 });
 
-export default mongoose.model<IQuizAttempt>('QuizAttempt', QuizAttemptSchema);
+export const QuizAttempt = mongoose.model<IQuizAttempt>('QuizAttempt', QuizAttemptSchema);
 

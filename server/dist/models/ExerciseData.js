@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ExerciseData = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const exerciseDataSchema = new mongoose_1.default.Schema({
     userId: {
@@ -341,6 +342,5 @@ exerciseDataSchema.statics.generateAIRecommendations = async function (userId) {
     }
     return recommendations;
 };
-const ExerciseData = mongoose_1.default.model('ExerciseData', exerciseDataSchema);
-exports.default = ExerciseData;
+exports.ExerciseData = mongoose_1.default.model('ExerciseData', exerciseDataSchema);
 //# sourceMappingURL=ExerciseData.js.map

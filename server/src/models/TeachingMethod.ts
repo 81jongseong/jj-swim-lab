@@ -71,5 +71,5 @@ const TeachingMethodSchema = new Schema<ITeachingMethod>({
   timestamps: true
 });
 
-export default mongoose.model<ITeachingMethod>('TeachingMethod', TeachingMethodSchema);
+export const TeachingMethod = mongoose.model<ITeachingMethod>('TeachingMethod', TeachingMethodSchema);
 

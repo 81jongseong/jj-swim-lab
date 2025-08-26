@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const CenterInfo_1 = __importDefault(require("../models/CenterInfo"));
+const CenterInfo_1 = require("../models/CenterInfo");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const router = express_1.default.Router();
@@ -35,7 +35,7 @@ const upload = (0, multer_1.default)({
 router.get('/public/:centerId', async (req, res) => {
     try {
         const { centerId } = req.params;
-        const centerInfo = await CenterInfo_1.default.findOne({ centerId });
+        const centerInfo = await CenterInfo_1.CenterInfo.findOne({ centerId });
         if (!centerInfo) {
             return res.status(404).json({
                 success: false,
@@ -60,10 +60,10 @@ router.get('/admin/list', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', '
         const { user } = req;
         let centerInfo;
         if (user.userType === 'centerAdmin') {
-            centerInfo = await CenterInfo_1.default.findOne({ centerId: user.centerId || 'jjswim-main' });
+            centerInfo = await CenterInfo_1.CenterInfo.findOne({ centerId: user.centerId || 'jjswim-main' });
         }
         else {
-            centerInfo = await CenterInfo_1.default.find();
+            centerInfo = await CenterInfo_1.CenterInfo.find();
         }
         if (!centerInfo) {
             return res.status(404).json({
@@ -91,7 +91,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmi
         if (user.userType === 'centerAdmin') {
             centerData.centerId = user.centerId || 'jjswim-main';
         }
-        const centerInfo = new CenterInfo_1.default(centerData);
+        const centerInfo = new CenterInfo_1.CenterInfo(centerData);
         await centerInfo.save();
         res.status(201).json({
             success: true,
@@ -112,7 +112,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAd
         const { id } = req.params;
         const { user } = req;
         const updateData = req.body;
-        const centerInfo = await CenterInfo_1.default.findById(id);
+        const centerInfo = await CenterInfo_1.CenterInfo.findById(id);
         if (!centerInfo) {
             return res.status(404).json({
                 success: false,
@@ -125,7 +125,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAd
                 message: '수정 권한이 없습니다.'
             });
         }
-        const updatedCenterInfo = await CenterInfo_1.default.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        const updatedCenterInfo = await CenterInfo_1.CenterInfo.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
         res.json({
             success: true,
             message: '센터 정보가 성공적으로 수정되었습니다.',
@@ -143,7 +143,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAd
 router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const centerInfo = await CenterInfo_1.default.findByIdAndDelete(id);
+        const centerInfo = await CenterInfo_1.CenterInfo.findByIdAndDelete(id);
         if (!centerInfo) {
             return res.status(404).json({
                 success: false,

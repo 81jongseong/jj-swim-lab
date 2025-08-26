@@ -357,12 +357,13 @@ async function getStudentDashboard(user) {
             .populate('course', 'name')
             .populate('instructor', 'name')
             .sort({ dueDate: 1 });
-        const totalChecklistItems = checklists.reduce((total, checklist) => {
-            return total + (checklist.checklistItems?.length || 0);
-        }, 0);
-        const completedChecklistItems = checklists.reduce((total, checklist) => {
-            return total + (checklist.checklistItems?.filter(item => item.isCompleted).length || 0);
-        }, 0);
+        let totalChecklistItems = 0;
+        let completedChecklistItems = 0;
+        for (const checklist of checklists) {
+            const items = checklist.checklistItems || [];
+            totalChecklistItems += items.length;
+            completedChecklistItems += items.filter((item) => item.isCompleted).length;
+        }
         const checklistCompletionRate = totalChecklistItems > 0
             ? Math.round((completedChecklistItems / totalChecklistItems) * 100)
             : 0;

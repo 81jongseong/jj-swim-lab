@@ -1,7 +1,7 @@
 import express from 'express';
 import { auth, requireRole } from '../middleware/auth';
-import Quiz from '../models/Quiz';
-import QuizAttempt from '../models/QuizAttempt';
+import { Quiz } from '../models/Quiz';
+import { QuizAttempt } from '../models/QuizAttempt';
 
 interface AuthenticatedRequest extends express.Request {
   user?: {

@@ -1,9 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
+const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Class_1 = require("../models/Class");
-const router = (0, express_1.Router)();
+const router = express_1.default.Router();
 router.post('/classes', auth_1.auth, async (req, res) => {
     try {
         if (req.user?.userType !== 'superAdmin') {

@@ -120,4 +120,4 @@ const CenterInfoSchema = new Schema<ICenterInfo>({
   timestamps: true
 });
 
-export default mongoose.model<ICenterInfo>('CenterInfo', CenterInfoSchema);
+export const CenterInfo = mongoose.model<ICenterInfo>('CenterInfo', CenterInfoSchema);

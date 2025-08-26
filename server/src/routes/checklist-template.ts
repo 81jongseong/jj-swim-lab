@@ -1,8 +1,9 @@
-import * as express from 'express';
+import express from 'express';
+import mongoose from 'mongoose';
 import { auth, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
-import ChecklistTemplate from '../models/ChecklistTemplate';
+import { ChecklistTemplate } from '../models/ChecklistTemplate';
 
 const router: express.Router = express.Router();
 

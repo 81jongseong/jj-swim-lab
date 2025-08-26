@@ -140,4 +140,4 @@ ChecklistSchema.pre('save', function(next) {
   next();
 });
 
-export default mongoose.model<IChecklist>('Checklist', ChecklistSchema);
+export const Checklist = mongoose.model<IChecklist>('Checklist', ChecklistSchema);
