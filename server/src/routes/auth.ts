@@ -180,7 +180,32 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // 마지막 로그인 시간 업데이트
     user.lastLoginAt = new Date();
-    await user.save();
+    
+    // 데이터 정리: 문자열 배열을 ObjectId 배열로 변환하거나 정리
+    if (user.studentInfo) {
+      // enrolledCourses와 completedCourses가 문자열 배열인 경우 정리
+      if (Array.isArray(user.studentInfo.enrolledCourses) && 
+          user.studentInfo.enrolledCourses.length > 0 && 
+          typeof user.studentInfo.enrolledCourses[0] === 'string') {
+        console.log('🔧 enrolledCourses 데이터 정리:', user.studentInfo.enrolledCourses);
+        user.studentInfo.enrolledCourses = [];
+      }
+      
+      if (Array.isArray(user.studentInfo.completedCourses) && 
+          user.studentInfo.completedCourses.length > 0 && 
+          typeof user.studentInfo.completedCourses[0] === 'string') {
+        console.log('🔧 completedCourses 데이터 정리:', user.studentInfo.completedCourses);
+        user.studentInfo.completedCourses = [];
+      }
+    }
+    
+    try {
+      await user.save();
+      console.log('✅ 사용자 정보 저장 성공');
+    } catch (saveError) {
+      console.warn('⚠️ 사용자 정보 저장 실패, 로그인은 계속 진행:', saveError.message);
+      // 저장 실패해도 로그인은 계속 진행
+    }
 
     // JWT 토큰 생성
     const tokenPayload: any = { userId: user._id };

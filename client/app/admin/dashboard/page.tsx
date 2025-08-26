@@ -245,13 +245,21 @@ export default function AdminDashboard() {
       {/* 빠른 액션 버튼들 */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">⚡ 빠른 액션</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button 
             onClick={() => window.location.href = '/admin/teaching-methods'}
             className="h-20 text-lg font-semibold"
             variant="outline"
           >
             📚 강습법 관리
+          </Button>
+          
+          <Button 
+            onClick={() => window.location.href = '/admin/center-levels'}
+            className="h-20 text-lg font-semibold"
+            variant="outline"
+          >
+            🎯 센터별 레벨 관리
           </Button>
           
           <Button 

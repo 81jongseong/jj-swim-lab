@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 정적 파일 경로 설정
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  
   // 성능 최적화
   experimental: {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],

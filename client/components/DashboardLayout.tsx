@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
+import TopNavigation from './TopNavigation';
 
 interface Breadcrumb {
   label: string;
@@ -41,22 +42,24 @@ export default function DashboardLayout({
   }, []);
 
   const navigationItems = [
-    { name: '대시보드', href: '/dashboard', icon: '📊' },
-            { name: '강습 과정', href: '/courses', icon: '/icons/manifest-icon-192.maskable.png' },
-    { name: '예약 관리', href: '/bookings', icon: '📅' },
-    { name: '진도 관리', href: '/progress', icon: '📈' },
-    { name: '결제 내역', href: '/payments', icon: '💳' },
-    { name: '커뮤니티', href: '/community', icon: '💬' },
-    { name: 'AI 분석', href: '/ai-analysis', icon: '🤖' },
-    { name: '퀴즈', href: '/quiz', icon: '❓' },
-    { name: '센터 정보', href: '/about', icon: 'ℹ️' },
+    { name: '대시보드', href: '/dashboard', icon: '📊', category: 'main' },
+    { name: '강습 과정', href: '/courses', icon: '🏊‍♂️', category: 'main' },
+    { name: '예약 관리', href: '/bookings', icon: '📅', category: 'main' },
+    { name: '진도 관리', href: '/progress', icon: '📈', category: 'main' },
+    { name: '결제 내역', href: '/payments', icon: '💳', category: 'main' },
+    { name: '커뮤니티', href: '/community', icon: '💬', category: 'social' },
+    { name: 'AI 분석', href: '/ai-analysis', icon: '🤖', category: 'ai' },
+    { name: '퀴즈', href: '/quiz', icon: '❓', category: 'learning' },
+    { name: '센터 정보', href: '/about', icon: 'ℹ️', category: 'info' },
   ];
 
   const adminNavigationItems = [
-    { name: '사용자 관리', href: '/admin/users', icon: '👥' },
-    { name: '강습법 관리', href: '/admin/teaching-methods', icon: '📚' },
-    { name: 'AI 설정', href: '/admin/ai-config', icon: '⚙️' },
-    { name: '시스템 상태', href: '/admin/system', icon: '🔧' },
+    { name: '사용자 관리', href: '/admin/users', icon: '👥', category: 'admin' },
+    { name: '강습법 관리', href: '/admin/teaching-methods', icon: '📚', category: 'admin' },
+    { name: '센터별 레벨 관리', href: '/admin/center-levels', icon: '🎯', category: 'admin' },
+    { name: '학생 레벨 관리', href: '/admin/student-levels', icon: '👨‍🎓', category: 'admin' },
+    { name: 'AI 설정', href: '/admin/ai-config', icon: '⚙️', category: 'admin' },
+    { name: '시스템 상태', href: '/admin/system', icon: '🔧', category: 'admin' },
   ];
 
   const getNavigationItems = () => {
@@ -64,12 +67,14 @@ export default function DashboardLayout({
       return [...navigationItems, ...adminNavigationItems];
     }
     if (user?.userType === 'centerAdmin') {
-      return [...navigationItems, ...adminNavigationItems.slice(0, 2)];
+      return [...navigationItems, ...adminNavigationItems.slice(0, 4)];
     }
     if (user?.userType === 'instructor') {
-      return navigationItems.filter(item => 
+      const instructorItems = navigationItems.filter(item => 
         !['결제 내역', 'AI 분석'].includes(item.name)
       );
+      // 강사도 학생 레벨 관리에 접근 가능
+      return [...instructorItems, { name: '학생 레벨 관리', href: '/admin/student-levels', icon: '👨‍🎓' }];
     }
     return navigationItems.filter(item => 
       !['결제 내역', 'AI 분석', '사용자 관리'].includes(item.name)
@@ -78,23 +83,56 @@ export default function DashboardLayout({
 
   const currentNavigationItems = getNavigationItems();
 
+  // 카테고리별로 메뉴 그룹화
+  const groupNavigationItems = (items: any[]) => {
+    const grouped = items.reduce((acc, item) => {
+      const category = item.category || 'other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {});
+
+    return grouped;
+  };
+
+  const groupedItems = groupNavigationItems(currentNavigationItems);
+
+  // 카테고리별 제목과 스타일
+  const getCategoryInfo = (category: string) => {
+    const categoryMap: { [key: string]: { title: string; color: string; icon: string } } = {
+      main: { title: '주요 기능', color: 'text-blue-600', icon: '⭐' },
+      admin: { title: '관리자 도구', color: 'text-purple-600', icon: '🔧' },
+      social: { title: '소셜', color: 'text-green-600', icon: '💬' },
+      ai: { title: 'AI 서비스', color: 'text-orange-600', icon: '🤖' },
+      learning: { title: '학습 도구', color: 'text-indigo-600', icon: '📚' },
+      info: { title: '정보', color: 'text-gray-600', icon: 'ℹ️' },
+      other: { title: '기타', color: 'text-gray-600', icon: '📋' }
+    };
+    return categoryMap[category] || categoryMap.other;
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {/* 새로운 상단 네비게이션 */}
+      <TopNavigation />
+      
       <div className="flex h-screen">
         {/* 사이드바 */}
         {showSidebar && (
           <aside className={`
-            fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+            fixed inset-y-0 left-0 z-40 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}>
             <div className="flex flex-col h-full">
               {/* 로고 및 브랜드 */}
-              <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-                <Link href="/" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">J</span>
+              <div className="flex items-center justify-between h-16 px-6 border-b border-border bg-gradient-to-r from-blue-600 to-indigo-700">
+                <Link href="/" className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                    <span className="text-blue-600 font-bold text-xl">J</span>
                   </div>
-                  <span className="font-bold text-xl text-foreground">JJ Swim Lab</span>
+                  <span className="font-bold text-xl text-white">JJ Swim Lab</span>
                 </Link>
                 <button
                   onClick={() => setIsSidebarOpen(false)}
@@ -107,17 +145,17 @@ export default function DashboardLayout({
               </div>
 
               {/* 사용자 정보 */}
-              <div className="px-6 py-4 border-b border-border">
+              <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50">
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-semibold text-lg">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-white font-bold text-lg">
                         {user.name?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground truncate capitalize">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
+                      <p className="text-xs text-gray-600 truncate capitalize">
                         {user.userType || 'user'}
                       </p>
                     </div>
@@ -130,16 +168,34 @@ export default function DashboardLayout({
               </div>
 
               {/* 네비게이션 메뉴 */}
-              <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-                {currentNavigationItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <span>{item.name}</span>
-                  </Link>
+              <nav className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
+                {Object.entries(groupedItems).map(([category, items]) => (
+                  <div key={category} className="space-y-2">
+                    {/* 카테고리 제목 */}
+                    <div className="flex items-center space-x-2 px-3 py-2">
+                      <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                        {getCategoryInfo(category).icon} {getCategoryInfo(category).title}
+                      </span>
+                    </div>
+                    
+                    {/* 카테고리별 메뉴 아이템들 */}
+                    <div className="space-y-1">
+                      {(items as any[]).map((item: any) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 group"
+                        >
+                          <span className="text-lg group-hover:scale-110 transition-transform duration-200">
+                            {item.icon}
+                          </span>
+                          <span className="group-hover:font-semibold transition-all duration-200">
+                            {item.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </nav>
 
@@ -222,28 +278,7 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* 모바일 헤더 */}
-      {showSidebar && (
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border">
-          <div className="flex items-center justify-between h-16 px-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 rounded-md hover:bg-muted"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">J</span>
-              </div>
-              <span className="font-bold text-xl text-foreground">JJ Swim Lab</span>
-            </Link>
-            <div className="w-10"></div>
-          </div>
-        </header>
-      )}
+      {/* 모바일 메뉴 버튼은 TopNavigation에서 처리 */}
     </div>
   );
 }

@@ -2,36 +2,42 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICenterLevel extends Document {
   centerId: mongoose.Types.ObjectId;
-  levelName: string; // 레벨 이름 (입문, 기초, 초급, 중급, 상급, 마스터 등)
-  levelOrder: number; // 레벨 순서 (1, 2, 3, 4, 5, 6...)
-  levelColor: string; // 레벨별 색상 (bg-green-500, bg-yellow-500, bg-red-500 등)
-  description?: string; // 레벨 설명
-  isActive: boolean;
+  name: string;           // 레벨 이름 (예: "입문", "기초", "마스터")
+  displayName: string;    // 표시용 이름 (예: "입문반", "기초반")
+  order: number;          // 정렬 순서
+  color: string;          // UI 색상 (예: "blue", "green", "red")
+  description?: string;   // 레벨 설명
+  isActive: boolean;      // 활성화 여부
   createdAt: Date;
   updatedAt: Date;
 }
 
-const CenterLevelSchema = new Schema<ICenterLevel>({
+const centerLevelSchema = new Schema<ICenterLevel>({
   centerId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'SwimmingCenter',
+    required: true,
+    index: true
   },
-  levelName: {
+  name: {
     type: String,
     required: true,
     trim: true
   },
-  levelOrder: {
-    type: Number,
-    required: true,
-    min: 1
-  },
-  levelColor: {
+  displayName: {
     type: String,
     required: true,
-    trim: true,
-    default: 'bg-gray-500'
+    trim: true
+  },
+  order: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  color: {
+    type: String,
+    required: true,
+    default: 'blue'
   },
   description: {
     type: String,
@@ -45,7 +51,10 @@ const CenterLevelSchema = new Schema<ICenterLevel>({
   timestamps: true
 });
 
-// 센터별로 레벨 순서가 유일해야 함
-CenterLevelSchema.index({ centerId: 1, levelOrder: 1 }, { unique: true });
+// 센터별로 레벨 이름은 유일해야 함
+centerLevelSchema.index({ centerId: 1, name: 1 }, { unique: true });
 
-export default mongoose.model<ICenterLevel>('CenterLevel', CenterLevelSchema);
+// 센터별로 정렬 순서도 유일해야 함
+centerLevelSchema.index({ centerId: 1, order: 1 }, { unique: true });
+
+export default mongoose.model<ICenterLevel>('CenterLevel', centerLevelSchema);

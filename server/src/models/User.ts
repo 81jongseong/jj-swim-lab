@@ -163,8 +163,18 @@ const userSchema = new mongoose.Schema({
       enum: ['beginner', 'intermediate', 'advanced', 'expert'],
       default: 'beginner'
     },
-    enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-    completedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+    enrolledCourses: [{ type: mongoose.Schema.Types.Mixed, ref: 'Course' }],
+    completedCourses: [{ type: mongoose.Schema.Types.Mixed, ref: 'Course' }],
+    // 반변경 이력 추가
+    levelChangeHistory: [{
+      fromLevel: { type: String, required: true },
+      toLevel: { type: String, required: true },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      changedByType: { type: String, enum: ['instructor', 'centerAdmin', 'superAdmin'], required: true },
+      reason: { type: String, default: '' },
+      changedAt: { type: Date, default: Date.now }
+    }],
+    currentLevel: { type: String, default: 'beginner' }
   },
   // 강사 전용 필드
   instructorInfo: {

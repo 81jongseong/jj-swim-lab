@@ -36,6 +36,7 @@ import checklistTemplateRoutes from './routes/checklist-template';
 import classChecklistRoutes from './routes/class-checklist';
 import notificationRoutes from './routes/notifications';
 import centerLevelRoutes from './routes/center-levels';
+import studentLevelRoutes from './routes/student-levels';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 import './models/Checklist';
@@ -246,6 +247,7 @@ app.use('/api/checklist-template', checklistTemplateRoutes);
 app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/center-levels', centerLevelRoutes);
+app.use('/api/student-levels', studentLevelRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

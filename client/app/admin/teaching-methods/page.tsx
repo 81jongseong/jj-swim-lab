@@ -24,6 +24,8 @@ interface TeachingMethod {
 
 export default function TeachingMethodsPage() {
   const { user } = useAuth();
+  const isCenterAdmin = user?.userType === 'centerAdmin';
+  const isSuperAdmin = user?.userType === 'superAdmin';
   const [methods, setMethods] = useState<TeachingMethod[]>([]);
   const [filteredMethods, setFilteredMethods] = useState<TeachingMethod[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,15 +35,20 @@ export default function TeachingMethodsPage() {
   const [selectedMethod, setSelectedMethod] = useState<TeachingMethod | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExcelUploaderOpen, setIsExcelUploaderOpen] = useState(false);
+  const [isLevelEditModalOpen, setIsLevelEditModalOpen] = useState(false);
+  const [editingLevelMethod, setEditingLevelMethod] = useState<TeachingMethod | null>(null);
+  const [newLevel, setNewLevel] = useState<string>('');
+  const [centerLevels, setCenterLevels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [steps, setSteps] = useState<string[]>([]);
   const [tips, setTips] = useState<string[]>([]);
 
   useEffect(() => {
-    if (user?.userType !== 'superAdmin') {
-      return;
+    // superAdmin과 centerAdmin 모두 접근 가능
+    if (user?.userType === 'superAdmin' || user?.userType === 'centerAdmin') {
+      fetchTeachingMethods();
+      fetchCenterLevels();
     }
-    fetchTeachingMethods();
   }, [user]);
 
   useEffect(() => {
@@ -331,7 +338,82 @@ export default function TeachingMethodsPage() {
     setIsExcelUploaderOpen(false);
   };
 
-  if (user?.userType !== 'superAdmin') {
+  const handleLevelEdit = (method: TeachingMethod) => {
+    setEditingLevelMethod(method);
+    setNewLevel(method.level);
+    setIsLevelEditModalOpen(true);
+  };
+
+  const fetchCenterLevels = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/center-levels', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCenterLevels(data.data || []);
+      }
+    } catch (error) {
+      console.error('센터 레벨 로드 실패:', error);
+    }
+  };
+
+  const handleLevelUpdate = async () => {
+    if (!editingLevelMethod || !newLevel) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('인증 토큰이 없습니다.');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/teaching-methods/${editingLevelMethod._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          level: newLevel
+        })
+      });
+
+      if (response.ok) {
+        const updatedMethod = await response.json();
+        console.log('✅ 레벨 수정 성공:', updatedMethod);
+        
+        // 로컬 상태 업데이트
+        setMethods(prev => prev.map(m => 
+          m._id === editingLevelMethod._id 
+            ? { ...m, level: newLevel as 'beginner' | 'intermediate' | 'advanced' }
+            : m
+        ));
+        
+        alert('강습법 레벨이 성공적으로 수정되었습니다.');
+        setIsLevelEditModalOpen(false);
+        setEditingLevelMethod(null);
+        setNewLevel('');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ 레벨 수정 실패:', errorData);
+        alert('레벨 수정에 실패했습니다: ' + (errorData.message || '알 수 없는 오류'));
+      }
+    } catch (error) {
+      console.error('❌ 레벨 수정 중 오류:', error);
+      alert('레벨 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // superAdmin과 centerAdmin만 접근 가능
+  if (user?.userType !== 'superAdmin' && user?.userType !== 'centerAdmin') {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -345,7 +427,7 @@ export default function TeachingMethodsPage() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">접근 권한 없음</h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>최고 관리자만 강습법 관리에 접근할 수 있습니다.</p>
+                  <p>최고 관리자와 센터 관리자만 강습법 조회에 접근할 수 있습니다.</p>
                 </div>
               </div>
             </div>
@@ -374,9 +456,14 @@ export default function TeachingMethodsPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">강습법 관리</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isCenterAdmin ? '강습법 조회' : '강습법 관리'}
+          </h1>
           <p className="mt-2 text-gray-600">
-            수영 강습에 필요한 다양한 강습법을 관리하고 체계화합니다.
+            {isCenterAdmin 
+              ? '수영 강습에 필요한 다양한 강습법을 조회하고 레벨별로 분류할 수 있습니다. 수정 및 삭제는 최고관리자만 가능합니다.'
+              : '수영 강습에 필요한 다양한 강습법을 관리하고 체계화합니다.'
+            }
           </p>
         </div>
 
@@ -404,24 +491,28 @@ export default function TeachingMethodsPage() {
                 <option value="advanced">상급</option>
               </select>
             </div>
-            <Button
-              onClick={() => {
-                setIsFormOpen(true);
-                setEditingMethod(null);
-                setSteps([]);
-                setTips([]);
-              }}
-              className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
-            >
-              ✨ 새 강습법 추가
-            </Button>
-            <Button
-              onClick={() => setIsExcelUploaderOpen(true)}
-              variant="outline"
-              className="px-6 py-2 border-green-500 text-green-700 hover:bg-green-50"
-            >
-              📊 엑셀 업로드
-            </Button>
+            {!isCenterAdmin && (
+              <Button
+                onClick={() => {
+                  setIsFormOpen(true);
+                  setEditingMethod(null);
+                  setSteps([]);
+                  setTips([]);
+                }}
+                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
+              >
+                ✨ 새 강습법 추가
+              </Button>
+            )}
+            {!isCenterAdmin && (
+              <Button
+                onClick={() => setIsExcelUploaderOpen(true)}
+                variant="outline"
+                className="px-6 py-2 border-green-500 text-green-700 hover:bg-green-50"
+              >
+                📊 엑셀 업로드
+              </Button>
+            )}
             <Button
               onClick={() => {
                 console.log('🔄 수동 새로고침 시작...');
@@ -432,56 +523,59 @@ export default function TeachingMethodsPage() {
             >
               🔄 새로고침
             </Button>
-            <Button
-              onClick={async () => {
-                if (confirm('정말로 모든 강습법을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-                  try {
-                    console.log('🗑️ 모든 강습법 삭제 시작...');
-                    
-                    // 모든 강습법 ID 수집
-                    const methodIds = methods.map(m => m._id);
-                    console.log(`📋 삭제할 강습법 개수: ${methodIds.length}`);
-                    
-                    // 각 강습법을 개별적으로 삭제
-                    let deletedCount = 0;
-                    for (const methodId of methodIds) {
-                      try {
-                        const response = await fetch(`http://localhost:5000/api/teaching-methods/${methodId}`, {
-                          method: 'DELETE',
-                          headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json'
+            {!isCenterAdmin && (
+              <Button
+                onClick={async () => {
+                  if (confirm('정말로 모든 강습법을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                    try {
+                      console.log('🗑️ 모든 강습법 삭제 시작...');
+                      
+                      // 모든 강습법 ID 수집
+                      const methodIds = methods.map(m => m._id);
+                      console.log(`📋 삭제할 강습법 개수: ${methodIds.length}`);
+                      
+                      // 각 강습법을 개별적으로 삭제
+                      let deletedCount = 0;
+                      for (const methodId of methodIds) {
+                        try {
+                          const response = await fetch(`http://localhost:5000/api/teaching-methods/${methodId}`, {
+                            method: 'DELETE',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                              'Method': 'DELETE',
+                              'Content-Type': 'application/json'
+                            }
+                          });
+                          
+                          if (response.ok) {
+                            deletedCount++;
+                            console.log(`✅ 삭제 완료: ${methodId}`);
+                          } else {
+                            console.error(`❌ 삭제 실패: ${methodId}`);
                           }
-                        });
-                        
-                        if (response.ok) {
-                          deletedCount++;
-                          console.log(`✅ 삭제 완료: ${methodId}`);
-                        } else {
-                          console.error(`❌ 삭제 실패: ${methodId}`);
+                        } catch (error) {
+                          console.error(`❌ 삭제 중 오류: ${methodId}`, error);
                         }
-                      } catch (error) {
-                        console.error(`❌ 삭제 중 오류: ${methodId}`, error);
                       }
+                      
+                      console.log(`🗑️ 모든 강습법 삭제 완료: ${deletedCount}개 삭제됨`);
+                      alert(`모든 강습법이 삭제되었습니다. (${deletedCount}개)`);
+                      
+                      // 데이터베이스에서 최신 상태 가져오기
+                      fetchTeachingMethods();
+                      
+                    } catch (error) {
+                      console.error('❌ 모든 강습법 삭제 중 오류:', error);
+                      alert('모든 강습법 삭제 중 오류가 발생했습니다.');
                     }
-                    
-                    console.log(`🗑️ 모든 강습법 삭제 완료: ${deletedCount}개 삭제됨`);
-                    alert(`모든 강습법이 삭제되었습니다. (${deletedCount}개)`);
-                    
-                    // 데이터베이스에서 최신 상태 가져오기
-                    fetchTeachingMethods();
-                    
-                  } catch (error) {
-                    console.error('❌ 모든 강습법 삭제 중 오류:', error);
-                    alert('모든 강습법 삭제 중 오류가 발생했습니다.');
                   }
-                }
-              }}
-              variant="outline"
-              className="px-6 py-2 border-red-500 text-red-700 hover:bg-red-50"
-            >
-              🗑️ 모든 강습법 삭제
-            </Button>
+                }}
+                variant="outline"
+                className="px-6 py-2 border-red-500 text-red-700 hover:bg-red-50"
+              >
+                🗑️ 모든 강습법 삭제
+              </Button>
+            )}
           </div>
         </div>
 
@@ -543,20 +637,33 @@ export default function TeachingMethodsPage() {
                   >
                     👁️ 상세보기
                   </Button>
-                  <Button
-                    onClick={() => handleEdit(method)}
-                    variant="outline"
-                    className="flex-1 bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
-                  >
-                    ✏️ 수정
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(method._id)}
-                    variant="outline"
-                    className="flex-1 bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                  >
-                    🗑️ 삭제
-                  </Button>
+                  {isCenterAdmin && (
+                    <Button
+                      onClick={() => handleLevelEdit(method)}
+                      variant="outline"
+                      className="flex-1 bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                    >
+                      🎯 레벨수정
+                    </Button>
+                  )}
+                  {!isCenterAdmin && (
+                    <Button
+                      onClick={() => handleEdit(method)}
+                      variant="outline"
+                      className="flex-1 bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
+                    >
+                      ✏️ 수정
+                    </Button>
+                  )}
+                  {!isCenterAdmin && (
+                    <Button
+                      onClick={() => handleDelete(method._id)}
+                      variant="outline"
+                      className="flex-1 bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                    >
+                      🗑️ 삭제
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -949,6 +1056,121 @@ export default function TeachingMethodsPage() {
                       🗑️ 삭제
                     </Button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 레벨 수정 모달 */}
+        {isLevelEditModalOpen && editingLevelMethod && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900">강습법 레벨 수정</h3>
+                  <button
+                    onClick={() => {
+                      setIsLevelEditModalOpen(false);
+                      setEditingLevelMethod(null);
+                      setNewLevel('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">강습법 이름</label>
+                    <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                      {editingLevelMethod.name}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">현재 레벨</label>
+                    <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                      {editingLevelMethod.level === 'beginner' ? '초급' :
+                       editingLevelMethod.level === 'intermediate' ? '중급' : '상급'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="newLevel" className="block text-sm font-medium text-gray-700 mb-2">
+                      새로운 레벨 *
+                    </label>
+                    {centerLevels.length > 0 ? (
+                      <select
+                        id="newLevel"
+                        value={newLevel}
+                        onChange={(e) => setNewLevel(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">레벨 선택</option>
+                        {centerLevels
+                          .filter(level => level.isActive)
+                          .sort((a, b) => a.order - b.order)
+                          .map(level => (
+                            <option key={level._id} value={level.name}>
+                              {level.displayName}
+                            </option>
+                          ))}
+                      </select>
+                    ) : (
+                      <select
+                        id="newLevel"
+                        value={newLevel}
+                        onChange={(e) => setNewLevel(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">레벨 선택</option>
+                        <option value="beginner">초급</option>
+                        <option value="intermediate">중급</option>
+                        <option value="advanced">상급</option>
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                          센터 관리자는 강습법의 레벨만 수정할 수 있습니다. 다른 정보는 변경할 수 없습니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-6">
+                  <Button
+                    onClick={() => {
+                      setIsLevelEditModalOpen(false);
+                      setEditingLevelMethod(null);
+                      setNewLevel('');
+                    }}
+                    variant="outline"
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    onClick={handleLevelUpdate}
+                    disabled={!newLevel || newLevel === editingLevelMethod.level}
+                    className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400"
+                  >
+                    🎯 레벨 수정
+                  </Button>
                 </div>
               </div>
             </div>

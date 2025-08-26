@@ -9,19 +9,65 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // 센터별 레벨 목록 조회
-router.get('/center/:centerId', auth, async (req: AuthRequest, res: Response) => {
+router.get('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const { centerId } = req.params;
+    const { centerId } = req.user;
     
-    const levels = await CenterLevel.find({ 
-      centerId, 
-      isActive: true 
-    }).sort({ levelOrder: 1 });
+    if (!centerId && req.user.userType !== 'superAdmin') {
+      return res.status(403).json({
+        success: false,
+        message: '센터 정보가 없습니다.'
+      });
+    }
+
+    const query = req.user.userType === 'superAdmin' ? {} : { centerId };
     
+    const levels = await CenterLevel.find(query)
+      .sort({ order: 1, createdAt: 1 })
+      .select('-__v');
+
     res.json({
       success: true,
       message: '센터 레벨 목록 조회 성공!',
-      data: levels
+      data: levels,
+      total: levels.length
+    });
+  } catch (error) {
+    console.error('센터 레벨 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 레벨 목록을 불러오는 데 실패했습니다.'
+    });
+  }
+});
+
+// 특정 센터 레벨 조회
+router.get('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { centerId } = req.user;
+    
+    const level = await CenterLevel.findById(id).select('-__v');
+    
+    if (!level) {
+      return res.status(404).json({
+        success: false,
+        message: '센터 레벨을 찾을 수 없습니다.'
+      });
+    }
+
+    // 센터 관리자는 자신의 센터 레벨만 조회 가능
+    if (req.user.userType === 'centerAdmin' && level.centerId.toString() !== centerId) {
+      return res.status(403).json({
+        success: false,
+        message: '다른 센터의 레벨을 조회할 수 없습니다.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: '센터 레벨 조회 성공!',
+      data: level
     });
   } catch (error) {
     console.error('센터 레벨 조회 오류:', error);
@@ -32,50 +78,54 @@ router.get('/center/:centerId', auth, async (req: AuthRequest, res: Response) =>
   }
 });
 
-// 센터별 레벨 생성 (센터 관리자, 총관리자, 위임받은 강사만)
-router.post('/', auth, requireRole(['centerAdmin', 'superAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+// 센터 레벨 생성
+router.post('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const { centerId, levelName, levelOrder, levelColor, description } = req.body;
+    const { centerId } = req.user;
+    const { name, displayName, order, color, description } = req.body;
     
-    if (!centerId || !levelName || !levelOrder) {
-      return res.status(400).json({
-        success: false,
-        message: '필수 정보가 누락되었습니다.'
-      });
-    }
-    
-    // 권한 확인 (센터 관리자는 자신의 센터만, 강사는 센터에서 위임받은 경우만)
-    if (req.user?.userType === 'centerAdmin' && req.user?.centerId?.toString() !== centerId) {
+    if (!centerId && req.user.userType !== 'superAdmin') {
       return res.status(403).json({
         success: false,
-        message: '자신의 센터만 관리할 수 있습니다.'
+        message: '센터 정보가 없습니다.'
       });
     }
-    
-    // 강사인 경우 센터에서 레벨 관리 권한을 위임받았는지 확인
-    if (req.user?.userType === 'instructor') {
-      // TODO: 센터에서 강사에게 레벨 관리 권한을 위임했는지 확인하는 로직 필요
-      // 현재는 임시로 허용 (실제로는 권한 테이블에서 확인해야 함)
-      console.log(`🔐 강사 ${req.user.name}이 센터 ${centerId}의 레벨을 생성하려고 시도`);
+
+    // 필수 필드 검증
+    if (!name || !displayName || order === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '필수 필드가 누락되었습니다.'
+      });
     }
-    
-    const newLevel = new CenterLevel({
-      centerId,
-      levelName,
-      levelOrder,
-      levelColor: levelColor || 'bg-gray-500',
+
+    const levelData = {
+      centerId: req.user.userType === 'superAdmin' ? req.body.centerId : centerId,
+      name,
+      displayName,
+      order: parseInt(order),
+      color: color || 'blue',
       description
-    });
-    
+    };
+
+    const newLevel = new CenterLevel(levelData);
     await newLevel.save();
-    
+
     res.status(201).json({
       success: true,
-      message: '센터 레벨 생성 성공!',
+      message: '센터 레벨이 성공적으로 생성되었습니다.',
       data: newLevel
     });
   } catch (error) {
     console.error('센터 레벨 생성 오류:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 존재하는 레벨 이름이거나 순서입니다.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: '센터 레벨 생성에 실패했습니다.'
@@ -83,41 +133,59 @@ router.post('/', auth, requireRole(['centerAdmin', 'superAdmin', 'instructor']),
   }
 });
 
-// 센터별 레벨 수정 (센터 관리자, 총관리자, 위임받은 강사만)
-router.put('/:id', auth, requireRole(['centerAdmin', 'superAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+// 센터 레벨 수정
+router.put('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { levelName, levelOrder, levelColor, description } = req.body;
+    const { centerId } = req.user;
+    const { name, displayName, order, color, description, isActive } = req.body;
     
     const level = await CenterLevel.findById(id);
+    
     if (!level) {
       return res.status(404).json({
         success: false,
         message: '센터 레벨을 찾을 수 없습니다.'
       });
     }
-    
-    // 권한 확인 (센터 관리자는 자신의 센터만)
-    if (req.user?.userType === 'centerAdmin' && req.user?.centerId?.toString() !== level.centerId?.toString()) {
+
+    // 센터 관리자는 자신의 센터 레벨만 수정 가능
+    if (req.user.userType === 'centerAdmin' && level.centerId.toString() !== centerId) {
       return res.status(403).json({
         success: false,
-        message: '자신의 센터만 관리할 수 있습니다.'
+        message: '다른 센터의 레벨을 수정할 수 없습니다.'
       });
     }
-    
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (displayName !== undefined) updateData.displayName = displayName;
+    if (order !== undefined) updateData.order = parseInt(order);
+    if (color !== undefined) updateData.color = color;
+    if (description !== undefined) updateData.description = description;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
     const updatedLevel = await CenterLevel.findByIdAndUpdate(
       id,
-      { levelName, levelOrder, levelColor, description },
+      updateData,
       { new: true, runValidators: true }
-    );
-    
+    ).select('-__v');
+
     res.json({
       success: true,
-      message: '센터 레벨 수정 성공!',
+      message: '센터 레벨이 성공적으로 수정되었습니다.',
       data: updatedLevel
     });
   } catch (error) {
     console.error('센터 레벨 수정 오류:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 존재하는 레벨 이름이거나 순서입니다.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: '센터 레벨 수정에 실패했습니다.'
@@ -125,74 +193,40 @@ router.put('/:id', auth, requireRole(['centerAdmin', 'superAdmin', 'instructor']
   }
 });
 
-// 센터별 레벨 삭제 (센터 관리자, 총관리자, 위임받은 강사만)
-router.delete('/:id', auth, requireRole(['centerAdmin', 'superAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+// 센터 레벨 삭제
+router.delete('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const { centerId } = req.user;
     
     const level = await CenterLevel.findById(id);
+    
     if (!level) {
       return res.status(404).json({
         success: false,
         message: '센터 레벨을 찾을 수 없습니다.'
       });
     }
-    
-    // 권한 확인 (센터 관리자는 자신의 센터만)
-    if (req.user?.userType === 'centerAdmin' && req.user?.centerId?.toString() !== level.centerId?.toString()) {
+
+    // 센터 관리자는 자신의 센터 레벨만 삭제 가능
+    if (req.user.userType === 'centerAdmin' && level.centerId.toString() !== centerId) {
       return res.status(403).json({
         success: false,
-        message: '자신의 센터만 관리할 수 있습니다.'
+        message: '다른 센터의 레벨을 삭제할 수 없습니다.'
       });
     }
-    
+
     await CenterLevel.findByIdAndDelete(id);
-    
+
     res.json({
       success: true,
-      message: '센터 레벨 삭제 성공!'
+      message: '센터 레벨이 성공적으로 삭제되었습니다.'
     });
   } catch (error) {
     console.error('센터 레벨 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 레벨 삭제에 실패했습니다.'
-    });
-  }
-});
-
-// 기본 센터 레벨 생성 (총관리자만)
-router.post('/default/:centerId', auth, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
-  try {
-    const { centerId } = req.params;
-    
-    // 기존 레벨 삭제
-    await CenterLevel.deleteMany({ centerId });
-    
-    // 기본 레벨 생성
-    const defaultLevels = [
-      { levelName: '입문', levelOrder: 1, levelColor: 'bg-blue-500', description: '수영을 처음 시작하는 단계' },
-      { levelName: '기초', levelOrder: 2, levelColor: 'bg-indigo-500', description: '기본 동작을 배우는 단계' },
-      { levelName: '초급', levelOrder: 3, levelColor: 'bg-green-500', description: '초급 기술을 연마하는 단계' },
-      { levelName: '중급', levelOrder: 4, levelColor: 'bg-yellow-500', description: '중급 기술을 연마하는 단계' },
-      { levelName: '상급', levelOrder: 5, levelColor: 'bg-orange-500', description: '상급 기술을 연마하는 단계' },
-      { levelName: '마스터', levelOrder: 6, levelColor: 'bg-red-500', description: '마스터 수준의 기술을 구사하는 단계' }
-    ];
-    
-    const createdLevels = await CenterLevel.insertMany(
-      defaultLevels.map(level => ({ ...level, centerId }))
-    );
-    
-    res.status(201).json({
-      success: true,
-      message: '기본 센터 레벨 생성 성공!',
-      data: createdLevels
-    });
-  } catch (error) {
-    console.error('기본 센터 레벨 생성 오류:', error);
-    res.status(500).json({
-      success: false,
-      message: '기본 센터 레벨 생성에 실패했습니다.'
     });
   }
 });

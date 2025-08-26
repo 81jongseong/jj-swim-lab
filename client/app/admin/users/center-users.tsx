@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { Button, Input, Card, Badge } from '@/components/ui';
 
 interface User {
   _id: string;

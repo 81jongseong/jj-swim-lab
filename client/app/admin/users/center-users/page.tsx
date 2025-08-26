@@ -102,7 +102,6 @@ function CenterUsersPage() {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleSearch = () => {
@@ -110,110 +109,76 @@ function CenterUsersPage() {
   };
 
   const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
     loadUsers(page);
-  };
-
-  const filteredUsers = users.filter(user => {
-    console.log('🔍 필터링 중인 사용자:', {
-      name: user.name,
-      userType: user.userType,
-      isActive: user.isActive,
-      studentInfo: user.studentInfo,
-      instructorInfo: user.instructorInfo
-    });
-    
-    if (filters.userType && user.userType !== filters.userType) {
-      console.log('❌ 사용자 유형 필터링 제외:', user.name, user.userType, '!==', filters.userType);
-      return false;
-    }
-    
-    if (filters.level) {
-      // 사용자 유형에 따라 레벨 필드 확인
-      let userLevel = null;
-      if (user.userType === 'student' && user.studentInfo?.swimmingLevel) {
-        userLevel = user.studentInfo.swimmingLevel;
-      } else if (user.userType === 'instructor' && user.instructorInfo?.instructorLevel) {
-        userLevel = user.instructorInfo.instructorLevel;
-      } else if (user.level) {
-        userLevel = user.level;
-      }
-      
-      if (userLevel !== filters.level) {
-        console.log('❌ 레벨 필터링 제외:', user.name, userLevel, '!==', filters.level);
-        return false;
-      }
-    }
-    
-    if (filters.status !== 'all') {
-      if (filters.status === 'active' && !user.isActive) {
-        console.log('❌ 상태 필터링 제외 (비활성):', user.name);
-        return false;
-      }
-      if (filters.status === 'inactive' && user.isActive) {
-        console.log('❌ 상태 필터링 제외 (활성):', user.name);
-        return false;
-      }
-    }
-    
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      const matches = (
-        user.name.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower) ||
-        user.phone.includes(searchLower)
-      );
-      if (!matches) {
-        console.log('❌ 검색 필터링 제외:', user.name, '검색어:', filters.search);
-        return false;
-      }
-    }
-    
-    console.log('✅ 필터링 통과:', user.name);
-    return true;
-  });
-  
-  console.log('📊 필터링 결과:', {
-    전체사용자: users.length,
-    필터링된사용자: filteredUsers.length,
-    필터: filters
-  });
-  
-  // 테이블 렌더링 디버깅
-  console.log('🔍 테이블 렌더링 정보:', {
-    filteredUsersLength: filteredUsers.length,
-    filteredUsersData: filteredUsers,
-    tableBody: filteredUsers.map(user => ({
-      id: user._id,
-      name: user.name,
-      userType: user.userType
-    }))
-  });
-
-  const getUserTypeLabel = (userType: string) => {
-    switch (userType) {
-      case 'student': return '회원';
-      case 'instructor': return '강사';
-      default: return userType;
-    }
-  };
-
-  const getLevelLabel = (level: string) => {
-    switch (level) {
-      case 'beginner': return '초급';
-      case 'intermediate': return '중급';
-      case 'advanced': return '상급';
-      default: return level;
-    }
   };
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
-      <Badge variant="success">활성</Badge>
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+        활성
+      </span>
     ) : (
-      <Badge variant="destructive">비활성</Badge>
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+        비활성
+      </span>
     );
   };
+
+  const getUserTypeLabel = (userType: string) => {
+    return userType === 'instructor' ? '강사' : '회원';
+  };
+
+  const getLevelLabel = (level: string) => {
+    const levelMap: { [key: string]: string } = {
+      'beginner': '초급',
+      'intermediate': '중급',
+      'advanced': '상급',
+    };
+    return levelMap[level] || level;
+  };
+
+  // 필터링된 사용자 목록
+  const filteredUsers = users.filter(user => {
+    if (filters.userType && user.userType !== filters.userType) return false;
+    if (filters.level && user.level !== filters.level) return false;
+    if (filters.status !== 'all') {
+      if (filters.status === 'active' && !user.isActive) return false;
+      if (filters.status === 'inactive' && user.isActive) return false;
+    }
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      return (
+        user.name.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        user.phone.includes(searchLower)
+      );
+    }
+    return true;
+  });
+
+  console.log('🔍 필터링 결과:', {
+    전체사용자: users.length,
+    필터링된사용자: filteredUsers.length,
+    필터: filters
+  });
+
+  // 테이블 렌더링 정보 로깅
+  const tableBody = filteredUsers.map(user => ({
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    userType: user.userType,
+    level: user.level,
+    isActive: user.isActive,
+    createdAt: user.createdAt
+  }));
+
+  console.log('🔍 테이블 렌더링 정보:', {
+    filteredUsersLength: filteredUsers.length,
+    filteredUsersData: tableBody,
+    tableBody: tableBody
+  });
 
   if (loading) {
     return (
@@ -332,23 +297,8 @@ function CenterUsersPage() {
                       {getUserTypeLabel(user.userType)}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {(() => {
-                      let userLevel = null;
-                      if (user.userType === 'student' && user.studentInfo?.swimmingLevel) {
-                        userLevel = user.studentInfo.swimmingLevel;
-                      } else if (user.userType === 'instructor' && user.instructorInfo?.instructorLevel) {
-                        userLevel = user.instructorInfo.instructorLevel;
-                      } else if (user.level) {
-                        userLevel = user.level;
-                      }
-                      
-                      return userLevel ? (
-                        <Badge variant="outline">
-                          {getLevelLabel(userLevel)}
-                        </Badge>
-                      ) : null;
-                    })()}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {getLevelLabel(user.level || 'beginner')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(user.isActive)}
@@ -364,6 +314,7 @@ function CenterUsersPage() {
                         setEditingUser(user);
                         setShowEditModal(true);
                       }}
+                      className="mr-2"
                     >
                       수정
                     </Button>
@@ -377,48 +328,74 @@ function CenterUsersPage() {
 
       {/* 페이지네이션 */}
       {pagination.pages > 1 && (
-        <div className="flex justify-center">
-          <nav className="flex space-x-2">
-            {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === pagination.page ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </Button>
-            ))}
-          </nav>
-        </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              총 {pagination.total}명의 사용자
+            </div>
+            <div className="flex space-x-2">
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === pagination.page ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* 통계 정보 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {users.filter(u => u.userType === 'instructor').length}
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
             </div>
-            <div className="text-sm text-gray-600">전체 강사</div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">전체 강사</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {users.filter(u => u.userType === 'instructor').length}명
+              </p>
+            </div>
           </div>
         </Card>
-        
+
         <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {users.filter(u => u.userType === 'student').length}
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
             </div>
-            <div className="text-sm text-gray-600">전체 회원</div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">전체 회원</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {users.filter(u => u.userType === 'student').length}명
+              </p>
+            </div>
           </div>
         </Card>
-        
+
         <Card className="p-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {users.filter(u => u.isActive).length}
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div className="text-sm text-gray-600">활성 사용자</div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">활성 사용자</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {users.filter(u => u.isActive).length}명
+              </p>
+            </div>
           </div>
         </Card>
       </div>
@@ -426,4 +403,4 @@ function CenterUsersPage() {
   );
 }
 
-export default withAuth(CenterUsersPage, ['centerAdmin']);
+export default withAuth(CenterUsersPage);
