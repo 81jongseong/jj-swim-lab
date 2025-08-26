@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/hooks/useAuth'
 import SimpleNavigation from '../components/SimpleNavigation'
+import TopNavigation from '../components/TopNavigation'
 // import EnhancedOfflineIndicator from '../components/EnhancedOfflineIndicator'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'
 // import ServiceWorkerRegistration from './sw-register'
@@ -123,7 +124,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <SimpleNavigation />
+          <TopNavigation />
           <main>
             {children}
           </main>

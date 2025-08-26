@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
 
 interface NavigationItem {
@@ -92,7 +93,7 @@ export default function TopNavigation() {
 
   const currentNavigationItems = getNavigationItems();
 
-  // 카테고리별로 메뉴 그룹화
+  // 카테고리별로 메뉴 그룹화 (데스크톱용)
   const groupNavigationItems = (items: any[]) => {
     const grouped = items.reduce((acc, item) => {
       const category = item.category || 'other';
@@ -133,47 +134,58 @@ export default function TopNavigation() {
     setActiveDropdown(null);
   };
 
+  const handleMobileMenuItemClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <nav className="bg-white border-b border-gray-200 px-4 lg:px-6">
+    <nav className="bg-white border-b border-gray-200 px-3 lg:px-4 relative">
       <div className="flex items-center justify-between h-16">
-        {/* 로고 */}
-        <div className="flex items-center space-x-4">
+        {/* 로고 - 컴팩트하게 */}
+        <div className="flex items-center space-x-2">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">J</span>
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center overflow-hidden">
+              <Image
+                src="/swim-icon.png"
+                alt="JJ Swim Lab"
+                width={28}
+                height={28}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
-            <span className="font-bold text-xl text-gray-900">JJ Swim Lab</span>
+            <span className="font-bold text-lg text-gray-900">JJ Swim Lab</span>
           </Link>
         </div>
 
-        {/* 데스크톱 네비게이션 */}
+        {/* 데스크톱 네비게이션 - 컴팩트하게 */}
         <div ref={dropdownRef} className="hidden lg:flex items-center space-x-1">
           {Object.entries(groupedItems).map(([category, items]) => (
             <div key={category} className="relative">
               <button
                 onClick={() => handleDropdownToggle(category)}
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                className="flex items-center space-x-1 px-2 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 whitespace-nowrap"
               >
-                <span className="text-lg">{getCategoryInfo(category).icon}</span>
-                <span>{getCategoryInfo(category).title}</span>
-                <svg className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === category ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="text-base">{getCategoryInfo(category).icon}</span>
+                <span className="truncate">{getCategoryInfo(category).title}</span>
+                <svg className={`w-3 h-3 transition-transform duration-200 ${activeDropdown === category ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {/* 드롭다운 메뉴 */}
               {activeDropdown === category && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <div className="py-2">
                     {(items as any[]).map((item: any) => (
                       <Link
                         key={item.name}
                         href={item.href}
                         onClick={closeAllDropdowns}
-                        className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
+                        className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
                       >
-                        <span className="text-lg">{item.icon}</span>
-                        <span>{item.name}</span>
+                        <span className="text-base">{item.icon}</span>
+                        <span className="truncate">{item.name}</span>
                       </Link>
                     ))}
                   </div>
@@ -183,64 +195,52 @@ export default function TopNavigation() {
           ))}
         </div>
 
-        {/* 사용자 정보 및 알림 */}
-        <div className="flex items-center space-x-4">
-          {/* 알림 */}
-          <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </button>
-
+        {/* 사용자 정보 및 모바일 메뉴 버튼 - 컴팩트하게 */}
+        <div className="flex items-center space-x-2">
           {/* 사용자 프로필 */}
           {user && (
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-xs">
                   {user.name?.charAt(0) || 'U'}
                 </span>
               </div>
-              <span className="text-sm font-medium text-gray-700">{user.name}님</span>
+              <span className="text-sm font-medium text-gray-700 hidden lg:block">
+                {user.name?.length > 8 ? `${user.name.substring(0, 8)}...` : user.name}님
+              </span>
             </div>
           )}
+
+          {/* 모바일 메뉴 버튼 */}
+          <div className="lg:hidden">
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              aria-label="메뉴 열기/닫기"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
-              {/* 모바일 메뉴 버튼 */}
-        <div className="lg:hidden">
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* 모바일 메뉴 */}
+      {/* 모바일 메뉴 - 햄버거 버튼 바로 아래에 위치하고 그룹화 제거 */}
       {isMobileMenuOpen && (
-        <div ref={mobileMenuRef} className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
-          <div className="px-4 py-2 space-y-1">
-            {Object.entries(groupedItems).map(([category, items]) => (
-              <div key={category} className="py-2">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">
-                  {getCategoryInfo(category).icon} {getCategoryInfo(category).title}
-                </div>
-                {(items as any[]).map((item: any) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
-              </div>
+        <div ref={mobileMenuRef} className="lg:hidden absolute top-16 right-2 bg-white border border-gray-200 shadow-lg max-h-64 w-64 overflow-y-auto rounded-lg z-50">
+          <div className="py-2">
+            {/* 그룹화 없이 모든 메뉴 항목을 단순 리스트로 */}
+            {currentNavigationItems.map((item: any) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={handleMobileMenuItemClick}
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150"
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="truncate">{item.name}</span>
+              </Link>
             ))}
           </div>
         </div>
