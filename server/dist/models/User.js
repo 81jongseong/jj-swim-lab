@@ -73,6 +73,7 @@ const userSchema = new mongoose_1.default.Schema({
             default: 'junior'
         },
         assignedCenters: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'SwimmingCenter' }],
+        assignedInstructor: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
         maxStudents: { type: Number, default: 20 },
         currentStudents: { type: Number, default: 0 },
     },

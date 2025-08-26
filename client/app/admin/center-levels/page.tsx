@@ -359,7 +359,7 @@ export default function CenterLevelsPage() {
                       <Input
                         id="order"
                         type="number"
-                        value={formData.order}
+                        value={formData.order.toString()}
                         onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
                         min="0"
                         required

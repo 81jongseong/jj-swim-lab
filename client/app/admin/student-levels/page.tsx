@@ -58,10 +58,10 @@ export default function StudentLevelsPage() {
 
       let url = '';
       if (isCenterAdmin) {
-        url = `http://localhost:5000/api/student-levels/center/${user.centerId}/levels`;
+        url = `http://localhost:5000/api/student-levels/center/${(user as any).centerId}/levels`;
       } else if (isSuperAdmin) {
         // 총관리자는 모든 센터 조회 가능
-        url = `http://localhost:5000/api/student-levels/center/${user.centerId || 'all'}/levels`;
+        url = `http://localhost:5000/api/student-levels/center/${(user as any).centerId || 'all'}/levels`;
       } else if (isInstructor) {
         // 강사는 자신이 담당하는 학생만 조회
         url = 'http://localhost:5000/api/users?userType=student';

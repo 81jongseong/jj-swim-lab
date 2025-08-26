@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/utils/api";
 import withAuth from "@/components/withAuth";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 interface CenterStats {
   totalInstructors: number;
@@ -209,4 +209,4 @@ function CenterDashboard() {
   );
 }
 
-export default withAuth(CenterDashboard, ['centerAdmin']);
+export default withAuth(CenterDashboard, { requireTypes: ['centerAdmin'] });

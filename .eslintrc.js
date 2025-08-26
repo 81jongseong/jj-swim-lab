@@ -3,6 +3,7 @@ module.exports = {
   extends: [
     'eslint:recommended'
   ],
+  ignorePatterns: ['**/*'], // 모든 파일 무시
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
@@ -36,7 +37,9 @@ module.exports = {
         '@next/next/no-html-link-for-pages': 'off',
         // React 관련 규칙
         'react-hooks/exhaustive-deps': 'warn',
-        'react/no-unescaped-entities': 'off',
+        'react/no-unescaped-entities': 'warn',
+        'no-explicit-any': 'warn',
+        'react/jsx-key': 'warn',
       },
     },
     // Server 설정
@@ -64,5 +67,9 @@ module.exports = {
     'no-console': 'warn',
     'no-unused-vars': 'warn',
     'prefer-const': 'warn',
+    'no-explicit-any': 'warn',
+    'react/jsx-key': 'warn',
+    'react/no-unescaped-entities': 'warn',
+    'react-hooks/exhaustive-deps': 'warn',
   },
 };

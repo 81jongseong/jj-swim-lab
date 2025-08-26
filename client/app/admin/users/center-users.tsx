@@ -211,7 +211,7 @@ function CenterUsersPage() {
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
-      <Badge variant="success">활성</Badge>
+      <Badge variant="default">활성</Badge>
     ) : (
       <Badge variant="destructive">비활성</Badge>
     );
@@ -428,4 +428,4 @@ function CenterUsersPage() {
   );
 }
 
-export default withAuth(CenterUsersPage, ['centerAdmin']);
+export default withAuth(CenterUsersPage, { requireTypes: ['centerAdmin'] });

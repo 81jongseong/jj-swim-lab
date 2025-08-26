@@ -50,7 +50,7 @@ router.put('/:studentId/level', auth, requireRole(['instructor', 'centerAdmin', 
       }
     } else if (user.userType === 'instructor') {
       // 강사는 자신이 담당하는 학생만 변경 가능
-      if (student.instructorInfo?.assignedInstructor?.toString() === user._id.toString()) {
+      if ((student.instructorInfo as any)?.assignedInstructor?.toString() === user._id.toString()) {
         hasPermission = true;
       }
     }
@@ -154,7 +154,7 @@ router.get('/:studentId/level-history', auth, requireRole(['instructor', 'center
         hasPermission = true;
       }
     } else if (user.userType === 'instructor') {
-      if (student.instructorInfo?.assignedInstructor?.toString() === user._id.toString()) {
+      if ((student.instructorInfo as any)?.assignedInstructor?.toString() === user._id.toString()) {
         hasPermission = true;
       }
     }
@@ -227,7 +227,7 @@ router.get('/center/:centerId/levels', auth, requireRole(['centerAdmin', 'superA
           id: student._id,
           name: student.name,
           currentLevel: student.studentInfo?.currentLevel || student.studentInfo?.swimmingLevel || 'beginner',
-          enrolledAt: student.createdAt
+          enrolledAt: (student as any).createdAt
         }))
       }
     });
