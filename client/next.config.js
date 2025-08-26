@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 정적 파일 경로 설정
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  assetPrefix: undefined,
+  
+  // 정적 파일 처리
+  trailingSlash: false,
+  generateEtags: false,
   
   // 성능 최적화
   experimental: {

@@ -1,13 +1,13 @@
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 
 interface InputProps {
   id?: string;
   name?: string;
   type?: string;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: any) => void;
   placeholder?: string;
   className?: string;
   required?: boolean;
@@ -15,9 +15,9 @@ interface InputProps {
   min?: string | number;
   max?: string | number;
   step?: string | number;
-  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyPress?: (e: any) => void;
+  onKeyDown?: (e: any) => void;
+  onKeyUp?: (e: any) => void;
 }
 
 const Input: React.FC<InputProps> = ({ 

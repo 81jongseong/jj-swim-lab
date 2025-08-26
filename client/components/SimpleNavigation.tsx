@@ -6,12 +6,13 @@ import { useAuth } from '../hooks/useAuth';
 export default function SimpleNavigation() {
   const { user } = useAuth();
 
-  // 기본 메뉴 (모든 사용자)
-  const baseMenu = [
-    { href: '/', label: '홈' },
-    { href: '/about', label: '소개' },
-    { href: '/community', label: '커뮤니티' },
-  ];
+            // 기본 메뉴 (모든 사용자)
+          const baseMenu = [
+            { href: '/', label: '홈' },
+            { href: '/about', label: '소개' },
+            { href: '/community', label: '커뮤니티' },
+            { href: '/install', label: '📱 앱 설치' },
+          ];
 
   // 로그인한 사용자용 메뉴
   const userMenu = [

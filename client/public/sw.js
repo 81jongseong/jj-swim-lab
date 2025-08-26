@@ -1,17 +1,12 @@
-const CACHE_NAME = 'jj-swim-lab-v1';
+const CACHE_NAME = 'jj-swim-lab-v2.1.0';
 const urlsToCache = [
   '/',
-  '/dashboard',
-  '/ai-analysis',
-  '/health',
-  '/uploads',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
+  '/offline',
   '/manifest.json',
   '/icons/manifest-icon-192.maskable.png',
   '/icons/manifest-icon-512.maskable.png',
-  '/icons/apple-icon-180.png',
-  '/icons/favicon-196.png'
+  '/icons/favicon-196.png',
+  '/icons/apple-icon-180.png'
 ];
 
 // Service Worker 설치
@@ -27,12 +22,12 @@ self.addEventListener('install', (event) => {
 
 // Service Worker 활성화
 self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
@@ -59,22 +54,22 @@ self.addEventListener('fetch', (event) => {
               return response;
             }
 
-            // 응답을 복제하여 캐시에 저장
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            // 응답을 복제하여 캐시에 저장 (완전 비활성화)
+            // const responseToCache = response.clone();
+            // caches.open(CACHE_NAME)
+            //   .then((cache) => {
+            //     cache.put(event.request, responseToCache);
+            //   });
+            console.log('Service Worker 캐시 비활성화됨');
 
             return response;
           }
-        );
-      })
-      .catch(() => {
-        // 오프라인 상태에서 기본 페이지 반환
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
+        ).catch(() => {
+          // Network failed, return offline page for navigation requests
+          if (event.request.mode === 'navigate') {
+            return caches.match('/offline');
+          }
+        });
       })
   );
 });
@@ -89,28 +84,23 @@ self.addEventListener('sync', (event) => {
 // 백그라운드 동기화 작업
 async function doBackgroundSync() {
   try {
-    // IndexedDB에서 저장된 데이터 가져오기
-    const db = await openDB('jj-swim-lab', 1);
-    const offlineData = await db.getAll('offline-data');
-    
-    // 네트워크가 복구되면 데이터 동기화
-    for (const data of offlineData) {
-      try {
-        await fetch(data.url, {
-          method: data.method,
-          headers: data.headers,
-          body: data.body
-        });
-        
-        // 성공적으로 동기화된 데이터 삭제
-        await db.delete('offline-data', data.id);
-      } catch (error) {
-        console.error('Background sync failed:', error);
-      }
+    const offlineData = await getOfflineData();
+    if (offlineData.length > 0) {
+      await syncOfflineData(offlineData);
     }
   } catch (error) {
-    console.error('Background sync error:', error);
+    console.error('Background sync failed:', error);
   }
+}
+
+async function getOfflineData() {
+  // IndexedDB에서 오프라인 데이터 가져오기 (Placeholder for now, actual implementation in useOffline hook)
+  return [];
+}
+
+async function syncOfflineData(data) {
+  // 서버에 데이터 동기화 (Placeholder for now, actual implementation in useOffline hook)
+  console.log('Syncing offline data:', data);
 }
 
 // 푸시 알림 처리
