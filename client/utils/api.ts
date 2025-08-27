@@ -365,29 +365,48 @@ class ApiClient {
   }
 
   // ===== 커뮤니티 API =====
-  async getCommunityPosts(params?: { category?: string; author?: string }): Promise<any> {
+  async getCommunityPosts(params?: { q?: string; tag?: string; category?: string }): Promise<any> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return this.request(`/api/community${queryString}`);
+    // Next.js API 라우트 사용
+    return fetch(`/api/community${queryString}`).then(res => res.json());
   }
 
   async createCommunityPost(postData: any): Promise<any> {
-    return this.request('/api/community', {
+    return fetch('/api/community', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(postData),
-    });
+    }).then(res => res.json());
   }
 
   async updateCommunityPost(id: string, postData: any): Promise<any> {
-    return this.request(`/api/community/${id}`, {
+    return fetch(`/api/community/${id}`, {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(postData),
-    });
+    }).then(res => res.json());
   }
 
   async deleteCommunityPost(id: string): Promise<any> {
-    return this.request(`/api/community/${id}`, {
+    return fetch(`/api/community/${id}`, {
       method: 'DELETE',
-    });
+    }).then(res => res.json());
+  }
+
+  async getCommunityPost(id: string): Promise<any> {
+    return fetch(`/api/community/${id}`).then(res => res.json());
+  }
+
+  async getCommunityComments(postId: string): Promise<any> {
+    return fetch(`/api/community/${postId}/comments`).then(res => res.json());
+  }
+
+  async createCommunityComment(postId: string, commentData: any): Promise<any> {
+    return fetch(`/api/community/${postId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(commentData),
+    }).then(res => res.json());
   }
 
   // ===== 쇼핑몰 API =====

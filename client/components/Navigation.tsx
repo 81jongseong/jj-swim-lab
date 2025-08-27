@@ -46,6 +46,7 @@ export default function Navigation() {
       { href: '/news', label: '📢 공지사항' },
       { href: '/quiz', label: '🧠 퀴즈 체험' },
       { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
+      { href: '/3d-swimming', label: '🎯 3D 자세 분석' },
       { href: '/health', label: '💪 건강관리 체험' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/community', label: '💬 커뮤니티' },
@@ -64,6 +65,7 @@ export default function Navigation() {
       { href: '/uploads', label: '영상 업로드' },
       { href: '/map', label: '지도' },
       { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/3d-swimming', label: '🎯 3D 자세 분석' },
       { href: '/health', label: '💪 건강관리' },
       { href: '/(labs)/animation', label: '애니메이션' },
       { href: '/about', label: '소개' },
@@ -81,6 +83,7 @@ export default function Navigation() {
       { href: '/instructor/reviews', label: '업로드 리뷰' },
       { href: '/quiz', label: '퀴즈' },
       { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/3d-swimming', label: '🎯 3D 자세 분석' },
       { href: '/health', label: '💪 건강관리' },
       { href: '/about', label: '소개' },
       { href: '/news', label: '공지사항' },
@@ -100,6 +103,8 @@ export default function Navigation() {
       { href: '/admin/lesson-plans', label: '강습 계획 관리' },
       { href: '/admin/quiz', label: '퀴즈 관리' },
       { href: '/admin/reports', label: '리포트' },
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/3d-swimming', label: '🎯 3D 자세 분석' },
       { href: '/about', label: '소개' },
       { href: '/news', label: '공지사항' },
       { href: '/shop', label: '상점' },
@@ -119,6 +124,8 @@ export default function Navigation() {
       { href: '/admin/quiz', label: '퀴즈 관리' },
       { href: '/admin/ai-config', label: 'AI 설정' },
       { href: '/admin/reports', label: '리포트' },
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/3d-swimming', label: '🎯 3D 자세 분석' },
       { href: '/about', label: '소개' },
       { href: '/news', label: '공지사항' },
       { href: '/shop', label: '상점' },
@@ -127,9 +134,48 @@ export default function Navigation() {
   };
 
         const currentMenu = filterMenuByPermissions(menuItems[user?.userType || 'guest'] || menuItems.guest, user?.userType || 'guest');
+        
+        // 디버깅용 로그 (개발 완료 후 제거)
+        console.log('🔍 Navigation Debug:', {
+          userType: user?.userType,
+          hasSuperAdmin: hasUserType('superAdmin'),
+          hasCenterAdmin: hasUserType('centerAdmin'),
+          hasInstructor: hasUserType('instructor'),
+          currentMenuLength: currentMenu.length,
+          currentMenu: currentMenu.map(item => ({ href: item.href, label: item.label }))
+        });
+        
+        // 렌더링 상태 확인
+        console.log('🔍 렌더링 상태:', {
+          isLoggedIn,
+          userName,
+          currentMenu: currentMenu,
+          menuItemsKeys: Object.keys(menuItems),
+          selectedMenuType: user?.userType || 'guest'
+        });
+        
+        // 메뉴 렌더링 디버깅
+        console.log('🔍 메뉴 렌더링 디버깅:', {
+          currentMenuLength: currentMenu.length,
+          firstMenuItem: currentMenu[0],
+          lastMenuItem: currentMenu[currentMenu.length - 1],
+          allMenuLabels: currentMenu.map(item => item.label)
+        });
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+      {/* 간단한 테스트 메뉴 */}
+      <div style={{ 
+        background: 'red', 
+        color: 'white', 
+        padding: '10px', 
+        textAlign: 'center', 
+        fontSize: '18px',
+        fontWeight: 'bold'
+      }}>
+        🔴 테스트: 네비게이션이 보입니다! 현재 메뉴 개수: {currentMenu.length}개
+      </div>
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
@@ -147,29 +193,68 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-8">
-            {currentMenu.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
-                  pathname === item.href ? 'text-blue-600 font-semibold' : ''
-                }`}
-              >
-                {item.label}
-              </Link>
+          <div className="flex items-center space-x-8" style={{ border: '2px solid red', padding: '10px' }}>
+            {/* 강제 메뉴 표시 테스트 */}
+            <div style={{ 
+              background: 'yellow', 
+              color: 'black', 
+              padding: '5px', 
+              margin: '0 5px',
+              borderRadius: '3px',
+              fontSize: '12px'
+            }}>
+              🟡 메뉴 컨테이너
+            </div>
+            
+            {currentMenu.map((item, index) => (
+              <div key={item.href} style={{ 
+                background: 'lightblue', 
+                color: 'black', 
+                padding: '5px 10px', 
+                margin: '0 2px',
+                borderRadius: '3px',
+                border: '1px solid blue'
+              }}>
+                <Link
+                  href={item.href}
+                  className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                    pathname === item.href ? 'text-blue-600 font-semibold' : ''
+                  }`}
+                  style={{ textDecoration: 'none', color: 'black' }}
+                >
+                  {item.label}
+                </Link>
+              </div>
             ))}
           </div>
 
           {/* User Menu and Actions */}
-          <div className="flex items-center space-x-4">
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1rem',
+            visibility: 'visible', 
+            opacity: 1 
+          }}>
             {isLoggedIn ? (
               <>
-                <div className="hidden md:flex items-center space-x-2">
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  visibility: 'visible', 
+                  opacity: 1 
+                }}>
                   <NotificationsBell />
                   <SmartNotifications userId={user?._id || ''} userType={user?.userType || 'guest'} />
                 </div>
-                <div className="hidden md:flex items-center space-x-2">
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  visibility: 'visible', 
+                  opacity: 1 
+                }}>
                   <span className="text-sm text-gray-700">{userName}님</span>
                   <button
                     onClick={handleLogout}
@@ -180,7 +265,13 @@ export default function Navigation() {
                 </div>
               </>
             ) : (user?.userType || 'guest') === 'guest' ? (
-              <div className="hidden md:flex items-center space-x-3">
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.75rem',
+                visibility: 'visible', 
+                opacity: 1 
+              }}>
                 <Link
                   href="/auth/login"
                   className="text-gray-700 hover:text-blue-600 transition-colors font-medium"

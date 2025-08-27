@@ -36,6 +36,10 @@ function QuizPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingQuiz, setDeletingQuiz] = useState<Quiz | null>(null);
 
   useEffect(() => {
     loadData();
@@ -93,6 +97,56 @@ function QuizPage() {
       console.error('데이터 로드 실패:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 퀴즈 수정 함수
+  const handleEditQuiz = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    setShowEditModal(true);
+  };
+
+  // 퀴즈 삭제 확인 함수
+  const handleDeleteQuiz = (quiz: Quiz) => {
+    setDeletingQuiz(quiz);
+    setShowDeleteConfirm(true);
+  };
+
+  // 퀴즈 삭제 실행 함수
+  const confirmDeleteQuiz = async () => {
+    if (!deletingQuiz) return;
+
+    try {
+      // 실제 API 호출 대신 로컬 상태에서 제거
+      setQuizzes(prev => prev.filter(q => q._id !== deletingQuiz._id));
+      
+      // 성공 메시지 표시 (실제로는 toast 라이브러리 사용 권장)
+      alert(`${deletingQuiz.title} 퀴즈가 삭제되었습니다.`);
+      
+      setShowDeleteConfirm(false);
+      setDeletingQuiz(null);
+    } catch (error) {
+      console.error('퀴즈 삭제 실패:', error);
+      alert('퀴즈 삭제에 실패했습니다.');
+    }
+  };
+
+  // 퀴즈 수정 저장 함수
+  const handleSaveQuiz = async (updatedQuiz: Quiz) => {
+    try {
+      // 실제 API 호출 대신 로컬 상태 업데이트
+      setQuizzes(prev => prev.map(q => 
+        q._id === updatedQuiz._id ? updatedQuiz : q
+      ));
+      
+      // 성공 메시지 표시
+      alert('퀴즈가 수정되었습니다.');
+      
+      setShowEditModal(false);
+      setEditingQuiz(null);
+    } catch (error) {
+      console.error('퀴즈 수정 실패:', error);
+      alert('퀴즈 수정에 실패했습니다.');
     }
   };
 
@@ -251,10 +305,16 @@ function QuizPage() {
                 </div>
                 
                 <div className="flex space-x-2">
-                  <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                  <button 
+                    onClick={() => handleEditQuiz(quiz)}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
                     수정
                   </button>
-                  <button className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                  <button 
+                    onClick={() => handleDeleteQuiz(quiz)}
+                    className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                  >
                     삭제
                   </button>
                 </div>
@@ -322,6 +382,138 @@ function QuizPage() {
                 ? (quizzes.length === 0 ? '등록된 퀴즈가 없습니다.' : '검색 결과가 없습니다.')
                 : (quizAttempts.length === 0 ? '퀴즈 시도 기록이 없습니다.' : '검색 결과가 없습니다.')
               }
+            </div>
+          </div>
+        )}
+
+        {/* 퀴즈 수정 모달 */}
+        {showEditModal && editingQuiz && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-xl font-bold mb-4">퀴즈 수정</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                  <input
+                    type="text"
+                    value={editingQuiz.title}
+                    onChange={(e) => setEditingQuiz({...editingQuiz, title: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                  <textarea
+                    value={editingQuiz.description}
+                    onChange={(e) => setEditingQuiz({...editingQuiz, description: e.target.value})}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                    <select
+                      value={editingQuiz.category}
+                      onChange={(e) => setEditingQuiz({...editingQuiz, category: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {categories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>
+                    <select
+                      value={editingQuiz.type}
+                      onChange={(e) => setEditingQuiz({...editingQuiz, type: e.target.value})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {types.map(type => (
+                        <option key={type} value={type}>{getTypeText(type)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">제한시간 (분)</label>
+                    <input
+                      type="number"
+                      value={editingQuiz.timeLimit}
+                      onChange={(e) => setEditingQuiz({...editingQuiz, timeLimit: parseInt(e.target.value)})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">합격 점수</label>
+                    <input
+                      type="number"
+                      value={editingQuiz.passingScore}
+                      onChange={(e) => setEditingQuiz({...editingQuiz, passingScore: parseInt(e.target.value)})}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={editingQuiz.isActive}
+                    onChange={(e) => setEditingQuiz({...editingQuiz, isActive: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <label htmlFor="isActive" className="text-sm font-medium text-gray-700">활성화</label>
+                </div>
+              </div>
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => handleSaveQuiz(editingQuiz)}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  저장
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingQuiz(null);
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 퀴즈 삭제 확인 모달 */}
+        {showDeleteConfirm && deletingQuiz && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ 퀴즈 삭제</h3>
+              <p className="text-gray-700 mb-6">
+                <strong>"{deletingQuiz.title}"</strong> 퀴즈를 정말로 삭제하시겠습니까?<br />
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={confirmDeleteQuiz}
+                  className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                >
+                  삭제
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingQuiz(null);
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  취소
+                </button>
+              </div>
             </div>
           </div>
         )}

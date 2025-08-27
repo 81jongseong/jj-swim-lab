@@ -59,7 +59,9 @@ export default function AdvancedAIAnalysisPage() {
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-3xl mb-2">{style.icon}</div>
+                    <div className="mb-2">
+                      <img src="/swim-icon.png" alt={style.name} className="w-12 h-12 mx-auto" />
+                    </div>
                     <div className="font-semibold text-gray-800">{style.name}</div>
                     <div className="text-xs text-gray-600 mt-1">{style.description}</div>
                   </div>

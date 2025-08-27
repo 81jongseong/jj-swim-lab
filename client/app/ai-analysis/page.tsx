@@ -7,6 +7,7 @@ import AdvancedPoseAnalysis from '../../components/AdvancedPoseAnalysis';
 import AdvancedMoveNetAnalysis from '../../components/AdvancedMoveNetAnalysis';
 import PerformanceOptimizer from '../../components/PerformanceOptimizer';
 import AIOptimizer from '../../components/AIOptimizer';
+import Link from 'next/link';
 
 interface AnalysisResult {
   confidence: number;
@@ -107,16 +108,61 @@ export default function AIAnalysisPage() {
     { id: 'ai-optimizer', label: 'AI 최적화', icon: '🧠' }
   ];
 
+  const analysisOptions = [
+    {
+      id: 'realtime',
+      label: '실시간 자세 분석',
+      description: '실시간 카메라 피드에서 수영 자세를 분석합니다.',
+      href: '#realtime',
+    },
+    {
+      id: 'advanced',
+      label: '고급 AI 자세 분석',
+      description: '더 정교한 머신러닝 모델을 사용하여 수영 자세를 분석합니다.',
+      href: '#advanced',
+    },
+    {
+      id: 'movenet',
+      label: 'MoveNet 고급 자세 분석',
+      description: '최신 MoveNet 모델을 활용하여 수영 자세를 분석합니다.',
+      href: '#movenet',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            🤖 AI 수영 자세 분석 시스템
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
+            <img src="/swim-icon.png" alt="AI 분석" className="w-12 h-12 mr-3" />
+            AI 수영 자세 분석 시스템
           </h1>
-          <p className="text-xl text-gray-600">
-            실시간 자세 분석부터 고급 AI 학습까지, 모든 것을 한 곳에서
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            최첨단 AI 기술로 수영 자세를 분석하고 개선점을 제안합니다
           </p>
+        </div>
+
+        {/* 분석 옵션 선택 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {analysisOptions.map((option) => (
+            <Link
+              key={option.id}
+              href={option.href}
+              className="group block"
+            >
+              <div className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:from-blue-200 group-hover:to-indigo-200 transition-colors">
+                  <img src="/swim-icon.png" alt={option.label} className="w-12 h-12" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
+                  {option.label}
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {option.description}
+                </p>
+              </div>
+            </Link>
+          ))}
         </div>
 
         {/* 탭 네비게이션 */}

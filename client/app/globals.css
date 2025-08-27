@@ -37,4 +37,11 @@
   }
 }
 
+/* 간단한 메뉴 표시 - 네비게이션 문제 해결용 */
+.force-show-menu {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 

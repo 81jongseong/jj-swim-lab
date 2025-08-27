@@ -58,7 +58,7 @@ export default function LandingPage() {
               className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
             >
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
-                <span className="text-3xl">🤖</span>
+                <img src="/swim-icon.png" alt="AI 강습법" className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-4">AI 기반 강습법</h3>
               <p className="text-muted-foreground mb-6">
@@ -77,7 +77,7 @@ export default function LandingPage() {
               className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
             >
               <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-secondary/20 transition-colors">
-                <span className="text-3xl">❓</span>
+                <img src="/swim-icon.png" alt="퀴즈" className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-4">인터랙티브 퀴즈</h3>
               <p className="text-muted-foreground mb-6">
@@ -96,7 +96,7 @@ export default function LandingPage() {
               className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
             >
               <div className="w-16 h-16 bg-info/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-info/20 transition-colors">
-                <span className="text-3xl">📊</span>
+                <img src="/swim-icon.png" alt="진도 관리" className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-4">체계적 진도 관리</h3>
               <p className="text-muted-foreground mb-6">
@@ -162,6 +162,25 @@ export default function LandingPage() {
               <div className="flex justify-center">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning/10 text-warning">
                   정보 공유
+                </span>
+              </div>
+            </motion.div>
+
+            {/* 3D 수영 자세 분석 */}
+            <motion.div
+              variants={motionPresets.scaleIn}
+              className="card-ocean p-8 text-center group hover:scale-105 transition-transform duration-300"
+            >
+              <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-purple-500/20 transition-colors">
+                <img src="/swim-icon.png" alt="3D 분석" className="w-10 h-10" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">3D 수영 자세 분석</h3>
+              <p className="text-muted-foreground mb-6">
+                인터랙티브 3D 모델로 수영 자세를 자세히 분석하고 정확한 각도를 학습합니다
+              </p>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-500/10 text-purple-500">
+                  3D 시각화
                 </span>
               </div>
             </motion.div>
