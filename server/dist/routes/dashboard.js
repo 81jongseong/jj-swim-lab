@@ -409,7 +409,17 @@ async function getStudentDashboard(user) {
             checklists: {
                 items: checklists,
                 completionRate: checklistCompletionRate,
-                upcoming: checklists.filter(c => c.dueDate && new Date(c.dueDate) > new Date()).slice(0, 3)
+                upcoming: (() => {
+                    const now = new Date();
+                    const result = [];
+                    for (let i = 0; i < checklists.length && result.length < 3; i++) {
+                        const c = checklists[i];
+                        if (c.dueDate && new Date(c.dueDate) > now) {
+                            result.push(c);
+                        }
+                    }
+                    return result;
+                })()
             },
             evaluations: evaluations,
             centerInfo: centerInfo,
@@ -454,10 +464,15 @@ function getNextLevelGoals(currentLevel) {
 }
 async function getInstructorDashboard(user) {
     try {
+        const instructorCourses = await Course_1.Course.find({ instructor: user._id }).select('_id');
+        const courseIds = [];
+        for (const course of instructorCourses) {
+            courseIds.push(course._id);
+        }
         const totalStudents = await User_1.User.countDocuments({
             userType: 'student',
             'studentInfo.enrolledCourses': {
-                $in: await Course_1.Course.find({ instructor: user._id }).select('_id')
+                $in: courseIds
             }
         });
         const myCourses = await Course_1.Course.find({ instructor: user._id })
@@ -475,12 +490,17 @@ async function getInstructorDashboard(user) {
             instructor: user._id,
             type: 'checklist'
         });
-        const totalChecklistItems = checklists.reduce((total, checklist) => {
-            return total + (checklist.checklistItems?.length || 0);
-        }, 0);
-        const completedChecklistItems = checklists.reduce((total, checklist) => {
-            return total + (checklist.checklistItems?.filter(item => item.isCompleted).length || 0);
-        }, 0);
+        let totalChecklistItems = 0;
+        let completedChecklistItems = 0;
+        for (const checklist of checklists) {
+            const items = checklist.checklistItems || [];
+            totalChecklistItems += items.length;
+            for (const item of items) {
+                if (item.isCompleted) {
+                    completedChecklistItems++;
+                }
+            }
+        }
         const completionRate = totalChecklistItems > 0
             ? Math.round((completedChecklistItems / totalChecklistItems) * 100)
             : 0;
@@ -506,11 +526,21 @@ async function getInstructorDashboard(user) {
             checklists: {
                 items: checklists,
                 completionRate,
-                upcoming: checklists.filter(c => c.dueDate && new Date(c.dueDate) > new Date()).sort((a, b) => {
-                    if (!a.dueDate || !b.dueDate)
-                        return 0;
-                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-                })
+                upcoming: (() => {
+                    const now = new Date();
+                    const result = [];
+                    for (const c of checklists) {
+                        if (c.dueDate && new Date(c.dueDate) > now) {
+                            result.push(c);
+                        }
+                    }
+                    result.sort((a, b) => {
+                        if (!a.dueDate || !b.dueDate)
+                            return 0;
+                        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                    });
+                    return result;
+                })()
             },
             quickActions: [
                 { name: '학생 진도 관리', action: 'manage_progress', icon: '📊' },
@@ -532,6 +562,11 @@ async function getCenterAdminDashboard(user) {
         if (!centerId) {
             throw new Error('관리하는 센터가 없습니다.');
         }
+        const centerCourses = await Course_1.Course.find({ center: centerId }).select('_id');
+        const courseIds = [];
+        for (const course of centerCourses) {
+            courseIds.push(course._id);
+        }
         const [totalInstructors, totalStudents, totalCourses, activeBookings] = await Promise.all([
             User_1.User.countDocuments({
                 userType: 'instructor',
@@ -539,11 +574,11 @@ async function getCenterAdminDashboard(user) {
             }),
             User_1.User.countDocuments({
                 userType: 'student',
-                'studentInfo.enrolledCourses': { $in: await Course_1.Course.find({ center: centerId }).select('_id') }
+                'studentInfo.enrolledCourses': { $in: courseIds }
             }),
             Course_1.Course.countDocuments({ center: centerId }),
             Booking_1.Booking.countDocuments({
-                course: { $in: await Course_1.Course.find({ center: centerId }).select('_id') },
+                course: { $in: courseIds },
                 date: { $gte: new Date() }
             })
         ]);

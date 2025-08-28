@@ -102,21 +102,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 강제 디버깅 로그
+  console.log('🔍 AuthProvider 렌더링:', { user, loading });
+
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 복원
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     
+    console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
+    
     if (token && savedUser) {
       // 토큰 유효성 검증
+      console.log('🔍 토큰 검증 시작:', { token: token.substring(0, 20) + '...', savedUser: savedUser.substring(0, 100) + '...' });
       validateToken(token, savedUser);
     } else {
+      console.log('🔍 토큰 또는 사용자 정보 없음');
       setLoading(false);
     }
   }, []);
 
   const validateToken = async (token: string, savedUser: string) => {
     try {
+      console.log('🔍 validateToken 시작');
+      
       const response = await fetch('http://localhost:5000/api/auth/verify', {
         method: 'GET',
         headers: {
@@ -125,9 +134,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         },
       });
 
+      console.log('🔍 validateToken 응답:', { status: response.status, ok: response.ok });
+
       if (response.ok) {
         // 토큰이 유효한 경우 사용자 정보 복원
         const userData = JSON.parse(savedUser);
+        console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
         
         // accessPermissions가 없으면 기본값 설정
         const userWithDefaults = {
@@ -147,16 +159,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         };
         
+        console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
         setUser(userWithDefaults);
       } else {
         // 토큰이 유효하지 않은 경우 정리
-        console.log('토큰이 만료되었습니다. 로그인이 필요합니다.');
+        console.log('❌ 토큰이 만료되었습니다. 로그인이 필요합니다.');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
       }
     } catch (error) {
-      console.error('토큰 검증 실패:', error);
+      console.error('❌ 토큰 검증 실패:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);

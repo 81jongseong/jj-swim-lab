@@ -436,111 +436,112 @@ router.get('/analytics', auth, requireRole(['centerAdmin']), async (req: AuthReq
     }
 
     // 수익성 분석 데이터
-    const [
-      monthlyRevenue,
-      coursePerformance,
-      instructorPerformance,
-      studentRetention,
-      peakHours,
-      capacityUtilization
-    ] = await Promise.all([
-      // 월별 수익 분석
-      Payment.aggregate([
-        { $match: { 
-          center: centerId, 
-          status: 'completed',
-          createdAt: { $gte: new Date(new Date().getFullYear(), 0, 1) }
-        }},
-        { $group: {
-          _id: { $month: '$createdAt' },
-          totalRevenue: { $sum: '$amount' },
-          totalPayments: { $sum: 1 }
-        }},
-        { $sort: { _id: 1 } }
-      ]),
-      // 강습 과정별 성과
-      Course.aggregate([
-        { $match: { center: centerId }},
-        { $lookup: {
-          from: 'bookings',
-          localField: '_id',
-          foreignField: 'course',
-          as: 'bookings'
-        }},
-        { $lookup: {
-          from: 'payments',
-          localField: '_id',
-          foreignField: 'relatedCourse',
-          as: 'payments'
-        }},
-        { $project: {
-          name: 1,
-          enrollmentCount: { $size: '$bookings' },
-          revenue: { $sum: '$payments.amount' },
-          completionRate: { $divide: [
-            { $size: { $filter: { input: '$bookings', cond: { $eq: ['$$this.status', 'completed'] }}}},
-            { $size: '$bookings' }
-          ]}
-        }}
-      ]),
-      // 강사별 성과
-      User.aggregate([
-        { $match: { 
-          userType: 'instructor',
-          'instructorInfo.assignedCenters': centerId
-        }},
-        { $lookup: {
-          from: 'courses',
-          localField: '_id',
-          foreignField: 'instructor',
-          as: 'courses'
-        }},
-        { $lookup: {
-          from: 'bookings',
-          localField: 'courses._id',
-          foreignField: 'course',
-          as: 'bookings'
-        }},
-        { $project: {
-          name: 1,
-          totalStudents: { $size: '$bookings' },
-          totalCourses: { $size: '$courses' },
-          studentSatisfaction: 4.2 // 실제로는 평가 데이터에서 계산
-        }}
-      ]),
-      // 학생 유지율 분석
-      User.aggregate([
-        { $match: { 
-          userType: 'student',
-          'studentInfo.enrolledCourses': { $in: await Course.find({ center: centerId }).select('_id') }
-        }},
-        { $lookup: {
-          from: 'bookings',
-          localField: '_id',
-          foreignField: 'user',
-          as: 'bookings'
-        }},
-        { $project: {
-          name: 1,
-          totalBookings: { $size: '$bookings' },
-          lastActivity: { $max: '$bookings.date' },
-          isActive: { $gt: [{ $size: '$bookings' }, 0] }
-        }}
-      ]),
-      // 피크 타임 분석
-      Booking.aggregate([
-        { $match: { 
-          course: { $in: await Course.find({ center: centerId }).select('_id') }
-        }},
-        { $group: {
-          _id: { $hour: '$date' },
-          bookingCount: { $sum: 1 }
-        }},
-        { $sort: { _id: 1 } }
-      ]),
-      // 수용 인원 활용률
-      SwimmingCenter.findById(centerId).select('currentCapacity maxCapacity')
+    // 월별 수익 분석
+    const monthlyRevenue = await Payment.aggregate([
+      { $match: { 
+        center: centerId, 
+        status: 'completed',
+        createdAt: { $gte: new Date(new Date().getFullYear(), 0, 1) }
+      }},
+      { $group: {
+        _id: { $month: '$createdAt' },
+        totalRevenue: { $sum: '$amount' },
+        totalPayments: { $sum: 1 }
+      }},
+      { $sort: { _id: 1 } }
     ]);
+
+    // 강습 과정별 성과
+    const coursePerformance = await Course.aggregate([
+      { $match: { center: centerId }},
+      { $lookup: {
+        from: 'bookings',
+        localField: '_id',
+        foreignField: 'course',
+        as: 'bookings'
+      }},
+      { $lookup: {
+        from: 'payments',
+        localField: '_id',
+        foreignField: 'relatedCourse',
+        as: 'payments'
+      }},
+      { $project: {
+        name: 1,
+        enrollmentCount: { $size: '$bookings' },
+        revenue: { $sum: '$payments.amount' },
+        completionRate: { $divide: [
+          { $size: { $filter: { input: '$bookings', cond: { $eq: ['$$this.status', 'completed'] }}}},
+          { $size: '$bookings' }
+        ]}
+      }}
+    ]);
+
+    // 강사별 성과
+    const instructorPerformance = await User.aggregate([
+      { $match: { 
+        userType: 'instructor',
+        'instructorInfo.assignedCenters': centerId
+      }},
+      { $lookup: {
+        from: 'courses',
+        localField: '_id',
+        foreignField: 'instructor',
+        as: 'courses'
+      }},
+      { $lookup: {
+        from: 'bookings',
+        localField: 'courses._id',
+        foreignField: 'course',
+        as: 'bookings'
+      }},
+      { $project: {
+        name: 1,
+        totalStudents: { $size: '$bookings' },
+        totalCourses: { $size: '$courses' },
+        studentSatisfaction: 4.2 // 실제로는 평가 데이터에서 계산
+      }}
+    ]);
+
+    // 학생 유지율 분석
+    const centerCourses = await Course.find({ center: centerId }).select('_id');
+    const courseIds: any[] = [];
+    for (const course of centerCourses) {
+      courseIds.push(course._id);
+    }
+    const studentRetention = await User.aggregate([
+      { $match: { 
+        userType: 'student',
+        'studentInfo.enrolledCourses': { $in: courseIds }
+      }},
+      { $lookup: {
+        from: 'bookings',
+        localField: '_id',
+        foreignField: 'user',
+        as: 'bookings'
+      }},
+      { $project: {
+        name: 1,
+        totalBookings: { $size: '$bookings' },
+        lastActivity: { $max: '$bookings.date' },
+        isActive: { $gt: [{ $size: '$bookings' }, 0] }
+      }}
+    ]);
+
+    // 피크 타임 분석
+    const peakHours = await Booking.aggregate([
+      { $match: { 
+        course: { $in: courseIds }
+      }},
+      { $group: {
+        _id: { $hour: '$date' },
+        bookingCount: { $sum: 1 }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+
+    // 수용 인원 활용률
+    const capacityUtilization = await SwimmingCenter.findById(centerId).select('currentCapacity maxCapacity');
 
     const analyticsData = {
       revenue: {

@@ -148,17 +148,305 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
-            {currentMenu.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
-                  pathname === item.href ? 'text-blue-600 font-semibold' : ''
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {/* 공통 메뉴 */}
+            <Link href="/" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+              pathname === '/' ? 'text-blue-600 font-semibold' : ''
+            }`}>
+              🏠 홈
+            </Link>
+            <Link href="/about" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+              pathname === '/about' ? 'text-blue-600 font-semibold' : ''
+            }`}>
+              🏊‍♂️ 소개
+            </Link>
+            <Link href="/guide" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+              pathname === '/guide' ? 'text-blue-600 font-semibold' : ''
+            }`}>
+              📋 이용안내
+            </Link>
+            <Link href="/news" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+              pathname === '/news' ? 'text-blue-600 font-semibold' : ''
+            }`}>
+              📢 공지사항
+            </Link>
+            
+            {/* 게스트 전용 메뉴 */}
+            {!user && (
+              <>
+                <span className="text-gray-300">|</span>
+                <Link href="/quiz" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/quiz' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🧠 퀴즈 체험
+                </Link>
+                <Link href="/ai-analysis" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/ai-analysis' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🤖 AI 분석 데모
+                </Link>
+                <Link href="/health" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/health' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💪 건강관리 체험
+                </Link>
+                <Link href="/(labs)/animation" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/(labs)/animation' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🎬 애니메이션
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💬 커뮤니티
+                </Link>
+                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🛍️ 상점
+                </Link>
+                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🗺️ 지도
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/auth/login" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/auth/login' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🔑 로그인
+                </Link>
+                <Link href="/auth/signup" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/auth/signup' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📝 회원가입
+                </Link>
+              </>
+            )}
+            
+            {/* 학생 전용 메뉴 */}
+            {user?.userType === 'student' && (
+              <>
+                <span className="text-gray-300">|</span>
+                <Link href="/dashboard" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/dashboard' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 대시보드
+                </Link>
+                <Link href="/courses" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/courses' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📚 내 강의
+                </Link>
+                <Link href="/dashboard/checklist" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/dashboard/checklist' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📋 체크리스트
+                </Link>
+                <Link href="/dashboard/progress" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/dashboard/progress' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📈 진행상황
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💬 커뮤니티
+                </Link>
+                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🛍️ 상점
+                </Link>
+                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🗺️ 지도
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/profile" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/profile' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👤 프로필
+                </Link>
+              </>
+            )}
+            
+            {/* 강사 전용 메뉴 */}
+            {user?.userType === 'instructor' && (
+              <>
+                <span className="text-gray-300">|</span>
+                <Link href="/instructor/dashboard" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/instructor/dashboard' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 강사 대시보드
+                </Link>
+                <Link href="/instructor/students" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/instructor/students' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👥 수강생 관리
+                </Link>
+                <Link href="/instructor/courses" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/instructor/courses' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📚 강의 관리
+                </Link>
+                <Link href="/instructor/checklist" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/instructor/checklist' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📋 체크리스트 관리
+                </Link>
+                <Link href="/instructor/progress" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/instructor/progress' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📈 진행상황 관리
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💬 커뮤니티
+                </Link>
+                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🛍️ 상점
+                </Link>
+                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🗺️ 지도
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/profile" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/profile' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👤 프로필
+                </Link>
+              </>
+            )}
+            
+            {/* 센터 관리자 전용 메뉴 */}
+            {user?.userType === 'centerAdmin' && (
+              <>
+                <span className="text-gray-300">|</span>
+                <Link href="/admin/dashboard" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/dashboard' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 센터 대시보드
+                </Link>
+                <Link href="/admin/users" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/users' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👥 회원 관리
+                </Link>
+                <Link href="/admin/instructors" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/instructors' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👨‍🏫 강사 관리
+                </Link>
+                <Link href="/admin/courses" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/courses' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📚 강의 관리
+                </Link>
+                <Link href="/admin/payments" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/payments' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💰 결제 관리
+                </Link>
+                <Link href="/admin/reports" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/reports' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 통계
+                </Link>
+                <Link href="/admin/settings" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/settings' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  ⚙️ 설정
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💬 커뮤니티
+                </Link>
+                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🛍️ 상점
+                </Link>
+                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🗺️ 지도
+                </Link>
+              </>
+            )}
+            
+            {/* 최고 관리자 전용 메뉴 */}
+            {user?.userType === 'superAdmin' && (
+              <>
+                <span className="text-gray-300">|</span>
+                <Link href="/admin/dashboard" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/dashboard' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 최고관리자 대시보드
+                </Link>
+                <Link href="/admin/centers" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/centers' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🏢 센터 관리
+                </Link>
+                <Link href="/admin/users" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/users' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👥 전체 회원 관리
+                </Link>
+                <Link href="/admin/instructors" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/instructors' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  👨‍🏫 전체 강사 관리
+                </Link>
+                <Link href="/admin/courses" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/courses' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📚 전체 강의 관리
+                </Link>
+                <Link href="/admin/payments" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/payments' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💰 전체 결제 관리
+                </Link>
+                <Link href="/admin/reports" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/reports' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  📊 전체 통계
+                </Link>
+                <Link href="/admin/system" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/admin/system' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  ⚙️ 시스템 설정
+                </Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  💬 커뮤니티
+                </Link>
+                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🛍️ 상점
+                </Link>
+                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium ${
+                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
+                }`}>
+                  🗺️ 지도
+                </Link>
+              </>
+            )}
           </div>
 
           {/* User Menu and Actions */}

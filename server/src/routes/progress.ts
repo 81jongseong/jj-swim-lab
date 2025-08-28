@@ -120,7 +120,7 @@ router.put('/student/:studentId', auth, requireRole(['instructor']), async (req:
     });
 
     if (!progress) {
-      progress = new Progress({
+      progress = new (Progress as any)({
         student: studentId,
         course: courseId,
         instructor: req.user._id
@@ -232,7 +232,7 @@ router.post('/evaluation/:studentId', auth, requireRole(['instructor']), async (
     });
 
     if (!evaluation) {
-      evaluation = new Evaluation({
+      evaluation = new (Evaluation as any)({
         student: studentId,
         course: courseId,
         instructor: req.user._id

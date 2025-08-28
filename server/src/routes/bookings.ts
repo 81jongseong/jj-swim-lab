@@ -314,9 +314,13 @@ router.get('/available/:date', async (req: Request, res: Response) => {
           `${hour.toString().padStart(2, '0')}:30`;
         
         // 해당 시간대에 예약이 있는지 확인
-        const conflictingBooking = bookings.find(booking => 
-          booking.startTime < nextTime && booking.endTime > time
-        );
+        let conflictingBooking = null;
+        for (const booking of bookings) {
+          if (booking.startTime < nextTime && booking.endTime > time) {
+            conflictingBooking = booking;
+            break;
+          }
+        }
         
         if (!conflictingBooking) {
           availableSlots.push({

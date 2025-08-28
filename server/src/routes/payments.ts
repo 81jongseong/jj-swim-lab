@@ -176,9 +176,13 @@ router.post('/:id/complete', authenticateToken, requireRole(['superAdmin']), asy
       // 강습 과정 등록 처리
       const course = await Course.findById(payment.relatedCourse);
       if (course) {
-        const existingEnrollment = course.enrolledStudents.find(
-          enrollment => enrollment.student && enrollment.student.toString() === payment.user.toString()
-        );
+        let existingEnrollment = null;
+        for (const enrollment of course.enrolledStudents) {
+          if (enrollment.student && enrollment.student.toString() === payment.user.toString()) {
+            existingEnrollment = enrollment;
+            break;
+          }
+        }
         
         if (!existingEnrollment) {
           course.enrolledStudents.push({
@@ -287,16 +291,15 @@ router.get('/stats/summary', authenticateToken, requireRole(['superAdmin']), asy
 
     const payments = await Payment.find(filter);
     
-    const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-    const paymentMethodStats = payments.reduce((acc, payment) => {
-      acc[payment.paymentMethod] = (acc[payment.paymentMethod] || 0) + 1;
-      return acc;
-    }, {} as any);
+    let totalAmount = 0;
+    const paymentMethodStats: any = {};
+    const purposeStats: any = {};
     
-    const purposeStats = payments.reduce((acc, payment) => {
-      acc[payment.purpose] = (acc[payment.purpose] || 0) + 1;
-      return acc;
-    }, {} as any);
+    for (const payment of payments) {
+      totalAmount += payment.amount;
+      paymentMethodStats[payment.paymentMethod] = (paymentMethodStats[payment.paymentMethod] || 0) + 1;
+      purposeStats[payment.purpose] = (purposeStats[payment.purpose] || 0) + 1;
+    }
 
     return res.json({
       totalPayments: payments.length,

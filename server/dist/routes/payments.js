@@ -131,7 +131,13 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
         if (payment.purpose === 'course' && payment.relatedCourse) {
             const course = await Course_1.Course.findById(payment.relatedCourse);
             if (course) {
-                const existingEnrollment = course.enrolledStudents.find(enrollment => enrollment.student && enrollment.student.toString() === payment.user.toString());
+                let existingEnrollment = null;
+                for (const enrollment of course.enrolledStudents) {
+                    if (enrollment.student && enrollment.student.toString() === payment.user.toString()) {
+                        existingEnrollment = enrollment;
+                        break;
+                    }
+                }
                 if (!existingEnrollment) {
                     course.enrolledStudents.push({
                         student: payment.user,
@@ -221,15 +227,14 @@ router.get('/stats/summary', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
             };
         }
         const payments = await Payment_1.Payment.find(filter);
-        const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-        const paymentMethodStats = payments.reduce((acc, payment) => {
-            acc[payment.paymentMethod] = (acc[payment.paymentMethod] || 0) + 1;
-            return acc;
-        }, {});
-        const purposeStats = payments.reduce((acc, payment) => {
-            acc[payment.purpose] = (acc[payment.purpose] || 0) + 1;
-            return acc;
-        }, {});
+        let totalAmount = 0;
+        const paymentMethodStats = {};
+        const purposeStats = {};
+        for (const payment of payments) {
+            totalAmount += payment.amount;
+            paymentMethodStats[payment.paymentMethod] = (paymentMethodStats[payment.paymentMethod] || 0) + 1;
+            purposeStats[payment.purpose] = (purposeStats[payment.purpose] || 0) + 1;
+        }
         return res.json({
             totalPayments: payments.length,
             totalAmount,

@@ -375,98 +375,101 @@ router.get('/analytics', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), 
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const [monthlyRevenue, coursePerformance, instructorPerformance, studentRetention, peakHours, capacityUtilization] = await Promise.all([
-            Payment_1.Payment.aggregate([
-                { $match: {
-                        center: centerId,
-                        status: 'completed',
-                        createdAt: { $gte: new Date(new Date().getFullYear(), 0, 1) }
-                    } },
-                { $group: {
-                        _id: { $month: '$createdAt' },
-                        totalRevenue: { $sum: '$amount' },
-                        totalPayments: { $sum: 1 }
-                    } },
-                { $sort: { _id: 1 } }
-            ]),
-            Course_1.Course.aggregate([
-                { $match: { center: centerId } },
-                { $lookup: {
-                        from: 'bookings',
-                        localField: '_id',
-                        foreignField: 'course',
-                        as: 'bookings'
-                    } },
-                { $lookup: {
-                        from: 'payments',
-                        localField: '_id',
-                        foreignField: 'relatedCourse',
-                        as: 'payments'
-                    } },
-                { $project: {
-                        name: 1,
-                        enrollmentCount: { $size: '$bookings' },
-                        revenue: { $sum: '$payments.amount' },
-                        completionRate: { $divide: [
-                                { $size: { $filter: { input: '$bookings', cond: { $eq: ['$$this.status', 'completed'] } } } },
-                                { $size: '$bookings' }
-                            ] }
-                    } }
-            ]),
-            User_1.User.aggregate([
-                { $match: {
-                        userType: 'instructor',
-                        'instructorInfo.assignedCenters': centerId
-                    } },
-                { $lookup: {
-                        from: 'courses',
-                        localField: '_id',
-                        foreignField: 'instructor',
-                        as: 'courses'
-                    } },
-                { $lookup: {
-                        from: 'bookings',
-                        localField: 'courses._id',
-                        foreignField: 'course',
-                        as: 'bookings'
-                    } },
-                { $project: {
-                        name: 1,
-                        totalStudents: { $size: '$bookings' },
-                        totalCourses: { $size: '$courses' },
-                        studentSatisfaction: 4.2
-                    } }
-            ]),
-            User_1.User.aggregate([
-                { $match: {
-                        userType: 'student',
-                        'studentInfo.enrolledCourses': { $in: await Course_1.Course.find({ center: centerId }).select('_id') }
-                    } },
-                { $lookup: {
-                        from: 'bookings',
-                        localField: '_id',
-                        foreignField: 'user',
-                        as: 'bookings'
-                    } },
-                { $project: {
-                        name: 1,
-                        totalBookings: { $size: '$bookings' },
-                        lastActivity: { $max: '$bookings.date' },
-                        isActive: { $gt: [{ $size: '$bookings' }, 0] }
-                    } }
-            ]),
-            Booking_1.Booking.aggregate([
-                { $match: {
-                        course: { $in: await Course_1.Course.find({ center: centerId }).select('_id') }
-                    } },
-                { $group: {
-                        _id: { $hour: '$date' },
-                        bookingCount: { $sum: 1 }
-                    } },
-                { $sort: { _id: 1 } }
-            ]),
-            SwimmingCenter_1.SwimmingCenter.findById(centerId).select('currentCapacity maxCapacity')
+        const monthlyRevenue = await Payment_1.Payment.aggregate([
+            { $match: {
+                    center: centerId,
+                    status: 'completed',
+                    createdAt: { $gte: new Date(new Date().getFullYear(), 0, 1) }
+                } },
+            { $group: {
+                    _id: { $month: '$createdAt' },
+                    totalRevenue: { $sum: '$amount' },
+                    totalPayments: { $sum: 1 }
+                } },
+            { $sort: { _id: 1 } }
         ]);
+        const coursePerformance = await Course_1.Course.aggregate([
+            { $match: { center: centerId } },
+            { $lookup: {
+                    from: 'bookings',
+                    localField: '_id',
+                    foreignField: 'course',
+                    as: 'bookings'
+                } },
+            { $lookup: {
+                    from: 'payments',
+                    localField: '_id',
+                    foreignField: 'relatedCourse',
+                    as: 'payments'
+                } },
+            { $project: {
+                    name: 1,
+                    enrollmentCount: { $size: '$bookings' },
+                    revenue: { $sum: '$payments.amount' },
+                    completionRate: { $divide: [
+                            { $size: { $filter: { input: '$bookings', cond: { $eq: ['$$this.status', 'completed'] } } } },
+                            { $size: '$bookings' }
+                        ] }
+                } }
+        ]);
+        const instructorPerformance = await User_1.User.aggregate([
+            { $match: {
+                    userType: 'instructor',
+                    'instructorInfo.assignedCenters': centerId
+                } },
+            { $lookup: {
+                    from: 'courses',
+                    localField: '_id',
+                    foreignField: 'instructor',
+                    as: 'courses'
+                } },
+            { $lookup: {
+                    from: 'bookings',
+                    localField: 'courses._id',
+                    foreignField: 'course',
+                    as: 'bookings'
+                } },
+            { $project: {
+                    name: 1,
+                    totalStudents: { $size: '$bookings' },
+                    totalCourses: { $size: '$courses' },
+                    studentSatisfaction: 4.2
+                } }
+        ]);
+        const centerCourses = await Course_1.Course.find({ center: centerId }).select('_id');
+        const courseIds = [];
+        for (const course of centerCourses) {
+            courseIds.push(course._id);
+        }
+        const studentRetention = await User_1.User.aggregate([
+            { $match: {
+                    userType: 'student',
+                    'studentInfo.enrolledCourses': { $in: courseIds }
+                } },
+            { $lookup: {
+                    from: 'bookings',
+                    localField: '_id',
+                    foreignField: 'user',
+                    as: 'bookings'
+                } },
+            { $project: {
+                    name: 1,
+                    totalBookings: { $size: '$bookings' },
+                    lastActivity: { $max: '$bookings.date' },
+                    isActive: { $gt: [{ $size: '$bookings' }, 0] }
+                } }
+        ]);
+        const peakHours = await Booking_1.Booking.aggregate([
+            { $match: {
+                    course: { $in: courseIds }
+                } },
+            { $group: {
+                    _id: { $hour: '$date' },
+                    bookingCount: { $sum: 1 }
+                } },
+            { $sort: { _id: 1 } }
+        ]);
+        const capacityUtilization = await SwimmingCenter_1.SwimmingCenter.findById(centerId).select('currentCapacity maxCapacity');
         const analyticsData = {
             revenue: {
                 monthly: monthlyRevenue,

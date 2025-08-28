@@ -456,9 +456,17 @@ async function getStudentDashboard(user: any) {
       checklists: {
         items: checklists,
         completionRate: checklistCompletionRate,
-        upcoming: checklists.filter(c => 
-          c.dueDate && new Date(c.dueDate) > new Date()
-        ).slice(0, 3)
+        upcoming: (() => {
+          const now = new Date();
+          const result: any[] = [];
+          for (let i = 0; i < checklists.length && result.length < 3; i++) {
+            const c = checklists[i];
+            if (c.dueDate && new Date(c.dueDate) > now) {
+              result.push(c);
+            }
+          }
+          return result;
+        })()
       },
       evaluations: evaluations,
       centerInfo: centerInfo,
@@ -509,10 +517,15 @@ function getNextLevelGoals(currentLevel: string) {
 async function getInstructorDashboard(user: any) {
   try {
     // 담당 학생 수
+    const instructorCourses = await Course.find({ instructor: user._id }).select('_id');
+    const courseIds: any[] = [];
+    for (const course of instructorCourses) {
+      courseIds.push(course._id);
+    }
     const totalStudents = await User.countDocuments({
       userType: 'student',
       'studentInfo.enrolledCourses': { 
-        $in: await Course.find({ instructor: user._id }).select('_id') 
+        $in: courseIds
       }
     });
 
@@ -537,13 +550,18 @@ async function getInstructorDashboard(user: any) {
       type: 'checklist'
     });
 
-    const totalChecklistItems = checklists.reduce((total, checklist) => {
-      return total + (checklist.checklistItems?.length || 0);
-    }, 0);
-
-    const completedChecklistItems = checklists.reduce((total, checklist) => {
-      return total + (checklist.checklistItems?.filter(item => item.isCompleted).length || 0);
-    }, 0);
+    let totalChecklistItems = 0;
+    let completedChecklistItems = 0;
+    
+    for (const checklist of checklists) {
+      const items = checklist.checklistItems || [];
+      totalChecklistItems += items.length;
+      for (const item of items) {
+        if (item.isCompleted) {
+          completedChecklistItems++;
+        }
+      }
+    }
 
     const completionRate = totalChecklistItems > 0 
       ? Math.round((completedChecklistItems / totalChecklistItems) * 100) 
@@ -571,12 +589,21 @@ async function getInstructorDashboard(user: any) {
       checklists: {
         items: checklists,
         completionRate,
-        upcoming: checklists.filter(c => 
-          c.dueDate && new Date(c.dueDate) > new Date()
-        ).sort((a, b) => {
-          if (!a.dueDate || !b.dueDate) return 0;
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        })
+        upcoming: (() => {
+          const now = new Date();
+          const result: any[] = [];
+          for (const c of checklists) {
+            if (c.dueDate && new Date(c.dueDate) > now) {
+              result.push(c);
+            }
+          }
+          // 날짜순 정렬
+          result.sort((a, b) => {
+            if (!a.dueDate || !b.dueDate) return 0;
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          });
+          return result;
+        })()
       },
       quickActions: [
         { name: '학생 진도 관리', action: 'manage_progress', icon: '📊' },
@@ -603,6 +630,12 @@ async function getCenterAdminDashboard(user: any) {
     }
 
     // 센터 통계
+    const centerCourses = await Course.find({ center: centerId }).select('_id');
+    const courseIds: any[] = [];
+    for (const course of centerCourses) {
+      courseIds.push(course._id);
+    }
+    
     const [
       totalInstructors,
       totalStudents,
@@ -615,11 +648,11 @@ async function getCenterAdminDashboard(user: any) {
       }),
       User.countDocuments({
         userType: 'student',
-        'studentInfo.enrolledCourses': { $in: await Course.find({ center: centerId }).select('_id') }
+        'studentInfo.enrolledCourses': { $in: courseIds }
       }),
       Course.countDocuments({ center: centerId }),
       Booking.countDocuments({
-        course: { $in: await Course.find({ center: centerId }).select('_id') },
+        course: { $in: courseIds },
         date: { $gte: new Date() }
       })
     ]);

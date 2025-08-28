@@ -183,9 +183,12 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
     }
 
     // 최대 학생 수 확인
-    const activeStudents = course.enrolledStudents.filter(
-      enrollment => enrollment.status === 'active'
-    ).length;
+    let activeStudents = 0;
+    for (const enrollment of course.enrolledStudents) {
+      if (enrollment.status === 'active') {
+        activeStudents++;
+      }
+    }
 
     if (activeStudents >= course.maxStudents) {
       return res.status(400).json({ error: '강습 과정이 가득 찼습니다.' });
@@ -245,9 +248,13 @@ router.post('/:courseId/enroll', authenticateToken, async (req: AuthRequest, res
     }
 
     // 이미 등록되어 있는지 확인
-    const existingEnrollment = course.enrolledStudents.find(
-      enrollment => enrollment.student && enrollment.student.toString() === studentId.toString()
-    );
+    let existingEnrollment = null;
+    for (const enrollment of course.enrolledStudents) {
+      if (enrollment.student && enrollment.student.toString() === studentId.toString()) {
+        existingEnrollment = enrollment;
+        break;
+      }
+    }
 
     if (existingEnrollment) {
       return res.status(400).json({ error: '이미 등록된 강습 과정입니다.' });
@@ -337,9 +344,13 @@ router.put('/:courseId/progress/:studentId', authenticateToken, async (req: Auth
     }
 
     // 학생 등록 상태 확인
-    const enrollment = course.enrolledStudents.find(
-      e => e.student && e.student.toString() === studentId
-    );
+    let enrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student.toString() === studentId) {
+        enrollment = e;
+        break;
+      }
+    }
 
     if (!enrollment) {
       return res.status(400).json({ error: '등록되지 않은 학생입니다.' });
@@ -388,9 +399,13 @@ router.get('/:courseId/student/:studentId', authenticateToken, async (req: AuthR
     }
 
     // 해당 학생 정보 찾기
-    const studentEnrollment = course.enrolledStudents.find(
-      e => e.student && e.student._id.toString() === studentId
-    );
+    let studentEnrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student._id.toString() === studentId) {
+        studentEnrollment = e;
+        break;
+      }
+    }
 
     if (!studentEnrollment || !studentEnrollment.student) {
       return res.status(404).json({ error: '등록되지 않은 학생입니다.' });
@@ -592,20 +607,25 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
     .populate('teachingMethods.methodId')
     .sort({ 'classInfo.startDate': 1 });
     
+    const classesData: any[] = [];
+    for (const course of classes) {
+      classesData.push({
+        _id: course._id,
+        name: course.name, // 기존 name 필드 사용
+        level: course.level,
+        classInfo: course.classInfo,
+        instructor: course.instructor,
+        enrolledStudents: course.enrolledStudents,
+        teachingMethods: course.teachingMethods,
+        schedule: course.schedule,
+        isActive: course.isActive !== false // isActive가 false가 아니면 true로 처리
+      });
+    }
+    
     res.json({
       success: true,
       data: {
-        classes: classes.map(course => ({
-          _id: course._id,
-          name: course.name, // 기존 name 필드 사용
-          level: course.level,
-          classInfo: course.classInfo,
-          instructor: course.instructor,
-          enrolledStudents: course.enrolledStudents,
-          teachingMethods: course.teachingMethods,
-          schedule: course.schedule,
-          isActive: course.isActive !== false // isActive가 false가 아니면 true로 처리
-        }))
+        classes: classesData
       }
     });
   } catch (error) {
@@ -629,7 +649,8 @@ router.get('/class/:classId/students/progress', async (req, res) => {
     }
     
     // 각 회원의 체크리스트 진행 상황 계산
-    const studentsProgress = course.enrolledStudents.map(enrollment => {
+    const studentsProgress: any[] = [];
+    for (const enrollment of course.enrolledStudents) {
       const student = enrollment.student as any;
       // progress는 항상 존재함 (모델에서 default 설정)
       const progress = enrollment.progress || {
@@ -640,10 +661,11 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       };
       
       // 전체 체크리스트 단계 수 계산
-      const totalSteps = course.teachingMethods.reduce((total, tm) => {
+      let totalSteps = 0;
+      for (const tm of course.teachingMethods) {
         const method = tm.methodId as any;
-        return total + (method?.steps?.length || 0);
-      }, 0);
+        totalSteps += (method?.steps?.length || 0);
+      }
       
       // 완료된 단계 수 계산
       const completedSteps = (progress.completedSteps as any[]).length;
@@ -651,7 +673,7 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       // 진행률 계산
       const percentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
       
-      return {
+      studentsProgress.push({
         student: {
           _id: student._id,
           name: student.name || student.userId,
@@ -668,31 +690,38 @@ router.get('/class/:classId/students/progress', async (req, res) => {
             completedSteps: completedSteps
           }
         },
-        teachingMethods: course.teachingMethods.map(tm => {
-          const method = tm.methodId as any;
-          const methodCompletedSteps = (progress.completedSteps as any[]).filter(
-            (step: any) => step.methodId?.toString() === method._id.toString()
-          );
-          
-          return {
-            _id: method._id,
-            name: method.name,
-            description: method.description,
-            steps: method.steps || [],
-            tips: method.tips || [],
-            order: tm.order,
-            isRequired: tm.isRequired,
-            progress: {
-              totalSteps: method.steps?.length || 0,
-              completedSteps: methodCompletedSteps.length,
-              percentage: method.steps?.length > 0 
-                ? Math.round((methodCompletedSteps.length / method.steps.length) * 100) 
-                : 0
+        teachingMethods: (() => {
+          const methodsData: any[] = [];
+          for (const tm of course.teachingMethods) {
+            const method = tm.methodId as any;
+            let methodCompletedSteps = 0;
+            for (const step of progress.completedSteps as any[]) {
+              if (step.methodId?.toString() === method._id.toString()) {
+                methodCompletedSteps++;
+              }
             }
-          };
-        })
-      };
-    });
+            
+            methodsData.push({
+              _id: method._id,
+              name: method.name,
+              description: method.description,
+              steps: method.steps || [],
+              tips: method.tips || [],
+              order: tm.order,
+              isRequired: tm.isRequired,
+              progress: {
+                totalSteps: method.steps?.length || 0,
+                completedSteps: methodCompletedSteps,
+                percentage: method.steps?.length > 0 
+                  ? Math.round((methodCompletedSteps / method.steps.length) * 100) 
+                  : 0
+              }
+            });
+          }
+          return methodsData;
+        })()
+      });
+    }
     
     res.json({
       success: true,
@@ -724,9 +753,13 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
     }
     
     // 해당 회원의 등록 정보 찾기
-    const enrollment = course.enrolledStudents.find(
-      e => e.student && e.student.toString() === studentId
-    );
+    let enrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student.toString() === studentId) {
+        enrollment = e;
+        break;
+      }
+    }
     
     if (!enrollment) {
       return res.status(404).json({ success: false, message: '해당 회원이 이 반에 등록되어 있지 않습니다.' });
@@ -753,9 +786,12 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
     });
     
     // 진행률 업데이트
-    const totalSteps = course.teachingMethods.reduce((total, tm) => {
-      return total + (tm.methodId.toString() === methodId ? 1 : 0);
-    }, 0);
+    let totalSteps = 0;
+    for (const tm of course.teachingMethods) {
+      if (tm.methodId.toString() === methodId) {
+        totalSteps++;
+      }
+    }
     
     progress.percentage = Math.round(
       ((progress.completedSteps as any[]).length / totalSteps) * 100
@@ -791,9 +827,13 @@ router.post('/:courseId/enroll', authenticateToken, async (req: AuthRequest, res
     }
 
     // 이미 등록되어 있는지 확인
-    const existingEnrollment = course.enrolledStudents.find(
-      enrollment => enrollment.student && enrollment.student.toString() === studentId.toString()
-    );
+    let existingEnrollment = null;
+    for (const enrollment of course.enrolledStudents) {
+      if (enrollment.student && enrollment.student.toString() === studentId.toString()) {
+        existingEnrollment = enrollment;
+        break;
+      }
+    }
 
     if (existingEnrollment) {
       return res.status(400).json({ error: '이미 등록된 강습 과정입니다.' });
@@ -883,9 +923,13 @@ router.put('/:courseId/progress/:studentId', authenticateToken, async (req: Auth
     }
 
     // 학생 등록 상태 확인
-    const enrollment = course.enrolledStudents.find(
-      e => e.student && e.student.toString() === studentId
-    );
+    let enrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student.toString() === studentId) {
+        enrollment = e;
+        break;
+      }
+    }
 
     if (!enrollment) {
       return res.status(400).json({ error: '등록되지 않은 학생입니다.' });
@@ -934,9 +978,13 @@ router.get('/:courseId/student/:studentId', authenticateToken, async (req: AuthR
     }
 
     // 해당 학생 정보 찾기
-    const studentEnrollment = course.enrolledStudents.find(
-      e => e.student && e.student._id.toString() === studentId
-    );
+    let studentEnrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student._id.toString() === studentId) {
+        studentEnrollment = e;
+        break;
+      }
+    }
 
     if (!studentEnrollment || !studentEnrollment.student) {
       return res.status(404).json({ error: '등록되지 않은 학생입니다.' });
@@ -1138,20 +1186,25 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
     .populate('teachingMethods.methodId')
     .sort({ 'classInfo.startDate': 1 });
     
+    const classesData: any[] = [];
+    for (const course of classes) {
+      classesData.push({
+        _id: course._id,
+        name: course.name, // 기존 name 필드 사용
+        level: course.level,
+        classInfo: course.classInfo,
+        instructor: course.instructor,
+        enrolledStudents: course.enrolledStudents,
+        teachingMethods: course.teachingMethods,
+        schedule: course.schedule,
+        isActive: course.isActive !== false // isActive가 false가 아니면 true로 처리
+      });
+    }
+    
     res.json({
       success: true,
       data: {
-        classes: classes.map(course => ({
-          _id: course._id,
-          name: course.name, // 기존 name 필드 사용
-          level: course.level,
-          classInfo: course.classInfo,
-          instructor: course.instructor,
-          enrolledStudents: course.enrolledStudents,
-          teachingMethods: course.teachingMethods,
-          schedule: course.schedule,
-          isActive: course.isActive !== false // isActive가 false가 아니면 true로 처리
-        }))
+        classes: classesData
       }
     });
   } catch (error) {
@@ -1175,7 +1228,8 @@ router.get('/class/:classId/students/progress', async (req, res) => {
     }
     
     // 각 회원의 체크리스트 진행 상황 계산
-    const studentsProgress = course.enrolledStudents.map(enrollment => {
+    const studentsProgress: any[] = [];
+    for (const enrollment of course.enrolledStudents) {
       const student = enrollment.student as any;
       // progress는 항상 존재함 (모델에서 default 설정)
       const progress = enrollment.progress || {
@@ -1186,10 +1240,11 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       };
       
       // 전체 체크리스트 단계 수 계산
-      const totalSteps = course.teachingMethods.reduce((total, tm) => {
+      let totalSteps = 0;
+      for (const tm of course.teachingMethods) {
         const method = tm.methodId as any;
-        return total + (method?.steps?.length || 0);
-      }, 0);
+        totalSteps += (method?.steps?.length || 0);
+      }
       
       // 완료된 단계 수 계산
       const completedSteps = (progress.completedSteps as any[]).length;
@@ -1197,7 +1252,7 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       // 진행률 계산
       const percentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
       
-      return {
+      studentsProgress.push({
         student: {
           _id: student._id,
           name: student.name || student.userId,
@@ -1214,31 +1269,38 @@ router.get('/class/:classId/students/progress', async (req, res) => {
             completedSteps: completedSteps
           }
         },
-        teachingMethods: course.teachingMethods.map(tm => {
-          const method = tm.methodId as any;
-          const methodCompletedSteps = (progress.completedSteps as any[]).filter(
-            (step: any) => step.methodId?.toString() === method._id.toString()
-          );
-          
-          return {
-            _id: method._id,
-            name: method.name,
-            description: method.description,
-            steps: method.steps || [],
-            tips: method.tips || [],
-            order: tm.order,
-            isRequired: tm.isRequired,
-            progress: {
-              totalSteps: method.steps?.length || 0,
-              completedSteps: methodCompletedSteps.length,
-              percentage: method.steps?.length > 0 
-                ? Math.round((methodCompletedSteps.length / method.steps.length) * 100) 
-                : 0
+        teachingMethods: (() => {
+          const methodsData: any[] = [];
+          for (const tm of course.teachingMethods) {
+            const method = tm.methodId as any;
+            let methodCompletedSteps = 0;
+            for (const step of progress.completedSteps as any[]) {
+              if (step.methodId?.toString() === method._id.toString()) {
+                methodCompletedSteps++;
+              }
             }
-          };
-        })
-      };
-    });
+            
+            methodsData.push({
+              _id: method._id,
+              name: method.name,
+              description: method.description,
+              steps: method.steps || [],
+              tips: method.tips || [],
+              order: tm.order,
+              isRequired: tm.isRequired,
+              progress: {
+                totalSteps: method.steps?.length || 0,
+                completedSteps: methodCompletedSteps,
+                percentage: method.steps?.length > 0 
+                  ? Math.round((methodCompletedSteps / method.steps.length) * 100) 
+                  : 0
+              }
+            });
+          }
+          return methodsData;
+        })()
+      });
+    }
     
     res.json({
       success: true,
@@ -1270,9 +1332,13 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
     }
     
     // 해당 회원의 등록 정보 찾기
-    const enrollment = course.enrolledStudents.find(
-      e => e.student && e.student.toString() === studentId
-    );
+    let enrollment = null;
+    for (const e of course.enrolledStudents) {
+      if (e.student && e.student.toString() === studentId) {
+        enrollment = e;
+        break;
+      }
+    }
     
     if (!enrollment) {
       return res.status(404).json({ success: false, message: '해당 회원이 이 반에 등록되어 있지 않습니다.' });
@@ -1299,9 +1365,12 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
     });
     
     // 진행률 업데이트
-    const totalSteps = course.teachingMethods.reduce((total, tm) => {
-      return total + (tm.methodId.toString() === methodId ? 1 : 0);
-    }, 0);
+    let totalSteps = 0;
+    for (const tm of course.teachingMethods) {
+      if (tm.methodId.toString() === methodId) {
+        totalSteps++;
+      }
+    }
     
     progress.percentage = Math.round(
       ((progress.completedSteps as any[]).length / totalSteps) * 100

@@ -247,7 +247,13 @@ router.get('/available/:date', async (req, res) => {
                 const nextTime = minute === 30 ?
                     `${(hour + 1).toString().padStart(2, '0')}:00` :
                     `${hour.toString().padStart(2, '0')}:30`;
-                const conflictingBooking = bookings.find(booking => booking.startTime < nextTime && booking.endTime > time);
+                let conflictingBooking = null;
+                for (const booking of bookings) {
+                    if (booking.startTime < nextTime && booking.endTime > time) {
+                        conflictingBooking = booking;
+                        break;
+                    }
+                }
                 if (!conflictingBooking) {
                     availableSlots.push({
                         startTime: time,

@@ -141,7 +141,12 @@ router.post('/:id/enroll', auth_1.auth, async (req, res) => {
         if (alreadyEnrolled) {
             return res.status(400).json({ error: '이미 등록된 강습 과정입니다.' });
         }
-        const activeStudents = course.enrolledStudents.filter(enrollment => enrollment.status === 'active').length;
+        let activeStudents = 0;
+        for (const enrollment of course.enrolledStudents) {
+            if (enrollment.status === 'active') {
+                activeStudents++;
+            }
+        }
         if (activeStudents >= course.maxStudents) {
             return res.status(400).json({ error: '강습 과정이 가득 찼습니다.' });
         }
@@ -184,7 +189,13 @@ router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
         if (!course || !course.isActive) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const existingEnrollment = course.enrolledStudents.find(enrollment => enrollment.student && enrollment.student.toString() === studentId.toString());
+        let existingEnrollment = null;
+        for (const enrollment of course.enrolledStudents) {
+            if (enrollment.student && enrollment.student.toString() === studentId.toString()) {
+                existingEnrollment = enrollment;
+                break;
+            }
+        }
         if (existingEnrollment) {
             return res.status(400).json({ error: '이미 등록된 강습 과정입니다.' });
         }
@@ -247,7 +258,13 @@ router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const enrollment = course.enrolledStudents.find(e => e.student && e.student.toString() === studentId);
+        let enrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student.toString() === studentId) {
+                enrollment = e;
+                break;
+            }
+        }
         if (!enrollment) {
             return res.status(400).json({ error: '등록되지 않은 학생입니다.' });
         }
@@ -284,7 +301,13 @@ router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const studentEnrollment = course.enrolledStudents.find(e => e.student && e.student._id.toString() === studentId);
+        let studentEnrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student._id.toString() === studentId) {
+                studentEnrollment = e;
+                break;
+            }
+        }
         if (!studentEnrollment || !studentEnrollment.student) {
             return res.status(404).json({ error: '등록되지 않은 학생입니다.' });
         }
@@ -455,20 +478,24 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
             .populate('enrolledStudents.student', 'name userId email')
             .populate('teachingMethods.methodId')
             .sort({ 'classInfo.startDate': 1 });
+        const classesData = [];
+        for (const course of classes) {
+            classesData.push({
+                _id: course._id,
+                name: course.name,
+                level: course.level,
+                classInfo: course.classInfo,
+                instructor: course.instructor,
+                enrolledStudents: course.enrolledStudents,
+                teachingMethods: course.teachingMethods,
+                schedule: course.schedule,
+                isActive: course.isActive !== false
+            });
+        }
         res.json({
             success: true,
             data: {
-                classes: classes.map(course => ({
-                    _id: course._id,
-                    name: course.name,
-                    level: course.level,
-                    classInfo: course.classInfo,
-                    instructor: course.instructor,
-                    enrolledStudents: course.enrolledStudents,
-                    teachingMethods: course.teachingMethods,
-                    schedule: course.schedule,
-                    isActive: course.isActive !== false
-                }))
+                classes: classesData
             }
         });
     }
@@ -487,7 +514,8 @@ router.get('/class/:classId/students/progress', async (req, res) => {
         if (!course) {
             return res.status(404).json({ success: false, message: '반을 찾을 수 없습니다.' });
         }
-        const studentsProgress = course.enrolledStudents.map(enrollment => {
+        const studentsProgress = [];
+        for (const enrollment of course.enrolledStudents) {
             const student = enrollment.student;
             const progress = enrollment.progress || {
                 percentage: 0,
@@ -495,13 +523,14 @@ router.get('/class/:classId/students/progress', async (req, res) => {
                 lastUpdated: new Date(),
                 notes: ''
             };
-            const totalSteps = course.teachingMethods.reduce((total, tm) => {
+            let totalSteps = 0;
+            for (const tm of course.teachingMethods) {
                 const method = tm.methodId;
-                return total + (method?.steps?.length || 0);
-            }, 0);
+                totalSteps += (method?.steps?.length || 0);
+            }
             const completedSteps = progress.completedSteps.length;
             const percentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-            return {
+            studentsProgress.push({
                 student: {
                     _id: student._id,
                     name: student.name || student.userId,
@@ -518,28 +547,37 @@ router.get('/class/:classId/students/progress', async (req, res) => {
                         completedSteps: completedSteps
                     }
                 },
-                teachingMethods: course.teachingMethods.map(tm => {
-                    const method = tm.methodId;
-                    const methodCompletedSteps = progress.completedSteps.filter((step) => step.methodId?.toString() === method._id.toString());
-                    return {
-                        _id: method._id,
-                        name: method.name,
-                        description: method.description,
-                        steps: method.steps || [],
-                        tips: method.tips || [],
-                        order: tm.order,
-                        isRequired: tm.isRequired,
-                        progress: {
-                            totalSteps: method.steps?.length || 0,
-                            completedSteps: methodCompletedSteps.length,
-                            percentage: method.steps?.length > 0
-                                ? Math.round((methodCompletedSteps.length / method.steps.length) * 100)
-                                : 0
+                teachingMethods: (() => {
+                    const methodsData = [];
+                    for (const tm of course.teachingMethods) {
+                        const method = tm.methodId;
+                        let methodCompletedSteps = 0;
+                        for (const step of progress.completedSteps) {
+                            if (step.methodId?.toString() === method._id.toString()) {
+                                methodCompletedSteps++;
+                            }
                         }
-                    };
-                })
-            };
-        });
+                        methodsData.push({
+                            _id: method._id,
+                            name: method.name,
+                            description: method.description,
+                            steps: method.steps || [],
+                            tips: method.tips || [],
+                            order: tm.order,
+                            isRequired: tm.isRequired,
+                            progress: {
+                                totalSteps: method.steps?.length || 0,
+                                completedSteps: methodCompletedSteps,
+                                percentage: method.steps?.length > 0
+                                    ? Math.round((methodCompletedSteps / method.steps.length) * 100)
+                                    : 0
+                            }
+                        });
+                    }
+                    return methodsData;
+                })()
+            });
+        }
         res.json({
             success: true,
             data: {
@@ -566,7 +604,13 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
         if (!course) {
             return res.status(404).json({ success: false, message: '반을 찾을 수 없습니다.' });
         }
-        const enrollment = course.enrolledStudents.find(e => e.student && e.student.toString() === studentId);
+        let enrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student.toString() === studentId) {
+                enrollment = e;
+                break;
+            }
+        }
         if (!enrollment) {
             return res.status(404).json({ success: false, message: '해당 회원이 이 반에 등록되어 있지 않습니다.' });
         }
@@ -581,9 +625,12 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
             completedAt: new Date(),
             notes: notes || ''
         });
-        const totalSteps = course.teachingMethods.reduce((total, tm) => {
-            return total + (tm.methodId.toString() === methodId ? 1 : 0);
-        }, 0);
+        let totalSteps = 0;
+        for (const tm of course.teachingMethods) {
+            if (tm.methodId.toString() === methodId) {
+                totalSteps++;
+            }
+        }
         progress.percentage = Math.round((progress.completedSteps.length / totalSteps) * 100);
         progress.lastUpdated = new Date();
         await course.save();
@@ -609,7 +656,13 @@ router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
         if (!course || !course.isActive) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const existingEnrollment = course.enrolledStudents.find(enrollment => enrollment.student && enrollment.student.toString() === studentId.toString());
+        let existingEnrollment = null;
+        for (const enrollment of course.enrolledStudents) {
+            if (enrollment.student && enrollment.student.toString() === studentId.toString()) {
+                existingEnrollment = enrollment;
+                break;
+            }
+        }
         if (existingEnrollment) {
             return res.status(400).json({ error: '이미 등록된 강습 과정입니다.' });
         }
@@ -672,7 +725,13 @@ router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const enrollment = course.enrolledStudents.find(e => e.student && e.student.toString() === studentId);
+        let enrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student.toString() === studentId) {
+                enrollment = e;
+                break;
+            }
+        }
         if (!enrollment) {
             return res.status(400).json({ error: '등록되지 않은 학생입니다.' });
         }
@@ -709,7 +768,13 @@ router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const studentEnrollment = course.enrolledStudents.find(e => e.student && e.student._id.toString() === studentId);
+        let studentEnrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student._id.toString() === studentId) {
+                studentEnrollment = e;
+                break;
+            }
+        }
         if (!studentEnrollment || !studentEnrollment.student) {
             return res.status(404).json({ error: '등록되지 않은 학생입니다.' });
         }
@@ -880,20 +945,24 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
             .populate('enrolledStudents.student', 'name userId email')
             .populate('teachingMethods.methodId')
             .sort({ 'classInfo.startDate': 1 });
+        const classesData = [];
+        for (const course of classes) {
+            classesData.push({
+                _id: course._id,
+                name: course.name,
+                level: course.level,
+                classInfo: course.classInfo,
+                instructor: course.instructor,
+                enrolledStudents: course.enrolledStudents,
+                teachingMethods: course.teachingMethods,
+                schedule: course.schedule,
+                isActive: course.isActive !== false
+            });
+        }
         res.json({
             success: true,
             data: {
-                classes: classes.map(course => ({
-                    _id: course._id,
-                    name: course.name,
-                    level: course.level,
-                    classInfo: course.classInfo,
-                    instructor: course.instructor,
-                    enrolledStudents: course.enrolledStudents,
-                    teachingMethods: course.teachingMethods,
-                    schedule: course.schedule,
-                    isActive: course.isActive !== false
-                }))
+                classes: classesData
             }
         });
     }
@@ -912,7 +981,8 @@ router.get('/class/:classId/students/progress', async (req, res) => {
         if (!course) {
             return res.status(404).json({ success: false, message: '반을 찾을 수 없습니다.' });
         }
-        const studentsProgress = course.enrolledStudents.map(enrollment => {
+        const studentsProgress = [];
+        for (const enrollment of course.enrolledStudents) {
             const student = enrollment.student;
             const progress = enrollment.progress || {
                 percentage: 0,
@@ -920,13 +990,14 @@ router.get('/class/:classId/students/progress', async (req, res) => {
                 lastUpdated: new Date(),
                 notes: ''
             };
-            const totalSteps = course.teachingMethods.reduce((total, tm) => {
+            let totalSteps = 0;
+            for (const tm of course.teachingMethods) {
                 const method = tm.methodId;
-                return total + (method?.steps?.length || 0);
-            }, 0);
+                totalSteps += (method?.steps?.length || 0);
+            }
             const completedSteps = progress.completedSteps.length;
             const percentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-            return {
+            studentsProgress.push({
                 student: {
                     _id: student._id,
                     name: student.name || student.userId,
@@ -943,28 +1014,37 @@ router.get('/class/:classId/students/progress', async (req, res) => {
                         completedSteps: completedSteps
                     }
                 },
-                teachingMethods: course.teachingMethods.map(tm => {
-                    const method = tm.methodId;
-                    const methodCompletedSteps = progress.completedSteps.filter((step) => step.methodId?.toString() === method._id.toString());
-                    return {
-                        _id: method._id,
-                        name: method.name,
-                        description: method.description,
-                        steps: method.steps || [],
-                        tips: method.tips || [],
-                        order: tm.order,
-                        isRequired: tm.isRequired,
-                        progress: {
-                            totalSteps: method.steps?.length || 0,
-                            completedSteps: methodCompletedSteps.length,
-                            percentage: method.steps?.length > 0
-                                ? Math.round((methodCompletedSteps.length / method.steps.length) * 100)
-                                : 0
+                teachingMethods: (() => {
+                    const methodsData = [];
+                    for (const tm of course.teachingMethods) {
+                        const method = tm.methodId;
+                        let methodCompletedSteps = 0;
+                        for (const step of progress.completedSteps) {
+                            if (step.methodId?.toString() === method._id.toString()) {
+                                methodCompletedSteps++;
+                            }
                         }
-                    };
-                })
-            };
-        });
+                        methodsData.push({
+                            _id: method._id,
+                            name: method.name,
+                            description: method.description,
+                            steps: method.steps || [],
+                            tips: method.tips || [],
+                            order: tm.order,
+                            isRequired: tm.isRequired,
+                            progress: {
+                                totalSteps: method.steps?.length || 0,
+                                completedSteps: methodCompletedSteps,
+                                percentage: method.steps?.length > 0
+                                    ? Math.round((methodCompletedSteps / method.steps.length) * 100)
+                                    : 0
+                            }
+                        });
+                    }
+                    return methodsData;
+                })()
+            });
+        }
         res.json({
             success: true,
             data: {
@@ -991,7 +1071,13 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
         if (!course) {
             return res.status(404).json({ success: false, message: '반을 찾을 수 없습니다.' });
         }
-        const enrollment = course.enrolledStudents.find(e => e.student && e.student.toString() === studentId);
+        let enrollment = null;
+        for (const e of course.enrolledStudents) {
+            if (e.student && e.student.toString() === studentId) {
+                enrollment = e;
+                break;
+            }
+        }
         if (!enrollment) {
             return res.status(404).json({ success: false, message: '해당 회원이 이 반에 등록되어 있지 않습니다.' });
         }
@@ -1006,9 +1092,12 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
             completedAt: new Date(),
             notes: notes || ''
         });
-        const totalSteps = course.teachingMethods.reduce((total, tm) => {
-            return total + (tm.methodId.toString() === methodId ? 1 : 0);
-        }, 0);
+        let totalSteps = 0;
+        for (const tm of course.teachingMethods) {
+            if (tm.methodId.toString() === methodId) {
+                totalSteps++;
+            }
+        }
         progress.percentage = Math.round((progress.completedSteps.length / totalSteps) * 100);
         progress.lastUpdated = new Date();
         await course.save();
