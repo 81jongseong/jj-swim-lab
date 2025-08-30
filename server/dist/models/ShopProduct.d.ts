@@ -33,8 +33,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
@@ -46,8 +46,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 }, {}, {
@@ -61,8 +61,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 } & {
@@ -80,8 +80,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
@@ -93,8 +93,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 }>, {}, mongoose.ResolveSchemaOptions<{
@@ -108,8 +108,8 @@ export declare const ShopProduct: mongoose.Model<{
     description: string;
     price: number;
     currency: string;
-    category: string;
     images: string[];
+    category: string;
     stock: number;
     createdBy?: mongoose.Types.ObjectId;
 }> & {

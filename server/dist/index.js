@@ -38,6 +38,9 @@ const class_checklist_1 = __importDefault(require("./routes/class-checklist"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
 const center_levels_1 = __importDefault(require("./routes/center-levels"));
 const student_levels_1 = __importDefault(require("./routes/student-levels"));
+const instructorManagement_1 = __importDefault(require("./routes/instructorManagement"));
+const revenue_1 = __importDefault(require("./routes/revenue"));
+const approvals_1 = __importDefault(require("./routes/approvals"));
 require("./models/Checklist");
 require("./models/ChecklistTemplate");
 require("./models/ClassChecklist");
@@ -63,6 +66,9 @@ require("./models/AIConfig");
 require("./models/CenterInfo");
 require("./models/Notification");
 require("./models/CenterLevel");
+require("./models/Center");
+require("./models/HealthData");
+require("./models/Approval");
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
     console.log('🔍 모델 등록 상태 확인:');
@@ -160,15 +166,6 @@ app.get('/', (req, res) => {
     res.json({ message: 'JJ Swim Lab API 서버가 실행 중입니다!' });
 });
 app.get('/api/health', (req, res) => {
-    res.json({
-        success: true,
-        message: 'JJ Swim Lab API 서버가 정상적으로 실행 중입니다!',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development'
-    });
-});
-app.get('/api/health', (req, res) => {
     const dbStatus = mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected';
     res.json({
         success: true,
@@ -207,6 +204,9 @@ app.use('/api/class-checklist', class_checklist_1.default);
 app.use('/api/notifications', notifications_1.default);
 app.use('/api/center-levels', center_levels_1.default);
 app.use('/api/student-levels', student_levels_1.default);
+app.use('/api/instructor-management', instructorManagement_1.default);
+app.use('/api/revenue', revenue_1.default);
+app.use('/api/approvals', approvals_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,

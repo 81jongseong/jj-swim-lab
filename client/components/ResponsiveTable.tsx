@@ -95,7 +95,9 @@ export default function ResponsiveTable({ children, className = '' }: Responsive
 export function TableHeader({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <thead className={`bg-gray-50 ${className}`}>
-      {children}
+      <tr>
+        {children}
+      </tr>
     </thead>
   );
 }

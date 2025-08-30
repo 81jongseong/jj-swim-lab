@@ -103,6 +103,20 @@ export { default as Badge } from './Badge';
 export { default as Modal } from './Modal';
 export { default as Button } from './Button';
 
+// 사용자 경험 개선 컴포넌트들
+export { default as RefreshButton } from './RefreshButton';
+export { default as Toast } from './Toast';
+export { default as ToastContainer } from './ToastContainer';
+
+// 배포 및 안정성 컴포넌트들
+export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as PerformanceMonitor } from './PerformanceMonitor';
+
+// 3D 뷰어 컴포넌트
+export { default as ThreeDViewer } from './ThreeDViewer';
+export { default as SwimmingPoseModel } from './SwimmingPoseModel';
+export { default as PoseComparisonViewer } from './PoseComparisonViewer';
+
 // 고급 UI 컴포넌트들
 export { default as LazyComponent } from './LazyComponent';
 export { default as OptimizedImage } from './OptimizedImage';
@@ -114,6 +128,9 @@ export { default as Textarea } from './Textarea';
 export { default as Label } from './Label';
 export { default as Slider } from './Slider';
 export { default as Switch } from './Switch';
+
+// 테이블 컴포넌트들
+export { default as ResponsiveTable, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell, MobileCard, MobileCardRow } from '../ResponsiveTable';
 
 // 컴포넌트 타입 및 인터페이스 (필요한 경우에만 export)
 // export type { BarChartProps } from './BarChart';

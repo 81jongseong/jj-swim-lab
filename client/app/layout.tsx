@@ -96,6 +96,8 @@ import './globals.css';
 import { AuthProvider } from '@/hooks/useAuth';
 import SimpleNavigation from '../components/SimpleNavigation'
 import TopNavigation from '../components/TopNavigation'
+import ToastContainer from '../components/ui/ToastContainer'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 // import EnhancedOfflineIndicator from '../components/EnhancedOfflineIndicator'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'
 // import ServiceWorkerRegistration from './sw-register'
@@ -215,15 +217,18 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/splash/apple-splash-640-1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <DynamicNavigation />
-          <main>
-            {children}
-          </main>
-          {/* <EnhancedOfflineIndicator /> */}
-          {/* <PWAInstallPrompt /> */}
-          {/* <ServiceWorkerRegistration /> */}
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <DynamicNavigation />
+            <main>
+              {children}
+            </main>
+            <ToastContainer />
+            {/* <EnhancedOfflineIndicator /> */}
+            {/* <PWAInstallPrompt /> */}
+            {/* <ServiceWorkerRegistration /> */}
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

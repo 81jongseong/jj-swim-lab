@@ -142,8 +142,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;
@@ -265,8 +265,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;
@@ -390,8 +390,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;
@@ -519,8 +519,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;
@@ -642,8 +642,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;
@@ -767,8 +767,8 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }>;
     notes?: string;
-    dueDate?: NativeDate;
     center?: mongoose.Types.ObjectId;
+    dueDate?: NativeDate;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: NativeDate;
     updatedBy?: mongoose.Types.ObjectId;

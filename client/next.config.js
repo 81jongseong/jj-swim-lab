@@ -88,6 +88,14 @@ const nextConfig = {
   // 성능 최적화
   experimental: {
     optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
+    optimizeCss: true,
+    scrollRestoration: true,
+  },
+  
+  // 컴파일러 최적화
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+    styledComponents: true,
   },
   
   // 이미지 최적화

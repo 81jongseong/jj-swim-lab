@@ -38,6 +38,8 @@ import notificationRoutes from './routes/notifications';
 import centerLevelRoutes from './routes/center-levels';
 import studentLevelRoutes from './routes/student-levels';
 import instructorManagementRoutes from './routes/instructorManagement';
+import revenueRoutes from './routes/revenue';
+import approvalRoutes from './routes/approvals';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 import './models/Checklist';
@@ -67,6 +69,7 @@ import './models/Notification';
 import './models/CenterLevel';
 import './models/Center';
 import './models/HealthData';
+import './models/Approval';
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -241,6 +244,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/center-levels', centerLevelRoutes);
 app.use('/api/student-levels', studentLevelRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
+app.use('/api/revenue', revenueRoutes);
+app.use('/api/approvals', approvalRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

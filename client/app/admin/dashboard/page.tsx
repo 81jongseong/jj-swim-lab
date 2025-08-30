@@ -71,9 +71,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui';
 import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 import { getDashboardStats, DashboardStats } from '@/lib/api/dashboard';
 

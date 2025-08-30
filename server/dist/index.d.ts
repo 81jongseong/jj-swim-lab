@@ -23,4 +23,7 @@ import './models/AIConfig';
 import './models/CenterInfo';
 import './models/Notification';
 import './models/CenterLevel';
+import './models/Center';
+import './models/HealthData';
+import './models/Approval';
 //# sourceMappingURL=index.d.ts.map

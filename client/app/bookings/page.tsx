@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import ResponsiveTable, { TableHeader, TableHeaderCell, TableBody } from '@/components/ResponsiveTable';
+import { ResponsiveTable, TableHeader, TableHeaderCell, TableBody } from '@/components/ui';
 
 interface Booking {
   _id: string;

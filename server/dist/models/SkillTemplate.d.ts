@@ -32,7 +32,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
@@ -75,7 +75,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
@@ -120,7 +120,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
@@ -169,7 +169,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
@@ -212,7 +212,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
@@ -257,7 +257,7 @@ export declare const SkillTemplate: mongoose.Model<{
     name: string;
     isActive: boolean;
     description: string;
-    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "turning" | "breathing" | "endurance" | "technique";
+    category: "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning" | "breathing" | "technique";
     practiceDrills: mongoose.Types.DocumentArray<{
         name: string;
         description: string;
