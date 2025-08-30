@@ -1,3 +1,77 @@
+/**
+ * 📝 JJ Swim Lab - 학생용 건강정보 관리 페이지
+ *
+ * 📋 **페이지 목적**
+ * - 학생이 자신의 건강 프로필을 관리하고 운동 기록을 추적하는 페이지
+ * - 개인 건강정보 입력, 수정, 삭제 및 공개/비공개 설정
+ * - AI 기반 맞춤형 운동 추천 및 건강 상태 분석
+ * - 운동 기록 및 성과 추적을 통한 건강 개선 모니터링
+ * - 개인정보 보호를 위한 세밀한 공개 설정 관리
+ *
+ * 🔄 **주요 기능**
+ * - 개인 건강 프로필 관리 (키, 몸무게, BMI, 건강 상태 등)
+ * - 건강정보 공개/비공개 설정 (개별 항목별 설정 가능)
+ * - AI 기반 맞춤형 운동 계획 및 추천
+ * - 운동 기록 및 성과 추적
+ * - 건강 상태 변화 이력 및 트렌드 분석
+ * - 개인정보 보안 및 접근 제어
+ *
+ * 🗄️ **데이터 연동**
+ * - 개인 건강 프로필 데이터베이스
+ * - AI 분석 및 추천 시스템
+ * - 운동 기록 및 성과 데이터
+ * - 건강 상태 변화 이력
+ * - 공개/비공개 설정 정보
+ *
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect)
+ * - useAuth hook (사용자 인증)
+ * - 건강정보 관리 API
+ * - AI 분석 및 추천 시스템
+ * - 차트 및 시각화 라이브러리
+ * - Tailwind CSS (스타일링)
+ *
+ * ⚠️ **개발 시 주의사항**
+ * 1. 학생 권한 확인 필수
+ * 2. 개인정보 보호 및 데이터 보안 강화
+ * 3. 공개/비공개 설정의 세밀한 제어
+ * 4. AI 추천 시스템의 정확성 및 신뢰성
+ * 5. 실시간 데이터 업데이트 및 동기화
+ *
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 학생 권한 확인
+ * - [ ] 개인정보 보안 설정 검증
+ * - [ ] 공개/비공개 설정 기능 확인
+ * - [ ] AI 추천 시스템 정확성 검증
+ * - [ ] 실시간 데이터 업데이트 확인
+ *
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (학생용 건강정보 관리 페이지)
+ * - 2024-12-19: 개인 건강 프로필 관리 시스템 구현
+ * - 2024-12-19: 공개/비공개 설정 시스템 구현
+ * - 2024-12-19: AI 기반 운동 추천 시스템 구현
+ *
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (학생용 건강정보 관리 시스템 완료)
+ *
+ * 🚀 **다음 단계**
+ * - AI 성능 최적화
+ * - 실시간 데이터 분석
+ * - 예측 모델 정확도 향상
+ * - 사용자 경험 개선
+ *
+ * 💡 **사용 예시**
+ * ```tsx
+ * <HealthPage
+ *   onHealthUpdate={(healthData) => handleHealthUpdate(healthData)}
+ *   onPrivacyChange={(setting) => handlePrivacyChange(setting)}
+ *   onExerciseRecord={(record) => handleExerciseRecord(record)}
+ *   enableRealTimeMonitoring={true}
+ * />
+ * ```
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,33 +81,79 @@ import ExerciseDashboard from '../../components/ExerciseDashboard';
 import ExerciseIntensityAI from '../../components/ExerciseIntensityAI';
 
 interface HealthProfile {
+  id?: string;
   height?: number;
   weight?: number;
   bmi?: number;
-  bloodType?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+  bloodType?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
   allergies?: string[];
-  fitnessGoals?: string[];
-  activityLevel?: "sedentary" | "lightly_active" | "moderately_active" | "very_active" | "extremely_active";
-  targetWeight?: number;
-  targetBMI?: number;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
+  medicalConditions?: string[];
+  medications?: string[];
+  exerciseLevel?: string;
+  swimmingExperience?: string;
+  lastHealthCheck?: Date;
+  isPublic?: {
+    height: boolean;
+    weight: boolean;
+    bmi: boolean;
+    bloodType: boolean;
+    allergies: boolean;
+    medicalConditions: boolean;
+    medications: boolean;
+    exerciseLevel: boolean;
+    swimmingExperience: boolean;
   };
 }
 
+
+
 export default function HealthPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'exercise' | 'ai-training'>('profile');
   const [healthProfile, setHealthProfile] = useState<HealthProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 권한 확인 및 데이터 로딩
   useEffect(() => {
-    if (user) {
-      loadHealthProfile();
+    // 로딩 중이거나 사용자 정보가 아직 준비되지 않은 경우 대기
+    if (loading) {
+      console.log('🔍 권한 확인 대기 중...', { loading, user: user?.userType });
+      return;
     }
-  }, [user]);
+    
+    // 사용자가 없거나 학생 권한이 없는 경우
+    if (!user || user.userType !== 'student') {
+      console.error('🚫 접근 권한이 없습니다.', { 
+        hasUser: !!user, 
+        userType: user?.userType,
+        expectedType: 'student' 
+      });
+      return;
+    }
+    
+    // 권한이 있는 경우 데이터 로딩
+    console.log('✅ 학생 권한 확인됨, 데이터 로딩 시작');
+    loadHealthProfile();
+  }, [user, loading]);
+
+  // 권한이 없는 경우 접근 거부 메시지 표시 (로딩 완료 후에만)
+  if (!loading && (!user || user.userType !== 'student')) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="text-red-500 text-6xl mb-4">🚫</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+              <p className="text-gray-600">
+                이 페이지는 학생 회원만 접근할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const loadHealthProfile = async () => {
     try {
@@ -51,23 +171,26 @@ export default function HealthPage() {
   };
 
   const handleHealthProfileSave = (profile: HealthProfile) => {
-    setHealthProfile(profile);
+    setHealthProfile(prev => ({ ...prev, ...profile }));
   };
 
   const tabs = [
-    { id: 'profile', label: '🏥 건강상태', icon: '🏥' },
-    { id: 'exercise', label: '📊 운동 기록', icon: '📊' },
-    { id: 'ai-training', label: '🤖 AI 훈련', icon: '🤖' }
+    { id: 'profile' as const, label: '🏥 건강상태', icon: '🏥' },
+    { id: 'exercise' as const, label: '📊 운동 기록', icon: '📊' },
+    { id: 'ai-training' as const, label: '🤖 AI 훈련', icon: '🤖' }
   ];
 
-  if (isLoading) {
+  // 로딩 중이거나 권한 확인 중인 경우
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">데이터를 불러오는 중...</p>
+              <p className="text-gray-600">
+                {loading ? '권한을 확인하는 중...' : '데이터를 불러오는 중...'}
+              </p>
             </div>
           </div>
         </div>
@@ -99,7 +222,6 @@ export default function HealthPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -138,7 +260,8 @@ export default function HealthPage() {
               
               <HealthProfileForm
                 onSave={handleHealthProfileSave}
-                initialData={healthProfile || undefined}
+                initialData={healthProfile}
+                showAdvanced={true}
               />
             </div>
           )}

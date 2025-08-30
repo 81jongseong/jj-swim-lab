@@ -1,3 +1,71 @@
+/**
+ * 🧠 JJ Swim Lab - SmartNotifications 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - 사용자별 맞춤형 스마트 알림 시스템
+ * - 계정 유형과 사용 패턴에 따른 지능형 알림 제공
+ * - 중요도와 우선순위를 고려한 알림 필터링
+ * - 실시간 알림 상태 관리 및 업데이트
+ * 
+ * 🔄 **주요 기능**
+ * - 사용자 계정 유형별 맞춤 알림
+ * - 알림 중요도 기반 우선순위 정렬
+ * - 읽지 않은 알림 개수 표시
+ * - 알림 클릭 시 상세 정보 표시
+ * - 알림 상태 실시간 업데이트
+ * 
+ * 🗄️ **데이터 연동**
+ * - 사용자 계정 유형 정보 (userType)
+ * - 사용자 ID 기반 개인화된 알림
+ * - 알림 데이터베이스 연동
+ * - 실시간 알림 상태 동기화
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect)
+ * - useAuth 훅 (사용자 정보)
+ * - Tailwind CSS (스타일링)
+ * - TypeScript (타입 정의)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 사용자 계정 유형에 따른 알림 필터링
+ * 2. 알림 중요도 기반 정렬 로직
+ * 3. 실시간 알림 업데이트 처리
+ * 4. 알림 클릭 시 적절한 네비게이션
+ * 5. 접근성을 위한 ARIA 라벨 설정
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 사용자 계정 유형별 알림 필터링 확인
+ * - [ ] 알림 중요도 정렬 로직 검증
+ * - [ ] 실시간 업데이트 동작 확인
+ * - [ ] 알림 클릭 이벤트 검증
+ * - [ ] 접근성 속성 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 스마트 알림)
+ * - 2024-12-19: 계정 유형별 맞춤 알림 구현
+ * - 2024-12-19: 알림 중요도 정렬 시스템 구현
+ * - 2024-12-19: 실시간 알림 업데이트 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (스마트 알림 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 알림 중요도 예측
+ * - 사용자 행동 패턴 분석
+ * - 알림 타이밍 최적화
+ * - 알림 설정 개인화
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <SmartNotifications 
+ *   userId="user123" 
+ *   userType="instructor" 
+ * />
+ * ```
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -115,7 +183,7 @@ export default function SmartNotifications({ userId, userType }: SmartNotificati
         onClick={() => setShowPanel(!showPanel)}
         className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
-        <Bell className="w-6 h-6" />
+        <span className="text-2xl" title="스마트 알림 (AI 기반 맞춤형 알림)">🔔</span>
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount}

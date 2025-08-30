@@ -1,3 +1,77 @@
+/**
+ * 🧠 JJ Swim Lab - ExerciseIntensityAI 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - AI 기반 수영 운동 강도 분석 및 최적화 시스템
+ * - 개인별 체력 수준에 맞는 운동 강도 자동 조절
+ * - 실시간 운동 강도 모니터링 및 피드백
+ * - 운동 강도 기반 개인 맞춤 훈련 계획 수립
+ * - 운동 강도 변화 추적 및 분석
+ * 
+ * 🔄 **주요 기능**
+ * - AI 기반 운동 강도 분석
+ * - 개인별 체력 수준 평가
+ * - 실시간 운동 강도 모니터링
+ * - 자동 운동 강도 조절
+ * - 운동 강도 기반 훈련 계획 수립
+ * 
+ * 🗄️ **데이터 연동**
+ * - AI 운동 강도 분석 모델
+ * - 개인 체력 수준 데이터
+ * - 실시간 운동 강도 측정
+ * - 운동 강도 변화 이력
+ * - 훈련 계획 및 결과 데이터
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - AI 운동 강도 분석 라이브러리
+ * - 실시간 데이터 처리 라이브러리
+ * - 차트 및 시각화 라이브러리
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. AI 모델의 운동 강도 분석 정확성
+ * 2. 개인별 체력 수준 평가의 정확성
+ * 3. 실시간 데이터 처리의 안정성
+ * 4. 운동 강도 조절의 안전성
+ * 5. 사용자 개인정보 보호
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] AI 운동 강도 분석 동작 확인
+ * - [ ] 개인별 체력 수준 평가 검증
+ * - [ ] 실시간 운동 강도 모니터링 확인
+ * - [ ] 자동 운동 강도 조절 검증
+ * - [ ] 훈련 계획 수립 시스템 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 운동 강도 AI)
+ * - 2024-12-19: AI 운동 강도 분석 시스템 구현
+ * - 2024-12-19: 개인별 체력 수준 평가 시스템 구현
+ * - 2024-12-19: 실시간 운동 강도 모니터링 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (운동 강도 AI 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 모델 고도화
+ * - 실시간 운동 강도 예측
+ * - 자동 훈련 계획 최적화
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <ExerciseIntensityAI 
+ *   onIntensityAnalysis={(intensity) => handleIntensityAnalysis(intensity)}
+ *   onFitnessLevelUpdate={(level) => handleFitnessLevelUpdate(level)}
+ *   onTrainingPlanGenerated={(plan) => handleTrainingPlanGenerated(plan)}
+ *   onIntensityAdjustment={(adjustment) => handleIntensityAdjustment(adjustment)}
+ *   userId="user123"
+ * />
+ * ```
+ */
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';

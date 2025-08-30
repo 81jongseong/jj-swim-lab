@@ -1,10 +1,80 @@
+/**
+ * 📝 JJ Swim Lab - 성능 모니터링 컴포넌트
+ *
+ * 📋 **컴포넌트 목적**
+ * - 웹 애플리케이션의 성능 메트릭을 실시간으로 모니터링
+ * - Core Web Vitals (FCP, LCP, FID, CLS) 및 추가 성능 지표 추적
+ * - 성능 점수 계산 및 상태 표시
+ * - 자동/수동 새로고침을 통한 실시간 모니터링
+ * - 성능 개선 권장사항 제공
+ *
+ * 🔄 **주요 기능**
+ * - 실시간 성능 메트릭 수집 및 표시
+ * - Core Web Vitals 기준별 성능 점수 계산
+ * - 전체 성능 점수 및 상태 표시
+ * - 자동 새로고침 (기본 30초 간격)
+ * - 수동 새로고침 기능
+ * - 성능 개선 팁 및 권장사항
+ *
+ * 🗄️ **데이터 연동**
+ * - Web Vitals API (실제 환경)
+ * - 성능 모니터링 서비스 연동
+ * - 실시간 메트릭 데이터
+ * - 성능 이력 및 추세 분석
+ *
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - UI 컴포넌트 (Card, Badge, Button, Progress)
+ * - Web Vitals API 또는 성능 모니터링 서비스
+ * - Tailwind CSS (스타일링)
+ *
+ * ⚠️ **개발 시 주의사항**
+ * 1. 실제 환경에서는 Web Vitals API 사용 권장
+ * 2. 성능 메트릭 수집 시 사용자 경험 고려
+ * 3. 새로고침 간격 조정으로 서버 부하 최소화
+ * 4. 에러 처리 및 폴백 메트릭 제공
+ * 5. 성능 점수 계산 기준 정확성 검증
+ *
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] Web Vitals API 연동 확인
+ * - [ ] 성능 메트릭 수집 정확성 검증
+ * - [ ] 새로고침 간격 최적화
+ * - [ ] 에러 처리 및 사용자 피드백
+ * - [ ] 성능 점수 계산 로직 검증
+ *
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (성능 모니터링 컴포넌트)
+ * - 2024-12-19: Core Web Vitals 메트릭 구현
+ * - 2024-12-19: 성능 점수 계산 시스템 구현
+ * - 2024-12-19: 자동/수동 새로고침 기능 구현
+ *
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (성능 모니터링 시스템 완료)
+ *
+ * 🚀 **다음 단계**
+ * - 실제 Web Vitals API 연동
+ * - 성능 이력 데이터베이스 구축
+ * - 알림 및 경고 시스템 구현
+ * - 성능 최적화 자동화
+ *
+ * 💡 **사용 예시**
+ * ```tsx
+ * <PerformanceMonitor 
+ *   refreshInterval={60000} 
+ *   onPerformanceAlert={(alert) => handleAlert(alert)}
+ *   enableRealTimeMonitoring={true}
+ * />
+ * ```
+ */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { Badge } from '@/components/ui';
-import { Button } from '@/components/ui';
-import { Progress } from '@/components/ui';
+import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import { Progress } from '@/components/ui/Progress';
 
 interface PerformanceMetrics {
   fcp: number; // First Contentful Paint

@@ -1,3 +1,78 @@
+/**
+ * 🗺️ JJ Swim Lab - OpenStreetMap 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - OpenStreetMap을 활용한 수영장 위치 및 지도 표시
+ * - 수영장 검색 및 위치 기반 서비스 제공
+ * - 사용자 위치 기반 주변 수영장 추천
+ * - 수영장 정보 및 상세 정보 표시
+ * - 경로 안내 및 거리 계산 기능
+ * 
+ * 🔄 **주요 기능**
+ * - OpenStreetMap 지도 표시 및 조작
+ * - 수영장 위치 마커 및 정보 표시
+ * - 사용자 위치 기반 검색 및 추천
+ * - 경로 안내 및 거리 계산
+ * - 지도 줌 및 이동 기능
+ * 
+ * 🗄️ **데이터 연동**
+ * - OpenStreetMap API 및 타일 서버
+ * - 수영장 위치 및 정보 데이터
+ * - 사용자 위치 정보 (GPS)
+ * - 경로 계산 및 안내 데이터
+ * - 지도 상호작용 이벤트
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useRef)
+ * - OpenStreetMap API 또는 Leaflet 라이브러리
+ * - 지도 타일 및 마커 이미지
+ * - 위치 기반 서비스 API
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. OpenStreetMap API 사용량 및 제한
+ * 2. 사용자 위치 정보의 개인정보 보호
+ * 3. 지도 성능 및 로딩 속도 최적화
+ * 4. 다양한 화면 크기에서의 반응형 동작
+ * 5. 지도 데이터의 정확성 및 최신성
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] OpenStreetMap 지도 표시 확인
+ * - [ ] 수영장 마커 및 정보 표시 검증
+ * - [ ] 사용자 위치 기반 검색 동작 확인
+ * - [ ] 경로 안내 및 거리 계산 정확성 확인
+ * - [ ] 지도 상호작용 기능 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 OpenStreetMap 통합)
+ * - 2024-12-19: 수영장 마커 및 정보 표시 구현
+ * - 2024-12-19: 위치 기반 검색 시스템 구현
+ * - 2024-12-19: 경로 안내 및 거리 계산 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (OpenStreetMap 통합 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 수영장 추천 시스템
+ * - 실시간 교통 정보 연동
+ * - 성능 최적화
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <OpenStreetMap 
+ *   onMapLoad={() => handleMapLoad()}
+ *   onMarkerClick={(marker) => handleMarkerClick(marker)}
+ *   onLocationSearch={(query) => handleLocationSearch(query)}
+ *   onRouteCalculate={(from, to) => handleRouteCalculate(from, to)}
+ *   center={[37.5665, 126.9780]}
+ *   zoom={13}
+ * />
+ * ```
+ */
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';

@@ -3,6 +3,7 @@ import { AIConfig, IAIConfig } from '../models/AIConfig';
 import { auth, requirePermission, requireLevel } from '../middleware/auth';
 import { User } from '../models/User'; // Added import for User
 import { requireRole } from '../middleware/auth'; // Added import for requireRole
+import { Checklist } from '../models/Checklist'; // Added import for Checklist
 
 interface AuthRequest extends Request {
   user?: any;
@@ -562,86 +563,98 @@ router.get('/templates/list', auth, requirePermission('aiConfigManagement'), asy
 });
 
 // 10. AI 개인 맞춤 강습 계획 생성 (학생만)
-router.post('/personalized-lesson-plan', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+router.post('/lesson-plan', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
-    const { currentLevel, goals, availableTime, preferredStyle } = req.body;
+    const { swimmingLevel, goals, availableDays, preferredDuration } = req.body;
     
+    // 사용자의 현재 진도율을 데이터베이스에서 조회
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // 체크리스트 기반으로 현재 진도율 계산
+    const checklists = await Checklist.find({ studentId: req.user._id });
+    let currentProgress = 0;
+    if (checklists.length > 0) {
+      const totalItems = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
+      const completedItems = checklists.reduce((sum, checklist) => 
+        sum + checklist.items.filter(item => item.isCompleted).length, 0
+      );
+      currentProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    }
+
     // AI 기반 개인 맞춤 강습 계획 생성
-    const lessonPlan = {
-      student: req.user._id,
-      generatedAt: new Date(),
-      currentLevel,
-      goals,
-      availableTime,
-      preferredStyle,
-      plan: {
-        weekly: {
-          monday: {
-            focus: '기술 연마',
-            duration: '60분',
-            exercises: [
-              '자유형 호흡법 연습 (20분)',
-              '평영 기본 동작 연습 (25분)',
-              '스트레칭 및 정리 (15분)'
-            ],
-            difficulty: 'moderate',
-            expectedProgress: '+5%'
-          },
-          wednesday: {
-            focus: '지구력 향상',
-            duration: '75분',
-            exercises: [
-              '자유형 지속 수영 (30분)',
-              '인터벌 트레이닝 (25분)',
-              '턴 연습 (15분)',
-              '정리 (5분)'
-            ],
-            difficulty: 'challenging',
-            expectedProgress: '+8%'
-          },
-          friday: {
-            focus: '새로운 기술 습득',
-            duration: '60분',
-            exercises: [
-              '평영 고급 동작 연습 (30분)',
-              '배영 기초 연습 (20분)',
-              '정리 (10분)'
-            ],
-            difficulty: 'moderate',
-            expectedProgress: '+6%'
-          }
+    const lessonPlan: any = {
+      studentId: req.user._id,
+      currentLevel: swimmingLevel || 'beginner',
+      currentProgress: currentProgress,
+      goals: goals || ['기본 영법 습득', '지구력 향상', '안전한 수영'],
+      weeklySchedule: {
+        monday: {
+          focus: '기본기 연마',
+          duration: '45분',
+          exercises: [
+            '자유형 기본 동작 연습 (20분)',
+            '스트레칭 및 정리 (15분)',
+            '안전 교육 (10분)'
+          ],
+          difficulty: 'easy',
+          expectedProgress: calculateExpectedProgress(currentProgress, 'easy')
         },
-        monthly: {
-          week1: '기본 기술 완성',
-          week2: '지구력 향상',
-          week3: '새로운 영법 도전',
-          week4: '종합 평가 및 다음 목표 설정'
+        wednesday: {
+          focus: '기술 연마',
+          duration: '60분',
+          exercises: [
+            '자유형 호흡법 연습 (20분)',
+            '평영 기본 동작 연습 (25분)',
+            '스트레칭 및 정리 (15분)'
+          ],
+          difficulty: 'moderate',
+          expectedProgress: calculateExpectedProgress(currentProgress, 'moderate')
         },
-        milestones: [
-          {
-            week: 2,
-            goal: '자유형 100m 완주',
-            reward: '특별 강습 1회'
-          },
-          {
-            week: 4,
-            goal: '평영 기본 동작 완성',
-            reward: '강사 1:1 피드백'
-          },
-          {
-            week: 8,
-            goal: '모든 기본 영법 습득',
-            reward: '수영 경기 참가 자격'
-          }
-        ]
+        friday: {
+          focus: '지구력 향상',
+          duration: '75분',
+          exercises: [
+            '자유형 지속 수영 (30분)',
+            '인터벌 트레이닝 (25분)',
+            '턴 연습 (15분)',
+            '정리 (5분)'
+          ],
+          difficulty: 'challenging',
+          expectedProgress: calculateExpectedProgress(currentProgress, 'challenging')
+        }
       },
-      aiRecommendations: [
-        '현재 진도에 맞춰 평영 학습을 시작하는 것이 최적입니다',
-        '수요일 지구력 훈련으로 전반적인 체력 향상을 기대할 수 있습니다',
-        '금요일 새로운 기술 습득으로 동기부여를 유지하세요',
-        '2주마다 목표를 달성하여 지속적인 성장을 이어가세요'
+      monthly: {
+        week1: '기본 기술 완성',
+        week2: '지구력 향상',
+        week3: '새로운 영법 도전',
+        week4: '종합 평가 및 다음 목표 설정'
+      },
+      milestones: [
+        {
+          week: 2,
+          goal: '자유형 100m 완주',
+          reward: '특별 강습 1회'
+        },
+        {
+          week: 4,
+          goal: '평영 기본 동작 완성',
+          reward: '강사 1:1 피드백'
+        },
+        {
+          week: 8,
+          goal: '모든 기본 영법 습득',
+          reward: '수영 경기 참가 자격'
+        }
       ]
     };
+
+    // AI 추천사항 생성 (현재 진도율 기반)
+    const aiRecommendations = generateAIRecommendations(currentProgress, swimmingLevel, goals);
+
+    lessonPlan.aiRecommendations = aiRecommendations;
 
     res.status(201).json({
       success: true,
@@ -657,6 +670,56 @@ router.post('/personalized-lesson-plan', auth, requireRole(['student']), async (
   }
 });
 
+// 예상 진도율 계산 함수
+function calculateExpectedProgress(currentProgress: number, difficulty: string): string {
+  let progressIncrease = 0;
+  
+  switch (difficulty) {
+    case 'easy':
+      progressIncrease = Math.min(3, Math.max(1, Math.floor(currentProgress * 0.05)));
+      break;
+    case 'moderate':
+      progressIncrease = Math.min(5, Math.max(2, Math.floor(currentProgress * 0.08)));
+      break;
+    case 'challenging':
+      progressIncrease = Math.min(8, Math.max(3, Math.floor(currentProgress * 0.12)));
+      break;
+    default:
+      progressIncrease = 3;
+  }
+  
+  return `+${progressIncrease}%`;
+}
+
+// AI 추천사항 생성 함수
+function generateAIRecommendations(currentProgress: number, level: string, goals: string[]): string[] {
+  const recommendations = [];
+  
+  if (currentProgress < 30) {
+    recommendations.push('기본 동작 연습에 집중하여 안전한 수영 기초를 다지세요');
+    recommendations.push('정기적인 연습으로 기본기를 탄탄히 하세요');
+  } else if (currentProgress < 60) {
+    recommendations.push('기본 기술을 완성하고 새로운 영법에 도전해보세요');
+    recommendations.push('지구력 향상을 위한 지속적인 연습이 필요합니다');
+  } else if (currentProgress < 80) {
+    recommendations.push('고급 기술 습득과 함께 경기 기술도 연마해보세요');
+    recommendations.push('정기적인 평가로 현재 수준을 파악하고 개선점을 찾아보세요');
+  } else {
+    recommendations.push('전문가 수준의 기술을 완성하고 경기 참가를 고려해보세요');
+    recommendations.push('다른 학생들을 지도하는 멘토 역할도 도전해보세요');
+  }
+  
+  if (goals.includes('지구력 향상')) {
+    recommendations.push('인터벌 트레이닝과 장거리 수영으로 체력을 기르세요');
+  }
+  
+  if (goals.includes('안전한 수영')) {
+    recommendations.push('안전 수칙을 항상 준수하고 응급 상황 대처법을 익히세요');
+  }
+  
+  return recommendations;
+}
+
 // 11. AI 진도 예측 및 최적화 (학생만)
 router.get('/progress-prediction', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
@@ -665,53 +728,83 @@ router.get('/progress-prediction', auth, requireRole(['student']), async (req: A
       return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
     }
 
-    // AI 기반 진도 예측
+    // 체크리스트 기반으로 현재 진도율 계산
+    const checklists = await Checklist.find({ studentId: req.user._id });
+    let currentProgress = 0;
+    if (checklists.length > 0) {
+      const totalItems = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
+      const completedItems = checklists.reduce((sum, checklist) => 
+        sum + checklist.items.filter(item => item.isCompleted).length, 0
+      );
+      currentProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    }
+
+    // AI 기반 진도 예측 (현재 진도율 기반)
     const prediction = {
       currentStatus: {
         level: user.studentInfo?.swimmingLevel || 'beginner',
-        progress: 65,
+        progress: currentProgress,
         lastUpdate: new Date()
       },
       predictions: {
         shortTerm: {
-          '1주': { level: 'beginner', progress: 70, confidence: 95 },
-          '2주': { level: 'beginner', progress: 75, confidence: 90 },
-          '4주': { level: 'intermediate', progress: 20, confidence: 85 }
+          '1주': { 
+            level: user.studentInfo?.swimmingLevel || 'beginner', 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.08)), 
+            confidence: 95 
+          },
+          '2주': { 
+            level: user.studentInfo?.swimmingLevel || 'beginner', 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.15)), 
+            confidence: 90 
+          },
+          '4주': { 
+            level: currentProgress >= 70 ? 'intermediate' : (user.studentInfo?.swimmingLevel || 'beginner'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.25)), 
+            confidence: 85 
+          }
         },
         mediumTerm: {
-          '2개월': { level: 'intermediate', progress: 50, confidence: 80 },
-          '3개월': { level: 'intermediate', progress: 80, confidence: 75 },
-          '6개월': { level: 'advanced', progress: 30, confidence: 70 }
+          '2개월': { 
+            level: currentProgress >= 60 ? 'intermediate' : (user.studentInfo?.swimmingLevel || 'beginner'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.4)), 
+            confidence: 80 
+          },
+          '3개월': { 
+            level: currentProgress >= 50 ? 'intermediate' : (user.studentInfo?.swimmingLevel || 'beginner'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.6)), 
+            confidence: 75 
+          },
+          '6개월': { 
+            level: currentProgress >= 40 ? 'advanced' : (currentProgress >= 20 ? 'intermediate' : 'beginner'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 0.8)), 
+            confidence: 70 
+          }
         },
         longTerm: {
-          '1년': { level: 'advanced', progress: 80, confidence: 65 },
-          '2년': { level: 'expert', progress: 50, confidence: 60 }
+          '1년': { 
+            level: currentProgress >= 30 ? 'advanced' : (currentProgress >= 10 ? 'intermediate' : 'beginner'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 1.2)), 
+            confidence: 65 
+          },
+          '2년': { 
+            level: currentProgress >= 20 ? 'expert' : (currentProgress >= 5 ? 'advanced' : 'intermediate'), 
+            progress: Math.min(100, currentProgress + Math.floor(currentProgress * 1.5)), 
+            confidence: 60 
+          }
         }
       },
       optimization: {
-        recommendedPracticeTime: '주 3회, 회당 60-75분',
-        focusAreas: [
-          '자유형 호흡법 완벽 숙련 (2주)',
-          '평영 기본 동작 습득 (4주)',
-          '지구력 향상 (지속적)',
-          '턴 기술 개선 (6주)'
-        ],
-        potentialBottlenecks: [
-          '호흡법 미숙으로 인한 지구력 한계',
-          '새로운 영법 학습 시 기존 기술 퇴보',
-          '정기적인 연습 부족으로 인한 성장 지연'
-        ],
-        solutions: [
-          '호흡법 전용 연습 시간 확보 (주 2회)',
-          '기존 기술 복습 시간 확보 (주 1회)',
-          '연습 일정 고정 및 알림 설정'
-        ]
+        recommendedPracticeTime: calculateRecommendedPracticeTime(currentProgress),
+        focusAreas: generateFocusAreas(currentProgress, user.studentInfo?.swimmingLevel),
+        potentialBottlenecks: generatePotentialBottlenecks(currentProgress),
+        solutions: generateSolutions(currentProgress)
       },
       successProbability: {
-        '1개월 내 목표 달성': 85,
-        '3개월 내 목표 달성': 75,
-        '6개월 내 목표 달성': 65,
-        '1년 내 목표 달성': 55
+        '1개월 내 목표 달성': Math.max(50, 100 - Math.floor(currentProgress * 0.3)),
+        '3개월 내 목표 달성': Math.max(60, 100 - Math.floor(currentProgress * 0.2)),
+        '6개월 내 목표 달성': Math.max(70, 100 - Math.floor(currentProgress * 0.15)),
+        '1년 내 목표 달성': Math.max(80, 100 - Math.floor(currentProgress * 0.1))
       }
     };
 
@@ -728,6 +821,94 @@ router.get('/progress-prediction', auth, requireRole(['student']), async (req: A
     });
   }
 });
+
+// 추천 연습 시간 계산 함수
+function calculateRecommendedPracticeTime(currentProgress: number): string {
+  if (currentProgress < 30) {
+    return '주 2-3회, 회당 30-45분';
+  } else if (currentProgress < 60) {
+    return '주 3-4회, 회당 45-60분';
+  } else if (currentProgress < 80) {
+    return '주 4-5회, 회당 60-75분';
+  } else {
+    return '주 5-6회, 회당 75-90분';
+  }
+}
+
+// 집중 영역 생성 함수
+function generateFocusAreas(currentProgress: number, level: string): string[] {
+  const focusAreas = [];
+  
+  if (currentProgress < 30) {
+    focusAreas.push('자유형 기본 동작 완벽 숙련 (4주)');
+    focusAreas.push('안전한 수영 습관 형성 (지속적)');
+    focusAreas.push('기본 체력 향상 (2주)');
+  } else if (currentProgress < 60) {
+    focusAreas.push('자유형 호흡법 완벽 숙련 (2주)');
+    focusAreas.push('평영 기본 동작 습득 (4주)');
+    focusAreas.push('지구력 향상 (지속적)');
+  } else if (currentProgress < 80) {
+    focusAreas.push('고급 영법 습득 (6주)');
+    focusAreas.push('턴 기술 개선 (4주)');
+    focusAreas.push('경기 전략 학습 (8주)');
+  } else {
+    focusAreas.push('전문가 수준 기술 완성 (12주)');
+    focusAreas.push('경기 경험 축적 (지속적)');
+    focusAreas.push('멘토링 및 지도법 학습 (6주)');
+  }
+  
+  return focusAreas;
+}
+
+// 잠재적 병목 지점 생성 함수
+function generatePotentialBottlenecks(currentProgress: number): string[] {
+  const bottlenecks = [];
+  
+  if (currentProgress < 30) {
+    bottlenecks.push('기본 동작 미숙으로 인한 안전 위험');
+    bottlenecks.push('체력 부족으로 인한 연습 지속 어려움');
+    bottlenecks.push('수영에 대한 두려움과 긴장감');
+  } else if (currentProgress < 60) {
+    bottlenecks.push('호흡법 미숙으로 인한 지구력 한계');
+    bottlenecks.push('새로운 영법 학습 시 기존 기술 퇴보');
+    bottlenecks.push('정기적인 연습 부족으로 인한 성장 지연');
+  } else if (currentProgress < 80) {
+    bottlenecks.push('고급 기술 습득 시 기본기 퇴보');
+    bottlenecks.push('경기 압박감으로 인한 실력 발휘 실패');
+    bottlenecks.push('지나친 연습으로 인한 과부하');
+  } else {
+    bottlenecks.push('기술적 한계에 도달한 느낌');
+    bottlenecks.push('동기부여 유지의 어려움');
+    bottlenecks.push('새로운 도전 과제 부족');
+  }
+  
+  return bottlenecks;
+}
+
+// 해결 방안 생성 함수
+function generateSolutions(currentProgress: number): string[] {
+  const solutions = [];
+  
+  if (currentProgress < 30) {
+    solutions.push('기본 동작 전용 연습 시간 확보 (주 2회)');
+    solutions.push('체력 향상을 위한 보조 운동 병행');
+    solutions.push('강사와의 1:1 맞춤 지도');
+  } else if (currentProgress < 60) {
+    solutions.push('호흡법 전용 연습 시간 확보 (주 2회)');
+    solutions.push('기존 기술 복습 시간 확보 (주 1회)');
+    solutions.push('연습 일정 고정 및 알림 설정');
+  } else if (currentProgress < 80) {
+    solutions.push('기본기 복습과 고급 기술 학습 병행');
+    solutions.push('정기적인 경기 참가로 압박감 극복');
+    solutions.push('적절한 휴식과 회복 시간 확보');
+  } else {
+    solutions.push('새로운 목표 설정 및 도전 과제 제시');
+    solutions.push('멘토링 역할로 동기부여 유지');
+    solutions.push('다양한 수영 스타일과 기술 탐구');
+  }
+  
+  return solutions;
+}
 
 // 12. AI 기반 강사 매칭 시스템 (학생만)
 router.get('/instructor-matching', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {

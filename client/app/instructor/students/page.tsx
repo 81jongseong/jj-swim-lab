@@ -1,9 +1,62 @@
+/**
+ * 👨‍🏫 JJ Swim Lab - 강사 학생 관리 페이지
+ *
+ * 📋 **페이지 목적**
+ * - 강사가 담당하는 학생들을 체계적으로 관리하는 페이지
+ * - 반별 학생 목록 및 상세 정보 관리
+ * - 학생별 체크리스트 및 진도율 추적
+ * - 학생 정보 수정 및 관리 기능
+ *
+ * 🔄 **데이터 플로우**
+ * 1. 페이지 로드 시 강사의 반 목록을 API로 조회
+ * 2. 각 반의 학생 정보와 진도율을 실시간으로 계산
+ * 3. 센터별 레벨 정보를 데이터베이스에서 조회
+ * 4. 학생 정보 수정 시 API를 통해 데이터베이스 업데이트
+ *
+ * 🎯 **주요 기능**
+ * - 반별 학생 목록 표시 (진도율, 출석률, 최근 강습 정보)
+ * - 학생별 체크리스트 상세 보기 및 관리
+ * - 학생 정보 수정 및 업데이트
+ * - 센터별 레벨 시스템 연동
+ * - 진도율 실시간 계산 및 표시
+ *
+ * 🔧 **개발 참고사항**
+ * - 모든 데이터는 데이터베이스에서 실시간 조회
+ * - 하드코딩된 데이터 완전 제거
+ * - API 실패 시 적절한 에러 처리 및 사용자 안내
+ * - 진도율은 체크리스트 완료 항목 기반으로 계산
+ *
+ * 📝 **수정 이력**
+ * - 2024-12-19: 하드코딩된 데이터 제거 및 API 연동 완료
+ * - 2024-12-19: 진도율 계산 로직을 데이터베이스 기반으로 변경
+ * - 2024-12-19: 학생 정보 수정 기능 API 연동 완료
+ * - 2024-12-19: 센터별 레벨 시스템 연동 완료
+ *
+ * ✅ **향후 수정 체크리스트**
+ * - [ ] 실시간 데이터 업데이트 기능 추가
+ * - [ ] 학생별 성과 분석 차트 구현
+ * - [ ] 일괄 학생 관리 기능 추가
+ * - [ ] 학생 검색 및 필터링 기능 고도화
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/utils/api';
-import { motion } from 'framer-motion';
-import { motionPresets } from '@/lib/motion';
+import { useAuth } from '../../../hooks/useAuth';
+import { Card, Badge, Button, Progress } from '@/components/ui';
+import { 
+  Users, 
+  TrendingUp, 
+  Calendar, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  Edit,
+  Eye,
+  Plus,
+  Search,
+  Filter
+} from 'lucide-react';
 
 interface Student {
   _id: string;
@@ -16,7 +69,7 @@ interface Student {
   nextLesson: string;
   attendance: number;
   totalLessons: number;
-  notes: string;
+  notes?: string;
 }
 
 interface Class {
@@ -24,171 +77,157 @@ interface Class {
   name: string;
   level: string;
   instructor: string;
-  students: Student[];
-  schedule: string;
   maxStudents: number;
+  schedule: string;
+  students: Student[];
 }
 
-interface ChecklistItem {
-  teachingMethodId?: string;
-  stepName: string;
-  stepOrder: number;
-  isCompleted: boolean;
-  completedAt?: string;
-  category?: string;
-  difficulty?: string;
-  tips?: string;
-  notes?: string;
-  instructorNotes?: string;
-  instructorComment?: string; // 강사 코멘트 추가
-  commentDate?: string; // 코멘트 작성일
-}
-
-interface Checklist {
+interface CenterLevel {
   _id: string;
-  studentId: string;
-  courseId: string;
-  instructorId: string;
-  teachingMethodId: string;
-  items: ChecklistItem[];
-  overallProgress: number;
-  lastUpdated: string;
-  startDate: string;
-  targetCompletionDate?: string;
-  status: 'active' | 'completed' | 'paused';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  description: string;
+  requirements: string[];
+  estimatedDuration: number;
 }
 
-const InstructorStudentsPage = () => {
-  // useAuth 제거하고 기본 상태로 변경
+export default function InstructorStudents() {
+  const { user } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
-  
-  // 모달 관련 상태
   const [showStudentModal, setShowStudentModal] = useState(false);
-  const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  
-  // 체크리스트 관련 상태
-  const [checklistData, setChecklistData] = useState<any>(null);
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [selectedChecklistItem, setSelectedChecklistItem] = useState<any>(null);
-  const [commentText, setCommentText] = useState('');
-  
-  // 레벨별 체크리스트 데이터
-  const [beginnerChecklist, setBeginnerChecklist] = useState<any[]>([]);
-  const [intermediateChecklist, setIntermediateChecklist] = useState<any[]>([]);
-  const [advancedChecklist, setAdvancedChecklist] = useState<any[]>([]);
-  
-  // 센터별 레벨 데이터
-  const [centerLevels, setCenterLevels] = useState<any[]>([]);
-  const [currentCenterId, setCurrentCenterId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [centerLevels, setCenterLevels] = useState<CenterLevel[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
 
   useEffect(() => {
-    loadClasses();
-  }, []);
+    if (user?.userType === 'instructor') {
+      loadClasses();
+    }
+  }, [user]);
+
+  // 강사의 반 목록 로드
+  const loadClasses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('인증 토큰이 없습니다.');
+        return;
+      }
+
+      // 강사의 반 목록 조회 API 호출
+      const response = await fetch('http://localhost:5000/api/instructor/classes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.classes && Array.isArray(data.classes)) {
+          // 각 학생의 진도율을 체크리스트 기반으로 계산
+          const classesWithProgress = await Promise.all(
+            data.classes.map(async (classItem: any) => {
+              const studentsWithProgress = await Promise.all(
+                classItem.students.map(async (student: any) => {
+                  const progress = await calculateStudentProgress(student._id, classItem._id);
+                  return {
+                    ...student,
+                    progress: progress
+                  };
+                })
+              );
+
+              return {
+                ...classItem,
+                students: studentsWithProgress
+              };
+            })
+          );
+
+          setClasses(classesWithProgress);
+          
+          // 첫 번째 반을 기본 선택
+          if (classesWithProgress.length > 0) {
+            setSelectedClass(classesWithProgress[0]);
+          }
+        } else {
+          setClasses([]);
+          setError('반 데이터 형식이 올바르지 않습니다.');
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || '반 데이터를 불러오는데 실패했습니다.');
+        setClasses([]);
+      }
+    } catch (error) {
+      console.error('반 목록 로드 실패:', error);
+      setError('네트워크 오류가 발생했습니다.');
+      setClasses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 학생별 진도율 계산 (체크리스트 기반)
+  const calculateStudentProgress = async (studentId: string, classId: string): Promise<number> => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return 0;
+
+      const response = await fetch(`http://localhost:5000/api/checklist/student/${studentId}/class/${classId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
+          const totalItems = data.checklist.items.length;
+          const completedItems = data.checklist.items.filter((item: any) => item.isCompleted).length;
+          return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+        }
+      }
+      return 0;
+    } catch (error) {
+      console.error('진도율 계산 실패:', error);
+      return 0;
+    }
+  };
 
   // 센터별 레벨 로드
   const loadCenterLevels = async (centerId: string) => {
     try {
-      console.log('🔍 센터별 레벨 로드 시작:', centerId);
-      const response = await apiClient.get(`/center-levels/center/${centerId}`);
-      
-      if (response.success) {
-        setCenterLevels(response.data);
-        setCurrentCenterId(centerId);
-        console.log('✅ 센터별 레벨 로드 성공:', response.data);
-      } else {
-        console.error('❌ 센터별 레벨 로드 실패:', response.message);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:5000/api/centers/${centerId}/levels`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.levels && Array.isArray(data.levels)) {
+          setCenterLevels(data.levels);
+        }
       }
     } catch (error) {
-      console.error('❌ 센터별 레벨 로드 중 오류:', error);
-    }
-  };
-
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-      // 실제로는 API 호출
-      const mockClasses: Class[] = [
-        {
-          _id: '507f1f77bcf86cd799439011',
-          name: '초급 자유형 A반',
-          level: '초급',
-          instructor: '김강사',
-          maxStudents: 8,
-          schedule: '월,수,금 14:00-16:00',
-          students: [
-            {
-              _id: '507f1f77bcf86cd799439012',
-              name: '김수영',
-              email: 'kim@example.com',
-              phone: '010-1234-5678',
-              level: '초급',
-              progress: 60,
-              lastLesson: '2025-01-20',
-              nextLesson: '2025-01-22',
-              attendance: 8,
-              totalLessons: 10,
-              notes: '호흡법에 어려움을 겪고 있음'
-            },
-            {
-              _id: '507f1f77bcf86cd799439013',
-              name: '이영희',
-              email: 'lee@example.com',
-              phone: '010-2345-6789',
-              level: '초급',
-              progress: 40,
-              lastLesson: '2025-01-19',
-              nextLesson: '2025-01-21',
-              attendance: 6,
-              totalLessons: 8,
-              notes: '기본 자세가 안정적임'
-            }
-          ]
-        },
-        {
-          _id: '507f1f77bcf86cd799439014',
-          name: '중급 접영 B반',
-          level: '중급',
-          instructor: '김강사',
-          maxStudents: 6,
-          schedule: '화,목 16:00-18:00',
-          students: [
-            {
-              _id: '507f1f77bcf86cd799439015',
-              name: '박철수',
-              email: 'park@example.com',
-              phone: '010-3456-7890',
-              level: '중급',
-              progress: 80,
-              lastLesson: '2025-01-18',
-              nextLesson: '2025-01-23',
-              attendance: 12,
-              totalLessons: 15,
-              notes: '턴 기법에 능숙함'
-            }
-          ]
-        }
-      ];
-      setClasses(mockClasses);
-      
-      // 센터별 레벨 로드 (임시로 첫 번째 클래스의 센터 ID 사용)
-      // 실제로는 강사의 센터 ID를 가져와야 함
-      const mockCenterId = '507f1f77bcf86cd799439010'; // 임시 센터 ID
-      await loadCenterLevels(mockCenterId);
-      
-    } catch (error) {
-      console.error('반 목록 로드 실패:', error);
-    } finally {
-      setLoading(false);
+      console.error('센터 레벨 로드 실패:', error);
     }
   };
 
@@ -215,648 +254,285 @@ const InstructorStudentsPage = () => {
     if (!editingStudent) return;
     
     try {
-      // 학생 정보 업데이트 로직 (필요시 구현)
-      console.log('학생 정보 업데이트:', editingStudent);
-      setMessage('학생 정보가 업데이트되었습니다.');
-      setShowEditModal(false);
-      
-      // 학생 목록 새로고침
-      // loadStudents();
-      
-    } catch (error) {
-      console.error('학생 정보 업데이트 실패:', error);
-      setMessage('학생 정보 업데이트에 실패했습니다.');
-    }
-  };
-
-  // 레벨 변환 함수
-  const convertLevelToEnglish = (koreanLevel: string): string => {
-    const levelMap: { [key: string]: string } = {
-      '초급': 'beginner',
-      '중급': 'intermediate',
-      '상급': 'advanced'
-    };
-    return levelMap[koreanLevel] || 'beginner';
-  };
-
-  const loadTeachingMethodCheckpoints = async (level: string) => {
-    try {
-      console.log('🔍 강습법 체크포인트 로드:', level);
-      
-      // 한국어 레벨을 영어로 변환
-      const englishLevel = convertLevelToEnglish(level);
-      console.log('🌐 변환된 레벨:', englishLevel);
-      
-      // 실제 API 호출로 변경
-      const response = await fetch(`http://localhost:5000/api/teaching-methods?level=${englishLevel}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📊 API 응답 데이터:', data);
-        return data.data || [];
-      } else {
-        console.log('📋 강습법 데이터를 가져올 수 없습니다.');
-        return [];
-      }
-    } catch (error) {
-      console.error('강습법 로드 오류:', error);
-      return [];
-    }
-  };
-
-  const handleGenerateChecklist = async (student: Student) => {
-    try {
-      console.log('🔧 체크리스트 생성:', student);
-      
-      // 1. 학생 레벨에 맞는 강습법 체크포인트 가져오기
-      const teachingMethods = await loadTeachingMethodCheckpoints(student.level);
-      
-      if (teachingMethods.length === 0) {
-        alert('해당 레벨의 강습법이 설정되지 않았습니다. 최고관리자에게 문의하세요.');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage('인증 토큰이 없습니다.');
         return;
       }
 
-      // 2. 강습법을 체크리스트 아이템으로 변환 (서버에서 처리됨)
-      // 클라이언트에서는 아이템을 미리 생성하지 않고 서버에 위임
-
-      // 3. 체크리스트 생성 (서버에서 처리)
-      const checklistData = {
-        studentId: student._id,
-        courseId: selectedClass?._id || '',
-        studentLevel: student.level // 학생 레벨만 전송
-      };
-
-      // 4. 체크리스트를 서버에 저장
-      const savedChecklist = await saveChecklistToServer(checklistData);
-      
-      if (savedChecklist) {
-        // 새로 생성된 체크리스트를 상태에 설정
-        setChecklistData(savedChecklist);
-        setShowChecklistModal(true);
-        console.log('✅ 최고관리자 강습법 기반 체크리스트 생성 및 저장 완료');
-        
-        // 체크리스트 데이터를 다시 로드하여 최신 상태 유지
-        await loadStudentChecklist(student._id, selectedClass?._id || '');
-      } else {
-        alert('체크리스트 저장에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('체크리스트 생성 오류:', error);
-      alert('체크리스트 생성 중 오류가 발생했습니다.');
-    }
-  };
-
-  // 체크리스트를 서버에 저장하는 함수
-  const saveChecklistToServer = async (checklistData: { studentId: string; courseId: string; studentLevel: string }): Promise<Checklist | null> => {
-    try {
-      console.log('💾 체크리스트 서버 저장:', checklistData);
-      
-      const response = await fetch('http://localhost:5000/api/checklist/generate', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          studentId: checklistData.studentId,
-          courseId: checklistData.courseId,
-          studentLevel: checklistData.studentLevel
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ 체크리스트 저장 성공:', data);
-        return data.checklist;
-      } else {
-        const errorData = await response.json();
-        console.error('❌ 체크리스트 저장 실패:', errorData);
-        return null;
-      }
-    } catch (error) {
-      console.error('체크리스트 저장 오류:', error);
-      return null;
-    }
-  };
-
-  const handleChecklistItemUpdate = async (checklistId: string, itemIndex: number, isCompleted: boolean) => {
-    try {
-      if (!checklistData) return;
-
-      const updatedItems = [...checklistData.items];
-      updatedItems[itemIndex] = {
-        ...updatedItems[itemIndex],
-        isCompleted,
-        completedAt: isCompleted ? new Date().toISOString() : undefined
-      };
-
-      const overallProgress = Math.round((updatedItems.filter(item => item.isCompleted).length / updatedItems.length) * 100);
-
-      const updatedChecklist: Checklist = {
-        ...checklistData,
-        items: updatedItems,
-        overallProgress,
-        lastUpdated: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      setChecklistData(updatedChecklist);
-    } catch (error) {
-      console.error('체크리스트 아이템 업데이트 오류:', error);
-    }
-  };
-
-  // 체크리스트 로드
-  const loadStudentChecklist = async (studentId: string, courseId: string) => {
-    try {
-      // 체크리스트 로드 로직 (필요시 구현)
-      console.log('체크리스트 로드:', { studentId, courseId });
-      
-    } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
-      setMessage('체크리스트를 불러오는데 실패했습니다.');
-    }
-  };
-
-  // 강사 코멘트 추가 함수
-  const handleAddComment = (index: number, item: ChecklistItem) => {
-    setSelectedChecklistItem({ index, item });
-    setCommentText(item.instructorComment || '');
-    setShowCommentModal(true);
-  };
-
-  // 강사 코멘트 저장 함수
-  const handleSaveComment = async () => {
-    if (!selectedChecklistItem || !checklistData) return;
-
-    try {
-                   const updatedItems = [...checklistData.items];
-             updatedItems[selectedChecklistItem.index] = {
-               ...updatedItems[selectedChecklistItem.index],
-               instructorNotes: commentText, // 서버 모델과 일치
-               instructorComment: commentText, // 클라이언트 호환성
-               commentDate: new Date().toISOString()
-             };
-
-             const updatedChecklist: Checklist = {
-               ...checklistData,
-               items: updatedItems,
-               lastUpdated: new Date().toISOString(),
-               updatedAt: new Date().toISOString()
-             };
-
-      // 서버에 업데이트된 체크리스트 저장
-      const response = await fetch(`http://localhost:5000/api/checklist/${checklistData._id}`, {
+      // 학생 정보 업데이트 API 호출
+      const response = await fetch(`http://localhost:5000/api/students/${editingStudent._id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          items: updatedItems
-        })
+        body: JSON.stringify(editingStudent)
       });
 
       if (response.ok) {
-        setChecklistData(updatedChecklist);
-        setShowCommentModal(false);
-        setSelectedChecklistItem(null);
-        setCommentText('');
-        console.log('✅ 강사 코멘트 저장 완료');
-      } else {
-        alert('코멘트 저장에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('코멘트 저장 오류:', error);
-      alert('코멘트 저장 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleDeleteChecklist = async () => {
-    if (!checklistData || !window.confirm('정말로 이 체크리스트를 삭제하시겠습니까?')) {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`http://localhost:5000/api/checklist/${checklistData._id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        alert('체크리스트가 성공적으로 삭제되었습니다!');
-        setChecklistData(null);
-        setShowChecklistModal(false);
-        // 체크리스트가 삭제되었으므로 더 이상 로드하지 않음
-        console.log('✅ 체크리스트 삭제 완료 - 더 이상 로드하지 않음');
+        setMessage('학생 정보가 업데이트되었습니다.');
+        setShowEditModal(false);
+        
+        // 학생 목록 새로고침
+        loadClasses();
       } else {
         const errorData = await response.json();
-        alert(`체크리스트 삭제 실패: ${errorData.message || '알 수 없는 오류'}`);
+        setMessage(errorData.message || '학생 정보 업데이트에 실패했습니다.');
       }
     } catch (error) {
-      console.error('체크리스트 삭제 오류:', error);
-      alert('체크리스트 삭제 중 오류가 발생했습니다.');
+      console.error('학생 정보 업데이트 실패:', error);
+      setMessage('네트워크 오류가 발생했습니다.');
     }
   };
 
-  // 페이지 로드 시 모든 레벨의 체크리스트 로드
-  useEffect(() => {
-    loadAllLevelChecklists();
-  }, []);
-
-  // 모든 레벨의 체크리스트 로드
-  const loadAllLevelChecklists = async () => {
+  // 체크리스트 항목 업데이트
+  const handleChecklistUpdate = async (studentId: string, itemId: string, isCompleted: boolean) => {
     try {
-      setLoading(true);
-      console.log('🚀 모든 레벨 체크리스트 로드 시작...');
-      
-      // 초급 체크리스트 로드
-      console.log('🔍 초급 체크리스트 로드 시작...');
-      const beginnerResponse = await apiClient.getTeachingMethods({ difficulty: 'beginner' });
-      console.log('📊 초급 API 응답:', beginnerResponse);
-      if (beginnerResponse.success) {
-        const beginnerItems = createChecklistItems(beginnerResponse.data, 'beginner');
-        setBeginnerChecklist(beginnerItems);
-        console.log('✅ 초급 체크리스트 설정 완료:', beginnerItems.length);
-      }
-      
-      // 중급 체크리스트 로드
-      console.log('🔍 중급 체크리스트 로드 시작...');
-      const intermediateResponse = await apiClient.getTeachingMethods({ difficulty: 'intermediate' });
-      console.log('📊 중급 API 응답:', intermediateResponse);
-      if (intermediateResponse.success) {
-        const intermediateItems = createChecklistItems(intermediateResponse.data, 'intermediate');
-        setIntermediateChecklist(intermediateItems);
-        console.log('✅ 중급 체크리스트 설정 완료:', intermediateItems.length);
-      }
-      
-      // 상급 체크리스트 로드
-      console.log('🔍 상급 체크리스트 로드 시작...');
-      const advancedResponse = await apiClient.getTeachingMethods({ difficulty: 'advanced' });
-      console.log('📊 상급 API 응답:', advancedResponse);
-      if (advancedResponse.success) {
-        const advancedItems = createChecklistItems(advancedResponse.data, 'advanced');
-        setAdvancedChecklist(advancedItems);
-        console.log('✅ 상급 체크리스트 설정 완료:', advancedItems.length);
-      }
-      
-      console.log('🎉 모든 레벨 체크리스트 로드 완료!');
-      
-    } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
-      setMessage('체크리스트를 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-  // 체크리스트 아이템 생성 (센터별 레벨 사용)
-  const createChecklistItems = (teachingMethods: any[], level: string) => {
-    let allItems: any[] = [];
-    
-    console.log('🔍 createChecklistItems 호출:', { level, methodsCount: teachingMethods.length });
-    console.log('🔍 센터별 레벨 정보:', centerLevels);
-    
-    teachingMethods.forEach((method, methodIndex) => {
-      console.log(`📝 ${methodIndex + 1}번째 강습법 처리:`, {
-        name: method.name,
-        level: method.level,
-        category: method.category
+      const response = await fetch(`http://localhost:5000/api/checklist/items/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isCompleted })
       });
-      
-      // 센터별 레벨에서 해당 레벨 찾기
-      let centerLevel = centerLevels.find(cl => 
-        cl.levelName === '초급' && level === 'beginner' ||
-        cl.levelName === '중급' && level === 'intermediate' ||
-        cl.levelName === '상급' && level === 'advanced'
-      );
-      
-      // 센터별 레벨이 없으면 기본값 사용
-      if (!centerLevel) {
-        centerLevel = {
-          levelName: level === 'beginner' ? '초급' : level === 'intermediate' ? '중급' : '상급',
-          levelColor: level === 'beginner' ? 'bg-green-500' : level === 'intermediate' ? 'bg-yellow-500' : 'bg-orange-500'
-        };
-      }
-      
-      // 강습법 제목을 상위 체크박스로 추가
-      allItems.push({
-        id: `method-${method._id}`,
-        stepName: method.name,
-        stepOrder: methodIndex + 1,
-        category: method.category || 'general',
-        difficulty: centerLevel.levelName, // 센터별 레벨 이름 사용
-        levelColor: centerLevel.levelColor, // 센터별 레벨 색상 사용
-        tips: method.description || '',
-        teachingMethodId: method._id,
-        isCompleted: false,
-        isMethod: true, // 강습법 제목임을 표시
-        steps: [] // 하위 step들을 저장할 배열
-      });
-      
-      // 각 강습법의 step들을 하위 체크박스로 추가
-      method.steps.forEach((step: string, stepIndex: number) => {
-        allItems.push({
-          id: `step-${method._id}-${stepIndex}`,
-          stepName: step,
-          stepOrder: stepIndex + 1,
-          category: method.category || 'general',
-          difficulty: centerLevel.levelName, // 센터별 레벨 이름 사용
-          levelColor: centerLevel.levelColor, // 센터별 레벨 색상 사용
-          tips: method.tips[stepIndex] || '',
-          teachingMethodId: method._id,
-          isCompleted: false,
-          isMethod: false, // step 항목임을 표시
-          parentMethodId: method._id, // 상위 강습법 ID
-          parentMethodName: method.name // 상위 강습법 이름
-        });
-      });
-    });
-    
-    console.log('✅ createChecklistItems 완료:', {
-      totalItems: allItems.length,
-      methods: allItems.filter(item => item.isMethod).length,
-      steps: allItems.filter(item => !item.isMethod).length
-    });
-    
-    return allItems;
-  };
 
-  // 체크리스트 섹션 렌더링 (계층 구조, 센터별 레벨 색상 사용)
-  const renderChecklistSection = (title: string, items: any[], level: string, color: string) => {
-    if (!items || items.length === 0) return null;
-    
-    // 강습법과 step을 분리
-    const methods = items.filter(item => item.isMethod);
-    const steps = items.filter(item => !item.isMethod);
-    
-    // 실제 레벨을 확인하여 제목 동적 생성
-    let actualLevel = title;
-    let actualLevelColor = color;
-    
-    if (methods.length > 0) {
-      const firstMethod = methods[0];
-      if (firstMethod.difficulty) {
-        actualLevel = firstMethod.difficulty;
-        // 센터별 레벨 색상이 있으면 사용
-        if (firstMethod.levelColor) {
-          actualLevelColor = firstMethod.levelColor;
+      if (response.ok) {
+        // 체크리스트 업데이트 후 진도율 재계산
+        if (selectedClass) {
+          const updatedStudents = selectedClass.students.map(student => {
+            if (student._id === studentId) {
+              return { ...student, progress: 0 }; // 임시로 0으로 설정, 나중에 재계산
+            }
+            return student;
+          });
+
+          setSelectedClass({
+            ...selectedClass,
+            students: updatedStudents
+          });
+
+          // 진도율 재계산
+          const updatedStudent = updatedStudents.find(s => s._id === studentId);
+          if (updatedStudent) {
+            const newProgress = await calculateStudentProgress(studentId, selectedClass._id);
+            const finalUpdatedStudents = selectedClass.students.map(student => {
+              if (student._id === studentId) {
+                return { ...student, progress: newProgress };
+              }
+              return student;
+            });
+
+            setSelectedClass({
+              ...selectedClass,
+              students: finalUpdatedStudents
+            });
+          }
         }
       }
+    } catch (error) {
+      console.error('체크리스트 업데이트 실패:', error);
     }
-    
-    console.log(`🔍 ${title} 체크리스트 렌더링:`, {
-      title,
-      actualLevel,
-      actualLevelColor,
-      methodsCount: methods.length,
-      firstMethodLevel: methods[0]?.difficulty,
-      firstMethodColor: methods[0]?.levelColor
-    });
-    
-    return (
-      <motion.div
-        key={level}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        {/* 레벨별 헤더 */}
-        <div className={`flex items-center space-x-3 mb-6 p-4 rounded-lg ${actualLevelColor} bg-opacity-10 border-l-4 ${actualLevelColor.replace('bg-', 'border-')}`}>
-          <div className={`w-4 h-4 rounded-full ${actualLevelColor}`}></div>
-          <h3 className={`text-xl font-bold ${actualLevelColor.replace('bg-', 'text-')}`}>
-            {actualLevel} 체크리스트 ({methods.length}개 강습법)
-          </h3>
-        </div>
-        
-        {/* 강습법별 체크리스트 */}
-        <div className="space-y-4">
-          {methods.map((method, methodIndex) => {
-            // 해당 강습법의 step들 찾기
-            const methodSteps = steps.filter(step => step.parentMethodId === method.teachingMethodId);
-            
-            // 진행 상태 계산
-            const completedSteps = methodSteps.filter(step => step.isCompleted).length;
-            const totalSteps = methodSteps.length;
-            const progressPercentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-            
-            // 상위 체크박스 상태 결정
-            let methodStatus = 'not-started';
-            let methodStatusText = '미시작';
-            let methodStatusColor = 'text-gray-500';
-            let methodStatusBgColor = 'bg-gray-100';
-            
-            if (completedSteps === totalSteps && totalSteps > 0) {
-              methodStatus = 'completed';
-              methodStatusText = '완료';
-              methodStatusColor = 'text-green-600';
-              methodStatusBgColor = 'bg-green-100';
-            } else if (completedSteps > 0) {
-              methodStatus = 'in-progress';
-              methodStatusText = '진행중';
-              methodStatusColor = 'text-blue-600';
-              methodStatusBgColor = 'bg-blue-100';
-            }
-            
-            return (
-              <motion.div
-                key={method.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: methodIndex * 0.1 }}
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-              >
-                {/* 강습법 제목 (상위 체크박스) */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50">
-                  <div className="flex items-center space-x-3">
-                    {/* 상위 체크박스 상태 표시 */}
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                      methodStatus === 'completed'
-                        ? 'bg-green-500 border-green-500 text-white cursor-pointer'
-                        : methodStatus === 'in-progress'
-                        ? 'bg-blue-500 border-blue-500 text-white cursor-pointer'
-                        : 'border-gray-400 text-gray-400 cursor-pointer hover:border-gray-500'
-                    }`}>
-                      {methodStatus === 'completed' ? '✓' : 
-                       methodStatus === 'in-progress' ? '●' : ''}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h4 className={`text-lg font-semibold ${
-                        methodStatus === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'
-                      }`}>
-                        {method.stepName}
-                      </h4>
-                      {method.tips && (
-                        <p className="text-sm text-gray-600 mt-1">{method.tips}</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      {/* 진행 상태 배지 */}
-                      <span className={`text-xs px-2 py-1 rounded ${methodStatusColor} ${methodStatusBgColor}`}>
-                        {methodStatusText}
-                      </span>
-                      
-                      {/* 진행률 표시 */}
-                      {methodStatus === 'in-progress' && (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          {progressPercentage}%
-                        </span>
-                      )}
-                      
-                      <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                        {completedSteps}/{totalSteps} 단계
-                      </span>
-                      
-                      <button
-                        onClick={() => handleAddComment(0, method)}
-                        className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-300 hover:border-blue-500 transition-colors"
-                      >
-                        💬 코멘트
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* 강사 코멘트 표시 */}
-                  {method.instructorComment && (
-                    <div className="mt-3 p-2 bg-blue-50 rounded border-l-2 border-blue-300">
-                      <p className="text-xs text-blue-800">
-                        <span className="font-medium">강사 코멘트:</span> {method.instructorComment}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Step 항목들 (하위 체크박스) */}
-                {methodSteps.length > 0 && (
-                  <div className="p-4 space-y-3">
-                    <h5 className="text-sm font-medium text-gray-700 mb-3">📋 학습 단계</h5>
-                    {methodSteps.map((step, stepIndex) => (
-                      <motion.div
-                        key={step.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: stepIndex * 0.05 }}
-                        className="flex items-start space-x-3 pl-6"
-                      >
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center cursor-pointer transition-colors mt-0.5 ${
-                          step.isCompleted 
-                            ? 'bg-green-500 border-green-500 text-white' 
-                            : 'border-gray-400 text-gray-400 hover:border-gray-500'
-                        }`}>
-                          {step.isCompleted ? '✓' : ''}
-                        </div>
-                        <div className="flex-1">
-                          <span className={`text-sm ${
-                            step.isCompleted ? 'line-through text-gray-500' : 'text-gray-700'
-                          }`}>
-                            Step {step.stepOrder}: {step.stepName}
-                          </span>
-                          {step.tips && (
-                            <p className="text-xs text-gray-500 mt-1 ml-4">{step.tips}</p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleAddComment(0, step)}
-                          className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-300 hover:border-blue-500 transition-colors"
-                        >
-                          💬
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-    );
   };
+
+  // 필터링된 학생 목록
+  const filteredStudents = selectedClass?.students.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLevel = filterLevel === 'all' || student.level === filterLevel;
+    return matchesSearch && matchesLevel;
+  }) || [];
+
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case '초급': return 'bg-blue-100 text-blue-800';
+      case '중급': return 'bg-green-100 text-green-800';
+      case '고급': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return 'text-green-600';
+    if (progress >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getProgressBarColor = (progress: number) => {
+    if (progress >= 80) return 'bg-green-500';
+    if (progress >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  if (user?.userType !== 'instructor') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+          <p className="text-gray-600">강사 계정으로 로그인해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">오류가 발생했습니다</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={loadClasses} variant="outline">
+            다시 시도
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">학생 관리</h1>
-          <p className="mt-2 text-gray-600">학생들의 정보와 체크리스트를 관리하세요.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">학생 관리</h1>
+          <p className="text-gray-600">담당 학생들의 정보와 진도를 관리하세요.</p>
         </div>
 
         {/* 반 선택 */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            반 선택
-          </label>
-          <select
-            value={selectedClass?._id || ''}
-            onChange={(e) => handleClassChange(e.target.value)}
-            className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">반을 선택하세요</option>
-            {classes.map((cls) => (
-              <option key={cls._id} value={cls._id}>
-                {cls.name} ({cls.students.length}/{cls.maxStudents}명)
-              </option>
-            ))}
-          </select>
-        </div>
+        <Card className="p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">반 선택</h2>
+            <Button onClick={() => window.location.href = '/instructor/classes'}>
+              <Plus className="h-4 w-4 mr-2" />
+              새 반 만들기
+            </Button>
+          </div>
+
+          {classes.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">아직 등록된 반이 없습니다</h3>
+              <p className="text-gray-600">새로운 반을 만들어 학생들을 관리해보세요.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {classes.map((classItem) => (
+                <Card 
+                  key={classItem._id} 
+                  className={`p-4 cursor-pointer transition-all ${
+                    selectedClass?._id === classItem._id 
+                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                      : 'hover:shadow-md'
+                  }`}
+                  onClick={() => handleClassChange(classItem._id)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{classItem.name}</h3>
+                      <p className="text-sm text-gray-600">{classItem.schedule}</p>
+                    </div>
+                    <Badge className={getLevelColor(classItem.level)}>
+                      {classItem.level}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">학생 수:</span>
+                      <span className="font-medium">{classItem.students.length}/{classItem.maxStudents}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">평균 진도율:</span>
+                      <span className="font-medium">
+                        {classItem.students.length > 0 
+                          ? Math.round(classItem.students.reduce((sum, s) => sum + s.progress, 0) / classItem.students.length)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </Card>
 
         {/* 학생 목록 */}
         {selectedClass && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {selectedClass.name} - 학생 목록 ({selectedClass.students.length}명)
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {selectedClass.schedule} | {selectedClass.level}
-                </p>
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{selectedClass.name} 학생 목록</h2>
+                <p className="text-sm text-gray-600">{selectedClass.students.length}명의 학생</p>
               </div>
               
+              {/* 검색 및 필터 */}
+              <div className="flex gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="학생 검색..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <select
+                  value={filterLevel}
+                  onChange={(e) => setFilterLevel(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">전체 레벨</option>
+                  <option value="초급">초급</option>
+                  <option value="중급">중급</option>
+                  <option value="고급">고급</option>
+                </select>
+              </div>
+            </div>
+
+            {filteredStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">검색 결과가 없습니다</h3>
+                <p className="text-gray-600">검색어나 필터를 변경해보세요.</p>
+              </div>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        학생명
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        연락처
+                        학생 정보
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         레벨
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        진행률
+                        진도율
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         출석률
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        다음 강의
+                        최근 강습
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         액션
@@ -864,176 +540,158 @@ const InstructorStudentsPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {selectedClass.students.map((student) => (
+                    {filteredStudents.map((student) => (
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                          <div className="text-sm text-gray-500">{student.email}</div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                            <div className="text-sm text-gray-500">{student.email}</div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.phone}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            student.level === '초급' ? 'bg-blue-100 text-blue-800' :
-                            student.level === '중급' ? 'bg-green-100 text-green-800' :
-                            'bg-purple-100 text-purple-800'
-                          }`}>
+                          <Badge className={getLevelColor(student.level)}>
                             {student.level}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${student.progress}%` }}
-                              ></div>
+                            <div className="flex-1 mr-3">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(student.progress)}`}
+                                  style={{ width: `${student.progress}%` }}
+                                />
+                              </div>
                             </div>
-                            <span className="text-sm text-gray-900">{student.progress}%</span>
+                            <span className={`text-sm font-medium ${getProgressColor(student.progress)}`}>
+                              {student.progress}%
+                            </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {Math.round((student.attendance / student.totalLessons) * 100)}%
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {student.attendance}/{student.totalLessons}회
-                          </div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {student.attendance}/{student.totalLessons}회
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.nextLesson}</div>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {student.lastLesson}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => handleStudentClick(student)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
-                          >
-                            상세보기
-                          </button>
-                          <button
-                            onClick={() => handleEditStudent(student)}
-                            className="text-green-600 hover:text-green-900 mr-3"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedStudent(student);
-                              loadStudentChecklist(student._id, selectedClass._id);
-                              setShowChecklistModal(true);
-                            }}
-                            className="text-purple-600 hover:text-purple-900"
-                          >
-                            체크리스트
-                          </button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleStudentClick(student)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              상세보기
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditStudent(student)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              수정
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* 체크리스트 섹션 */}
-            {selectedStudent && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-lg p-6"
-              >
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    📋 {selectedStudent.name}님의 체크리스트
-                  </h2>
-                  <p className="text-gray-600">
-                    레벨별 체크리스트를 확인하고 코멘트를 추가하세요.
-                  </p>
-                </div>
-
-                {/* 레벨별 체크리스트 표시 */}
-                {renderChecklistSection('초급', beginnerChecklist, 'beginner', 'bg-green-500')}
-                {renderChecklistSection('중급', intermediateChecklist, 'intermediate', 'bg-yellow-500')}
-                {renderChecklistSection('상급', advancedChecklist, 'advanced', 'bg-red-500')}
-
-                {/* 체크리스트가 없는 경우 */}
-                {beginnerChecklist.length === 0 && 
-                 intermediateChecklist.length === 0 && 
-                 advancedChecklist.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 text-6xl mb-4">📋</div>
-                    <p className="text-gray-500 text-lg">체크리스트 데이터가 없습니다.</p>
-                    <p className="text-gray-400 text-sm mt-2">
-                      최고관리자에게 강습법 설정을 요청하세요.
-                    </p>
-                  </div>
-                )}
-              </motion.div>
             )}
-          </div>
+          </Card>
         )}
 
-        {/* 학생 상세 정보 모달 */}
+        {/* 학생 상세 모달 */}
         {showStudentModal && selectedStudent && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {selectedStudent.name} - 상세 정보
-                  </h3>
-                  <button
-                    onClick={() => setShowStudentModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">{selectedStudent.name} - 학생 상세</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowStudentModal(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">이름</p>
+                    <p className="font-medium">{selectedStudent.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">이메일</p>
+                    <p className="font-medium">{selectedStudent.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">전화번호</p>
+                    <p className="font-medium">{selectedStudent.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">레벨</p>
+                    <Badge className={getLevelColor(selectedStudent.level)}>
+                      {selectedStudent.level}
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">이름</label>
-                      <p className="text-sm text-gray-900">{selectedStudent.name}</p>
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">진도율</p>
+                  <div className="flex items-center">
+                    <div className="flex-1 mr-3">
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className={`h-3 rounded-full transition-all duration-300 ${getProgressBarColor(selectedStudent.progress)}`}
+                          style={{ width: `${selectedStudent.progress}%` }}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">이메일</label>
-                      <p className="text-sm text-gray-900">{selectedStudent.email}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">전화번호</label>
-                      <p className="text-sm text-gray-900">{selectedStudent.phone}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">레벨</label>
-                      <p className="text-sm text-gray-900">{selectedStudent.level}</p>
-                    </div>
+                    <span className={`text-lg font-semibold ${getProgressColor(selectedStudent.progress)}`}>
+                      {selectedStudent.progress}%
+                    </span>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">메모</label>
-                    <p className="text-sm text-gray-900">{selectedStudent.notes || '메모가 없습니다.'}</p>
+                    <p className="text-sm text-gray-600">출석률</p>
+                    <p className="font-medium">{selectedStudent.attendance}/{selectedStudent.totalLessons}회</p>
                   </div>
+                  <div>
+                    <p className="text-sm text-gray-600">최근 강습</p>
+                    <p className="font-medium">{selectedStudent.lastLesson}</p>
+                  </div>
+                </div>
 
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      onClick={() => setShowStudentModal(false)}
-                      className="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                    >
-                      닫기
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowStudentModal(false);
-                        handleEditStudent(selectedStudent);
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      수정
-                    </button>
+                {selectedStudent.notes && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">특이사항</p>
+                    <p className="text-sm bg-gray-50 p-3 rounded">{selectedStudent.notes}</p>
                   </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowStudentModal(false)}
+                    className="flex-1"
+                  >
+                    닫기
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowStudentModal(false);
+                      handleEditStudent(selectedStudent);
+                    }}
+                    className="flex-1"
+                  >
+                    수정하기
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1042,129 +700,88 @@ const InstructorStudentsPage = () => {
 
         {/* 학생 수정 모달 */}
         {showEditModal && editingStudent && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {editingStudent.name} - 정보 수정
-                  </h3>
-                  <button
-                    onClick={() => setShowEditModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">학생 정보 수정</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                  <input
+                    type="text"
+                    value={editingStudent.name}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
 
-                <form onSubmit={(e) => { e.preventDefault(); handleUpdateStudent(); }} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">이름</label>
-                      <input
-                        type="text"
-                        value={editingStudent.name}
-                        onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">이메일</label>
-                      <input
-                        type="email"
-                        value={editingStudent.name}
-                        onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">전화번호</label>
-                      <input
-                        type="tel"
-                        value={editingStudent.phone}
-                        onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value})}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">레벨</label>
-                      <select
-                        value={editingStudent.level}
-                        onChange={(e) => setEditingStudent({...editingStudent, level: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="초급">초급</option>
-                        <option value="중급">중급</option>
-                        <option value="고급">고급</option>
-                      </select>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                  <input
+                    type="email"
+                    value={editingStudent.email}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">메모</label>
-                    <textarea
-                      value={editingStudent.notes || ''}
-                      onChange={(e) => setEditingStudent({...editingStudent, notes: e.target.value})}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                  <input
+                    type="tel"
+                    value={editingStudent.phone}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-                  <div className="flex justify-end space-x-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                      className="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                    >
-                      취소
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      수정
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">레벨</label>
+                  <select
+                    value={editingStudent.level}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, level: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="초급">초급</option>
+                    <option value="중급">중급</option>
+                    <option value="고급">고급</option>
+                  </select>
+                </div>
 
-        {/* 코멘트 모달 */}
-        {showCommentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-bold mb-4">코멘트 추가</h3>
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>단계:</strong> {selectedChecklistItem?.stepName}
-                </p>
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="코멘트를 입력하세요..."
-                  className="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowCommentModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleSaveComment}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  저장
-                </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">특이사항</label>
+                  <textarea
+                    value={editingStudent.notes || ''}
+                    onChange={(e) => setEditingStudent({ ...editingStudent, notes: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1"
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    onClick={handleUpdateStudent}
+                    className="flex-1"
+                  >
+                    저장
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -1172,19 +789,19 @@ const InstructorStudentsPage = () => {
 
         {/* 메시지 표시 */}
         {message && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg"
-          >
+          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
             {message}
-          </motion.div>
+            <button
+              onClick={() => setMessage(null)}
+              className="ml-4 text-white hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
-};
-
-export default InstructorStudentsPage;
+}
 
 

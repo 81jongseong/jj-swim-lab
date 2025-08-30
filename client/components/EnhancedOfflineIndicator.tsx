@@ -1,4 +1,77 @@
-"use client";
+/**
+ * 🚀 JJ Swim Lab - EnhancedOfflineIndicator 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - 고급 오프라인 상태 표시 및 관리 시스템
+ * - 네트워크 상태의 세밀한 모니터링 및 분석
+ * - 오프라인 상태에서의 지능형 기능 안내
+ * - 네트워크 품질 및 속도 정보 제공
+ * - 오프라인 기능 자동 최적화 및 권장사항
+ * 
+ * 🔄 **주요 기능**
+ * - 고급 네트워크 상태 감지 및 분석
+ * - 네트워크 품질 및 속도 측정
+ * - 지능형 오프라인 기능 안내
+ * - 오프라인 기능 자동 최적화
+ * - 네트워크 상태 예측 및 권장사항
+ * 
+ * 🗄️ **데이터 연동**
+ * - 고급 네트워크 상태 정보
+ * - 네트워크 품질 및 성능 데이터
+ * - 오프라인 기능 사용 패턴
+ * - 사용자 인터랙션 및 피드백
+ * - 네트워크 상태 예측 모델
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - 고급 네트워크 상태 감지 API
+ * - 네트워크 성능 측정 도구
+ * - 오프라인 기능 최적화 라이브러리
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 고급 네트워크 상태 감지의 정확성
+ * 2. 네트워크 성능 측정의 오버헤드 최소화
+ * 3. 지능형 기능 안내의 적절성
+ * 4. 오프라인 기능 최적화의 효과성
+ * 5. 사용자 경험의 일관성 유지
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 고급 네트워크 상태 감지 동작 확인
+ * - [ ] 네트워크 품질 측정 정확성 확인
+ * - [ ] 지능형 기능 안내 검증
+ * - [ ] 오프라인 기능 최적화 효과 확인
+ * - [ ] 네트워크 상태 예측 정확성 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 고급 오프라인 표시기)
+ * - 2024-12-19: 고급 네트워크 상태 감지 구현
+ * - 2024-12-19: 네트워크 품질 측정 시스템 구현
+ * - 2024-12-19: 지능형 기능 안내 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (고급 오프라인 표시기 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 네트워크 상태 예측 고도화
+ * - 오프라인 기능 자동 최적화 고도화
+ * - 성능 최적화
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <EnhancedOfflineIndicator 
+ *   onNetworkQualityChange={(quality) => handleQualityChange(quality)}
+ *   onOfflineOptimization={(optimization) => handleOptimization(optimization)}
+ *   onNetworkPrediction={(prediction) => handlePrediction(prediction)}
+ *   enableIntelligentGuide={true}
+ * />
+ * ```
+ */
+
+'use client';
 
 import { useState, useEffect } from 'react';
 import useEnhancedOffline from '../hooks/useEnhancedOffline';

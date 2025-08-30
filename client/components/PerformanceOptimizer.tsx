@@ -1,4 +1,75 @@
-﻿'use client';
+﻿/**
+ * ⚡ JJ Swim Lab - PerformanceOptimizer 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - 애플리케이션 성능 최적화 및 모니터링 시스템
+ * - 성능 병목 지점 식별 및 해결 방안 제시
+ * - 메모리 사용량 및 로딩 시간 최적화
+ * - 사용자 경험 개선을 위한 성능 지표 분석
+ * - 자동 성능 최적화 및 권장사항 제공
+ * 
+ * 🔄 **주요 기능**
+ * - 성능 지표 실시간 모니터링
+ * - 성능 병목 지점 자동 식별
+ * - 메모리 사용량 최적화
+ * - 로딩 시간 및 응답 속도 개선
+ * - 성능 최적화 권장사항 제공
+ * 
+ * 🗄️ **데이터 연동**
+ * - 성능 모니터링 데이터
+ * - 메모리 사용량 통계
+ * - 로딩 시간 및 응답 속도 데이터
+ * - 성능 최적화 이력
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - 성능 모니터링 라이브러리
+ * - 메모리 사용량 측정 도구
+ * - 차트 및 시각화 라이브러리
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 성능 모니터링의 오버헤드 최소화
+ * 2. 메모리 누수 방지 및 관리
+ * 3. 성능 지표의 정확성 및 신뢰성
+ * 4. 사용자 개인정보 보호
+ * 5. 성능 최적화 권장사항의 실용성
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 성능 모니터링 시스템 동작 확인
+ * - [ ] 메모리 사용량 측정 정확성 확인
+ * - [ ] 성능 최적화 권장사항 검증
+ * - [ ] 성능 지표 시각화 확인
+ * - [ ] 성능 모니터링 오버헤드 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 성능 최적화)
+ * - 2024-12-19: 성능 모니터링 시스템 구현
+ * - 2024-12-19: 메모리 사용량 최적화 구현
+ * - 2024-12-19: 성능 최적화 권장사항 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (성능 최적화 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 성능 최적화
+ * - 실시간 성능 예측
+ * - 자동 성능 최적화
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <PerformanceOptimizer 
+ *   onPerformanceUpdate={(metrics) => handlePerformanceUpdate(metrics)}
+ *   onOptimizationComplete={(result) => handleOptimizationComplete(result)}
+ *   onRecommendationGenerated={(recommendation) => handleRecommendation(recommendation)}
+ * />
+ * ```
+ */
+
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';

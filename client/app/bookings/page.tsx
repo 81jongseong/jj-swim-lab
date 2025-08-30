@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import ResponsiveTable from '@/components/ResponsiveTable';
+import ResponsiveTable, { TableHeader, TableHeaderCell, TableBody } from '@/components/ResponsiveTable';
 
 interface Booking {
   _id: string;
@@ -132,7 +132,16 @@ export default function BookingsPage() {
           </select>
         </div>
 
-        <ResponsiveTable headers={["사용자", "강사", "날짜", "시간", "상태", "작업"]}>
+        <ResponsiveTable>
+          <TableHeader>
+            <TableHeaderCell>사용자</TableHeaderCell>
+            <TableHeaderCell>강사</TableHeaderCell>
+            <TableHeaderCell>날짜</TableHeaderCell>
+            <TableHeaderCell>시간</TableHeaderCell>
+            <TableHeaderCell>상태</TableHeaderCell>
+            <TableHeaderCell>작업</TableHeaderCell>
+          </TableHeader>
+          <TableBody>
           {filteredBookings.map((booking) => (
             <div key={booking._id} className="bg-white rounded-lg shadow p-4 mb-4">
               <div className="flex justify-between items-start mb-2">
@@ -169,6 +178,7 @@ export default function BookingsPage() {
               </div>
             </div>
           ))}
+          </TableBody>
         </ResponsiveTable>
 
         {filteredBookings.length === 0 && (

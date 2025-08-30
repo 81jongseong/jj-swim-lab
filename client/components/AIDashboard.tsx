@@ -1,3 +1,77 @@
+/**
+ * 🤖 JJ Swim Lab - AIDashboard 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - AI 시스템 전반의 상태 및 성능을 종합적으로 모니터링하는 대시보드
+ * - AI 모델 성능 지표 및 분석 결과 시각화
+ * - AI 시스템 최적화 및 튜닝 도구 제공
+ * - AI 모델 학습 상태 및 개선 진행 상황 표시
+ * - AI 시스템 건강성 및 안정성 모니터링
+ * 
+ * 🔄 **주요 기능**
+ * - AI 모델 성능 지표 모니터링
+ * - AI 분석 결과 시각화 및 통계
+ * - AI 시스템 최적화 도구
+ * - AI 모델 학습 상태 추적
+ * - AI 시스템 건강성 및 안정성 모니터링
+ * 
+ * 🗄️ **데이터 연동**
+ * - AI 모델 성능 데이터
+ * - AI 분석 결과 및 통계
+ * - AI 시스템 최적화 이력
+ * - AI 모델 학습 상태 정보
+ * - AI 시스템 모니터링 데이터
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - AI 모델 성능 모니터링 도구
+ * - 차트 및 시각화 라이브러리
+ * - AI 시스템 최적화 도구
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. AI 모델 성능 지표의 정확성
+ * 2. AI 시스템 최적화의 안정성
+ * 3. 실시간 모니터링의 오버헤드
+ * 4. AI 분석 결과의 신뢰성
+ * 5. AI 시스템 보안 및 개인정보 보호
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] AI 모델 성능 모니터링 동작 확인
+ * - [ ] AI 분석 결과 시각화 검증
+ * - [ ] AI 시스템 최적화 도구 확인
+ * - [ ] AI 모델 학습 상태 추적 확인
+ * - [ ] AI 시스템 건강성 모니터링 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 AI 대시보드)
+ * - 2024-12-19: AI 모델 성능 모니터링 시스템 구현
+ * - 2024-12-19: AI 분석 결과 시각화 시스템 구현
+ * - 2024-12-19: AI 시스템 최적화 도구 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (AI 대시보드 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 자동 최적화
+ * - 실시간 AI 성능 예측
+ * - AI 시스템 자동 튜닝
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <AIDashboard 
+ *   onPerformanceUpdate={(metrics) => handlePerformanceUpdate(metrics)}
+ *   onOptimizationComplete={(result) => handleOptimizationComplete(result)}
+ *   onLearningStatusUpdate={(status) => handleLearningStatusUpdate(status)}
+ *   onSystemHealthUpdate={(health) => handleSystemHealthUpdate(health)}
+ *   enableRealTimeMonitoring={true}
+ * />
+ * ```
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';

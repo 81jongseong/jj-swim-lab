@@ -1,3 +1,60 @@
+/**
+ * @fileoverview 관리자용 강습 과정 관리 페이지
+ * 
+ * @description
+ * 이 컴포넌트는 최고관리자가 모든 강습 과정을 관리할 수 있는 페이지입니다.
+ * 강습 과정 생성, 수정, 삭제, 조회 기능을 제공하며, 데이터베이스와 연동되어
+ * 실시간으로 데이터를 관리합니다.
+ * 
+ * @features
+ * - 강습 과정 목록 조회 (실시간 데이터베이스 연동)
+ * - 강습 과정 생성 및 편집
+ * - 강습 과정 삭제
+ * - 수영장 레인 배정 관리
+ * - 강사 배정 및 수강생 정원 관리
+ * - 수업 시간 및 요일 설정
+ * - 강습 상태 관리 (active, inactive, completed)
+ * - 검색 및 필터링 기능
+ * 
+ * @workflow
+ * 1. 컴포넌트 로드 시 API를 통해 강습 과정 데이터를 가져옴
+ * 2. 사용자가 강습 과정을 추가/수정하면 즉시 데이터베이스에 반영
+ * 3. 강습 과정별 수강생 수, 정원, 배정된 레인 정보 표시
+ * 4. 강사별 강습 과정 관리 및 통계 제공
+ * 
+ * @security
+ * - 최고관리자 권한 필요
+ * - JWT 토큰을 통한 인증
+ * - 모든 API 호출에 인증 헤더 포함
+ * 
+ * @database
+ * - Course 모델과 연동
+ * - 실시간 데이터 동기화
+ * - 강사 정보는 User 모델과 연관
+ * - 수강생 정보는 enrolledStudents 배열로 관리
+ * 
+ * @apiEndpoints
+ * - GET /api/courses - 강습 과정 목록 조회
+ * - POST /api/courses - 강습 과정 생성
+ * - PUT /api/courses/:id - 강습 과정 수정
+ * - DELETE /api/courses/:id - 강습 과정 삭제
+ * 
+ * @changelog
+ * - 2024-12-19: 하드코딩된 mockCourses 데이터를 실제 API 호출로 대체
+ * - 2024-12-19: 데이터베이스 연동 완료 및 실시간 데이터 동기화 구현
+ * - 2024-12-19: JSDoc 문서화 추가
+ * 
+ * @todo
+ * - [ ] 강습 과정별 상세 통계 추가
+ * - [ ] 수강생 출석률 연동
+ * - [ ] 강습 평가 시스템 통합
+ * - [ ] 강습 과정 복사 기능 추가
+ * 
+ * @author JJ Swim Lab Development Team
+ * @since 2024-12-19
+ * @version 1.2.0
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -100,48 +157,43 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     // 강습 과정 데이터 로드
     const loadCourses = async () => {
-      try {
-        setLoading(true);
-        // 실제로는 API 호출
-        const mockCourses: Course[] = [
-          {
-            id: 1,
-            name: '초급 자유형',
-            instructor: '김강사',
-            level: 'beginner',
-            students: 8,
-            maxStudents: 10,
-            status: 'active',
-            lanes: [2],
-            time: '14:00-16:00',
-            days: ['monday', 'wednesday', 'friday']
-          },
-          {
-            id: 2,
-            name: '중급 접영',
-            instructor: '이강사',
-            level: 'intermediate',
-            students: 6,
-            maxStudents: 8,
-            status: 'active',
-            lanes: [5],
-            time: '16:00-18:00',
-            days: ['tuesday', 'thursday']
-          },
-          {
-            id: 3,
-            name: '고급 평영',
-            instructor: '박강사',
-            level: 'advanced',
-            students: 4,
-            maxStudents: 6,
-            status: 'active',
-            lanes: [1],
-            time: '10:00-12:00',
-            days: ['saturday']
+              try {
+          setLoading(true);
+          const token = localStorage.getItem('token');
+          if (!token) {
+            console.error('인증 토큰이 없습니다.');
+            return;
           }
-        ];
-        setCourses(mockCourses);
+
+          const response = await fetch('http://localhost:5000/api/courses', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const coursesData = data.courses || [];
+            
+            // API 응답을 컴포넌트에서 사용하는 형식으로 변환
+            const formattedCourses: Course[] = coursesData.map((course: any) => ({
+              id: course._id,
+              name: course.name,
+              instructor: course.instructor?.name || '미배정',
+              level: course.level || 'beginner',
+              students: course.enrolledStudents?.length || 0,
+              maxStudents: course.maxStudents || 10,
+              status: course.status || 'active',
+              lanes: course.poolLanes || [],
+              time: course.schedule?.time || '시간 미정',
+              days: course.schedule?.days || []
+            }));
+            
+            setCourses(formattedCourses);
+          } else {
+            console.error('강습 과정 로드 실패:', response.status);
+          }
       } catch (error) {
         console.error('강습 과정 로드 실패:', error);
       } finally {

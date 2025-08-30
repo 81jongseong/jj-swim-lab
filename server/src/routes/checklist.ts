@@ -57,8 +57,8 @@ router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async
     if (status) filter.status = status;
     
     const checklists = await Checklist.find(filter)
-      .populate('studentId', 'name email')
-      .populate('courseId', 'name')
+      .populate('studentId', 'name email phone currentLevel lastLesson nextLesson attendance totalLessons')
+      .populate('courseId', 'name level')
       .populate('teachingMethodId', 'name')
       .skip(skip)
       .limit(Number(limit))
@@ -77,6 +77,24 @@ router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async
     });
   } catch (error) {
     logError('강사별 체크리스트 조회 실패', error);
+    res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
+  }
+});
+
+// 현재 로그인한 강사의 체크리스트 조회
+router.get('/instructor/me', auth, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
+  try {
+    const instructorId = (req as any).user._id;
+    
+    const checklists = await Checklist.find({ instructorId })
+      .populate('studentId', 'name email phone currentLevel lastLesson nextLesson attendance totalLessons')
+      .populate('courseId', 'name level')
+      .populate('teachingMethodId', 'name')
+      .sort({ lastUpdated: -1 });
+    
+    res.json({ checklists });
+  } catch (error) {
+    logError('현재 강사 체크리스트 조회 실패', error);
     res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
   }
 });

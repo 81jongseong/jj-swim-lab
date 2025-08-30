@@ -37,6 +37,7 @@ import classChecklistRoutes from './routes/class-checklist';
 import notificationRoutes from './routes/notifications';
 import centerLevelRoutes from './routes/center-levels';
 import studentLevelRoutes from './routes/student-levels';
+import instructorManagementRoutes from './routes/instructorManagement';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 import './models/Checklist';
@@ -64,6 +65,8 @@ import './models/AIConfig';
 import './models/CenterInfo';
 import './models/Notification';
 import './models/CenterLevel';
+import './models/Center';
+import './models/HealthData';
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -197,17 +200,6 @@ app.get('/', (req, res) => {
 
 // 헬스 체크 엔드포인트
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'JJ Swim Lab API 서버가 정상적으로 실행 중입니다!',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Health check 엔드포인트
-app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({
     success: true,
@@ -248,6 +240,7 @@ app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/center-levels', centerLevelRoutes);
 app.use('/api/student-levels', studentLevelRoutes);
+app.use('/api/instructor-management', instructorManagementRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

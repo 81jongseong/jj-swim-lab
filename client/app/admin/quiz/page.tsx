@@ -8,12 +8,22 @@ interface Quiz {
   title: string;
   description: string;
   category: string;
-  type: string;
-  questions: any[];
+  type: 'multiple' | 'essay' | 'mixed';
+  questions: Question[];
   timeLimit: number;
   passingScore: number;
   isActive: boolean;
   createdAt: Date;
+  completedAt?: Date;
+}
+
+interface Question {
+  question: string;
+  type: 'multiple' | 'essay';
+  options?: string[];
+  correctAnswer: string | string[];
+  points: number;
+  explanation?: string;
 }
 
 interface QuizAttempt {

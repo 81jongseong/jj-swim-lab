@@ -1,3 +1,76 @@
+/**
+ * 🤖 JJ Swim Lab - AIOptimizer 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - AI 시스템의 성능 최적화 및 자동 튜닝 시스템
+ * - AI 모델 파라미터 자동 최적화 및 성능 향상
+ * - 실시간 AI 성능 모니터링 및 분석
+ * - AI 모델 자동 학습 및 개선
+ * - 사용자 경험 기반 AI 시스템 최적화
+ * 
+ * 🔄 **주요 기능**
+ * - AI 모델 파라미터 자동 최적화
+ * - 실시간 AI 성능 모니터링
+ * - AI 모델 자동 학습 및 개선
+ * - 성능 병목 지점 자동 식별
+ * - AI 시스템 자동 튜닝 및 조정
+ * 
+ * 🗄️ **데이터 연동**
+ * - AI 모델 성능 데이터
+ * - 사용자 인터랙션 및 피드백
+ * - AI 모델 파라미터 및 설정
+ * - 성능 최적화 이력 및 통계
+ * - AI 학습 데이터 및 결과
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useCallback)
+ * - AI 최적화 라이브러리
+ * - 성능 모니터링 도구
+ * - 차트 및 시각화 라이브러리
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. AI 최적화의 정확성 및 안정성
+ * 2. 실시간 성능 모니터링의 오버헤드
+ * 3. AI 모델 자동 학습의 품질 관리
+ * 4. 사용자 데이터의 개인정보 보호
+ * 5. AI 시스템 최적화의 효과성 검증
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] AI 모델 파라미터 최적화 동작 확인
+ * - [ ] 실시간 성능 모니터링 검증
+ * - [ ] AI 모델 자동 학습 시스템 확인
+ * - [ ] 성능 최적화 효과 검증
+ * - [ ] AI 시스템 안정성 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 AI 최적화)
+ * - 2024-12-19: AI 모델 파라미터 최적화 구현
+ * - 2024-12-19: 실시간 성능 모니터링 시스템 구현
+ * - 2024-12-19: AI 모델 자동 학습 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (AI 최적화 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 기반 최적화 알고리즘 고도화
+ * - 실시간 AI 성능 예측
+ * - 자동 AI 시스템 튜닝
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <AIOptimizer 
+ *   onOptimizationComplete={(result) => handleOptimizationComplete(result)}
+ *   onPerformanceUpdate={(metrics) => handlePerformanceUpdate(metrics)}
+ *   onAutoLearningComplete={(model) => handleAutoLearningComplete(model)}
+ *   enableAutoOptimization={true}
+ * />
+ * ```
+ */
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';

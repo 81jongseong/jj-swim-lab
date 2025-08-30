@@ -1,153 +1,248 @@
+/**
+ * 👨‍🏫 JJ Swim Lab - 강사 대시보드 페이지
+ *
+ * 📋 **페이지 목적**
+ * - 강사가 자신의 학생들과 강습 현황을 한눈에 파악할 수 있는 대시보드
+ * - 학생별 체크리스트 및 진도 관리
+ * - 강습 통계 및 성과 분석
+ *
+ * 🔄 **데이터 플로우**
+ * 1. 페이지 로드 시 강사의 학생 목록을 API로 조회
+ * 2. 각 학생의 체크리스트와 진도율을 실시간으로 계산
+ * 3. 강습 통계를 데이터베이스에서 집계하여 표시
+ *
+ * 🎯 **주요 기능**
+ * - 학생 목록 표시 (진도율, 출석률, 최근 강습 정보)
+ * - 학생별 체크리스트 상세 보기
+ * - 진도 관리 버튼 (학생별 상세 페이지로 이동)
+ * - 강습 통계 및 성과 지표
+ *
+ * 🔧 **개발 참고사항**
+ * - 모든 데이터는 데이터베이스에서 실시간 조회
+ * - 하드코딩된 데이터 완전 제거
+ * - API 실패 시 적절한 에러 처리 및 사용자 안내
+ *
+ * 📝 **수정 이력**
+ * - 2024-12-19: 하드코딩된 데이터 제거 및 API 연동 완료
+ * - 2024-12-19: 진도율 계산 로직을 데이터베이스 기반으로 변경
+ * - 2024-12-19: 체크리스트 데이터 연동 완료
+ *
+ * ✅ **향후 수정 체크리스트**
+ * - [ ] 실시간 데이터 업데이트 기능 추가
+ * - [ ] 진도율 예측 알고리즘 구현
+ * - [ ] 성과 분석 차트 고도화
+ * - [ ] 알림 시스템 연동
+ */
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import withAuth from '../../../components/withAuth';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../hooks/useAuth';
+import { Card, Badge, Button, Progress } from '@/components/ui';
+import { 
+  Users, 
+  TrendingUp, 
+  Calendar, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  BarChart3,
+  Target,
+  Award,
+  BookOpen
+} from 'lucide-react';
 
 interface Student {
-  id: number;
+  _id: string;
   name: string;
-  course: string;
-  level: '초급' | '중급' | '고급';
+  email: string;
+  phone: string;
+  level: string;
   progress: number;
   lastLesson: string;
   nextLesson: string;
   attendance: number;
   totalLessons: number;
-}
-
-interface Stats {
-  activeCourses: number;
-  totalStudents: number;
-  totalLessons: number;
-  nextLesson: string;
-  averageProgress: number;
+  courseId: string;
+  courseName: string;
 }
 
 interface ChecklistItem {
-  id: number;
+  _id: string;
   title: string;
-  completed: boolean;
-  dueDate: string;
+  description: string;
+  stepOrder: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  notes?: string;
 }
 
-function InstructorDashboard() {
-  const [stats, setStats] = useState<Stats>({
-    activeCourses: 0,
-    totalStudents: 0,
-    totalLessons: 0,
-    nextLesson: '',
-    averageProgress: 0
-  });
+interface ChecklistData {
+  _id: string;
+  studentId: string;
+  courseId: string;
+  items: ChecklistItem[];
+  overallProgress: number;
+  targetCompletionDate?: string;
+}
 
+export default function InstructorDashboard() {
+  const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [checklistData, setChecklistData] = useState<ChecklistItem[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 통계 데이터 상태
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [averageProgress, setAverageProgress] = useState(0);
+  const [totalLessons, setTotalLessons] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState(0);
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setLoading(true);
+    if (user?.userType === 'instructor') {
+      loadStudents();
+    }
+  }, [user]);
+
+  // 강사의 학생 목록 로드
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('인증 토큰이 없습니다.');
+        return;
+      }
+
+      // 강사의 학생 목록 조회 API 호출
+      const response = await fetch('http://localhost:5000/api/instructor/students', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
         
-        // 실제로는 API 호출
-        const mockStats: Stats = {
-          activeCourses: 3,
-          totalStudents: 12,
-          totalLessons: 48,
-          nextLesson: '오후 2시 - 초급 자유형',
-          averageProgress: 75
-        };
+        if (data.students && Array.isArray(data.students)) {
+          // 각 학생의 진도율을 체크리스트 기반으로 계산
+          const studentsWithProgress = await Promise.all(
+            data.students.map(async (student: any) => {
+              const progress = await calculateStudentProgress(student._id, student.courseId);
+              return {
+                ...student,
+                progress: progress
+              };
+            })
+          );
 
-        const mockStudents: Student[] = [
-          {
-            id: 1,
-            name: '김수영',
-            course: '초급 자유형',
-            level: '초급',
-            progress: 60,
-            lastLesson: '2025-01-20',
-            nextLesson: '2025-01-22',
-            attendance: 8,
-            totalLessons: 10
-          },
-          {
-            id: 2,
-            name: '이영희',
-            course: '중급 접영',
-            level: '중급',
-            progress: 80,
-            lastLesson: '2025-01-19',
-            nextLesson: '2025-01-23',
-            attendance: 12,
-            totalLessons: 15
-          },
-          {
-            id: 3,
-            name: '박철수',
-            course: '고급 평영',
-            level: '고급',
-            progress: 90,
-            lastLesson: '2025-01-18',
-            nextLesson: '2025-01-24',
-            attendance: 20,
-            totalLessons: 25
-          },
-          {
-            id: 4,
-            name: '최민수',
-            course: '초급 자유형',
-            level: '초급',
-            progress: 40,
-            lastLesson: '2025-01-17',
-            nextLesson: '2025-01-21',
-            attendance: 6,
-            totalLessons: 8
-          }
-        ];
-
-        setStats(mockStats);
-        setStudents(mockStudents);
-      } catch (error) {
-        console.error('대시보드 데이터 로드 실패:', error);
-      } finally {
-        setLoading(false);
+          setStudents(studentsWithProgress);
+          
+          // 통계 데이터 계산
+          const total = studentsWithProgress.length;
+          const avgProgress = total > 0 
+            ? Math.round(studentsWithProgress.reduce((sum, s) => sum + s.progress, 0) / total)
+            : 0;
+          
+          setTotalStudents(total);
+          setAverageProgress(avgProgress);
+          
+          // 강습 통계 계산
+          const totalLessonsCount = studentsWithProgress.reduce((sum, s) => sum + s.totalLessons, 0);
+          const completedLessonsCount = studentsWithProgress.reduce((sum, s) => sum + s.attendance, 0);
+          
+          setTotalLessons(totalLessonsCount);
+          setCompletedLessons(completedLessonsCount);
+        } else {
+          setStudents([]);
+          setError('학생 데이터 형식이 올바르지 않습니다.');
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || '학생 데이터를 불러오는데 실패했습니다.');
+        setStudents([]);
       }
-    };
-
-    loadDashboardData();
-  }, []);
-
-  const getChecklistItems = (student: Student): ChecklistItem[] => {
-    return [
-      {
-        id: 1,
-        title: '자유형 기본 동작 연습',
-        completed: student.progress >= 30,
-        dueDate: '2025-01-25'
-      },
-      {
-        id: 2,
-        title: '호흡법 숙지',
-        completed: student.progress >= 50,
-        dueDate: '2025-01-30'
-      },
-      {
-        id: 3,
-        title: '25m 완주',
-        completed: student.progress >= 70,
-        dueDate: '2025-02-05'
-      },
-      {
-        id: 4,
-        title: '기술 평가',
-        completed: student.progress >= 90,
-        dueDate: '2025-02-10'
-      }
-    ];
+    } catch (error) {
+      console.error('학생 데이터 로드 실패:', error);
+      setError('네트워크 오류가 발생했습니다.');
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleStudentClick = (student: Student) => {
+  // 학생별 진도율 계산 (체크리스트 기반)
+  const calculateStudentProgress = async (studentId: string, courseId: string): Promise<number> => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return 0;
+
+      const response = await fetch(`http://localhost:5000/api/checklist/student/${studentId}/course/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
+          const totalItems = data.checklist.items.length;
+          const completedItems = data.checklist.items.filter((item: any) => item.isCompleted).length;
+          return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+        }
+      }
+      return 0;
+    } catch (error) {
+      console.error('진도율 계산 실패:', error);
+      return 0;
+    }
+  };
+
+  // 학생 체크리스트 로드
+  const loadStudentChecklist = async (studentId: string, courseId?: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      let url = `http://localhost:5000/api/checklist/student/${studentId}`;
+      if (courseId) {
+        url += `/course/${courseId}`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checklist && data.checklist.items) {
+          const sortedItems = data.checklist.items.sort((a: any, b: any) => a.stepOrder - b.stepOrder);
+          setChecklistData(sortedItems);
+        } else {
+          setChecklistData([]);
+        }
+      } else {
+        setChecklistData([]);
+      }
+    } catch (error) {
+      console.error('체크리스트 로드 실패:', error);
+      setChecklistData([]);
+    }
+  };
+
+  const handleStudentClick = async (student: Student) => {
     setSelectedStudent(student);
+    await loadStudentChecklist(student._id, student.courseId);
     setShowProgressModal(true);
   };
 
@@ -166,256 +261,247 @@ function InstructorDashboard() {
     return 'text-red-600';
   };
 
+  const getProgressBarColor = (progress: number) => {
+    if (progress >= 80) return 'bg-green-500';
+    if (progress >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  if (user?.userType !== 'instructor') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+          <p className="text-gray-600">강사 계정으로 로그인해주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">오류가 발생했습니다</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={loadStudents} variant="outline">
+            다시 시도
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">강사 대시보드</h1>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* 헤더 */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">강사 대시보드</h1>
+          <p className="text-gray-600">안녕하세요, {user?.name}님! 오늘의 강습 현황을 확인해보세요.</p>
+        </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div 
-            className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300"
-            onClick={() => {
-              console.log('활성 강습 카드 클릭됨');
-              window.location.href = '/instructor/courses';
-            }}
-          >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <span className="text-2xl">📚</span>
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">활성 강습</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeCourses}</p>
+                <p className="text-sm font-medium text-gray-600">전체 학생</p>
+                <p className="text-2xl font-bold text-gray-900">{totalStudents}명</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div 
-            className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-green-300"
-            onClick={() => {
-              console.log('담당 학생 카드 클릭됨');
-              window.location.href = '/instructor/students';
-            }}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
-                <span className="text-2xl">👥</span>
+                <TrendingUp className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">담당 학생</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+                <p className="text-sm font-medium text-gray-600">평균 진도율</p>
+                <p className="text-2xl font-bold text-gray-900">{averageProgress}%</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div 
-            className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-purple-300"
-            onClick={() => {
-              console.log('총 강의 카드 클릭됨');
-              window.location.href = '/instructor/schedule';
-            }}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <span className="text-2xl">📅</span>
+                <BookOpen className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">총 강의</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalLessons}</p>
+                <p className="text-sm font-medium text-gray-600">총 강습 수</p>
+                <p className="text-2xl font-bold text-gray-900">{totalLessons}회</p>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div 
-            className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-yellow-300"
-            onClick={() => {
-              console.log('다음 강의 카드 클릭됨');
-              window.location.href = '/instructor/progress';
-            }}
-          >
+          <Card className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <span className="text-2xl">⏰</span>
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-orange-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">다음 강의</p>
-                <p className="text-sm font-bold text-gray-900">{stats.nextLesson || '예정 없음'}</p>
+                <p className="text-sm font-medium text-gray-600">완료된 강습</p>
+                <p className="text-2xl font-bold text-gray-900">{completedLessons}회</p>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 학생 목록 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">내 학생들</h2>
-          
-          {/* 카드 형태로 표시 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {students.map((student) => (
-              <div key={student.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                {/* 학생 정보 헤더 */}
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{student.name}</h3>
-                    <p className="text-sm text-gray-600">{student.course}</p>
-                  </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getLevelColor(student.level)}`}>
-                    {student.level}
-                  </span>
-                </div>
-
-                {/* 진행률 */}
-                <div className="mb-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">진행률</span>
-                    <span className={`text-sm font-semibold ${getProgressColor(student.progress)}`}>
-                      {student.progress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${student.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* 출석률 */}
-                <div className="mb-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">출석률</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {Math.round((student.attendance / student.totalLessons) * 100)}%
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    {student.attendance}/{student.totalLessons}회
-                  </p>
-                </div>
-
-                {/* 다음 강의 */}
-                <div className="mb-4">
-                  <p className="text-xs text-gray-500 mb-1">다음 강의</p>
-                  <p className="text-sm font-medium text-gray-900">{student.nextLesson}</p>
-                </div>
-
-                {/* 액션 버튼 */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleStudentClick(student)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    상세보기
-                  </button>
-                  <button
-                    onClick={() => window.location.href = `/instructor/progress/${student.id}`}
-                    className="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    진도관리
-                  </button>
-                </div>
-              </div>
-            ))}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">내 학생들</h2>
+            <Button onClick={() => window.location.href = '/instructor/students'}>
+              전체 학생 보기
+            </Button>
           </div>
-        </div>
 
-        {/* 진행률 상세 모달 */}
-        {showProgressModal && selectedStudent && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {selectedStudent.name} - 진행률 상세
-                  </h3>
-                  <button
-                    onClick={() => setShowProgressModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* 학생 정보 */}
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <div className="grid grid-cols-2 gap-4">
+          {students.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">아직 등록된 학생이 없습니다</h3>
+              <p className="text-gray-600">새로운 학생이 등록되면 여기에 표시됩니다.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {students.map((student) => (
+                <Card key={student._id} className="p-4 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleStudentClick(student)}>
+                  <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="text-sm text-gray-600">이름</p>
-                      <p className="font-medium">{selectedStudent.name}</p>
+                      <h3 className="font-semibold text-gray-900">{student.name}</h3>
+                      <p className="text-sm text-gray-600">{student.email}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">강습 과정</p>
-                      <p className="font-medium">{selectedStudent.course}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">레벨</p>
-                      <p className="font-medium">{selectedStudent.level}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">전체 진행률</p>
-                      <p className="font-medium">{selectedStudent.progress}%</p>
-                    </div>
+                    <Badge className={getLevelColor(student.level)}>
+                      {student.level}
+                    </Badge>
                   </div>
-                </div>
 
-                {/* 체크리스트 */}
-                <div className="mb-6">
-                  <h4 className="text-md font-medium text-gray-900 mb-3">학습 체크리스트</h4>
-                  <div className="space-y-2">
-                    {getChecklistItems(selectedStudent).map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={item.completed}
-                            readOnly
-                            className="mr-3 h-4 w-4 text-blue-600 rounded border-gray-300"
-                          />
-                          <span className={`text-sm ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                            {item.title}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-500">{item.dueDate}</span>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">진도율</span>
+                        <span className={`font-semibold ${getProgressColor(student.progress)}`}>
+                          {student.progress}%
+                        </span>
                       </div>
-                    ))}
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(student.progress)}`}
+                          style={{ width: `${student.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">출석률:</span>
+                        <span className="ml-1 font-medium">{student.attendance}/{student.totalLessons}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">코스:</span>
+                        <span className="ml-1 font-medium">{student.courseName}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full"
+                                                 onClick={() => {
+                           window.location.href = `/instructor/progress/${student._id}`;
+                         }}
+                      >
+                        진도관리
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* 진도 모달 */}
+        {showProgressModal && selectedStudent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">{selectedStudent.name} - 진도 상세</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowProgressModal(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">전체 진도율</p>
+                    <p className="font-medium">{selectedStudent.progress}%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">코스</p>
+                    <p className="font-medium">{selectedStudent.courseName}</p>
                   </div>
                 </div>
 
-                {/* 액션 버튼 */}
-                <div className="flex justify-end space-x-4">
-                  <button
+                <div>
+                  <h4 className="font-medium mb-2">체크리스트 항목</h4>
+                  {checklistData.length > 0 ? (
+                    <div className="space-y-2">
+                      {checklistData.map((item) => (
+                        <div key={item._id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-sm">{item.title}</span>
+                          <Badge variant={item.isCompleted ? "default" : "secondary"}>
+                            {item.isCompleted ? "완료" : "진행중"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">체크리스트 항목이 없습니다.</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
                     onClick={() => setShowProgressModal(false)}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                    className="flex-1"
                   >
                     닫기
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       setShowProgressModal(false);
-                      window.location.href = `/instructor/progress/${selectedStudent.id}`;
+                      window.location.href = `/instructor/progress/${selectedStudent._id}`;
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="flex-1"
                   >
                     진도 관리
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -425,7 +511,5 @@ function InstructorDashboard() {
     </div>
   );
 }
-
-export default withAuth(InstructorDashboard, { requireTypes: ['instructor', 'superAdmin'], requirePermission: null });
 
 

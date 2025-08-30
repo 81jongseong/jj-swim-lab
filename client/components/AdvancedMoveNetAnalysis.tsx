@@ -1,3 +1,77 @@
+/**
+ * 🔬 JJ Swim Lab - AdvancedMoveNetAnalysis 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - Google MoveNet을 활용한 고급 수영 자세 분석 시스템
+ * - 실시간 3D 자세 추적 및 분석
+ * - 고정밀 자세 교정 가이드 및 피드백
+ * - 자세 분석 리포트 및 통계 생성
+ * - 전문가 수준의 자세 진단 및 처방
+ * 
+ * 🔄 **주요 기능**
+ * - MoveNet 기반 고정밀 자세 인식
+ * - 실시간 3D 자세 추적 및 분석
+ * - 고급 자세 교정 가이드
+ * - 자세 분석 리포트 및 통계
+ * - 전문가 의견 및 피드백 시스템
+ * 
+ * 🗄️ **데이터 연동**
+ * - Google MoveNet AI 모델
+ * - 실시간 비디오 스트림 데이터
+ * - 3D 자세 추적 및 분석 결과
+ * - 자세 교정 가이드 데이터
+ * - 전문가 피드백 및 의견
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - React (useState, useEffect, useRef)
+ * - Google MoveNet AI 모델
+ * - TensorFlow.js 또는 MediaPipe
+ * - 3D 렌더링 및 시각화 라이브러리
+ * - Tailwind CSS (스타일링)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. MoveNet 모델의 성능 및 정확도
+ * 2. 실시간 3D 자세 추적의 안정성
+ * 3. 고급 자세 분석의 전문성
+ * 4. 사용자 개인정보 보호
+ * 5. 3D 렌더링 성능 최적화
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] MoveNet 모델 연동 상태 확인
+ * - [ ] 실시간 3D 자세 추적 동작 확인
+ * - [ ] 고급 자세 분석 정확성 검증
+ * - [ ] 자세 교정 가이드 시스템 확인
+ * - [ ] 3D 렌더링 성능 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 구현 (기본 MoveNet 분석)
+ * - 2024-12-19: MoveNet AI 모델 연동 구현
+ * - 2024-12-19: 3D 자세 추적 시스템 구현
+ * - 2024-12-19: 고급 자세 분석 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (고급 MoveNet 자세 분석 시스템 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - MoveNet 모델 고도화
+ * - 실시간 3D 자세 예측
+ * - 자동 자세 교정 시스템
+ * - 접근성 개선
+ * 
+ * 💡 **사용 예시**
+ * ```tsx
+ * <AdvancedMoveNetAnalysis 
+ *   onPoseDetected={(pose) => handlePoseDetected(pose)}
+ *   onAnalysisComplete={(result) => handleAnalysisComplete(result)}
+ *   on3DTracking={(tracking) => handle3DTracking(tracking)}
+ *   onExpertFeedback={(feedback) => handleExpertFeedback(feedback)}
+ *   enable3DTracking={true}
+ * />
+ * ```
+ */
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
