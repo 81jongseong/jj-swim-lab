@@ -105,6 +105,15 @@ export default function InstructorStudents() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<string>('all');
 
+  // 체크리스트 관련 상태 추가
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [selectedStudentForChecklist, setSelectedStudentForChecklist] = useState<Student | null>(null);
+  const [checklistType, setChecklistType] = useState<'group' | 'individual'>('individual');
+  const [selectedClassForChecklist, setSelectedClassForChecklist] = useState<string>('');
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [checklistLevel, setChecklistLevel] = useState<string>('초급');
+  const [creatingChecklist, setCreatingChecklist] = useState(false);
+
   useEffect(() => {
     if (user?.userType === 'instructor') {
       loadClasses();
@@ -336,6 +345,81 @@ export default function InstructorStudents() {
       }
     } catch (error) {
       console.error('체크리스트 업데이트 실패:', error);
+    }
+  };
+
+  // 체크리스트 생성 모달 열기
+  const openChecklistModal = (student: Student) => {
+    setSelectedStudentForChecklist(student);
+    setShowChecklistModal(true);
+    loadAvailableClasses();
+  };
+
+  // 사용 가능한 클래스 로드
+  const loadAvailableClasses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/courses/instructor', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableClasses(data.courses || []);
+      }
+    } catch (error) {
+      console.error('클래스 로드 실패:', error);
+    }
+  };
+
+  // 체크리스트 생성
+  const createChecklist = async () => {
+    if (!selectedStudentForChecklist || !selectedClassForChecklist) {
+      setMessage('학생과 클래스를 선택해주세요.');
+      return;
+    }
+
+    setCreatingChecklist(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage('인증 토큰이 없습니다.');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/checklist/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          studentId: selectedStudentForChecklist._id,
+          courseId: selectedClassForChecklist,
+          studentLevel: checklistLevel
+        })
+      });
+
+      if (response.ok) {
+        setMessage('체크리스트가 성공적으로 생성되었습니다!');
+        setShowChecklistModal(false);
+        setSelectedStudentForChecklist(null);
+        setSelectedClassForChecklist('');
+        setChecklistLevel('초급');
+      } else {
+        const errorData = await response.json();
+        setMessage(errorData.error || '체크리스트 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('체크리스트 생성 실패:', error);
+      setMessage('네트워크 오류가 발생했습니다.');
+    } finally {
+      setCreatingChecklist(false);
     }
   };
 
@@ -592,6 +676,14 @@ export default function InstructorStudents() {
                               <Edit className="h-4 w-4 mr-1" />
                               수정
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openChecklistModal(student)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              체크리스트
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -781,6 +873,128 @@ export default function InstructorStudents() {
                   >
                     저장
                   </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 체크리스트 생성 모달 */}
+        {showChecklistModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">체크리스트 생성</h3>
+                <button
+                  onClick={() => setShowChecklistModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* 학생 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    학생 선택
+                  </label>
+                  <select
+                    value={selectedStudentForChecklist?._id || ''}
+                    onChange={(e) => {
+                      const student = classes.flatMap(c => c.students).find(s => s._id === e.target.value);
+                      setSelectedStudentForChecklist(student || null);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">학생을 선택하세요</option>
+                    {classes.flatMap(c => c.students).map((student) => (
+                      <option key={student._id} value={student._id}>
+                        {student.name} ({student.level})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 체크리스트 타입 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    체크리스트 타입
+                  </label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="individual"
+                        checked={checklistType === 'individual'}
+                        onChange={(e) => setChecklistType(e.target.value as 'group' | 'individual')}
+                        className="mr-2"
+                      />
+                      개인레슨
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="group"
+                        checked={checklistType === 'group'}
+                        onChange={(e) => setChecklistType(e.target.value as 'group' | 'individual')}
+                        className="mr-2"
+                      />
+                      단체반
+                    </label>
+                  </div>
+                </div>
+
+                {/* 클래스 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    클래스 선택
+                  </label>
+                  <select
+                    value={selectedClassForChecklist}
+                    onChange={(e) => setSelectedClassForChecklist(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">클래스를 선택하세요</option>
+                    {classes.map((cls) => (
+                      <option key={cls._id} value={cls._id}>
+                        {cls.name} ({cls.level})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 레벨 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    학생 레벨
+                  </label>
+                  <select
+                    value={checklistLevel}
+                    onChange={(e) => setChecklistLevel(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="초급">초급</option>
+                    <option value="중급">중급</option>
+                    <option value="고급">고급</option>
+                  </select>
+                </div>
+
+                {/* 버튼 */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowChecklistModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={createChecklist}
+                    disabled={creatingChecklist || !selectedStudentForChecklist || !selectedClassForChecklist}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {creatingChecklist ? '생성 중...' : '체크리스트 생성'}
+                  </button>
                 </div>
               </div>
             </div>

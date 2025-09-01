@@ -51,6 +51,7 @@ import {
   Award,
   BookOpen
 } from 'lucide-react';
+import withAuth from '../../../components/withAuth';
 
 interface Student {
   _id: string;
@@ -86,7 +87,7 @@ interface ChecklistData {
   targetCompletionDate?: string;
 }
 
-export default function InstructorDashboard() {
+function InstructorDashboard() {
   const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [checklistData, setChecklistData] = useState<ChecklistItem[]>([]);
@@ -511,5 +512,9 @@ export default function InstructorDashboard() {
     </div>
   );
 }
+
+export default withAuth(InstructorDashboard, { 
+  requireTypes: ['instructor', 'superAdmin'] 
+});
 
 

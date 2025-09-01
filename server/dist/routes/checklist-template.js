@@ -5,131 +5,179 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const cache_1 = require("../middleware/cache");
-const logger_1 = require("../utils/logger");
 const ChecklistTemplate_1 = require("../models/ChecklistTemplate");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
+router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
-        const { level, category, page = 1, limit = 20 } = req.query;
-        const skip = (Number(page) - 1) * Number(limit);
-        const filter = { isActive: true };
-        if (level)
-            filter.level = level;
-        if (category)
-            filter.category = category;
-        const templates = await ChecklistTemplate_1.ChecklistTemplate.find(filter)
-            .populate('createdBy', 'name email')
-            .skip(skip)
-            .limit(Number(limit))
+        const { name, description, levels, items, isPublic, tags } = req.body;
+        const creatorId = req.user?._id;
+        const creatorType = req.user?.userType === 'centerAdmin' ? 'center' : 'instructor';
+        const centerId = req.user?.centerId;
+        if (!name || !levels || !items || !Array.isArray(levels) || !Array.isArray(items)) {
+            return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+        }
+        const template = new ChecklistTemplate_1.ChecklistTemplate({
+            name,
+            description: description || '',
+            creatorId,
+            creatorType,
+            centerId,
+            levels,
+            items: items.map((item, index) => ({
+                ...item,
+                stepOrder: index + 1
+            })),
+            isPublic: isPublic || false,
+            tags: tags || [],
+            isActive: true
+        });
+        await template.save();
+        (0, logger_1.logInfo)('체크리스트 템플릿 생성', {
+            templateId: template._id,
+            name,
+            creatorId,
+            levels: levels.length,
+            itemCount: items.length
+        });
+        res.status(201).json({
+            success: true,
+            message: '체크리스트 템플릿이 성공적으로 생성되었습니다.',
+            template
+        });
+    }
+    catch (error) {
+        (0, logger_1.logError)('체크리스트 템플릿 생성 실패', error);
+        res.status(500).json({ error: '체크리스트 템플릿 생성에 실패했습니다.' });
+    }
+});
+router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+    try {
+        const userId = req.user?._id;
+        const centerId = req.user?.centerId;
+        const userType = req.user?.userType;
+        let query = { isActive: true };
+        if (userType === 'centerAdmin') {
+            query.$or = [
+                { creatorId: userId },
+                { centerId: centerId },
+                { isPublic: true }
+            ];
+        }
+        else {
+            query.$or = [
+                { creatorId: userId },
+                { centerId: centerId },
+                { isPublic: true }
+            ];
+        }
+        const templates = await ChecklistTemplate_1.ChecklistTemplate.find(query)
+            .populate('creatorId', 'name')
+            .populate('centerId', 'name')
             .sort({ createdAt: -1 });
-        const total = await ChecklistTemplate_1.ChecklistTemplate.countDocuments(filter);
+        (0, logger_1.logInfo)('체크리스트 템플릿 목록 조회', {
+            userId,
+            templateCount: templates.length
+        });
         res.json({
-            templates,
-            pagination: {
-                page: Number(page),
-                limit: Number(limit),
-                total,
-                pages: Math.ceil(total / Number(limit))
-            }
+            success: true,
+            templates
         });
     }
     catch (error) {
         (0, logger_1.logError)('체크리스트 템플릿 목록 조회 실패', error);
-        res.status(500).json({ error: '템플릿 목록을 불러오는데 실패했습니다.' });
+        res.status(500).json({ error: '체크리스트 템플릿 목록 조회에 실패했습니다.' });
     }
 });
-router.get('/level/:level', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
-        const { level } = req.params;
-        const { category } = req.query;
-        const filter = { level, isActive: true };
-        if (category)
-            filter.category = category;
-        const templates = await ChecklistTemplate_1.ChecklistTemplate.find(filter)
-            .populate('createdBy', 'name email')
-            .sort({ name: 1 });
-        res.json({ templates });
-    }
-    catch (error) {
-        (0, logger_1.logError)('레벨별 템플릿 조회 실패', error);
-        res.status(500).json({ error: '템플릿을 불러오는데 실패했습니다.' });
-    }
-});
-router.get('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
-    try {
-        const template = await ChecklistTemplate_1.ChecklistTemplate.findById(req.params.templateId)
-            .populate('createdBy', 'name email');
+        const { templateId } = req.params;
+        const userId = req.user?._id;
+        const centerId = req.user?.centerId;
+        const template = await ChecklistTemplate_1.ChecklistTemplate.findById(templateId)
+            .populate('creatorId', 'name')
+            .populate('centerId', 'name');
         if (!template) {
             return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
         }
-        res.json({ template });
-    }
-    catch (error) {
-        (0, logger_1.logError)('템플릿 상세 조회 실패', error);
-        res.status(500).json({ error: '템플릿을 불러오는데 실패했습니다.' });
-    }
-});
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
-    try {
-        const { name, description, level, category, items, tags } = req.body;
-        if (!name || !level || !category) {
-            return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
+        const hasAccess = template.creatorId.equals(userId) ||
+            template.centerId?.equals(centerId) ||
+            template.isPublic;
+        if (!hasAccess) {
+            return res.status(403).json({ error: '이 템플릿에 접근할 권한이 없습니다.' });
         }
-        const template = new ChecklistTemplate_1.ChecklistTemplate({
-            name,
-            description,
-            level,
-            category,
-            items: items || [],
-            tags: tags || [],
-            createdBy: req.user._id
+        res.json({
+            success: true,
+            template
         });
+    }
+    catch (error) {
+        (0, logger_1.logError)('체크리스트 템플릿 조회 실패', error);
+        res.status(500).json({ error: '체크리스트 템플릿 조회에 실패했습니다.' });
+    }
+});
+router.put('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+    try {
+        const { templateId } = req.params;
+        const { name, description, levels, items, isPublic, tags } = req.body;
+        const userId = req.user?._id;
+        const template = await ChecklistTemplate_1.ChecklistTemplate.findById(templateId);
+        if (!template) {
+            return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
+        }
+        if (!template.creatorId.equals(userId)) {
+            return res.status(403).json({ error: '이 템플릿을 수정할 권한이 없습니다.' });
+        }
+        template.name = name || template.name;
+        template.description = description || template.description;
+        template.levels = levels || template.levels;
+        template.items = items ? items.map((item, index) => ({
+            ...item,
+            stepOrder: index + 1
+        })) : template.items;
+        template.isPublic = isPublic !== undefined ? isPublic : template.isPublic;
+        template.tags = tags || template.tags;
         await template.save();
-        (0, logger_1.logInfo)('체크리스트 템플릿 생성', { templateId: template._id, name, level });
-        res.status(201).json({ template });
+        (0, logger_1.logInfo)('체크리스트 템플릿 수정', {
+            templateId,
+            userId
+        });
+        res.json({
+            success: true,
+            message: '체크리스트 템플릿이 성공적으로 수정되었습니다.',
+            template
+        });
     }
     catch (error) {
-        (0, logger_1.logError)('템플릿 생성 실패', error);
-        res.status(500).json({ error: '템플릿 생성에 실패했습니다.' });
+        (0, logger_1.logError)('체크리스트 템플릿 수정 실패', error);
+        res.status(500).json({ error: '체크리스트 템플릿 수정에 실패했습니다.' });
     }
 });
-router.put('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.delete('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
-        const { name, description, level, category, items, tags, isActive } = req.body;
-        const template = await ChecklistTemplate_1.ChecklistTemplate.findByIdAndUpdate(req.params.templateId, {
-            name,
-            description,
-            level,
-            category,
-            items,
-            tags,
-            isActive,
-            version: { $inc: 1 }
-        }, { new: true });
+        const { templateId } = req.params;
+        const userId = req.user?._id;
+        const template = await ChecklistTemplate_1.ChecklistTemplate.findById(templateId);
         if (!template) {
             return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
         }
-        (0, logger_1.logInfo)('템플릿 수정', { templateId: template._id, name });
-        res.json({ template });
-    }
-    catch (error) {
-        (0, logger_1.logError)('템플릿 수정 실패', error);
-        res.status(500).json({ error: '템플릿 수정에 실패했습니다.' });
-    }
-});
-router.delete('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
-    try {
-        const template = await ChecklistTemplate_1.ChecklistTemplate.findByIdAndDelete(req.params.templateId);
-        if (!template) {
-            return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
+        if (!template.creatorId.equals(userId)) {
+            return res.status(403).json({ error: '이 템플릿을 삭제할 권한이 없습니다.' });
         }
-        (0, logger_1.logInfo)('템플릿 삭제', { templateId: req.params.templateId, name: template.name });
-        res.json({ message: '템플릿이 성공적으로 삭제되었습니다.' });
+        template.isActive = false;
+        await template.save();
+        (0, logger_1.logInfo)('체크리스트 템플릿 비활성화', {
+            templateId,
+            userId
+        });
+        res.json({
+            success: true,
+            message: '체크리스트 템플릿이 성공적으로 비활성화되었습니다.'
+        });
     }
     catch (error) {
-        (0, logger_1.logError)('템플릿 삭제 실패', error);
-        res.status(500).json({ error: '템플릿 삭제에 실패했습니다.' });
+        (0, logger_1.logError)('체크리스트 템플릿 삭제 실패', error);
+        res.status(500).json({ error: '체크리스트 템플릿 삭제에 실패했습니다.' });
     }
 });
 exports.default = router;

@@ -93,7 +93,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 
-interface User {
+export interface User {
   _id: string;
   userId: string;
   name: string;

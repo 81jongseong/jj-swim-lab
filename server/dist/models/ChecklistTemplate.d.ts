@@ -24,24 +24,28 @@
 /// <reference types="mongoose/types/inferschematype" />
 /// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose, { Document } from 'mongoose';
-export interface IChecklistTemplateItem {
+export interface IChecklistTemplateItem extends Document {
     stepName: string;
     stepOrder: number;
-    category?: string;
-    difficulty?: 'beginner' | 'intermediate' | 'advanced';
-    tips?: string;
-    estimatedTime?: number;
-    required?: boolean;
+    category: string;
+    difficulty: string;
+    tips: string;
+    teachingMethodId: mongoose.Types.ObjectId;
+    isRequired: boolean;
+    prerequisites: string[];
+    healthRestrictions: string[];
+    alternativeSteps: string[];
 }
 export interface IChecklistTemplate extends Document {
     name: string;
-    description: string;
-    level: 'beginner' | 'intermediate' | 'advanced';
-    category: string;
+    creatorId: mongoose.Types.ObjectId;
+    creatorType: 'center' | 'instructor';
+    centerId?: mongoose.Types.ObjectId;
+    levels: string[];
     items: IChecklistTemplateItem[];
     isActive: boolean;
-    createdBy: mongoose.Types.ObjectId;
-    version: number;
+    isPublic: boolean;
+    description: string;
     tags: string[];
 }
 export declare const ChecklistTemplate: mongoose.Model<IChecklistTemplate, {}, {}, {}, mongoose.Document<unknown, {}, IChecklistTemplate, {}, {}> & IChecklistTemplate & Required<{

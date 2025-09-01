@@ -24,6 +24,7 @@ export interface IChecklist extends Document {
   startDate: Date;
   targetCompletionDate?: Date;
   status: 'active' | 'completed' | 'paused';
+  completedAt?: Date;
   notes?: string;
 }
 
@@ -116,6 +117,9 @@ const ChecklistSchema = new Schema<IChecklist>({
     type: String,
     enum: ['active', 'completed', 'paused'],
     default: 'active'
+  },
+  completedAt: {
+    type: Date
   },
   notes: {
     type: String,

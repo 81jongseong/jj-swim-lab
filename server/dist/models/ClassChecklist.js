@@ -42,7 +42,7 @@ const ClassChecklistItemSchema = new mongoose_1.Schema({
     },
     difficulty: {
         type: String,
-        enum: ['beginner', 'intermediate', 'advanced']
+        trim: true
     },
     tips: {
         type: String,
@@ -52,22 +52,46 @@ const ClassChecklistItemSchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'TeachingMethod',
         required: true
+    },
+    instructorMessage: {
+        type: String,
+        trim: true
+    },
+    messageUpdatedAt: {
+        type: Date
+    },
+    isCompleted: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
 });
 const ClassChecklistSchema = new mongoose_1.Schema({
     classId: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Course',
+        type: mongoose_1.Schema.Types.Mixed,
         required: true
     },
     level: {
         type: String,
-        enum: ['beginner', 'intermediate', 'advanced'],
-        required: true
+        trim: true
+    },
+    templateId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'ChecklistTemplate'
+    },
+    customLevel: {
+        type: String,
+        trim: true
     },
     items: {
+        type: [ClassChecklistItemSchema],
+        default: []
+    },
+    hiddenItems: [{
+            type: String
+        }],
+    customItems: {
         type: [ClassChecklistItemSchema],
         default: []
     },
@@ -78,6 +102,6 @@ const ClassChecklistSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
-ClassChecklistSchema.index({ classId: 1, level: 1 }, { unique: true });
+ClassChecklistSchema.index({ classId: 1 }, { unique: true });
 exports.ClassChecklist = mongoose_1.default.model('ClassChecklist', ClassChecklistSchema);
 //# sourceMappingURL=ClassChecklist.js.map

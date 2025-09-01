@@ -25,7 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChecklistTemplate = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const checklistTemplateItemSchema = new mongoose_1.Schema({
+const ChecklistTemplateItemSchema = new mongoose_1.Schema({
     stepName: {
         type: String,
         required: true,
@@ -38,73 +38,89 @@ const checklistTemplateItemSchema = new mongoose_1.Schema({
     },
     category: {
         type: String,
+        required: true,
         trim: true
     },
     difficulty: {
         type: String,
-        enum: ['beginner', 'intermediate', 'advanced']
+        required: true,
+        trim: true
     },
     tips: {
         type: String,
         trim: true
     },
-    estimatedTime: {
-        type: Number,
-        min: 0
+    teachingMethodId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'TeachingMethod',
+        required: true
     },
-    required: {
+    isRequired: {
         type: Boolean,
         default: true
-    }
+    },
+    prerequisites: [{
+            type: String,
+            trim: true
+        }],
+    healthRestrictions: [{
+            type: String,
+            trim: true
+        }],
+    alternativeSteps: [{
+            type: String,
+            trim: true
+        }]
 }, {
     timestamps: true
 });
-const checklistTemplateSchema = new mongoose_1.Schema({
+const ChecklistTemplateSchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
         trim: true
     },
-    description: {
-        type: String,
-        trim: true
-    },
-    level: {
-        type: String,
-        enum: ['beginner', 'intermediate', 'advanced'],
+    creatorId: {
+        type: mongoose_1.Schema.Types.ObjectId,
         required: true
     },
-    category: {
+    creatorType: {
         type: String,
-        required: true,
-        trim: true
+        enum: ['center', 'instructor'],
+        required: true
     },
+    centerId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Center'
+    },
+    levels: [{
+            type: String,
+            required: true,
+            trim: true
+        }],
     items: {
-        type: [checklistTemplateItemSchema],
+        type: [ChecklistTemplateItemSchema],
         default: []
     },
     isActive: {
         type: Boolean,
         default: true
     },
-    createdBy: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+    isPublic: {
+        type: Boolean,
+        default: false
     },
-    version: {
-        type: Number,
-        default: 1
+    description: {
+        type: String,
+        trim: true
     },
-    tags: {
-        type: [String],
-        default: []
-    }
+    tags: [{
+            type: String,
+            trim: true
+        }]
 }, {
     timestamps: true
 });
-checklistTemplateSchema.index({ level: 1, category: 1 });
-checklistTemplateSchema.index({ isActive: 1, createdBy: 1 });
-checklistTemplateSchema.index({ tags: 1 });
-exports.ChecklistTemplate = mongoose_1.default.model('ChecklistTemplate', checklistTemplateSchema);
+ChecklistTemplateSchema.index({ creatorId: 1, name: 1 }, { unique: true });
+exports.ChecklistTemplate = mongoose_1.default.model('ChecklistTemplate', ChecklistTemplateSchema);
 //# sourceMappingURL=ChecklistTemplate.js.map

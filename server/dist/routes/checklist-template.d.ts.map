@@ -1,1 +1,1 @@
-{"version":3,"file":"checklist-template.d.ts","sourceRoot":"","sources":["../../src/routes/checklist-template.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAO9B,QAAA,MAAM,MAAM,EAAE,OAAO,CAAC,MAAyB,CAAC;AAsJhD,eAAe,MAAM,CAAC"}
+{"version":3,"file":"checklist-template.d.ts","sourceRoot":"","sources":["../../src/routes/checklist-template.ts"],"names":[],"mappings":"AAKA,QAAA,MAAM,MAAM,4CAAmB,CAAC;AAsNhC,eAAe,MAAM,CAAC"}

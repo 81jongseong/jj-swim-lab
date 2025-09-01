@@ -1,526 +1,313 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle, Button, LoadingSpinner } from '@/components/ui';
+import { Save, Edit, Eye, Building, Info, FileText } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
 
 interface CenterInfo {
-  _id: string;
   centerId: string;
   name: string;
   description: string;
-  shortDescription: string;
   address: string;
   phone: string;
   email: string;
-  website?: string;
-  businessHours: {
-    monday: string;
-    tuesday: string;
-    wednesday: string;
-    thursday: string;
-    friday: string;
-    saturday: string;
-    sunday: string;
-  };
+  operatingHours: string;
   facilities: string[];
-  images: {
-    mainImage: string;
-    gallery: string[];
-  };
-  features: string[];
-  instructors: {
-    name: string;
-    specialty: string;
-    experience: string;
-    image?: string;
-  }[];
-  courses: {
-    name: string;
-    description: string;
-    level: string;
-    duration: string;
-    price: string;
-  }[];
-  socialMedia: {
-    instagram?: string;
-    facebook?: string;
-    youtube?: string;
-    blog?: string;
-  };
-  location: {
-    latitude: number;
-    longitude: number;
-    address: string;
-  };
-  isActive: boolean;
-  lastUpdated: Date;
+  introduction: string;
+  guide: string;
+  updatedAt: Date;
 }
 
-function CenterInfoPage() {
+function CenterInfoManagement() {
+  const { user } = useAuth();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<CenterInfo>>({});
-  const [uploading, setUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingInfo, setEditingInfo] = useState<Partial<CenterInfo>>({});
 
   useEffect(() => {
-    loadCenterInfo();
-  }, []);
+    if (user) {
+      loadCenterInfo();
+    }
+  }, [user]);
 
   const loadCenterInfo = async () => {
     try {
-      setLoading(true);
-      // Mock 데이터 사용
-      const mockCenterInfo: CenterInfo = {
-        _id: '1',
-        centerId: 'JJSWIM001',
-        name: 'JJ 수영장',
-        description: '전문적인 수영 교육을 제공하는 프리미엄 수영장입니다.',
-        shortDescription: '전문 수영 교육의 새로운 기준',
+      setIsLoading(true);
+      // 임시 데이터 (실제로는 API에서 가져옴)
+      const tempInfo: CenterInfo = {
+        centerId: 'center001',
+        name: 'JJ Swim Lab',
+        description: '전문적인 수영 교육을 제공하는 프리미엄 수영장',
         address: '서울시 강남구 테헤란로 123',
         phone: '02-1234-5678',
-        email: 'info@jjswim.com',
-        website: 'https://jjswim.com',
-        businessHours: {
-          monday: '06:00-22:00',
-          tuesday: '06:00-22:00',
-          wednesday: '06:00-22:00',
-          thursday: '06:00-22:00',
-          friday: '06:00-22:00',
-          saturday: '08:00-20:00',
-          sunday: '08:00-18:00'
-        },
-        facilities: ['수영장', '샤워실', '탈의실', '사우나', '주차장'],
-        images: {
-          mainImage: '/api/placeholder/400/300',
-          gallery: ['/api/placeholder/300/200', '/api/placeholder/300/200']
-        },
-        features: ['24시간 운영', '전문 강사진', '무료 주차', '사우나 이용'],
-        instructors: [
-          {
-            name: '김강사',
-            specialty: '자유형',
-            experience: '10년',
-            image: '/api/placeholder/100/100'
-          }
-        ],
-        courses: [
-          {
-            name: '초급 자유형',
-            description: '자유형 기초 과정',
-            level: '초급',
-            duration: '3개월',
-            price: '300,000원'
-          }
-        ],
-        socialMedia: {
-          instagram: '@jjswim',
-          facebook: 'jjswim',
-          youtube: 'JJ수영장'
-        },
-        location: {
-          latitude: 37.5665,
-          longitude: 126.9780,
-          address: '서울시 강남구 테헤란로 123'
-        },
-        isActive: true,
-        lastUpdated: new Date()
+        email: 'info@jjswimlab.com',
+        operatingHours: '평일 06:00-22:00, 주말 08:00-20:00',
+        facilities: ['25m 실내 수영장', '사우나', '피트니스룸', '주차장'],
+        introduction: 'JJ Swim Lab은 체계적이고 과학적인 수영 교육을 통해 모든 연령대의 수영 실력을 향상시키는 것을 목표로 합니다. 경험丰富的한 강사진과 최신 시설을 갖춘 프리미엄 수영 교육 센터입니다.',
+        guide: '1. 수강 신청: 온라인 또는 방문 접수\n2. 레벨 테스트: 첫 수업 시 무료 레벨 테스트 진행\n3. 수업 진행: 개인별 맞춤형 커리큘럼으로 진행\n4. 진도 관리: 정기적인 진도 체크 및 피드백 제공\n5. 안전 관리: 모든 수업에서 안전을 최우선으로 합니다.',
+        updatedAt: new Date()
       };
-
-      setCenterInfo(mockCenterInfo);
-      setFormData(mockCenterInfo);
+      
+      setCenterInfo(tempInfo);
+      setEditingInfo(tempInfo);
     } catch (error) {
-      console.error('센터 정보 로딩 실패:', error);
+      console.error('센터 정보 로드 실패:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   const handleSave = async () => {
     try {
-      // Mock 저장 로직
-      setCenterInfo(formData as CenterInfo);
-      setEditing(false);
-      alert('센터 정보가 성공적으로 저장되었습니다.');
+      setIsSaving(true);
+      // 실제로는 API 호출
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setCenterInfo(prev => prev ? { ...prev, ...editingInfo, updatedAt: new Date() } : null);
+      setIsEditing(false);
+      alert('센터 정보가 성공적으로 저장되었습니다!');
     } catch (error) {
       console.error('센터 정보 저장 실패:', error);
       alert('센터 정보 저장에 실패했습니다.');
-    }
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'gallery') => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploading(true);
-      // Mock 이미지 업로드
-      const imageUrl = URL.createObjectURL(file);
-      
-      if (type === 'main') {
-        setFormData(prev => ({
-          ...prev,
-          images: { ...prev.images, mainImage: imageUrl }
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          images: { 
-            ...prev.images, 
-            gallery: [...(prev.images?.gallery || []), imageUrl] 
-          }
-        }));
-      }
-
-      alert('이미지가 성공적으로 업로드되었습니다.');
-    } catch (error) {
-      console.error('이미지 업로드 실패:', error);
-      alert('이미지 업로드에 실패했습니다.');
     } finally {
-      setUploading(false);
+      setIsSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">센터 정보를 불러오는 중...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleCancel = () => {
+    setEditingInfo(centerInfo || {});
+    setIsEditing(false);
+  };
 
-  if (!centerInfo && !editing) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">센터 정보 관리</h1>
-            <p className="text-gray-600 mb-8">아직 센터 정보가 등록되지 않았습니다.</p>
-            <button
-              onClick={() => setEditing(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              센터 정보 등록하기
-            </button>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" text="센터 정보를 불러오는 중..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">센터 정보 관리</h1>
-          {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              수정하기
-            </button>
-          ) : (
-            <div className="space-x-2">
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  setFormData(centerInfo || {});
-                }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleSave}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-              >
-                저장
-              </button>
-            </div>
-          )}
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          🏢 센터 정보 관리
+        </h1>
+        <p className="text-sm text-gray-600">
+          센터 소개글과 이용안내를 작성하고 관리하세요
+        </p>
+      </div>
 
-        {editing ? (
-          <div className="bg-white rounded-lg shadow p-6 space-y-6">
-            {/* 기본 정보 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">센터명</label>
-                <input
-                  type="text"
-                  value={formData.name || ''}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">센터 ID</label>
-                <input
-                  type="text"
-                  value={formData.centerId || ''}
-                  onChange={(e) => handleInputChange('centerId', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 센터 기본 정보 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Building className="w-5 h-5" />
+                센터 기본 정보
+              </CardTitle>
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  편집
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleCancel}>
+                    취소
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? '저장 중...' : '저장'}
+                  </Button>
+                </div>
+              )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">간단 설명</label>
-              <input
-                type="text"
-                value={formData.shortDescription || ''}
-                onChange={(e) => handleInputChange('shortDescription', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="200자 이내로 센터를 소개해주세요"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">상세 설명</label>
-              <textarea
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="센터에 대한 자세한 설명을 입력해주세요"
-              />
-            </div>
-
-            {/* 연락처 정보 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">주소</label>
-                <input
-                  type="text"
-                  value={formData.address || ''}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-                <input
-                  type="text"
-                  value={formData.phone || ''}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-                <input
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* 이미지 업로드 */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">메인 이미지</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, 'main')}
-                  disabled={uploading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {formData.images?.mainImage && (
-                  <img
-                    src={formData.images.mainImage}
-                    alt="메인 이미지"
-                    className="mt-2 w-32 h-32 object-cover rounded-md"
+          </CardHeader>
+          
+          <CardContent>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">센터명 *</label>
+                  <input
+                    type="text"
+                    value={editingInfo.name || ''}
+                    onChange={(e) => setEditingInfo({...editingInfo, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">갤러리 이미지</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleImageUpload(e, 'gallery')}
-                  disabled={uploading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {formData.images?.gallery && formData.images.gallery.length > 0 && (
-                  <div className="mt-2 grid grid-cols-4 gap-2">
-                    {formData.images.gallery.map((image, index) => (
-                      <img
-                        key={index}
-                        src={image}
-                        alt={`갤러리 이미지 ${index + 1}`}
-                        className="w-24 h-24 object-cover rounded-md"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 시설 및 특징 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">주요 시설</label>
-                <textarea
-                  value={formData.facilities?.join(', ') || ''}
-                  onChange={(e) => handleInputChange('facilities', e.target.value.split(', ').filter(Boolean))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="쉼표로 구분하여 입력 (예: 수영장, 샤워실, 탈의실)"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">특징</label>
-                <textarea
-                  value={formData.features?.join(', ') || ''}
-                  onChange={(e) => handleInputChange('features', e.target.value.split(', ').filter(Boolean))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="쉼표로 구분하여 입력 (예: 24시간 운영, 전문 강사진, 무료 주차)"
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* 기본 정보 */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">기본 정보</h2>
-                <div className="space-y-3">
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">간단 설명</label>
+                  <input
+                    type="text"
+                    value={editingInfo.description || ''}
+                    onChange={(e) => setEditingInfo({...editingInfo, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                  <input
+                    type="text"
+                    value={editingInfo.address || ''}
+                    onChange={(e) => setEditingInfo({...editingInfo, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="font-medium text-gray-700">센터명:</span>
-                    <span className="ml-2 text-gray-900">{centerInfo?.name}</span>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                    <input
+                      type="text"
+                      value={editingInfo.phone || ''}
+                      onChange={(e) => setEditingInfo({...editingInfo, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">센터 ID:</span>
-                    <span className="ml-2 text-gray-900">{centerInfo?.centerId}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">간단 설명:</span>
-                    <p className="ml-2 text-gray-900 mt-1">{centerInfo?.shortDescription}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">상세 설명:</span>
-                    <p className="ml-2 text-gray-900 mt-1">{centerInfo?.description}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                    <input
+                      type="email"
+                      value={editingInfo.email || ''}
+                      onChange={(e) => setEditingInfo({...editingInfo, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </div>
                 </div>
-              </div>
-
-              {/* 연락처 정보 */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">연락처 정보</h2>
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-medium text-gray-700">주소:</span>
-                    <span className="ml-2 text-gray-900">{centerInfo?.address}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">전화번호:</span>
-                    <span className="ml-2 text-gray-900">{centerInfo?.phone}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">이메일:</span>
-                    <span className="ml-2 text-gray-900">{centerInfo?.email}</span>
-                  </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">운영시간</label>
+                  <input
+                    type="text"
+                    value={editingInfo.operatingHours || ''}
+                    onChange={(e) => setEditingInfo({...editingInfo, operatingHours: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 평일 06:00-22:00, 주말 08:00-20:00"
+                  />
                 </div>
               </div>
-            </div>
-
-            {/* 이미지 */}
-            {centerInfo?.images && (
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">이미지</h2>
-                <div className="space-y-4">
-                  {centerInfo.images.mainImage && (
-                    <div>
-                      <h3 className="font-medium text-gray-700 mb-2">메인 이미지</h3>
-                      <img
-                        src={centerInfo.images.mainImage}
-                        alt="메인 이미지"
-                        className="w-48 h-32 object-cover rounded-lg shadow-md"
-                      />
-                    </div>
-                  )}
-                  {centerInfo.images.gallery && centerInfo.images.gallery.length > 0 && (
-                    <div>
-                      <h3 className="font-medium text-gray-700 mb-2">갤러리</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {centerInfo.images.gallery.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`갤러리 이미지 ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg shadow-md"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-gray-500">센터명</span>
+                  <p className="text-gray-900">{centerInfo?.name}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">설명</span>
+                  <p className="text-gray-900">{centerInfo?.description}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">주소</span>
+                  <p className="text-gray-900">{centerInfo?.address}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">전화번호</span>
+                    <p className="text-gray-900">{centerInfo?.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">이메일</span>
+                    <p className="text-gray-900">{centerInfo?.email}</p>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">운영시간</span>
+                  <p className="text-gray-900">{centerInfo?.operatingHours}</p>
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
 
-            {/* 시설 및 특징 */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-              {centerInfo?.facilities && centerInfo.facilities.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">주요 시설</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {centerInfo.facilities.map((facility, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                      >
-                        {facility}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* 센터 소개글 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5" />
+              센터 소개글
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent>
+            {isEditing ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">소개글</label>
+                <textarea
+                  value={editingInfo.introduction || ''}
+                  onChange={(e) => setEditingInfo({...editingInfo, introduction: e.target.value})}
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="센터에 대한 자세한 소개글을 작성해주세요..."
+                />
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-900 whitespace-pre-line">{centerInfo?.introduction}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-              {centerInfo?.features && centerInfo.features.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">특징</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {centerInfo.features.map((feature, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* 이용안내 */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              이용안내
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent>
+            {isEditing ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">이용안내</label>
+                <textarea
+                  value={editingInfo.guide || ''}
+                  onChange={(e) => setEditingInfo({...editingInfo, guide: e.target.value})}
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="수강생들이 알아야 할 이용안내를 작성해주세요..."
+                />
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-900 whitespace-pre-line">{centerInfo?.guide}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* 저장 상태 표시 */}
+      {centerInfo && (
+        <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm font-medium text-green-700">
+              ✅ 센터 정보가 저장되어 있습니다
+            </span>
+          </div>
+          <p className="text-xs text-green-600 mt-1">
+            마지막 업데이트: {centerInfo.updatedAt.toLocaleString()}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-export default withAuth(CenterInfoPage, { requireTypes: ['centerAdmin', 'superAdmin'], requirePermission: null });
+export default withAuth(CenterInfoManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
 
 
 

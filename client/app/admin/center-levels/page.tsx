@@ -1,436 +1,393 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { Button, Input, Card, Badge } from '@/components/ui';
+import React, { useState, useEffect } from 'react';
+import { useAuth, type User } from '../../../hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle, Button, LoadingSpinner } from '@/components/ui';
+import { getCenterLevels, updateCenterLevels, type CenterLevel } from '../../../lib/api/center-level';
+import { Plus, Trash2, Save, X, GripVertical } from 'lucide-react';
+import withAuth from '../../../components/withAuth';
 
-interface CenterLevel {
-  _id: string;
-  centerId: string;
-  name: string;
-  displayName: string;
-  order: number;
-  color: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export default function CenterLevelsPage() {
+function CenterLevelsManagement() {
   const { user } = useAuth();
-  const [levels, setLevels] = useState<CenterLevel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingLevel, setEditingLevel] = useState<CenterLevel | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    displayName: '',
-    order: 0,
-    color: 'blue',
-    description: ''
-  });
-
-  const isCenterAdmin = user?.userType === 'centerAdmin';
-  const isSuperAdmin = user?.userType === 'superAdmin';
+  const [centerLevels, setCenterLevels] = useState<CenterLevel | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingLevels, setEditingLevels] = useState<CenterLevel['levels']>([]);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (isCenterAdmin || isSuperAdmin) {
-      fetchCenterLevels();
+    if (user) {
+      console.log('🔍 사용자 정보 전체:', JSON.stringify(user, null, 2));
+      console.log('🔍 사용자 타입:', user.userType);
+      console.log('🔍 centerAdminInfo:', user.centerAdminInfo);
+      console.log('🔍 instructorInfo:', user.instructorInfo);
+      
+      const centerId = getCenterId(user);
+      console.log('🏢 센터 ID:', centerId);
+      
+      if (centerId) {
+        loadCenterLevels(centerId);
+      } else {
+        console.error('❌ 센터 ID를 찾을 수 없습니다');
+        setIsLoading(false);
+      }
     }
   }, [user]);
 
-  const fetchCenterLevels = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('❌ JWT 토큰이 없습니다.');
-        return;
-      }
-
-      const response = await fetch('http://localhost:5000/api/center-levels', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ 센터 레벨 목록 로드 성공:', data);
-        setLevels(data.data || []);
-      } else {
-        console.error('❌ 센터 레벨 목록 로드 실패:', response.status);
-      }
-    } catch (error) {
-      console.error('❌ 센터 레벨 목록 로드 중 오류:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('인증 토큰이 없습니다.');
-        return;
-      }
-
-      const url = editingLevel 
-        ? `http://localhost:5000/api/center-levels/${editingLevel._id}`
-        : 'http://localhost:5000/api/center-levels';
-      
-      const method = editingLevel ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ 센터 레벨 저장 성공:', result);
-        
-        alert(editingLevel ? '레벨이 수정되었습니다.' : '새 레벨이 생성되었습니다.');
-        
-        // 폼 초기화
-        setFormData({
-          name: '',
-          displayName: '',
-          order: 0,
-          color: 'blue',
-          description: ''
-        });
-        setEditingLevel(null);
-        setIsFormOpen(false);
-        
-        // 목록 새로고침
-        fetchCenterLevels();
-      } else {
-        const errorData = await response.json();
-        alert('저장에 실패했습니다: ' + (errorData.message || '알 수 없는 오류'));
-      }
-    } catch (error) {
-      console.error('❌ 센터 레벨 저장 중 오류:', error);
-      alert('저장 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleEdit = (level: CenterLevel) => {
-    setEditingLevel(level);
-    setFormData({
-      name: level.name,
-      displayName: level.displayName,
-      order: level.order,
-      color: level.color,
-      description: level.description || ''
+  const getCenterId = (user: User): string | null => {
+    console.log('🔍 getCenterId 호출:', {
+      userType: user.userType,
+      centerAdminInfo: user.centerAdminInfo,
+      instructorInfo: user.instructorInfo
     });
-    setIsFormOpen(true);
+    
+    // centerAdminInfo 상세 정보 출력
+    if (user.centerAdminInfo) {
+      console.log('🔍 centerAdminInfo 상세:', {
+        managedCenters: user.centerAdminInfo.managedCenters,
+        hasManagedCenters: !!user.centerAdminInfo.managedCenters,
+        managedCentersLength: user.centerAdminInfo.managedCenters?.length,
+        firstCenter: user.centerAdminInfo.managedCenters?.[0]
+      });
+    }
+    
+    if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters?.[0]) {
+      const centerId = user.centerAdminInfo.managedCenters[0];
+      console.log('✅ centerAdmin 센터 ID:', centerId);
+      return centerId;
+    }
+    
+    if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters?.[0]) {
+      const centerId = user.instructorInfo.assignedCenters[0];
+      console.log('✅ instructor 센터 ID:', centerId);
+      return centerId;
+    }
+    
+    if (user.userType === 'superAdmin') {
+      console.log('✅ superAdmin - default 센터 ID 사용');
+      return 'center001'; // 실제 존재하는 센터 ID 사용
+    }
+    
+    // centerAdmin이지만 managedCenters가 없는 경우 fallback
+    if (user.userType === 'centerAdmin') {
+      console.log('⚠️ centerAdmin이지만 managedCenters가 없음, 기본값 사용');
+      return 'center001'; // 기본 센터 ID 사용
+    }
+    
+    console.log('❌ 센터 ID를 찾을 수 없음');
+    return null;
   };
 
-  const handleDelete = async (levelId: string) => {
-    if (!confirm('정말로 이 레벨을 삭제하시겠습니까?')) {
-      return;
-    }
-
+  const loadCenterLevels = async (centerId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('인증 토큰이 없습니다.');
+      setIsLoading(true);
+      console.log('🔍 센터 레벨 로드 시작:', centerId);
+      
+      const data = await getCenterLevels(centerId);
+      console.log('✅ 센터 레벨 로드 성공:', data);
+      
+      setCenterLevels(data);
+      setEditingLevels([...data.levels]);
+    } catch (error) {
+      console.error('❌ 센터 레벨 로드 실패:', error);
+      
+      // 에러가 발생해도 기본 레벨을 설정
+      const defaultLevels = [
+        { name: '기초', order: 1, description: '수영을 처음 시작하는 단계', color: '#10B981' },
+        { name: '초급', order: 2, description: '기본 동작을 익히는 단계', color: '#3B82F6' },
+        { name: '중급', order: 3, description: '자유형과 배영을 배우는 단계', color: '#F59E0B' },
+        { name: '상급', order: 4, description: '평영과 접영을 배우는 단계', color: '#EF4444' },
+        { name: '마스터', order: 5, description: '고급 기술과 경영을 배우는 단계', color: '#8B5CF6' }
+      ];
+      
+      const defaultCenterLevel = {
+        _id: 'temp',
+        centerId: centerId,
+        levels: defaultLevels,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setCenterLevels(defaultCenterLevel);
+      setEditingLevels([...defaultLevels]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddLevel = () => {
+    const newLevel = {
+      name: '',
+      order: editingLevels.length + 1,
+      description: '',
+      color: '#3B82F6'
+    };
+    setEditingLevels([...editingLevels, newLevel]);
+  };
+
+  const handleRemoveLevel = (index: number) => {
+    const newLevels = editingLevels.filter((_, i) => i !== index);
+    // 순서 재정렬
+    const reorderedLevels = newLevels.map((level, i) => ({
+      ...level,
+      order: i + 1
+    }));
+    setEditingLevels(reorderedLevels);
+  };
+
+  const handleLevelChange = (index: number, field: keyof typeof editingLevels[0], value: string | number) => {
+    const newLevels = [...editingLevels];
+    newLevels[index] = { ...newLevels[index], [field]: value };
+    setEditingLevels(newLevels);
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      
+      // 유효성 검사
+      if (editingLevels.length === 0) {
+        alert('최소 1개 이상의 레벨이 필요합니다.');
         return;
       }
-
-      const response = await fetch(`http://localhost:5000/api/center-levels/${levelId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        alert('레벨이 삭제되었습니다.');
-        fetchCenterLevels();
-      } else {
-        const errorData = await response.json();
-        alert('삭제에 실패했습니다: ' + (errorData.message || '알 수 없는 오류'));
+      
+      const hasEmptyNames = editingLevels.some(level => !level.name.trim());
+      if (hasEmptyNames) {
+        alert('모든 레벨의 이름을 입력해주세요.');
+        return;
+      }
+      
+      const hasDuplicateNames = editingLevels.some((level, index) => 
+        editingLevels.findIndex(l => l.name === level.name) !== index
+      );
+      if (hasDuplicateNames) {
+        alert('중복된 레벨 이름이 있습니다.');
+        return;
+      }
+      
+      const centerId = getCenterId(user!);
+      if (centerId) {
+        const savedData = await updateCenterLevels(centerId, { levels: editingLevels });
+        console.log('✅ 저장된 데이터:', savedData);
+        
+        // 저장된 데이터로 상태 업데이트
+        setCenterLevels(savedData);
+        setEditingLevels([...savedData.levels]);
+        
+        // 편집 모드 종료
+        setIsEditing(false);
+        
+        // 성공 메시지 표시
+        alert('레벨 설정이 성공적으로 저장되었습니다!');
       }
     } catch (error) {
-      console.error('❌ 센터 레벨 삭제 중 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      console.error('레벨 저장 실패:', error);
+      alert('레벨 저장에 실패했습니다: ' + error.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const getColorClass = (color: string) => {
-    const colorMap: { [key: string]: string } = {
-      blue: 'bg-blue-100 text-blue-800',
-      green: 'bg-green-100 text-green-800',
-      yellow: 'bg-yellow-100 text-yellow-800',
-      red: 'bg-red-100 text-red-800',
-      purple: 'bg-purple-100 text-purple-800',
-      pink: 'bg-pink-100 text-pink-800',
-      indigo: 'bg-indigo-100 text-indigo-800',
-      gray: 'bg-gray-100 text-gray-800'
-    };
-    return colorMap[color] || 'bg-gray-100 text-gray-800';
+  const handleCancel = () => {
+    setEditingLevels([...centerLevels!.levels]);
+    setIsEditing(false);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" text="센터 레벨을 불러오는 중..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isCenterAdmin ? '센터 레벨 관리' : '센터별 레벨 관리'}
-          </h1>
-          <p className="mt-2 text-gray-600">
-            {isCenterAdmin 
-              ? '센터에 맞는 맞춤형 레벨 체계를 설정하고 관리합니다.'
-              : '모든 센터의 레벨 체계를 관리합니다.'
-            }
-          </p>
-        </div>
-
-        {/* 레벨 추가 버튼 */}
-        <div className="mb-6">
-          <Button
-            onClick={() => {
-              setEditingLevel(null);
-              setFormData({
-                name: '',
-                displayName: '',
-                order: 0,
-                color: 'blue',
-                description: ''
-              });
-              setIsFormOpen(true);
-            }}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            ✨ 새 레벨 추가
-          </Button>
-        </div>
-
-        {/* 레벨 목록 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {levels.map((level) => (
-            <Card key={level._id} className="hover:shadow-lg transition-shadow duration-200">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">{level.displayName}</h3>
-                  <Badge className={getColorClass(level.color)}>
-                    {level.name}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">순서:</span> {level.order}
-                  </p>
-                  {level.description && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">설명:</span> {level.description}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-500">
-                    생성일: {new Date(level.createdAt).toLocaleDateString('ko-KR')}
-                  </p>
-                </div>
-
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={() => handleEdit(level)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    ✏️ 수정
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(level._id)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                  >
-                    🗑️ 삭제
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {levels.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">
-              <p>등록된 레벨이 없습니다.</p>
-              <p className="text-sm mt-2">새로운 레벨을 추가해보세요!</p>
-            </div>
-          </div>
-        )}
-
-        {/* 레벨 추가/수정 모달 */}
-        {isFormOpen && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {editingLevel ? '레벨 수정' : '새 레벨 추가'}
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setIsFormOpen(false);
-                      setEditingLevel(null);
-                      setFormData({
-                        name: '',
-                        displayName: '',
-                        order: 0,
-                        color: 'blue',
-                        description: ''
-                      });
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                        레벨 이름 *
-                      </label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="예: 입문, 기초, 마스터"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-2">
-                        표시 이름 *
-                      </label>
-                      <Input
-                        id="displayName"
-                        type="text"
-                        value={formData.displayName}
-                        onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                        placeholder="예: 입문반, 기초반, 마스터반"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-2">
-                        순서 *
-                      </label>
-                      <Input
-                        id="order"
-                        type="number"
-                        value={formData.order.toString()}
-                        onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                        min="0"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                        색상 *
-                      </label>
-                      <select
-                        id="color"
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="blue">파랑</option>
-                        <option value="green">초록</option>
-                        <option value="yellow">노랑</option>
-                        <option value="red">빨강</option>
-                        <option value="purple">보라</option>
-                        <option value="pink">분홍</option>
-                        <option value="indigo">남색</option>
-                        <option value="gray">회색</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                      설명
-                    </label>
-                    <textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="레벨에 대한 설명을 입력하세요"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-4">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setIsFormOpen(false);
-                        setEditingLevel(null);
-                        setFormData({
-                          name: '',
-                          displayName: '',
-                          order: 0,
-                          color: 'blue',
-                          description: ''
-                        });
-                      }}
-                      variant="outline"
-                    >
-                      취소
-                    </Button>
-                    <Button type="submit">
-                      {editingLevel ? '수정' : '추가'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          🎯 센터별 레벨 설정
+        </h1>
+        <p className="text-sm text-gray-600">
+          {getCenterId(user!) || '센터'}의 수영 레벨을 설정하고 관리하세요
+        </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <GripVertical className="w-5 h-5" />
+              레벨 구성
+            </CardTitle>
+            
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                레벨 편집
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCancel}>
+                  <X className="w-4 h-4 mr-2" />
+                  취소
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSaving ? '저장 중...' : '저장'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {isEditing ? (
+            <div className="space-y-4">
+                                            {editingLevels.map((level, index) => (
+                 <div key={index} className="grid grid-cols-[80px_1fr_80px] items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                   <div className="flex items-center gap-2 text-gray-500">
+                     <GripVertical className="w-4 h-4" />
+                     <span className="text-sm font-medium">{level.order}</span>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        레벨명 *
+                      </label>
+                      <input
+                        type="text"
+                        value={level.name}
+                        onChange={(e) => handleLevelChange(index, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="예: 기초, 초급, 중급"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        설명
+                      </label>
+                      <input
+                        type="text"
+                        value={level.description || ''}
+                        onChange={(e) => handleLevelChange(index, 'description', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="레벨에 대한 설명"
+                      />
+                    </div>
+                    
+                                         <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-1">
+                         색상
+                       </label>
+                       <div className="flex items-center gap-3">
+                         <div className="flex-shrink-0">
+                           <input
+                             type="color"
+                             value={level.color || '#3B82F6'}
+                             onChange={(e) => handleLevelChange(index, 'color', e.target.value)}
+                             className="w-16 h-12 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors"
+                           />
+                         </div>
+                         <div className="flex-1">
+                           <input
+                             type="text"
+                             value={level.color || '#3B82F6'}
+                             onChange={(e) => handleLevelChange(index, 'color', e.target.value)}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                             placeholder="#3B82F6"
+                           />
+                         </div>
+                       </div>
+                                          </div>
+                   </div>
+                   
+                   {editingLevels.length > 1 && (
+                     <div className="flex items-center justify-center">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleRemoveLevel(index)}
+                         className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 w-12 h-10 p-0 transition-colors duration-200"
+                       >
+                         <Trash2 className="w-4 h-4" />
+                       </Button>
+                     </div>
+                   )}
+                 </div>
+               ))}
+              
+              <Button
+                onClick={handleAddLevel}
+                variant="outline"
+                className="w-full border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                새 레벨 추가
+              </Button>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  💡 <strong>팁:</strong> 레벨 순서는 자동으로 정렬되며, 최소 1개 이상의 레벨이 필요합니다.
+                  각 레벨의 이름은 고유해야 하며, 설명과 색상을 설정하여 시각적으로 구분할 수 있습니다.
+                </p>
+              </div>
+            </div>
+                       ) : (
+               <div className="space-y-4">
+                 {/* 저장 상태 표시 */}
+                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                   <div className="flex items-center gap-2">
+                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                     <span className="text-sm font-medium text-green-700">
+                       ✅ 현재 저장된 레벨 설정 ({centerLevels?.levels.length || 0}개)
+                     </span>
+                   </div>
+                   <p className="text-xs text-green-600 mt-1">
+                     마지막 업데이트: {centerLevels?.updatedAt ? new Date(centerLevels.updatedAt).toLocaleString() : '방금 전'}
+                   </p>
+                 </div>
+                 
+                 {centerLevels?.levels.map((level, index) => (
+                   <div key={index} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                                           <div className="flex items-center gap-3">
+                        <div 
+                          className="w-6 h-6 rounded-lg border-2 border-gray-200 shadow-sm"
+                          style={{ backgroundColor: level.color || '#3B82F6' }}
+                        />
+                        <span className="text-sm font-medium text-gray-500">{level.order}</span>
+                      </div>
+                     
+                     <div className="flex-1">
+                       <h3 className="font-semibold text-gray-900">{level.name}</h3>
+                       {level.description && (
+                         <p className="text-sm text-gray-600">{level.description}</p>
+                       )}
+                     </div>
+                     
+                                           <div 
+                        className="w-8 h-8 rounded-lg border-2 border-gray-200 shadow-sm"
+                        style={{ backgroundColor: level.color || '#3B82F6' }}
+                      />
+                   </div>
+                 ))}
+                 
+                 {centerLevels?.levels.length === 0 && (
+                   <div className="text-center py-8 text-gray-500">
+                     <p>아직 설정된 레벨이 없습니다.</p>
+                     <p className="text-sm">레벨 편집 버튼을 클릭하여 레벨을 추가하세요.</p>
+                   </div>
+                 )}
+               </div>
+             )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+export default withAuth(CenterLevelsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});

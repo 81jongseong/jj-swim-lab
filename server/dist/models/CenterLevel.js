@@ -25,37 +25,24 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CenterLevel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const centerLevelSchema = new mongoose_1.Schema({
+const CenterLevelSchema = new mongoose_1.Schema({
     centerId: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'SwimmingCenter',
+        type: String,
         required: true,
         index: true
     },
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    displayName: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    order: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    color: {
-        type: String,
-        required: true,
-        default: 'blue'
-    },
-    description: {
-        type: String,
-        trim: true
-    },
+    levels: [{
+            name: {
+                type: String,
+                required: true
+            },
+            order: {
+                type: Number,
+                required: true
+            },
+            description: String,
+            color: String
+        }],
     isActive: {
         type: Boolean,
         default: true
@@ -63,7 +50,6 @@ const centerLevelSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
-centerLevelSchema.index({ centerId: 1, name: 1 }, { unique: true });
-centerLevelSchema.index({ centerId: 1, order: 1 }, { unique: true });
-exports.CenterLevel = mongoose_1.default.model('CenterLevel', centerLevelSchema);
+CenterLevelSchema.index({ centerId: 1 }, { unique: true });
+exports.CenterLevel = mongoose_1.default.model('CenterLevel', CenterLevelSchema);
 //# sourceMappingURL=CenterLevel.js.map

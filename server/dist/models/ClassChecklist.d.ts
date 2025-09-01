@@ -28,14 +28,21 @@ export interface IClassChecklistItem extends Document {
     stepName: string;
     stepOrder: number;
     category?: string;
-    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    difficulty?: string;
     tips?: string;
     teachingMethodId: mongoose.Types.ObjectId;
+    instructorMessage?: string;
+    messageUpdatedAt?: Date;
+    isCompleted?: boolean;
 }
 export interface IClassChecklist extends Document {
-    classId: mongoose.Types.ObjectId;
-    level: 'beginner' | 'intermediate' | 'advanced';
+    classId: string | mongoose.Types.ObjectId;
+    level?: string;
+    templateId?: mongoose.Types.ObjectId;
+    customLevel?: string;
     items: IClassChecklistItem[];
+    hiddenItems: string[];
+    customItems: IClassChecklistItem[];
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

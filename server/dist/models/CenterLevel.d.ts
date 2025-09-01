@@ -25,12 +25,13 @@
 /// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose, { Document } from 'mongoose';
 export interface ICenterLevel extends Document {
-    centerId: mongoose.Types.ObjectId;
-    name: string;
-    displayName: string;
-    order: number;
-    color: string;
-    description?: string;
+    centerId: string;
+    levels: {
+        name: string;
+        order: number;
+        description?: string;
+        color?: string;
+    }[];
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

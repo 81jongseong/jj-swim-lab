@@ -2,14 +2,14 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 // 모델 import
-const User = require('../src/models/User');
-const Course = require('../src/models/Course');
-const Checklist = require('../src/models/Checklist');
-const ChecklistTemplate = require('../src/models/ChecklistTemplate');
-const TeachingMethod = require('../src/models/TeachingMethod');
-const CenterLevel = require('../src/models/CenterLevel');
-const Booking = require('../src/models/Booking');
-const Payment = require('../src/models/Payment');
+const { User } = require('../dist/models/User');
+const { Course } = require('../dist/models/Course');
+const { Checklist } = require('../dist/models/Checklist');
+const { ChecklistTemplate } = require('../dist/models/ChecklistTemplate');
+const { TeachingMethod } = require('../dist/models/TeachingMethod');
+const { CenterLevel } = require('../dist/models/CenterLevel');
+const { Booking } = require('../dist/models/Booking');
+const { Payment } = require('../dist/models/Payment');
 
 // 완벽한 샘플 데이터
 const sampleUsers = [

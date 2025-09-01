@@ -53,6 +53,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -66,7 +67,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -96,6 +96,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -109,7 +110,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 }, {}, {
     timestamps: true;
 }> & {
@@ -141,6 +141,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -154,7 +155,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 } & {
     _id: mongoose.Types.ObjectId;
 } & {
@@ -190,6 +190,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -203,7 +204,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -233,6 +233,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -246,7 +247,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 }>, {}, mongoose.ResolveSchemaOptions<{
     timestamps: true;
 }>> & mongoose.FlatRecord<{
@@ -278,6 +278,7 @@ export declare const SkillTemplate: mongoose.Model<{
         youtubeUrl?: string;
     }>;
     createdBy: mongoose.Types.ObjectId;
+    prerequisites: mongoose.Types.ObjectId[];
     commonIssues: mongoose.Types.DocumentArray<{
         issue: string;
         solution: string;
@@ -291,7 +292,6 @@ export declare const SkillTemplate: mongoose.Model<{
         solution: string;
         practiceDrill?: string;
     }>;
-    prerequisites: mongoose.Types.ObjectId[];
 }> & {
     _id: mongoose.Types.ObjectId;
 } & {

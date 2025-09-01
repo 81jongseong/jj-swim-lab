@@ -113,7 +113,7 @@ router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: Auth
 });
 
 // 전체 사용자 조회 (권한별 필터링)
-router.get('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);

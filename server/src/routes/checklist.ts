@@ -289,4 +289,52 @@ router.delete('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']),
   }
 });
 
+// 체크리스트 상태 업데이트 (강사만)
+router.put('/:checklistId/status', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { checklistId } = req.params;
+    const { status, notes } = req.body;
+    
+    if (!['active', 'completed', 'paused'].includes(status)) {
+      return res.status(400).json({ error: '유효하지 않은 상태입니다.' });
+    }
+    
+    // 체크리스트 조회
+    const checklist = await Checklist.findById(checklistId);
+    if (!checklist) {
+      return res.status(404).json({ error: '체크리스트를 찾을 수 없습니다.' });
+    }
+    
+    // 권한 확인 (강사가 해당 체크리스트의 담당자인지)
+    if (checklist.instructorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: '이 체크리스트를 수정할 권한이 없습니다.' });
+    }
+    
+    // 상태 업데이트
+    checklist.status = status;
+    if (notes !== undefined) checklist.notes = notes;
+    checklist.lastUpdated = new Date();
+    
+    // 완료 상태로 변경 시 완료일 설정
+    if (status === 'completed' && !checklist.completedAt) {
+      checklist.completedAt = new Date();
+    }
+    
+    await checklist.save();
+    
+    res.json({
+      success: true,
+      message: '체크리스트 상태가 업데이트되었습니다.',
+      data: {
+        status: checklist.status,
+        lastUpdated: checklist.lastUpdated,
+        completedAt: checklist.completedAt
+      }
+    });
+  } catch (error) {
+    logError('체크리스트 상태 업데이트 실패', error);
+    res.status(500).json({ error: '체크리스트 상태 업데이트에 실패했습니다.' });
+  }
+});
+
 export default router;

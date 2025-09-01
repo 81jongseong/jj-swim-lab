@@ -152,6 +152,16 @@ const nextConfig = {
       },
     ];
   },
+
+  // API 프록시 설정 (개발 환경)
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5000/api/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

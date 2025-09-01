@@ -6,6 +6,249 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import NotificationsBell from './NotificationsBell';
 
+// 사용자별 메뉴 구조 정의
+const userMenuStructure = {
+  student: {
+    main: [
+      { href: '/', label: '🏠 홈' },
+      { href: '/dashboard', label: '📊 대시보드' },
+      { href: '/courses', label: '📚 내 강의' },
+      { href: '/bookings', label: '📅 예약 관리' },
+      { href: '/payments', label: '💰 결제 내역' },
+    ],
+    health: [
+      { href: '/health', label: '🏥 건강상태 관리' },
+      { href: '/health/privacy', label: '🔒 공개 설정' },
+      { href: '/health/exercise', label: '📊 운동 기록' },
+      { href: '/health/ai-training', label: '🤖 AI 훈련' },
+    ],
+    experience: [
+      { href: '/quiz', label: '🧠 퀴즈' },
+      { href: '/uploads', label: '📹 영상 업로드' },
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+    ],
+    info: [
+      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/news', label: '📢 공지사항' },
+      { href: '/community', label: '💬 커뮤니티' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+      { href: '/profile', label: '👤 프로필' },
+    ]
+  },
+  instructor: {
+    main: [
+      { href: '/', label: '🏠 홈' },
+      { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
+      { href: '/instructor/courses', label: '📚 강의 관리' },
+      { href: '/instructor/checklist', label: '✅ 체크리스트 관리' },
+      { href: '/instructor/progress', label: '📈 진행상황 관리' },
+    ],
+    students: [
+      { href: '/instructor/students', label: '👥 수강생 관리' },
+      { href: '/instructor/schedule', label: '📅 일정 관리' },
+      { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
+    ],
+    health: [
+      { href: '/instructor/health/overview', label: '📊 전체 건강 현황' },
+      { href: '/instructor/health/statistics', label: '📈 건강 통계' },
+      { href: '/instructor/health/students', label: '👥 학생별 건강정보' },
+      { href: '/instructor/health/recommendations', label: '💡 맞춤형 운동 추천' },
+      { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
+    ],
+    center: [
+      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/news', label: '📢 공지사항' },
+    ],
+    experience: [
+      { href: '/quiz', label: '🧠 퀴즈' },
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+    ],
+    info: [
+      { href: '/community', label: '💬 커뮤니티' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+      { href: '/profile', label: '👤 프로필' },
+    ]
+  },
+  centerAdmin: {
+    dashboard: [
+      { href: '/', label: '🏠 홈' },
+      { href: '/admin/dashboard', label: '📊 센터 대시보드' },
+      { href: '/admin/users', label: '👥 회원 관리' },
+      { href: '/admin/instructors', label: '👨‍🏫 강사 관리' },
+      { href: '/admin/courses', label: '📚 강의 관리' },
+      { href: '/admin/payments', label: '💰 결제 관리' },
+      { href: '/admin/reports', label: '📊 통계' },
+      { href: '/admin/settings', label: '⚙️ 설정' },
+    ],
+    health: [
+      { href: '/center-admin/health', label: '📊 센터 건강 현황' },
+      { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
+      { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
+      { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
+    ],
+    levels: [
+      { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
+      { href: '/admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
+    ],
+    info: [
+      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/news', label: '📢 공지사항' },
+      { href: '/community', label: '💬 커뮤니티' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+    ],
+    tools: [
+      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+    ]
+  },
+  superAdmin: {
+    dashboard: [
+      { href: '/', label: '🏠 홈' },
+      { href: '/admin/dashboard', label: '📊 최고관리자 대시보드' },
+      { href: '/admin/centers', label: '🏢 센터 관리' },
+      { href: '/admin/users', label: '👥 전체 회원 관리' },
+      { href: '/admin/instructor-management', label: '📊 강사 상세 관리' },
+      { href: '/admin/courses', label: '📚 전체 강의 관리' },
+      { href: '/admin/payments', label: '💰 전체 결제 관리' },
+      { href: '/admin/reports', label: '📊 전체 통계' },
+      { href: '/admin/system', label: '⚙️ 시스템 설정' },
+    ],
+    centers: [
+      { href: '/admin/centers', label: '🏢 센터 관리' },
+      { href: '/admin/centers/approval', label: '⏳ 센터 승인' },
+      { href: '/admin/centers/statistics', label: '📊 센터 통계' },
+    ],
+    users: [
+      { href: '/admin/users', label: '👥 전체 회원 관리' },
+      { href: '/admin/instructors', label: '👨‍🏫 전체 강사 관리' },
+      { href: '/admin/instructor-management', label: '📊 강사 상세 관리' },
+    ],
+    revenue: [
+      { href: '/admin/payments', label: '💰 전체 결제 관리' },
+      { href: '/admin/revenue', label: '💰 총매출 관리' },
+      { href: '/admin/reports', label: '📊 전체 통계' },
+    ],
+    approvals: [
+      { href: '/admin/approvals', label: '⏳ 승인대기' },
+      { href: '/admin/centers/approval', label: '⏳ 센터 승인' },
+    ],
+    ai: [
+      { href: '/admin/ai-config', label: '⚙️ AI 시스템 설정' },
+      { href: '/admin/ai-config/recommendations', label: '💡 운동량 추천 알고리즘' },
+      { href: '/admin/health', label: '📊 전체 건강 현황' },
+      { href: '/admin/health/standards', label: '📊 건강체크 기준' },
+      { href: '/admin/health/privacy', label: '🔒 공개/비공개 설정' },
+      { href: '/admin/health/ai-settings', label: '🤖 AI 설정' },
+      { href: '/admin/health/statistics', label: '📈 건강 통계' },
+    ],
+    tools: [
+      { href: '/admin/3d-viewer/management', label: '⚙️ 3D 뷰어 관리' },
+      { href: '/admin/3d-viewer/swimming-styles', label: '🏊‍♂️ 영법 종류 관리' },
+      { href: '/admin/3d-viewer/drills', label: '🎯 드릴 관리' },
+      { href: '/admin/3d-viewer/models', label: '📦 3D 모델 관리' },
+      { href: '/3d-viewer', label: '🧪 기본 3D 뷰어' },
+      { href: '/3d-viewer/advanced', label: '🚀 고급 3D 뷰어' },
+    ],
+    experience: [
+      { href: '/quiz', label: '🧠 퀴즈' },
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+    ],
+    info: [
+      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/news', label: '📢 공지사항' },
+      { href: '/community', label: '💬 커뮤니티' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+    ]
+  },
+  guest: {
+    main: [
+      { href: '/', label: '🏠 홈' },
+      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/guide', label: '📖 이용안내' },
+      { href: '/news', label: '📢 공지사항' },
+    ],
+    experience: [
+      { href: '/quiz', label: '🧠 퀴즈 체험' },
+      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
+      { href: '/health', label: '🏥 건강체크 체험' },
+      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+    ],
+    health: [
+      { href: '/health', label: '🏥 건강체크 체험' },
+      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
+    ],
+    tools: [
+      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+    ],
+    community: [
+      { href: '/community', label: '💬 커뮤니티' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+    ],
+    shop: [
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 지도' },
+    ],
+    map: [
+      { href: '/map', label: '🗺️ 지도' },
+    ],
+    auth: [
+      { href: '/auth/login', label: '🔑 로그인' },
+      { href: '/auth/signup', label: '📝 회원가입' },
+    ]
+  }
+};
+
+// 메뉴 그룹화 정의 - 데스크탑과 모바일 모두 동일하게 사용
+const menuGrouping = {
+  student: [
+    { groupName: '🏠 기본 메뉴', categories: ['main'] },
+    { groupName: '🏥 건강 관리', categories: ['health'] },
+    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
+    { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
+  ],
+  instructor: [
+    { groupName: '🏠 기본 메뉴', categories: ['main'] },
+    { groupName: '👥 수강생 관리', categories: ['students'] },
+    { groupName: '🏥 건강정보 관리', categories: ['health'] },
+    { groupName: '🏢 센터 정보', categories: ['center'] },
+    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
+    { groupName: '💬 커뮤니티', categories: ['info'] },
+  ],
+  centerAdmin: [
+    { groupName: '📊 센터 관리', categories: ['dashboard'] },
+    { groupName: '🏥 건강 관리', categories: ['health'] },
+    { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
+    { groupName: '🛠️ 도구', categories: ['tools'] },
+  ],
+  superAdmin: [
+    { groupName: '📊 최고 관리', categories: ['dashboard'] },
+    { groupName: '🏢 센터 & 회원', categories: ['centers', 'users'] },
+    { groupName: '💰 매출 & 승인', categories: ['revenue', 'approvals'] },
+    { groupName: '🤖 AI & 건강체크', categories: ['ai'] },
+    { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },
+    { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
+  ],
+  guest: [
+    { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
+    { groupName: '🎯 체험 메뉴', categories: ['experience', 'health', 'tools'] },
+    { groupName: '💬 커뮤니티 & 상점', categories: ['community', 'shop', 'map'] },
+    { groupName: '🔑 로그인/회원가입', categories: ['auth'] }
+  ]
+};
+
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -31,7 +274,7 @@ export default function Navigation() {
   const closeDropdown = () => {
     const timeout = setTimeout(() => {
       setActiveDropdown(null);
-    }, 150); // 150ms 지연으로 마우스가 메뉴로 이동할 시간 확보
+    }, 150);
     setDropdownTimeout(timeout);
   };
 
@@ -48,12 +291,10 @@ export default function Navigation() {
     if (userType === 'guest') return menuItems;
     
     return menuItems.filter(item => {
-      // 특별한 권한이 필요한 메뉴들
       if (item.href === '/admin/reports' && !hasUserType('superAdmin')) return false;
       if (item.href === '/ai-config' && !hasUserType('superAdmin')) return false;
       if (item.href === '/admin/ai-config' && !hasUserType('superAdmin')) return false;
       
-      // 일반적인 권한 체크
       if (item.href.startsWith('/admin/') && !hasUserType('centerAdmin') && !hasUserType('superAdmin')) return false;
       if (item.href.startsWith('/instructor/') && !hasUserType('instructor')) return false;
       
@@ -61,97 +302,87 @@ export default function Navigation() {
     });
   };
 
-  const menuItems = {
-    guest: [
-      { href: '/', label: '🏠 홈' },
-      { href: '/about', label: '🏊‍♂️ 소개' },
-      { href: '/guide', label: '📖 이용안내' },
-      { href: '/news', label: '📢 공지사항' },
-      { href: '/quiz', label: '🧠 퀴즈 체험' },
-      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
-      { href: '/health', label: '🏥 건강체크 체험' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
-      { href: '/community', label: '💬 커뮤니티' },
-      { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
-      { href: '/auth/login', label: '🔑 로그인' },
-      { href: '/auth/signup', label: '📝 회원가입' },
-    ],
-    student: [
-      { href: '/', label: '홈' },
-      { href: '/dashboard', label: '대시보드' },
-      { href: '/courses', label: '강습 과정' },
-      { href: '/bookings', label: '예약 관리' },
-      { href: '/payments', label: '결제 내역' },
-      { href: '/quiz', label: '퀴즈' },
-      { href: '/uploads', label: '영상 업로드' },
-      { href: '/map', label: '지도' },
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/health', label: '🏥 건강체크' },
-      { href: '/(labs)/animation', label: '애니메이션' },
-      { href: '/about', label: '소개' },
-      { href: '/news', label: '공지사항' },
-      { href: '/shop', label: '상점' },
-      { href: '/community', label: '커뮤니티' },
-    ],
-    instructor: [
-      { href: '/', label: '홈' },
-      { href: '/instructor/dashboard', label: '강사 대시보드' },
-      { href: '/instructor/courses', label: '강습 관리' },
-      { href: '/instructor/students', label: '학생 관리' },
-      { href: '/instructor/schedule', label: '일정 관리' },
-      { href: '/instructor/progress', label: '진도 관리' },
-      { href: '/instructor/reviews', label: '업로드 리뷰' },
-      { href: '/quiz', label: '퀴즈' },
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/instructor/health/overview', label: '🏥 건강정보 관리' },
-      { href: '/about', label: '소개' },
-      { href: '/news', label: '공지사항' },
-      { href: '/(labs)/animation', label: '애니메이션' },
-      { href: '/shop', label: '상점' },
-      { href: '/community', label: '커뮤니티' },
-    ],
-    centerAdmin: [
-      { href: '/', label: '홈' },
-      { href: '/admin/dashboard', label: '관리자 대시보드' },
-      { href: '/admin/users', label: '사용자 관리' },
-      { href: '/admin/courses', label: '강습 과정 관리' },
-      { href: '/admin/bookings', label: '예약 관리' },
-      { href: '/admin/payments', label: '결제 관리' },
-      { href: '/admin/notices', label: '공지사항 관리' },
-      { href: '/admin/teaching-methods', label: '강습법 관리' },
-      { href: '/admin/lesson-plans', label: '강습 계획 관리' },
-      { href: '/admin/quiz', label: '퀴즈 관리' },
-      { href: '/admin/reports', label: '리포트' },
-      { href: '/center-admin/health', label: '건강체크 관리' },
-      { href: '/about', label: '소개' },
-      { href: '/news', label: '공지사항' },
-      { href: '/shop', label: '상점' },
-      { href: '/community', label: '커뮤니티' },
-    ],
-    superAdmin: [
-      { href: '/', label: '홈' },
-      { href: '/admin/dashboard', label: '슈퍼 관리자 대시보드' },
-      { href: '/admin/centers', label: '센터 관리' },
-      { href: '/admin/users', label: '사용자 관리' },
-      { href: '/admin/instructor-management', label: '강사 관리' },
-      { href: '/admin/courses', label: '강습 과정 관리' },
-      { href: '/admin/bookings', label: '예약 관리' },
-      { href: '/admin/payments', label: '결제 관리' },
-      { href: '/admin/notices', label: '공지사항 관리' },
-      { href: '/admin/teaching-methods', label: '강습법 관리' },
-      { href: '/admin/lesson-plans', label: '강습 계획 관리' },
-      { href: '/admin/quiz', label: '퀴즈 관리' },
-      { href: '/admin/ai-config', label: 'AI & 건강체크' },
-      { href: '/admin/reports', label: '리포트' },
-      { href: '/about', label: '소개' },
-      { href: '/news', label: '공지사항' },
-      { href: '/shop', label: '상점' },
-      { href: '/community', label: '커뮤니티' },
-    ],
+  // 현재 사용자 타입에 따른 메뉴 그룹 가져오기
+  const getCurrentMenuGrouping = () => {
+    const userType = user?.userType || 'guest';
+    return menuGrouping[userType] || menuGrouping.guest;
   };
 
-  const currentMenu = filterMenuByPermissions(menuItems[user?.userType || 'guest'] || menuItems.guest, user?.userType || 'guest');
+  // 메뉴 렌더링 함수 (데스크탑과 모바일 모두에서 사용)
+  const renderMenuGroups = (isMobile: boolean = false) => {
+    const grouping = getCurrentMenuGrouping();
+    
+    return grouping.map((group, groupIndex) => {
+      if (isMobile) {
+        // 모바일 메뉴 렌더링
+        return (
+          <div key={groupIndex} className="px-3 py-2 border-b border-gray-200">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              {group.groupName}
+            </div>
+            {group.categories.map(category => {
+              const menuItems = userMenuStructure[user?.userType || 'guest']?.[category] || [];
+              return menuItems.map((item, itemIndex) => (
+                <Link
+                  key={`${category}-${itemIndex}`}
+                  href={item.href}
+                  className={`block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors ${
+                    pathname === item.href ? 'text-blue-600 font-semibold' : ''
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ));
+            })}
+          </div>
+        );
+      } else {
+        // 데스크탑 메뉴 렌더링
+        return (
+          <div key={groupIndex} className="relative group">
+            <button
+              className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
+                group.categories.some(cat => 
+                  userMenuStructure[user?.userType || 'guest']?.[cat]?.some(item => 
+                    pathname === item.href || pathname.startsWith(item.href + '/')
+                  )
+                ) ? 'text-blue-600 font-semibold bg-blue-50' : ''
+              }`}
+              onMouseEnter={() => openDropdown(`desktop-${groupIndex}`)}
+              onMouseLeave={closeDropdown}
+            >
+              <span>{group.groupName}</span>
+              <span className="text-xs ml-1">▼</span>
+            </button>
+            {activeDropdown === `desktop-${groupIndex}` && (
+              <div 
+                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
+                onMouseEnter={() => keepDropdownOpen(`desktop-${groupIndex}`)}
+                onMouseLeave={closeDropdown}
+              >
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
+                  {group.groupName}
+                </div>
+                {group.categories.map(category => {
+                  const menuItems = userMenuStructure[user?.userType || 'guest']?.[category] || [];
+                  return menuItems.map((item, itemIndex) => (
+                    <Link
+                      key={`${category}-${itemIndex}`}
+                      href={item.href}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                  ));
+                })}
+              </div>
+            )}
+          </div>
+        );
+      }
+    });
+  };
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
@@ -171,687 +402,9 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - 반응형으로 자동 조정 */}
           <div className="hidden lg:flex lg:items-center lg:space-x-2 relative min-w-0 flex-1 justify-center px-4">
-            {/* 공통 메뉴 */}
-            <Link href="/" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-              pathname === '/' ? 'text-blue-600 font-semibold' : ''
-            }`}>
-              🏠 홈
-            </Link>
-            <Link href="/about" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-              pathname === '/about' ? 'text-blue-600 font-semibold' : ''
-            }`}>
-              🏊‍♂️ 소개
-            </Link>
-            <Link href="/guide" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-              pathname === '/guide' ? 'text-blue-600 font-semibold' : ''
-            }`}>
-              📖 이용안내
-            </Link>
-            <Link href="/news" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-              pathname === '/news' ? 'text-blue-600 font-semibold' : ''
-            }`}>
-              📢 공지사항
-            </Link>
-            
-            {/* 게스트 전용 메뉴 */}
-            {!user && (
-              <>
-                <span className="text-gray-300">|</span>
-                <Link href="/quiz" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/quiz' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🧠 퀴즈 체험
-                </Link>
-                <Link href="/ai-analysis" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/ai-analysis' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🤖 AI 분석 데모
-                </Link>
-                <Link href="/health" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/health' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🏥 건강체크 체험
-                </Link>
-                <Link href="/(labs)/animation" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/(labs)/animation' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🎬 애니메이션
-                </Link>
-                
-                {/* 3D 뷰어 체험 메뉴 */}
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/3d-viewer') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('guest-3d-viewer')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🎨 3D 뷰어</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'guest-3d-viewer' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('guest-3d-viewer')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🎨 3D 뷰어 체험
-                      </div>
-                      <Link href="/3d-viewer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🧪 기본 3D 뷰어
-                      </Link>
-                      <Link href="/3d-viewer/advanced" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🚀 고급 3D 뷰어
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                <span className="text-gray-300">|</span>
-                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  💬 커뮤니티
-                </Link>
-                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🛍️ 상점
-                </Link>
-                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🗺️ 지도
-                </Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/auth/login" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/auth/login' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🔑 로그인
-                </Link>
-                <Link href="/auth/signup" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/auth/signup' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  📝 회원가입
-                </Link>
-              </>
-            )}
-            
-            {/* 학생 전용 메뉴 */}
-            {user?.userType === 'student' && (
-              <>
-                <span className="text-gray-300">|</span>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/dashboard') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('dashboard')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>📊 대시보드</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'dashboard' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('dashboard')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 메인 대시보드
-                      </Link>
-                      <Link href="/dashboard/checklist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        ✅ 체크리스트
-                      </Link>
-                      <Link href="/dashboard/progress" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📈 진행상황
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <Link href="/courses" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/courses' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  📚 내 강의
-                </Link>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/health') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('health')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🏥 건강체크</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'health' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('health')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🏥 건강 관리
-                      </div>
-                      <Link href="/health" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🏥 건강상태 관리
-                      </Link>
-                      <Link href="/health/privacy" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🔒 공개 설정
-                      </Link>
-                      
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2 bg-gray-50">
-                        📊 운동 & AI
-                      </div>
-                      <Link href="/health/exercise" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📊 운동 기록
-                      </Link>
-                      <Link href="/health/ai-training" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🤖 AI 훈련
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                {/* 3D 뷰어 체험 메뉴 */}
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/3d-viewer') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('student-3d-viewer')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🎨 3D 뷰어</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'student-3d-viewer' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('student-3d-viewer')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🎨 3D 뷰어 체험
-                      </div>
-                      <Link href="/3d-viewer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🧪 기본 3D 뷰어
-                      </Link>
-                      <Link href="/3d-viewer/advanced" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🚀 고급 3D 뷰어
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                <span className="text-gray-300">|</span>
-                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  💬 커뮤니티
-                </Link>
-                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🛍️ 상점
-                </Link>
-                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🗺️ 지도
-                </Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/profile" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/profile' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  👤 프로필
-                </Link>
-              </>
-            )}
-            
-            {/* 강사 전용 메뉴 */}
-            {user?.userType === 'instructor' && (
-              <>
-                <span className="text-gray-300">|</span>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/instructor/dashboard') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('instructor-dashboard')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>📊 강사 대시보드</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'instructor-dashboard' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('instructor-dashboard')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <Link href="/instructor/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 메인 대시보드
-                      </Link>
-                      <Link href="/instructor/students" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        👥 수강생 관리
-                      </Link>
-                      <Link href="/instructor/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📚 강의 관리
-                      </Link>
-                      <Link href="/instructor/checklist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        ✅ 체크리스트 관리
-                      </Link>
-                      <Link href="/instructor/progress" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📈 진행상황 관리
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/instructor/health') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('instructor-health')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🏥 건강정보 관리</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'instructor-health' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('instructor-health')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        📊 전체 현황
-                      </div>
-                      <Link href="/instructor/health/overview" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📊 전체 건강 현황
-                      </Link>
-                      <Link href="/instructor/health/statistics" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-600 transition-colors">
-                        📈 건강 통계
-                      </Link>
-                      
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2 bg-gray-50">
-                        👥 학생 관리
-                      </div>
-                      <Link href="/instructor/health/students" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        👥 학생별 건강정보
-                      </Link>
-                      <Link href="/instructor/health/recommendations" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        💡 맞춤형 운동 추천
-                      </Link>
-                      <Link href="/instructor/health/progress" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📈 진행상황 추적
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                {/* 3D 뷰어 체험 메뉴 */}
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/3d-viewer') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('instructor-3d-viewer')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🎨 3D 뷰어</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'instructor-3d-viewer' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('instructor-3d-viewer')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🎨 3D 뷰어 체험
-                      </div>
-                      <Link href="/3d-viewer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🧪 기본 3D 뷰어
-                      </Link>
-                      <Link href="/3d-viewer/advanced" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🚀 고급 3D 뷰어
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                <span className="text-gray-300">|</span>
-                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  💬 커뮤니티
-                </Link>
-                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🛍️ 상점
-                </Link>
-                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🗺️ 지도
-                </Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/profile" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/profile' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  👤 프로필
-                </Link>
-              </>
-            )}
-            
-            {/* 센터 관리자 전용 메뉴 */}
-            {user?.userType === 'centerAdmin' && (
-              <>
-                <span className="text-gray-300">|</span>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/admin/dashboard') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('admin-dashboard')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>📊 센터 대시보드</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'admin-dashboard' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('admin-dashboard')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 메인 대시보드
-                      </Link>
-                      <Link href="/admin/users" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        👥 회원 관리
-                      </Link>
-                      <Link href="/admin/instructors" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        👨‍🏫 강사 관리
-                      </Link>
-                      <Link href="/admin/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📚 강의 관리
-                      </Link>
-                      <Link href="/admin/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        💰 결제 관리
-                      </Link>
-                      <Link href="/admin/reports" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 통계
-                      </Link>
-                      <Link href="/admin/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        ⚙️ 설정
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/center-admin/health') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('center-health')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🏥 건강체크</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'center-health' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('center-health')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        📊 센터 현황
-                      </div>
-                      <Link href="/center-admin/health" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📊 센터 건강 현황
-                      </Link>
-                      <Link href="/center-admin/health/statistics" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📈 건강 통계
-                      </Link>
-                      
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2 bg-gray-50">
-                        👥 회원 관리
-                      </div>
-                      <Link href="/center-admin/health/members" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        👥 회원 건강정보
-                      </Link>
-                      <Link href="/center-admin/health/programs" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🏊‍♂️ 건강 프로그램
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                {/* 3D 뷰어 체험 메뉴 */}
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/3d-viewer') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('center-admin-3d-viewer')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🎨 3D 뷰어</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'center-admin-3d-viewer' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('center-admin-3d-viewer')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🎨 3D 뷰어 체험
-                      </div>
-                      <Link href="/3d-viewer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🧪 기본 3D 뷰어
-                      </Link>
-                      <Link href="/3d-viewer/advanced" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🚀 고급 3D 뷰어
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                <span className="text-gray-300">|</span>
-                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  💬 커뮤니티
-                </Link>
-                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🛍️ 상점
-                </Link>
-                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🗺️ 지도
-                </Link>
-              </>
-            )}
-            
-            {/* 최고 관리자 전용 메뉴 */}
-            {user?.userType === 'superAdmin' && (
-              <>
-                <span className="text-gray-300">|</span>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/admin/dashboard') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('super-admin-dashboard')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>📊 최고관리자 대시보드</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'super-admin-dashboard' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('super-admin-dashboard')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 메인 대시보드
-                      </Link>
-                      <Link href="/admin/centers" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        🏢 센터 관리
-                      </Link>
-                      <Link href="/admin/users" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        👥 전체 회원 관리
-                      </Link>
-                      <Link href="/admin/instructors" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        👨‍🏫 전체 강사 관리
-                      </Link>
-                      <Link href="/admin/instructor-management" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 강사 상세 관리
-                      </Link>
-                      <Link href="/admin/courses" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📚 전체 강의 관리
-                      </Link>
-                      <Link href="/admin/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        💰 전체 결제 관리
-                      </Link>
-                      <Link href="/admin/reports" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        📊 전체 통계
-                      </Link>
-                      <Link href="/admin/system" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                        ⚙️ 시스템 설정
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/admin/ai-config') || pathname.startsWith('/admin/health') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('ai-health')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🤖 AI & 건강체크</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === 'ai-health' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('ai-health')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🤖 AI 시스템
-                      </div>
-                      <Link href="/admin/ai-config" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        ⚙️ AI 시스템 설정
-                      </Link>
-                      <Link href="/admin/ai-config/recommendations" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        💡 운동량 추천 알고리즘
-                      </Link>
-                      
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2 bg-gray-50">
-                        🏥 건강체크 관리
-                      </div>
-                      <Link href="/admin/health" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📊 전체 건강 현황
-                      </Link>
-                      <Link href="/admin/health/standards" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📊 건강체크 기준
-                      </Link>
-                      <Link href="/admin/health/privacy" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🔒 공개/비공개 설정
-                      </Link>
-                      <Link href="/admin/health/ai-settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🤖 AI 설정
-                      </Link>
-                      <Link href="/admin/health/statistics" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📈 건강 통계
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                
-                {/* 3D 뷰어 관리 메뉴 */}
-                <div className="relative group">
-                  <button
-                    className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
-                      pathname.startsWith('/admin/3d-viewer') ? 'text-blue-600 font-semibold bg-blue-50' : ''
-                    }`}
-                    onMouseEnter={() => openDropdown('3d-viewer')}
-                    onMouseLeave={closeDropdown}
-                  >
-                    <span>🎨 3D 뷰어 관리</span>
-                    <span className="text-xs ml-1">▼</span>
-                  </button>
-                  {activeDropdown === '3d-viewer' && (
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
-                      onMouseEnter={() => keepDropdownOpen('3d-viewer')}
-                      onMouseLeave={closeDropdown}
-                    >
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
-                        🎨 3D 뷰어 시스템
-                      </div>
-                      <Link href="/admin/3d-viewer/management" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        ⚙️ 3D 뷰어 관리
-                      </Link>
-                      <Link href="/admin/3d-viewer/swimming-styles" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🏊‍♂️ 영법 종류 관리
-                      </Link>
-                      <Link href="/admin/3d-viewer/drills" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🎯 드릴 관리
-                      </Link>
-                      <Link href="/admin/3d-viewer/models" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        📦 3D 모델 관리
-                      </Link>
-                      
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2 bg-gray-50">
-                        🔍 뷰어 테스트
-                      </div>
-                      <Link href="/3d-viewer" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🧪 기본 3D 뷰어
-                      </Link>
-                      <Link href="/3d-viewer/advanced" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                        🚀 고급 3D 뷰어
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <span className="text-gray-300">|</span>
-                <Link href="/community" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/community' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  💬 커뮤니티
-                </Link>
-                <Link href="/shop" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/shop' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🛍️ 상점
-                </Link>
-                <Link href="/map" className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm ${
-                  pathname === '/map' ? 'text-blue-600 font-semibold' : ''
-                }`}>
-                  🗺️ 지도
-                </Link>
-              </>
-            )}
+            {renderMenuGroups(false)}
           </div>
 
           {/* User Menu and Actions */}
@@ -907,172 +460,11 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - 반응형으로 자동 조정 */}
         {isMenuOpen && (
           <div className="lg:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t max-h-96 overflow-y-auto">
-              {/* 기본 메뉴 그룹 */}
-              <div className="px-3 py-2 border-b border-gray-200">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  🏠 기본 메뉴
-                </div>
-                {currentMenu.slice(0, 3).map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors ${
-                      pathname === item.href ? 'text-blue-600 font-semibold' : ''
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              
-              {/* 체험 메뉴 그룹 */}
-              <div className="px-3 py-2 border-b border-gray-200">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  🎯 체험 메뉴
-                </div>
-                {currentMenu.slice(3).map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors ${
-                      pathname === item.href ? 'text-blue-600 font-semibold' : ''
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-              
-              {/* 3D 뷰어 모바일 메뉴 */}
-              <div className="px-3 py-2 border-b border-gray-200">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  🎨 3D 뷰어
-                </div>
-                <Link
-                  href="/3d-viewer"
-                  className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  🧪 기본 3D 뷰어
-                </Link>
-                <Link
-                  href="/3d-viewer/advanced"
-                  className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  🚀 고급 3D 뷰어
-                </Link>
-                
-                {/* 최고 관리자 전용 3D 뷰어 관리 메뉴 */}
-                {user?.userType === 'superAdmin' && (
-                  <>
-                    <div className="px-3 py-1 mt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      🎯 3D 뷰어 관리
-                    </div>
-                    <Link
-                      href="/admin/3d-viewer/management"
-                      className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      ⚙️ 3D 뷰어 관리
-                    </Link>
-                    <Link
-                      href="/admin/3d-viewer/swimming-styles"
-                      className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      🏊‍♂️ 영법 종류 관리
-                    </Link>
-                    <Link
-                      href="/admin/3d-viewer/drills"
-                      className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      🎯 드릴 관리
-                    </Link>
-                    <Link
-                      href="/admin/3d-viewer/models"
-                      className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      📦 3D 모델 관리
-                    </Link>
-                  </>
-                )}
-              </div>
-              
-              {/* 사용자별 전용 메뉴 그룹 */}
-              {isLoggedIn && (
-                <div className="px-3 py-2 border-b border-gray-200">
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    👤 {user?.userType === 'student' ? '학생' : user?.userType === 'instructor' ? '강사' : user?.userType === 'centerAdmin' ? '센터 관리자' : '최고 관리자'} 전용
-                  </div>
-                  {user?.userType === 'student' && (
-                    <>
-                      <Link href="/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        📊 대시보드
-                      </Link>
-                      <Link href="/courses" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        📚 내 강의
-                      </Link>
-                      <Link href="/health" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        🏥 건강체크
-                      </Link>
-                    </>
-                  )}
-                  {user?.userType === 'instructor' && (
-                    <>
-                      <Link href="/instructor/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        📊 강사 대시보드
-                      </Link>
-                      <Link href="/instructor/students" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        👥 수강생 관리
-                      </Link>
-                      <Link href="/instructor/health/overview" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        🏥 건강정보 관리
-                      </Link>
-                    </>
-                  )}
-                  {user?.userType === 'centerAdmin' && (
-                    <>
-                      <Link href="/admin/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        📊 센터 대시보드
-                      </Link>
-                      <Link href="/admin/users" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        👥 회원 관리
-                      </Link>
-                      <Link href="/center-admin/health" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        🏥 건강체크 관리
-                      </Link>
-                    </>
-                  )}
-                  {user?.userType === 'superAdmin' && (
-                    <>
-                      <Link href="/admin/dashboard" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        📊 최고관리자 대시보드
-                      </Link>
-                      <Link href="/admin/centers" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        🏢 센터 관리
-                      </Link>
-                      <Link href="/admin/users" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        👥 전체 회원 관리
-                      </Link>
-                      <Link href="/admin/revenue" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        💰 총매출 관리
-                      </Link>
-                      <Link href="/admin/approvals" className="block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                        ⏳ 승인대기
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
+              {renderMenuGroups(true)}
               
               {isLoggedIn ? (
                 <div className="px-3 py-2 border-t border-gray-200">
