@@ -26,26 +26,31 @@ function CenterDashboard() {
     const loadStats = async () => {
       try {
         // 센터 통계 데이터 로드
-        const [usersRes, coursesRes] = await Promise.all([
-          apiClient.get('/users'),
-          apiClient.get('/courses')
-        ]);
-
-        if (usersRes.success && usersRes.users && coursesRes.success) {
-          const users = usersRes.users;
-          const courses = coursesRes.data.courses;
-          
+        const response = await apiClient.get('/centers/dashboard');
+        
+        if (response.success && response.data) {
+          const data = response.data;
+          const overview = data.overview || {};
           setStats({
-            totalInstructors: users.filter((u: any) => u.userType === 'instructor').length,
-            totalStudents: users.filter((u: any) => u.userType === 'student').length,
-            totalCourses: courses.length,
-            activeCourses: courses.filter((c: any) => c.isActive !== false).length,
-            totalBookings: 0, // 예약 데이터는 별도 API 필요
-            totalRevenue: 0, // 수익 데이터는 별도 API 필요
+            totalInstructors: overview.totalInstructors || 0,
+            totalStudents: overview.totalStudents || 0,
+            totalCourses: overview.totalCourses || 0,
+            activeCourses: overview.totalCourses || 0, // 활성 과정은 전체 과정과 동일
+            totalBookings: overview.activeBookings || 0,
+            totalRevenue: overview.recentPayments || 0,
           });
         }
       } catch (error) {
         console.error('센터 통계 로드 실패:', error);
+        // 폴백으로 기본값 설정
+        setStats({
+          totalInstructors: 0,
+          totalStudents: 0,
+          totalCourses: 0,
+          activeCourses: 0,
+          totalBookings: 0,
+          totalRevenue: 0,
+        });
       } finally {
         setLoading(false);
       }

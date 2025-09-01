@@ -22,10 +22,13 @@ const userMenuStructure = {
       { href: '/health/exercise', label: '📊 운동 기록' },
       { href: '/health/ai-training', label: '🤖 AI 훈련' },
     ],
+    ai: [
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/ai-evaluation', label: '📊 AI 평가' },
+    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/uploads', label: '📹 영상 업로드' },
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
@@ -43,8 +46,11 @@ const userMenuStructure = {
       { href: '/', label: '🏠 홈' },
       { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
       { href: '/instructor/courses', label: '📚 강의 관리' },
-      { href: '/instructor/checklist', label: '✅ 체크리스트 관리' },
       { href: '/instructor/progress', label: '📈 진행상황 관리' },
+    ],
+    checklist: [
+      { href: '/instructor/checklist', label: '✅ 체크리스트 관리' },
+      { href: '/instructor/templates', label: '📝 템플릿 관리' },
     ],
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
@@ -62,9 +68,13 @@ const userMenuStructure = {
       { href: '/about', label: '🏊‍♂️ 소개' },
       { href: '/news', label: '📢 공지사항' },
     ],
+    ai: [
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/ai-evaluation', label: '📊 AI 평가' },
+      { href: '/ai-config', label: '⚙️ AI 설정' },
+    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
@@ -84,6 +94,7 @@ const userMenuStructure = {
       { href: '/admin/courses', label: '📚 강의 관리' },
       { href: '/admin/payments', label: '💰 결제 관리' },
       { href: '/admin/reports', label: '📊 통계' },
+      { href: '/admin/center-info', label: '🏢 센터 정보 관리' },
       { href: '/admin/settings', label: '⚙️ 설정' },
     ],
     health: [
@@ -103,6 +114,11 @@ const userMenuStructure = {
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 지도' },
+    ],
+    ai: [
+      { href: '/ai-analysis', label: '🤖 AI 분석' },
+      { href: '/ai-evaluation', label: '📊 AI 평가' },
+      { href: '/ai-config', label: '⚙️ AI 설정' },
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
@@ -139,15 +155,16 @@ const userMenuStructure = {
       { href: '/admin/approvals', label: '⏳ 승인대기' },
       { href: '/admin/centers/approval', label: '⏳ 센터 승인' },
     ],
-    ai: [
-      { href: '/admin/ai-config', label: '⚙️ AI 시스템 설정' },
-      { href: '/admin/ai-config/recommendations', label: '💡 운동량 추천 알고리즘' },
-      { href: '/admin/health', label: '📊 전체 건강 현황' },
-      { href: '/admin/health/standards', label: '📊 건강체크 기준' },
-      { href: '/admin/health/privacy', label: '🔒 공개/비공개 설정' },
-      { href: '/admin/health/ai-settings', label: '🤖 AI 설정' },
-      { href: '/admin/health/statistics', label: '📈 건강 통계' },
-    ],
+            ai: [
+          { href: '/ai-analysis', label: '🤖 AI 분석' },
+          { href: '/ai-evaluation', label: '📊 AI 평가' },
+          { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
+          { href: '/ai-config', label: '⚙️ AI 설정' },
+          { href: '/admin/ai-config', label: '⚙️ AI 시스템 설정' },
+          { href: '/admin/ai-config/recommendations', label: '💡 운동량 추천 알고리즘' },
+          { href: '/admin/ai-evaluation-criteria', label: '🎯 AI 평가 기준 관리' },
+          { href: '/admin/ai-exercise-database', label: '💪 AI 운동 데이터베이스' },
+        ],
     tools: [
       { href: '/admin/3d-viewer/management', label: '⚙️ 3D 뷰어 관리' },
       { href: '/admin/3d-viewer/swimming-styles', label: '🏊‍♂️ 영법 종류 관리' },
@@ -158,7 +175,6 @@ const userMenuStructure = {
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
     ],
     info: [
@@ -176,16 +192,17 @@ const userMenuStructure = {
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
     ],
+    ai: [
+      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
+    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈 체험' },
-      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
       { href: '/health', label: '🏥 건강체크 체험' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     health: [
       { href: '/health', label: '🏥 건강체크 체험' },
-      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
@@ -215,13 +232,16 @@ const menuGrouping = {
   student: [
     { groupName: '🏠 기본 메뉴', categories: ['main'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
+    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
   ],
   instructor: [
     { groupName: '🏠 기본 메뉴', categories: ['main'] },
+    { groupName: '📋 체크리스트 관리', categories: ['checklist'] },
     { groupName: '👥 수강생 관리', categories: ['students'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
+    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 센터 정보', categories: ['center'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
     { groupName: '💬 커뮤니티', categories: ['info'] },
@@ -230,6 +250,7 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
@@ -243,6 +264,7 @@ const menuGrouping = {
   ],
   guest: [
     { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
+    { groupName: '🤖 AI 체험', categories: ['ai'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience', 'health', 'tools'] },
     { groupName: '💬 커뮤니티 & 상점', categories: ['community', 'shop', 'map'] },
     { groupName: '🔑 로그인/회원가입', categories: ['auth'] }

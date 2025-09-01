@@ -1,5 +1,5 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >nul 2>&1
 title JJ Swim Lab - 개발 서버 시작
 
 echo 🚀 JJ Swim Lab 개발 서버 시작
@@ -7,18 +7,23 @@ echo ================================
 echo 📅 시작 시간: %date% %time%
 echo.
 
-:: 프로젝트 루트 디렉토리로 이동 (사용자명 독립적)
+:: 프로젝트 루트 디렉토리로 이동
 cd /d "%~dp0"
 echo 📁 작업 디렉토리: %CD%
 echo.
+
+:: 기존 프로세스 종료 (포트 충돌 방지)
+echo 🧹 기존 프로세스 정리 중...
+taskkill /f /im node.exe >nul 2>&1
+timeout /t 2 /nobreak >nul
 
 :: 서버 시작
 echo 🔌 MongoDB 서버를 시작합니다...
 start "JJ Swim Lab Server" cmd /k "cd /d "%~dp0server" && pnpm run dev"
 
 :: 서버 시작 대기
-echo ⏳ 서버 시작 대기 중... (3초)
-timeout /t 3 /nobreak >nul
+echo ⏳ 서버 시작 대기 중... (5초)
+timeout /t 5 /nobreak >nul
 
 :: 클라이언트 시작
 echo 📱 Next.js 클라이언트를 시작합니다...

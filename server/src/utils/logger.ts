@@ -1,94 +1,138 @@
 import * as winston from 'winston';
-import * as path from 'path';
-import * as fs from 'fs';
+import path from 'path';
 
-// 로그 디렉토리 생성
-const logDir = path.join(__dirname, '../../logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
-}
+// 로그 레벨 정의
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
+};
+
+// 로그 색상 정의
+const logColors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
+};
+
+// 색상 추가
+winston.addColors(logColors);
 
 // 로그 포맷 정의
 const logFormat = winston.format.combine(
-  winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'
-  }),
-  winston.format.errors({ stack: true }),
-  winston.format.json(),
-  winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
-    let log = `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    if (Object.keys(meta).length > 0) {
-      log += ` ${JSON.stringify(meta)}`;
-    }
-    if (stack) {
-      log += `\n${stack}`;
-    }
-    return log;
-  })
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${info.level}: ${info.message}`
+  )
 );
 
-// 로거 생성
+// 파일 로그 포맷 (색상 없음)
+const fileLogFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${info.level}: ${info.message}`
+  )
+);
+
+// 로그 디렉토리 생성
+const logDir = path.join(__dirname, '../../logs');
+
+// Winston 로거 생성
 const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
+  levels: logLevels,
   format: logFormat,
   transports: [
     // 콘솔 출력
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
-    
-    // 일반 로그 파일
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-      tailable: true
+      format: logFormat,
     }),
     
     // 에러 로그 파일
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
+      format: fileLogFormat,
       maxsize: 5242880, // 5MB
       maxFiles: 5,
-      tailable: true
     }),
     
-    // API 요청 로그 파일
+    // 전체 로그 파일
     new winston.transports.File({
-      filename: path.join(logDir, 'api.log'),
+      filename: path.join(logDir, 'combined.log'),
+      format: fileLogFormat,
       maxsize: 5242880, // 5MB
       maxFiles: 5,
-      tailable: true
-    })
+    }),
   ],
-  
-  // 예외 처리
-  exceptionHandlers: [
-    new winston.transports.File({
-      filename: path.join(logDir, 'exceptions.log')
-    })
-  ],
-  
-  // 프로세스 종료 처리
-  exitOnError: false
 });
 
-// 개발 환경에서 더 자세한 로그
-if (process.env.NODE_ENV !== 'production') {
-  logger.level = 'debug';
-}
+// HTTP 요청 로그용 별도 로거
+const httpLogger = winston.createLogger({
+  level: 'http',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`
+    )
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: path.join(logDir, 'http.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: 3,
+    }),
+  ],
+});
 
-// 로그 레벨별 헬퍼 함수
+// 데이터베이스 로그용 별도 로거
+const dbLogger = winston.createLogger({
+  level: 'debug',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(
+      (info) => `${info.timestamp} [DB] ${info.level}: ${info.message}`
+    )
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: path.join(logDir, 'database.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: 3,
+    }),
+  ],
+});
+
+// 성능 로그용 별도 로거
+const performanceLogger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(
+      (info) => `${info.timestamp} [PERF] ${info.level}: ${info.message}`
+    )
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: path.join(logDir, 'performance.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: 3,
+    }),
+  ],
+});
+
+// 로그 함수들
 export const logInfo = (message: string, meta?: any) => {
   logger.info(message, meta);
 };
 
 export const logError = (message: string, error?: any) => {
-  logger.error(message, { error: error?.message || error, stack: error?.stack });
+  logger.error(message, error);
 };
 
 export const logWarn = (message: string, meta?: any) => {
@@ -99,36 +143,39 @@ export const logDebug = (message: string, meta?: any) => {
   logger.debug(message, meta);
 };
 
-export const logApi = (req: any, res: any, responseTime: number) => {
-  logger.info('API Request', {
+export const logHttp = (message: string, meta?: any) => {
+  httpLogger.http(message, meta);
+};
+
+export const logDatabase = (message: string, meta?: any) => {
+  dbLogger.info(message, meta);
+};
+
+export const logPerformance = (message: string, meta?: any) => {
+  performanceLogger.info(message, meta);
+};
+
+// 특별한 로그 함수들
+export const logRequest = (req: any, res: any, responseTime: number) => {
+  const message = `${req.method} ${req.originalUrl} ${res.statusCode} - ${responseTime}ms`;
+  logHttp(message, {
     method: req.method,
     url: req.originalUrl,
     statusCode: res.statusCode,
-    responseTime: `${responseTime}ms`,
+    responseTime,
     userAgent: req.get('User-Agent'),
-    ip: req.ip || req.connection.remoteAddress,
-    userId: req.user?.id || 'anonymous'
+    ip: req.ip,
   });
 };
 
-// 성능 모니터링 로그
-export const logPerformance = (operation: string, duration: number, details?: any) => {
-  logger.info('Performance', {
-    operation,
-    duration: `${duration}ms`,
-    details
-  });
+export const logDatabaseQuery = (query: string, executionTime: number) => {
+  logDatabase(`Query executed in ${executionTime}ms`, { query, executionTime });
 };
 
-// 데이터베이스 쿼리 로그
-export const logDatabase = (operation: string, collection: string, duration: number, details?: any) => {
-  logger.debug('Database', {
-    operation,
-    collection,
-    duration: `${duration}ms`,
-    details
-  });
+export const logPerformanceMetric = (operation: string, duration: number, meta?: any) => {
+  logPerformance(`${operation} completed in ${duration}ms`, { operation, duration, ...meta });
 };
 
+// 로거 내보내기
 export default logger;
-
+export { httpLogger, dbLogger, performanceLogger };

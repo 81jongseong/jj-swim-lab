@@ -4,8 +4,10 @@ import { auth, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
 import { Checklist } from '../models/Checklist';
+import { ChecklistTemplate } from '../models/ChecklistTemplate';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { Course } from '../models/Course';
+import { User } from '../models/User';
 
 const router: express.Router = express.Router();
 
@@ -334,6 +336,257 @@ router.put('/:checklistId/status', auth, requireRole(['instructor', 'centerAdmin
   } catch (error) {
     logError('체크리스트 상태 업데이트 실패', error);
     res.status(500).json({ error: '체크리스트 상태 업데이트에 실패했습니다.' });
+  }
+});
+
+// 강사별 성과 분석 (센터 관리자만)
+router.get('/instructor/:instructorId/performance', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { instructorId } = req.params;
+    
+    // 강사 정보 조회
+    const instructor = await User.findById(instructorId);
+    if (!instructor || instructor.userType !== 'instructor') {
+      return res.status(404).json({ error: '강사를 찾을 수 없습니다.' });
+    }
+    
+    // 강사별 체크리스트 통계
+    const totalChecklists = await Checklist.countDocuments({ instructorId });
+    const completedChecklists = await Checklist.countDocuments({ 
+      instructorId, 
+      status: 'completed' 
+    });
+    
+    // 평균 진행률 계산
+    const checklists = await Checklist.find({ instructorId });
+    const averageProgress = checklists.length > 0 
+      ? Math.round(checklists.reduce((sum, checklist) => sum + checklist.overallProgress, 0) / checklists.length)
+      : 0;
+    
+    // 학생 통계 (체크리스트를 가진 학생 수)
+    const uniqueStudents = await Checklist.distinct('studentId', { instructorId });
+    const activeStudents = await Checklist.distinct('studentId', { 
+      instructorId, 
+      status: 'active' 
+    });
+    
+    // 최근 활동 (최근 업데이트된 체크리스트)
+    const recentChecklists = await Checklist.find({ instructorId })
+      .populate('studentId', 'name')
+      .sort({ lastUpdated: -1 })
+      .limit(5);
+    
+    const recentActivity = recentChecklists.map(checklist => ({
+      date: checklist.lastUpdated.toISOString().split('T')[0],
+      action: checklist.status === 'completed' ? '체크리스트 완료' : '진행도 업데이트',
+      student: (checklist.studentId as any)?.name || '알 수 없음'
+    }));
+    
+    res.json({
+      success: true,
+      data: {
+        totalChecklists,
+        completedChecklists,
+        averageProgress,
+        totalStudents: uniqueStudents.length,
+        activeStudents: activeStudents.length,
+        recentActivity
+      }
+    });
+  } catch (error) {
+    logError('강사 성과 분석 실패', error);
+    res.status(500).json({ error: '성과 분석에 실패했습니다.' });
+  }
+});
+
+// 체크리스트 템플릿 목록 조회
+router.get('/templates', auth, async (req: express.Request, res: express.Response) => {
+  try {
+    const { page = 1, limit = 20, level, creatorType } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const filter: any = { isActive: true };
+    
+    if (level && level !== 'all') {
+      filter.levels = level;
+    }
+    
+    if (creatorType) {
+      filter.creatorType = creatorType;
+    }
+
+    // 사용자가 볼 수 있는 템플릿 필터링 (공개 템플릿 또는 자신이 생성한 템플릿)
+    const user = req.user;
+    if (user.userType === 'instructor') {
+      filter.$or = [
+        { isPublic: true },
+        { creatorId: user._id, creatorType: 'instructor' }
+      ];
+    } else if (user.userType === 'centerAdmin') {
+      // 센터 관리자는 공개 템플릿과 자신의 센터 템플릿을 볼 수 있음
+      filter.$or = [
+        { isPublic: true },
+        { creatorType: 'center' }
+      ];
+    }
+
+    const templates = await ChecklistTemplate.find(filter)
+      .populate('creatorId', 'name')
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await ChecklistTemplate.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: templates,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error) {
+    logError('템플릿 목록 조회 실패', error);
+    res.status(500).json({ error: '템플릿 목록 조회에 실패했습니다.' });
+  }
+});
+
+// 체크리스트 템플릿 생성
+router.post('/templates', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { name, description, levels, items, tags, isPublic } = req.body;
+    const user = req.user;
+
+    if (!name || !description || !items || items.length === 0) {
+      return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
+    }
+
+    const templateData: any = {
+      name,
+      description,
+      levels: levels || [],
+      items: items.map((item: any, index: number) => ({
+        ...item,
+        stepOrder: index + 1
+      })),
+      tags: tags || [],
+      isPublic: isPublic || false,
+      creatorId: user._id,
+      creatorType: user.userType === 'instructor' ? 'instructor' : 'center',
+      isActive: true
+    };
+
+    // 센터 관리자인 경우 centerId 추가
+    if (user.userType === 'centerAdmin' && (user as any).centerAdminInfo?.managedCenters?.[0]) {
+      templateData.centerId = (user as any).centerAdminInfo.managedCenters[0];
+    }
+
+    const template = new ChecklistTemplate(templateData);
+    await template.save();
+
+    res.status(201).json({
+      success: true,
+      message: '템플릿이 성공적으로 생성되었습니다.',
+      data: template
+    });
+  } catch (error) {
+    logError('템플릿 생성 실패', error);
+    res.status(500).json({ error: '템플릿 생성에 실패했습니다.' });
+  }
+});
+
+// 체크리스트 템플릿 삭제
+router.delete('/templates/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const template = await ChecklistTemplate.findById(id);
+    if (!template) {
+      return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
+    }
+
+    // 권한 확인: 생성자이거나 센터 관리자여야 함
+    const canDelete = template.creatorId.toString() === user._id.toString() ||
+                     user.userType === 'superAdmin' ||
+                     (user.userType === 'centerAdmin' && template.creatorType === 'center');
+
+    if (!canDelete) {
+      return res.status(403).json({ error: '템플릿을 삭제할 권한이 없습니다.' });
+    }
+
+    await ChecklistTemplate.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: '템플릿이 성공적으로 삭제되었습니다.'
+    });
+  } catch (error) {
+    logError('템플릿 삭제 실패', error);
+    res.status(500).json({ error: '템플릿 삭제에 실패했습니다.' });
+  }
+});
+
+// 템플릿으로부터 체크리스트 생성
+router.post('/from-template/:templateId', auth, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
+  try {
+    const { templateId } = req.params;
+    const { studentId, courseId } = req.body;
+    const user = req.user;
+
+    if (!studentId || !courseId) {
+      return res.status(400).json({ error: '학생 ID와 과정 ID가 필요합니다.' });
+    }
+
+    const template = await ChecklistTemplate.findById(templateId);
+    if (!template || !template.isActive) {
+      return res.status(404).json({ error: '템플릿을 찾을 수 없습니다.' });
+    }
+
+    // 학생과 과정 확인
+    const student = await User.findById(studentId);
+    const course = await Course.findById(courseId);
+
+    if (!student || student.userType !== 'student') {
+      return res.status(404).json({ error: '학생을 찾을 수 없습니다.' });
+    }
+
+    if (!course) {
+      return res.status(404).json({ error: '과정을 찾을 수 없습니다.' });
+    }
+
+    // 체크리스트 생성
+    const checklistData = {
+      studentId,
+      courseId,
+      instructorId: user._id,
+      items: template.items.map((item: any) => ({
+        stepName: item.stepName,
+        stepOrder: item.stepOrder,
+        category: item.category,
+        difficulty: item.difficulty,
+        tips: item.tips,
+        isCompleted: false
+      })),
+      overallProgress: 0,
+      status: 'active',
+      startDate: new Date()
+    };
+
+    const checklist = new Checklist(checklistData);
+    await checklist.save();
+
+    res.status(201).json({
+      success: true,
+      message: '템플릿으로부터 체크리스트가 생성되었습니다.',
+      data: checklist
+    });
+  } catch (error) {
+    logError('템플릿 기반 체크리스트 생성 실패', error);
+    res.status(500).json({ error: '체크리스트 생성에 실패했습니다.' });
   }
 });
 

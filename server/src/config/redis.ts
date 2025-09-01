@@ -1,123 +1,96 @@
 import Redis from 'ioredis';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
-
-const redisConfig = {
+// Redis 클라이언트 설정
+const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD,
-  db: parseInt(process.env.REDIS_DB || '0'),
-  retryDelayOnFailover: 100,
   maxRetriesPerRequest: 3,
   lazyConnect: true,
   keepAlive: 30000,
   connectTimeout: 10000,
   commandTimeout: 5000,
-  maxMemoryPolicy: 'allkeys-lru',
-  maxMemory: '256mb'
+});
+
+// Redis 연결 이벤트 처리
+redis.on('connect', () => {
+  console.log('✅ Redis 연결 성공');
+});
+
+redis.on('error', (error) => {
+  console.error('❌ Redis 연결 오류:', error);
+});
+
+redis.on('close', () => {
+  console.log('🔌 Redis 연결 종료');
+});
+
+// Redis 연결 테스트
+export const testRedisConnection = async (): Promise<boolean> => {
+  try {
+    await redis.ping();
+    console.log('✅ Redis 연결 테스트 성공');
+    return true;
+  } catch (error) {
+    console.error('❌ Redis 연결 테스트 실패:', error);
+    return false;
+  }
 };
 
-class RedisClient {
-  private client: Redis | null = null;
-  private subscriber: Redis | null = null;
+// Redis 클라이언트 내보내기
+export default redis;
 
-  async connect() {
+// Redis 유틸리티 함수들
+export const redisUtils = {
+  // 캐시 설정
+  async setCache(key: string, value: any, ttl: number = 3600): Promise<void> {
     try {
-      this.client = new Redis(redisConfig);
-      this.subscriber = new Redis(redisConfig);
-
-      this.client.on('connect', () => {
-        console.log('✅ Redis 클라이언트 연결 성공');
-      });
-
-      this.client.on('error', (error) => {
-        console.error('❌ Redis 클라이언트 오류:', error);
-      });
-
-      this.client.on('ready', () => {
-        console.log('🚀 Redis 클라이언트 준비 완료');
-      });
-
-      return true;
+      await redis.setex(key, ttl, JSON.stringify(value));
     } catch (error) {
-      console.error('❌ Redis 연결 실패:', error);
-      return false;
+      console.error('Redis 캐시 설정 오류:', error);
     }
-  }
+  },
 
-  async get(key: string): Promise<string | null> {
-    if (!this.client) return null;
+  // 캐시 조회
+  async getCache(key: string): Promise<any> {
     try {
-      return await this.client.get(key);
+      const value = await redis.get(key);
+      return value ? JSON.parse(value) : null;
     } catch (error) {
-      console.error('Redis GET 오류:', error);
+      console.error('Redis 캐시 조회 오류:', error);
       return null;
     }
-  }
+  },
 
-  async set(key: string, value: string, ttl?: number): Promise<boolean> {
-    if (!this.client) return false;
+  // 캐시 삭제
+  async deleteCache(key: string): Promise<void> {
     try {
-      if (ttl) {
-        await this.client.setex(key, ttl, value);
-      } else {
-        await this.client.set(key, value);
+      await redis.del(key);
+    } catch (error) {
+      console.error('Redis 캐시 삭제 오류:', error);
+    }
+  },
+
+  // 패턴으로 캐시 삭제
+  async deleteCachePattern(pattern: string): Promise<void> {
+    try {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(...keys);
       }
-      return true;
     } catch (error) {
-      console.error('Redis SET 오류:', error);
-      return false;
+      console.error('Redis 패턴 캐시 삭제 오류:', error);
     }
-  }
+  },
 
-  async del(key: string): Promise<boolean> {
-    if (!this.client) return false;
+  // 캐시 존재 확인
+  async existsCache(key: string): Promise<boolean> {
     try {
-      await this.client.del(key);
-      return true;
+      const exists = await redis.exists(key);
+      return exists === 1;
     } catch (error) {
-      console.error('Redis DEL 오류:', error);
+      console.error('Redis 캐시 존재 확인 오류:', error);
       return false;
     }
   }
-
-  async exists(key: string): Promise<boolean> {
-    if (!this.client) return false;
-    try {
-      const result = await this.client.exists(key);
-      return result === 1;
-    } catch (error) {
-      console.error('Redis EXISTS 오류:', error);
-      return false;
-    }
-  }
-
-  async flushdb(): Promise<boolean> {
-    if (!this.client) return false;
-    try {
-      await this.client.flushdb();
-      return true;
-    } catch (error) {
-      console.error('Redis FLUSHDB 오류:', error);
-      return false;
-    }
-  }
-
-  async disconnect() {
-    if (this.client) {
-      await this.client.disconnect();
-    }
-    if (this.subscriber) {
-      await this.subscriber.disconnect();
-    }
-  }
-
-  getClient(): Redis | null {
-    return this.client;
-  }
-}
-
-export const redisClient = new RedisClient();
-export default redisClient;
-
+};

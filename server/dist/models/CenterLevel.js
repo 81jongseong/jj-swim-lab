@@ -28,8 +28,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const CenterLevelSchema = new mongoose_1.Schema({
     centerId: {
         type: String,
-        required: true,
-        index: true
+        required: true
     },
     levels: [{
             name: {

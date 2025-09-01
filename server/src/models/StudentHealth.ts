@@ -128,7 +128,7 @@ const StudentHealthSchema = new Schema<IStudentHealth>({
   timestamps: true
 });
 
-// 학생별로 유니크
+// 학생별로 유니크 - studentId 필드에 unique: true가 없으므로 인덱스 생성
 StudentHealthSchema.index({ studentId: 1 }, { unique: true });
 
 export const StudentHealth = mongoose.model<IStudentHealth>('StudentHealth', StudentHealthSchema);

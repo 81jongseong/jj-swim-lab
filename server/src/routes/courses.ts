@@ -196,7 +196,8 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
 
     course.enrolledStudents.push({
       student: (req as any).user._id,
-      status: 'active'
+      status: 'active',
+      enrolledAt: new Date()
     });
 
     await course.save();

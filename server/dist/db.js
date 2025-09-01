@@ -1,52 +1,16 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.suggestIndexes = exports.checkDatabaseHealth = exports.getDBStats = exports.disconnectDB = exports.isConnected = exports.connectDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv = __importStar(require("dotenv"));
 const logger_1 = require("./utils/logger");
-const path_1 = __importDefault(require("path"));
-console.log('🔍 db.ts 모듈 로딩 시작...');
-try {
-    console.log('🔍 dotenv.config() 호출 중...');
-    dotenv.config({ path: path_1.default.resolve(__dirname, '../.env') });
-    console.log('🔍 dotenv.config() 완료');
-    console.log('🔍 환경 변수 로드 확인:');
-    console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
-    console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ 설정됨' : '❌ 설정되지 않음');
-    console.log('NODE_ENV:', process.env.NODE_ENV || '❌ 설정되지 않음');
-    console.log('🔍 db.ts 모듈 로딩 완료');
-}
-catch (error) {
-    console.error('❌ db.ts 모듈 로딩 중 에러:', error);
-    console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '스택 없음');
-}
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/jj-swim-db';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+console.log('🔍 db.ts에서 환경 변수 확인:');
+console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
+console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');
+console.log('   - 사용할 URI:', MONGODB_URI.substring(0, 50) + '...');
 const connectionOptions = {
     bufferCommands: true,
     autoIndex: false,
@@ -63,23 +27,23 @@ const connectionOptions = {
 };
 mongoose_1.default.connection.on('connected', () => {
     (0, logger_1.logInfo)('✅ MongoDB 연결 성공');
-    (0, logger_1.logDatabase)('connection', 'database', 0, { status: 'connected' });
+    (0, logger_1.logDatabase)('Database connected', { status: 'connected' });
 });
 mongoose_1.default.connection.on('error', (error) => {
     (0, logger_1.logError)('❌ MongoDB 연결 오류', error);
-    (0, logger_1.logDatabase)('error', 'database', 0, { error: error.message });
+    (0, logger_1.logDatabase)('Database error', { error: error.message });
 });
 mongoose_1.default.connection.on('disconnected', () => {
     (0, logger_1.logInfo)('⚠️ MongoDB 연결 해제');
-    (0, logger_1.logDatabase)('disconnection', 'database', 0, { status: 'disconnected' });
+    (0, logger_1.logDatabase)('Database disconnected', { status: 'disconnected' });
 });
 mongoose_1.default.connection.on('reconnected', () => {
     (0, logger_1.logInfo)('🔄 MongoDB 재연결 성공');
-    (0, logger_1.logDatabase)('reconnection', 'database', 0, { status: 'reconnected' });
+    (0, logger_1.logDatabase)('Database reconnected', { status: 'reconnected' });
 });
 if (process.env.NODE_ENV === 'development') {
     mongoose_1.default.set('debug', (collectionName, methodName, ...methodArgs) => {
-        (0, logger_1.logDatabase)('query', collectionName, 0, {
+        (0, logger_1.logDatabase)(`Query: ${collectionName}.${methodName}`, {
             method: methodName,
             args: methodArgs
         });
@@ -104,7 +68,7 @@ const connectDB = async () => {
         (0, logger_1.logInfo)(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);
         console.log(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);
         console.log(`✅ 연결 상태: ${mongoose_1.default.connection.readyState}`);
-        (0, logger_1.logDatabase)('connection', 'database', connectionTime, {
+        (0, logger_1.logDatabase)('Database connection successful', {
             status: 'success',
             connectionTime
         });
@@ -125,7 +89,7 @@ const connectDB = async () => {
         else if (error instanceof Error && error.message.includes('authentication')) {
             console.log('❌ MongoDB 인증 실패. 사용자명과 비밀번호를 확인하세요.');
         }
-        (0, logger_1.logDatabase)('error', 'database', 0, {
+        (0, logger_1.logDatabase)('Database connection failed', {
             error: error instanceof Error ? error.message : String(error)
         });
         return false;

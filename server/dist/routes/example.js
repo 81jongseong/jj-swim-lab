@@ -47,7 +47,7 @@ router.post('/classes/:id/enroll', auth_1.auth, async (req, res) => {
             return res.status(404).json({ error: '반을 찾을 수 없습니다.' });
         const exists = cls.students.some(s => s.student?.toString() === studentId);
         if (!exists) {
-            cls.students.push({ student: studentId, status: 'active' });
+            cls.students.push({ student: studentId, status: 'active', enrolledAt: new Date() });
             cls.currentStudents = (cls.currentStudents || 0) + 1;
             await cls.save();
         }

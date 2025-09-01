@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose, { Document } from 'mongoose';
 export interface IChecklistTemplateItem extends Document {
     stepName: string;
@@ -48,9 +47,7 @@ export interface IChecklistTemplate extends Document {
     description: string;
     tags: string[];
 }
-export declare const ChecklistTemplate: mongoose.Model<IChecklistTemplate, {}, {}, {}, mongoose.Document<unknown, {}, IChecklistTemplate, {}, {}> & IChecklistTemplate & Required<{
-    _id: unknown;
-}> & {
-    __v: number;
+export declare const ChecklistTemplate: mongoose.Model<IChecklistTemplate, {}, {}, {}, mongoose.Document<unknown, {}, IChecklistTemplate> & IChecklistTemplate & {
+    _id: mongoose.Types.ObjectId;
 }, any>;
 //# sourceMappingURL=ChecklistTemplate.d.ts.map

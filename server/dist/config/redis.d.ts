@@ -1,16 +1,12 @@
 import Redis from 'ioredis';
-declare class RedisClient {
-    private client;
-    private subscriber;
-    connect(): Promise<boolean>;
-    get(key: string): Promise<string | null>;
-    set(key: string, value: string, ttl?: number): Promise<boolean>;
-    del(key: string): Promise<boolean>;
-    exists(key: string): Promise<boolean>;
-    flushdb(): Promise<boolean>;
-    disconnect(): Promise<void>;
-    getClient(): Redis | null;
-}
-export declare const redisClient: RedisClient;
-export default redisClient;
+declare const redis: Redis;
+export declare const testRedisConnection: () => Promise<boolean>;
+export default redis;
+export declare const redisUtils: {
+    setCache(key: string, value: any, ttl?: number): Promise<void>;
+    getCache(key: string): Promise<any>;
+    deleteCache(key: string): Promise<void>;
+    deleteCachePattern(pattern: string): Promise<void>;
+    existsCache(key: string): Promise<boolean>;
+};
 //# sourceMappingURL=redis.d.ts.map

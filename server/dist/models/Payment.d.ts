@@ -15,22 +15,21 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose from 'mongoose';
 export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -39,14 +38,14 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
+    processedAt?: Date;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -55,16 +54,14 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
-}, {}, {
-    timestamps: true;
+    processedAt?: Date;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -73,11 +70,9 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
+    processedAt?: Date;
 } & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
@@ -85,8 +80,8 @@ export declare const Payment: mongoose.Model<{
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -95,14 +90,14 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
+    processedAt?: Date;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -111,16 +106,14 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
-}>, {}, mongoose.ResolveSchemaOptions<{
-    timestamps: true;
+    processedAt?: Date;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     status: "completed" | "pending" | "failed" | "refunded";
-    user: mongoose.Types.ObjectId;
     notes: string;
+    user: mongoose.Types.ObjectId;
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -129,10 +122,8 @@ export declare const Payment: mongoose.Model<{
     relatedBooking?: mongoose.Types.ObjectId;
     transactionId?: string;
     receiptUrl?: string;
-    processedAt?: NativeDate;
+    processedAt?: Date;
 }> & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }>>;
 //# sourceMappingURL=Payment.d.ts.map

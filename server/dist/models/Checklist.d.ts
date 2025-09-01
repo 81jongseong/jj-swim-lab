@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose, { Document } from 'mongoose';
 export interface IChecklistItem extends Document {
     teachingMethodId: mongoose.Types.ObjectId;
@@ -46,11 +45,10 @@ export interface IChecklist extends Document {
     startDate: Date;
     targetCompletionDate?: Date;
     status: 'active' | 'completed' | 'paused';
+    completedAt?: Date;
     notes?: string;
 }
-export declare const Checklist: mongoose.Model<IChecklist, {}, {}, {}, mongoose.Document<unknown, {}, IChecklist, {}, {}> & IChecklist & Required<{
-    _id: unknown;
-}> & {
-    __v: number;
+export declare const Checklist: mongoose.Model<IChecklist, {}, {}, {}, mongoose.Document<unknown, {}, IChecklist> & IChecklist & {
+    _id: mongoose.Types.ObjectId;
 }, any>;
 //# sourceMappingURL=Checklist.d.ts.map

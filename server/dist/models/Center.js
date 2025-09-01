@@ -97,7 +97,6 @@ const centerSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
-centerSchema.index({ name: 1 });
 centerSchema.index({ managerId: 1 });
 centerSchema.index({ status: 1 });
 exports.Center = mongoose_1.default.model('Center', centerSchema);

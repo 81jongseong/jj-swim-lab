@@ -90,7 +90,7 @@ router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']
         });
     }
 });
-router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.get('/', auth_1.auth, async (req, res) => {
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);

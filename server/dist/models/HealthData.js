@@ -150,7 +150,6 @@ healthDataSchema.pre('save', function (next) {
     }
     next();
 });
-healthDataSchema.index({ studentId: 1 });
 healthDataSchema.index({ healthStatus: 1 });
 healthDataSchema.index({ exerciseCompliance: 1 });
 healthDataSchema.index({ lastHealthCheck: 1 });

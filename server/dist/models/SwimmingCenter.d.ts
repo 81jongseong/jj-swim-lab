@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose from 'mongoose';
 export declare const SwimmingCenter: mongoose.Model<{
     createdAt: NativeDate;
@@ -35,33 +34,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -122,33 +142,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -198,8 +239,6 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
-}, {}, {
-    timestamps: true;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -211,33 +250,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -289,8 +349,6 @@ export declare const SwimmingCenter: mongoose.Model<{
     };
 } & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
@@ -304,33 +362,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -391,33 +470,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -467,8 +567,6 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
-}>, {}, mongoose.ResolveSchemaOptions<{
-    timestamps: true;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -480,33 +578,54 @@ export declare const SwimmingCenter: mongoose.Model<{
     students: mongoose.Types.ObjectId[];
     maxCapacity: number;
     currentCapacity: number;
-    images: mongoose.Types.DocumentArray<{
+    images: {
         url?: string;
         caption?: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        url?: string;
-        caption?: string;
-    }> & {
-        url?: string;
-        caption?: string;
-    }>;
+    }[];
     admins: mongoose.Types.ObjectId[];
     instructors: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
     location?: {
-        latitude: number;
-        longitude: number;
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
     };
     website?: string;
+    introduction?: string;
+    guide?: string;
     facilities?: {
-        lanes: number;
-        poolLength: number;
-        poolDepth: number;
-        temperature: number;
-        hasSauna: boolean;
-        hasShower: boolean;
-        hasLocker: boolean;
+        mainPool?: {
+            lanes: number;
+            poolLength: number;
+            poolDepth: number;
+            temperature: number;
+        };
+        kidsPool?: {
+            hasKidsPool: boolean;
+            kidsPoolLanes: number;
+            kidsPoolLength: number;
+            kidsPoolDepth: number;
+            kidsPoolTemperature: number;
+        };
+        endlessPool?: {
+            hasEndlessPool: boolean;
+            endlessPoolCount: number;
+            endlessPoolLength: number;
+            endlessPoolWidth: number;
+        };
+        amenities?: {
+            hasSauna: boolean;
+            hasShower: boolean;
+            hasLocker: boolean;
+            hasJacuzzi: boolean;
+            hasSteamRoom: boolean;
+            hasFitnessRoom: boolean;
+            hasCafeteria: boolean;
+            hasParking: boolean;
+            parkingSpaces: number;
+            additionalFacilities: string;
+        };
     };
     operatingHours?: {
         monday?: {
@@ -558,7 +677,5 @@ export declare const SwimmingCenter: mongoose.Model<{
     };
 }> & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }>>;
 //# sourceMappingURL=SwimmingCenter.d.ts.map

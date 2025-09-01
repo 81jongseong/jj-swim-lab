@@ -1,34 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 interface CacheOptions {
     ttl?: number;
-    key?: string;
-    condition?: (req: Request, res: Response) => boolean;
-    compress?: boolean;
-    varyBy?: string[];
+    keyGenerator?: (req: Request) => string;
+    skipCache?: (req: Request) => boolean;
 }
 export declare const cache: (options?: CacheOptions) => (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
-export declare const conditionalCache: (options?: CacheOptions) => (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
-export declare const userCache: (options?: CacheOptions) => (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
-export declare const queryCache: (options?: CacheOptions) => (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
-export declare const invalidateCache: (pattern: string) => Promise<void>;
-export declare const invalidateUserCache: (userId: string) => Promise<void>;
-export declare const invalidatePathCache: (path: string) => Promise<void>;
-export declare const getCacheStats: () => {
-    hitRate: string;
-    memoryUsage: {
-        rss: number;
-        heapTotal: number;
-        heapUsed: number;
-        external: number;
-    };
-    hits: number;
-    misses: number;
-    sets: number;
-    errors: number;
-    totalRequests: number;
+export declare const cacheMiddleware: {
+    userList: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    instructorList: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    centerInfo: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    aiAnalysis: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    video3DAnalysis: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    dashboard: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
+    statistics: (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
 };
-export declare const cleanupCache: () => Promise<void>;
-export declare const checkCacheHealth: () => Promise<boolean>;
-export declare const updateRequestStats: () => void;
-export default cache;
+export declare const invalidateCache: {
+    user: (userId: string) => Promise<void>;
+    instructor: (instructorId: string) => Promise<void>;
+    center: (centerId: string) => Promise<void>;
+    aiAnalysis: (studentId: string) => Promise<void>;
+    video3DAnalysis: (analysisId: string) => Promise<void>;
+    all: () => Promise<void>;
+};
+export {};
 //# sourceMappingURL=cache.d.ts.map

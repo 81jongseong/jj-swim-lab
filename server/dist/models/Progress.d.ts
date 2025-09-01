@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose from 'mongoose';
 export declare const Progress: mongoose.Model<{
     createdAt: NativeDate;
@@ -33,119 +32,45 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
@@ -156,122 +81,46 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
-}, {}, {
-    timestamps: true;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -281,124 +130,48 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
 } & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
@@ -410,119 +183,45 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
@@ -533,122 +232,46 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
-}>, {}, mongoose.ResolveSchemaOptions<{
-    timestamps: true;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -658,123 +281,47 @@ export declare const Progress: mongoose.Model<{
     instructor: mongoose.Types.ObjectId;
     isActive: boolean;
     status: "completed" | "pending" | "in_progress" | "overdue";
-    lastUpdated: NativeDate;
+    lastUpdated: Date;
     course: mongoose.Types.ObjectId;
     priority: "high" | "medium" | "low";
-    skills: mongoose.Types.DocumentArray<{
+    skills: {
         status: "completed" | "not_started" | "learning" | "needs_improvement";
         skillName: string;
         instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
+        practiceDrills: {
             name?: string;
             description?: string;
             youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
+        }[];
         advice: string;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }> & {
-        status: "completed" | "not_started" | "learning" | "needs_improvement";
-        skillName: string;
-        instructorNotes: string;
-        practiceDrills: mongoose.Types.DocumentArray<{
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }> & {
-            name?: string;
-            description?: string;
-            youtubeUrl?: string;
-        }>;
-        advice: string;
-    }>;
+    }[];
     overallProgress: number;
     instructorComments: string;
-    nextGoals: mongoose.Types.DocumentArray<{
+    nextGoals: {
         goal?: string;
-        targetDate?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        goal?: string;
-        targetDate?: NativeDate;
-    }> & {
-        goal?: string;
-        targetDate?: NativeDate;
-    }>;
-    checklistItems: mongoose.Types.DocumentArray<{
+        targetDate?: Date;
+    }[];
+    checklistItems: {
         priority: "high" | "medium" | "low";
         isCompleted: boolean;
         description?: string;
         notes?: string;
         title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }> & {
-        priority: "high" | "medium" | "low";
-        isCompleted: boolean;
-        description?: string;
-        notes?: string;
-        title?: string;
-        dueDate?: NativeDate;
-        completedAt?: NativeDate;
-    }>;
-    completedLessons: mongoose.Types.DocumentArray<{
-        completedAt?: NativeDate;
+        dueDate?: Date;
+        completedAt?: Date;
+    }[];
+    completedLessons: {
+        completedAt?: Date;
         lessonName?: string;
         score?: number;
-    }, mongoose.Types.Subdocument<mongoose.mongo.BSON.ObjectId, any, {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }> & {
-        completedAt?: NativeDate;
-        lessonName?: string;
-        score?: number;
-    }>;
+    }[];
     notes?: string;
     center?: mongoose.Types.ObjectId;
-    dueDate?: NativeDate;
+    dueDate?: Date;
     class?: mongoose.Types.ObjectId;
-    evaluationDate?: NativeDate;
+    evaluationDate?: Date;
     updatedBy?: mongoose.Types.ObjectId;
 }> & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }>>;
 //# sourceMappingURL=Progress.d.ts.map

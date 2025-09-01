@@ -16,8 +16,7 @@ export interface ICenterLevel extends Document {
 const CenterLevelSchema = new Schema<ICenterLevel>({
   centerId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   levels: [{
     name: {

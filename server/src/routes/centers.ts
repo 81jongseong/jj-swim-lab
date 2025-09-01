@@ -280,7 +280,234 @@ router.put('/instructors/:id/permissions', auth, requireRole(['centerAdmin']), a
   }
 });
 
-// 6. 센터 통계 대시보드 (센터 관리자만)
+// 6. 강사 정보 수정 (센터 관리자만)
+router.put('/instructors/:id', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { permissions, maxStudents, isActive } = req.body;
+
+    const instructor = await User.findById(id);
+    if (!instructor || instructor.userType !== 'instructor') {
+      return res.status(404).json({
+        success: false,
+        message: '강사를 찾을 수 없습니다.'
+      });
+    }
+
+    // 센터 관리자 권한 확인
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    
+    if (!centerId || !instructor.instructorInfo?.assignedCenters?.includes(centerId)) {
+      return res.status(403).json({
+        success: false,
+        message: '해당 강사를 관리할 권한이 없습니다.'
+      });
+    }
+
+    if (permissions) {
+      instructor.accessPermissions = {
+        ...instructor.accessPermissions,
+        ...permissions
+      };
+    }
+
+    if (maxStudents !== undefined) {
+      instructor.instructorInfo.maxStudents = maxStudents;
+    }
+
+    if (isActive !== undefined) {
+      instructor.isActive = isActive;
+    }
+
+    await instructor.save();
+
+    res.json({
+      success: true,
+      message: '강사 정보가 성공적으로 수정되었습니다!',
+      data: {
+        accessPermissions: instructor.accessPermissions,
+        isActive: instructor.isActive
+      }
+    });
+  } catch (error) {
+    console.error('강사 정보 수정 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강사 정보 수정에 실패했습니다.'
+    });
+  }
+});
+
+// 7. 강사 삭제 (센터 관리자만)
+router.delete('/instructors/:id', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const instructor = await User.findById(id);
+    if (!instructor || instructor.userType !== 'instructor') {
+      return res.status(404).json({
+        success: false,
+        message: '강사를 찾을 수 없습니다.'
+      });
+    }
+
+    // 센터 관리자 권한 확인
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    
+    if (!centerId || !instructor.instructorInfo?.assignedCenters?.includes(centerId)) {
+      return res.status(403).json({
+        success: false,
+        message: '해당 강사를 관리할 권한이 없습니다.'
+      });
+    }
+
+    // 센터에서 강사 정보 제거
+    const center = await SwimmingCenter.findById(centerId);
+    if (center) {
+      center.instructors = center.instructors?.filter(
+        (instructorId: mongoose.Types.ObjectId) => instructorId.toString() !== id
+      );
+      await center.save();
+    }
+
+    // 강사 계정 삭제
+    await User.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: '강사가 성공적으로 삭제되었습니다.'
+    });
+  } catch (error) {
+    console.error('강사 삭제 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강사 삭제에 실패했습니다.'
+    });
+  }
+});
+
+// 7. 센터 정보 조회 (센터 관리자만)
+router.get('/info', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    const center = await SwimmingCenter.findById(centerId);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '센터를 찾을 수 없습니다.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '센터 정보 조회 성공!',
+      data: {
+        centerId: center._id,
+        name: center.name,
+        description: center.description,
+        address: center.address,
+        phone: center.phone,
+        email: center.email,
+        operatingHours: center.operatingHours,
+        facilities: center.facilities || [],
+        introduction: center.introduction || '',
+        guide: center.guide || '',
+        updatedAt: center.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('센터 정보 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 정보 조회에 실패했습니다.'
+    });
+  }
+});
+
+// 8. 센터 정보 수정 (센터 관리자만)
+router.put('/info', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    const {
+      name,
+      description,
+      address,
+      phone,
+      email,
+      operatingHours,
+      facilities,
+      introduction,
+      guide
+    } = req.body;
+
+    const center = await SwimmingCenter.findById(centerId);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '센터를 찾을 수 없습니다.'
+      });
+    }
+
+    // 센터 정보 업데이트
+    if (name) center.name = name;
+    if (description) center.description = description;
+    if (address) center.address = address;
+    if (phone) center.phone = phone;
+    if (email) center.email = email;
+    if (operatingHours) center.operatingHours = operatingHours;
+    if (facilities) center.facilities = facilities;
+    if (introduction) center.introduction = introduction;
+    if (guide) center.guide = guide;
+
+    await center.save();
+
+    res.json({
+      success: true,
+      message: '센터 정보가 성공적으로 수정되었습니다!',
+      data: {
+        centerId: center._id,
+        name: center.name,
+        description: center.description,
+        address: center.address,
+        phone: center.phone,
+        email: center.email,
+        operatingHours: center.operatingHours,
+        facilities: center.facilities,
+        introduction: center.introduction,
+        guide: center.guide,
+        updatedAt: center.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('센터 정보 수정 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 정보 수정에 실패했습니다.'
+    });
+  }
+});
+
+// 9. 센터 통계 대시보드 (센터 관리자만)
 router.get('/dashboard', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const centerAdmin = await User.findById(req.user._id);

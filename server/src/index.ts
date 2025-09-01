@@ -6,10 +6,13 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 
-// 환경 변수 로드
+// 환경 변수 로드 (다른 import 전에 실행)
 const envPath = path.join(__dirname, '../.env');
 console.log('🔍 .env 파일 경로:', envPath);
 dotenv.config({ path: envPath });
+
+// 환경 변수 로드 후 connectDB import
+import { connectDB } from './db';
 
 // 라우트 임포트
 import authRoutes from './routes/auth';
@@ -43,38 +46,29 @@ import instructorRoutes from './routes/instructor';
 import instructorManagementRoutes from './routes/instructorManagement';
 import revenueRoutes from './routes/revenue';
 import approvalRoutes from './routes/approvals';
+// AI 라우트들 정상화
+import aiRoutes from './routes/ai';
+import smartwatchRoutes from './routes/smartwatch';
+import videoAnalysisRoutes from './routes/video-analysis';
+import aiEvaluationCriteriaRoutes from './routes/ai-evaluation-criteria';
+import video3DAnalysisRoutes from './routes/video-3d-analysis';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
-import './models/Checklist';
-import './models/ChecklistTemplate';
-import './models/ClassChecklist';
-import './models/StudentProgress';
-import './models/StudentHealth';
+console.log('📦 모델 import 시작...');
+
+// 최소한의 필수 모델만 import (무한 로딩 해결용)
 import './models/User';
-import './models/CenterLevel';
-import './models/Quiz';
-import './models/QuizAttempt';
-import './models/TeachingMethod';
-import './models/Course';
-import './models/Booking';
-import './models/SwimmingCenter';
-import './models/Notice';
-import './models/Payment';
-import './models/Progress';
-import './models/Membership';
-import './models/Report';
-import './models/CommunityPost';
-import './models/CommunityComment';
-import './models/CommunityReport';
-import './models/ShopProduct';
-import './models/ShopOrder';
-import './models/AIConfig';
-import './models/CenterInfo';
-import './models/Notification';
-import './models/CenterLevel';
-import './models/Center';
-import './models/HealthData';
-import './models/Approval';
+import './models/Checklist';
+
+console.log('📦 기본 모델 import 완료!');
+
+// AI 모델들 정상화
+import './models/AIAnalysis';
+import './models/AIEvaluationCriteria';
+import './models/SmartWatchData';
+import './models/VideoAnalysisCriteria';
+
+console.log('📦 모든 모델 import 완료!');
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -134,64 +128,7 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 
-// MongoDB 연결
-const connectDB = async () => {
-  try {
-    // Atlas 연결만 사용 (로컬 연결 제거)
-    const mongoURI = process.env.MONGODB_URI;
-    if (!mongoURI) {
-      throw new Error('MONGODB_URI 환경 변수가 설정되지 않았습니다.');
-    }
-    
-    console.log('🔗 Atlas 연결 시도 중...');
-    console.log('🔗 연결 URI:', mongoURI.substring(0, 50) + '...');
-    
-    // MongoDB 연결 옵션 (Atlas 최적화)
-    const options = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    };
-    
-    console.log('🔗 MongoDB Atlas 연결 시도 중...');
-    console.log('🔗 연결 옵션:', JSON.stringify(options, null, 2));
-    
-    await mongoose.connect(mongoURI, options);
-    console.log('🔗 MongoDB Atlas 연결 성공!');
-    console.log('✅ 서버가 MongoDB Atlas와 연결되어 정상적으로 실행 중입니다!');
-    
-    // 연결 상태 모니터링
-    mongoose.connection.on('connected', () => {
-      console.log('✅ MongoDB Atlas 연결됨');
-    });
-    
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB Atlas 연결 오류:', err);
-    });
-    
-    mongoose.connection.on('disconnected', () => {
-      console.log('🔌 MongoDB Atlas 연결 끊어짐');
-    });
-    
-  } catch (error: any) {
-    console.error('❌ MongoDB Atlas 연결 실패:', error);
-    console.log('⚠️ MongoDB Atlas 연결 실패했지만 서버는 계속 실행됩니다.');
-    console.log('⚠️ 연결 오류 상세:', error.message);
-    
-    // 연결 실패 시에도 연결 상태 모니터링 설정
-    mongoose.connection.on('connected', () => {
-      console.log('✅ MongoDB Atlas 연결됨 (재연결)');
-    });
-    
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB Atlas 연결 오류 (재연결 시도 중):', err);
-    });
-    
-    mongoose.connection.on('disconnected', () => {
-      console.log('🔌 MongoDB Atlas 연결 끊어짐 (재연결 시도 중)');
-    });
-  }
-};
+// MongoDB 연결은 db.ts 모듈에서 처리
 
 // 미들웨어
 app.use(cors());
@@ -254,6 +191,12 @@ app.use('/api/instructor', instructorRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/approvals', approvalRoutes);
+// AI 라우트들 정상화
+app.use('/api/ai', aiRoutes);
+app.use('/api/smartwatch', smartwatchRoutes);
+app.use('/api/video-analysis', videoAnalysisRoutes);
+app.use('/api/ai', aiEvaluationCriteriaRoutes);
+app.use('/api/video-3d-analysis', video3DAnalysisRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {
@@ -273,11 +216,23 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 });
 
 // 서버 시작
-server.listen(PORT, () => {
+console.log('🚀 서버 시작 준비 중...');
+console.log(`📡 포트: ${PORT}`);
+
+server.listen(PORT, async () => {
   console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
   console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);
-  connectDB();
+  
+  try {
+    console.log('🔗 MongoDB 연결 시도 중...');
+    await connectDB();
+  } catch (error) {
+    console.error('❌ MongoDB 연결 실패:', error);
+    console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');
+  }
 });
+
+console.log('📡 server.listen 호출 완료');
 
 // Graceful shutdown
 process.on('SIGINT', () => {

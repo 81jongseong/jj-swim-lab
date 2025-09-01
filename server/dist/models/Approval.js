@@ -29,29 +29,24 @@ const ApprovalSchema = new mongoose_1.Schema({
     type: {
         type: String,
         enum: ['course_enrollment', 'instructor_registration', 'payment_approval', 'schedule_change', 'refund_request'],
-        required: true,
-        index: true
+        required: true
     },
     userId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
+        required: true
     },
     courseId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Course',
-        index: true
+        ref: 'Course'
     },
     instructorId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
-        index: true
+        ref: 'User'
     },
     paymentId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Payment',
-        index: true
+        ref: 'Payment'
     },
     title: {
         type: String,
@@ -66,14 +61,12 @@ const ApprovalSchema = new mongoose_1.Schema({
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
-        default: 'pending',
-        index: true
+        default: 'pending'
     },
     priority: {
         type: String,
         enum: ['low', 'medium', 'high'],
-        default: 'medium',
-        index: true
+        default: 'medium'
     },
     estimatedAmount: {
         type: Number,
@@ -81,8 +74,7 @@ const ApprovalSchema = new mongoose_1.Schema({
     },
     requestDate: {
         type: Date,
-        default: Date.now,
-        index: true
+        default: Date.now
     },
     processedBy: {
         type: mongoose_1.Schema.Types.ObjectId,
@@ -97,8 +89,7 @@ const ApprovalSchema = new mongoose_1.Schema({
     },
     centerId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Center',
-        index: true
+        ref: 'Center'
     },
     attachments: [{
             type: String

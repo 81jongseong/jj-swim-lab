@@ -10,12 +10,13 @@ const swimmingCenterSchema = new mongoose.Schema({
     required: true,
   },
   location: {
-    latitude: {
-      type: Number,
+    type: {
+      type: String,
+      enum: ['Point'],
       required: true,
     },
-    longitude: {
-      type: Number,
+    coordinates: {
+      type: [Number],
       required: true,
     },
   },
@@ -32,34 +33,116 @@ const swimmingCenterSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  introduction: {
+    type: String,
+  },
+  guide: {
+    type: String,
+  },
   facilities: {
-    lanes: {
-      type: Number,
-      required: true,
+    // 메인 수영장
+    mainPool: {
+      lanes: {
+        type: Number,
+        required: true,
+      },
+      poolLength: {
+        type: Number, // 미터
+        required: true,
+      },
+      poolDepth: {
+        type: Number, // 미터
+        required: true,
+      },
+      temperature: {
+        type: Number, // 섭씨
+        required: true,
+      },
     },
-    poolLength: {
-      type: Number, // 미터
-      required: true,
+    // 유아풀
+    kidsPool: {
+      hasKidsPool: {
+        type: Boolean,
+        default: false,
+      },
+      kidsPoolLanes: {
+        type: Number,
+        default: 0,
+      },
+      kidsPoolLength: {
+        type: Number,
+        default: 0,
+      },
+      kidsPoolDepth: {
+        type: Number,
+        default: 0,
+      },
+      kidsPoolTemperature: {
+        type: Number,
+        default: 0,
+      },
     },
-    poolDepth: {
-      type: Number, // 미터
-      required: true,
+    // 엔드리스 풀
+    endlessPool: {
+      hasEndlessPool: {
+        type: Boolean,
+        default: false,
+      },
+      endlessPoolCount: {
+        type: Number,
+        default: 0,
+      },
+      endlessPoolLength: {
+        type: Number,
+        default: 0,
+      },
+      endlessPoolWidth: {
+        type: Number,
+        default: 0,
+      },
     },
-    temperature: {
-      type: Number, // 섭씨
-      required: true,
-    },
-    hasSauna: {
-      type: Boolean,
-      default: false,
-    },
-    hasShower: {
-      type: Boolean,
-      default: true,
-    },
-    hasLocker: {
-      type: Boolean,
-      default: true,
+    // 부대시설
+    amenities: {
+      hasSauna: {
+        type: Boolean,
+        default: false,
+      },
+      hasShower: {
+        type: Boolean,
+        default: true,
+      },
+      hasLocker: {
+        type: Boolean,
+        default: true,
+      },
+      hasJacuzzi: {
+        type: Boolean,
+        default: false,
+      },
+      hasSteamRoom: {
+        type: Boolean,
+        default: false,
+      },
+      hasFitnessRoom: {
+        type: Boolean,
+        default: false,
+      },
+      hasCafeteria: {
+        type: Boolean,
+        default: false,
+      },
+      hasParking: {
+        type: Boolean,
+        default: false,
+      },
+      parkingSpaces: {
+        type: Number,
+        default: 0,
+      },
+      additionalFacilities: {
+        type: String,
+        default: '',
+      },
     },
   },
   operatingHours: {

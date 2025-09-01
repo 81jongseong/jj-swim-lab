@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose, { Document } from 'mongoose';
 export interface ICenterLevel extends Document {
     centerId: string;
@@ -36,9 +35,7 @@ export interface ICenterLevel extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
-export declare const CenterLevel: mongoose.Model<ICenterLevel, {}, {}, {}, mongoose.Document<unknown, {}, ICenterLevel, {}, {}> & ICenterLevel & Required<{
-    _id: unknown;
-}> & {
-    __v: number;
+export declare const CenterLevel: mongoose.Model<ICenterLevel, {}, {}, {}, mongoose.Document<unknown, {}, ICenterLevel> & ICenterLevel & {
+    _id: mongoose.Types.ObjectId;
 }, any>;
 //# sourceMappingURL=CenterLevel.d.ts.map

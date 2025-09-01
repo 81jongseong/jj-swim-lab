@@ -1,31 +1,16 @@
 import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
 import { logInfo, logError, logDatabase } from './utils/logger';
 import { optimizeConnectionPool } from './utils/performance';
-import path from 'path';
-
-console.log('🔍 db.ts 모듈 로딩 시작...');
-
-try {
-  // .env 파일 로드 (서버 루트 디렉토리 기준)
-  console.log('🔍 dotenv.config() 호출 중...');
-  dotenv.config({ path: path.resolve(__dirname, '../.env') });
-  console.log('🔍 dotenv.config() 완료');
-  
-  // 환경 변수 로드 확인
-  console.log('🔍 환경 변수 로드 확인:');
-  console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
-  console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ 설정됨' : '❌ 설정되지 않음');
-  console.log('NODE_ENV:', process.env.NODE_ENV || '❌ 설정되지 않음');
-  
-  console.log('🔍 db.ts 모듈 로딩 완료');
-} catch (error) {
-  console.error('❌ db.ts 모듈 로딩 중 에러:', error);
-  console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '스택 없음');
-}
 
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/jj-swim-db';
+// MongoDB Atlas URI 강제 설정
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+
+// 환경 변수 디버깅
+console.log('🔍 db.ts에서 환경 변수 확인:');
+console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
+console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');
+console.log('   - 사용할 URI:', MONGODB_URI.substring(0, 50) + '...');
 
 // 데이터베이스 연결 최적화 설정
 const connectionOptions = {
@@ -50,28 +35,28 @@ const connectionOptions = {
 // 연결 이벤트 리스너
 mongoose.connection.on('connected', () => {
   logInfo('✅ MongoDB 연결 성공');
-  logDatabase('connection', 'database', 0, { status: 'connected' });
+  logDatabase('Database connected', { status: 'connected' });
 });
 
 mongoose.connection.on('error', (error) => {
   logError('❌ MongoDB 연결 오류', error);
-  logDatabase('error', 'database', 0, { error: error.message });
+  logDatabase('Database error', { error: error.message });
 });
 
 mongoose.connection.on('disconnected', () => {
   logInfo('⚠️ MongoDB 연결 해제');
-  logDatabase('disconnection', 'database', 0, { status: 'disconnected' });
+  logDatabase('Database disconnected', { status: 'disconnected' });
 });
 
 mongoose.connection.on('reconnected', () => {
   logInfo('🔄 MongoDB 재연결 성공');
-  logDatabase('reconnection', 'database', 0, { status: 'reconnected' });
+  logDatabase('Database reconnected', { status: 'reconnected' });
 });
 
 // 쿼리 성능 모니터링 (개발 환경에서만)
 if (process.env.NODE_ENV === 'development') {
   mongoose.set('debug', (collectionName, methodName, ...methodArgs) => {
-    logDatabase('query', collectionName, 0, {
+    logDatabase(`Query: ${collectionName}.${methodName}`, {
       method: methodName,
       args: methodArgs
     });
@@ -103,9 +88,9 @@ export const connectDB = async () => {
     logInfo(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);
     console.log(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);
     console.log(`✅ 연결 상태: ${mongoose.connection.readyState}`);
-    logDatabase('connection', 'database', connectionTime, { 
+        logDatabase('Database connection successful', { 
       status: 'success',
-      connectionTime 
+      connectionTime
     });
     
     return true;
@@ -124,8 +109,8 @@ export const connectDB = async () => {
       console.log('❌ MongoDB 인증 실패. 사용자명과 비밀번호를 확인하세요.');
     }
     
-    logDatabase('error', 'database', 0, { 
-      error: error instanceof Error ? error.message : String(error) 
+        logDatabase('Database connection failed', {
+      error: error instanceof Error ? error.message : String(error)
     });
     return false;
   }

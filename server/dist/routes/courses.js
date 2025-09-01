@@ -152,7 +152,8 @@ router.post('/:id/enroll', auth_1.auth, async (req, res) => {
         }
         course.enrolledStudents.push({
             student: req.user._id,
-            status: 'active'
+            status: 'active',
+            enrolledAt: new Date()
         });
         await course.save();
         return res.json({ message: '강습 과정에 등록되었습니다.' });

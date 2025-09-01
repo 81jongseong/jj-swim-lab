@@ -29,8 +29,7 @@ const notificationSchema = new mongoose_1.Schema({
     userId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
+        required: true
     },
     title: {
         type: String,
@@ -54,8 +53,7 @@ const notificationSchema = new mongoose_1.Schema({
     },
     isRead: {
         type: Boolean,
-        default: false,
-        index: true
+        default: false
     },
     isEmailSent: {
         type: Boolean,

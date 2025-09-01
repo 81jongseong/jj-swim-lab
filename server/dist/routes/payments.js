@@ -141,7 +141,8 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
                 if (!existingEnrollment) {
                     course.enrolledStudents.push({
                         student: payment.user,
-                        status: 'active'
+                        status: 'active',
+                        enrolledAt: new Date()
                     });
                     await course.save();
                 }

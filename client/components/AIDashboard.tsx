@@ -1,386 +1,346 @@
-/**
- * 🤖 JJ Swim Lab - AIDashboard 컴포넌트
- * 
- * 📋 **컴포넌트 목적**
- * - AI 시스템 전반의 상태 및 성능을 종합적으로 모니터링하는 대시보드
- * - AI 모델 성능 지표 및 분석 결과 시각화
- * - AI 시스템 최적화 및 튜닝 도구 제공
- * - AI 모델 학습 상태 및 개선 진행 상황 표시
- * - AI 시스템 건강성 및 안정성 모니터링
- * 
- * 🔄 **주요 기능**
- * - AI 모델 성능 지표 모니터링
- * - AI 분석 결과 시각화 및 통계
- * - AI 시스템 최적화 도구
- * - AI 모델 학습 상태 추적
- * - AI 시스템 건강성 및 안정성 모니터링
- * 
- * 🗄️ **데이터 연동**
- * - AI 모델 성능 데이터
- * - AI 분석 결과 및 통계
- * - AI 시스템 최적화 이력
- * - AI 모델 학습 상태 정보
- * - AI 시스템 모니터링 데이터
- * 
- * 🛠️ **필요한 설치 파일**
- * - React (useState, useEffect, useCallback)
- * - AI 모델 성능 모니터링 도구
- * - 차트 및 시각화 라이브러리
- * - AI 시스템 최적화 도구
- * - Tailwind CSS (스타일링)
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. AI 모델 성능 지표의 정확성
- * 2. AI 시스템 최적화의 안정성
- * 3. 실시간 모니터링의 오버헤드
- * 4. AI 분석 결과의 신뢰성
- * 5. AI 시스템 보안 및 개인정보 보호
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] AI 모델 성능 모니터링 동작 확인
- * - [ ] AI 분석 결과 시각화 검증
- * - [ ] AI 시스템 최적화 도구 확인
- * - [ ] AI 모델 학습 상태 추적 확인
- * - [ ] AI 시스템 건강성 모니터링 검증
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 구현 (기본 AI 대시보드)
- * - 2024-12-19: AI 모델 성능 모니터링 시스템 구현
- * - 2024-12-19: AI 분석 결과 시각화 시스템 구현
- * - 2024-12-19: AI 시스템 최적화 도구 구현
- * 
- * 👨‍💻 **개발자 정보**
- * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (AI 대시보드 시스템 완료)
- * 
- * 🚀 **다음 단계**
- * - AI 기반 자동 최적화
- * - 실시간 AI 성능 예측
- * - AI 시스템 자동 튜닝
- * - 접근성 개선
- * 
- * 💡 **사용 예시**
- * ```tsx
- * <AIDashboard 
- *   onPerformanceUpdate={(metrics) => handlePerformanceUpdate(metrics)}
- *   onOptimizationComplete={(result) => handleOptimizationComplete(result)}
- *   onLearningStatusUpdate={(status) => handleLearningStatusUpdate(status)}
- *   onSystemHealthUpdate={(health) => handleSystemHealthUpdate(health)}
- *   enableRealTimeMonitoring={true}
- * />
- * ```
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-
-interface AIAnalysisData {
-  timestamp: Date;
-  confidence: number;
-  poseType: string;
-  quality: string;
-  landmarks: any[];
-  feedback: string[];
-}
-
-interface AIStats {
-  totalSessions: number;
-  averageConfidence: number;
-  improvementRate: number;
-  commonIssues: string[];
-  recommendedExercises: string[];
-}
+import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
+import { 
+  Brain, 
+  TrendingUp, 
+  Target, 
+  BarChart3, 
+  Lightbulb,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  ArrowUp,
+  ArrowDown,
+  Minus
+} from 'lucide-react';
 
 interface AIDashboardProps {
-  onAnalysisResult?: (result: any) => void;
+  studentId: string;
+  instructorId: string;
 }
 
-export function AIDashboard({ onAnalysisResult }: AIDashboardProps) {
-  const [analysisHistory, setAnalysisHistory] = useState<AIAnalysisData[]>([]);
-  const [aiStats, setAiStats] = useState<AIStats>({
-    totalSessions: 0,
-    averageConfidence: 0,
-    improvementRate: 0,
-    commonIssues: [],
-    recommendedExercises: []
-  });
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'day' | 'week' | 'month'>('week');
+interface AnalysisResult {
+  id: string;
+  type: 'posture' | 'progress' | 'recommendation' | 'performance';
+  createdAt: string;
+  summary: string;
+}
 
-  // AI 분석 결과 처리
-  const handleAnalysisResult = (result: any) => {
-    const newAnalysis: AIAnalysisData = {
-      timestamp: new Date(),
-      confidence: result.analysis.confidence,
-      poseType: result.analysis.poseType,
-      quality: result.analysis.quality,
-      landmarks: result.landmarks,
-      feedback: generateFeedback(result.analysis)
-    };
-
-    setAnalysisHistory(prev => [newAnalysis, ...prev.slice(0, 49)]); // 최근 50개만 유지
-    updateAIStats();
+interface DashboardData {
+  recentAnalyses: AnalysisResult[];
+  progressTrend: {
+    trend: number;
+    direction: 'up' | 'down' | 'stable';
   };
-
-  // 피드백 생성
-  const generateFeedback = (analysis: any): string[] => {
-    const feedback: string[] = [];
-    
-    if (analysis.confidence < 70) {
-      feedback.push('카메라 앞에서 더 명확하게 보이도록 해주세요');
-    }
-    
-    if (analysis.quality === 'Needs Improvement') {
-      feedback.push('어깨와 엉덩이를 수평으로 맞춰주세요');
-      feedback.push('자세를 더 바르게 정렬해주세요');
-    }
-    
-    if (analysis.confidence > 85 && analysis.quality === 'Good') {
-      feedback.push('훌륭한 자세입니다! 이대로 유지해주세요');
-    }
-    
-    return feedback;
+  recommendations: string[];
+  performanceMetrics: {
+    avgScore: number;
+    completionRate: number;
+    consistency: number;
   };
+}
 
-  // AI 통계 업데이트
-  const updateAIStats = () => {
-    if (analysisHistory.length === 0) return;
+export default function AIDashboard({ studentId, instructorId }: AIDashboardProps) {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(null);
 
-    const recentData = analysisHistory.filter(data => {
-      const now = new Date();
-      const dataTime = data.timestamp;
-      
-      switch (selectedTimeRange) {
-        case 'day':
-          return now.getDate() === dataTime.getDate() && 
-                 now.getMonth() === dataTime.getMonth() && 
-                 now.getFullYear() === dataTime.getFullYear();
-        case 'week':
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return dataTime >= weekAgo;
-        case 'month':
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          return dataTime >= monthAgo;
-        default:
-          return true;
-      }
-    });
-
-    if (recentData.length === 0) return;
-
-    const avgConfidence = recentData.reduce((sum, data) => sum + data.confidence, 0) / recentData.length;
-    
-    // 개선률 계산 (간단한 예시)
-    const improvementRate = Math.min(100, Math.max(0, avgConfidence - 70));
-    
-    // 일반적인 문제점 분석
-    const issues = recentData
-      .filter(data => data.quality !== 'Good')
-      .map(data => data.quality)
-      .filter((value, index, self) => self.indexOf(value) === index)
-      .slice(0, 3);
-
-    // 추천 운동
-    const recommendedExercises = getRecommendedExercises(issues, avgConfidence);
-
-    setAiStats({
-      totalSessions: recentData.length,
-      averageConfidence: Math.round(avgConfidence),
-      improvementRate: Math.round(improvementRate),
-      commonIssues: issues,
-      recommendedExercises
-    });
-  };
-
-  // 추천 운동 생성
-  const getRecommendedExercises = (issues: string[], confidence: number): string[] => {
-    const exercises: string[] = [];
-    
-    if (confidence < 70) {
-      exercises.push('기본 자세 연습');
-      exercises.push('균형 잡기 운동');
-    }
-    
-    if (issues.includes('Needs Improvement')) {
-      exercises.push('어깨 안정화 운동');
-      exercises.push('코어 강화 운동');
-    }
-    
-    if (exercises.length === 0) {
-      exercises.push('고급 수영 기술 연습');
-      exercises.push('지구력 향상 운동');
-    }
-    
-    return exercises.slice(0, 3);
-  };
-
-  // 시간 범위 변경 시 통계 업데이트
   useEffect(() => {
-    updateAIStats();
-  }, [selectedTimeRange, analysisHistory]);
+    loadDashboardData();
+  }, [studentId, instructorId]);
 
-  return (
-    <div className="w-full max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          🤖 AI 분석 대시보드
-        </h2>
-        <p className="text-gray-600">
-          실시간 AI 분석 결과 및 개인 맞춤 추천
-        </p>
-      </div>
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/ai/dashboard/${studentId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data.data);
+      }
+    } catch (error) {
+      console.error('AI 대시보드 데이터 로드 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      {/* 시간 범위 선택 */}
-      <div className="mb-6">
-        <div className="flex gap-2">
-          {(['day', 'week', 'month'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setSelectedTimeRange(range)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedTimeRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {range === 'day' ? '오늘' : range === 'week' ? '이번 주' : '이번 달'}
-            </button>
-          ))}
-        </div>
-      </div>
+  const runAnalysis = async (analysisType: string) => {
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          studentId,
+          analysisType
+        })
+      });
 
-      {/* AI 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-blue-600">{aiStats.totalSessions}</div>
-          <div className="text-sm text-blue-800">분석 세션</div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-green-600">{aiStats.averageConfidence}%</div>
-          <div className="text-sm text-green-800">평균 신뢰도</div>
-        </div>
-        <div className="bg-yellow-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-yellow-600">{aiStats.improvementRate}%</div>
-          <div className="text-sm text-yellow-800">개선률</div>
-        </div>
-        <div className="bg-purple-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-purple-600">
-            {aiStats.commonIssues.length}
-          </div>
-          <div className="text-sm text-purple-800">발견된 문제점</div>
-        </div>
-      </div>
+      if (response.ok) {
+        await loadDashboardData(); // 데이터 새로고침
+      }
+    } catch (error) {
+      console.error('AI 분석 실행 오류:', error);
+    }
+  };
 
-      {/* AI 추천 및 피드백 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* 추천 운동 */}
-        <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            💪 AI 추천 운동
-          </h3>
-          {aiStats.recommendedExercises.length > 0 ? (
-            <ul className="space-y-2">
-              {aiStats.recommendedExercises.map((exercise, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <span className="text-gray-700">{exercise}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500">분석 데이터가 충분하지 않습니다</p>
-          )}
-        </div>
+  const getAnalysisIcon = (type: string) => {
+    switch (type) {
+      case 'posture': return <Target className="w-4 h-4" />;
+      case 'progress': return <TrendingUp className="w-4 h-4" />;
+      case 'recommendation': return <Lightbulb className="w-4 h-4" />;
+      case 'performance': return <BarChart3 className="w-4 h-4" />;
+      default: return <Brain className="w-4 h-4" />;
+    }
+  };
 
-        {/* 일반적인 문제점 */}
-        <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            ⚠️ 발견된 문제점
-          </h3>
-          {aiStats.commonIssues.length > 0 ? (
-            <ul className="space-y-2">
-              {aiStats.commonIssues.map((issue, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                  <span className="text-gray-700">{issue}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-green-600 font-medium">문제점이 발견되지 않았습니다! 🎉</p>
-          )}
-        </div>
-      </div>
+  const getAnalysisColor = (type: string) => {
+    switch (type) {
+      case 'posture': return 'bg-blue-100 text-blue-800';
+      case 'progress': return 'bg-green-100 text-green-800';
+      case 'recommendation': return 'bg-yellow-100 text-yellow-800';
+      case 'performance': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-      {/* 최근 분석 결과 */}
-      <div className="bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          📊 최근 분석 결과
-        </h3>
-        {analysisHistory.length > 0 ? (
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {analysisHistory.slice(0, 10).map((analysis, index) => (
-              <div key={index} className="bg-white p-3 rounded-lg border">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-500">
-                    {analysis.timestamp.toLocaleTimeString()}
-                  </span>
-                  <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      analysis.confidence >= 80 ? 'bg-green-100 text-green-800' :
-                      analysis.confidence >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {analysis.confidence}%
-                    </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      analysis.quality === 'Good' ? 'bg-green-100 text-green-800' :
-                      analysis.quality === 'Fair' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {analysis.quality}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <strong>자세:</strong> {analysis.poseType}
-                </div>
-                {analysis.feedback.length > 0 && (
-                  <div className="mt-2">
-                    <div className="text-xs text-gray-500 mb-1">피드백:</div>
-                    <ul className="text-xs text-gray-600 space-y-1">
-                      {analysis.feedback.map((feedback, fIndex) => (
-                        <li key={fIndex} className="flex items-center gap-1">
-                          <span>•</span>
-                          <span>{feedback}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+  const getTrendIcon = (direction: string) => {
+    switch (direction) {
+      case 'up': return <ArrowUp className="w-4 h-4 text-green-500" />;
+      case 'down': return <ArrowDown className="w-4 h-4 text-red-500" />;
+      default: return <Minus className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">
-            아직 분석 결과가 없습니다. 자세 분석을 시작해보세요!
-          </p>
-        )}
-      </div>
-
-      {/* AI 모델 정보 */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-semibold text-blue-800 mb-2">🔬 AI 모델 정보</h3>
-        <div className="text-sm text-blue-700 space-y-1">
-          <div>• <strong>MediaPipe Pose:</strong> Google의 실시간 자세 인식 AI</div>
-          <div>• <strong>정확도:</strong> 95% 이상의 높은 인식률</div>
-          <div>• <strong>처리 속도:</strong> 실시간 30fps 이상</div>
-          <div>• <strong>지원 동작:</strong> 33개 주요 신체 부위 인식</div>
         </div>
       </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="text-center py-8">
+        <Brain className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">AI 분석 데이터를 불러올 수 없습니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 헤더 */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">AI 분석 대시보드</h2>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={() => runAnalysis('progress')}
+            variant="outline"
+            size="sm"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            진도 분석
+          </Button>
+          <Button 
+            onClick={() => runAnalysis('recommendation')}
+            variant="outline"
+            size="sm"
+          >
+            <Lightbulb className="w-4 h-4 mr-2" />
+            추천 생성
+          </Button>
+          <Button 
+            onClick={() => runAnalysis('performance')}
+            size="sm"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            성과 분석
+          </Button>
+        </div>
+      </div>
+
+      {/* 성과 메트릭 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">평균 점수</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData.performanceMetrics.avgScore}점
+                </p>
+              </div>
+              <BarChart3 className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">완료율</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData.performanceMetrics.completionRate}%
+                </p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">일관성</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardData.performanceMetrics.consistency}%
+                </p>
+              </div>
+              <div className="flex items-center">
+                {getTrendIcon(dashboardData.progressTrend.direction)}
+                <span className="ml-2 text-sm text-gray-600">
+                  {dashboardData.progressTrend.trend > 0 ? '+' : ''}{dashboardData.progressTrend.trend}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 최근 분석 결과 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Brain className="w-5 h-5 mr-2" />
+              최근 분석 결과
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.recentAnalyses.map((analysis) => (
+                <div
+                  key={analysis.id}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedAnalysis === analysis.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSelectedAnalysis(
+                    selectedAnalysis === analysis.id ? null : analysis.id
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Badge className={getAnalysisColor(analysis.type)}>
+                        {getAnalysisIcon(analysis.type)}
+                        <span className="ml-1 capitalize">{analysis.type}</span>
+                      </Badge>
+                      <span className="text-sm text-gray-600">
+                        {new Date(analysis.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <Clock className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-700 mt-2">{analysis.summary}</p>
+                </div>
+              ))}
+              
+              {dashboardData.recentAnalyses.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Brain className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p>아직 분석 결과가 없습니다.</p>
+                  <p className="text-sm">위의 버튼을 클릭하여 분석을 시작하세요.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI 추천사항 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Lightbulb className="w-5 h-5 mr-2" />
+              AI 추천사항
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.recommendations.map((recommendation, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex-shrink-0 w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-yellow-800">{index + 1}</span>
+                  </div>
+                  <p className="text-sm text-gray-700">{recommendation}</p>
+                </div>
+              ))}
+              
+              {dashboardData.recommendations.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Lightbulb className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p>아직 추천사항이 없습니다.</p>
+                  <p className="text-sm">AI 분석을 실행하면 맞춤형 추천을 받을 수 있습니다.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 진도 트렌드 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <TrendingUp className="w-5 h-5 mr-2" />
+            진도 트렌드
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                {getTrendIcon(dashboardData.progressTrend.direction)}
+                <span className="text-lg font-medium">
+                  {dashboardData.progressTrend.direction === 'up' ? '상승' : 
+                   dashboardData.progressTrend.direction === 'down' ? '하락' : '안정'}
+                </span>
+              </div>
+              <div className="text-sm text-gray-600">
+                {dashboardData.progressTrend.trend > 0 ? '+' : ''}{dashboardData.progressTrend.trend}점 변화
+              </div>
+            </div>
+            <Button 
+              onClick={() => runAnalysis('progress')}
+              variant="outline"
+              size="sm"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              진도 재분석
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-export default AIDashboard;

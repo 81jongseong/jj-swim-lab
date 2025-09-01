@@ -10,14 +10,15 @@ const measurePerformance = (operation) => {
             try {
                 const result = await method.apply(this, args);
                 const duration = Date.now() - start;
-                (0, logger_1.logPerformance)(operation, duration, { method: propertyName });
+                (0, logger_1.logPerformance)(`${operation} - ${propertyName}`, { method: propertyName, duration });
                 return result;
             }
             catch (error) {
                 const duration = Date.now() - start;
-                (0, logger_1.logPerformance)(operation, duration, {
+                (0, logger_1.logPerformance)(`${operation} - ${propertyName} (ERROR)`, {
                     method: propertyName,
-                    error: error.message
+                    error: error.message,
+                    duration
                 });
                 throw error;
             }
@@ -33,17 +34,19 @@ const measureDatabaseQuery = (collection) => {
             try {
                 const result = await method.apply(this, args);
                 const duration = Date.now() - start;
-                (0, logger_1.logDatabase)('query', collection, duration, {
+                (0, logger_1.logDatabase)(`Database Query: ${collection}.${propertyName}`, {
                     method: propertyName,
-                    resultCount: Array.isArray(result) ? result.length : 1
+                    resultCount: Array.isArray(result) ? result.length : 1,
+                    duration
                 });
                 return result;
             }
             catch (error) {
                 const duration = Date.now() - start;
-                (0, logger_1.logDatabase)('error', collection, duration, {
+                (0, logger_1.logDatabase)(`Database Error: ${collection}.${propertyName}`, {
                     method: propertyName,
-                    error: error.message
+                    error: error.message,
+                    duration
                 });
                 throw error;
             }
@@ -74,10 +77,11 @@ const responseTimeMiddleware = (req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        (0, logger_1.logPerformance)('API Response', duration, {
+        (0, logger_1.logPerformance)(`API Response: ${req.method} ${req.originalUrl}`, {
             method: req.method,
             url: req.originalUrl,
-            statusCode: res.statusCode
+            statusCode: res.statusCode,
+            duration
         });
     });
     next();

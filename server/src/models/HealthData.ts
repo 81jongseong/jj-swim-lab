@@ -169,7 +169,7 @@ healthDataSchema.pre('save', function(next) {
 });
 
 // 인덱스 생성
-healthDataSchema.index({ studentId: 1 });
+// studentId 필드는 unique: true로 인해 자동으로 인덱스가 생성되므로 중복 제거
 healthDataSchema.index({ healthStatus: 1 });
 healthDataSchema.index({ exerciseCompliance: 1 });
 healthDataSchema.index({ lastHealthCheck: 1 });

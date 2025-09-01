@@ -35,29 +35,24 @@ const ApprovalSchema = new Schema<IApproval>({
   type: {
     type: String,
     enum: ['course_enrollment', 'instructor_registration', 'payment_approval', 'schedule_change', 'refund_request'],
-    required: true,
-    index: true
+    required: true
   },
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
   },
   courseId: {
     type: Schema.Types.ObjectId,
-    ref: 'Course',
-    index: true
+    ref: 'Course'
   },
   instructorId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
-    index: true
+    ref: 'User'
   },
   paymentId: {
     type: Schema.Types.ObjectId,
-    ref: 'Payment',
-    index: true
+    ref: 'Payment'
   },
   title: {
     type: String,
@@ -72,14 +67,12 @@ const ApprovalSchema = new Schema<IApproval>({
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high'],
-    default: 'medium',
-    index: true
+    default: 'medium'
   },
   estimatedAmount: {
     type: Number,
@@ -87,8 +80,7 @@ const ApprovalSchema = new Schema<IApproval>({
   },
   requestDate: {
     type: Date,
-    default: Date.now,
-    index: true
+    default: Date.now
   },
   processedBy: {
     type: Schema.Types.ObjectId,
@@ -103,8 +95,7 @@ const ApprovalSchema = new Schema<IApproval>({
   },
   centerId: {
     type: Schema.Types.ObjectId,
-    ref: 'Center',
-    index: true
+    ref: 'Center'
   },
   attachments: [{
     type: String

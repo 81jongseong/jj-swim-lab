@@ -9,8 +9,7 @@ const exerciseDataSchema = new mongoose_1.default.Schema({
     userId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
+        required: true
     },
     sessionId: {
         type: String,
@@ -24,12 +23,10 @@ const exerciseDataSchema = new mongoose_1.default.Schema({
     },
     startTime: {
         type: Date,
-        required: true,
-        index: true
+        required: true
     },
     endTime: {
-        type: Date,
-        index: true
+        type: Date
     },
     duration: {
         type: Number,

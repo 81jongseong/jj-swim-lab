@@ -10,13 +10,14 @@ export const measurePerformance = (operation: string) => {
       try {
         const result = await method.apply(this, args);
         const duration = Date.now() - start;
-        logPerformance(operation, duration, { method: propertyName });
+        logPerformance(`${operation} - ${propertyName}`, { method: propertyName, duration });
         return result;
       } catch (error) {
         const duration = Date.now() - start;
-        logPerformance(operation, duration, { 
+        logPerformance(`${operation} - ${propertyName} (ERROR)`, { 
           method: propertyName, 
-          error: (error as any).message 
+          error: (error as any).message,
+          duration
         });
         throw error;
       }
@@ -34,16 +35,18 @@ export const measureDatabaseQuery = (collection: string) => {
       try {
         const result = await method.apply(this, args);
         const duration = Date.now() - start;
-        logDatabase('query', collection, duration, { 
+                logDatabase(`Database Query: ${collection}.${propertyName}`, {
           method: propertyName,
-          resultCount: Array.isArray(result) ? result.length : 1
+          resultCount: Array.isArray(result) ? result.length : 1,
+          duration
         });
         return result;
       } catch (error) {
         const duration = Date.now() - start;
-        logDatabase('error', collection, duration, { 
+        logDatabase(`Database Error: ${collection}.${propertyName}`, { 
           method: propertyName, 
-          error: (error as any).message 
+          error: (error as any).message,
+          duration
         });
         throw error;
       }
@@ -78,10 +81,11 @@ export const responseTimeMiddleware = (req: any, res: any, next: any) => {
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    logPerformance('API Response', duration, {
+    logPerformance(`API Response: ${req.method} ${req.originalUrl}`, {
       method: req.method,
       url: req.originalUrl,
-      statusCode: res.statusCode
+      statusCode: res.statusCode,
+      duration
     });
   });
   

@@ -15,14 +15,13 @@
 /// <reference types="mongoose/types/populate" />
 /// <reference types="mongoose/types/query" />
 /// <reference types="mongoose/types/schemaoptions" />
+/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/session" />
 /// <reference types="mongoose/types/types" />
 /// <reference types="mongoose/types/utility" />
 /// <reference types="mongoose/types/validation" />
 /// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/schematypes" />
 /// <reference types="mongoose/types/inferschematype" />
-/// <reference types="mongoose/types/inferrawdoctype" />
 import mongoose from 'mongoose';
 export declare const CommunityPost: mongoose.Model<{
     createdAt: NativeDate;
@@ -46,8 +45,6 @@ export declare const CommunityPost: mongoose.Model<{
     tags: string[];
     likes: number;
     commentsCount: number;
-}, {}, {
-    timestamps: true;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -61,8 +58,6 @@ export declare const CommunityPost: mongoose.Model<{
     commentsCount: number;
 } & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
     timestamps: true;
 }, {
@@ -87,8 +82,6 @@ export declare const CommunityPost: mongoose.Model<{
     tags: string[];
     likes: number;
     commentsCount: number;
-}>, {}, mongoose.ResolveSchemaOptions<{
-    timestamps: true;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -102,7 +95,5 @@ export declare const CommunityPost: mongoose.Model<{
     commentsCount: number;
 }> & {
     _id: mongoose.Types.ObjectId;
-} & {
-    __v: number;
 }>>;
 //# sourceMappingURL=CommunityPost.d.ts.map

@@ -95,7 +95,7 @@ const centerSchema = new Schema<ICenter>({
 });
 
 // 인덱스 생성
-centerSchema.index({ name: 1 });
+// name 필드는 unique: true로 인해 자동으로 인덱스가 생성되므로 중복 제거
 centerSchema.index({ managerId: 1 });
 centerSchema.index({ status: 1 });
 

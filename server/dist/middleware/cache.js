@@ -1,192 +1,94 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateRequestStats = exports.checkCacheHealth = exports.cleanupCache = exports.getCacheStats = exports.invalidatePathCache = exports.invalidateUserCache = exports.invalidateCache = exports.queryCache = exports.userCache = exports.conditionalCache = exports.cache = void 0;
-const ioredis_1 = __importDefault(require("ioredis"));
-const redis = new ioredis_1.default({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: 3,
-    lazyConnect: true,
-    keepAlive: 30000,
-    connectTimeout: 10000,
-    commandTimeout: 5000,
-    keyPrefix: 'jjswim:'
-});
-const generateCacheKey = (req, options) => {
-    const baseKey = options.key || `${req.method}:${req.originalUrl}`;
-    const userKey = req.user?._id ? `:user:${req.user._id}` : '';
-    const headerKeys = options.varyBy?.map(header => req.headers[header.toLowerCase()] ? `:${header}:${req.headers[header.toLowerCase()]}` : '').join('') || '';
-    const queryKeys = Object.keys(req.query).length > 0 ?
-        `:query:${JSON.stringify(req.query)}` : '';
-    return `${baseKey}${userKey}${headerKeys}${queryKeys}`;
-};
-const compressResponse = (data) => {
-    try {
-        const jsonString = JSON.stringify(data);
-        return Buffer.from(jsonString);
-    }
-    catch (error) {
-        console.warn('응답 압축 실패:', error);
-        return Buffer.from(JSON.stringify(data));
-    }
-};
-const decompressResponse = (compressedData) => {
-    try {
-        const jsonString = compressedData.toString();
-        return JSON.parse(jsonString);
-    }
-    catch (error) {
-        console.warn('응답 압축 해제 실패:', error);
-        return null;
-    }
-};
-const getMemoryUsage = () => {
-    const usage = process.memoryUsage();
-    return {
-        rss: Math.round(usage.rss / 1024 / 1024),
-        heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
-        heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
-        external: Math.round(usage.external / 1024 / 1024)
-    };
-};
-let cacheStats = {
-    hits: 0,
-    misses: 0,
-    sets: 0,
-    errors: 0,
-    totalRequests: 0
+exports.invalidateCache = exports.cacheMiddleware = exports.cache = void 0;
+const redis_1 = require("../config/redis");
+const defaultKeyGenerator = (req) => {
+    const { method, originalUrl, query, body } = req;
+    const key = `${method}:${originalUrl}:${JSON.stringify(query)}:${JSON.stringify(body)}`;
+    return Buffer.from(key).toString('base64');
 };
 const cache = (options = {}) => {
-    const { ttl = 300, condition = () => true, compress = false, varyBy = [] } = options;
+    const { ttl = 3600, keyGenerator = defaultKeyGenerator, skipCache = () => false } = options;
     return async (req, res, next) => {
-        if (!condition(req, res)) {
-            return next();
-        }
-        const cacheKey = generateCacheKey(req, options);
         try {
-            const cachedData = await redis.get(cacheKey);
-            if (cachedData) {
-                cacheStats.hits++;
-                const data = compress ? decompressResponse(Buffer.from(cachedData)) : JSON.parse(cachedData);
-                res.set({
-                    'X-Cache': 'HIT',
-                    'X-Cache-Key': cacheKey,
-                    'Cache-Control': `public, max-age=${ttl}`,
-                    'X-Cache-TTL': ttl.toString()
-                });
-                return res.json(data);
+            if (skipCache(req)) {
+                return next();
             }
-            cacheStats.misses++;
-            const originalSend = res.json;
+            const cacheKey = `cache:${keyGenerator(req)}`;
+            const cachedData = await redis_1.redisUtils.getCache(cacheKey);
+            if (cachedData) {
+                console.log(`✅ 캐시 히트: ${cacheKey}`);
+                return res.json(cachedData);
+            }
+            const originalJson = res.json;
             res.json = function (data) {
-                const dataToCache = compress ? compressResponse(data) : JSON.stringify(data);
-                redis.setex(cacheKey, ttl, dataToCache)
-                    .then(() => {
-                    cacheStats.sets++;
-                    console.log(`캐시 저장 완료: ${cacheKey} (TTL: ${ttl}s)`);
-                })
-                    .catch((error) => {
-                    cacheStats.errors++;
-                    console.error('캐시 저장 실패:', error);
-                });
-                res.set({
-                    'X-Cache': 'MISS',
-                    'X-Cache-Key': cacheKey,
-                    'Cache-Control': `public, max-age=${ttl}`,
-                    'X-Cache-TTL': ttl.toString()
-                });
-                return originalSend.call(this, data);
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    redis_1.redisUtils.setCache(cacheKey, data, ttl).catch(error => {
+                        console.error('캐시 설정 오류:', error);
+                    });
+                }
+                return originalJson.call(this, data);
             };
             next();
         }
         catch (error) {
-            cacheStats.errors++;
-            console.error('캐시 처리 오류:', error);
+            console.error('캐시 미들웨어 오류:', error);
             next();
         }
     };
 };
 exports.cache = cache;
-const conditionalCache = (options = {}) => {
-    return (0, exports.cache)({
-        ...options,
-        condition: (req) => req.method === 'GET'
-    });
+exports.cacheMiddleware = {
+    userList: (0, exports.cache)({
+        ttl: 300,
+        keyGenerator: (req) => `users:${req.query.userType || 'all'}:${req.query.page || 1}`
+    }),
+    instructorList: (0, exports.cache)({
+        ttl: 600,
+        keyGenerator: (req) => `instructors:${req.query.centerId || 'all'}:${req.query.page || 1}`
+    }),
+    centerInfo: (0, exports.cache)({
+        ttl: 1800,
+        keyGenerator: (req) => `center:${req.params.id || req.query.centerId}`
+    }),
+    aiAnalysis: (0, exports.cache)({
+        ttl: 3600,
+        keyGenerator: (req) => `ai:${req.params.studentId}:${req.query.technique || 'all'}`
+    }),
+    video3DAnalysis: (0, exports.cache)({
+        ttl: 7200,
+        keyGenerator: (req) => `3d:${req.params.analysisId || req.query.studentId}`
+    }),
+    dashboard: (0, exports.cache)({
+        ttl: 300,
+        keyGenerator: (req) => `dashboard:${req.params.centerId || req.user?._id}`
+    }),
+    statistics: (0, exports.cache)({
+        ttl: 900,
+        keyGenerator: (req) => `stats:${req.query.period || 'month'}:${req.query.centerId || 'all'}`
+    })
 };
-exports.conditionalCache = conditionalCache;
-const userCache = (options = {}) => {
-    return (0, exports.cache)({
-        ...options,
-        condition: (req) => !!req.user?._id
-    });
-};
-exports.userCache = userCache;
-const queryCache = (options = {}) => {
-    return (0, exports.cache)({
-        ...options,
-        condition: (req) => Object.keys(req.query).length > 0
-    });
-};
-exports.queryCache = queryCache;
-const invalidateCache = async (pattern) => {
-    try {
-        const keys = await redis.keys(pattern);
-        if (keys.length > 0) {
-            await redis.del(...keys);
-            console.log(`캐시 무효화 완료: ${keys.length}개 키`);
-        }
-    }
-    catch (error) {
-        console.error('캐시 무효화 실패:', error);
-    }
-};
-exports.invalidateCache = invalidateCache;
-const invalidateUserCache = async (userId) => {
-    await (0, exports.invalidateCache)(`*:user:${userId}*`);
-};
-exports.invalidateUserCache = invalidateUserCache;
-const invalidatePathCache = async (path) => {
-    await (0, exports.invalidateCache)(`*${path}*`);
-};
-exports.invalidatePathCache = invalidatePathCache;
-const getCacheStats = () => {
-    const hitRate = cacheStats.totalRequests > 0 ?
-        (cacheStats.hits / cacheStats.totalRequests * 100).toFixed(2) : '0.00';
-    return {
-        ...cacheStats,
-        hitRate: `${hitRate}%`,
-        memoryUsage: getMemoryUsage()
-    };
-};
-exports.getCacheStats = getCacheStats;
-const cleanupCache = async () => {
-    try {
-        console.log('캐시 정리 완료 (Redis 자동 정리)');
-    }
-    catch (error) {
-        console.error('캐시 정리 실패:', error);
+exports.invalidateCache = {
+    user: async (userId) => {
+        await redis_1.redisUtils.deleteCachePattern(`*users*`);
+        await redis_1.redisUtils.deleteCachePattern(`*user:${userId}*`);
+    },
+    instructor: async (instructorId) => {
+        await redis_1.redisUtils.deleteCachePattern(`*instructors*`);
+        await redis_1.redisUtils.deleteCachePattern(`*instructor:${instructorId}*`);
+    },
+    center: async (centerId) => {
+        await redis_1.redisUtils.deleteCachePattern(`*center:${centerId}*`);
+        await redis_1.redisUtils.deleteCachePattern(`*dashboard:${centerId}*`);
+    },
+    aiAnalysis: async (studentId) => {
+        await redis_1.redisUtils.deleteCachePattern(`*ai:${studentId}*`);
+    },
+    video3DAnalysis: async (analysisId) => {
+        await redis_1.redisUtils.deleteCachePattern(`*3d:${analysisId}*`);
+    },
+    all: async () => {
+        await redis_1.redisUtils.deleteCachePattern(`cache:*`);
     }
 };
-exports.cleanupCache = cleanupCache;
-const checkCacheHealth = async () => {
-    try {
-        await redis.ping();
-        return true;
-    }
-    catch (error) {
-        console.error('Redis 연결 실패:', error);
-        return false;
-    }
-};
-exports.checkCacheHealth = checkCacheHealth;
-setInterval(exports.cleanupCache, 60 * 60 * 1000);
-const updateRequestStats = () => {
-    cacheStats.totalRequests++;
-};
-exports.updateRequestStats = updateRequestStats;
-exports.default = exports.cache;
 //# sourceMappingURL=cache.js.map

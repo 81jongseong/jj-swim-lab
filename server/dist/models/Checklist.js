@@ -113,6 +113,9 @@ const ChecklistSchema = new mongoose_1.Schema({
         enum: ['active', 'completed', 'paused'],
         default: 'active'
     },
+    completedAt: {
+        type: Date
+    },
     notes: {
         type: String,
         trim: true

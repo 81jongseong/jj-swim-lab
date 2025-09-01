@@ -15,12 +15,13 @@ const swimmingCenterSchema = new mongoose_1.default.Schema({
         required: true,
     },
     location: {
-        latitude: {
-            type: Number,
+        type: {
+            type: String,
+            enum: ['Point'],
             required: true,
         },
-        longitude: {
-            type: Number,
+        coordinates: {
+            type: [Number],
             required: true,
         },
     },
@@ -37,34 +38,112 @@ const swimmingCenterSchema = new mongoose_1.default.Schema({
     description: {
         type: String,
     },
+    introduction: {
+        type: String,
+    },
+    guide: {
+        type: String,
+    },
     facilities: {
-        lanes: {
-            type: Number,
-            required: true,
+        mainPool: {
+            lanes: {
+                type: Number,
+                required: true,
+            },
+            poolLength: {
+                type: Number,
+                required: true,
+            },
+            poolDepth: {
+                type: Number,
+                required: true,
+            },
+            temperature: {
+                type: Number,
+                required: true,
+            },
         },
-        poolLength: {
-            type: Number,
-            required: true,
+        kidsPool: {
+            hasKidsPool: {
+                type: Boolean,
+                default: false,
+            },
+            kidsPoolLanes: {
+                type: Number,
+                default: 0,
+            },
+            kidsPoolLength: {
+                type: Number,
+                default: 0,
+            },
+            kidsPoolDepth: {
+                type: Number,
+                default: 0,
+            },
+            kidsPoolTemperature: {
+                type: Number,
+                default: 0,
+            },
         },
-        poolDepth: {
-            type: Number,
-            required: true,
+        endlessPool: {
+            hasEndlessPool: {
+                type: Boolean,
+                default: false,
+            },
+            endlessPoolCount: {
+                type: Number,
+                default: 0,
+            },
+            endlessPoolLength: {
+                type: Number,
+                default: 0,
+            },
+            endlessPoolWidth: {
+                type: Number,
+                default: 0,
+            },
         },
-        temperature: {
-            type: Number,
-            required: true,
-        },
-        hasSauna: {
-            type: Boolean,
-            default: false,
-        },
-        hasShower: {
-            type: Boolean,
-            default: true,
-        },
-        hasLocker: {
-            type: Boolean,
-            default: true,
+        amenities: {
+            hasSauna: {
+                type: Boolean,
+                default: false,
+            },
+            hasShower: {
+                type: Boolean,
+                default: true,
+            },
+            hasLocker: {
+                type: Boolean,
+                default: true,
+            },
+            hasJacuzzi: {
+                type: Boolean,
+                default: false,
+            },
+            hasSteamRoom: {
+                type: Boolean,
+                default: false,
+            },
+            hasFitnessRoom: {
+                type: Boolean,
+                default: false,
+            },
+            hasCafeteria: {
+                type: Boolean,
+                default: false,
+            },
+            hasParking: {
+                type: Boolean,
+                default: false,
+            },
+            parkingSpaces: {
+                type: Number,
+                default: 0,
+            },
+            additionalFacilities: {
+                type: String,
+                default: '',
+            },
         },
     },
     operatingHours: {

@@ -13,6 +13,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const envPath = path_1.default.join(__dirname, '../.env');
 console.log('🔍 .env 파일 경로:', envPath);
 dotenv_1.default.config({ path: envPath });
+const db_1 = require("./db");
 const auth_1 = __importDefault(require("./routes/auth"));
 const dashboard_1 = __importDefault(require("./routes/dashboard"));
 const users_1 = __importDefault(require("./routes/users"));
@@ -44,36 +45,20 @@ const instructor_1 = __importDefault(require("./routes/instructor"));
 const instructorManagement_1 = __importDefault(require("./routes/instructorManagement"));
 const revenue_1 = __importDefault(require("./routes/revenue"));
 const approvals_1 = __importDefault(require("./routes/approvals"));
-require("./models/Checklist");
-require("./models/ChecklistTemplate");
-require("./models/ClassChecklist");
-require("./models/StudentProgress");
-require("./models/StudentHealth");
+const ai_1 = __importDefault(require("./routes/ai"));
+const smartwatch_1 = __importDefault(require("./routes/smartwatch"));
+const video_analysis_1 = __importDefault(require("./routes/video-analysis"));
+const ai_evaluation_criteria_1 = __importDefault(require("./routes/ai-evaluation-criteria"));
+const video_3d_analysis_1 = __importDefault(require("./routes/video-3d-analysis"));
+console.log('📦 모델 import 시작...');
 require("./models/User");
-require("./models/CenterLevel");
-require("./models/Quiz");
-require("./models/QuizAttempt");
-require("./models/TeachingMethod");
-require("./models/Course");
-require("./models/Booking");
-require("./models/SwimmingCenter");
-require("./models/Notice");
-require("./models/Payment");
-require("./models/Progress");
-require("./models/Membership");
-require("./models/Report");
-require("./models/CommunityPost");
-require("./models/CommunityComment");
-require("./models/CommunityReport");
-require("./models/ShopProduct");
-require("./models/ShopOrder");
-require("./models/AIConfig");
-require("./models/CenterInfo");
-require("./models/Notification");
-require("./models/CenterLevel");
-require("./models/Center");
-require("./models/HealthData");
-require("./models/Approval");
+require("./models/Checklist");
+console.log('📦 기본 모델 import 완료!');
+require("./models/AIAnalysis");
+require("./models/AIEvaluationCriteria");
+require("./models/SmartWatchData");
+require("./models/VideoAnalysisCriteria");
+console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
     console.log('🔍 모델 등록 상태 확인:');
@@ -120,49 +105,6 @@ io.on('connection', (socket) => {
     });
 });
 const PORT = process.env.PORT || 5000;
-const connectDB = async () => {
-    try {
-        const mongoURI = process.env.MONGODB_URI;
-        if (!mongoURI) {
-            throw new Error('MONGODB_URI 환경 변수가 설정되지 않았습니다.');
-        }
-        console.log('🔗 Atlas 연결 시도 중...');
-        console.log('🔗 연결 URI:', mongoURI.substring(0, 50) + '...');
-        const options = {
-            maxPoolSize: 10,
-            serverSelectionTimeoutMS: 10000,
-            socketTimeoutMS: 45000,
-        };
-        console.log('🔗 MongoDB Atlas 연결 시도 중...');
-        console.log('🔗 연결 옵션:', JSON.stringify(options, null, 2));
-        await mongoose_1.default.connect(mongoURI, options);
-        console.log('🔗 MongoDB Atlas 연결 성공!');
-        console.log('✅ 서버가 MongoDB Atlas와 연결되어 정상적으로 실행 중입니다!');
-        mongoose_1.default.connection.on('connected', () => {
-            console.log('✅ MongoDB Atlas 연결됨');
-        });
-        mongoose_1.default.connection.on('error', (err) => {
-            console.error('❌ MongoDB Atlas 연결 오류:', err);
-        });
-        mongoose_1.default.connection.on('disconnected', () => {
-            console.log('🔌 MongoDB Atlas 연결 끊어짐');
-        });
-    }
-    catch (error) {
-        console.error('❌ MongoDB Atlas 연결 실패:', error);
-        console.log('⚠️ MongoDB Atlas 연결 실패했지만 서버는 계속 실행됩니다.');
-        console.log('⚠️ 연결 오류 상세:', error.message);
-        mongoose_1.default.connection.on('connected', () => {
-            console.log('✅ MongoDB Atlas 연결됨 (재연결)');
-        });
-        mongoose_1.default.connection.on('error', (err) => {
-            console.error('❌ MongoDB Atlas 연결 오류 (재연결 시도 중):', err);
-        });
-        mongoose_1.default.connection.on('disconnected', () => {
-            console.log('🔌 MongoDB Atlas 연결 끊어짐 (재연결 시도 중)');
-        });
-    }
-};
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
@@ -215,6 +157,11 @@ app.use('/api/instructor', instructor_1.default);
 app.use('/api/instructor-management', instructorManagement_1.default);
 app.use('/api/revenue', revenue_1.default);
 app.use('/api/approvals', approvals_1.default);
+app.use('/api/ai', ai_1.default);
+app.use('/api/smartwatch', smartwatch_1.default);
+app.use('/api/video-analysis', video_analysis_1.default);
+app.use('/api/ai', ai_evaluation_criteria_1.default);
+app.use('/api/video-3d-analysis', video_3d_analysis_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,
@@ -228,11 +175,21 @@ app.use((error, req, res, next) => {
         message: '서버 내부 오류가 발생했습니다.'
     });
 });
-server.listen(PORT, () => {
+console.log('🚀 서버 시작 준비 중...');
+console.log(`📡 포트: ${PORT}`);
+server.listen(PORT, async () => {
     console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
     console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);
-    connectDB();
+    try {
+        console.log('🔗 MongoDB 연결 시도 중...');
+        await (0, db_1.connectDB)();
+    }
+    catch (error) {
+        console.error('❌ MongoDB 연결 실패:', error);
+        console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');
+    }
 });
+console.log('📡 server.listen 호출 완료');
 process.on('SIGINT', () => {
     console.log('\n🛑 서버 종료 중...');
     mongoose_1.default.connection.close().then(() => {
