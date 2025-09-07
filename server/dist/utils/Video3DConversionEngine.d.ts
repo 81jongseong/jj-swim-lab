@@ -4,6 +4,7 @@ export interface Video3DConversionResult {
         originalFrames: string[];
         depthMaps: string[];
         reconstructed3D: string[];
+        video3D: string;
         analysisData: {
             bodyPositions3D: any[];
             jointAngles3D: any[];
@@ -42,13 +43,20 @@ export interface Swimming3DAnalysis {
 }
 export declare class Video3DConversionEngine {
     static convertAndAnalyzeVideo(videoPath: string, outputDir: string, technique: string, level: string): Promise<Video3DConversionResult>;
+    private static runPythonConverter;
     private static extractFrames;
+    private static simulateFrameExtraction;
     private static generateDepthMaps;
     private static generateDepthMapWithMiDaS;
+    private static generateSimulationDepthMap;
+    private static apply3DEffect;
     private static reconstruct3D;
+    private static create3DVideo;
+    private static simulate3DVideo;
     private static generateBlenderScript;
     private static runBlenderReconstruction;
     private static analyze3DData;
+    private static generateSimulationAnalysisData;
     private static performSwimming3DAnalysis;
     private static analyze3DBodyAlignment;
     private static analyze3DStrokeTechnique;

@@ -289,6 +289,12 @@ const VideoAnalysisResultSchema = new mongoose_1.Schema({
         encouragement: { type: String, required: true },
         goals: [{ type: String }]
     },
+    filePaths: {
+        video3D: { type: String },
+        originalFrames: [{ type: String }],
+        depthMaps: [{ type: String }],
+        reconstructed3D: [{ type: String }]
+    },
     analysisDate: { type: Date, required: true }
 }, {
     timestamps: true

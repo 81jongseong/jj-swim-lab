@@ -1,0 +1,78 @@
+{
+  "description": "Mixamo 기본 본 매핑 - 표준 인간형 리그 구조",
+  "mappings": {
+    "Hips": "rootx",
+    "Spine": "spine_01x",
+    "Spine1": "spine_02x", 
+    "Spine2": "spine_03x",
+    "Neck": "neckx",
+    "Head": "headx",
+    
+    "LeftShoulder": "shoulderl",
+    "LeftArm": "arm_stretchl",
+    "LeftForeArm": "forearm_stretchl",
+    "LeftHand": "handl",
+    
+    "RightShoulder": "shoulderr",
+    "RightArm": "arm_stretchr", 
+    "RightForeArm": "forearm_stretchr",
+    "RightHand": "handr",
+    
+    "LeftUpLeg": "thigh_stretchl",
+    "LeftLeg": "leg_stretchl",
+    "LeftFoot": "footl",
+    "LeftToeBase": "toes_01l",
+    
+    "RightUpLeg": "thigh_stretchr",
+    "RightLeg": "leg_stretchr", 
+    "RightFoot": "footr",
+    "RightToeBase": "toes_01r",
+    
+    "LeftThumb1": "thumb1l",
+    "LeftThumb2": "c_thumb2l",
+    "LeftThumb3": "c_thumb3l",
+    
+    "LeftIndex1": "index1l",
+    "LeftIndex2": "c_index2l", 
+    "LeftIndex3": "c_index3l",
+    
+    "LeftMiddle1": "middle1l",
+    "LeftMiddle2": "c_middle2l",
+    "LeftMiddle3": "c_middle3l",
+    
+    "LeftRing1": "ring1l",
+    "LeftRing2": "c_ring2l",
+    "LeftRing3": "c_ring3l",
+    
+    "LeftPinky1": "pinky1l",
+    "LeftPinky2": "c_pinky2l",
+    "LeftPinky3": "c_pinky3l",
+    
+    "RightThumb1": "thumb1r",
+    "RightThumb2": "c_thumb2r",
+    "RightThumb3": "c_thumb3r",
+    
+    "RightIndex1": "index1r",
+    "RightIndex2": "c_index2r",
+    "RightIndex3": "c_index3r",
+    
+    "RightMiddle1": "middle1r", 
+    "RightMiddle2": "c_middle2r",
+    "RightMiddle3": "c_middle3r",
+    
+    "RightRing1": "ring1r",
+    "RightRing2": "c_ring2r",
+    "RightRing3": "c_ring3r",
+    
+    "RightPinky1": "pinky1r",
+    "RightPinky2": "c_pinky2r", 
+    "RightPinky3": "c_pinky3r"
+  },
+  "key_bones": [
+    "Hips", "LeftFoot", "RightFoot", "LeftLeg", "RightLeg", "LeftUpLeg", "RightUpLeg"
+  ],
+  "pose_bones": [
+    "LeftShoulder", "RightShoulder", "LeftArm", "RightArm", "LeftForeArm", "RightForeArm"
+  ]
+}
+

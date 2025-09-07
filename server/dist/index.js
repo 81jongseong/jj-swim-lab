@@ -10,6 +10,14 @@ const path_1 = __importDefault(require("path"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
+process.on('warning', (warning) => {
+    if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
+        return;
+    }
+    if (warning.name !== 'DeprecationWarning') {
+        console.warn(warning.name, warning.message);
+    }
+});
 const envPath = path_1.default.join(__dirname, '../.env');
 console.log('🔍 .env 파일 경로:', envPath);
 dotenv_1.default.config({ path: envPath });
@@ -50,6 +58,7 @@ const smartwatch_1 = __importDefault(require("./routes/smartwatch"));
 const video_analysis_1 = __importDefault(require("./routes/video-analysis"));
 const ai_evaluation_criteria_1 = __importDefault(require("./routes/ai-evaluation-criteria"));
 const video_3d_analysis_1 = __importDefault(require("./routes/video-3d-analysis"));
+const video_upload_1 = __importDefault(require("./routes/video-upload"));
 console.log('📦 모델 import 시작...');
 require("./models/User");
 require("./models/Checklist");
@@ -58,6 +67,7 @@ require("./models/AIAnalysis");
 require("./models/AIEvaluationCriteria");
 require("./models/SmartWatchData");
 require("./models/VideoAnalysisCriteria");
+require("./models/VideoProcessingJob");
 console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
@@ -162,6 +172,7 @@ app.use('/api/smartwatch', smartwatch_1.default);
 app.use('/api/video-analysis', video_analysis_1.default);
 app.use('/api/ai', ai_evaluation_criteria_1.default);
 app.use('/api/video-3d-analysis', video_3d_analysis_1.default);
+app.use('/api/video-upload', video_upload_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,

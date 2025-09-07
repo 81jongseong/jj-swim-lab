@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title JJ Swim Lab - Server Start
 
 echo Starting JJ Swim Lab Server...

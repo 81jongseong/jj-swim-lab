@@ -89,6 +89,7 @@ interface InputProps {
   required?: boolean;
   defaultValue?: string;
   min?: string | number;
+  accept?: string;
   max?: string | number;
   step?: string | number;
   onKeyPress?: (e: any) => void;
@@ -109,6 +110,7 @@ const Input: React.FC<InputProps> = ({
   min,
   max,
   step,
+  accept,
   onKeyPress,
   onKeyDown,
   onKeyUp
@@ -126,6 +128,7 @@ const Input: React.FC<InputProps> = ({
       min={min}
       max={max}
       step={step}
+      accept={accept}
       onKeyPress={onKeyPress}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}

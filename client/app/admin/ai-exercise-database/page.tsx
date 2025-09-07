@@ -236,7 +236,10 @@ export default function AIExerciseDatabasePage() {
     if (!selectedRecommendation || !value.trim()) return;
     
     const updated = { ...selectedRecommendation };
-    updated.exercises[exerciseIndex][field as keyof Exercise].push(value);
+    const fieldValue = updated.exercises[exerciseIndex][field as keyof Exercise];
+    if (Array.isArray(fieldValue)) {
+      fieldValue.push(value);
+    }
     setSelectedRecommendation(updated);
   };
 
@@ -244,7 +247,10 @@ export default function AIExerciseDatabasePage() {
     if (!selectedRecommendation) return;
     
     const updated = { ...selectedRecommendation };
-    updated.exercises[exerciseIndex][field as keyof Exercise].splice(itemIndex, 1);
+    const fieldValue = updated.exercises[exerciseIndex][field as keyof Exercise];
+    if (Array.isArray(fieldValue)) {
+      fieldValue.splice(itemIndex, 1);
+    }
     setSelectedRecommendation(updated);
   };
 
@@ -410,8 +416,7 @@ export default function AIExerciseDatabasePage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onClick={() => {
                               deleteRecommendation(recommendation._id!);
                             }}
                           >
@@ -687,6 +692,7 @@ export default function AIExerciseDatabasePage() {
                                 {(isEditing || isCreating) && (
                                   <div className="flex space-x-2">
                                     <input
+                                      id={`equipment-input-${index}`}
                                       type="text"
                                       placeholder="장비 추가"
                                       onKeyPress={(e) => {
@@ -699,9 +705,9 @@ export default function AIExerciseDatabasePage() {
                                     />
                                     <Button
                                       size="sm"
-                                      onClick={(e) => {
-                                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                        if (input.value.trim()) {
+                                      onClick={() => {
+                                        const input = document.querySelector(`#equipment-input-${index}`) as HTMLInputElement;
+                                        if (input && input.value.trim()) {
                                           addArrayItem(index, 'equipment', input.value);
                                           input.value = '';
                                         }
@@ -737,6 +743,7 @@ export default function AIExerciseDatabasePage() {
                                 {(isEditing || isCreating) && (
                                   <div className="flex space-x-2">
                                     <input
+                                      id={`instructions-input-${index}`}
                                       type="text"
                                       placeholder="운동 방법 추가"
                                       onKeyPress={(e) => {
@@ -749,9 +756,9 @@ export default function AIExerciseDatabasePage() {
                                     />
                                     <Button
                                       size="sm"
-                                      onClick={(e) => {
-                                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                        if (input.value.trim()) {
+                                      onClick={() => {
+                                        const input = document.querySelector(`#instructions-input-${index}`) as HTMLInputElement;
+                                        if (input && input.value.trim()) {
                                           addArrayItem(index, 'instructions', input.value);
                                           input.value = '';
                                         }

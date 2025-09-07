@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo 강제 종료 실행 중...
 echo.
 

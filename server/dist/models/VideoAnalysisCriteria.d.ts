@@ -317,6 +317,12 @@ export interface IVideoAnalysisResult extends Document {
         encouragement: string;
         goals: string[];
     };
+    filePaths?: {
+        video3D?: string;
+        originalFrames?: string[];
+        depthMaps?: string[];
+        reconstructed3D?: string[];
+    };
     analysisDate: Date;
     createdAt: Date;
     updatedAt: Date;

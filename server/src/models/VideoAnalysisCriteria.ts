@@ -263,6 +263,14 @@ export interface IVideoAnalysisResult extends Document {
     goals: string[];
   };
   
+  // 파일 경로
+  filePaths?: {
+    video3D?: string;
+    originalFrames?: string[];
+    depthMaps?: string[];
+    reconstructed3D?: string[];
+  };
+  
   analysisDate: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -534,6 +542,12 @@ const VideoAnalysisResultSchema = new Schema<IVideoAnalysisResult>({
     detailedFeedback: { type: String, required: true },
     encouragement: { type: String, required: true },
     goals: [{ type: String }]
+  },
+  filePaths: {
+    video3D: { type: String },
+    originalFrames: [{ type: String }],
+    depthMaps: [{ type: String }],
+    reconstructed3D: [{ type: String }]
   },
   analysisDate: { type: Date, required: true }
 }, {

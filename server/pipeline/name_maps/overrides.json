@@ -1,0 +1,44 @@
+{
+  "description": "수동 교정 키-값 매핑 - 특수한 경우나 커스텀 모델용",
+  "mappings": {
+    "Hip": "rootx",
+    "Pelvis": "rootx", 
+    "Root": "rootx",
+    "Spine": "spine_01x",
+    "Chest": "spine_02x",
+    "UpperChest": "spine_03x",
+    "Neck": "neckx",
+    "Head": "headx",
+    
+    "L_Shoulder": "shoulderl",
+    "L_UpperArm": "arm_stretchl", 
+    "L_ForeArm": "forearm_stretchl",
+    "L_Hand": "handl",
+    
+    "R_Shoulder": "shoulderr",
+    "R_UpperArm": "arm_stretchr",
+    "R_ForeArm": "forearm_stretchr", 
+    "R_Hand": "handr",
+    
+    "L_Thigh": "thigh_stretchl",
+    "L_Leg": "leg_stretchl",
+    "L_Foot": "footl",
+    "L_Toe": "toes_01l",
+    
+    "R_Thigh": "thigh_stretchr",
+    "R_Leg": "leg_stretchr",
+    "R_Foot": "footr", 
+    "R_Toe": "toes_01r"
+  },
+  "special_cases": {
+    "twist_bones": [
+      "thigh_twistl", "thigh_twistr", "leg_twistl", "leg_twistr",
+      "c_arm_twist_offsetl", "c_arm_twist_offsetr", "forearm_twistl", "forearm_twistr"
+    ],
+    "stretch_bones": [
+      "thigh_stretchl", "thigh_stretchr", "leg_stretchl", "leg_stretchr",
+      "arm_stretchl", "arm_stretchr", "forearm_stretchl", "forearm_stretchr"
+    ]
+  }
+}
+

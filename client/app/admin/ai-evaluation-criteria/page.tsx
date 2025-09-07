@@ -240,7 +240,7 @@ export default function AIEvaluationCriteriaPage() {
     if (!selectedCriteria) return;
     
     const updated = { ...selectedCriteria };
-    updated.categories[category as keyof typeof updated.criteria].subCategories[subCategory as keyof any].criteria.splice(index, 1);
+    updated.categories[category as keyof typeof updated.categories].subCategories[subCategory as keyof any].criteria.splice(index, 1);
     setSelectedCriteria(updated);
   };
 
@@ -331,8 +331,7 @@ export default function AIEvaluationCriteriaPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onClick={() => {
                               deleteCriteria(criteria._id!);
                             }}
                           >

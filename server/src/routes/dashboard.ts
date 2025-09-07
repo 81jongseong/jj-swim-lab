@@ -97,7 +97,7 @@ router.get('/stats', async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('❌ 대시보드 통계 생성 중 오류 발생:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: '대시보드 통계를 가져올 수 없습니다',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
     });

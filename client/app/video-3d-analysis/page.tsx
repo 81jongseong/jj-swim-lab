@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import Card, { CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import ThreeJSViewer from '../../components/ThreeJSViewer';
 import { 
   Video, 
   Upload, 
@@ -86,34 +87,83 @@ export default function Video3DAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
+  const [threejsData, setThreejsData] = useState<any>(null);
+  const [customModel, setCustomModel] = useState<File | null>(null);
+  const modelInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
       loadStudents();
+    } else {
+      // 테스트용 임시 학생 데이터 (로그인하지 않은 경우)
+      console.log('🧪 테스트용 학생 데이터 로드');
+      setStudents([
+        {
+          _id: 'test-student-1',
+          name: '테스트 학생',
+          email: 'test@example.com',
+          studentInfo: {
+            swimmingLevel: '초급',
+            age: 25
+          }
+        }
+      ]);
     }
   }, [user]);
 
   const loadStudents = async () => {
     try {
+      console.log('👥 학생 목록 로드 시작...');
+      const token = localStorage.getItem('token');
+      console.log('🔑 토큰:', token ? '존재함' : '없음');
+      
       const response = await fetch('/api/users?userType=student', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log('📡 응답 상태:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 받은 데이터:', data);
         setStudents(data.users || []);
+        console.log('✅ 학생 목록 설정 완료:', data.users?.length || 0, '명');
+      } else {
+        console.error('❌ 학생 목록 로드 실패:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('학생 목록 로드 오류:', error);
+      console.error('❌ 학생 목록 로드 오류:', error);
     }
   };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('📹 동영상 파일 선택:', file);
     if (file) {
       setSelectedVideo(file);
       setUploadProgress(0);
+      console.log('✅ 동영상 파일 설정 완료:', file.name);
+    }
+  };
+
+  const handleModelSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    console.log('🎯 3D 모델 파일 선택:', file);
+    if (file) {
+      // 지원되는 3D 모델 형식 확인
+      const supportedFormats = ['.obj', '.fbx', '.glb', '.gltf', '.blend'];
+      const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+      
+      if (supportedFormats.includes(fileExt)) {
+        setCustomModel(file);
+        console.log('✅ 3D 모델 파일 설정 완료:', file.name);
+        alert(`3D 모델이 선택되었습니다: ${file.name}`);
+      } else {
+        alert('지원되지 않는 파일 형식입니다. OBJ, FBX, GLB, GLTF, BLEND 파일을 선택해주세요.');
+      }
     }
   };
 
@@ -132,6 +182,12 @@ export default function Video3DAnalysisPage() {
       formData.append('studentId', selectedStudent._id);
       formData.append('technique', technique);
       formData.append('level', level);
+      
+      // 3D 모델이 선택된 경우 추가
+      if (customModel) {
+        formData.append('customModel', customModel);
+        console.log('🎯 사용자 3D 모델 포함:', customModel.name);
+      }
 
       // 업로드 진행률 시뮬레이션
       const progressInterval = setInterval(() => {
@@ -144,13 +200,19 @@ export default function Video3DAnalysisPage() {
         });
       }, 1000);
 
-      const response = await fetch('/api/video-3d-analysis/upload', {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분 타임아웃
+      
+      const response = await fetch('http://localhost:5000/api/video-3d-analysis/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -158,8 +220,15 @@ export default function Video3DAnalysisPage() {
       const data = await response.json();
 
       if (data.success) {
+        console.log('🔍 분석 결과 데이터:', JSON.stringify(data.data, null, 2));
         setAnalysisResult(data.data);
         setShowResult(true);
+        
+        // Three.js 데이터 로드
+        if (data.data.threejsData) {
+          loadThreeJSData(data.data.threejsData);
+        }
+        
         alert('3D 동영상 분석이 완료되었습니다!');
       } else {
         alert('3D 동영상 분석 중 오류가 발생했습니다: ' + data.message);
@@ -186,6 +255,107 @@ export default function Video3DAnalysisPage() {
       case 'medium': return 'bg-yellow-100 text-yellow-800';
       case 'low': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const download3DVideo = async (analysisId: string) => {
+    try {
+      console.log('🔍 3D 영상 다운로드 시작:', analysisId);
+      console.log('🔍 토큰:', localStorage.getItem('token') ? '존재함' : '없음');
+      
+      const response = await fetch(`http://localhost:5000/api/video-3d-analysis/download/${analysisId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('🔍 다운로드 응답 상태:', response.status);
+      console.log('🔍 응답 헤더:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ 다운로드 실패:', errorText);
+        throw new Error(`다운로드 실패: ${response.status} ${errorText}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('🔍 다운로드된 파일 크기:', blob.size, 'bytes');
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `3d_analysis_${analysisId}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log('✅ 3D 영상 다운로드 완료');
+    } catch (error) {
+      console.error('❌ 3D 영상 다운로드 오류:', error);
+      alert('3D 영상 다운로드 중 오류가 발생했습니다: ' + error.message);
+    }
+  };
+
+  const loadThreeJSData = async (threejsDataPath: string) => {
+    try {
+      console.log('🔍 Three.js 데이터 로드 시작:', threejsDataPath);
+      
+      const response = await fetch(`http://localhost:5000/api/video-3d-analysis/threejs-data/${threejsDataPath}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setThreejsData(data);
+        setShow3DViewer(true);
+        console.log('✅ Three.js 데이터 로드 완료');
+      } else {
+        console.error('❌ Three.js 데이터 로드 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Three.js 데이터 로드 오류:', error);
+    }
+  };
+
+  const download3DModel = async (analysisId: string) => {
+    try {
+      console.log('🔍 3D 모델 다운로드 시작:', analysisId);
+      
+      const response = await fetch(`http://localhost:5000/api/video-3d-analysis/download-3d-model/${analysisId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('🔍 3D 모델 다운로드 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ 3D 모델 다운로드 실패:', errorText);
+        throw new Error(`3D 모델 다운로드 실패: ${response.status} ${errorText}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('🔍 다운로드된 3D 모델 파일 크기:', blob.size, 'bytes');
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `3d_model_${analysisId}.obj`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log('✅ 3D 모델 다운로드 완료');
+    } catch (error) {
+      console.error('❌ 3D 모델 다운로드 오류:', error);
+      alert('3D 모델 다운로드 중 오류가 발생했습니다: ' + error.message);
     }
   };
 
@@ -219,7 +389,10 @@ export default function Video3DAnalysisPage() {
                     students.map((student) => (
                       <div
                         key={student._id}
-                        onClick={() => setSelectedStudent(student)}
+                        onClick={() => {
+                          console.log('👤 학생 선택:', student);
+                          setSelectedStudent(student);
+                        }}
                         className={`p-3 border rounded-lg cursor-pointer transition-all
                           ${selectedStudent?._id === student._id
                             ? 'border-blue-500 bg-blue-50 shadow-md'
@@ -300,6 +473,35 @@ export default function Video3DAnalysisPage() {
                 </div>
               </div>
 
+              {/* 3D 모델 업로드 (선택사항) */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  🎯 사용자 3D 모델 (선택사항)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                      <input
+                      type="file"
+                      accept=".obj,.fbx,.glb,.gltf,.blend"
+                      onChange={handleModelSelect}
+                      className="hidden"
+                      id="model-upload"
+                      ref={modelInputRef}
+                    />
+                  <label htmlFor="model-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">
+                      {customModel ? customModel.name : '3D 모델 파일을 선택하세요 (선택사항)'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      OBJ, FBX, GLB, GLTF, BLEND 형식 지원
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2">
+                      💡 사용자 모델을 제공하면 해당 모델에 수영 동작이 적용됩니다
+                    </p>
+                  </label>
+                </div>
+              </div>
+
               {/* 업로드 진행률 */}
               {loading && (
                 <div>
@@ -317,7 +519,14 @@ export default function Video3DAnalysisPage() {
               )}
 
               <Button
-                onClick={handleAnalysis}
+                onClick={() => {
+                  console.log('🔍 버튼 클릭 - 상태 확인:');
+                  console.log('  - loading:', loading);
+                  console.log('  - selectedStudent:', selectedStudent);
+                  console.log('  - selectedVideo:', selectedVideo);
+                  console.log('  - 버튼 활성화:', !loading && selectedStudent && selectedVideo);
+                  handleAnalysis();
+                }}
                 disabled={loading || !selectedStudent || !selectedVideo}
                 className="w-full py-3 text-lg"
               >
@@ -329,10 +538,41 @@ export default function Video3DAnalysisPage() {
           {/* 분석 결과 */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                3D 분석 결과
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  3D 분석 결과
+                </CardTitle>
+                {analysisResult && (
+                  <>
+                    {console.log('🔍 버튼 렌더링 조건 확인:', {
+                      analysisResult: !!analysisResult,
+                      analysisId: analysisResult?.analysisId,
+                      filePaths: analysisResult?.filePaths
+                    })}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setShow3DViewer(!show3DViewer)}
+                        className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                      >
+                        🎮 {show3DViewer ? '3D 뷰어 숨기기' : '3D 뷰어 보기'}
+                      </button>
+                      <button
+                        onClick={() => download3DVideo(analysisResult.analysisId)}
+                        className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      >
+                        📥 3D 영상 다운로드 (MP4)
+                      </button>
+                      <button
+                        onClick={() => download3DModel(analysisResult.analysisId)}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        🎯 3D 모델 다운로드 (OBJ/BLEND)
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {!showResult || !analysisResult ? (
@@ -454,6 +694,33 @@ export default function Video3DAnalysisPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* 3D 뷰어 */}
+          {show3DViewer && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="w-5 h-5" />
+                  3D 수영자 모델 뷰어
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-96 bg-gray-100 rounded-lg overflow-hidden">
+                  <ThreeJSViewer 
+                    animationData={threejsData}
+                    modelPaths={analysisResult?.filePaths?.reconstructed3D}
+                    width={800}
+                    height={384}
+                  />
+                </div>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p>• 마우스로 3D 모델을 회전시켜 다양한 각도에서 관찰할 수 있습니다</p>
+                  <p>• 실제 포즈 데이터를 기반으로 생성된 3D 수영자 모델입니다</p>
+                  <p>• 수영 동작의 3D 궤적과 자세를 분석할 수 있습니다</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* 3D 분석 프로세스 설명 */}

@@ -421,7 +421,7 @@ export default function AIConfigPage() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <button
+            <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
@@ -525,8 +525,8 @@ export default function AIConfigPage() {
               <div className="mb-6">
                 <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
                   ➕ 새 기준 추가
-                </button>
-              </div>
+            </button>
+          </div>
 
               <div className="space-y-4">
                 {healthStandards.map((standard) => (
@@ -552,15 +552,15 @@ export default function AIConfigPage() {
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                      <div>
+            <div>
                         <p className="text-sm text-gray-500">카테고리</p>
                         <p className="font-medium">{standard.category}</p>
-                      </div>
-                      <div>
+            </div>
+            <div>
                         <p className="text-sm text-gray-500">범위</p>
                         <p className="font-medium">{standard.minValue} - {standard.maxValue} {standard.unit}</p>
-                      </div>
-                      <div>
+            </div>
+            <div>
                         <p className="text-sm text-gray-500">설명</p>
                         <p className="font-medium">{standard.description}</p>
                       </div>
@@ -596,10 +596,10 @@ export default function AIConfigPage() {
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {setting.isPublic ? '공개' : '비공개'}
-                        </span>
-                      </div>
-                    </div>
-                    
+                  </span>
+            </div>
+          </div>
+
                     <p className="text-gray-600 mb-3">{setting.description}</p>
                     
                     <div className="mb-3">
@@ -611,8 +611,8 @@ export default function AIConfigPage() {
                              role === 'centerAdmin' ? '센터 관리자' : role}
                           </span>
                         ))}
-                      </div>
-                    </div>
+          </div>
+        </div>
 
                     <div className="flex space-x-2">
                       <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
@@ -620,13 +620,13 @@ export default function AIConfigPage() {
                       </button>
                       <button className="text-red-600 hover:text-red-800 text-sm font-medium">
                         🗑️ 삭제
-                      </button>
-                    </div>
+                  </button>
+                </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+                  </div>
+                )}
 
           {activeTab === 'exercise-algorithms' && (
             <div className="p-6">
@@ -653,7 +653,7 @@ export default function AIConfigPage() {
                         </span>
                       </div>
                     </div>
-                    
+
                     <p className="text-gray-600 mb-3">{algorithm.description}</p>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
@@ -669,7 +669,7 @@ export default function AIConfigPage() {
                         <p className="text-sm text-gray-500">빈도 (주/회)</p>
                         <p className="font-medium">{algorithm.parameters.frequency}</p>
                       </div>
-                      <div>
+                    <div>
                         <p className="text-sm text-gray-500">휴식기간 (시간)</p>
                         <p className="font-medium">{algorithm.parameters.restPeriod}</p>
                       </div>
@@ -731,7 +731,7 @@ export default function AIConfigPage() {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">🤖 AI 추천 시스템 효과</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                    <div>
                     <h4 className="font-medium text-gray-700 mb-2">운동 성과 향상</h4>
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -749,11 +749,11 @@ export default function AIConfigPage() {
                       <span className="text-sm font-medium text-gray-700">68%</span>
                     </div>
                   </div>
-                </div>
+                  </div>
               </div>
             </div>
           )}
-        </div>
+          </div>
       </div>
     </div>
   );

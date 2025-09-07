@@ -63,7 +63,7 @@ function CenterInfoManagement() {
 
   useEffect(() => {
     if (user) {
-      loadCenterInfo();
+    loadCenterInfo();
     }
   }, [user]);
 
@@ -246,8 +246,8 @@ function CenterInfoManagement() {
                     <Save className="w-4 h-4 mr-2" />
                     {isSaving ? '저장 중...' : '저장'}
                   </Button>
-                </div>
-              )}
+            </div>
+          )}
             </div>
           </CardHeader>
           
@@ -282,41 +282,41 @@ function CenterInfoManagement() {
                     onChange={(e) => setEditingInfo({...editingInfo, address: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </div>
-                
+        </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+              <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
-                    <input
-                      type="text"
+                <input
+                  type="text"
                       value={editingInfo.phone || ''}
                       onChange={(e) => setEditingInfo({...editingInfo, phone: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
+                />
+              </div>
+              <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                    <input
+                <input
                       type="email"
                       value={editingInfo.email || ''}
                       onChange={(e) => setEditingInfo({...editingInfo, email: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                
-                <div>
+                />
+              </div>
+            </div>
+
+            <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">운영시간</label>
-                  <input
-                    type="text"
+              <input
+                type="text"
                     value={typeof editingInfo.operatingHours === 'string' ? editingInfo.operatingHours : ''}
                     onChange={(e) => setEditingInfo({...editingInfo, operatingHours: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="예: 평일 06:00-22:00, 주말 08:00-20:00"
-                  />
-                </div>
-                
-                <div>
+              />
+            </div>
+
+            <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">시설 정보</label>
                   
                   {/* 메인 수영장 */}
@@ -340,11 +340,11 @@ function CenterInfoManagement() {
                           })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="8"
-                        />
-                      </div>
-                      <div>
+              />
+            </div>
+              <div>
                         <label className="block text-xs text-gray-600 mb-1">수영장 길이 (m)</label>
-                        <input
+                <input
                           type="number"
                           value={editingInfo.facilities?.mainPool?.poolLength || ''}
                           onChange={(e) => setEditingInfo({
@@ -359,11 +359,11 @@ function CenterInfoManagement() {
                           })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="25"
-                        />
-                      </div>
-                      <div>
+                />
+              </div>
+              <div>
                         <label className="block text-xs text-gray-600 mb-1">수영장 깊이 (m)</label>
-                        <input
+                <input
                           type="number"
                           step="0.1"
                           value={editingInfo.facilities?.mainPool?.poolDepth || ''}
@@ -379,11 +379,11 @@ function CenterInfoManagement() {
                           })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="1.5"
-                        />
-                      </div>
-                      <div>
+                />
+              </div>
+              <div>
                         <label className="block text-xs text-gray-600 mb-1">수온 (°C)</label>
-                        <input
+                <input
                           type="number"
                           value={editingInfo.facilities?.mainPool?.temperature || ''}
                           onChange={(e) => setEditingInfo({
@@ -400,8 +400,8 @@ function CenterInfoManagement() {
                           placeholder="28"
                         />
                       </div>
-                    </div>
-                  </div>
+              </div>
+            </div>
 
                   {/* 유아풀 */}
                   <div className="bg-green-50 p-4 rounded-lg mb-4">
@@ -466,9 +466,9 @@ function CenterInfoManagement() {
                             placeholder="10"
                           />
                         </div>
-                        <div>
+              <div>
                           <label className="block text-xs text-gray-600 mb-1">수영장 깊이 (m)</label>
-                          <input
+                <input
                             type="number"
                             step="0.1"
                             value={editingInfo.facilities?.kidsPool?.kidsPoolDepth || ''}
@@ -506,8 +506,8 @@ function CenterInfoManagement() {
                           />
                         </div>
                       </div>
-                    )}
-                  </div>
+                )}
+              </div>
 
                   {/* 엔드리스 풀 */}
                   <div className="bg-purple-50 p-4 rounded-lg mb-4">
@@ -553,9 +553,9 @@ function CenterInfoManagement() {
                             placeholder="1"
                           />
                         </div>
-                        <div>
+              <div>
                           <label className="block text-xs text-gray-600 mb-1">길이 (m)</label>
-                          <input
+                <input
                             type="number"
                             value={editingInfo.facilities?.endlessPool?.endlessPoolLength || ''}
                             onChange={(e) => setEditingInfo({
@@ -759,15 +759,15 @@ function CenterInfoManagement() {
                               placeholder="대수"
                             />
                             <span className="text-sm text-gray-600">대</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
                     {/* 기타 시설 (수기 입력) */}
-                    <div>
+              <div>
                       <h5 className="text-sm font-medium text-gray-700 mb-2">기타 시설 (자유 입력)</h5>
-                      <textarea
+                <textarea
                         value={editingInfo.facilities?.amenities?.additionalFacilities || ''}
                         onChange={(e) => setEditingInfo({
                           ...editingInfo,
@@ -780,27 +780,27 @@ function CenterInfoManagement() {
                           }
                         })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        rows={3}
+                  rows={3}
                         placeholder="예: 카페테리아, 휴게실, 매점, 탈의실, 구명장비, 수질관리시설, CCTV, 출입통제시스템 등 자유롭게 입력하세요"
-                      />
-                    </div>
-                  </div>
-                </div>
+                />
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
+              </div>
+            </div>
+          </div>
+        ) : (
+                <div className="space-y-3">
+                  <div>
                   <span className="text-sm font-medium text-gray-500">센터명</span>
                   <p className="text-gray-900">{centerInfo?.name}</p>
                 </div>
                 <div>
                   <span className="text-sm font-medium text-gray-500">설명</span>
                   <p className="text-gray-900">{centerInfo?.description}</p>
-                </div>
-                <div>
+                  </div>
+                  <div>
                   <span className="text-sm font-medium text-gray-500">주소</span>
                   <p className="text-gray-900">{centerInfo?.address}</p>
-                </div>
+                  </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-sm font-medium text-gray-500">전화번호</span>
@@ -811,7 +811,7 @@ function CenterInfoManagement() {
                     <p className="text-gray-900">{centerInfo?.email}</p>
                   </div>
                 </div>
-                <div>
+              <div>
                   <span className="text-sm font-medium text-gray-500">운영시간</span>
                   <div className="text-gray-900">
                     {typeof centerInfo?.operatingHours === 'object' && centerInfo.operatingHours ? (
@@ -820,9 +820,9 @@ function CenterInfoManagement() {
                           <div key={day} className="flex justify-between">
                             <span className="capitalize">{day}:</span>
                             <span>{hours?.isOpen ? `${hours.open} - ${hours.close}` : '휴무'}</span>
-                          </div>
+                  </div>
                         ))}
-                      </div>
+                  </div>
                     ) : (
                       <p>{centerInfo?.operatingHours || '운영시간 정보 없음'}</p>
                     )}
@@ -841,8 +841,8 @@ function CenterInfoManagement() {
                             <div>수영장 길이: {centerInfo.facilities.mainPool?.poolLength || 0}m</div>
                             <div>수영장 깊이: {centerInfo.facilities.mainPool?.poolDepth || 0}m</div>
                             <div>수온: {centerInfo.facilities.mainPool?.temperature || 0}°C</div>
-                          </div>
-                        </div>
+              </div>
+            </div>
 
                         {/* 유아풀 */}
                         {centerInfo.facilities.kidsPool?.hasKidsPool && (
@@ -854,8 +854,8 @@ function CenterInfoManagement() {
                               <div>수영장 깊이: {centerInfo.facilities.kidsPool.kidsPoolDepth}m</div>
                               <div>수온: {centerInfo.facilities.kidsPool.kidsPoolTemperature}°C</div>
                             </div>
-                          </div>
-                        )}
+                    </div>
+                  )}
 
                         {/* 엔드리스 풀 */}
                         {centerInfo.facilities.endlessPool?.hasEndlessPool && (
@@ -865,9 +865,9 @@ function CenterInfoManagement() {
                               <div>개수: {centerInfo.facilities.endlessPool.endlessPoolCount}개</div>
                               <div>길이: {centerInfo.facilities.endlessPool.endlessPoolLength}m</div>
                               <div>폭: {centerInfo.facilities.endlessPool.endlessPoolWidth}m</div>
-                            </div>
-                          </div>
-                        )}
+                      </div>
+                    </div>
+                  )}
 
                         {/* 부대시설 */}
                         <div className="bg-gray-50 p-3 rounded-lg">
@@ -912,7 +912,7 @@ function CenterInfoManagement() {
           
           <CardContent>
             {isEditing ? (
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">소개글</label>
                 <textarea
                   value={editingInfo.introduction || ''}
@@ -921,12 +921,12 @@ function CenterInfoManagement() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="센터에 대한 자세한 소개글을 작성해주세요..."
                 />
-              </div>
+                  </div>
             ) : (
               <div>
                 <p className="text-gray-900 whitespace-pre-line">{centerInfo?.introduction}</p>
-              </div>
-            )}
+                </div>
+              )}
           </CardContent>
         </Card>
 
@@ -941,7 +941,7 @@ function CenterInfoManagement() {
           
           <CardContent>
             {isEditing ? (
-              <div>
+                <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">이용안내</label>
                 <textarea
                   value={editingInfo.guide || ''}
@@ -950,15 +950,15 @@ function CenterInfoManagement() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="수강생들이 알아야 할 이용안내를 작성해주세요..."
                 />
-              </div>
+                  </div>
             ) : (
               <div>
                 <p className="text-gray-900 whitespace-pre-line">{centerInfo?.guide}</p>
-              </div>
-            )}
+                </div>
+              )}
           </CardContent>
         </Card>
-      </div>
+            </div>
 
       {/* 저장 상태 표시 */}
       {centerInfo && (
@@ -972,8 +972,8 @@ function CenterInfoManagement() {
           <p className="text-xs text-green-600 mt-1">
             마지막 업데이트: {centerInfo.updatedAt.toLocaleString()}
           </p>
-        </div>
-      )}
+          </div>
+        )}
     </div>
   );
 }

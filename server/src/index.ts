@@ -6,6 +6,18 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 
+// Deprecation warning 무시 설정
+process.on('warning', (warning) => {
+  if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
+    // util._extend 관련 warning은 무시
+    return;
+  }
+  // 다른 중요한 warning은 표시
+  if (warning.name !== 'DeprecationWarning') {
+    console.warn(warning.name, warning.message);
+  }
+});
+
 // 환경 변수 로드 (다른 import 전에 실행)
 const envPath = path.join(__dirname, '../.env');
 console.log('🔍 .env 파일 경로:', envPath);
@@ -52,6 +64,7 @@ import smartwatchRoutes from './routes/smartwatch';
 import videoAnalysisRoutes from './routes/video-analysis';
 import aiEvaluationCriteriaRoutes from './routes/ai-evaluation-criteria';
 import video3DAnalysisRoutes from './routes/video-3d-analysis';
+import videoUploadRoutes from './routes/video-upload';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -67,6 +80,7 @@ import './models/AIAnalysis';
 import './models/AIEvaluationCriteria';
 import './models/SmartWatchData';
 import './models/VideoAnalysisCriteria';
+import './models/VideoProcessingJob';
 
 console.log('📦 모든 모델 import 완료!');
 
@@ -197,6 +211,7 @@ app.use('/api/smartwatch', smartwatchRoutes);
 app.use('/api/video-analysis', videoAnalysisRoutes);
 app.use('/api/ai', aiEvaluationCriteriaRoutes);
 app.use('/api/video-3d-analysis', video3DAnalysisRoutes);
+app.use('/api/video-upload', videoUploadRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

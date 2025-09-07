@@ -118,15 +118,15 @@ export default function AIEvaluationPage() {
     setEvaluationInput(prev => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof typeof prev],
+        ...(prev[parent as keyof typeof prev] as any),
         [field]: value
       }
     }));
   };
 
   const handleEvaluation = async () => {
-    if (!selectedStudent || !evaluationInput.technique || !evaluationInput.level) {
-      alert('학생, 수영 기법, 레벨을 모두 선택해주세요.');
+    if (!selectedStudent || !evaluationInput.technique) {
+      alert('학생과 수영 기법을 모두 선택해주세요.');
       return;
     }
 
@@ -141,7 +141,7 @@ export default function AIEvaluationPage() {
         body: JSON.stringify({
           studentId: selectedStudent._id,
           technique: evaluationInput.technique,
-          level: evaluationInput.level,
+          level: 'beginner', // 기본값으로 설정
           performanceMetrics: evaluationInput.performanceMetrics,
           instructorObservations: evaluationInput.instructorObservations
         })
@@ -378,7 +378,7 @@ export default function AIEvaluationPage() {
                     {Object.entries(evaluationResult.categoryScores).map(([category, score]) => (
                       <div key={category} className="text-center p-3 bg-white rounded-lg border">
                         <div className={`text-lg font-semibold ${getScoreColor(score as number)}`}>
-                          {score}점
+                          {score as number}점
                         </div>
                         <p className="text-xs text-gray-600">
                           {category === 'posture' ? '자세' :

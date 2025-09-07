@@ -25,6 +25,7 @@ const userMenuStructure = {
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/ai-evaluation', label: '📊 AI 평가' },
+      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
@@ -71,6 +72,7 @@ const userMenuStructure = {
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/ai-evaluation', label: '📊 AI 평가' },
+      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
       { href: '/ai-config', label: '⚙️ AI 설정' },
     ],
     experience: [
@@ -118,6 +120,7 @@ const userMenuStructure = {
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/ai-evaluation', label: '📊 AI 평가' },
+      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
       { href: '/ai-config', label: '⚙️ AI 설정' },
     ],
     tools: [
@@ -194,6 +197,7 @@ const userMenuStructure = {
     ],
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
+      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈 체험' },
