@@ -49,7 +49,15 @@ router.post('/signup', async (req, res) => {
         }
         const user = new User_1.User(userData);
         await user.save();
-        const token = jsonwebtoken_1.default.sign({ userId: user._id }, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
+        const tokenPayload = {
+            id: user._id,
+            userId: user._id,
+            userType: user.userType,
+            email: user.email,
+            name: user.name,
+            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+        };
+        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
         return res.status(201).json({
             message: '회원가입이 완료되었습니다.',
             token,
@@ -161,7 +169,22 @@ router.post('/login', async (req, res) => {
         catch (saveError) {
             console.warn('⚠️ 사용자 정보 저장 실패, 로그인은 계속 진행:', saveError.message);
         }
-        const tokenPayload = { userId: user._id };
+        const tokenPayload = {
+            id: user._id,
+            userId: user._id,
+            userType: user.userType,
+            email: user.email,
+            name: user.name,
+            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+        };
+        console.log('🔍 JWT 토큰 페이로드 생성:', {
+            id: tokenPayload.id,
+            userId: tokenPayload.userId,
+            userType: tokenPayload.userType,
+            email: tokenPayload.email,
+            name: tokenPayload.name,
+            permissions: tokenPayload.permissions
+        });
         if (user.userType === 'centerAdmin' && user.centerId) {
             tokenPayload.centerId = user.centerId;
             console.log('🔍 JWT 토큰에 centerId 포함:', {

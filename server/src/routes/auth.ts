@@ -61,9 +61,18 @@ router.post('/signup', async (req: Request, res: Response) => {
     const user = new User(userData);
     await user.save();
 
-    // JWT 토큰 생성
+    // JWT 토큰 생성 - 모든 필요한 필드 포함
+    const tokenPayload = {
+      id: user._id,
+      userId: user._id,
+      userType: user.userType,
+      email: user.email,
+      name: user.name,
+      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+    };
+    
     const token = jwt.sign(
-      { userId: user._id },
+      tokenPayload,
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     );
@@ -207,8 +216,25 @@ router.post('/login', async (req: Request, res: Response) => {
       // 저장 실패해도 로그인은 계속 진행
     }
 
-    // JWT 토큰 생성
-    const tokenPayload: any = { userId: user._id };
+    // JWT 토큰 생성 - 모든 필요한 필드 포함
+    const tokenPayload: any = { 
+      id: user._id,
+      userId: user._id,
+      userType: user.userType,
+      email: user.email,
+      name: user.name,
+      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+    };
+    
+    // 디버깅: JWT 토큰 페이로드 확인
+    console.log('🔍 JWT 토큰 페이로드 생성:', {
+      id: tokenPayload.id,
+      userId: tokenPayload.userId,
+      userType: tokenPayload.userType,
+      email: tokenPayload.email,
+      name: tokenPayload.name,
+      permissions: tokenPayload.permissions
+    });
     
     // centerAdmin인 경우 centerId 포함
     if (user.userType === 'centerAdmin' && user.centerId) {

@@ -49,7 +49,7 @@ export interface IEvaluationCriteria extends Document {
       advanced: { min: number; max: number; unit: string; };
       expert: { min: number; max: number; unit: string; };
     };
-    endurance: {
+    distance: {
       beginner: { min: number; max: number; unit: string; };
       intermediate: { min: number; max: number; unit: string; };
       advanced: { min: number; max: number; unit: string; };
@@ -61,81 +61,21 @@ export interface IEvaluationCriteria extends Document {
       advanced: { min: number; max: number; unit: string; };
       expert: { min: number; max: number; unit: string; };
     };
-    heartRate: {
-      beginner: { min: number; max: number; unit: string; };
-      intermediate: { min: number; max: number; unit: string; };
-      advanced: { min: number; max: number; unit: string; };
-      expert: { min: number; max: number; unit: string; };
-    };
   };
   
-  // 점수 계산 방식
-  scoringMethod: {
-    type: 'weighted' | 'threshold' | 'progressive';
-    parameters: any;
+  // AI 분석 설정
+  aiSettings: {
+    confidenceThreshold: number; // 신뢰도 임계값
+    analysisDepth: 'basic' | 'intermediate' | 'advanced';
+    feedbackStyle: 'encouraging' | 'technical' | 'balanced';
+    language: string;
   };
   
-  // 피드백 템플릿
-  feedbackTemplates: {
-    excellent: string[];
-    good: string[];
-    average: string[];
-    poor: string[];
-  };
-  
-  // 개선 제안
-  improvementSuggestions: {
-    posture: string[];
-    breathing: string[];
-    movement: string[];
-    efficiency: string[];
-  };
-  
+  // 메타데이터
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// 운동 추천 인터페이스
-export interface IExerciseRecommendation extends Document {
-  technique: string;
-  level: string;
-  category: 'posture' | 'breathing' | 'movement' | 'efficiency';
-  
-  // 운동 정보
-  exercises: {
-    name: string;
-    description: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    duration: number; // 분
-    repetitions?: number;
-    sets?: number;
-    equipment: string[];
-    instructions: string[];
-    benefits: string[];
-    precautions: string[];
-  }[];
-  
-  // 운동 계획
-  workoutPlan: {
-    name: string;
-    description: string;
-    totalDuration: number; // 분
-    exercises: {
-      exerciseName: string;
-      duration: number;
-      order: number;
-    }[];
-    frequency: number; // 주당 횟수
-    progression: {
-      week1: any;
-      week2: any;
-      week3: any;
-      week4: any;
-    };
-  }[];
-  
-  isActive: boolean;
+  version: string;
+  createdBy: mongoose.Types.ObjectId;
+  centerId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -143,58 +83,55 @@ export interface IExerciseRecommendation extends Document {
 // AI 평가 결과 인터페이스
 export interface IAIEvaluationResult extends Document {
   studentId: mongoose.Types.ObjectId;
-  instructorId: mongoose.Types.ObjectId;
   technique: string;
   level: string;
   
-  // 평가 입력 데이터
-  inputData: {
-    performanceMetrics: {
-      speed?: number;
-      endurance?: number;
-      strokeCount?: number;
-      heartRate?: number;
-      distance?: number;
+  // 분석 결과
+  analysis: {
+    posture: {
+      score: number;
+      details: {
+        bodyAlignment: { score: number; feedback: string; };
+        headPosition: { score: number; feedback: string; };
+        coreStability: { score: number; feedback: string; };
+      };
     };
-    instructorObservations: {
-      posture: number;
-      breathing: number;
-      movement: number;
-      efficiency: number;
+    breathing: {
+      score: number;
+      details: {
+        timing: { score: number; feedback: string; };
+        technique: { score: number; feedback: string; };
+        consistency: { score: number; feedback: string; };
+      };
+    };
+    movement: {
+      score: number;
+      details: {
+        strokeTechnique: { score: number; feedback: string; };
+        rhythm: { score: number; feedback: string; };
+        coordination: { score: number; feedback: string; };
+      };
+    };
+    efficiency: {
+      score: number;
+      details: {
+        power: { score: number; feedback: string; };
+        endurance: { score: number; feedback: string; };
+        speed: { score: number; feedback: string; };
+      };
     };
   };
   
-  // AI 분석 결과
-  analysisResult: {
-    overallScore: number; // 0-100
-    categoryScores: {
-      posture: number;
-      breathing: number;
-      movement: number;
-      efficiency: number;
-    };
-    levelAssessment: string;
-    strengths: string[];
-    weaknesses: string[];
-    improvementAreas: string[];
+  // 성과 지표
+  performance: {
+    speed: { value: number; unit: string; };
+    distance: { value: number; unit: string; };
+    strokeCount: { value: number; unit: string; };
   };
   
-  // 추천 사항
-  recommendations: {
-    exercises: {
-      name: string;
-      priority: 'high' | 'medium' | 'low';
-      reason: string;
-      duration: number;
-    }[];
-    workoutPlan: {
-      name: string;
-      description: string;
-      duration: number;
-      frequency: number;
-    };
-    nextEvaluationDate: Date;
-  };
+  // 종합 점수
+  overallScore: number;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F';
   
   // 피드백
   feedback: {
@@ -293,108 +230,108 @@ const EvaluationCriteriaSchema = new Schema<IEvaluationCriteria>({
   },
   performanceMetrics: {
     speed: {
-      beginner: { min: Number, max: Number, unit: String },
-      intermediate: { min: Number, max: Number, unit: String },
-      advanced: { min: Number, max: Number, unit: String },
-      expert: { min: Number, max: Number, unit: String }
+      beginner: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm/s' }
+      },
+      intermediate: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm/s' }
+      },
+      advanced: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm/s' }
+      },
+      expert: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm/s' }
+      }
     },
-    endurance: {
-      beginner: { min: Number, max: Number, unit: String },
-      intermediate: { min: Number, max: Number, unit: String },
-      advanced: { min: Number, max: Number, unit: String },
-      expert: { min: Number, max: Number, unit: String }
+    distance: {
+      beginner: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm' }
+      },
+      intermediate: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm' }
+      },
+      advanced: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm' }
+      },
+      expert: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'm' }
+      }
     },
     strokeCount: {
-      beginner: { min: Number, max: Number, unit: String },
-      intermediate: { min: Number, max: Number, unit: String },
-      advanced: { min: Number, max: Number, unit: String },
-      expert: { min: Number, max: Number, unit: String }
-    },
-    heartRate: {
-      beginner: { min: Number, max: Number, unit: String },
-      intermediate: { min: Number, max: Number, unit: String },
-      advanced: { min: Number, max: Number, unit: String },
-      expert: { min: Number, max: Number, unit: String }
+      beginner: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'strokes' }
+      },
+      intermediate: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'strokes' }
+      },
+      advanced: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'strokes' }
+      },
+      expert: {
+        min: { type: Number, required: true },
+        max: { type: Number, required: true },
+        unit: { type: String, required: true, default: 'strokes' }
+      }
     }
   },
-  scoringMethod: {
-    type: { type: String, enum: ['weighted', 'threshold', 'progressive'], default: 'weighted' },
-    parameters: Schema.Types.Mixed
+  aiSettings: {
+    confidenceThreshold: { type: Number, required: true, min: 0, max: 1, default: 0.7 },
+    analysisDepth: { 
+      type: String, 
+      enum: ['basic', 'intermediate', 'advanced'], 
+      default: 'intermediate' 
+    },
+    feedbackStyle: { 
+      type: String, 
+      enum: ['encouraging', 'technical', 'balanced'], 
+      default: 'balanced' 
+    },
+    language: { type: String, default: 'ko' }
   },
-  feedbackTemplates: {
-    excellent: [{ type: String }],
-    good: [{ type: String }],
-    average: [{ type: String }],
-    poor: [{ type: String }]
+  isActive: { type: Boolean, default: true },
+  version: { type: String, default: '1.0.0' },
+  createdBy: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  improvementSuggestions: {
-    posture: [{ type: String }],
-    breathing: [{ type: String }],
-    movement: [{ type: String }],
-    efficiency: [{ type: String }]
-  },
-  isActive: { type: Boolean, default: true }
-}, {
-  timestamps: true
-});
-
-// 운동 추천 스키마
-const ExerciseRecommendationSchema = new Schema<IExerciseRecommendation>({
-  technique: {
-    type: String,
-    required: true,
-    enum: ['freestyle', 'backstroke', 'breaststroke', 'butterfly']
-  },
-  level: {
-    type: String,
-    required: true,
-    enum: ['beginner', 'intermediate', 'advanced', 'expert']
-  },
-  category: {
-    type: String,
-    required: true,
-    enum: ['posture', 'breathing', 'movement', 'efficiency']
-  },
-  exercises: [{
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
-    duration: { type: Number, required: true },
-    repetitions: Number,
-    sets: Number,
-    equipment: [{ type: String }],
-    instructions: [{ type: String }],
-    benefits: [{ type: String }],
-    precautions: [{ type: String }]
-  }],
-  workoutPlan: [{
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    totalDuration: { type: Number, required: true },
-    exercises: [{
-      exerciseName: { type: String, required: true },
-      duration: { type: Number, required: true },
-      order: { type: Number, required: true }
-    }],
-    frequency: { type: Number, required: true },
-    progression: Schema.Types.Mixed
-  }],
-  isActive: { type: Boolean, default: true }
+  centerId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Center', 
+    required: true 
+  }
 }, {
   timestamps: true
 });
 
 // AI 평가 결과 스키마
 const AIEvaluationResultSchema = new Schema<IAIEvaluationResult>({
-  studentId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  instructorId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  studentId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
   technique: {
     type: String,
@@ -406,48 +343,95 @@ const AIEvaluationResultSchema = new Schema<IAIEvaluationResult>({
     required: true,
     enum: ['beginner', 'intermediate', 'advanced', 'expert']
   },
-  inputData: {
-    performanceMetrics: {
-      speed: Number,
-      endurance: Number,
-      strokeCount: Number,
-      heartRate: Number,
-      distance: Number
+  analysis: {
+    posture: {
+      score: { type: Number, required: true, min: 0, max: 100 },
+      details: {
+        bodyAlignment: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        headPosition: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        coreStability: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        }
+      }
     },
-    instructorObservations: {
-      posture: { type: Number, required: true, min: 0, max: 100 },
-      breathing: { type: Number, required: true, min: 0, max: 100 },
-      movement: { type: Number, required: true, min: 0, max: 100 },
-      efficiency: { type: Number, required: true, min: 0, max: 100 }
+    breathing: {
+      score: { type: Number, required: true, min: 0, max: 100 },
+      details: {
+        timing: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        technique: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        consistency: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        }
+      }
+    },
+    movement: {
+      score: { type: Number, required: true, min: 0, max: 100 },
+      details: {
+        strokeTechnique: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        rhythm: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        coordination: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        }
+      }
+    },
+    efficiency: {
+      score: { type: Number, required: true, min: 0, max: 100 },
+      details: {
+        power: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        endurance: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        },
+        speed: {
+          score: { type: Number, required: true, min: 0, max: 100 },
+          feedback: { type: String, required: true }
+        }
+      }
     }
   },
-  analysisResult: {
-    overallScore: { type: Number, required: true, min: 0, max: 100 },
-    categoryScores: {
-      posture: { type: Number, required: true, min: 0, max: 100 },
-      breathing: { type: Number, required: true, min: 0, max: 100 },
-      movement: { type: Number, required: true, min: 0, max: 100 },
-      efficiency: { type: Number, required: true, min: 0, max: 100 }
+  performance: {
+    speed: {
+      value: { type: Number, required: true },
+      unit: { type: String, required: true }
     },
-    levelAssessment: { type: String, required: true },
-    strengths: [{ type: String }],
-    weaknesses: [{ type: String }],
-    improvementAreas: [{ type: String }]
+    distance: {
+      value: { type: Number, required: true },
+      unit: { type: String, required: true }
+    },
+    strokeCount: {
+      value: { type: Number, required: true },
+      unit: { type: String, required: true }
+    }
   },
-  recommendations: {
-    exercises: [{
-      name: { type: String, required: true },
-      priority: { type: String, enum: ['high', 'medium', 'low'], required: true },
-      reason: { type: String, required: true },
-      duration: { type: Number, required: true }
-    }],
-    workoutPlan: {
-      name: { type: String, required: true },
-      description: { type: String, required: true },
-      duration: { type: Number, required: true },
-      frequency: { type: Number, required: true }
-    },
-    nextEvaluationDate: { type: Date, required: true }
+  overallScore: { type: Number, required: true, min: 0, max: 100 },
+  grade: { 
+    type: String, 
+    enum: ['A', 'B', 'C', 'D', 'F'], 
+    required: true 
   },
   feedback: {
     summary: { type: String, required: true },
@@ -455,17 +439,51 @@ const AIEvaluationResultSchema = new Schema<IAIEvaluationResult>({
     encouragement: { type: String, required: true },
     goals: [{ type: String }]
   },
-  evaluationDate: { type: Date, required: true }
+  evaluationDate: { type: Date, required: true, default: Date.now }
 }, {
   timestamps: true
 });
 
 // 인덱스 설정
 EvaluationCriteriaSchema.index({ technique: 1, level: 1 }, { unique: true });
-ExerciseRecommendationSchema.index({ technique: 1, level: 1, category: 1 });
 AIEvaluationResultSchema.index({ studentId: 1, technique: 1, evaluationDate: -1 });
+
+// 운동 추천 인터페이스
+export interface IExerciseRecommendation {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: string;
+  duration: number; // 분
+  equipment?: string[];
+  instructions: string[];
+  benefits: string[];
+}
+
+// 운동 추천 스키마
+const ExerciseRecommendationSchema = new Schema<IExerciseRecommendation>({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  difficulty: { 
+    type: String, 
+    enum: ['beginner', 'intermediate', 'advanced'], 
+    required: true 
+  },
+  category: { type: String, required: true },
+  duration: { type: Number, required: true },
+  equipment: [{ type: String }],
+  instructions: [{ type: String, required: true }],
+  benefits: [{ type: String, required: true }]
+}, {
+  timestamps: true
+});
+
+// 인덱스 설정
+ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
 
 // 모델 생성
 export const EvaluationCriteria = mongoose.model<IEvaluationCriteria>('EvaluationCriteria', EvaluationCriteriaSchema);
-export const ExerciseRecommendation = mongoose.model<IExerciseRecommendation>('ExerciseRecommendation', ExerciseRecommendationSchema);
 export const AIEvaluationResult = mongoose.model<IAIEvaluationResult>('AIEvaluationResult', AIEvaluationResultSchema);
+export const ExerciseRecommendation = mongoose.model<IExerciseRecommendation>('ExerciseRecommendation', ExerciseRecommendationSchema);

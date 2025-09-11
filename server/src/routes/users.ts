@@ -5,7 +5,7 @@ import {
   auth, 
   requireRole, 
   requirePermission, 
-  requireLevel
+  // requireLevel
 } from '../middleware/auth';
 
 interface AuthRequest extends Request {

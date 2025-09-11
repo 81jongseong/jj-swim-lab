@@ -1,8 +1,12 @@
 import './models/User';
 import './models/Checklist';
+import './models/Center';
 import './models/AIAnalysis';
 import './models/AIEvaluationCriteria';
 import './models/SmartWatchData';
 import './models/VideoAnalysisCriteria';
 import './models/VideoProcessingJob';
+import './models/ExerciseRecommendation';
+import './models/Order';
+import './models/Product';
 //# sourceMappingURL=index.d.ts.map

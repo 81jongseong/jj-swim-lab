@@ -94,10 +94,13 @@ import type { Metadata } from 'next';
 import { Inter, Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ReactQueryProvider } from '@/lib/react-query';
 import SimpleNavigation from '../components/SimpleNavigation'
 import TopNavigation from '../components/TopNavigation'
 import ToastContainer from '../components/ui/ToastContainer'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import { ErrorProvider } from '../components/ui/ErrorProvider'
+import { initializeSecurity } from '../lib/security'
 // import EnhancedOfflineIndicator from '../components/EnhancedOfflineIndicator'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'
 // import ServiceWorkerRegistration from './sw-register'
@@ -184,6 +187,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // 보안 초기화
+  if (typeof window !== 'undefined') {
+    initializeSecurity();
+  }
+
   return (
     <html lang="ko">
       <head>
@@ -218,16 +226,20 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>
-            <DynamicNavigation />
-            <main>
-              {children}
-            </main>
-            <ToastContainer />
-            {/* <EnhancedOfflineIndicator /> */}
-            {/* <PWAInstallPrompt /> */}
-            {/* <ServiceWorkerRegistration /> */}
-          </AuthProvider>
+          <ReactQueryProvider>
+            <ErrorProvider>
+              <AuthProvider>
+                <DynamicNavigation />
+                <main>
+                  {children}
+                </main>
+                <ToastContainer />
+                {/* <EnhancedOfflineIndicator /> */}
+                {/* <PWAInstallPrompt /> */}
+                {/* <ServiceWorkerRegistration /> */}
+              </AuthProvider>
+            </ErrorProvider>
+          </ReactQueryProvider>
         </ErrorBoundary>
       </body>
     </html>

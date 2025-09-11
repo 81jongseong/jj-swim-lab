@@ -69,7 +69,7 @@ import { motion } from 'framer-motion';
 import { motionPresets, staggerContainer } from '@/lib/motion';
 import HeroWave from '@/components/HeroWave';
 import WaterRippleBackground from '@/components/WaterRippleBackground';
-import ThreeSplash from '@/components/ThreeSplash';
+// import ThreeSplash from '@/components/ThreeSplash';
 import LottiePlayer from '@/components/LottiePlayer';
 
 export default function LandingPage() {
@@ -261,13 +261,13 @@ export default function LandingPage() {
             {/* 3D 파티클 시스템 */}
             <motion.div
               variants={motionPresets.slideLeft}
-              className="h-96 rounded-3xl overflow-hidden shadow-deep"
+              className="h-96 rounded-3xl overflow-hidden shadow-deep bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center"
             >
-              <ThreeSplash
-                intensity="medium"
-                color="primary"
-                onLoad={() => console.log('3D 효과 로드 완료')}
-              />
+              <div className="text-center text-primary">
+                <div className="text-6xl mb-4">🏊‍♂️</div>
+                <h3 className="text-2xl font-bold mb-2">3D 수영 시뮬레이션</h3>
+                <p className="text-lg opacity-80">Three.js 기반 인터랙티브 3D 환경</p>
+              </div>
             </motion.div>
 
             {/* 설명 */}

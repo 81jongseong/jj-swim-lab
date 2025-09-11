@@ -49,89 +49,50 @@ function LessonPlansPage() {
     try {
       setLoading(true);
       
-      // Mock 데이터
-      const mockLessonPlans: LessonPlan[] = [
-        {
-          _id: '1',
-          name: '자유형 기초 과정 (3개월)',
-          description: '자유형의 기본기를 다지는 3개월 과정입니다.',
-          level: 'beginner',
-          duration: 3,
-          teachingMethods: ['1', '2', '3'],
-          isActive: true,
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-15')
-        },
-        {
-          _id: '2',
-          name: '평영 중급 과정 (4개월)',
-          description: '평영의 고급 기술을 익히는 4개월 과정입니다.',
-          level: 'intermediate',
-          duration: 4,
-          teachingMethods: ['4', '5'],
-          isActive: true,
-          createdAt: new Date('2024-01-10'),
-          updatedAt: new Date('2024-01-20')
-        }
-      ];
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('인증 토큰이 없습니다.');
+        return;
+      }
 
-      const mockTeachingMethods: TeachingMethod[] = [
-        {
-          _id: '1',
-          name: '기본 자세',
-          description: '수영의 기본 자세를 익힙니다.',
-          category: '자유형',
-          difficulty: 'beginner',
-          steps: ['발 딛기', '팔 위치', '머리 각도'],
-          tips: ['편안하게 호흡하세요', '어깨를 이완하세요'],
-          order: 1
-        },
-        {
-          _id: '2',
-          name: '호흡법',
-          description: '수영 중 올바른 호흡법을 익힙니다.',
-          category: '자유형',
-          difficulty: 'beginner',
-          steps: ['입으로 들이마시기', '코로 내쉬기', '리듬 맞추기'],
-          tips: ['천천히 연습하세요', '물속에서 눈을 감지 마세요'],
-          order: 2
-        },
-        {
-          _id: '3',
-          name: '팔 동작',
-          description: '자유형의 팔 동작을 익힙니다.',
-          category: '자유형',
-          difficulty: 'beginner',
-          steps: ['물 밀기', '팔 돌리기', '손목 각도'],
-          tips: ['팔을 너무 세게 치지 마세요', '자연스럽게 움직이세요'],
-          order: 3
-        },
-        {
-          _id: '4',
-          name: '평영 기본 자세',
-          description: '평영의 기본 자세를 익힙니다.',
-          category: '평영',
-          difficulty: 'intermediate',
-          steps: ['발 동작', '팔 동작', '호흡 타이밍'],
-          tips: ['동작을 정확하게 하세요', '속도보다 정확성을 우선하세요'],
-          order: 4
-        },
-        {
-          _id: '5',
-          name: '평영 고급 기술',
-          description: '평영의 고급 기술을 익힙니다.',
-          category: '평영',
-          difficulty: 'advanced',
-          steps: ['턴 동작', '스타트', '피니시'],
-          tips: ['경기 상황을 고려하세요', '체력 관리가 중요합니다'],
-          order: 5
-        }
-      ];
+      // 실제 API 호출
+      const [lessonPlansResponse, teachingMethodsResponse] = await Promise.all([
+        fetch('http://localhost:5000/api/lesson-plans', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        fetch('http://localhost:5000/api/teaching-methods', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      ]);
 
-      setLessonPlans(mockLessonPlans);
-      setTeachingMethods(mockTeachingMethods);
+      if (lessonPlansResponse.ok) {
+        const lessonPlansData = await lessonPlansResponse.json();
+        setLessonPlans(lessonPlansData.data || []);
+      } else {
+        console.error('수업 계획 데이터 로드 실패:', lessonPlansResponse.status);
+        // API 실패 시 빈 배열로 설정
+        setLessonPlans([]);
+      }
+
+      if (teachingMethodsResponse.ok) {
+        const teachingMethodsData = await teachingMethodsResponse.json();
+        setTeachingMethods(teachingMethodsData.data || []);
+      } else {
+        console.error('강습법 데이터 로드 실패:', teachingMethodsResponse.status);
+        // API 실패 시 빈 배열로 설정
+        setTeachingMethods([]);
+      }
     } catch (error) {
       console.error('데이터 로드 실패:', error);
+      // 에러 발생 시 빈 배열로 설정
+      setLessonPlans([]);
+      setTeachingMethods([]);
     } finally {
       setLoading(false);
     }

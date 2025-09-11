@@ -6,6 +6,11 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 
+// 보안 미들웨어 import
+import { securityMiddleware } from './middleware/security';
+import { authMiddleware } from './middleware/auth';
+import { createValidationMiddleware } from './middleware/validation';
+
 // Deprecation warning 무시 설정
 process.on('warning', (warning) => {
   if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
@@ -25,6 +30,7 @@ dotenv.config({ path: envPath });
 
 // 환경 변수 로드 후 connectDB import
 import { connectDB } from './db';
+import { runSeedData } from './utils/seedData';
 
 // 라우트 임포트
 import authRoutes from './routes/auth';
@@ -65,6 +71,8 @@ import videoAnalysisRoutes from './routes/video-analysis';
 import aiEvaluationCriteriaRoutes from './routes/ai-evaluation-criteria';
 import video3DAnalysisRoutes from './routes/video-3d-analysis';
 import videoUploadRoutes from './routes/video-upload';
+import aiExerciseRecommendationsRoutes from './routes/ai-exercise-recommendations';
+import ordersRoutes from './routes/orders';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -72,6 +80,7 @@ console.log('📦 모델 import 시작...');
 // 최소한의 필수 모델만 import (무한 로딩 해결용)
 import './models/User';
 import './models/Checklist';
+import './models/Center';
 
 console.log('📦 기본 모델 import 완료!');
 
@@ -81,6 +90,9 @@ import './models/AIEvaluationCriteria';
 import './models/SmartWatchData';
 import './models/VideoAnalysisCriteria';
 import './models/VideoProcessingJob';
+import './models/ExerciseRecommendation';
+import './models/Order';
+import './models/Product';
 
 console.log('📦 모든 모델 import 완료!');
 
@@ -144,8 +156,10 @@ const PORT = process.env.PORT || 5000;
 
 // MongoDB 연결은 db.ts 모듈에서 처리
 
-// 미들웨어
-app.use(cors());
+// 보안 미들웨어 적용
+app.use(securityMiddleware);
+
+// 기본 미들웨어
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -209,9 +223,11 @@ app.use('/api/approvals', approvalRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/smartwatch', smartwatchRoutes);
 app.use('/api/video-analysis', videoAnalysisRoutes);
-app.use('/api/ai', aiEvaluationCriteriaRoutes);
+app.use('/api/ai/evaluation-criteria', aiEvaluationCriteriaRoutes);
 app.use('/api/video-3d-analysis', video3DAnalysisRoutes);
 app.use('/api/video-upload', videoUploadRoutes);
+app.use('/api/ai/exercise-recommendations', aiExerciseRecommendationsRoutes);
+app.use('/api/shop/orders', ordersRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {
@@ -241,6 +257,10 @@ server.listen(PORT, async () => {
   try {
     console.log('🔗 MongoDB 연결 시도 중...');
     await connectDB();
+    
+    // 데이터베이스 연결 성공 후 시드 데이터 실행 (일시 비활성화)
+    // console.log('🌱 테스트 데이터 시드 시작...');
+    // await runSeedData();
   } catch (error) {
     console.error('❌ MongoDB 연결 실패:', error);
     console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');

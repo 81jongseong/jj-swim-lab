@@ -108,7 +108,7 @@ export class AdvancedAIEngine {
       const exerciseRecommendations = await this.generateExerciseRecommendations(input.technique, input.level, improvementAreas);
       
       // 9. 피드백 생성
-      const feedback = this.generateFeedback(overallScore, strengths, weaknesses, criteria.feedbackTemplates);
+      const feedback = this.generateFeedback(overallScore, strengths, weaknesses);
       
       // 10. 결과 구성
       const result: IAIEvaluationResult = {
@@ -297,27 +297,27 @@ export class AdvancedAIEngine {
       });
       
       recommendations.forEach(rec => {
-        rec.exercises.forEach(exercise => {
-          exercises.push({
-            name: exercise.name,
-            priority: this.determinePriority(area, exercise.difficulty),
-            reason: `${area} 개선을 위한 ${exercise.name}`,
-            duration: exercise.duration
+        if (rec.instructions) {
+          rec.instructions.forEach(instruction => {
+            exercises.push({
+              name: instruction,
+              priority: this.determinePriority(area, rec.difficulty),
+              reason: `${area} 개선을 위한 ${instruction}`,
+              duration: rec.duration
+            });
           });
-        });
+        }
       });
       
       // 첫 번째 개선 영역의 운동 계획 사용
       if (!workoutPlan && recommendations.length > 0) {
-        const plan = recommendations[0].workoutPlan[0];
-        if (plan) {
-          workoutPlan = {
-            name: plan.name,
-            description: plan.description,
-            duration: plan.totalDuration,
-            frequency: plan.frequency
-          };
-        }
+        const rec = recommendations[0];
+        workoutPlan = {
+          name: rec.name,
+          description: rec.description,
+          duration: rec.duration,
+          frequency: 'daily'
+        };
       }
     }
     
@@ -340,8 +340,7 @@ export class AdvancedAIEngine {
   private static generateFeedback(
     overallScore: number,
     strengths: string[],
-    weaknesses: string[],
-    templates: any
+    weaknesses: string[]
   ): { summary: string; detailedFeedback: string; encouragement: string; goals: string[] } {
     let feedbackLevel: string;
     if (overallScore >= 90) feedbackLevel = 'excellent';
@@ -349,7 +348,14 @@ export class AdvancedAIEngine {
     else if (overallScore >= 60) feedbackLevel = 'average';
     else feedbackLevel = 'poor';
     
-    const template = templates[feedbackLevel] || templates.average;
+    const feedbackTemplates = {
+      excellent: ['훌륭한 실력을 보여주고 있습니다!', '완벽에 가까운 기술을 보여주고 있습니다!'],
+      good: ['좋은 실력을 보여주고 있습니다!', '꾸준한 노력이 보입니다!'],
+      average: ['기본기를 잘 다지고 있습니다!', '조금 더 연습하면 더 좋아질 것입니다!'],
+      poor: ['기본기를 다시 한번 점검해보세요!', '꾸준한 연습이 필요합니다!']
+    };
+    
+    const template = feedbackTemplates[feedbackLevel] || feedbackTemplates.average;
     const randomTemplate = template[Math.floor(Math.random() * template.length)] || '좋은 노력을 보이고 있습니다.';
     
     return {

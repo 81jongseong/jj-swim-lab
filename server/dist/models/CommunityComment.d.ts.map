@@ -1,1 +1,1 @@
-{"version":3,"file":"CommunityComment.d.ts","sourceRoot":"","sources":["../../src/models/CommunityComment.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAWhC,eAAO,MAAM,gBAAgB;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;GAA6D,CAAC"}
+{"version":3,"file":"CommunityComment.d.ts","sourceRoot":"","sources":["../../src/models/CommunityComment.ts"],"names":[],"mappings":"AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAWhC,eAAO,MAAM,gBAAgB;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;GAA6D,CAAC"}

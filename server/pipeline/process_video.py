@@ -348,30 +348,30 @@ Frame Time: {1.0/fps:.6f}
         left_leg_rot = [0.0, 0.0, 0.0]
         right_leg_rot = [0.0, 0.0, 0.0]
         
-        # 포즈 데이터 기반 회전 계산
+        # 포즈 데이터 기반 회전 계산 (3D 포즈는 [x, y, z] 리스트)
         if len(pose) >= 17:
-            # 어깨 키포인트 (5, 6)
-            if pose[5]['confidence'] > 0.5 and pose[6]['confidence'] > 0.5:
-                left_shoulder_rot[1] = (pose[5]['y'] - 0.5) * 60  # Y 회전
-                right_shoulder_rot[1] = (pose[6]['y'] - 0.5) * 60
+            # 어깨 키포인트 (5, 6) - 3D 포즈는 [x, y, z] 리스트
+            if len(pose[5]) >= 3 and len(pose[6]) >= 3:
+                left_shoulder_rot[1] = (pose[5][1] - 0.5) * 60  # Y 회전
+                right_shoulder_rot[1] = (pose[6][1] - 0.5) * 60
             
             # 팔 키포인트 (7, 8, 9, 10)
-            if pose[7]['confidence'] > 0.5 and pose[9]['confidence'] > 0.5:
-                left_arm_rot[0] = (pose[7]['y'] - pose[9]['y']) * 30  # X 회전
-                left_arm_rot[1] = (pose[7]['x'] - pose[9]['x']) * 30  # Y 회전
+            if len(pose[7]) >= 3 and len(pose[9]) >= 3:
+                left_arm_rot[0] = (pose[7][1] - pose[9][1]) * 30  # X 회전
+                left_arm_rot[1] = (pose[7][0] - pose[9][0]) * 30  # Y 회전
             
-            if pose[8]['confidence'] > 0.5 and pose[10]['confidence'] > 0.5:
-                right_arm_rot[0] = (pose[8]['y'] - pose[10]['y']) * 30
-                right_arm_rot[1] = (pose[8]['x'] - pose[10]['x']) * 30
+            if len(pose[8]) >= 3 and len(pose[10]) >= 3:
+                right_arm_rot[0] = (pose[8][1] - pose[10][1]) * 30
+                right_arm_rot[1] = (pose[8][0] - pose[10][0]) * 30
             
             # 다리 키포인트 (11, 12, 13, 14, 15, 16)
-            if pose[11]['confidence'] > 0.5 and pose[13]['confidence'] > 0.5:
-                left_leg_rot[0] = (pose[11]['y'] - pose[13]['y']) * 20
-                left_leg_rot[1] = (pose[11]['x'] - pose[13]['x']) * 20
+            if len(pose[11]) >= 3 and len(pose[13]) >= 3:
+                left_leg_rot[0] = (pose[11][1] - pose[13][1]) * 20
+                left_leg_rot[1] = (pose[11][0] - pose[13][0]) * 20
             
-            if pose[12]['confidence'] > 0.5 and pose[14]['confidence'] > 0.5:
-                right_leg_rot[0] = (pose[12]['y'] - pose[14]['y']) * 20
-                right_leg_rot[1] = (pose[12]['x'] - pose[14]['x']) * 20
+            if len(pose[12]) >= 3 and len(pose[14]) >= 3:
+                right_leg_rot[0] = (pose[12][1] - pose[14][1]) * 20
+                right_leg_rot[1] = (pose[12][0] - pose[14][0]) * 20
         
         # 프레임 데이터 생성
         frame_data = f"{x_pos:.6f} {y_pos:.6f} {z_pos:.6f} {z_rot:.6f} {x_rot:.6f} {y_rot:.6f} "  # Hips
@@ -417,8 +417,8 @@ def main():
     args = parser.parse_args()
     
     # 경로 정규화
-    video_path = normalize_unicode_path(Path(args.video).resolve())
-    output_dir = normalize_unicode_path(Path(args.out).resolve())
+    video_path = Path(normalize_unicode_path(args.video)).resolve()
+    output_dir = Path(normalize_unicode_path(args.out)).resolve()
     
     print(f"[VIDEO] 입력 비디오: {video_path}")
     print(f"[VIDEO] 출력 디렉토리: {output_dir}")

@@ -194,7 +194,7 @@ export function SwimmingPoseModel({
 
   return (
     <group
-      ref={groupRef}
+      ref={groupRef as any}
       position={position}
       rotation={rotation}
       scale={scale}

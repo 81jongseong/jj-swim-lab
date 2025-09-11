@@ -1,27 +1,3 @@
-/// <reference types="mongoose/types/aggregate" />
-/// <reference types="mongoose/types/callback" />
-/// <reference types="mongoose/types/collection" />
-/// <reference types="mongoose/types/connection" />
-/// <reference types="mongoose/types/cursor" />
-/// <reference types="mongoose/types/document" />
-/// <reference types="mongoose/types/error" />
-/// <reference types="mongoose/types/expressions" />
-/// <reference types="mongoose/types/helpers" />
-/// <reference types="mongoose/types/middlewares" />
-/// <reference types="mongoose/types/indexes" />
-/// <reference types="mongoose/types/models" />
-/// <reference types="mongoose/types/mongooseoptions" />
-/// <reference types="mongoose/types/pipelinestage" />
-/// <reference types="mongoose/types/populate" />
-/// <reference types="mongoose/types/query" />
-/// <reference types="mongoose/types/schemaoptions" />
-/// <reference types="mongoose/types/schematypes" />
-/// <reference types="mongoose/types/session" />
-/// <reference types="mongoose/types/types" />
-/// <reference types="mongoose/types/utility" />
-/// <reference types="mongoose/types/validation" />
-/// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/inferschematype" />
 import mongoose, { Document } from 'mongoose';
 export interface IEvaluationCriteria extends Document {
     technique: string;
@@ -119,7 +95,7 @@ export interface IEvaluationCriteria extends Document {
                 unit: string;
             };
         };
-        endurance: {
+        distance: {
             beginner: {
                 min: number;
                 max: number;
@@ -163,134 +139,110 @@ export interface IEvaluationCriteria extends Document {
                 unit: string;
             };
         };
-        heartRate: {
-            beginner: {
-                min: number;
-                max: number;
-                unit: string;
-            };
-            intermediate: {
-                min: number;
-                max: number;
-                unit: string;
-            };
-            advanced: {
-                min: number;
-                max: number;
-                unit: string;
-            };
-            expert: {
-                min: number;
-                max: number;
-                unit: string;
-            };
-        };
     };
-    scoringMethod: {
-        type: 'weighted' | 'threshold' | 'progressive';
-        parameters: any;
-    };
-    feedbackTemplates: {
-        excellent: string[];
-        good: string[];
-        average: string[];
-        poor: string[];
-    };
-    improvementSuggestions: {
-        posture: string[];
-        breathing: string[];
-        movement: string[];
-        efficiency: string[];
+    aiSettings: {
+        confidenceThreshold: number;
+        analysisDepth: 'basic' | 'intermediate' | 'advanced';
+        feedbackStyle: 'encouraging' | 'technical' | 'balanced';
+        language: string;
     };
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-}
-export interface IExerciseRecommendation extends Document {
-    technique: string;
-    level: string;
-    category: 'posture' | 'breathing' | 'movement' | 'efficiency';
-    exercises: {
-        name: string;
-        description: string;
-        difficulty: 'easy' | 'medium' | 'hard';
-        duration: number;
-        repetitions?: number;
-        sets?: number;
-        equipment: string[];
-        instructions: string[];
-        benefits: string[];
-        precautions: string[];
-    }[];
-    workoutPlan: {
-        name: string;
-        description: string;
-        totalDuration: number;
-        exercises: {
-            exerciseName: string;
-            duration: number;
-            order: number;
-        }[];
-        frequency: number;
-        progression: {
-            week1: any;
-            week2: any;
-            week3: any;
-            week4: any;
-        };
-    }[];
-    isActive: boolean;
+    version: string;
+    createdBy: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
 export interface IAIEvaluationResult extends Document {
     studentId: mongoose.Types.ObjectId;
-    instructorId: mongoose.Types.ObjectId;
     technique: string;
     level: string;
-    inputData: {
-        performanceMetrics: {
-            speed?: number;
-            endurance?: number;
-            strokeCount?: number;
-            heartRate?: number;
-            distance?: number;
+    analysis: {
+        posture: {
+            score: number;
+            details: {
+                bodyAlignment: {
+                    score: number;
+                    feedback: string;
+                };
+                headPosition: {
+                    score: number;
+                    feedback: string;
+                };
+                coreStability: {
+                    score: number;
+                    feedback: string;
+                };
+            };
         };
-        instructorObservations: {
-            posture: number;
-            breathing: number;
-            movement: number;
-            efficiency: number;
+        breathing: {
+            score: number;
+            details: {
+                timing: {
+                    score: number;
+                    feedback: string;
+                };
+                technique: {
+                    score: number;
+                    feedback: string;
+                };
+                consistency: {
+                    score: number;
+                    feedback: string;
+                };
+            };
+        };
+        movement: {
+            score: number;
+            details: {
+                strokeTechnique: {
+                    score: number;
+                    feedback: string;
+                };
+                rhythm: {
+                    score: number;
+                    feedback: string;
+                };
+                coordination: {
+                    score: number;
+                    feedback: string;
+                };
+            };
+        };
+        efficiency: {
+            score: number;
+            details: {
+                power: {
+                    score: number;
+                    feedback: string;
+                };
+                endurance: {
+                    score: number;
+                    feedback: string;
+                };
+                speed: {
+                    score: number;
+                    feedback: string;
+                };
+            };
         };
     };
-    analysisResult: {
-        overallScore: number;
-        categoryScores: {
-            posture: number;
-            breathing: number;
-            movement: number;
-            efficiency: number;
+    performance: {
+        speed: {
+            value: number;
+            unit: string;
         };
-        levelAssessment: string;
-        strengths: string[];
-        weaknesses: string[];
-        improvementAreas: string[];
-    };
-    recommendations: {
-        exercises: {
-            name: string;
-            priority: 'high' | 'medium' | 'low';
-            reason: string;
-            duration: number;
-        }[];
-        workoutPlan: {
-            name: string;
-            description: string;
-            duration: number;
-            frequency: number;
+        distance: {
+            value: number;
+            unit: string;
         };
-        nextEvaluationDate: Date;
+        strokeCount: {
+            value: number;
+            unit: string;
+        };
     };
+    overallScore: number;
+    grade: 'A' | 'B' | 'C' | 'D' | 'F';
     feedback: {
         summary: string;
         detailedFeedback: string;
@@ -301,13 +253,24 @@ export interface IAIEvaluationResult extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
+export interface IExerciseRecommendation {
+    id: string;
+    name: string;
+    description: string;
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    category: string;
+    duration: number;
+    equipment?: string[];
+    instructions: string[];
+    benefits: string[];
+}
 export declare const EvaluationCriteria: mongoose.Model<IEvaluationCriteria, {}, {}, {}, mongoose.Document<unknown, {}, IEvaluationCriteria> & IEvaluationCriteria & {
     _id: mongoose.Types.ObjectId;
 }, any>;
-export declare const ExerciseRecommendation: mongoose.Model<IExerciseRecommendation, {}, {}, {}, mongoose.Document<unknown, {}, IExerciseRecommendation> & IExerciseRecommendation & {
+export declare const AIEvaluationResult: mongoose.Model<IAIEvaluationResult, {}, {}, {}, mongoose.Document<unknown, {}, IAIEvaluationResult> & IAIEvaluationResult & {
     _id: mongoose.Types.ObjectId;
 }, any>;
-export declare const AIEvaluationResult: mongoose.Model<IAIEvaluationResult, {}, {}, {}, mongoose.Document<unknown, {}, IAIEvaluationResult> & IAIEvaluationResult & {
+export declare const ExerciseRecommendation: mongoose.Model<IExerciseRecommendation, {}, {}, {}, mongoose.Document<unknown, {}, IExerciseRecommendation> & IExerciseRecommendation & {
     _id: mongoose.Types.ObjectId;
 }, any>;
 //# sourceMappingURL=AIEvaluationCriteria.d.ts.map

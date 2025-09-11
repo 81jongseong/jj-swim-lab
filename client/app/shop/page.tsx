@@ -21,7 +21,7 @@ export default function ShopPage() {
     if (category) params.category = category;
     const res = await apiClient.getShopProducts(params);
     console.log('🔍 상점 API 응답:', res);
-    if (res.error) setError(res.error); else setItems((res.data as any)?.items || res.data || []);
+    if (res.error) setError(res.error); else setItems(res.products || []);
     setLoading(false);
   };
 

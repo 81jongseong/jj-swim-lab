@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import withAuth from '../../../components/withAuth';
+import { useQuizzes, useQuizAttempts, useCreateQuiz, useUpdateQuiz, useDeleteQuiz } from '@/hooks/useApi';
 
 interface Quiz {
   _id: string;
@@ -39,72 +40,22 @@ interface QuizAttempt {
 }
 
 function QuizPage() {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'quizzes' | 'attempts'>('quizzes');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // React Query 훅 사용
+  const { data: quizzesData, isLoading: quizzesLoading, error: quizzesError } = useQuizzes();
+  const { data: attemptsData, isLoading: attemptsLoading, error: attemptsError } = useQuizAttempts();
+  
+  const createQuizMutation = useCreateQuiz();
+  const updateQuizMutation = useUpdateQuiz();
+  const deleteQuizMutation = useDeleteQuiz();
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Mock 데이터
-      const mockQuizzes: Quiz[] = [
-        {
-          _id: '1',
-          title: '자유형 기초 퀴즈',
-          description: '자유형의 기본기를 테스트하는 퀴즈입니다.',
-          category: '자유형',
-          type: 'multiple',
-          questions: [],
-          timeLimit: 30,
-          passingScore: 70,
-          isActive: true,
-          createdAt: new Date()
-        },
-        {
-          _id: '2',
-          title: '호흡법 퀴즈',
-          description: '수영 호흡법에 대한 이해도를 확인합니다.',
-          category: '호흡법',
-          type: 'multiple',
-          questions: [],
-          timeLimit: 20,
-          passingScore: 80,
-          isActive: true,
-          createdAt: new Date()
-        }
-      ];
-
-      const mockAttempts: QuizAttempt[] = [
-        {
-          _id: '1',
-          quiz: mockQuizzes[0],
-          user: { name: '김학생' },
-          percentage: 85,
-          totalScore: 17,
-          maxPossibleScore: 20,
-          passed: true,
-          timeSpent: 1200,
-          completedAt: new Date()
-        }
-      ];
-
-      setQuizzes(mockQuizzes);
-      setQuizAttempts(mockAttempts);
-    } catch (error) {
-      console.error('데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const quizzes = quizzesData?.data || [];
+  const quizAttempts = attemptsData?.data || [];
+  const loading = quizzesLoading || attemptsLoading;
 
   const getTypeText = (type: string) => {
     switch (type) {

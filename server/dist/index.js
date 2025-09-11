@@ -4,12 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const path_1 = __importDefault(require("path"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
+const security_1 = require("./middleware/security");
 process.on('warning', (warning) => {
     if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
         return;
@@ -59,15 +59,21 @@ const video_analysis_1 = __importDefault(require("./routes/video-analysis"));
 const ai_evaluation_criteria_1 = __importDefault(require("./routes/ai-evaluation-criteria"));
 const video_3d_analysis_1 = __importDefault(require("./routes/video-3d-analysis"));
 const video_upload_1 = __importDefault(require("./routes/video-upload"));
+const ai_exercise_recommendations_1 = __importDefault(require("./routes/ai-exercise-recommendations"));
+const orders_1 = __importDefault(require("./routes/orders"));
 console.log('📦 모델 import 시작...');
 require("./models/User");
 require("./models/Checklist");
+require("./models/Center");
 console.log('📦 기본 모델 import 완료!');
 require("./models/AIAnalysis");
 require("./models/AIEvaluationCriteria");
 require("./models/SmartWatchData");
 require("./models/VideoAnalysisCriteria");
 require("./models/VideoProcessingJob");
+require("./models/ExerciseRecommendation");
+require("./models/Order");
+require("./models/Product");
 console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
@@ -115,7 +121,7 @@ io.on('connection', (socket) => {
     });
 });
 const PORT = process.env.PORT || 5000;
-app.use((0, cors_1.default)());
+app.use(security_1.securityMiddleware);
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express_1.default.static('uploads'));
@@ -170,9 +176,11 @@ app.use('/api/approvals', approvals_1.default);
 app.use('/api/ai', ai_1.default);
 app.use('/api/smartwatch', smartwatch_1.default);
 app.use('/api/video-analysis', video_analysis_1.default);
-app.use('/api/ai', ai_evaluation_criteria_1.default);
+app.use('/api/ai/evaluation-criteria', ai_evaluation_criteria_1.default);
 app.use('/api/video-3d-analysis', video_3d_analysis_1.default);
 app.use('/api/video-upload', video_upload_1.default);
+app.use('/api/ai/exercise-recommendations', ai_exercise_recommendations_1.default);
+app.use('/api/shop/orders', orders_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,

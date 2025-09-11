@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { auth, requireRole, requireCenterAdminPermission } from '../middleware/auth';
+import { auth, requireRole } from '../middleware/auth';
 import { SwimmingCenter } from '../models/SwimmingCenter';
 import { User } from '../models/User';
 import { Course } from '../models/Course';

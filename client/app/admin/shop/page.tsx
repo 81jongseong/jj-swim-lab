@@ -31,7 +31,7 @@ function AdminShopPage() {
 
   const load = async () => {
     setLoading(true);
-    const res = await apiClient.get<any>('/shop?limit=50');
+    const res = await apiClient.get<any>('/shop/admin/products?limit=50');
     if (res.error) setError(res.error);
     else setList(res.data.products || []);
     setLoading(false);

@@ -491,8 +491,8 @@ class ApiClient {
   }
 
   // ===== 쇼핑몰 API =====
-  async getShopProducts(params?: { category?: string; priceRange?: string }): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+  async getShopProducts(params?: { category?: string; priceRange?: string; q?: string }): Promise<any> {
+    const queryString = params && Object.keys(params).length > 0 ? `?${new URLSearchParams(params as any).toString()}` : '';
     return this.request(`/api/shop/products${queryString}`);
   }
 

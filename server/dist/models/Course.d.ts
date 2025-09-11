@@ -1,27 +1,3 @@
-/// <reference types="mongoose/types/aggregate" />
-/// <reference types="mongoose/types/callback" />
-/// <reference types="mongoose/types/collection" />
-/// <reference types="mongoose/types/connection" />
-/// <reference types="mongoose/types/cursor" />
-/// <reference types="mongoose/types/document" />
-/// <reference types="mongoose/types/error" />
-/// <reference types="mongoose/types/expressions" />
-/// <reference types="mongoose/types/helpers" />
-/// <reference types="mongoose/types/middlewares" />
-/// <reference types="mongoose/types/indexes" />
-/// <reference types="mongoose/types/models" />
-/// <reference types="mongoose/types/mongooseoptions" />
-/// <reference types="mongoose/types/pipelinestage" />
-/// <reference types="mongoose/types/populate" />
-/// <reference types="mongoose/types/query" />
-/// <reference types="mongoose/types/schemaoptions" />
-/// <reference types="mongoose/types/schematypes" />
-/// <reference types="mongoose/types/session" />
-/// <reference types="mongoose/types/types" />
-/// <reference types="mongoose/types/utility" />
-/// <reference types="mongoose/types/validation" />
-/// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/inferschematype" />
 import mongoose from 'mongoose';
 export declare const Course: mongoose.Model<{
     createdAt: NativeDate;
@@ -30,37 +6,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };
@@ -71,37 +47,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };
@@ -112,37 +88,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };
@@ -157,37 +133,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };
@@ -198,37 +174,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };
@@ -239,37 +215,37 @@ export declare const Course: mongoose.Model<{
     name: string;
     instructor: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
-    maxStudents: number;
     isActive: boolean;
     description: string;
     duration: number;
     price: number;
+    maxStudents: number;
     teachingMethods: {
-        methodId: mongoose.Types.ObjectId;
         order: number;
+        methodId: mongoose.Types.ObjectId;
         isRequired: boolean;
     }[];
     schedule: {
-        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
         startTime: string;
         endTime: string;
+        day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
     }[];
     enrolledStudents: {
         student: mongoose.Types.ObjectId;
-        status: "active" | "completed" | "dropped";
+        status: "completed" | "active" | "dropped";
         enrolledAt: Date;
         progress?: {
+            notes: string;
             percentage: number;
             lastUpdated: Date;
-            notes: string;
             completedSteps?: any;
         };
     }[];
     classInfo?: {
-        className: string;
-        classType: "regular" | "intensive" | "private";
         startDate: Date;
         endDate: Date;
+        className: string;
+        classType: "private" | "regular" | "intensive";
         maxCapacity: number;
         currentEnrollment: number;
     };

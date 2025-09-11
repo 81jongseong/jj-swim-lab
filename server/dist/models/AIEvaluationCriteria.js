@@ -15,15 +15,25 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AIEvaluationResult = exports.ExerciseRecommendation = exports.EvaluationCriteria = void 0;
+exports.ExerciseRecommendation = exports.AIEvaluationResult = exports.EvaluationCriteria = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const EvaluationCriteriaSchema = new mongoose_1.Schema({
     technique: {
@@ -108,91 +118,98 @@ const EvaluationCriteriaSchema = new mongoose_1.Schema({
     },
     performanceMetrics: {
         speed: {
-            beginner: { min: Number, max: Number, unit: String },
-            intermediate: { min: Number, max: Number, unit: String },
-            advanced: { min: Number, max: Number, unit: String },
-            expert: { min: Number, max: Number, unit: String }
+            beginner: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm/s' }
+            },
+            intermediate: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm/s' }
+            },
+            advanced: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm/s' }
+            },
+            expert: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm/s' }
+            }
         },
-        endurance: {
-            beginner: { min: Number, max: Number, unit: String },
-            intermediate: { min: Number, max: Number, unit: String },
-            advanced: { min: Number, max: Number, unit: String },
-            expert: { min: Number, max: Number, unit: String }
+        distance: {
+            beginner: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm' }
+            },
+            intermediate: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm' }
+            },
+            advanced: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm' }
+            },
+            expert: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'm' }
+            }
         },
         strokeCount: {
-            beginner: { min: Number, max: Number, unit: String },
-            intermediate: { min: Number, max: Number, unit: String },
-            advanced: { min: Number, max: Number, unit: String },
-            expert: { min: Number, max: Number, unit: String }
-        },
-        heartRate: {
-            beginner: { min: Number, max: Number, unit: String },
-            intermediate: { min: Number, max: Number, unit: String },
-            advanced: { min: Number, max: Number, unit: String },
-            expert: { min: Number, max: Number, unit: String }
+            beginner: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'strokes' }
+            },
+            intermediate: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'strokes' }
+            },
+            advanced: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'strokes' }
+            },
+            expert: {
+                min: { type: Number, required: true },
+                max: { type: Number, required: true },
+                unit: { type: String, required: true, default: 'strokes' }
+            }
         }
     },
-    scoringMethod: {
-        type: { type: String, enum: ['weighted', 'threshold', 'progressive'], default: 'weighted' },
-        parameters: mongoose_1.Schema.Types.Mixed
+    aiSettings: {
+        confidenceThreshold: { type: Number, required: true, min: 0, max: 1, default: 0.7 },
+        analysisDepth: {
+            type: String,
+            enum: ['basic', 'intermediate', 'advanced'],
+            default: 'intermediate'
+        },
+        feedbackStyle: {
+            type: String,
+            enum: ['encouraging', 'technical', 'balanced'],
+            default: 'balanced'
+        },
+        language: { type: String, default: 'ko' }
     },
-    feedbackTemplates: {
-        excellent: [{ type: String }],
-        good: [{ type: String }],
-        average: [{ type: String }],
-        poor: [{ type: String }]
+    isActive: { type: Boolean, default: true },
+    version: { type: String, default: '1.0.0' },
+    createdBy: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    improvementSuggestions: {
-        posture: [{ type: String }],
-        breathing: [{ type: String }],
-        movement: [{ type: String }],
-        efficiency: [{ type: String }]
-    },
-    isActive: { type: Boolean, default: true }
-}, {
-    timestamps: true
-});
-const ExerciseRecommendationSchema = new mongoose_1.Schema({
-    technique: {
-        type: String,
-        required: true,
-        enum: ['freestyle', 'backstroke', 'breaststroke', 'butterfly']
-    },
-    level: {
-        type: String,
-        required: true,
-        enum: ['beginner', 'intermediate', 'advanced', 'expert']
-    },
-    category: {
-        type: String,
-        required: true,
-        enum: ['posture', 'breathing', 'movement', 'efficiency']
-    },
-    exercises: [{
-            name: { type: String, required: true },
-            description: { type: String, required: true },
-            difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
-            duration: { type: Number, required: true },
-            repetitions: Number,
-            sets: Number,
-            equipment: [{ type: String }],
-            instructions: [{ type: String }],
-            benefits: [{ type: String }],
-            precautions: [{ type: String }]
-        }],
-    workoutPlan: [{
-            name: { type: String, required: true },
-            description: { type: String, required: true },
-            totalDuration: { type: Number, required: true },
-            exercises: [{
-                    exerciseName: { type: String, required: true },
-                    duration: { type: Number, required: true },
-                    order: { type: Number, required: true }
-                }],
-            frequency: { type: Number, required: true },
-            progression: mongoose_1.Schema.Types.Mixed
-        }],
-    isActive: { type: Boolean, default: true }
+    centerId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Center',
+        required: true
+    }
 }, {
     timestamps: true
 });
@@ -202,11 +219,6 @@ const AIEvaluationResultSchema = new mongoose_1.Schema({
         ref: 'User',
         required: true
     },
-    instructorId: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
     technique: {
         type: String,
         required: true,
@@ -217,48 +229,95 @@ const AIEvaluationResultSchema = new mongoose_1.Schema({
         required: true,
         enum: ['beginner', 'intermediate', 'advanced', 'expert']
     },
-    inputData: {
-        performanceMetrics: {
-            speed: Number,
-            endurance: Number,
-            strokeCount: Number,
-            heartRate: Number,
-            distance: Number
+    analysis: {
+        posture: {
+            score: { type: Number, required: true, min: 0, max: 100 },
+            details: {
+                bodyAlignment: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                headPosition: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                coreStability: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                }
+            }
         },
-        instructorObservations: {
-            posture: { type: Number, required: true, min: 0, max: 100 },
-            breathing: { type: Number, required: true, min: 0, max: 100 },
-            movement: { type: Number, required: true, min: 0, max: 100 },
-            efficiency: { type: Number, required: true, min: 0, max: 100 }
+        breathing: {
+            score: { type: Number, required: true, min: 0, max: 100 },
+            details: {
+                timing: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                technique: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                consistency: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                }
+            }
+        },
+        movement: {
+            score: { type: Number, required: true, min: 0, max: 100 },
+            details: {
+                strokeTechnique: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                rhythm: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                coordination: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                }
+            }
+        },
+        efficiency: {
+            score: { type: Number, required: true, min: 0, max: 100 },
+            details: {
+                power: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                endurance: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                },
+                speed: {
+                    score: { type: Number, required: true, min: 0, max: 100 },
+                    feedback: { type: String, required: true }
+                }
+            }
         }
     },
-    analysisResult: {
-        overallScore: { type: Number, required: true, min: 0, max: 100 },
-        categoryScores: {
-            posture: { type: Number, required: true, min: 0, max: 100 },
-            breathing: { type: Number, required: true, min: 0, max: 100 },
-            movement: { type: Number, required: true, min: 0, max: 100 },
-            efficiency: { type: Number, required: true, min: 0, max: 100 }
+    performance: {
+        speed: {
+            value: { type: Number, required: true },
+            unit: { type: String, required: true }
         },
-        levelAssessment: { type: String, required: true },
-        strengths: [{ type: String }],
-        weaknesses: [{ type: String }],
-        improvementAreas: [{ type: String }]
+        distance: {
+            value: { type: Number, required: true },
+            unit: { type: String, required: true }
+        },
+        strokeCount: {
+            value: { type: Number, required: true },
+            unit: { type: String, required: true }
+        }
     },
-    recommendations: {
-        exercises: [{
-                name: { type: String, required: true },
-                priority: { type: String, enum: ['high', 'medium', 'low'], required: true },
-                reason: { type: String, required: true },
-                duration: { type: Number, required: true }
-            }],
-        workoutPlan: {
-            name: { type: String, required: true },
-            description: { type: String, required: true },
-            duration: { type: Number, required: true },
-            frequency: { type: Number, required: true }
-        },
-        nextEvaluationDate: { type: Date, required: true }
+    overallScore: { type: Number, required: true, min: 0, max: 100 },
+    grade: {
+        type: String,
+        enum: ['A', 'B', 'C', 'D', 'F'],
+        required: true
     },
     feedback: {
         summary: { type: String, required: true },
@@ -266,14 +325,31 @@ const AIEvaluationResultSchema = new mongoose_1.Schema({
         encouragement: { type: String, required: true },
         goals: [{ type: String }]
     },
-    evaluationDate: { type: Date, required: true }
+    evaluationDate: { type: Date, required: true, default: Date.now }
 }, {
     timestamps: true
 });
 EvaluationCriteriaSchema.index({ technique: 1, level: 1 }, { unique: true });
-ExerciseRecommendationSchema.index({ technique: 1, level: 1, category: 1 });
 AIEvaluationResultSchema.index({ studentId: 1, technique: 1, evaluationDate: -1 });
+const ExerciseRecommendationSchema = new mongoose_1.Schema({
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    difficulty: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced'],
+        required: true
+    },
+    category: { type: String, required: true },
+    duration: { type: Number, required: true },
+    equipment: [{ type: String }],
+    instructions: [{ type: String, required: true }],
+    benefits: [{ type: String, required: true }]
+}, {
+    timestamps: true
+});
+ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
 exports.EvaluationCriteria = mongoose_1.default.model('EvaluationCriteria', EvaluationCriteriaSchema);
-exports.ExerciseRecommendation = mongoose_1.default.model('ExerciseRecommendation', ExerciseRecommendationSchema);
 exports.AIEvaluationResult = mongoose_1.default.model('AIEvaluationResult', AIEvaluationResultSchema);
+exports.ExerciseRecommendation = mongoose_1.default.model('ExerciseRecommendation', ExerciseRecommendationSchema);
 //# sourceMappingURL=AIEvaluationCriteria.js.map

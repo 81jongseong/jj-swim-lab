@@ -32,7 +32,7 @@ function AdminOrdersPage() {
     setLoading(true);
     const res = await apiClient.getShopOrders({ limit: 50 });
     if (res.error) setError(res.error);
-    else setList(res.data.orders || []);
+    else setList(res.data?.orders || []);
     setLoading(false);
   };
 

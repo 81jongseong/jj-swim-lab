@@ -1,38 +1,14 @@
-/// <reference types="mongoose/types/aggregate" />
-/// <reference types="mongoose/types/callback" />
-/// <reference types="mongoose/types/collection" />
-/// <reference types="mongoose/types/connection" />
-/// <reference types="mongoose/types/cursor" />
-/// <reference types="mongoose/types/document" />
-/// <reference types="mongoose/types/error" />
-/// <reference types="mongoose/types/expressions" />
-/// <reference types="mongoose/types/helpers" />
-/// <reference types="mongoose/types/middlewares" />
-/// <reference types="mongoose/types/indexes" />
-/// <reference types="mongoose/types/models" />
-/// <reference types="mongoose/types/mongooseoptions" />
-/// <reference types="mongoose/types/pipelinestage" />
-/// <reference types="mongoose/types/populate" />
-/// <reference types="mongoose/types/query" />
-/// <reference types="mongoose/types/schemaoptions" />
-/// <reference types="mongoose/types/schematypes" />
-/// <reference types="mongoose/types/session" />
-/// <reference types="mongoose/types/types" />
-/// <reference types="mongoose/types/utility" />
-/// <reference types="mongoose/types/validation" />
-/// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/inferschematype" />
 import mongoose from 'mongoose';
 export declare const LessonPlan: mongoose.Model<{
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];
@@ -45,13 +21,13 @@ export declare const LessonPlan: mongoose.Model<{
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];
@@ -64,13 +40,13 @@ export declare const LessonPlan: mongoose.Model<{
 }> & {
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];
@@ -85,13 +61,13 @@ export declare const LessonPlan: mongoose.Model<{
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, mongoose.DefaultSchemaOptions, {
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];
@@ -104,13 +80,13 @@ export declare const LessonPlan: mongoose.Model<{
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];
@@ -123,13 +99,13 @@ export declare const LessonPlan: mongoose.Model<{
 }>> & mongoose.FlatRecord<{
     level: "고급" | "초급" | "중급";
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
     description: string;
     duration: number;
-    title: string;
+    createdAt: Date;
+    updatedAt: Date;
     createdBy: mongoose.Types.ObjectId;
-    stroke: "자유형" | "평영" | "배영" | "접영" | "혼영";
+    stroke: "자유형" | "배영" | "평영" | "접영" | "혼영";
     objectives: string[];
     activities: {
         materials: string[];

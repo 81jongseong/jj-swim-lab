@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import ThreeJSAnimationViewer from '@/components/ThreeJSAnimationViewer';
+// import ThreeJSAnimationViewer from '@/components/ThreeJSAnimationViewer';
 
 interface VideoData {
   videoId: string;
@@ -208,11 +208,12 @@ const VideoViewerPage: React.FC = () => {
           {/* 3D 뷰어 */}
           <div className="lg:col-span-3">
             <div className="bg-black bg-opacity-20 rounded-lg overflow-hidden">
-              <div className="h-96 lg:h-[600px]">
-                <ThreeJSAnimationViewer
-                  videoId={videoId}
-                  className="w-full h-full"
-                />
+              <div className="h-96 lg:h-[600px] flex items-center justify-center">
+                <div className="text-center text-white">
+                  <div className="text-6xl mb-4">🏊‍♂️</div>
+                  <h3 className="text-2xl font-bold mb-2">3D 애니메이션 뷰어</h3>
+                  <p className="text-lg opacity-80">동영상 기반 3D 모션 캡처</p>
+                </div>
               </div>
             </div>
           </div>

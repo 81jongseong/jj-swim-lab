@@ -109,7 +109,9 @@ export { default as Toast } from './Toast';
 export { default as ToastContainer } from './ToastContainer';
 
 // 배포 및 안정성 컴포넌트들
-export { default as ErrorBoundary } from './ErrorBoundary';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorToast } from './ErrorToast';
+export { ErrorProvider } from './ErrorProvider';
 export { default as PerformanceMonitor } from './PerformanceMonitor';
 
 // 3D 뷰어 컴포넌트
@@ -130,7 +132,12 @@ export { default as Slider } from './Slider';
 export { default as Switch } from './Switch';
 
 // 테이블 컴포넌트들
-export { default as ResponsiveTable, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell, MobileCard, MobileCardRow } from '../ResponsiveTable';
+export { default as ResponsiveTable } from './ResponsiveTable';
+export { default as TableHeader } from './TableHeader';
+export { default as TableHeaderCell } from './TableHeaderCell';
+export { default as TableBody } from './TableBody';
+export { default as TableRow } from './TableRow';
+export { default as TableCell } from './TableCell';
 
 // 컴포넌트 타입 및 인터페이스 (필요한 경우에만 export)
 // export type { BarChartProps } from './BarChart';

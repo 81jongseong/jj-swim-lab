@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { auth, requirePermission, requireLevel } from '../middleware/auth';
+import { auth, requirePermission } from '../middleware/auth';
 import { Notice, NoticeView } from '../models/Notice';
 import { User } from '../models/User';
 

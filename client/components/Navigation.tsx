@@ -439,17 +439,17 @@ export default function Navigation() {
               <>
                 <div className="hidden md:flex items-center space-x-4 flex-nowrap">
                   <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg flex-shrink-0">
-                    <NotificationsBell />
-                  </div>
+                  <NotificationsBell />
+                </div>
                   <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-lg whitespace-nowrap flex-shrink-0">
                     <span className="text-sm font-medium text-gray-800">{userName}님</span>
                     <span className="text-xs text-gray-500">|</span>
-                    <button
-                      onClick={handleLogout}
+                  <button
+                    onClick={handleLogout}
                       className="text-sm text-gray-700 hover:text-red-600 transition-colors font-medium"
-                    >
-                      로그아웃
-                    </button>
+                  >
+                    로그아웃
+                  </button>
                   </div>
                 </div>
               </>
