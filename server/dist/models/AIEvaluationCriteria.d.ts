@@ -253,24 +253,10 @@ export interface IAIEvaluationResult extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
-export interface IExerciseRecommendation {
-    id: string;
-    name: string;
-    description: string;
-    difficulty: 'beginner' | 'intermediate' | 'advanced';
-    category: string;
-    duration: number;
-    equipment?: string[];
-    instructions: string[];
-    benefits: string[];
-}
 export declare const EvaluationCriteria: mongoose.Model<IEvaluationCriteria, {}, {}, {}, mongoose.Document<unknown, {}, IEvaluationCriteria> & IEvaluationCriteria & {
     _id: mongoose.Types.ObjectId;
 }, any>;
 export declare const AIEvaluationResult: mongoose.Model<IAIEvaluationResult, {}, {}, {}, mongoose.Document<unknown, {}, IAIEvaluationResult> & IAIEvaluationResult & {
-    _id: mongoose.Types.ObjectId;
-}, any>;
-export declare const ExerciseRecommendation: mongoose.Model<IExerciseRecommendation, {}, {}, {}, mongoose.Document<unknown, {}, IExerciseRecommendation> & IExerciseRecommendation & {
     _id: mongoose.Types.ObjectId;
 }, any>;
 //# sourceMappingURL=AIEvaluationCriteria.d.ts.map

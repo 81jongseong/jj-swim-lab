@@ -1,3 +1,110 @@
+/**
+ * 🛒 JJ Swim Lab - 상점 관리 API 라우트
+ * 
+ * 📋 **라우트 목적**
+ * - 수영 강습 관련 상품 및 주문 관리 API 엔드포인트 제공
+ * - 상품 CRUD 작업 및 재고 관리
+ * - 주문 처리 및 결제 연동
+ * - 상점 통계 및 분석 데이터 제공
+ * - 상점 보안 및 관리 기능
+ * 
+ * 🔄 **주요 기능**
+ * - 상품 CRUD 작업 (생성, 조회, 수정, 삭제)
+ * - 상품 검색 및 필터링 (카테고리, 가격, 재고별)
+ * - 주문 관리 및 상태 추적
+ * - 주문 통계 및 분석
+ * - 재고 관리 및 알림
+ * - 상품 카테고리 및 태그 관리
+ * - 상점 통계 및 대시보드
+ * 
+ * 🗄️ **데이터 연동**
+ * - Product 모델과 연동 (상품 정보)
+ * - Order 모델과 연동 (주문 정보)
+ * - User 모델과 연동 (고객, 관리자 정보)
+ * - Payment 모델과 연동 (결제 정보)
+ * - 센터 정보와 연동 (센터별 상품 그룹)
+ * - 인증 미들웨어와 연동 (권한 검증)
+ * - MongoDB Atlas 데이터베이스
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - Express.js Router
+ * - Mongoose (MongoDB ODM)
+ * - Product 모델 (../models/Product)
+ * - Order 모델 (../models/Order)
+ * - User 모델 (../models/User)
+ * - Payment 모델 (../models/Payment)
+ * - 인증 미들웨어 (../middleware/auth)
+ * - MongoDB Atlas (데이터 저장)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 상품 데이터 검증 및 sanitization
+ * 2. 주문 처리 시 재고 확인 및 차감
+ * 3. 상품 권한 관리 (관리자만 수정/삭제)
+ * 4. 주문 상태 변경 시 결제 시스템 연동
+ * 5. 상품 검색 성능 최적화
+ * 6. API 보안 및 Rate Limiting 적용
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 상품 데이터 검증 로직 확인
+ * - [ ] 주문 처리 및 재고 관리 확인
+ * - [ ] 상품 권한 관리 확인
+ * - [ ] 주문 상태 관리 확인
+ * - [ ] API 엔드포인트 보안 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 상점 관리 API 구현
+ * - 2024-12-19: 상품 CRUD 시스템 구현
+ * - 2024-12-19: 주문 관리 시스템 구현
+ * - 2024-12-19: 재고 관리 시스템 구현
+ * - 2024-12-19: 상점 통계 및 분석 기능 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (상점 관리 API 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - 실시간 재고 알림 시스템
+ * - 상품 추천 시스템
+ * - 상품 리뷰 및 평점 시스템
+ * - 상점 통계 대시보드
+ * - 상점 보안 강화
+ * 
+ * 💡 **사용 예시**
+ * ```typescript
+ * // 상품 목록 조회
+ * GET /api/shop/products?category=equipment&page=1&limit=20
+ * 
+ * // 상품 생성 (관리자)
+ * POST /api/shop/products
+ * {
+ *   "name": "수영 고글",
+ *   "description": "방수 고글",
+ *   "price": 25000,
+ *   "category": "equipment",
+ *   "stock": 100
+ * }
+ * 
+ * // 주문 목록 조회 (관리자)
+ * GET /api/shop/orders?status=completed&page=1&limit=20
+ * 
+ * // 주문 상태 변경
+ * PUT /api/shop/orders/:id/status
+ * {
+ *   "status": "shipped"
+ * }
+ * ```
+ * 
+ * 🔍 **상점 관리 처리 흐름**
+ * 1. 사용자 권한 및 역할 검증
+ * 2. 상품/주문 데이터 검증 및 sanitization
+ * 3. 재고 확인 및 차감 처리
+ * 4. 데이터베이스 쿼리 실행
+ * 5. 주문 상태 업데이트 및 알림
+ * 6. 상점 통계 업데이트
+ * 7. 응답 데이터 반환 및 로깅
+ */
+
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import Product, { IProduct } from '../models/Product';

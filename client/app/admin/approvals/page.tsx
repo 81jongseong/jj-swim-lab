@@ -16,12 +16,65 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button, ResponsiveTable, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell, LoadingSpinner, RefreshButton } from '@/components/ui';
-import { getApprovals, processApproval, type ApprovalItem as ApiApprovalItem } from '@/lib/api/approvals';
+import apiClient from '@/utils/api';
+
+interface CenterRegistration {
+  _id: string;
+  centerName: string;
+  businessNumber: string;
+  representativeName: string;
+  representativeEmail: string;
+  representativePhone: string;
+  address: {
+    address1: string;
+    address2?: string;
+    city: string;
+    province: string;
+    postalCode: string;
+  };
+  centerInfo: {
+    description: string;
+    facilities: string[];
+    poolSize: {
+      length: number;
+      width: number;
+      depth: number;
+    };
+    capacity: number;
+    parkingAvailable: boolean;
+  };
+  applicant: {
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+  };
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'cancelled';
+  submittedAt: string;
+  approvalInfo?: {
+    reviewedBy?: {
+      name: string;
+      email: string;
+    };
+    reviewedAt?: string;
+    approvedBy?: {
+      name: string;
+      email: string;
+    };
+    approvedAt?: string;
+    rejectedBy?: {
+      name: string;
+      email: string;
+    };
+    rejectedAt?: string;
+    rejectionReason?: string;
+    comments?: string;
+  };
+}
 
 interface ApprovalItem {
   id: string;
-  type: 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request';
+  type: 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request' | 'center_registration';
   title: string;
   description: string;
   requesterName: string;
@@ -32,6 +85,7 @@ interface ApprovalItem {
   estimatedAmount?: number;
   courseName?: string;
   instructorName?: string;
+  centerRegistration?: CenterRegistration;
 }
 
 export default function ApprovalsPage() {
@@ -39,35 +93,65 @@ export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [filteredApprovals, setFilteredApprovals] = useState<ApprovalItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request' | 'center_registration'>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCenter, setSelectedCenter] = useState<CenterRegistration | null>(null);
+  const [showCenterModal, setShowCenterModal] = useState(false);
 
   const fetchApprovals = async () => {
     try {
       setIsLoading(true);
       
-      // 실제 API 호출
-      const apiResponse = await getApprovals();
-      const apiApprovals = apiResponse.data.approvals;
+      // 센터 등록 신청 데이터 가져오기
+      const centerRegistrationsResponse = await apiClient.get('/api/center-registrations');
+      const centerRegistrations = centerRegistrationsResponse.data?.registrations || [];
       
-      // API 데이터를 기존 형식으로 변환
-      const transformedApprovals: ApprovalItem[] = apiApprovals.map(item => ({
-        id: item.id,
-        type: item.type,
-        title: item.title,
-        description: item.description,
-        requesterName: item.requesterName,
-        requesterType: item.requesterType,
-        requestDate: new Date(item.requestDate).toLocaleDateString('ko-KR'),
-        status: item.status,
-        priority: item.priority,
-        courseName: item.courseName,
-        estimatedAmount: item.estimatedAmount,
-        instructorName: item.instructorName
+      // 센터 등록 신청을 ApprovalItem 형식으로 변환
+      const centerApprovals: ApprovalItem[] = centerRegistrations.map((reg: CenterRegistration) => ({
+        id: reg._id,
+        type: 'center_registration',
+        title: `${reg.centerName} 센터 등록 신청`,
+        description: `${reg.applicant.name}님이 ${reg.centerName} 센터 등록을 신청했습니다.`,
+        requesterName: reg.applicant.name,
+        requesterType: 'centerAdmin',
+        requestDate: new Date(reg.submittedAt).toLocaleDateString('ko-KR'),
+        status: reg.status === 'approved' ? 'approved' : reg.status === 'rejected' ? 'rejected' : 'pending',
+        priority: 'high',
+        centerRegistration: reg
       }));
       
-      setApprovals(transformedApprovals);
-      setFilteredApprovals(transformedApprovals);
+      // 기존 mock 데이터와 센터 등록 신청 합치기
+      const mockData: ApprovalItem[] = [
+        {
+          id: '1',
+          type: 'course_enrollment',
+          title: '초급 수영 과정 수강 신청',
+          description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
+          requesterName: '김학생',
+          requesterType: 'student',
+          requestDate: '2024-01-15',
+          status: 'pending',
+          priority: 'medium',
+          courseName: '초급 수영',
+          estimatedAmount: 120000
+        },
+        {
+          id: '2',
+          type: 'instructor_registration',
+          title: '새 강사 등록 신청',
+          description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
+          requesterName: '박강사',
+          requesterType: 'instructor',
+          requestDate: '2024-01-14',
+          status: 'pending',
+          priority: 'high',
+          instructorName: '박강사'
+        }
+      ];
+      
+      const allApprovals = [...mockData, ...centerApprovals];
+      setApprovals(allApprovals);
+      setFilteredApprovals(allApprovals);
       setIsLoading(false);
     } catch (error) {
       console.error('승인 데이터 가져오기 실패:', error);
@@ -99,43 +183,6 @@ export default function ApprovalsPage() {
           status: 'pending',
           priority: 'high',
           instructorName: '박강사'
-        },
-        {
-          id: '3',
-          type: 'payment_approval',
-          title: '결제 승인 요청',
-          description: '이학생님의 결제 승인을 요청합니다.',
-          requesterName: '이학생',
-          requesterType: 'student',
-          requestDate: '2024-01-13',
-          status: 'pending',
-          priority: 'medium',
-          estimatedAmount: 150000,
-          courseName: '중급 수영'
-        },
-        {
-          id: '4',
-          type: 'schedule_change',
-          title: '수업 일정 변경 요청',
-          description: '수영장 정비로 인한 수업 일정 변경을 요청합니다.',
-          requesterName: '김수영',
-          requesterType: 'instructor',
-          requestDate: '2024-01-12',
-          status: 'pending',
-          priority: 'high'
-        },
-        {
-          id: '5',
-          type: 'refund_request',
-          title: '환불 요청',
-          description: '개인 사정으로 인한 환불을 요청합니다.',
-          requesterName: '최학생',
-          requesterType: 'student',
-          requestDate: '2024-01-11',
-          status: 'pending',
-          priority: 'low',
-          estimatedAmount: 120000,
-          courseName: '초급 수영'
         }
       ];
       
@@ -183,102 +230,107 @@ export default function ApprovalsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner 
-          size="xl" 
-          color="primary" 
-          text="승인 데이터를 불러오는 중..." 
-        />
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">승인 데이터를 불러오는 중...</p>
+        </div>
       </div>
     );
   }
 
   const handleApproval = async (id: string, action: 'approve' | 'reject') => {
     try {
-      // 실제 API 호출
-      await processApproval(id, action);
+      const approval = approvals.find(item => item.id === id);
       
-      // 로컬 상태 업데이트
-      setApprovals(prev => 
-        prev.map(item => 
-          item.id === id 
-            ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
-            : item
-        )
-      );
-      
-      // 필터링된 목록도 업데이트
-      setFilteredApprovals(prev => 
-        prev.map(item => 
-          item.id === id 
-            ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
-            : item
-        )
-      );
-      
-      // Toast 알림 표시
-      if ((window as any).showToast) {
-        (window as any).showToast({
-          type: 'success',
-          title: '처리 완료',
-          message: `승인 요청이 ${action === 'approve' ? '승인' : '거부'}되었습니다.`,
-          duration: 3000
-        });
+      if (approval?.type === 'center_registration') {
+        // 센터 등록 승인/거부 처리
+        const endpoint = action === 'approve' 
+          ? `/api/center-registrations/${id}/approve`
+          : `/api/center-registrations/${id}/reject`;
+        
+        const response = action === 'approve' 
+          ? await apiClient.post(endpoint, {
+              comments: '센터 등록이 승인되었습니다.'
+            })
+          : await apiClient.post(endpoint, {
+              rejectionReason: '서류 미비',
+              comments: '센터 등록이 거부되었습니다.'
+            });
+        
+        if (response.success) {
+          await fetchApprovals(); // 데이터 새로고침
+          alert(`센터 등록이 ${action === 'approve' ? '승인' : '거부'}되었습니다.`);
+        } else {
+          alert(response.message || '처리 중 오류가 발생했습니다.');
+        }
+      } else {
+        // 기존 승인 처리 로직 (mock)
+        setApprovals(prev => 
+          prev.map(item => 
+            item.id === id 
+              ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
+              : item
+          )
+        );
+        
+        setFilteredApprovals(prev => 
+          prev.map(item => 
+            item.id === id 
+              ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
+              : item
+          )
+        );
+        
+        alert(`승인 요청이 ${action === 'approve' ? '승인' : '거부'}되었습니다.`);
       }
     } catch (error) {
       console.error('승인 처리 실패:', error);
-      
-      // 에러 Toast 알림 표시
-      if ((window as any).showToast) {
-        (window as any).showToast({
-          type: 'error',
-          title: '처리 실패',
-          message: '승인 처리 중 오류가 발생했습니다.',
-          duration: 5000
-        });
-      }
+      alert('승인 처리 중 오류가 발생했습니다.');
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'course_enrollment':
-        return <Badge variant="outline" className="border-blue-500 text-blue-600">수강 신청</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">수강 신청</span>;
       case 'instructor_registration':
-        return <Badge variant="outline" className="border-green-500 text-green-600">강사 등록</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">강사 등록</span>;
       case 'payment_approval':
-        return <Badge variant="outline" className="border-purple-500 text-purple-600">결제 승인</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">결제 승인</span>;
       case 'schedule_change':
-        return <Badge variant="outline" className="border-orange-500 text-orange-600">일정 변경</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">일정 변경</span>;
       case 'refund_request':
-        return <Badge variant="outline" className="border-red-500 text-red-600">환불 요청</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">환불 요청</span>;
+      case 'center_registration':
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">센터 등록</span>;
       default:
-        return <Badge variant="outline">알 수 없음</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">알 수 없음</span>;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-600">대기</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">대기</span>;
       case 'approved':
-        return <Badge variant="default" className="bg-green-500">승인</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">승인</span>;
       case 'rejected':
-        return <Badge variant="destructive">거부</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">거부</span>;
       default:
-        return <Badge variant="outline">알 수 없음</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">알 수 없음</span>;
     }
   };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'low':
-        return <Badge variant="outline" className="border-gray-500 text-gray-600">낮음</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">낮음</span>;
       case 'medium':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-600">보통</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">보통</span>;
       case 'high':
-        return <Badge variant="outline" className="border-red-500 text-red-600">높음</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">높음</span>;
       default:
-        return <Badge variant="outline">알 수 없음</Badge>;
+        return <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">알 수 없음</span>;
     }
   };
 
@@ -289,6 +341,7 @@ export default function ApprovalsPage() {
       case 'payment_approval': return '결제 승인';
       case 'schedule_change': return '일정 변경';
       case 'refund_request': return '환불 요청';
+      case 'center_registration': return '센터 등록';
       default: return '전체';
     }
   };
@@ -304,141 +357,354 @@ export default function ApprovalsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">승인 대기 관리</h1>
           <p className="text-gray-600">승인 대기 중인 요청들을 관리하고 처리합니다.</p>
         </div>
-        <RefreshButton
-          onRefresh={fetchApprovals}
-          size="md"
-          variant="outline"
-          tooltip="승인 데이터 새로고침"
-        />
+        <button
+          onClick={fetchApprovals}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          새로고침
+        </button>
       </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">대기 중</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
-            <p className="text-xs text-gray-500">승인 대기 중인 요청</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">승인됨</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
-            <p className="text-xs text-gray-500">승인된 요청</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">거부됨</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
-            <p className="text-xs text-gray-500">거부된 요청</p>
-          </CardContent>
-        </Card>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="text-sm font-medium text-gray-600 mb-2">대기 중</div>
+          <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
+          <p className="text-xs text-gray-500">승인 대기 중인 요청</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="text-sm font-medium text-gray-600 mb-2">승인됨</div>
+          <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+          <p className="text-xs text-gray-500">승인된 요청</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="text-sm font-medium text-gray-600 mb-2">거부됨</div>
+          <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
+          <p className="text-xs text-gray-500">거부된 요청</p>
+        </div>
       </div>
 
       {/* 필터 */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>필터</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-              >
-                <option value="all">전체</option>
-                <option value="pending">대기 중</option>
-                <option value="approved">승인됨</option>
-                <option value="rejected">거부됨</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">유형</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as any)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-              >
-                <option value="all">전체</option>
-                <option value="course_enrollment">수강 신청</option>
-                <option value="instructor_registration">강사 등록</option>
-                <option value="payment_approval">결제 승인</option>
-                <option value="schedule_change">일정 변경</option>
-                <option value="refund_request">환불 요청</option>
-              </select>
-            </div>
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">필터</h3>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="all">전체</option>
+              <option value="pending">대기 중</option>
+              <option value="approved">승인됨</option>
+              <option value="rejected">거부됨</option>
+            </select>
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">유형</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as any)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="all">전체</option>
+              <option value="course_enrollment">수강 신청</option>
+              <option value="instructor_registration">강사 등록</option>
+              <option value="payment_approval">결제 승인</option>
+              <option value="schedule_change">일정 변경</option>
+              <option value="refund_request">환불 요청</option>
+              <option value="center_registration">센터 등록</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* 승인 요청 목록 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>승인 요청 목록</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveTable>
-            <TableHeader>
-              <TableHeaderCell>유형</TableHeaderCell>
-              <TableHeaderCell>제목 및 설명</TableHeaderCell>
-              <TableHeaderCell>요청자</TableHeaderCell>
-              <TableHeaderCell>요청일</TableHeaderCell>
-              <TableHeaderCell>우선순위</TableHeaderCell>
-              <TableHeaderCell>상태</TableHeaderCell>
-              <TableHeaderCell>작업</TableHeaderCell>
-            </TableHeader>
-            <TableBody>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">승인 요청 목록</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">유형</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목 및 설명</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청자</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청일</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">우선순위</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
               {filteredApprovals.map((approval) => (
-                <TableRow key={approval.id}>
-                  <TableCell>{getTypeLabel(approval.type)}</TableCell>
-                  <TableCell>
+                <tr key={approval.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">{getTypeLabel(approval.type)}</td>
+                  <td className="px-6 py-4">
                     <div className="font-medium">{approval.title}</div>
                     <div className="text-sm text-gray-500">{approval.description}</div>
-                  </TableCell>
-                  <TableCell>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="font-medium">{approval.requesterName}</div>
                     <div className="text-sm text-gray-500">{approval.requesterType}</div>
-                  </TableCell>
-                  <TableCell className="text-gray-500">{approval.requestDate}</TableCell>
-                  <TableCell>{getPriorityBadge(approval.priority)}</TableCell>
-                  <TableCell>{getStatusBadge(approval.status)}</TableCell>
-                  <TableCell>
-                    {approval.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApproval(approval.id, 'approve')}
-                          className="bg-green-600 hover:bg-green-700"
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{approval.requestDate}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{getPriorityBadge(approval.priority)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(approval.status)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
+                      {approval.type === 'center_registration' && (
+                        <button
+                          onClick={() => {
+                            setSelectedCenter(approval.centerRegistration!);
+                            setShowCenterModal(true);
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
                         >
-                          승인
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleApproval(approval.id, 'reject')}
-                        >
-                          거부
-                        </Button>
+                          상세보기
+                        </button>
+                      )}
+                      {approval.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleApproval(approval.id, 'approve')}
+                            className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            승인
+                          </button>
+                          <button
+                            onClick={() => handleApproval(approval.id, 'reject')}
+                            className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            거부
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 센터 등록 상세보기 모달 */}
+      {showCenterModal && selectedCenter && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">{selectedCenter.centerName} 센터 등록 신청</h3>
+                <button
+                  onClick={() => setShowCenterModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 기본 정보 */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">센터 기본 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">센터명</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.centerName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">사업자등록번호</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.businessNumber}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">대표자명</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.representativeName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">대표자 이메일</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.representativeEmail}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">대표자 전화번호</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.representativePhone}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 주소 정보 */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">주소 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">우편번호</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.address.postalCode}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">기본주소</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.address.address1}</p>
+                    </div>
+                    {selectedCenter.address.address2 && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">상세주소</label>
+                        <p className="text-sm text-gray-900">{selectedCenter.address.address2}</p>
                       </div>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </ResponsiveTable>
-        </CardContent>
-      </Card>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">시/도</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.address.city}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">시/군/구</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.address.province}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 센터 상세 정보 */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">센터 상세 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">센터 소개</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.centerInfo.description}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">수영장 크기</label>
+                      <p className="text-sm text-gray-900">
+                        {selectedCenter.centerInfo.poolSize.length}m × {selectedCenter.centerInfo.poolSize.width}m × {selectedCenter.centerInfo.poolSize.depth}m
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">수용 인원</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.centerInfo.capacity}명</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">주차 가능</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.centerInfo.parkingAvailable ? '가능' : '불가능'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">시설</label>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedCenter.centerInfo.facilities.map((facility, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                            {facility}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 신청자 정보 */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">신청자 정보</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">신청자명</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.applicant.name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">신청자 이메일</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.applicant.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">신청자 전화번호</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.applicant.phone}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">직책</label>
+                      <p className="text-sm text-gray-900">{selectedCenter.applicant.position}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">신청일</label>
+                      <p className="text-sm text-gray-900">{new Date(selectedCenter.submittedAt).toLocaleDateString('ko-KR')}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">상태</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedCenter.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedCenter.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        selectedCenter.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedCenter.status === 'pending' ? '대기중' :
+                         selectedCenter.status === 'approved' ? '승인됨' :
+                         selectedCenter.status === 'rejected' ? '거부됨' :
+                         selectedCenter.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 승인 정보 */}
+              {selectedCenter.approvalInfo && (
+                <div className="mt-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">승인 정보</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    {selectedCenter.approvalInfo.reviewedBy && (
+                      <div className="mb-2">
+                        <label className="text-sm font-medium text-gray-600">검토자</label>
+                        <p className="text-sm text-gray-900">
+                          {selectedCenter.approvalInfo.reviewedBy.name} ({selectedCenter.approvalInfo.reviewedBy.email})
+                        </p>
+                      </div>
+                    )}
+                    {selectedCenter.approvalInfo.comments && (
+                      <div className="mb-2">
+                        <label className="text-sm font-medium text-gray-600">검토 의견</label>
+                        <p className="text-sm text-gray-900">{selectedCenter.approvalInfo.comments}</p>
+                      </div>
+                    )}
+                    {selectedCenter.approvalInfo.rejectionReason && (
+                      <div className="mb-2">
+                        <label className="text-sm font-medium text-gray-600">거부 사유</label>
+                        <p className="text-sm text-gray-900">{selectedCenter.approvalInfo.rejectionReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowCenterModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  닫기
+                </button>
+                {selectedCenter.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleApproval(selectedCenter._id, 'approve');
+                        setShowCenterModal(false);
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      승인
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleApproval(selectedCenter._id, 'reject');
+                        setShowCenterModal(false);
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      거부
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

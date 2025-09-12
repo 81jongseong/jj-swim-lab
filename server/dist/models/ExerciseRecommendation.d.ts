@@ -23,7 +23,7 @@ export interface IWorkoutPlan {
     frequency: number;
     progression: any;
 }
-export interface IExerciseRecommendation extends Document {
+export interface IExerciseRecommendationComplex extends Document {
     technique: string;
     level: string;
     category: 'posture' | 'breathing' | 'movement' | 'efficiency';
@@ -34,6 +34,17 @@ export interface IExerciseRecommendation extends Document {
     centerId: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
+}
+export interface IExerciseRecommendation {
+    id: string;
+    name: string;
+    description: string;
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    category: string;
+    duration: number;
+    equipment?: string[];
+    instructions: string[];
+    benefits: string[];
 }
 declare const _default: mongoose.Model<IExerciseRecommendation, {}, {}, {}, mongoose.Document<unknown, {}, IExerciseRecommendation> & IExerciseRecommendation & {
     _id: mongoose.Types.ObjectId;

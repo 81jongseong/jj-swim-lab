@@ -28,8 +28,8 @@ export interface IWorkoutPlan {
   progression: any; // 진행 단계 정보
 }
 
-// 운동 추천 인터페이스
-export interface IExerciseRecommendation extends Document {
+// 운동 추천 인터페이스 (기존 복잡한 구조)
+export interface IExerciseRecommendationComplex extends Document {
   technique: string; // 수영 기법 (freestyle, backstroke, breaststroke, butterfly)
   level: string; // 레벨 (beginner, intermediate, advanced, expert)
   category: 'posture' | 'breathing' | 'movement' | 'efficiency'; // 카테고리
@@ -40,6 +40,19 @@ export interface IExerciseRecommendation extends Document {
   centerId: mongoose.Types.ObjectId; // 센터 ID
   createdAt: Date;
   updatedAt: Date;
+}
+
+// 간단한 운동 추천 인터페이스 (AI 엔진에서 사용)
+export interface IExerciseRecommendation {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: string;
+  duration: number; // 분
+  equipment?: string[];
+  instructions: string[];
+  benefits: string[];
 }
 
 // 운동 스키마
@@ -74,44 +87,27 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>({
   progression: { type: Schema.Types.Mixed }
 }, { _id: false });
 
-// 운동 추천 스키마
+// 운동 추천 스키마 (간단한 버전)
 const ExerciseRecommendationSchema = new Schema<IExerciseRecommendation>({
-  technique: { 
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  difficulty: { 
     type: String, 
-    required: true,
-    enum: ['freestyle', 'backstroke', 'breaststroke', 'butterfly']
-  },
-  level: { 
-    type: String, 
-    required: true,
-    enum: ['beginner', 'intermediate', 'advanced', 'expert']
-  },
-  category: { 
-    type: String, 
-    required: true,
-    enum: ['posture', 'breathing', 'movement', 'efficiency']
-  },
-  exercises: [ExerciseSchema],
-  workoutPlan: [WorkoutPlanSchema],
-  isActive: { type: Boolean, default: true },
-  createdBy: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
+    enum: ['beginner', 'intermediate', 'advanced'], 
     required: true 
   },
-  centerId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Center', 
-    required: true 
-  }
+  category: { type: String, required: true },
+  duration: { type: Number, required: true },
+  equipment: [{ type: String }],
+  instructions: [{ type: String, required: true }],
+  benefits: [{ type: String, required: true }]
 }, {
   timestamps: true
 });
 
 // 인덱스 설정
-ExerciseRecommendationSchema.index({ technique: 1, level: 1, category: 1 });
-ExerciseRecommendationSchema.index({ centerId: 1, isActive: 1 });
-ExerciseRecommendationSchema.index({ createdBy: 1 });
+ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
 
 export default mongoose.model<IExerciseRecommendation>('ExerciseRecommendation', ExerciseRecommendationSchema);
 

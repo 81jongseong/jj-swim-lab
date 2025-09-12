@@ -448,42 +448,6 @@ const AIEvaluationResultSchema = new Schema<IAIEvaluationResult>({
 EvaluationCriteriaSchema.index({ technique: 1, level: 1 }, { unique: true });
 AIEvaluationResultSchema.index({ studentId: 1, technique: 1, evaluationDate: -1 });
 
-// 운동 추천 인터페이스
-export interface IExerciseRecommendation {
-  id: string;
-  name: string;
-  description: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  category: string;
-  duration: number; // 분
-  equipment?: string[];
-  instructions: string[];
-  benefits: string[];
-}
-
-// 운동 추천 스키마
-const ExerciseRecommendationSchema = new Schema<IExerciseRecommendation>({
-  id: { type: String, required: true },
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  difficulty: { 
-    type: String, 
-    enum: ['beginner', 'intermediate', 'advanced'], 
-    required: true 
-  },
-  category: { type: String, required: true },
-  duration: { type: Number, required: true },
-  equipment: [{ type: String }],
-  instructions: [{ type: String, required: true }],
-  benefits: [{ type: String, required: true }]
-}, {
-  timestamps: true
-});
-
-// 인덱스 설정
-ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
-
 // 모델 생성
 export const EvaluationCriteria = mongoose.model<IEvaluationCriteria>('EvaluationCriteria', EvaluationCriteriaSchema);
 export const AIEvaluationResult = mongoose.model<IAIEvaluationResult>('AIEvaluationResult', AIEvaluationResultSchema);
-export const ExerciseRecommendation = mongoose.model<IExerciseRecommendation>('ExerciseRecommendation', ExerciseRecommendationSchema);

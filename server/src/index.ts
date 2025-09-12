@@ -1,3 +1,93 @@
+/**
+ * 🚀 JJ Swim Lab - 메인 서버 진입점
+ * 
+ * 📋 **서버 목적**
+ * - JJ Swim Lab 웹 애플리케이션의 메인 서버 진입점
+ * - Express.js 기반 RESTful API 서버 구축
+ * - MongoDB 데이터베이스 연결 및 소켓 통신 지원
+ * - 인증, 권한 관리, 파일 업로드 등 핵심 기능 제공
+ * 
+ * 🔄 **주요 기능**
+ * - Express.js 웹 서버 설정 및 미들웨어 구성
+ * - MongoDB Atlas 데이터베이스 연결
+ * - Socket.IO 실시간 통신 지원
+ * - JWT 기반 인증 및 권한 관리
+ * - CORS 및 보안 미들웨어 적용
+ * - 파일 업로드 및 정적 파일 서빙
+ * - 환경 변수 관리 및 시드 데이터 실행
+ * 
+ * 🗄️ **데이터 연동**
+ * - MongoDB Atlas (클라우드 데이터베이스)
+ * - 모든 모델 파일들과 연동 (User, Center, Course 등)
+ * - Socket.IO 클라이언트와 실시간 통신
+ * - 파일 시스템 (이미지, 문서 업로드)
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - Express.js 4.18.2
+ * - MongoDB Driver 7.8.7
+ * - Socket.IO 4.7.5
+ * - JWT 9.0.2
+ * - CORS 2.8.5
+ * - Multer 1.4.5-lts.1
+ * - Dotenv 16.3.1
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 환경 변수 설정 필수 (.env 파일)
+ * 2. MongoDB Atlas 연결 정보 보안 관리
+ * 3. CORS 설정 시 프로덕션 환경 고려
+ * 4. 파일 업로드 크기 제한 설정
+ * 5. 에러 처리 및 로깅 시스템 구축
+ * 6. 보안 헤더 및 미들웨어 적용
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 새로운 라우트 추가 시 index.ts에 등록
+ * - [ ] 환경 변수 추가 시 .env 파일 업데이트
+ * - [ ] 보안 미들웨어 설정 검토
+ * - [ ] 에러 처리 로직 개선
+ * - [ ] 성능 모니터링 추가
+ * - [ ] 로그 시스템 구축
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 서버 구조 설정
+ * - 2024-12-19: 인증 시스템 및 미들웨어 추가
+ * - 2024-12-19: 센터 관리 및 승인 시스템 추가
+ * - 2024-12-19: 보안 및 검증 미들웨어 개선
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (메인 서버 구축 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - API 문서화 (Swagger/OpenAPI)
+ * - 로그 시스템 구축 (Winston)
+ * - 성능 모니터링 (PM2)
+ * - 보안 강화 (Rate Limiting, Helmet)
+ * - 테스트 자동화 (Jest, Supertest)
+ * 
+ * 💡 **사용 예시**
+ * ```bash
+ * # 개발 서버 시작
+ * npm run dev
+ * 
+ * # 프로덕션 빌드
+ * npm run build
+ * 
+ * # 프로덕션 서버 시작
+ * npm start
+ * ```
+ * 
+ * 🔍 **서버 처리 흐름**
+ * 1. 환경 변수 로드 및 설정
+ * 2. Express 앱 초기화 및 미들웨어 설정
+ * 3. MongoDB 데이터베이스 연결
+ * 4. 라우트 등록 및 API 엔드포인트 설정
+ * 5. Socket.IO 서버 초기화
+ * 6. 파일 업로드 및 정적 파일 서빙 설정
+ * 7. 에러 처리 및 서버 시작
+ * 8. 시드 데이터 실행 (개발 환경)
+ */
+
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -73,6 +163,8 @@ import video3DAnalysisRoutes from './routes/video-3d-analysis';
 import videoUploadRoutes from './routes/video-upload';
 import aiExerciseRecommendationsRoutes from './routes/ai-exercise-recommendations';
 import ordersRoutes from './routes/orders';
+import centerRegistrationRoutes from './routes/center-registrations';
+import centerManagementRoutes from './routes/center-management';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -93,6 +185,7 @@ import './models/VideoProcessingJob';
 import './models/ExerciseRecommendation';
 import './models/Order';
 import './models/Product';
+import './models/CenterRegistration';
 
 console.log('📦 모든 모델 import 완료!');
 
@@ -228,6 +321,8 @@ app.use('/api/video-3d-analysis', video3DAnalysisRoutes);
 app.use('/api/video-upload', videoUploadRoutes);
 app.use('/api/ai/exercise-recommendations', aiExerciseRecommendationsRoutes);
 app.use('/api/shop/orders', ordersRoutes);
+app.use('/api/center-registrations', centerRegistrationRoutes);
+app.use('/api/center-management', centerManagementRoutes);
 
 // 404 처리
 app.use('*', (req, res) => {

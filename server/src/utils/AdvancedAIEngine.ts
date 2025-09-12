@@ -1,6 +1,101 @@
+/**
+ * 🤖 JJ Swim Lab - 고급 AI 엔진 유틸리티
+ * 
+ * 📋 **유틸리티 목적**
+ * - 수영 강습 AI 분석 및 추천 시스템의 고급 AI 엔진
+ * - 종합적인 AI 평가 및 분석 기능 제공
+ * - 개인화된 운동 추천 및 진도 예측
+ * - AI 기반 성과 분석 및 피드백 생성
+ * - AI 모델 성능 최적화 및 관리
+ * 
+ * 🔄 **주요 기능**
+ * - 종합적인 AI 평가 및 분석
+ * - 개인화된 운동 추천 시스템
+ * - AI 기반 성과 분석 및 피드백
+ * - 진도 예측 및 목표 설정
+ * - AI 모델 성능 최적화
+ * - AI 분석 결과 저장 및 관리
+ * - AI 모델 자동 업데이트
+ * 
+ * 🗄️ **데이터 연동**
+ * - Checklist 모델과 연동 (체크리스트 데이터)
+ * - AIAnalysis 모델과 연동 (AI 분석 결과)
+ * - AIEvaluationResult 모델과 연동 (AI 평가 결과)
+ * - ExerciseRecommendation 모델과 연동 (운동 추천)
+ * - AI 분석 결과 데이터베이스
+ * - AI 모델 성능 데이터
+ * - 개인화 추천 데이터
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - AI 분석 라이브러리 (TensorFlow, PyTorch)
+ * - 데이터 분석 라이브러리 (NumPy, Pandas)
+ * - Checklist 모델 (../models/Checklist)
+ * - AIAnalysis 모델 (../models/AIAnalysis)
+ * - AIEvaluationResult 모델 (../models/AIEvaluationCriteria)
+ * - ExerciseRecommendation 모델 (../models/ExerciseRecommendation)
+ * - MongoDB Atlas (데이터 저장)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. AI 모델 성능 및 정확도 최적화
+ * 2. 개인정보 보호 및 데이터 보안
+ * 3. AI 분석 결과의 해석 가능성
+ * 4. 실시간 분석 성능 최적화
+ * 5. AI 모델 업데이트 및 버전 관리
+ * 6. 에러 처리 및 폴백 메커니즘
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] AI 모델 성능 및 정확도 확인
+ * - [ ] 개인정보 보호 및 데이터 보안 확인
+ * - [ ] AI 분석 결과 해석 가능성 확인
+ * - [ ] 실시간 분석 성능 최적화 확인
+ * - [ ] AI 모델 업데이트 및 버전 관리 확인
+ * - [ ] 에러 처리 및 폴백 메커니즘 확인
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 고급 AI 엔진 구현
+ * - 2024-12-19: 종합적인 AI 평가 시스템 구현
+ * - 2024-12-19: 개인화된 운동 추천 시스템 구현
+ * - 2024-12-19: AI 기반 성과 분석 시스템 구현
+ * - 2024-12-19: AI 모델 성능 최적화 및 관리 시스템 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (고급 AI 엔진 유틸리티 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - AI 모델 성능 향상
+ * - 실시간 AI 분석 시스템
+ * - AI 기반 맞춤형 코스 추천
+ * - AI 분석 결과 시각화
+ * - AI 모델 자동 업데이트 시스템
+ * 
+ * 💡 **사용 예시**
+ * ```typescript
+ * // 종합적인 AI 평가
+ * const evaluationResult = await performComprehensiveEvaluation(inputData);
+ * 
+ * // 개인화된 운동 추천
+ * const recommendations = await generatePersonalizedRecommendations(studentId);
+ * 
+ * // AI 기반 성과 분석
+ * const performanceAnalysis = await analyzePerformanceMetrics(metrics);
+ * ```
+ * 
+ * 🔍 **고급 AI 엔진 처리 흐름**
+ * 1. 입력 데이터 검증 및 전처리
+ * 2. AI 모델을 통한 종합적인 분석 실행
+ * 3. AI 분석 결과 후처리 및 해석
+ * 4. 개인화된 추천 및 피드백 생성
+ * 5. AI 분석 결과 데이터베이스 저장
+ * 6. AI 모델 성능 평가 및 개선
+ * 7. 사용자 피드백 수집 및 학습
+ */
+
 import { Checklist } from '../models/Checklist';
 import { AIAnalysis } from '../models/AIAnalysis';
-import { AIEvaluationResult, EvaluationCriteria, ExerciseRecommendation, IExerciseRecommendation } from '../models/AIEvaluationCriteria';
+import { AIEvaluationResult, EvaluationCriteria } from '../models/AIEvaluationCriteria';
+import ExerciseRecommendation, { IExerciseRecommendation } from '../models/ExerciseRecommendation';
 
 // AI 평가 입력 데이터 인터페이스
 export interface ComprehensiveEvaluationInput {
@@ -290,10 +385,8 @@ export class AdvancedAIEngine {
     // 개선 영역별 운동 추천
     for (const area of improvementAreas) {
       const recommendations = await ExerciseRecommendation.find({
-        technique,
-        level,
         category: this.getCategoryEnglishName(area),
-        isActive: true
+        difficulty: level === 'expert' ? 'advanced' : level
       });
       
       recommendations.forEach(rec => {

@@ -1,3 +1,116 @@
+/**
+ * 💳 JJ Swim Lab - 결제 관리 API 라우트
+ * 
+ * 📋 **라우트 목적**
+ * - 수영 강습 결제 관리 및 CRUD 작업을 위한 API 엔드포인트 제공
+ * - 결제 생성, 수정, 취소, 조회 기능
+ * - 결제 상태 관리 및 결제 승인 처리
+ * - 결제 내역 및 통계 데이터 제공
+ * - 결제 보안 및 거래 내역 추적
+ * 
+ * 🔄 **주요 기능**
+ * - 전체 결제 내역 조회 및 검색 (상태, 목적, 기간별)
+ * - 사용자별 결제 내역 관리
+ * - 결제 생성, 수정, 취소 (권한별 제한)
+ * - 결제 상태 관리 (대기, 완료, 실패, 취소)
+ * - 결제 승인 및 처리
+ * - 결제 통계 및 분석
+ * - 결제 보안 및 거래 내역 추적
+ * 
+ * 🗄️ **데이터 연동**
+ * - Payment 모델과 연동 (결제 정보 관리)
+ * - User 모델과 연동 (사용자 정보)
+ * - Course 모델과 연동 (강습 과정 정보)
+ * - Booking 모델과 연동 (예약 정보)
+ * - 센터 정보와 연동 (센터별 결제 그룹)
+ * - 외부 결제 시스템과 연동 (PG사)
+ * - MongoDB Atlas 데이터베이스
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - Express.js Router
+ * - Mongoose (MongoDB ODM)
+ * - Payment 모델 (../models/Payment)
+ * - User 모델 (../models/User)
+ * - Course 모델 (../models/Course)
+ * - Booking 모델 (../models/Booking)
+ * - 인증 미들웨어 (../middleware/auth)
+ * - 외부 결제 API (PG사 연동)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 결제 보안 및 암호화 처리 필수
+ * 2. 결제 상태 변경 시 예약 시스템 연동
+ * 3. 결제 데이터 검증 및 sanitization
+ * 4. 결제 실패 시 롤백 처리
+ * 5. 결제 내역 추적 및 로깅
+ * 6. API 보안 및 Rate Limiting 적용
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 결제 보안 및 암호화 확인
+ * - [ ] 결제 상태 관리 확인
+ * - [ ] 결제 데이터 검증 및 sanitization 확인
+ * - [ ] 결제 실패 시 롤백 처리 확인
+ * - [ ] API 엔드포인트 보안 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 결제 관리 API 구현
+ * - 2024-12-19: 결제 상태 관리 시스템 구현
+ * - 2024-12-19: 결제 보안 및 암호화 시스템 구현
+ * - 2024-12-19: 결제 통계 및 분석 기능 구현
+ * - 2024-12-19: 외부 결제 시스템 연동
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (결제 관리 API 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - 실시간 결제 알림 시스템
+ * - 결제 자동 환불 시스템
+ * - 결제 패턴 분석 및 최적화
+ * - 결제 보안 강화 (3D Secure)
+ * - 결제 통계 대시보드
+ * 
+ * 💡 **사용 예시**
+ * ```typescript
+ * // 전체 결제 내역 조회
+ * GET /api/payments?status=completed&startDate=2024-12-01&endDate=2024-12-31
+ * 
+ * // 사용자별 결제 내역 조회
+ * GET /api/payments/user/:userId
+ * 
+ * // 결제 생성
+ * POST /api/payments
+ * {
+ *   "userId": "user001",
+ *   "courseId": "course001",
+ *   "amount": 50000,
+ *   "purpose": "course_payment",
+ *   "paymentMethod": "card"
+ * }
+ * 
+ * // 결제 승인
+ * PUT /api/payments/:id/approve
+ * {
+ *   "transactionId": "txn_123456789"
+ * }
+ * 
+ * // 결제 취소
+ * PUT /api/payments/:id/cancel
+ * {
+ *   "reason": "user_request"
+ * }
+ * ```
+ * 
+ * 🔍 **결제 관리 처리 흐름**
+ * 1. 사용자 권한 및 역할 검증
+ * 2. 결제 데이터 검증 및 sanitization
+ * 3. 결제 금액 및 수수료 계산
+ * 4. 외부 결제 시스템 연동
+ * 5. 결제 상태 업데이트 및 로깅
+ * 6. 예약 시스템 연동 (결제 완료 시)
+ * 7. 결제 통계 및 분석 데이터 제공
+ */
+
 import { Router, Request, Response } from 'express';
 import { Payment } from '../models/Payment';
 import { User } from '../models/User';

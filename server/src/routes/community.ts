@@ -1,3 +1,111 @@
+/**
+ * 💬 JJ Swim Lab - 커뮤니티 관리 API 라우트
+ * 
+ * 📋 **라우트 목적**
+ * - 수영 강습 커뮤니티 관리 및 CRUD 작업을 위한 API 엔드포인트 제공
+ * - 게시글, 댓글, 신고 관리 기능
+ * - 커뮤니티 검색, 필터링, 페이지네이션 기능
+ * - 커뮤니티 통계 및 분석 데이터 제공
+ * - 커뮤니티 보안 및 관리 기능
+ * 
+ * 🔄 **주요 기능**
+ * - 게시글 CRUD 작업 (생성, 조회, 수정, 삭제)
+ * - 댓글 CRUD 작업 및 중첩 댓글 지원
+ * - 게시글 검색 및 필터링 (제목, 내용, 태그별)
+ * - 커뮤니티 신고 및 관리 기능
+ * - 페이지네이션 및 정렬 기능
+ * - 커뮤니티 통계 및 분석
+ * - 게시글 조회수 및 좋아요 기능
+ * 
+ * 🗄️ **데이터 연동**
+ * - CommunityPost 모델과 연동 (게시글 정보)
+ * - CommunityComment 모델과 연동 (댓글 정보)
+ * - CommunityReport 모델과 연동 (신고 정보)
+ * - User 모델과 연동 (작성자 정보)
+ * - 인증 미들웨어와 연동 (권한 검증)
+ * - MongoDB Atlas 데이터베이스
+ * 
+ * 🛠️ **필요한 설치 파일**
+ * - Express.js Router
+ * - Mongoose (MongoDB ODM)
+ * - CommunityPost 모델 (../models/CommunityPost)
+ * - CommunityComment 모델 (../models/CommunityComment)
+ * - CommunityReport 모델 (../models/CommunityReport)
+ * - 인증 미들웨어 (../middleware/auth)
+ * - MongoDB Atlas (데이터 저장)
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 게시글 및 댓글 내용 검증 및 sanitization
+ * 2. 커뮤니티 신고 처리 및 관리
+ * 3. 게시글 권한 관리 (작성자만 수정/삭제)
+ * 4. 검색 성능 최적화 및 인덱스 관리
+ * 5. 페이지네이션 성능 최적화
+ * 6. API 보안 및 Rate Limiting 적용
+ * 
+ * 🔧 **수정 시 체크리스트**
+ * - [ ] 게시글 및 댓글 검증 로직 확인
+ * - [ ] 커뮤니티 신고 처리 확인
+ * - [ ] 게시글 권한 관리 확인
+ * - [ ] 검색 성능 최적화 확인
+ * - [ ] API 엔드포인트 보안 검증
+ * 
+ * 📅 **개발 히스토리**
+ * - 2024-12-19: 초기 커뮤니티 관리 API 구현
+ * - 2024-12-19: 게시글 CRUD 시스템 구현
+ * - 2024-12-19: 댓글 시스템 및 중첩 댓글 구현
+ * - 2024-12-19: 커뮤니티 신고 시스템 구현
+ * - 2024-12-19: 검색 및 필터링 기능 구현
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2024-12-19
+ * - 상태: ✅ 완성 (커뮤니티 관리 API 완료)
+ * 
+ * 🚀 **다음 단계**
+ * - 실시간 댓글 알림 시스템
+ * - 게시글 추천 시스템
+ * - 커뮤니티 모더레이션 도구
+ * - 커뮤니티 통계 대시보드
+ * - 커뮤니티 보안 강화
+ * 
+ * 💡 **사용 예시**
+ * ```typescript
+ * // 게시글 목록 조회
+ * GET /api/community/posts?page=1&limit=10&tag=자유형
+ * 
+ * // 게시글 생성
+ * POST /api/community/posts
+ * {
+ *   "title": "자유형 기초 강습 후기",
+ *   "content": "강습 내용...",
+ *   "tags": ["자유형", "초급", "후기"]
+ * }
+ * 
+ * // 댓글 생성
+ * POST /api/community/posts/:postId/comments
+ * {
+ *   "content": "좋은 글 감사합니다!"
+ * }
+ * 
+ * // 커뮤니티 신고
+ * POST /api/community/reports
+ * {
+ *   "targetType": "post",
+ *   "targetId": "post001",
+ *   "reason": "스팸"
+ * }
+ * ```
+ * 
+ * 🔍 **커뮤니티 관리 처리 흐름**
+ * 1. 사용자 권한 및 역할 검증
+ * 2. 게시글/댓글 데이터 검증 및 sanitization
+ * 3. 검색 및 필터링 조건 적용
+ * 4. 데이터베이스 쿼리 실행
+ * 5. 페이지네이션 및 정렬 처리
+ * 6. 커뮤니티 통계 업데이트
+ * 7. 응답 데이터 반환 및 로깅
+ */
+
 import express, { Request, Response } from 'express';
 import { auth, requireRole } from '../middleware/auth';
 import { CommunityPost } from '../models/CommunityPost';

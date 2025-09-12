@@ -9,4 +9,5 @@ import './models/VideoProcessingJob';
 import './models/ExerciseRecommendation';
 import './models/Order';
 import './models/Product';
+import './models/CenterRegistration';
 //# sourceMappingURL=index.d.ts.map

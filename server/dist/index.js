@@ -61,6 +61,8 @@ const video_3d_analysis_1 = __importDefault(require("./routes/video-3d-analysis"
 const video_upload_1 = __importDefault(require("./routes/video-upload"));
 const ai_exercise_recommendations_1 = __importDefault(require("./routes/ai-exercise-recommendations"));
 const orders_1 = __importDefault(require("./routes/orders"));
+const center_registrations_1 = __importDefault(require("./routes/center-registrations"));
+const center_management_1 = __importDefault(require("./routes/center-management"));
 console.log('📦 모델 import 시작...');
 require("./models/User");
 require("./models/Checklist");
@@ -74,6 +76,7 @@ require("./models/VideoProcessingJob");
 require("./models/ExerciseRecommendation");
 require("./models/Order");
 require("./models/Product");
+require("./models/CenterRegistration");
 console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
@@ -181,6 +184,8 @@ app.use('/api/video-3d-analysis', video_3d_analysis_1.default);
 app.use('/api/video-upload', video_upload_1.default);
 app.use('/api/ai/exercise-recommendations', ai_exercise_recommendations_1.default);
 app.use('/api/shop/orders', orders_1.default);
+app.use('/api/center-registrations', center_registrations_1.default);
+app.use('/api/center-management', center_management_1.default);
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,

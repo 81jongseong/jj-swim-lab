@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExerciseRecommendation = exports.AIEvaluationResult = exports.EvaluationCriteria = void 0;
+exports.AIEvaluationResult = exports.EvaluationCriteria = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const EvaluationCriteriaSchema = new mongoose_1.Schema({
     technique: {
@@ -331,25 +331,6 @@ const AIEvaluationResultSchema = new mongoose_1.Schema({
 });
 EvaluationCriteriaSchema.index({ technique: 1, level: 1 }, { unique: true });
 AIEvaluationResultSchema.index({ studentId: 1, technique: 1, evaluationDate: -1 });
-const ExerciseRecommendationSchema = new mongoose_1.Schema({
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    difficulty: {
-        type: String,
-        enum: ['beginner', 'intermediate', 'advanced'],
-        required: true
-    },
-    category: { type: String, required: true },
-    duration: { type: Number, required: true },
-    equipment: [{ type: String }],
-    instructions: [{ type: String, required: true }],
-    benefits: [{ type: String, required: true }]
-}, {
-    timestamps: true
-});
-ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
 exports.EvaluationCriteria = mongoose_1.default.model('EvaluationCriteria', EvaluationCriteriaSchema);
 exports.AIEvaluationResult = mongoose_1.default.model('AIEvaluationResult', AIEvaluationResultSchema);
-exports.ExerciseRecommendation = mongoose_1.default.model('ExerciseRecommendation', ExerciseRecommendationSchema);
 //# sourceMappingURL=AIEvaluationCriteria.js.map

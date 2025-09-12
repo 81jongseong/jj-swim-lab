@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const AIEvaluationCriteria_1 = require("../models/AIEvaluationCriteria");
+const ExerciseRecommendation_1 = __importDefault(require("../models/ExerciseRecommendation"));
 const AdvancedAIEngine_1 = require("../utils/AdvancedAIEngine");
 const router = express_1.default.Router();
 router.get('/evaluation-criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
@@ -104,15 +105,13 @@ router.delete('/evaluation-criteria/:id', auth_1.auth, (0, auth_1.requireRole)([
 });
 router.get('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
-        const { technique, level, category } = req.query;
-        const filter = { isActive: true };
-        if (technique)
-            filter.technique = technique;
-        if (level)
-            filter.level = level;
+        const { category, difficulty } = req.query;
+        const filter = {};
         if (category)
             filter.category = category;
-        const recommendations = await AIEvaluationCriteria_1.ExerciseRecommendation.find(filter).sort({ technique: 1, level: 1, category: 1 });
+        if (difficulty)
+            filter.difficulty = difficulty;
+        const recommendations = await ExerciseRecommendation_1.default.find(filter).sort({ category: 1, difficulty: 1 });
         res.json({
             success: true,
             data: { recommendations },
@@ -130,7 +129,7 @@ router.get('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['i
 router.post('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const recommendationData = req.body;
-        const recommendation = new AIEvaluationCriteria_1.ExerciseRecommendation(recommendationData);
+        const recommendation = new ExerciseRecommendation_1.default(recommendationData);
         await recommendation.save();
         res.status(201).json({
             success: true,
@@ -150,7 +149,7 @@ router.put('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const recommendation = await AIEvaluationCriteria_1.ExerciseRecommendation.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        const recommendation = await ExerciseRecommendation_1.default.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
         if (!recommendation) {
             return res.status(404).json({
                 success: false,
@@ -174,7 +173,7 @@ router.put('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)
 router.delete('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const recommendation = await AIEvaluationCriteria_1.ExerciseRecommendation.findByIdAndDelete(id);
+        const recommendation = await ExerciseRecommendation_1.default.findByIdAndDelete(id);
         if (!recommendation) {
             return res.status(404).json({
                 success: false,

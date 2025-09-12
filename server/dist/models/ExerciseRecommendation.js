@@ -63,39 +63,22 @@ const WorkoutPlanSchema = new mongoose_1.Schema({
     progression: { type: mongoose_1.Schema.Types.Mixed }
 }, { _id: false });
 const ExerciseRecommendationSchema = new mongoose_1.Schema({
-    technique: {
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    difficulty: {
         type: String,
-        required: true,
-        enum: ['freestyle', 'backstroke', 'breaststroke', 'butterfly']
-    },
-    level: {
-        type: String,
-        required: true,
-        enum: ['beginner', 'intermediate', 'advanced', 'expert']
-    },
-    category: {
-        type: String,
-        required: true,
-        enum: ['posture', 'breathing', 'movement', 'efficiency']
-    },
-    exercises: [ExerciseSchema],
-    workoutPlan: [WorkoutPlanSchema],
-    isActive: { type: Boolean, default: true },
-    createdBy: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'User',
+        enum: ['beginner', 'intermediate', 'advanced'],
         required: true
     },
-    centerId: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Center',
-        required: true
-    }
+    category: { type: String, required: true },
+    duration: { type: Number, required: true },
+    equipment: [{ type: String }],
+    instructions: [{ type: String, required: true }],
+    benefits: [{ type: String, required: true }]
 }, {
     timestamps: true
 });
-ExerciseRecommendationSchema.index({ technique: 1, level: 1, category: 1 });
-ExerciseRecommendationSchema.index({ centerId: 1, isActive: 1 });
-ExerciseRecommendationSchema.index({ createdBy: 1 });
+ExerciseRecommendationSchema.index({ category: 1, difficulty: 1 });
 exports.default = mongoose_1.default.model('ExerciseRecommendation', ExerciseRecommendationSchema);
 //# sourceMappingURL=ExerciseRecommendation.js.map

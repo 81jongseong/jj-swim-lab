@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdvancedAIEngine = void 0;
 const AIEvaluationCriteria_1 = require("../models/AIEvaluationCriteria");
+const ExerciseRecommendation_1 = __importDefault(require("../models/ExerciseRecommendation"));
 class AdvancedAIEngine {
     static async performComprehensiveEvaluation(input) {
         try {
@@ -132,11 +136,9 @@ class AdvancedAIEngine {
         const exercises = [];
         let workoutPlan = null;
         for (const area of improvementAreas) {
-            const recommendations = await AIEvaluationCriteria_1.ExerciseRecommendation.find({
-                technique,
-                level,
+            const recommendations = await ExerciseRecommendation_1.default.find({
                 category: this.getCategoryEnglishName(area),
-                isActive: true
+                difficulty: level === 'expert' ? 'advanced' : level
             });
             recommendations.forEach(rec => {
                 if (rec.instructions) {
