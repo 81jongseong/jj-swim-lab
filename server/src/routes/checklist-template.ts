@@ -9,9 +9,9 @@ const router = express.Router();
 router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { name, description, levels, items, isPublic, tags } = req.body;
-    const creatorId = req.user?._id;
-    const creatorType = req.user?.userType === 'centerAdmin' ? 'center' : 'instructor';
-    const centerId = req.user?.centerId;
+    const creatorId = (req as any).user?._id;
+    const creatorType = (req as any).user?.userType === 'centerAdmin' ? 'center' : 'instructor';
+    const centerId = (req as any).user?.centerId;
 
     if (!name || !levels || !items || !Array.isArray(levels) || !Array.isArray(items)) {
       return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
@@ -58,9 +58,9 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: e
 // 사용 가능한 템플릿 목록 조회
 router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
-    const userId = req.user?._id;
-    const centerId = req.user?.centerId;
-    const userType = req.user?.userType;
+    const userId = (req as any).user?._id;
+    const centerId = (req as any).user?.centerId;
+    const userType = (req as any).user?.userType;
 
     const query: any = { isActive: true };
 
@@ -104,8 +104,8 @@ router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: ex
 router.get('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
-    const userId = req.user?._id;
-    const centerId = req.user?.centerId;
+    const userId = (req as any).user?._id;
+    const centerId = (req as any).user?.centerId;
 
     const template = await ChecklistTemplate.findById(templateId)
       .populate('creatorId', 'name')
@@ -139,7 +139,7 @@ router.put('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), asy
   try {
     const { templateId } = req.params;
     const { name, description, levels, items, isPublic, tags } = req.body;
-    const userId = req.user?._id;
+    const userId = (req as any).user?._id;
 
     const template = await ChecklistTemplate.findById(templateId);
 
@@ -185,7 +185,7 @@ router.put('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), asy
 router.delete('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
-    const userId = req.user?._id;
+    const userId = (req as any).user?._id;
 
     const template = await ChecklistTemplate.findById(templateId);
 

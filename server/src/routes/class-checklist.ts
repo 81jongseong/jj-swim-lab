@@ -53,8 +53,8 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
       }
       
       // 템플릿 접근 권한 확인
-      const userId = req.user?._id;
-      const centerId = req.user?.centerId;
+      const userId = (req as any).user?._id;
+      const centerId = (req as any).user?.centerId;
       const hasAccess = template.creatorId.equals(userId) || 
                        template.centerId?.equals(centerId) || 
                        template.isPublic;

@@ -8,7 +8,7 @@ const router: express.Router = express.Router();
 // 반 목록 조회 (강사별)
 router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
-    const userId = req.user?._id;
+    const userId = (req as any).user?._id;
     
     if (!userId) {
       return res.status(401).json({ error: '사용자 인증이 필요합니다.' });
@@ -75,7 +75,7 @@ router.get('/:classId', auth, requireRole(['instructor', 'centerAdmin']), async 
       name: '초급반 A',
       level: '초급',
       type: 'group',
-      instructor: req.user?._id,
+      instructor: (req as any).user?._id,
       maxStudents: 8,
       currentStudents: 6,
       schedule: '월,수,금 18:00-19:00',

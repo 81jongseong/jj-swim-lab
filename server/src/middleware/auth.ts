@@ -95,6 +95,23 @@ export interface AuthenticatedUser {
 }
 
 // JWT 토큰 생성
+/**
+ * 🔐 JWT 토큰 생성 함수
+ * 
+ * 📋 **기능**
+ * - 사용자 정보를 기반으로 JWT 토큰 생성
+ * - Access Token (1시간) 및 Refresh Token (7일) 생성
+ * - issuer와 audience 설정으로 보안 강화
+ * 
+ * 🔄 **토큰 생성 과정**
+ * 1. 사용자 정보를 페이로드로 구성
+ * 2. Access Token 생성 (1시간 만료)
+ * 3. Refresh Token 생성 (7일 만료)
+ * 4. issuer/audience 설정으로 보안 강화
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: 토큰 생성 로직에 주석 추가
+ */
 export const generateTokens = (user: any) => {
   const payload = {
     id: user._id,
@@ -125,6 +142,23 @@ export const generateTokens = (user: any) => {
 };
 
 // JWT 토큰 검증
+/**
+ * 🔐 JWT 토큰 검증 함수
+ * 
+ * 📋 **기능**
+ * - JWT 토큰의 유효성 검증
+ * - issuer와 audience 검증 포함
+ * - 토큰 만료 및 서명 검증
+ * 
+ * 🔄 **검증 과정**
+ * 1. JWT 토큰 서명 검증
+ * 2. issuer ('jj-swim-lab') 검증
+ * 3. audience ('jj-swim-lab-users') 검증
+ * 4. 토큰 만료 시간 검증
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: 토큰 검증 로직 통일을 위한 주석 추가
+ */
 export const verifyToken = (token: string, secret: string): Promise<AuthenticatedUser> => {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secret, {
@@ -143,6 +177,24 @@ export const verifyToken = (token: string, secret: string): Promise<Authenticate
 };
 
 // 기본 인증 미들웨어
+/**
+ * 🔐 기본 인증 미들웨어
+ * 
+ * 📋 **기능**
+ * - JWT 토큰 기반 사용자 인증
+ * - Authorization 헤더에서 토큰 추출 및 검증
+ * - 인증된 사용자 정보를 req.user에 설정
+ * - 토큰 검증 실패 시 401 응답
+ * 
+ * 🔄 **인증 과정**
+ * 1. Authorization 헤더에서 Bearer 토큰 추출
+ * 2. JWT 토큰 검증 (issuer/audience 포함)
+ * 3. 사용자 정보를 req.user에 설정
+ * 4. 다음 미들웨어로 진행
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: 토큰 검증 로직 통일을 위한 주석 추가
+ */
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Authorization 헤더에서 토큰 추출
@@ -344,6 +396,25 @@ export const requireCenterAdmin = (req: Request, res: Response, next: NextFuncti
 };
 
 // 특정 권한 검증
+/**
+ * 🔐 권한 검증 미들웨어
+ * 
+ * 📋 **기능**
+ * - 특정 권한을 가진 사용자만 접근 허용
+ * - permissions 배열, 객체, accessPermissions 모두 지원
+ * - superAdmin은 모든 권한 자동 허용
+ * 
+ * 🔄 **검증 과정**
+ * 1. 사용자 인증 상태 확인
+ * 2. permissions 배열에서 권한 확인
+ * 3. permissions 객체에서 권한 확인
+ * 4. accessPermissions 객체에서 권한 확인
+ * 5. superAdmin 권한 확인
+ * 6. 권한 없으면 403 응답
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: permissions 타입 안전성 개선 (배열/객체 모두 지원)
+ */
 export const requirePermission = (permission: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user as AuthenticatedUser;
@@ -355,16 +426,19 @@ export const requirePermission = (permission: string) => {
       });
     }
     
-    // permissions 배열에서 확인
-    const hasPermissionInArray = user.permissions && user.permissions.includes(permission);
+    // permissions 배열에서 확인 (배열인 경우)
+    const hasPermissionInArray = user.permissions && Array.isArray(user.permissions) && user.permissions.includes(permission);
+    
+    // permissions 객체에서 확인 (객체인 경우)
+    const hasPermissionInObject = user.permissions && typeof user.permissions === 'object' && !Array.isArray(user.permissions) && user.permissions[permission] === true;
     
     // accessPermissions 객체에서 확인
-    const hasPermissionInObject = user.accessPermissions && user.accessPermissions[permission] === true;
+    const hasAccessPermission = user.accessPermissions && user.accessPermissions[permission] === true;
     
     // superAdmin은 모든 권한을 가짐
     const isSuperAdmin = user.userType === 'superAdmin';
     
-    if (!hasPermissionInArray && !hasPermissionInObject && !isSuperAdmin) {
+    if (!hasPermissionInArray && !hasPermissionInObject && !hasAccessPermission && !isSuperAdmin) {
       console.warn('권한 없는 접근 시도:', {
         userId: user.id,
         userType: user.userType,

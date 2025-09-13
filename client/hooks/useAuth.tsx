@@ -189,6 +189,24 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * 🔐 인증 컨텍스트 제공자 컴포넌트
+ * 
+ * 📋 **기능**
+ * - 전역 인증 상태 관리
+ * - JWT 토큰 검증 및 갱신
+ * - 사용자 정보 및 권한 관리
+ * - 로그인/로그아웃 상태 처리
+ * 
+ * 🔄 **인증 과정**
+ * 1. 컴포넌트 마운트 시 토큰 검증
+ * 2. 유효한 토큰이면 사용자 정보 복원
+ * 3. 무효한 토큰이면 로그아웃 처리
+ * 4. 인증 상태를 하위 컴포넌트에 제공
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: 인증 컨텍스트 주석 추가
+ */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +231,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  /**
+   * 🔐 JWT 토큰 검증 함수
+   * 
+   * 📋 **기능**
+   * - 서버에 토큰 유효성 검증 요청
+   * - 토큰이 유효하면 사용자 정보 반환
+   * - 토큰이 무효하면 null 반환
+   * 
+   * 🔄 **검증 과정**
+   * 1. Authorization 헤더에 Bearer 토큰 추가
+   * 2. GET /api/auth/verify 요청 실행
+   * 3. 응답 상태 확인 (200: 유효, 401: 무효)
+   * 4. 유효한 경우 사용자 정보 반환
+   * 
+   * 📅 **수정 히스토리**
+   * - 2025-01-13: 토큰 검증 함수 주석 추가
+   */
   const validateToken = async (token: string, savedUser: string) => {
     try {
       console.log('🔍 validateToken 시작');

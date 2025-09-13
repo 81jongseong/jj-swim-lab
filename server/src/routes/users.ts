@@ -268,6 +268,25 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // 전체 사용자 조회 (권한별 필터링) - GET /:id 라우트 다음에 정의
+/**
+ * 👥 전체 사용자 조회 API
+ * 
+ * 📋 **기능**
+ * - 권한별 사용자 목록 조회
+ * - 페이지네이션 및 필터링 지원
+ * - 사용자 타입, 레벨, 검색어별 필터링
+ * - userManagement 권한 필요
+ * 
+ * 🔄 **조회 과정**
+ * 1. 사용자 권한 검증 (userManagement)
+ * 2. 쿼리 파라미터 파싱 (page, limit, userType 등)
+ * 3. 필터링 조건 적용
+ * 4. 페이지네이션 처리
+ * 5. 사용자 목록 반환
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: API 엔드포인트 주석 추가
+ */
 router.get('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;

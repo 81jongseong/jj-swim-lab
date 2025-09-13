@@ -138,34 +138,34 @@ const userMenuStructure = {
     main: [
       { href: '/', label: '🏠 홈' },
       { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
-      { href: '/instructor/courses', label: '📚 강의 관리' },
-      { href: '/instructor/progress', label: '📈 진행상황 관리' },
-    ],
-    checklist: [
-      { href: '/instructor/checklist', label: '✅ 체크리스트 관리' },
-      { href: '/instructor/templates', label: '📝 템플릿 관리' },
+      { href: '/instructor/courses', label: '📚 내 강의 관리' },
+      { href: '/instructor/bookings', label: '📅 예약 관리' },
     ],
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
       { href: '/instructor/schedule', label: '📅 일정 관리' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
+    reports: [
+      { href: '/instructor/reports', label: '📊 강사 리포트' },
+      { href: '/instructor/progress', label: '📈 진행상황 관리' },
+    ],
     health: [
-      { href: '/instructor/health/overview', label: '📊 전체 건강 현황' },
-      { href: '/instructor/health/statistics', label: '📈 건강 통계' },
+      { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
       { href: '/instructor/health/students', label: '👥 학생별 건강정보' },
-      { href: '/instructor/health/recommendations', label: '💡 맞춤형 운동 추천' },
       { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
     ],
     center: [
       { href: '/about', label: '🏊‍♂️ 소개' },
       { href: '/news', label: '📢 공지사항' },
     ],
+    teaching: [
+      { href: '/instructor/teaching-methods', label: '🏊‍♂️ 강습법 관리' },
+    ],
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/ai-evaluation', label: '📊 AI 평가' },
       { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-      { href: '/ai-config', label: '⚙️ AI 설정' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
@@ -182,25 +182,20 @@ const userMenuStructure = {
   centerAdmin: {
     dashboard: [
       { href: '/', label: '🏠 홈' },
-      { href: '/admin/dashboard', label: '📊 센터 대시보드' },
-      { href: '/admin/users', label: '👥 회원 관리' },
-      { href: '/admin/instructors', label: '👨‍🏫 강사 관리' },
-      { href: '/admin/courses', label: '📚 강의 관리' },
-      { href: '/admin/payments', label: '💰 결제 관리' },
-      { href: '/admin/reports', label: '📊 통계' },
-      { href: '/admin/center-info', label: '🏢 센터 정보 관리' },
-      { href: '/admin/settings', label: '⚙️ 설정' },
+      { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
+      { href: '/center-admin/users', label: '👥 센터 회원 관리' },
+      { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
+      { href: '/center-admin/courses', label: '📚 센터 강의 관리' },
+      { href: '/center-admin/bookings', label: '📅 예약 관리' },
+      { href: '/center-admin/payments', label: '💰 결제 관리' },
+      { href: '/center-admin/reports', label: '📊 센터 통계' },
+      { href: '/center-admin/notices', label: '📢 공지사항 관리' },
     ],
     health: [
       { href: '/center-admin/health', label: '📊 센터 건강 현황' },
       { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
       { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
       { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
-    ],
-    levels: [
-      { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
-      { href: '/admin/lesson-plans', label: '📋 강습 계획 관리' },
-      { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
@@ -213,7 +208,6 @@ const userMenuStructure = {
       { href: '/ai-analysis', label: '🤖 AI 분석' },
       { href: '/ai-evaluation', label: '📊 AI 평가' },
       { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-      { href: '/ai-config', label: '⚙️ AI 설정' },
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
@@ -240,6 +234,11 @@ const userMenuStructure = {
       { href: '/admin/users', label: '👥 전체 회원 관리' },
       { href: '/admin/instructors', label: '👨‍🏫 전체 강사 관리' },
       { href: '/admin/instructor-management', label: '📊 강사 상세 관리' },
+    ],
+    levels: [
+      { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
+      { href: '/admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
     ],
     revenue: [
       { href: '/admin/payments', label: '💰 전체 결제 관리' },
@@ -353,6 +352,7 @@ const menuGrouping = {
   superAdmin: [
     { groupName: '📊 최고 관리', categories: ['dashboard'] },
     { groupName: '🏢 센터 & 회원', categories: ['centers', 'users'] },
+    { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '💰 매출 & 승인', categories: ['revenue', 'approvals'] },
     { groupName: '🤖 AI & 건강체크', categories: ['ai'] },
     { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },

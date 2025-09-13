@@ -22,18 +22,18 @@ router.get('/', auth, async (req: AuthenticatedRequest, res) => {
     const query: any = { isActive: true };
 
     // 권한에 따른 필터링
-    if (req.user?.userType === 'student') {
+    if ((req as any).user?.userType === 'student') {
       // 학생은 자신에게 할당된 퀴즈만 볼 수 있음
-      query.assignedTo = req.user._id;
-    } else if (req.user?.userType === 'instructor') {
+      query.assignedTo = (req as any).user._id;
+    } else if ((req as any).user?.userType === 'instructor') {
       // 강사는 자신이 만든 퀴즈와 센터 퀴즈만 볼 수 있음
       query.$or = [
-        { createdBy: req.user._id },
-        { centerId: req.user.centerId }
+        { createdBy: (req as any).user._id },
+        { centerId: (req as any).user.centerId }
       ];
-    } else if (req.user?.userType === 'centerAdmin') {
+    } else if ((req as any).user?.userType === 'centerAdmin') {
       // 센터 관리자는 자신의 센터 퀴즈만 볼 수 있음
-      query.centerId = req.user.centerId;
+      query.centerId = (req as any).user.centerId;
     }
     // superAdmin은 모든 퀴즈를 볼 수 있음
 
@@ -76,14 +76,14 @@ router.get('/attempts/user', auth, async (req: AuthenticatedRequest, res) => {
     const { page = 1, limit = 10, quizId, passed } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
       });
     }
 
-    const query: any = { userId: req.user._id };
+    const query: any = { userId: (req as any).user._id };
 
     // 필터링
     if (quizId) query.quizId = quizId;
@@ -130,7 +130,7 @@ router.get('/:id', auth, async (req: AuthenticatedRequest, res) => {
     }
 
     // 권한 확인
-    if (req.user?.userType === 'student' && !quiz.assignedTo?.some(user => user._id.toString() === req.user?._id.toString())) {
+    if ((req as any).user?.userType === 'student' && !quiz.assignedTo?.some(user => user._id.toString() === (req as any).user?._id.toString())) {
       return res.status(403).json({
         success: false,
         message: '이 퀴즈에 접근할 권한이 없습니다.'
@@ -154,7 +154,7 @@ router.get('/:id', auth, async (req: AuthenticatedRequest, res) => {
 // 새 퀴즈 생성 (강사, 센터 관리자, 슈퍼 관리자만)
 router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
@@ -219,7 +219,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']),
       passingScore: passingScore || 70,
       maxAttempts: maxAttempts || 3,
       tags: tags || [],
-      createdBy: req.user._id,
+      createdBy: (req as any).user._id,
       assignedTo: assignedTo || []
     });
 
@@ -242,7 +242,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']),
 // 퀴즈 수정 (생성자 또는 슈퍼 관리자만)
 router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
@@ -259,7 +259,7 @@ router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']
     }
 
     // 권한 확인
-    if (req.user.userType !== 'superAdmin' && quiz.createdBy.toString() !== req.user._id.toString()) {
+    if ((req as any).user.userType !== 'superAdmin' && quiz.createdBy.toString() !== (req as any).user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: '이 퀴즈를 수정할 권한이 없습니다.'
@@ -289,7 +289,7 @@ router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']
 // 퀴즈 삭제 (생성자 또는 슈퍼 관리자만)
 router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
@@ -306,7 +306,7 @@ router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
     }
 
     // 권한 확인
-    if (req.user.userType !== 'superAdmin' && quiz.createdBy.toString() !== req.user._id.toString()) {
+    if ((req as any).user.userType !== 'superAdmin' && quiz.createdBy.toString() !== (req as any).user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: '이 퀴즈를 삭제할 권한이 없습니다.'
@@ -333,7 +333,7 @@ router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
 // 퀴즈 통계
 router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
@@ -343,10 +343,10 @@ router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 's
     const query: any = {};
 
     // 권한에 따른 필터링
-    if (req.user.userType === 'instructor') {
-      query.createdBy = req.user._id;
-    } else if (req.user.userType === 'centerAdmin') {
-      query.centerId = req.user.centerId;
+    if ((req as any).user.userType === 'instructor') {
+      query.createdBy = (req as any).user._id;
+    } else if ((req as any).user.userType === 'centerAdmin') {
+      query.centerId = (req as any).user.centerId;
     }
 
     const stats = await Quiz.aggregate([
@@ -413,7 +413,7 @@ router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 's
 // 퀴즈 복사
 router.post('/:id/copy', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req.user?._id) {
+    if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
         message: '사용자 인증이 필요합니다.'
@@ -433,7 +433,7 @@ router.post('/:id/copy', auth, requireRole(['instructor', 'centerAdmin', 'superA
       ...originalQuiz.toObject(),
       _id: undefined,
       title: `${originalQuiz.title} (복사본)`,
-      createdBy: req.user._id,
+      createdBy: (req as any).user._id,
       assignedTo: [],
       isActive: false,
       createdAt: new Date(),

@@ -102,7 +102,14 @@ export default function TeachingMethodsPage() {
           console.log('📋 첫 번째 강습법 샘플:', apiMethods[0]);
           console.log('📋 마지막 강습법 샘플:', apiMethods[apiMethods.length - 1]);
           
-          setMethods(apiMethods);
+          // steps와 tips 배열이 undefined인 경우 빈 배열로 초기화
+          const processedMethods = apiMethods.map(method => ({
+            ...method,
+            steps: method.steps || [],
+            tips: method.tips || []
+          }));
+          
+          setMethods(processedMethods);
           console.log(`✅ ${apiMethods.length}개의 강습법을 성공적으로 로드했습니다.`);
           console.log('🔍 methods 상태 업데이트 완료');
         } else {
@@ -605,11 +612,11 @@ export default function TeachingMethodsPage() {
                     📂 카테고리: {method.category}
                   </div>
                   <div className="text-sm text-gray-500">
-                    📋 단계: {method.steps.length}개
+                    📋 단계: {method.steps?.length || 0}개
                   </div>
-                  {method.tips.length > 0 && (
+                  {(method.tips?.length || 0) > 0 && (
                     <div className="text-sm text-gray-500">
-                      💡 팁: {method.tips.length}개
+                      💡 팁: {method.tips?.length || 0}개
                     </div>
                   )}
                   {(method.videoUrl || method.imageUrl) && (
@@ -1000,17 +1007,17 @@ export default function TeachingMethodsPage() {
                   <div>
                     <h4 className="font-medium text-gray-900">단계별 설명</h4>
                     <ol className="list-decimal list-inside space-y-1 text-gray-600">
-                      {selectedMethod.steps.map((step, index) => (
+                      {selectedMethod.steps?.map((step, index) => (
                         <li key={index}>{step}</li>
-                      ))}
+                      )) || <li className="text-gray-400">단계 정보가 없습니다.</li>}
                     </ol>
                   </div>
 
-                  {selectedMethod.tips.length > 0 && (
+                  {(selectedMethod.tips?.length || 0) > 0 && (
                     <div>
                       <h4 className="font-medium text-gray-900">팁</h4>
                       <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        {selectedMethod.tips.map((tip, index) => (
+                        {selectedMethod.tips?.map((tip, index) => (
                           <li key={index}>{tip}</li>
                         ))}
                       </ul>

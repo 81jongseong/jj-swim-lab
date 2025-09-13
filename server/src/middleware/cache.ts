@@ -186,7 +186,7 @@ export const cacheMiddleware = {
   // 대시보드 데이터 캐시 (5분)
   dashboard: cache({
     ttl: 300,
-    keyGenerator: (req) => `dashboard:${req.params.centerId || req.user?._id}`
+    keyGenerator: (req) => `dashboard:${req.params.centerId || (req as any).user?._id}`
   }),
 
   // 통계 데이터 캐시 (15분)

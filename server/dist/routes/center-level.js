@@ -7,6 +7,50 @@ const express_1 = __importDefault(require("express"));
 const CenterLevel_1 = require("../models/CenterLevel");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
+router.get('/', auth_1.auth, async (req, res) => {
+    try {
+        const defaultLevels = [
+            {
+                _id: 'default-beginner',
+                name: 'beginner',
+                displayName: '초급',
+                order: 1,
+                description: '기본 동작을 익히는 단계',
+                color: 'green',
+                isActive: true
+            },
+            {
+                _id: 'default-intermediate',
+                name: 'intermediate',
+                displayName: '중급',
+                order: 2,
+                description: '다양한 수영법을 배우는 단계',
+                color: 'yellow',
+                isActive: true
+            },
+            {
+                _id: 'default-advanced',
+                name: 'advanced',
+                displayName: '상급',
+                order: 3,
+                description: '고급 기술을 연마하는 단계',
+                color: 'red',
+                isActive: true
+            }
+        ];
+        res.json({
+            success: true,
+            data: defaultLevels
+        });
+    }
+    catch (error) {
+        console.error('센터 레벨 조회 실패:', error);
+        res.status(500).json({
+            success: false,
+            error: '센터 레벨 조회에 실패했습니다.'
+        });
+    }
+});
 router.get('/:centerId', auth_1.auth, async (req, res) => {
     try {
         const { centerId } = req.params;

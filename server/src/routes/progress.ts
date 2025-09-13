@@ -36,7 +36,7 @@ router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async
     const { instructorId } = req.params;
     
     // 강사 본인만 조회 가능
-    if (req.user._id.toString() !== instructorId) {
+    if ((req as any).user._id.toString() !== instructorId) {
       return res.status(403).json({
         success: false,
         message: '자신의 학생 진도만 조회할 수 있습니다.'
@@ -65,7 +65,7 @@ router.get('/instructor/:instructorId/checklist', auth, requireRole(['instructor
     const { instructorId } = req.params;
     
     // 강사 본인만 조회 가능
-    if (req.user._id.toString() !== instructorId) {
+    if ((req as any).user._id.toString() !== instructorId) {
       return res.status(403).json({
         success: false,
         message: '자신의 학생 체크리스트만 조회할 수 있습니다.'
@@ -102,7 +102,7 @@ router.put('/student/:studentId', auth, requireRole(['instructor']), async (req:
       _id: studentId,
       userType: 'student',
       'studentInfo.enrolledCourses': { 
-        $in: await Course.find({ instructor: req.user._id }).select('_id') 
+        $in: await Course.find({ instructor: (req as any).user._id }).select('_id') 
       }
     });
 
@@ -123,7 +123,7 @@ router.put('/student/:studentId', auth, requireRole(['instructor']), async (req:
       progress = new (Progress as any)({
         student: studentId,
         course: courseId,
-        instructor: req.user._id
+        instructor: (req as any).user._id
       });
     }
 
@@ -134,7 +134,7 @@ router.put('/student/:studentId', auth, requireRole(['instructor']), async (req:
     if (completedLessons) progress.completedLessons = completedLessons;
     
     // lastUpdated는 timestamps: true로 자동 설정됨
-    progress.updatedBy = req.user._id;
+    progress.updatedBy = (req as any).user._id;
 
     await progress.save();
 
@@ -163,7 +163,7 @@ router.post('/checklist/:studentId', auth, requireRole(['instructor']), async (r
       _id: studentId,
       userType: 'student',
       'studentInfo.enrolledCourses': { 
-        $in: await Course.find({ instructor: req.user._id }).select('_id') 
+        $in: await Course.find({ instructor: (req as any).user._id }).select('_id') 
       }
     });
 
@@ -178,7 +178,7 @@ router.post('/checklist/:studentId', auth, requireRole(['instructor']), async (r
     const checklist = new Progress({
       student: studentId,
       course: courseId,
-      instructor: req.user._id,
+      instructor: (req as any).user._id,
       type: 'checklist',
       checklistItems: checklistItems || [],
       dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -213,7 +213,7 @@ router.post('/evaluation/:studentId', auth, requireRole(['instructor']), async (
       _id: studentId,
       userType: 'student',
       'studentInfo.enrolledCourses': { 
-        $in: await Course.find({ instructor: req.user._id }).select('_id') 
+        $in: await Course.find({ instructor: (req as any).user._id }).select('_id') 
       }
     });
 
@@ -228,14 +228,14 @@ router.post('/evaluation/:studentId', auth, requireRole(['instructor']), async (
     let evaluation = await Evaluation.findOne({ 
       student: studentId, 
       course: courseId,
-      instructor: req.user._id
+      instructor: (req as any).user._id
     });
 
     if (!evaluation) {
       evaluation = new (Evaluation as any)({
         student: studentId,
         course: courseId,
-        instructor: req.user._id
+        instructor: (req as any).user._id
       });
     }
 
@@ -268,7 +268,7 @@ router.get('/instructor/:instructorId/stats', auth, requireRole(['instructor']),
     const { instructorId } = req.params;
     
     // 강사 본인만 조회 가능
-    if (req.user._id.toString() !== instructorId) {
+    if ((req as any).user._id.toString() !== instructorId) {
       return res.status(403).json({
         success: false,
         message: '자신의 통계만 조회할 수 있습니다.'
@@ -328,7 +328,7 @@ router.get('/instructor/:instructorId/stats', auth, requireRole(['instructor']),
 // 7. 강사 스케줄 최적화 (강사만)
 router.get('/schedule-optimization', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
-    const instructor = await User.findById(req.user._id);
+    const instructor = await User.findById((req as any).user._id);
     
     // 강사 스케줄 분석 및 최적화 제안
     const scheduleAnalysis = {
@@ -371,12 +371,12 @@ router.get('/schedule-optimization', auth, requireRole(['instructor']), async (r
 // 8. 내 진도 현황 조회 (학생만)
 router.get('/my-progress', auth, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
   try {
-    const progress = await Progress.find({ student: req.user._id })
+    const progress = await Progress.find({ student: (req as any).user._id })
       .populate('course', 'name description level')
       .populate('instructor', 'name')
       .sort({ updatedAt: -1 });
 
-    const evaluations = await Evaluation.find({ student: req.user._id })
+    const evaluations = await Evaluation.find({ student: (req as any).user._id })
       .populate('course', 'name')
       .populate('instructor', 'name')
       .sort({ createdAt: -1 });
@@ -402,7 +402,7 @@ router.get('/my-progress', auth, requireRole(['student']), async (req: AuthReque
 router.get('/my-checklist', auth, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
   try {
     const checklists = await Progress.find({ 
-      student: req.user._id,
+      student: (req as any).user._id,
       type: 'checklist'
     })
       .populate('course', 'name')

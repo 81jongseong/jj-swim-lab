@@ -110,8 +110,6 @@
 
 import { Router, Request, Response } from 'express';
 import { Booking } from '../models/Booking';
-import { User } from '../models/User';
-import { Course } from '../models/Course';
 import { auth as authenticateToken, requireRole } from '../middleware/auth';
 
 // Request 타입 확장

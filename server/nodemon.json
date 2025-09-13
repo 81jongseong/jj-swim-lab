@@ -2,7 +2,7 @@
   "watch": ["src"],
   "ext": "ts",
   "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts", "**/*.log", "**/*.tmp"],
-  "exec": "ts-node --transpile-only --ignore false src/index.ts",
+  "exec": "ts-node --transpile-only src/index.ts",
   "legacyWatch": true,
   "quiet": false,
   "verbose": false,

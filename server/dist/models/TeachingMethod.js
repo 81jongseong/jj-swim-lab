@@ -85,7 +85,34 @@ const TeachingMethodSchema = new mongoose_1.Schema({
     order: {
         type: Number,
         default: 0
-    }
+    },
+    instructorComments: {
+        type: String,
+        trim: true
+    },
+    levelChangeHistory: [{
+            fromLevel: {
+                type: String,
+                required: true
+            },
+            toLevel: {
+                type: String,
+                required: true
+            },
+            changedBy: {
+                type: mongoose_1.Schema.Types.ObjectId,
+                ref: 'User',
+                required: true
+            },
+            changedAt: {
+                type: Date,
+                default: Date.now
+            },
+            reason: {
+                type: String,
+                trim: true
+            }
+        }]
 }, {
     timestamps: true
 });

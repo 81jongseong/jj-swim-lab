@@ -11,6 +11,14 @@ export interface ITeachingMethod extends Document {
     createdBy?: mongoose.Types.ObjectId;
     isActive: boolean;
     order?: number;
+    instructorComments?: string;
+    levelChangeHistory?: Array<{
+        fromLevel: string;
+        toLevel: string;
+        changedBy: mongoose.Types.ObjectId;
+        changedAt: Date;
+        reason?: string;
+    }>;
     createdAt: Date;
     updatedAt: Date;
 }

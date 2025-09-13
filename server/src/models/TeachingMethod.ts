@@ -12,6 +12,14 @@ export interface ITeachingMethod extends Document {
   createdBy?: mongoose.Types.ObjectId;
   isActive: boolean;
   order?: number; // 순서 정보 추가
+  instructorComments?: string; // 강사 코멘트
+  levelChangeHistory?: Array<{ // 레벨 변경 이력
+    fromLevel: string;
+    toLevel: string;
+    changedBy: mongoose.Types.ObjectId;
+    changedAt: Date;
+    reason?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,7 +74,34 @@ const TeachingMethodSchema = new Schema<ITeachingMethod>({
   order: {
     type: Number,
     default: 0
-  }
+  },
+  instructorComments: {
+    type: String,
+    trim: true
+  },
+  levelChangeHistory: [{
+    fromLevel: {
+      type: String,
+      required: true
+    },
+    toLevel: {
+      type: String,
+      required: true
+    },
+    changedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    reason: {
+      type: String,
+      trim: true
+    }
+  }]
 }, {
   timestamps: true
 });

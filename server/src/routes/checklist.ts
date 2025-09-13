@@ -308,7 +308,7 @@ router.put('/:checklistId/status', auth, requireRole(['instructor', 'centerAdmin
     }
     
     // 권한 확인 (강사가 해당 체크리스트의 담당자인지)
-    if (checklist.instructorId.toString() !== req.user._id.toString()) {
+    if (checklist.instructorId.toString() !== (req as any).user._id.toString()) {
       return res.status(403).json({ error: '이 체크리스트를 수정할 권한이 없습니다.' });
     }
     
@@ -416,7 +416,7 @@ router.get('/templates', auth, async (req: express.Request, res: express.Respons
     }
 
     // 사용자가 볼 수 있는 템플릿 필터링 (공개 템플릿 또는 자신이 생성한 템플릿)
-    const user = req.user;
+    const user = (req as any).user;
     if (user.userType === 'instructor') {
       filter.$or = [
         { isPublic: true },
@@ -458,7 +458,7 @@ router.get('/templates', auth, async (req: express.Request, res: express.Respons
 router.post('/templates', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { name, description, levels, items, tags, isPublic } = req.body;
-    const user = req.user;
+    const user = (req as any).user;
 
     if (!name || !description || !items || items.length === 0) {
       return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
@@ -502,7 +502,7 @@ router.post('/templates', auth, requireRole(['instructor', 'centerAdmin', 'super
 router.delete('/templates/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
-    const user = req.user;
+    const user = (req as any).user;
 
     const template = await ChecklistTemplate.findById(id);
     if (!template) {
@@ -535,7 +535,7 @@ router.post('/from-template/:templateId', auth, requireRole(['instructor']), asy
   try {
     const { templateId } = req.params;
     const { studentId, courseId } = req.body;
-    const user = req.user;
+    const user = (req as any).user;
 
     if (!studentId || !courseId) {
       return res.status(400).json({ error: '학생 ID와 과정 ID가 필요합니다.' });

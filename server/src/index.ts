@@ -156,6 +156,9 @@ import instructorRoutes from './routes/instructor';
 import instructorManagementRoutes from './routes/instructorManagement';
 import revenueRoutes from './routes/revenue';
 import approvalRoutes from './routes/approvals';
+// 사용자 유형별 라우트
+import centerAdminRoutes from './routes/center-admin';
+import studentRoutes from './routes/student';
 // AI 라우트들 정상화
 import aiRoutes from './routes/ai';
 import smartwatchRoutes from './routes/smartwatch';
@@ -314,6 +317,9 @@ app.use('/api/instructor', instructorRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/approvals', approvalRoutes);
+// 사용자 유형별 API 라우트
+app.use('/api/center-admin', centerAdminRoutes);
+app.use('/api/student', studentRoutes);
 // AI 라우트들 정상화
 app.use('/api/ai', aiRoutes);
 app.use('/api/smartwatch', smartwatchRoutes);

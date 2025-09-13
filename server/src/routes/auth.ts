@@ -109,6 +109,25 @@ import { User } from '../models/User';
 const router: Router = Router();
 
 // 회원가입
+/**
+ * 🔐 사용자 회원가입 엔드포인트
+ * 
+ * 📋 **기능**
+ * - 새로운 사용자 계정 생성
+ * - 이메일 및 사용자 ID 중복 확인
+ * - 비밀번호 해싱 및 저장
+ * - 회원가입 완료 시 JWT 토큰 발급
+ * 
+ * 🔄 **회원가입 과정**
+ * 1. 요청 데이터 검증 및 중복 확인
+ * 2. 비밀번호 해싱
+ * 3. 사용자 정보 저장
+ * 4. JWT 토큰 생성 (issuer/audience 포함)
+ * 5. 사용자 정보와 토큰 반환
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: JWT 토큰 생성 시 issuer/audience 추가
+ */
 router.post('/signup', async (req: Request, res: Response) => {
   try {
     const { userId, name, email, password, phone, address, userType } = req.body;
@@ -177,7 +196,11 @@ router.post('/signup', async (req: Request, res: Response) => {
     const token = jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
+      { 
+        expiresIn: '24h',
+        issuer: 'jj-swim-lab',
+        audience: 'jj-swim-lab-users'
+      }
     );
 
     return res.status(201).json({
@@ -197,7 +220,24 @@ router.post('/signup', async (req: Request, res: Response) => {
   }
 });
 
-// 토큰 검증
+// 토큰 검증 - 인증 미들웨어와 동일한 검증 로직 사용
+/**
+ * 🔐 토큰 검증 엔드포인트
+ * 
+ * 📋 **기능**
+ * - JWT 토큰의 유효성 검증
+ * - 사용자 정보 반환
+ * - 인증 미들웨어와 동일한 검증 로직 사용
+ * 
+ * 🔄 **검증 과정**
+ * 1. Authorization 헤더에서 토큰 추출
+ * 2. JWT 토큰 검증 (issuer, audience 포함)
+ * 3. 사용자 정보 조회 및 활성 상태 확인
+ * 4. 사용자 정보 반환
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: 인증 미들웨어와 동일한 검증 로직으로 수정 (issuer/audience 검증 추가)
+ */
 router.get('/verify', async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
@@ -209,8 +249,13 @@ router.get('/verify', async (req: Request, res: Response) => {
     const token = authHeader.substring(7);
     
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-      const user = await User.findById(decoded.userId).select('-password');
+      // 인증 미들웨어와 동일한 검증 로직 사용
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret', {
+        issuer: 'jj-swim-lab',
+        audience: 'jj-swim-lab-users'
+      }) as any;
+      
+      const user = await User.findById(decoded.userId || decoded.id).select('-password');
       
       if (!user) {
         return res.status(401).json({ error: '사용자를 찾을 수 없습니다.' });
@@ -233,6 +278,7 @@ router.get('/verify', async (req: Request, res: Response) => {
         }
       });
     } catch (jwtError) {
+      console.error('JWT 토큰 검증 실패:', jwtError);
       return res.status(401).json({ error: '토큰이 만료되었거나 유효하지 않습니다.' });
     }
   } catch (error) {
@@ -242,6 +288,24 @@ router.get('/verify', async (req: Request, res: Response) => {
 });
 
 // 로그인
+/**
+ * 🔐 사용자 로그인 엔드포인트
+ * 
+ * 📋 **기능**
+ * - 사용자 인증 및 JWT 토큰 발급
+ * - 로그인 실패 시 적절한 에러 메시지 반환
+ * - 사용자 정보와 함께 토큰 반환
+ * 
+ * 🔄 **인증 과정**
+ * 1. 요청 데이터 검증 (userId, password)
+ * 2. 사용자 정보 조회 및 비밀번호 검증
+ * 3. 사용자 활성 상태 확인
+ * 4. JWT 토큰 생성 (issuer/audience 포함)
+ * 5. 사용자 정보와 토큰 반환
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-01-13: JWT 토큰 생성 시 issuer/audience 추가
+ */
 router.post('/login', async (req: Request, res: Response) => {
   try {
     console.log('🔍 로그인 요청 받음:', { body: req.body });
@@ -360,7 +424,11 @@ router.post('/login', async (req: Request, res: Response) => {
     const token = jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
+      { 
+        expiresIn: '24h',
+        issuer: 'jj-swim-lab',
+        audience: 'jj-swim-lab-users'
+      }
     );
 
     return res.json({

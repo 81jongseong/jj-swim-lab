@@ -295,6 +295,25 @@ class ApiClient {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   }
 
+  /**
+   * 🔐 API 요청 메서드
+   * 
+   * 📋 **기능**
+   * - 모든 API 요청의 기본 메서드
+   * - JWT 토큰 자동 첨부
+   * - 에러 처리 및 로깅
+   * - 응답 데이터 타입 안전성 보장
+   * 
+   * 🔄 **요청 과정**
+   * 1. 로컬 스토리지에서 토큰 추출
+   * 2. Authorization 헤더에 Bearer 토큰 추가
+   * 3. HTTP 요청 실행
+   * 4. 응답 상태 및 데이터 로깅
+   * 5. 에러 처리 및 반환
+   * 
+   * 📅 **수정 히스토리**
+   * - 2025-01-13: API 요청 메서드 주석 추가
+   */
   private async request<T = ApiResponse>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
@@ -442,6 +461,22 @@ class ApiClient {
   }
 
   // ===== 사용자 관리 API =====
+  /**
+   * 👥 사용자 목록 조회 API
+   * 
+   * 📋 **기능**
+   * - 페이지네이션을 지원하는 사용자 목록 조회
+   * - 필터링 옵션 지원 (역할, 센터 ID 등)
+   * - userManagement 권한 필요
+   * 
+   * 🔄 **조회 과정**
+   * 1. 쿼리 파라미터 구성 (role, centerId, page, limit)
+   * 2. GET /api/users 요청 실행
+   * 3. 사용자 목록 및 페이지네이션 정보 반환
+   * 
+   * 📅 **수정 히스토리**
+   * - 2025-01-13: 사용자 목록 조회 API 주석 추가
+   */
   async getUsers(params?: { role?: string; centerId?: string; page?: number; limit?: number }): Promise<any> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
     return this.request(`/api/users${queryString}`);

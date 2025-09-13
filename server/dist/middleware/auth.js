@@ -225,10 +225,11 @@ const requirePermission = (permission) => {
                 message: '로그인해주세요.',
             });
         }
-        const hasPermissionInArray = user.permissions && user.permissions.includes(permission);
-        const hasPermissionInObject = user.accessPermissions && user.accessPermissions[permission] === true;
+        const hasPermissionInArray = user.permissions && Array.isArray(user.permissions) && user.permissions.includes(permission);
+        const hasPermissionInObject = user.permissions && typeof user.permissions === 'object' && !Array.isArray(user.permissions) && user.permissions[permission] === true;
+        const hasAccessPermission = user.accessPermissions && user.accessPermissions[permission] === true;
         const isSuperAdmin = user.userType === 'superAdmin';
-        if (!hasPermissionInArray && !hasPermissionInObject && !isSuperAdmin) {
+        if (!hasPermissionInArray && !hasPermissionInObject && !hasAccessPermission && !isSuperAdmin) {
             console.warn('권한 없는 접근 시도:', {
                 userId: user.id,
                 userType: user.userType,

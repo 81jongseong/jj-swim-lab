@@ -57,7 +57,11 @@ router.post('/signup', async (req, res) => {
             name: user.name,
             permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
         };
-        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
+        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
+            expiresIn: '24h',
+            issuer: 'jj-swim-lab',
+            audience: 'jj-swim-lab-users'
+        });
         return res.status(201).json({
             message: '회원가입이 완료되었습니다.',
             token,
@@ -83,8 +87,11 @@ router.get('/verify', async (req, res) => {
         }
         const token = authHeader.substring(7);
         try {
-            const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-            const user = await User_1.User.findById(decoded.userId).select('-password');
+            const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'fallback-secret', {
+                issuer: 'jj-swim-lab',
+                audience: 'jj-swim-lab-users'
+            });
+            const user = await User_1.User.findById(decoded.userId || decoded.id).select('-password');
             if (!user) {
                 return res.status(401).json({ error: '사용자를 찾을 수 없습니다.' });
             }
@@ -105,6 +112,7 @@ router.get('/verify', async (req, res) => {
             });
         }
         catch (jwtError) {
+            console.error('JWT 토큰 검증 실패:', jwtError);
             return res.status(401).json({ error: '토큰이 만료되었거나 유효하지 않습니다.' });
         }
     }
@@ -201,7 +209,11 @@ router.post('/login', async (req, res) => {
             });
         }
         console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
-        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '24h' });
+        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
+            expiresIn: '24h',
+            issuer: 'jj-swim-lab',
+            audience: 'jj-swim-lab-users'
+        });
         return res.json({
             success: true,
             message: '로그인이 완료되었습니다.',

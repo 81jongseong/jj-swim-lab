@@ -4,6 +4,53 @@ import { auth } from '../middleware/auth';
 
 const router = express.Router();
 
+// 모든 센터 레벨 조회 (기본값 반환)
+router.get('/', auth, async (req, res) => {
+  try {
+    // 기본 레벨 설정 반환
+    const defaultLevels = [
+      { 
+        _id: 'default-beginner',
+        name: 'beginner', 
+        displayName: '초급',
+        order: 1, 
+        description: '기본 동작을 익히는 단계', 
+        color: 'green',
+        isActive: true
+      },
+      { 
+        _id: 'default-intermediate',
+        name: 'intermediate', 
+        displayName: '중급',
+        order: 2, 
+        description: '다양한 수영법을 배우는 단계', 
+        color: 'yellow',
+        isActive: true
+      },
+      { 
+        _id: 'default-advanced',
+        name: 'advanced', 
+        displayName: '상급',
+        order: 3, 
+        description: '고급 기술을 연마하는 단계', 
+        color: 'red',
+        isActive: true
+      }
+    ];
+    
+    res.json({
+      success: true,
+      data: defaultLevels
+    });
+  } catch (error) {
+    console.error('센터 레벨 조회 실패:', error);
+    res.status(500).json({ 
+      success: false,
+      error: '센터 레벨 조회에 실패했습니다.' 
+    });
+  }
+});
+
 // 센터별 레벨 설정 조회
 router.get('/:centerId', auth, async (req, res) => {
   try {
@@ -40,8 +87,8 @@ router.put('/:centerId', auth, async (req, res) => {
     const { levels } = req.body;
     
     // 권한 확인 (센터 관리자 또는 슈퍼 관리자)
-    if (req.user?.userType !== 'superAdmin' && 
-        req.user?.userType !== 'centerAdmin') {
+    if ((req as any).user?.userType !== 'superAdmin' && 
+        (req as any).user?.userType !== 'centerAdmin') {
       return res.status(403).json({ error: '권한이 없습니다.' });
     }
     
@@ -83,8 +130,8 @@ router.delete('/:centerId', auth, async (req, res) => {
     const { centerId } = req.params;
     
     // 권한 확인
-    if (req.user?.userType !== 'superAdmin' && 
-        req.user?.userType !== 'centerAdmin') {
+    if ((req as any).user?.userType !== 'superAdmin' && 
+        (req as any).user?.userType !== 'centerAdmin') {
       return res.status(403).json({ error: '권한이 없습니다.' });
     }
     

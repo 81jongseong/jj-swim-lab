@@ -295,6 +295,65 @@ router.get('/stats/difficulties', async (req: Request, res: Response) => {
   }
 });
 
+// 강습법 레벨 수정 (센터 관리자, 강사만)
+router.put('/:id/level', auth, requireRole(['centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { level, instructorComment, updatedBy } = req.body;
+
+    if (!level || !['beginner', 'intermediate', 'advanced'].includes(level)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효한 레벨을 선택해주세요. (beginner, intermediate, advanced)'
+      });
+    }
+
+    const method = await TeachingMethod.findById(id);
+    if (!method) {
+      return res.status(404).json({
+        success: false,
+        message: '강습법을 찾을 수 없습니다.'
+      });
+    }
+
+    // 레벨 변경 이력 저장
+    const levelChangeHistory = method.levelChangeHistory || [];
+    levelChangeHistory.push({
+      fromLevel: method.level,
+      toLevel: level,
+      changedBy: req.user._id,
+      changedAt: new Date(),
+      reason: instructorComment || '레벨 변경'
+    });
+
+    // 강습법 업데이트
+    method.level = level;
+    method.instructorComments = instructorComment || method.instructorComments;
+    method.levelChangeHistory = levelChangeHistory;
+    method.updatedAt = new Date();
+
+    await method.save();
+
+    res.json({
+      success: true,
+      message: '강습법 레벨이 성공적으로 업데이트되었습니다!',
+      data: {
+        _id: method._id,
+        name: method.name,
+        level: method.level,
+        instructorComments: method.instructorComments,
+        levelChangeHistory: method.levelChangeHistory
+      }
+    });
+  } catch (error) {
+    console.error('강습법 레벨 수정 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강습법 레벨 수정 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 export default router;
 
 
