@@ -110,3 +110,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.x.x] - 이전 버전들
 
 초기 개발 및 프로토타입 단계의 변경사항들은 별도 문서에서 관리됩니다.
+
