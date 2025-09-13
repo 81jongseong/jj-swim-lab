@@ -15,7 +15,7 @@ router.get('/', auth, async (req: AuthRequest, res) => {
     const { category, priority, isPinned, page = 1, limit = 10 } = req.query;
     const user = req.user;
 
-    let query: any = { isPublished: true };
+    const query: any = { isPublished: true };
     
     if (category) query.category = category;
     if (priority) query.priority = priority;
@@ -223,7 +223,7 @@ router.get('/unread/count', auth, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     
-    let query: any = { isPublished: true };
+    const query: any = { isPublished: true };
     
     if (user.userType !== 'superAdmin') {
       query.targetUserTypes = { $in: [user.userType] };
@@ -268,7 +268,7 @@ router.get('/popular', auth, async (req: AuthRequest, res) => {
     const { limit = 5 } = req.query;
     const user = req.user;
 
-    let query: any = { isPublished: true };
+    const query: any = { isPublished: true };
     
     if (user.userType !== 'superAdmin') {
       query.targetUserTypes = { $in: [user.userType] };

@@ -13,7 +13,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { category, level, difficulty, search } = req.query;
     
-    let query: any = {};
+    const query: any = {};
     
     if (category) {
       query.category = category;

@@ -249,7 +249,9 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
         type: 'payment:created',
         message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('결제 처리 중 오류:', error);
+    }
 
     return res.status(201).json({
       success: true,
@@ -321,7 +323,9 @@ router.post('/:id/complete', authenticateToken, requireRole(['superAdmin']), asy
         type: 'payment:completed',
         message: '결제가 완료되었습니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('결제 처리 중 오류:', error);
+    }
 
     return res.json({
       success: true,
@@ -380,7 +384,9 @@ router.post('/:id/refund', authenticateToken, requireRole(['superAdmin']), async
         type: 'payment:refunded',
         message: '결제가 환불되었습니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('결제 처리 중 오류:', error);
+    }
 
     return res.json({
       success: true,

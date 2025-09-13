@@ -300,7 +300,7 @@ exerciseDataSchema.statics.generateAIRecommendations = async function (userId) {
     const recentSessions = await this.find({ userId })
         .sort({ startTime: -1 })
         .limit(5);
-    let recommendations = {
+    const recommendations = {
         nextWorkout: '',
         focusAreas: [],
         restDays: 1,

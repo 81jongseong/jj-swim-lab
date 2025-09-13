@@ -115,7 +115,9 @@ router.post('/', auth_1.auth, async (req, res) => {
                     message: '예약이 생성되었습니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('예약 처리 중 오류:', error);
+        }
         return res.status(201).json({
             success: true,
             message: '예약이 생성되었습니다.',
@@ -151,7 +153,9 @@ router.put('/:id', auth_1.auth, async (req, res) => {
                     message: '예약 정보가 업데이트되었습니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('예약 처리 중 오류:', error);
+        }
         return res.json({
             success: true,
             message: '예약이 수정되었습니다.',
@@ -186,7 +190,9 @@ router.post('/:id/cancel', auth_1.auth, async (req, res) => {
                     message: '예약이 취소되었습니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('예약 처리 중 오류:', error);
+        }
         return res.json({ success: true, message: '예약이 취소되었습니다.' });
     }
     catch (error) {
@@ -214,7 +220,9 @@ router.patch('/:id/status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin'])
                     message: `예약 상태가 '${status}'로 변경되었습니다.`,
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('예약 처리 중 오류:', error);
+        }
         return res.json({
             message: '예약 상태가 변경되었습니다.',
             booking
@@ -283,7 +291,7 @@ router.get('/course/:courseId', auth_1.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const { date } = req.query;
-        let filter = { course: courseId };
+        const filter = { course: courseId };
         if (date) {
             const startDate = new Date(date);
             const endDate = new Date(startDate);
@@ -440,7 +448,7 @@ router.get('/course/:courseId', auth_1.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const { date } = req.query;
-        let filter = { course: courseId };
+        const filter = { course: courseId };
         if (date) {
             const startDate = new Date(date);
             const endDate = new Date(startDate);

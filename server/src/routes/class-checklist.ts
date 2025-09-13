@@ -104,7 +104,7 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
     }
     
     // 기존 체크리스트 확인
-    let existingChecklist = await ClassChecklist.findOne({ classId });
+    const existingChecklist = await ClassChecklist.findOne({ classId });
     
     if (existingChecklist) {
       // 기존 체크리스트가 있으면 업데이트
@@ -181,7 +181,7 @@ router.get('/class/:classId', auth, requireRole(['instructor', 'centerAdmin']), 
     }
     
     // 응답 데이터 구성
-    let responseChecklist = { ...checklist.toObject() };
+    const responseChecklist = { ...checklist.toObject() };
     
     // 숨겨진 항목을 포함하지 않는 경우, 숨겨진 항목들을 필터링
     if (!includeHidden && checklist.hiddenItems && checklist.hiddenItems.length > 0) {

@@ -24,7 +24,7 @@ router.get('/', auth_1.auth, requireAdmin, async (req, res) => {
     try {
         const { userType, centerId } = req.user;
         const { status, type, page = 1, limit = 20 } = req.query;
-        let queryCondition = {};
+        const queryCondition = {};
         if (userType === 'centerAdmin' && centerId) {
             queryCondition.centerId = centerId;
         }
@@ -214,7 +214,7 @@ async function processApprovedRequest(approval) {
 router.get('/stats/overview', auth_1.auth, requireAdmin, async (req, res) => {
     try {
         const { userType, centerId } = req.user;
-        let queryCondition = {};
+        const queryCondition = {};
         if (userType === 'centerAdmin' && centerId) {
             queryCondition.centerId = centerId;
         }

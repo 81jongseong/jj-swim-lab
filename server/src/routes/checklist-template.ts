@@ -62,7 +62,7 @@ router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: ex
     const centerId = req.user?.centerId;
     const userType = req.user?.userType;
 
-    let query: any = { isActive: true };
+    const query: any = { isActive: true };
 
     // 센터 관리자는 자신의 센터 템플릿과 공개 템플릿만
     if (userType === 'centerAdmin') {

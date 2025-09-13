@@ -294,7 +294,7 @@ class IntegratedAIEngine {
             breaststroke: ['브레스트스트로크 기본 동작', '호흡 타이밍 연습'],
             butterfly: ['버터플라이 기본 동작', '호흡 타이밍 연습']
         };
-        let exercises = baseExercises[technique] || baseExercises.freestyle;
+        const exercises = baseExercises[technique] || baseExercises.freestyle;
         if (categoryScores.posture < 60) {
             exercises.push('자세 교정 운동');
         }

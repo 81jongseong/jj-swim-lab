@@ -19,7 +19,7 @@ router.get('/', auth, async (req: AuthenticatedRequest, res) => {
     const { page = 1, limit = 10, category, difficulty, type, search } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    let query: any = { isActive: true };
+    const query: any = { isActive: true };
 
     // 권한에 따른 필터링
     if (req.user?.userType === 'student') {
@@ -83,7 +83,7 @@ router.get('/attempts/user', auth, async (req: AuthenticatedRequest, res) => {
       });
     }
 
-    let query: any = { userId: req.user._id };
+    const query: any = { userId: req.user._id };
 
     // 필터링
     if (quizId) query.quizId = quizId;
@@ -340,7 +340,7 @@ router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 's
       });
     }
 
-    let query: any = {};
+    const query: any = {};
 
     // 권한에 따른 필터링
     if (req.user.userType === 'instructor') {

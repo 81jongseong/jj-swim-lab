@@ -11,7 +11,7 @@ router.get('/', auth_1.auth, async (req, res) => {
     try {
         const { category, priority, isPinned, page = 1, limit = 10 } = req.query;
         const user = req.user;
-        let query = { isPublished: true };
+        const query = { isPublished: true };
         if (category)
             query.category = category;
         if (priority)
@@ -165,7 +165,7 @@ router.patch('/:id/pin', auth_1.auth, (0, auth_1.requirePermission)('noticeManag
 router.get('/unread/count', auth_1.auth, async (req, res) => {
     try {
         const user = req.user;
-        let query = { isPublished: true };
+        const query = { isPublished: true };
         if (user.userType !== 'superAdmin') {
             query.targetUserTypes = { $in: [user.userType] };
         }
@@ -203,7 +203,7 @@ router.get('/popular', auth_1.auth, async (req, res) => {
     try {
         const { limit = 5 } = req.query;
         const user = req.user;
-        let query = { isPublished: true };
+        const query = { isPublished: true };
         if (user.userType !== 'superAdmin') {
             query.targetUserTypes = { $in: [user.userType] };
         }

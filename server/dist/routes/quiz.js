@@ -12,7 +12,7 @@ router.get('/', auth_1.auth, async (req, res) => {
     try {
         const { page = 1, limit = 10, category, difficulty, type, search } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        let query = { isActive: true };
+        const query = { isActive: true };
         if (req.user?.userType === 'student') {
             query.assignedTo = req.user._id;
         }
@@ -67,7 +67,7 @@ router.get('/attempts/user', auth_1.auth, async (req, res) => {
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        let query = { userId: req.user._id };
+        const query = { userId: req.user._id };
         if (quizId)
             query.quizId = quizId;
         if (passed !== undefined)
@@ -275,7 +275,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor'
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        let query = {};
+        const query = {};
         if (req.user.userType === 'instructor') {
             query.createdBy = req.user._id;
         }

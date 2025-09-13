@@ -209,7 +209,7 @@ const sanitizeObject = (obj: any): any => {
   if (typeof obj === 'object') {
     const sanitized: any = {};
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         // 키도 sanitization (DOMPurify 대신 기본 정리)
         const sanitizedKey = key
           .replace(/<[^>]*>/g, '') // HTML 태그 제거

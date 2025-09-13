@@ -13,6 +13,11 @@
 
 ## 🚀 개발 환경 설정
 
+### **✅ 최신 업데이트 (2025-01-13)**
+- **TypeScript ESLint 설정 완전 개선**: 모든 TypeScript 파일에 대한 올바른 린팅 지원
+- **코드 품질 강화**: 빈 catch 블록, 중복 선언 등 모든 오류 해결
+- **빌드 시스템 안정화**: 버퍼 크기 및 워커 수 최적화로 안정적인 빌드 환경
+
 ### 필수 요구사항
 
 - **Node.js**: 18.0.0 이상
@@ -154,9 +159,10 @@ git commit -m "refactor: 컴포넌트 리팩토링"
 ### 린팅 규칙
 
 #### 서버 (Node.js/Express)
-- **ESLint**: JavaScript 코드 품질 검사
-- **TypeScript**: 타입 안전성 보장
+- **ESLint**: TypeScript ESLint 플러그인으로 완전한 TypeScript 지원
+- **TypeScript**: 타입 안전성 보장 및 컴파일 검사
 - **Prettier**: 코드 포맷팅
+- **TypeScript ESLint**: `@typescript-eslint/parser` 및 `@typescript-eslint/eslint-plugin` 사용
 
 #### 클라이언트 (Next.js/React)
 - **ESLint**: Next.js 규칙 적용
@@ -330,4 +336,5 @@ npm run build
 **문서 버전**: 1.2.0  
 **최종 업데이트**: 2025-01-13  
 **작성자**: AI Assistant
+
 

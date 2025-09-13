@@ -101,7 +101,9 @@ router.post('/', auth_1.auth, async (req, res) => {
                     message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('결제 처리 중 오류:', error);
+        }
         return res.status(201).json({
             success: true,
             message: '결제가 생성되었습니다.',
@@ -161,7 +163,9 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
                     message: '결제가 완료되었습니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('결제 처리 중 오류:', error);
+        }
         return res.json({
             success: true,
             message: '결제가 완료되었습니다.',
@@ -208,7 +212,9 @@ router.post('/:id/refund', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']),
                     message: '결제가 환불되었습니다.',
                 });
         }
-        catch { }
+        catch (error) {
+            console.error('결제 처리 중 오류:', error);
+        }
         return res.json({
             success: true,
             message: '결제가 환불되었습니다.',

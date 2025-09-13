@@ -83,7 +83,7 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         else {
             return res.status(400).json({ error: '레벨, 템플릿 정보, 또는 개인레슨 여부가 필요합니다.' });
         }
-        let existingChecklist = await ClassChecklist_1.ClassChecklist.findOne({ classId });
+        const existingChecklist = await ClassChecklist_1.ClassChecklist.findOne({ classId });
         if (existingChecklist) {
             if (templateId) {
                 existingChecklist.templateId = templateId;
@@ -147,7 +147,7 @@ router.get('/class/:classId', auth_1.auth, (0, auth_1.requireRole)(['instructor'
         if (!checklist) {
             return res.status(404).json({ error: '해당 반의 체크리스트를 찾을 수 없습니다.' });
         }
-        let responseChecklist = { ...checklist.toObject() };
+        const responseChecklist = { ...checklist.toObject() };
         if (!includeHidden && checklist.hiddenItems && checklist.hiddenItems.length > 0) {
             responseChecklist.items = checklist.items.filter(item => !checklist.hiddenItems.includes(item._id.toString()));
             responseChecklist.customItems = checklist.customItems.filter(item => !checklist.hiddenItems.includes(item._id.toString()));

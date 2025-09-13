@@ -563,7 +563,7 @@ export class IntegratedAIEngine {
       butterfly: ['버터플라이 기본 동작', '호흡 타이밍 연습']
     };
     
-    let exercises = baseExercises[technique as keyof typeof baseExercises] || baseExercises.freestyle;
+    const exercises = baseExercises[technique as keyof typeof baseExercises] || baseExercises.freestyle;
     
     // 약한 영역에 따른 추가 운동
     if (categoryScores.posture < 60) {

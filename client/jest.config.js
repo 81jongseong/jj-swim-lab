@@ -21,7 +21,7 @@ const customJestConfig = {
     '/e2e/'  // E2E 테스트 파일들 제외
   ],
   
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@components/(.*)$': '<rootDir>/components/$1',
     '^@utils/(.*)$': '<rootDir>/utils/$1',

@@ -254,7 +254,9 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
         type: 'booking:created',
         message: '예약이 생성되었습니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('예약 처리 중 오류:', error);
+    }
 
     return res.status(201).json({
       success: true,
@@ -302,7 +304,9 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
         type: 'booking:updated',
         message: '예약 정보가 업데이트되었습니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('예약 처리 중 오류:', error);
+    }
 
     return res.json({
       success: true,
@@ -344,7 +348,9 @@ router.post('/:id/cancel', authenticateToken, async (req: AuthRequest, res: Resp
         type: 'booking:cancelled',
         message: '예약이 취소되었습니다.',
       });
-    } catch {}
+    } catch (error) {
+      console.error('예약 처리 중 오류:', error);
+    }
 
     return res.json({ success: true, message: '예약이 취소되었습니다.' });
   } catch (error) {
@@ -381,7 +387,9 @@ router.patch('/:id/status', authenticateToken, requireRole(['superAdmin']), asyn
         type: 'booking:statusChanged',
         message: `예약 상태가 '${status}'로 변경되었습니다.`,
       });
-    } catch {}
+    } catch (error) {
+      console.error('예약 처리 중 오류:', error);
+    }
 
     return res.json({
       message: '예약 상태가 변경되었습니다.',
@@ -464,7 +472,7 @@ router.get('/course/:courseId', authenticateToken, async (req: AuthRequest, res:
     const { courseId } = req.params;
     const { date } = req.query;
 
-    let filter: any = { course: courseId };
+    const filter: any = { course: courseId };
     
     if (date) {
       const startDate = new Date(date as string);
@@ -651,7 +659,7 @@ router.get('/course/:courseId', authenticateToken, async (req: AuthRequest, res:
     const { courseId } = req.params;
     const { date } = req.query;
 
-    let filter: any = { course: courseId };
+    const filter: any = { course: courseId };
     
     if (date) {
       const startDate = new Date(date as string);

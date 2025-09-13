@@ -82,7 +82,9 @@ function executeCommand(command, description, category, subcategory = null) {
     
     execSync(command, { 
       stdio: 'pipe',
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 10, // 10MB 버퍼 증가
+      timeout: 300000 // 5분 타임아웃
     });
     
     const duration = Date.now() - startTime;
@@ -220,7 +222,7 @@ async function main() {
     
     // 2. 테스트 실행
     logHeader('🧪 테스트 실행');
-    executeCommand('npm run test:server', '서버 테스트', 'test', 'server');
+    executeCommand('npm run test:server -- --maxWorkers=1', '서버 테스트', 'test', 'server');
     executeCommand('npm run test:client', '클라이언트 테스트', 'test', 'client');
     
     // 3. 린팅 검사
@@ -260,4 +262,5 @@ if (require.main === module) {
 }
 
 module.exports = { main, results };
+
 

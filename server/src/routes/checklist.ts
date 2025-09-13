@@ -149,7 +149,7 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
     }
     
     // 모든 강습법의 단계를 하나의 체크리스트로 통합
-    let allItems: any[] = [];
+    const allItems: any[] = [];
     let stepOrder = 1;
     
     teachingMethods.forEach((method, methodIndex) => {

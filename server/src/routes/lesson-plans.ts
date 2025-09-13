@@ -7,7 +7,7 @@ const router: express.Router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { stroke, level, search, createdBy } = req.query;
-    let filter: any = { isActive: true };
+    const filter: any = { isActive: true };
     
     if (stroke) filter.stroke = stroke;
     if (level) filter.level = level;

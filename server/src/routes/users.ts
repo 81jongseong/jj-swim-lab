@@ -122,7 +122,7 @@ router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: Auth
     const { page = 1, limit = 20, userType, level, search, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
     
-    let query: any = {};
+    const query: any = {};
     
     // 센터 관리자는 자신의 센터에 속한 사용자만 조회
     const centerId = (req as any).user.centerId;
@@ -273,7 +273,7 @@ router.get('/', auth, requirePermission('userManagement'), async (req: AuthReque
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
     
-    let query: any = {};
+    const query: any = {};
     
     // 사용자 유형별 권한에 따른 필터링
     if ((req as any).user.userType === 'centerAdmin') {
@@ -636,7 +636,7 @@ router.patch('/:id/upgrade-level', auth, requirePermission('userManagement'), as
     }
     
     // 레벨 업그레이드 로직
-    let updateData: any = {};
+    const updateData: any = {};
     
     switch(userType) {
       case 'student':

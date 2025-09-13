@@ -10,7 +10,7 @@ const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
         const { category, level, difficulty, search } = req.query;
-        let query = {};
+        const query = {};
         if (category) {
             query.category = category;
         }

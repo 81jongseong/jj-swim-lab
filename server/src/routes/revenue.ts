@@ -39,7 +39,7 @@ router.get('/stats', authMiddleware, requireAdmin, async (req, res) => {
     const { userType, centerId } = req.user;
 
     // 기본 쿼리 조건
-    let queryCondition: any = {};
+    const queryCondition: any = {};
     if (userType === 'centerAdmin' && centerId) {
       queryCondition.centerId = centerId;
     }
@@ -179,7 +179,7 @@ router.get('/instructor/:instructorId', authMiddleware, requireAdmin, async (req
     const { instructorId } = req.params;
     const { startDate, endDate } = req.query;
 
-    let dateFilter: any = {};
+    const dateFilter: any = {};
     if (startDate && endDate) {
       dateFilter.createdAt = {
         $gte: new Date(startDate as string),
@@ -248,7 +248,7 @@ router.get('/course/:courseId', authMiddleware, requireAdmin, async (req, res) =
     const { courseId } = req.params;
     const { startDate, endDate } = req.query;
 
-    let dateFilter: any = {};
+    const dateFilter: any = {};
     if (startDate && endDate) {
       dateFilter.createdAt = {
         $gte: new Date(startDate as string),

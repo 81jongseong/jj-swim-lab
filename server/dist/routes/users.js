@@ -12,7 +12,7 @@ router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']
     try {
         const { page = 1, limit = 20, userType, level, search, status } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        let query = {};
+        const query = {};
         const centerId = req.user.centerId;
         if (!centerId) {
             return res.status(400).json({
@@ -137,7 +137,7 @@ router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), as
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        let query = {};
+        const query = {};
         if (req.user.userType === 'centerAdmin') {
             const adminCenterId = req.user.centerId;
             console.log('🔍 센터 관리자 요청:', {
@@ -413,7 +413,7 @@ router.patch('/:id/upgrade-level', auth_1.auth, (0, auth_1.requirePermission)('u
         if (!user) {
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
         }
-        let updateData = {};
+        const updateData = {};
         switch (userType) {
             case 'student':
                 updateData['studentInfo.swimmingLevel'] = newLevel;

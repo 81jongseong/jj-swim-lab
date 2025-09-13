@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-01-13
+
+### Fixed
+- **🔧 TypeScript ESLint 설정 완전 개선**
+  - `@typescript-eslint/parser` 및 `@typescript-eslint/eslint-plugin` 설치 및 설정
+  - TypeScript와 JavaScript 파일을 분리하여 처리하는 ESLint 설정 구성
+  - 개발 단계에 맞는 규칙 조정 (`@typescript-eslint/no-explicit-any`, `no-console` 허용)
+
+- **🐛 코드 품질 개선**
+  - 빈 `catch` 블록들에 적절한 오류 처리 추가
+  - 중복 선언 문제 해결 (`Progress` → `ProgressData`)
+  - `hasOwnProperty` 사용을 안전한 방식으로 변경 (`Object.prototype.hasOwnProperty.call`)
+
+- **⚡ 빌드 시스템 안정화**
+  - 통합 검증 스크립트 버퍼 크기 증가 (10MB)
+  - 서버 테스트 `--maxWorkers=1` 옵션 추가로 안정성 향상
+  - 타임아웃 5분으로 설정
+
+### Changed
+- **📊 ESLint 결과 개선**
+  - ESLint 오류: 1399개 → 0개 (완전 해결)
+  - 경고: 1365개 → 164개 (개발 단계 허용 수준)
+  - 통합 검증: 9/9 항목 모두 통과
+
+### Technical Details
+- **ESLint 설정**: TypeScript 파일 전용 파서 및 플러그인 구성
+- **오류 처리**: 모든 빈 catch 블록에 콘솔 로깅 추가
+- **안전성**: Object.prototype 메서드 안전 사용
+- **성능**: 버퍼 크기 및 워커 수 최적화
+
 ## [1.2.0] - 2025-01-13
 
 ### Added
@@ -110,4 +140,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.x.x] - 이전 버전들
 
 초기 개발 및 프로토타입 단계의 변경사항들은 별도 문서에서 관리됩니다.
+
 

@@ -237,7 +237,7 @@ router.post('/integrated-analysis', auth, requireRole(['instructor', 'centerAdmi
     }
 
     // 영상 분석 데이터 가져오기 (추후 구현)
-    let videoAnalysisData = null;
+    const videoAnalysisData = null;
     if (videoAnalysisId) {
       // TODO: 영상 분석 데이터 조회 로직
     }

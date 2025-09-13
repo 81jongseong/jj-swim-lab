@@ -178,7 +178,7 @@ router.post('/integrated-analysis', auth_1.auth, (0, auth_1.requireRole)(['instr
         if (smartWatchSessionId) {
             smartWatchData = await SmartWatchData_1.SmartWatchData.findOne({ sessionId: smartWatchSessionId });
         }
-        let videoAnalysisData = null;
+        const videoAnalysisData = null;
         if (videoAnalysisId) {
         }
         const analysisInput = {

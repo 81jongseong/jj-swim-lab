@@ -41,7 +41,7 @@ router.get('/', authMiddleware, requireAdmin, async (req, res) => {
     const { status, type, page = 1, limit = 20 } = req.query;
 
     // 기본 쿼리 조건
-    let queryCondition: any = {};
+    const queryCondition: any = {};
     if (userType === 'centerAdmin' && centerId) {
       queryCondition.centerId = centerId;
     }
@@ -278,7 +278,7 @@ router.get('/stats/overview', authMiddleware, requireAdmin, async (req, res) => 
   try {
     const { userType, centerId } = req.user;
 
-    let queryCondition: any = {};
+    const queryCondition: any = {};
     if (userType === 'centerAdmin' && centerId) {
       queryCondition.centerId = centerId;
     }

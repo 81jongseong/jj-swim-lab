@@ -20,7 +20,7 @@ interface CompletedStep {
   notes: string;
 }
 
-interface Progress {
+interface ProgressData {
   percentage: number;
   completedSteps: CompletedStep[];
   notes: string;

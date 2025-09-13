@@ -1,18 +1,5 @@
 import '@testing-library/jest-dom';
 
-// Jest DOM 타입 확장
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R;
-      toHaveClass(...classNames: string[]): R;
-      toHaveTextContent(text: string): R;
-      toHaveAttribute(attr: string, value?: string): R;
-      toBeDisabled(): R;
-    }
-  }
-}
-
 // Next.js 라우터 모킹
 jest.mock('next/router', () => ({
   useRouter() {

@@ -128,7 +128,7 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         if (!teachingMethods || teachingMethods.length === 0) {
             return res.status(404).json({ error: '해당 레벨의 강습법을 찾을 수 없습니다.' });
         }
-        let allItems = [];
+        const allItems = [];
         let stepOrder = 1;
         teachingMethods.forEach((method, methodIndex) => {
             method.steps.forEach((step, stepIndex) => {

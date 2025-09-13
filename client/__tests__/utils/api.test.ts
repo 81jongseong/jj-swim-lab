@@ -270,8 +270,9 @@ describe('API Client', () => {
       const result = await apiClient.get('/users/999');
       expect(result.error).toBeDefined();
       expect(result).toEqual(expect.objectContaining({
-        error: expect.any(String),
-        success: false
+        error: expect.any(Object),
+        success: false,
+        status: 404
       }));
     });
 
@@ -587,8 +588,9 @@ describe('API Client', () => {
       const result = await apiClient.get('/error');
       expect(result.error).toBeDefined();
       expect(result).toEqual(expect.objectContaining({
-        error: expect.any(String),
-        success: false
+        error: expect.any(Object),
+        success: false,
+        status: 400
       }));
     });
   });

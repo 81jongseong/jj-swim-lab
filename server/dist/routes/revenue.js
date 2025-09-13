@@ -20,7 +20,7 @@ const requireAdmin = (req, res, next) => {
 router.get('/stats', auth_1.auth, requireAdmin, async (req, res) => {
     try {
         const { userType, centerId } = req.user;
-        let queryCondition = {};
+        const queryCondition = {};
         if (userType === 'centerAdmin' && centerId) {
             queryCondition.centerId = centerId;
         }
@@ -147,7 +147,7 @@ router.get('/instructor/:instructorId', auth_1.auth, requireAdmin, async (req, r
     try {
         const { instructorId } = req.params;
         const { startDate, endDate } = req.query;
-        let dateFilter = {};
+        const dateFilter = {};
         if (startDate && endDate) {
             dateFilter.createdAt = {
                 $gte: new Date(startDate),
@@ -212,7 +212,7 @@ router.get('/course/:courseId', auth_1.auth, requireAdmin, async (req, res) => {
     try {
         const { courseId } = req.params;
         const { startDate, endDate } = req.query;
-        let dateFilter = {};
+        const dateFilter = {};
         if (startDate && endDate) {
             dateFilter.createdAt = {
                 $gte: new Date(startDate),

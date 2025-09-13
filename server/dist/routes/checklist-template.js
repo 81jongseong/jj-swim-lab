@@ -56,7 +56,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin
         const userId = req.user?._id;
         const centerId = req.user?.centerId;
         const userType = req.user?.userType;
-        let query = { isActive: true };
+        const query = { isActive: true };
         if (userType === 'centerAdmin') {
             query.$or = [
                 { creatorId: userId },
