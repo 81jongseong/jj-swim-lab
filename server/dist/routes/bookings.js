@@ -24,17 +24,17 @@ router.get('/', auth_1.auth, async (req, res) => {
                 filter.instructor = instructor;
         }
         else if (currentUser?.userType === 'instructor') {
-            filter.instructor = currentUser._id;
+            filter.instructor = currentUser.userId;
         }
         else {
-            filter.user = currentUser._id;
+            filter.user = currentUser.userId;
         }
         const bookings = await Booking_1.Booking.find(filter)
             .populate('user', 'name userId')
             .populate('instructor', 'name userId')
             .populate('course', 'name')
             .sort({ date: 1, startTime: 1 });
-        return res.json({ bookings });
+        return res.json({ success: true, message: '예약 조회 성공!', data: bookings });
     }
     catch (error) {
         console.error('예약 조회 오류:', error);
@@ -51,10 +51,10 @@ router.get('/:id', auth_1.auth, async (req, res) => {
             return res.status(404).json({ error: '예약을 찾을 수 없습니다.' });
         }
         const currentUser = req.user;
-        if (currentUser?.userType !== 'superAdmin' && booking.user.toString() !== String(currentUser._id)) {
+        if (currentUser?.userType !== 'superAdmin' && booking.user.toString() !== String(currentUser.userId)) {
             return res.status(403).json({ error: '조회 권한이 없습니다.' });
         }
-        return res.json({ booking });
+        return res.json({ success: true, message: '예약 조회 성공!', data: booking });
     }
     catch (error) {
         console.error('예약 조회 오류:', error);
@@ -91,7 +91,7 @@ router.post('/', auth_1.auth, async (req, res) => {
             return res.status(400).json({ error: '해당 시간에 이미 예약이 있습니다.' });
         }
         const bookingData = {
-            user: req.user._id,
+            user: req.user.userId,
             date: bookingDate,
             startTime,
             endTime,
@@ -110,15 +110,16 @@ router.post('/', auth_1.auth, async (req, res) => {
         try {
             const io = req.app.get('io');
             if (io)
-                io.to(`user:${String(req.user._id)}`).emit('notification', {
+                io.to(`user:${String(req.user.userId)}`).emit('notification', {
                     type: 'booking:created',
                     message: '예약이 생성되었습니다.',
                 });
         }
         catch { }
         return res.status(201).json({
+            success: true,
             message: '예약이 생성되었습니다.',
-            booking: populatedBooking
+            data: populatedBooking
         });
     }
     catch (error) {
@@ -152,8 +153,9 @@ router.put('/:id', auth_1.auth, async (req, res) => {
         }
         catch { }
         return res.json({
+            success: true,
             message: '예약이 수정되었습니다.',
-            booking: updatedBooking
+            data: updatedBooking
         });
     }
     catch (error) {
@@ -185,7 +187,7 @@ router.post('/:id/cancel', auth_1.auth, async (req, res) => {
                 });
         }
         catch { }
-        return res.json({ message: '예약이 취소되었습니다.' });
+        return res.json({ success: true, message: '예약이 취소되었습니다.' });
     }
     catch (error) {
         console.error('예약 취소 오류:', error);
@@ -263,9 +265,13 @@ router.get('/available/:date', async (req, res) => {
             }
         }
         return res.json({
-            date: bookingDate,
-            availableSlots,
-            existingBookings: bookings
+            success: true,
+            message: '예약 가능 시간 조회 성공!',
+            data: {
+                date: bookingDate,
+                availableSlots,
+                existingBookings: bookings
+            }
         });
     }
     catch (error) {
@@ -310,7 +316,7 @@ router.get('/course/:courseId', auth_1.auth, async (req, res) => {
 router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
     try {
         const { studentId } = req.params;
-        if (req.user._id !== studentId &&
+        if (req.user.userId !== studentId &&
             req.user.userType !== 'instructor' &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
@@ -370,7 +376,7 @@ router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
 router.get('/instructor/:instructorId/courses', auth_1.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });
@@ -467,7 +473,7 @@ router.get('/course/:courseId', auth_1.auth, async (req, res) => {
 router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
     try {
         const { studentId } = req.params;
-        if (req.user._id !== studentId &&
+        if (req.user.userId !== studentId &&
             req.user.userType !== 'instructor' &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
@@ -527,7 +533,7 @@ router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
 router.get('/instructor/:instructorId/courses', auth_1.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });

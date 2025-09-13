@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { auth, requireRole } from '../middleware/auth';
 import { Video } from '../models/Video';
+import { SecureExcelParser } from '../utils/secureExcelParser';
 
 
 const router: express.Router = express.Router();
@@ -80,19 +81,19 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
           }
         }
       } else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
-        // Excel 파일 처리 (xlsx 라이브러리 사용)
-        console.log('📊 Excel 파일 감지됨, xlsx 라이브러리로 파싱 시도');
+        // Excel 파일 처리 (안전한 파서 사용)
+        console.log('📊 Excel 파일 감지됨, 안전한 파서로 파싱 시도');
         
         try {
-          const XLSX = require('xlsx');
+          const parser = new SecureExcelParser({
+            maxFileSize: 5 * 1024 * 1024, // 5MB
+            maxRows: 1000,
+            maxColumns: 20,
+            sanitizeData: true
+          });
           
-          // Excel 파일 읽기
-          const workbook = XLSX.readFile(file.path);
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          
-          // JSON으로 변환
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          const result = await parser.parseFile(file.path);
+          const jsonData = result.data;
           
           console.log(`📊 Excel 파일 파싱 결과: ${jsonData.length}행`);
           

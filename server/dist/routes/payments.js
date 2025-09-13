@@ -26,14 +26,14 @@ router.get('/', auth_1.auth, async (req, res) => {
         }
         const currentUser = req.user;
         if (currentUser?.userType !== 'superAdmin') {
-            filter.user = currentUser._id;
+            filter.user = currentUser.userId;
         }
         const payments = await Payment_1.Payment.find(filter)
             .populate('user', 'name userId')
             .populate('relatedCourse', 'name')
             .populate('relatedBooking', 'date startTime endTime')
             .sort({ createdAt: -1 });
-        return res.json({ payments });
+        return res.json({ success: true, message: '결제 내역 조회 성공!', data: payments });
     }
     catch (error) {
         console.error('결제 내역 조회 오류:', error);
@@ -53,7 +53,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         if (currentUser?.userType !== 'superAdmin' && payment.user.toString() !== req.user.userId) {
             return res.status(403).json({ error: '조회 권한이 없습니다.' });
         }
-        return res.json({ payment });
+        return res.json({ success: true, message: '결제 조회 성공!', data: payment });
     }
     catch (error) {
         console.error('결제 조회 오류:', error);
@@ -77,7 +77,7 @@ router.post('/', auth_1.auth, async (req, res) => {
         }
         const transactionId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const paymentData = {
-            user: req.user._id,
+            user: req.user.userId,
             amount,
             paymentMethod,
             purpose,
@@ -96,15 +96,16 @@ router.post('/', auth_1.auth, async (req, res) => {
         try {
             const io = req.app.get('io');
             if (io)
-                io.to(`user:${String(req.user._id)}`).emit('notification', {
+                io.to(`user:${String(req.user.userId)}`).emit('notification', {
                     type: 'payment:created',
                     message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
                 });
         }
         catch { }
         return res.status(201).json({
+            success: true,
             message: '결제가 생성되었습니다.',
-            payment: populatedPayment
+            data: populatedPayment
         });
     }
     catch (error) {
@@ -162,8 +163,9 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
         }
         catch { }
         return res.json({
+            success: true,
             message: '결제가 완료되었습니다.',
-            payment: updatedPayment
+            data: updatedPayment
         });
     }
     catch (error) {
@@ -208,8 +210,9 @@ router.post('/:id/refund', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']),
         }
         catch { }
         return res.json({
+            success: true,
             message: '결제가 환불되었습니다.',
-            payment: updatedPayment
+            data: updatedPayment
         });
     }
     catch (error) {
@@ -237,11 +240,15 @@ router.get('/stats/summary', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
             purposeStats[payment.purpose] = (purposeStats[payment.purpose] || 0) + 1;
         }
         return res.json({
-            totalPayments: payments.length,
-            totalAmount,
-            paymentMethodStats,
-            purposeStats,
-            averageAmount: payments.length > 0 ? totalAmount / payments.length : 0
+            success: true,
+            message: '결제 통계 조회 성공!',
+            data: {
+                totalPayments: payments.length,
+                totalAmount,
+                paymentMethodStats,
+                purposeStats,
+                averageAmount: payments.length > 0 ? totalAmount / payments.length : 0
+            }
         });
     }
     catch (error) {
@@ -352,7 +359,7 @@ router.get('/course/:courseId/stats', auth_1.auth, async (req, res) => {
 router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
     try {
         const { studentId } = req.params;
-        if (req.user._id !== studentId &&
+        if (req.user.userId !== studentId &&
             req.user.userType !== 'instructor' &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
@@ -578,7 +585,7 @@ router.get('/course/:courseId/stats', auth_1.auth, async (req, res) => {
 router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
     try {
         const { studentId } = req.params;
-        if (req.user._id !== studentId &&
+        if (req.user.userId !== studentId &&
             req.user.userType !== 'instructor' &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {

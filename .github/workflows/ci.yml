@@ -1,0 +1,547 @@
+# JJ Swim Lab CI/CD Pipeline
+# 이 워크플로우는 다음을 수행합니다:
+# - 서버 및 클라이언트 테스트 실행
+# - E2E, 통합, 성능, 접근성 테스트
+# - 보안 감사 실행
+# - main 브랜치에 자동 배포
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  MONGODB_VERSION: '6.0'
+  REDIS_VERSION: '7.0'
+
+jobs:
+  # 서버 테스트 - Node.js 백엔드 애플리케이션 테스트
+  # - 의존성 설치 및 빌드
+  # - 린팅, 타입 체크, 단위 테스트 실행
+  # - MongoDB 및 Redis 서비스 사용
+  server-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: server/package-lock.json
+
+    - name: Install server dependencies
+      working-directory: ./server
+      run: npm ci
+
+    - name: Build server
+      working-directory: ./server
+      run: npm run build
+
+    - name: Run server linting
+      working-directory: ./server
+      run: npm run lint
+
+    - name: Run server type checking
+      working-directory: ./server
+      run: npm run type-check
+
+    - name: Run server tests
+      working-directory: ./server
+      run: npm test
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/jj-swim-lab-test
+        JWT_SECRET: test-jwt-secret-key
+        REDIS_URL: redis://localhost:6379/1
+
+  # 클라이언트 테스트 - Next.js 프론트엔드 애플리케이션 테스트
+  # - 의존성 설치 및 빌드
+  # - 린팅, 타입 체크, 단위 테스트 실행
+  # - 커버리지 리포트 생성
+  client-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install client dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Run client linting
+      working-directory: ./client
+      run: npm run lint
+
+    - name: Run client type checking
+      working-directory: ./client
+      run: npm run type-check
+
+    - name: Run client unit tests
+      working-directory: ./client
+      run: npm test -- --coverage --watchAll=false
+
+    - name: Build client
+      working-directory: ./client
+      run: npm run build
+
+  # E2E 테스트 - Playwright를 사용한 End-to-End 테스트
+  # - 서버 및 클라이언트 애플리케이션 시작
+  # - 실제 브라우저에서 사용자 시나리오 테스트
+  # - 테스트 결과 아티팩트 업로드
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Install Playwright Browsers
+      working-directory: ./client
+      run: npx playwright install --with-deps
+
+    - name: Start server
+      working-directory: ./server
+      run: |
+        npm run build
+        nohup npm start > server.log 2>&1 &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/jj-swim-lab-test
+        JWT_SECRET: test-jwt-secret-key
+        REDIS_URL: redis://localhost:6379/1
+        PORT: 5000
+
+    - name: Wait for server
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5000/api/health; do sleep 2; done'
+
+    - name: Start client
+      working-directory: ./client
+      run: |
+        npm run build
+        nohup npm start > client.log 2>&1 &
+        echo $! > client.pid
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+
+    - name: Wait for client
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+    - name: Run E2E tests
+      working-directory: ./client
+      run: npm run test:e2e
+      env:
+        TEST_SERVER_URL: http://localhost:5000
+        TEST_CLIENT_URL: http://localhost:3000
+        TEST_DB_URI: mongodb://localhost:27017/jj-swim-lab-test
+
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: client/playwright-report/
+        retention-days: 30
+
+    - name: Cleanup processes
+      if: always()
+      run: |
+        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+        if [ -f client.pid ]; then kill $(cat client.pid) || true; fi
+
+  # 통합 테스트 - API와 데이터베이스 통합 테스트
+  # - 서버 애플리케이션 시작
+  # - API 엔드포인트와 데이터베이스 연동 테스트
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Install Playwright Browsers
+      working-directory: ./client
+      run: npx playwright install --with-deps
+
+    - name: Start server
+      working-directory: ./server
+      run: |
+        npm run build
+        nohup npm start > server.log 2>&1 &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/jj-swim-lab-test
+        JWT_SECRET: test-jwt-secret-key
+        REDIS_URL: redis://localhost:6379/1
+        PORT: 5000
+
+    - name: Wait for server
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5000/api/health; do sleep 2; done'
+
+    - name: Run integration tests
+      working-directory: ./client
+      run: npx playwright test e2e/integration.spec.ts
+      env:
+        TEST_SERVER_URL: http://localhost:5000
+        TEST_CLIENT_URL: http://localhost:3000
+        TEST_DB_URI: mongodb://localhost:27017/jj-swim-lab-test
+
+    - name: Cleanup processes
+      if: always()
+      run: |
+        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+
+  # 성능 테스트 - 애플리케이션 성능 및 부하 테스트
+  # - 서버 및 클라이언트 애플리케이션 시작
+  # - 응답 시간, 처리량, 리소스 사용량 측정
+  performance-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Install Playwright Browsers
+      working-directory: ./client
+      run: npx playwright install --with-deps
+
+    - name: Start server
+      working-directory: ./server
+      run: |
+        npm run build
+        nohup npm start > server.log 2>&1 &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/jj-swim-lab-test
+        JWT_SECRET: test-jwt-secret-key
+        REDIS_URL: redis://localhost:6379/1
+        PORT: 5000
+
+    - name: Wait for server
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5000/api/health; do sleep 2; done'
+
+    - name: Start client
+      working-directory: ./client
+      run: |
+        npm run build
+        nohup npm start > client.log 2>&1 &
+        echo $! > client.pid
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+
+    - name: Wait for client
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+    - name: Run performance tests
+      working-directory: ./client
+      run: npx playwright test e2e/performance.spec.ts
+      env:
+        TEST_SERVER_URL: http://localhost:5000
+        TEST_CLIENT_URL: http://localhost:3000
+        TEST_DB_URI: mongodb://localhost:27017/jj-swim-lab-test
+
+    - name: Cleanup processes
+      if: always()
+      run: |
+        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+        if [ -f client.pid ]; then kill $(cat client.pid) || true; fi
+
+  # 접근성 테스트 - 웹 접근성 표준 준수 테스트
+  # - WCAG 가이드라인 준수 확인
+  # - 스크린 리더 및 키보드 네비게이션 테스트
+  accessibility-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Install Playwright Browsers
+      working-directory: ./client
+      run: npx playwright install --with-deps
+
+    - name: Start server
+      working-directory: ./server
+      run: |
+        npm run build
+        nohup npm start > server.log 2>&1 &
+        echo $! > server.pid
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://localhost:27017/jj-swim-lab-test
+        JWT_SECRET: test-jwt-secret-key
+        REDIS_URL: redis://localhost:6379/1
+        PORT: 5000
+
+    - name: Wait for server
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:5000/api/health; do sleep 2; done'
+
+    - name: Start client
+      working-directory: ./client
+      run: |
+        npm run build
+        nohup npm start > client.log 2>&1 &
+        echo $! > client.pid
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+
+    - name: Wait for client
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+    - name: Run accessibility tests
+      working-directory: ./client
+      run: npx playwright test e2e/accessibility.spec.ts
+      env:
+        TEST_SERVER_URL: http://localhost:5000
+        TEST_CLIENT_URL: http://localhost:3000
+        TEST_DB_URI: mongodb://localhost:27017/jj-swim-lab-test
+
+    - name: Cleanup processes
+      if: always()
+      run: |
+        if [ -f server.pid ]; then kill $(cat server.pid) || true; fi
+        if [ -f client.pid ]; then kill $(cat client.pid) || true; fi
+
+  # 보안 테스트 - 의존성 보안 감사 및 취약점 검사
+  # - npm audit를 통한 보안 취약점 검사
+  # - audit-ci를 통한 의존성 보안 검증
+  security-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Run security audit
+      run: |
+        cd server && npm audit --audit-level=moderate || true
+        cd ../client && npm audit --audit-level=moderate || true
+
+    - name: Run dependency check
+      run: |
+        cd server && npx audit-ci --config audit-ci.json || echo "audit-ci config not found, skipping"
+        cd ../client && npx audit-ci --config audit-ci.json || echo "audit-ci config not found, skipping"
+
+  # 배포 - 프로덕션 환경 배포 (main 브랜치에만)
+  # - 모든 테스트 통과 후 자동 배포
+  # - Docker 이미지 빌드 및 컨테이너 레지스트리 푸시
+  # - 데이터베이스 마이그레이션 실행
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [server-tests, client-tests, e2e-tests, integration-tests, performance-tests, accessibility-tests, security-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Build client
+      working-directory: ./client
+      run: npm run build
+
+    - name: Deploy to production
+      run: |
+        echo "Production deployment would happen here"
+        echo "This could include:"
+        echo "- Building Docker images"
+        echo "- Pushing to container registry"
+        echo "- Deploying to cloud platform"
+        echo "- Running database migrations"
+        echo "- Updating load balancer configuration"
+

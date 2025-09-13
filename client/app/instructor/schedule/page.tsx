@@ -47,7 +47,7 @@ function InstructorSchedulePage() {
     try {
       // 현재 로그인한 강사 정보 가져오기
       const currentUser = apiClient.getCurrentUser();
-      if (!currentUser?.id) {
+      if (!currentUser?.userId) {
         console.error('사용자 정보를 찾을 수 없습니다.');
         return;
       }

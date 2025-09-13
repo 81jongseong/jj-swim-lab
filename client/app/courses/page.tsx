@@ -45,9 +45,13 @@ export default function CoursesPage() {
   const loadInstructors = async () => {
     try {
       // 센터 계정인 경우 해당 센터의 강사만 조회
-      const res = await apiClient.get('/users?userType=instructor');
-      if (res.success && res.users) {
-        setInstructors(res.users);
+      const res = await apiClient.get<{
+        success: boolean;
+        users?: any[];
+        error?: string;
+      }>('/users?userType=instructor');
+      if ((res as any).success && (res as any).users) {
+        setInstructors((res as any).users);
       }
     } catch (error) {
       console.error('강사 목록 로드 실패:', error);

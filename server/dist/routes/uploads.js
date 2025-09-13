@@ -9,6 +9,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const auth_1 = require("../middleware/auth");
 const Video_1 = require("../models/Video");
+const secureExcelParser_1 = require("../utils/secureExcelParser");
 const router = express_1.default.Router();
 const uploadDir = process.env.UPLOAD_PATH || path_1.default.join(process.cwd(), 'uploads');
 if (!fs_1.default.existsSync(uploadDir)) {
@@ -64,13 +65,16 @@ router.post('/excel', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
                 }
             }
             else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
-                console.log('📊 Excel 파일 감지됨, xlsx 라이브러리로 파싱 시도');
+                console.log('📊 Excel 파일 감지됨, 안전한 파서로 파싱 시도');
                 try {
-                    const XLSX = require('xlsx');
-                    const workbook = XLSX.readFile(file.path);
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const parser = new secureExcelParser_1.SecureExcelParser({
+                        maxFileSize: 5 * 1024 * 1024,
+                        maxRows: 1000,
+                        maxColumns: 20,
+                        sanitizeData: true
+                    });
+                    const result = await parser.parseFile(file.path);
+                    const jsonData = result.data;
                     console.log(`📊 Excel 파일 파싱 결과: ${jsonData.length}행`);
                     if (jsonData.length > 1) {
                         const firstRow = jsonData[0];

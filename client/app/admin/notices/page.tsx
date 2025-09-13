@@ -10,7 +10,13 @@ function AdminNoticesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ title: '', content: '', category: 'general', priority: 'medium', isPublished: false });
+  const [form, setForm] = useState<{
+    title: string;
+    content: string;
+    category: string;
+    priority: 'low' | 'medium' | 'high';
+    isPublished: boolean;
+  }>({ title: '', content: '', category: 'general', priority: 'medium', isPublished: false });
 
   const formatDate = (dateString: string | Date | null | undefined) => {
     if (!dateString) return '-';
@@ -174,7 +180,7 @@ function AdminNoticesPage() {
                   <option value="event">이벤트</option>
                   <option value="instructor">강사</option>
                 </select>
-                <select value={form.priority} onChange={(e)=>setForm({...form, priority:e.target.value})} className="border rounded px-3 py-2">
+                <select value={form.priority} onChange={(e)=>setForm({...form, priority:e.target.value as 'low' | 'medium' | 'high'})} className="border rounded px-3 py-2">
                   <option value="low">낮음</option>
                   <option value="medium">보통</option>
                   <option value="high">높음</option>

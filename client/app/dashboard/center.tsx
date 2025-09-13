@@ -26,10 +26,21 @@ function CenterDashboard() {
     const loadStats = async () => {
       try {
         // 센터 통계 데이터 로드
-        const response = await apiClient.get('/centers/dashboard');
+        const response = await apiClient.get<{
+          success: boolean;
+          data?: {
+            overview?: {
+              totalInstructors?: number;
+              totalStudents?: number;
+              totalCourses?: number;
+              activeBookings?: number;
+              recentPayments?: number;
+            };
+          };
+        }>('/centers/dashboard');
         
-        if (response.success && response.data) {
-          const data = response.data;
+        if ((response as any).success && (response as any).data) {
+          const data = (response as any).data;
           const overview = data.overview || {};
           setStats({
             totalInstructors: overview.totalInstructors || 0,

@@ -49,6 +49,7 @@
  * - 2024-12-19: 인증 토큰 관리 시스템 구현
  * - 2024-12-19: 에러 처리 및 재시도 시스템 구현
  * - 2024-12-19: 타입 안전성 및 성능 최적화 시스템 구현
+ * - 2024-12-19: TypeScript 타입 정의 강화 (any 타입을 구체적인 타입으로 교체, 인터페이스 추가)
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
@@ -98,6 +99,194 @@
  * 5. 에러 처리 및 재시도 로직 실행
  */
 
+// API 요청/응답 타입 정의
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+interface UserData {
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  password?: string;
+  address?: string;
+  level?: string;
+  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CourseData {
+  _id: string;
+  name: string;
+  description: string;
+  instructor: string;
+  level: string;
+  maxStudents: number;
+  currentStudents: number;
+  schedule: string;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BookingData {
+  _id: string;
+  studentId: string;
+  courseId: string;
+  instructorId: string;
+  bookingDate: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PaymentData {
+  _id: string;
+  studentId: string;
+  courseId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  paymentMethod: string;
+  transactionId?: string;
+  purpose?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CenterData {
+  _id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  description?: string;
+  facilities: string[];
+  operatingHours: {
+    weekdays: string;
+    weekends: string;
+  };
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface NoticeData {
+  _id: string;
+  title: string;
+  content: string;
+  author: string;
+  priority: 'low' | 'medium' | 'high';
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface QuizData {
+  _id: string;
+  title: string;
+  description: string;
+  questions: Array<{
+    question: string;
+    options: string[];
+    correctAnswer: number;
+    explanation?: string;
+  }>;
+  timeLimit: number;
+  passingScore: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CommunityPostData {
+  _id: string;
+  title: string;
+  content: string;
+  author: string;
+  tags: string[];
+  likes: number;
+  comments: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ShopOrderData {
+  _id: string;
+  customerId: string;
+  items: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+  }>;
+  totalAmount: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  shippingAddress: {
+    name: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    phone: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LessonPlanData {
+  _id: string;
+  title: string;
+  description: string;
+  instructorId: string;
+  level: string;
+  duration: number;
+  objectives: string[];
+  activities: Array<{
+    name: string;
+    description: string;
+    duration: number;
+    materials?: string[];
+  }>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ExerciseData {
+  _id: string;
+  studentId: string;
+  instructorId: string;
+  exerciseType: string;
+  data: Record<string, unknown>;
+  score?: number;
+  feedback?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReportData {
+  _id: string;
+  title: string;
+  content: string;
+  author: string;
+  type: 'performance' | 'progress' | 'incident' | 'other';
+  priority: 'low' | 'medium' | 'high';
+  status: 'draft' | 'submitted' | 'reviewed' | 'approved';
+  assignedTo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // HTTP API 통신 관리 유틸리티
 class ApiClient {
   private baseURL: string;
@@ -106,7 +295,7 @@ class ApiClient {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   }
 
-  private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+  private async request<T = ApiResponse>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     console.log(`🔍 API 요청: ${this.baseURL}${endpoint}`);
@@ -133,46 +322,50 @@ class ApiClient {
         return { 
           error: data.error || data.message || '요청에 실패했습니다.',
           status: response.status,
-          details: data
-        };
+          details: data,
+          success: false
+        } as T;
       }
 
       // 서버 응답 구조를 그대로 반환 (success, data, message 등 포함)
-      return data;
+      return data as T;
     } catch (error) {
       console.error(`💥 네트워크 오류:`, error);
-      return { error: '네트워크 오류가 발생했습니다.' };
+      return { 
+        error: '네트워크 오류가 발생했습니다.',
+        success: false
+      } as T;
     }
   }
 
   // ===== 범용 HTTP 메소드 =====
-  async get<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'GET' });
+  async get<T = ApiResponse>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
+  async post<T = ApiResponse>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async put<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
+  async put<T = ApiResponse>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async patch<T = any>(endpoint: string, data?: any): Promise<T> {
-    return this.request(endpoint, {
+  async patch<T = ApiResponse>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async delete<T = any>(endpoint: string): Promise<T> {
-    return this.request(endpoint, { method: 'DELETE' });
+  async delete<T = ApiResponse>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
   // ===== 인증 관련 API =====
@@ -183,7 +376,7 @@ class ApiClient {
     });
   }
 
-  async signup(userData: any): Promise<any> {
+  async signup(userData: Partial<UserData>): Promise<ApiResponse<UserData>> {
     return this.request('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -194,7 +387,7 @@ class ApiClient {
     return this.request('/api/auth/profile');
   }
 
-  getCurrentUser(): any {
+  getCurrentUser(): UserData | null {
     if (typeof window !== 'undefined') {
       const userStr = localStorage.getItem('user');
       return userStr ? JSON.parse(userStr) : null;
@@ -258,14 +451,14 @@ class ApiClient {
     return this.request(`/api/users/${id}`);
   }
 
-  async createUser(userData: any): Promise<any> {
+  async createUser(userData: Partial<UserData>): Promise<ApiResponse<UserData>> {
     return this.request('/api/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
-  async updateUser(id: string, userData: any): Promise<any> {
+  async updateUser(id: string, userData: Partial<UserData>): Promise<ApiResponse<UserData>> {
     return this.request(`/api/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
@@ -302,14 +495,14 @@ class ApiClient {
     return this.request(`/api/courses/${id}`);
   }
 
-  async createCourse(courseData: any): Promise<any> {
+  async createCourse(courseData: Partial<CourseData>): Promise<ApiResponse<CourseData>> {
     return this.request('/api/courses', {
       method: 'POST',
       body: JSON.stringify(courseData),
     });
   }
 
-  async updateCourse(id: string, courseData: any): Promise<any> {
+  async updateCourse(id: string, courseData: Partial<CourseData>): Promise<ApiResponse<CourseData>> {
     return this.request(`/api/courses/${id}`, {
       method: 'PUT',
       body: JSON.stringify(courseData),
@@ -336,7 +529,7 @@ class ApiClient {
   }
 
   // 학생별 강습 과정 진도율 업데이트
-  async updateCourseProgress(courseId: string, studentId: string, progressData: any): Promise<any> {
+  async updateCourseProgress(courseId: string, studentId: string, progressData: Record<string, unknown>): Promise<ApiResponse<unknown>> {
     return this.request(`/api/courses/${courseId}/progress/${studentId}`, {
       method: 'PUT',
       body: JSON.stringify(progressData),
@@ -359,14 +552,14 @@ class ApiClient {
     return this.request(`/api/bookings${queryString}`);
   }
 
-  async createBooking(bookingData: any): Promise<any> {
+  async createBooking(bookingData: Partial<BookingData>): Promise<ApiResponse<BookingData>> {
     return this.request('/api/bookings', {
       method: 'POST',
       body: JSON.stringify(bookingData),
     });
   }
 
-  async updateBooking(id: string, bookingData: any): Promise<any> {
+  async updateBooking(id: string, bookingData: Partial<BookingData>): Promise<ApiResponse<BookingData>> {
     return this.request(`/api/bookings/${id}`, {
       method: 'PUT',
       body: JSON.stringify(bookingData),
@@ -385,14 +578,14 @@ class ApiClient {
     return this.request(`/api/payments${queryString}`);
   }
 
-  async createPayment(paymentData: any): Promise<any> {
+  async createPayment(paymentData: Partial<PaymentData>): Promise<ApiResponse<PaymentData>> {
     return this.request('/api/payments', {
       method: 'POST',
       body: JSON.stringify(paymentData),
     });
   }
 
-  async updatePayment(id: string, paymentData: any): Promise<any> {
+  async updatePayment(id: string, paymentData: Partial<PaymentData>): Promise<ApiResponse<PaymentData>> {
     return this.request(`/api/payments/${id}`, {
       method: 'PUT',
       body: JSON.stringify(paymentData),
@@ -405,7 +598,7 @@ class ApiClient {
     return this.request(endpoint);
   }
 
-  async updateCenterInfo(centerData: any, centerId?: string): Promise<any> {
+  async updateCenterInfo(centerData: Partial<CenterData>, centerId?: string): Promise<ApiResponse<CenterData>> {
     const endpoint = centerId ? `/api/centers/${centerId}` : '/api/center-info';
     return this.request(endpoint, {
       method: 'PUT',
@@ -424,14 +617,14 @@ class ApiClient {
     return this.request(`/api/admin/notices${queryString}`);
   }
 
-  async createNotice(noticeData: any): Promise<any> {
+  async createNotice(noticeData: Partial<NoticeData>): Promise<ApiResponse<NoticeData>> {
     return this.request('/api/notices', {
       method: 'POST',
       body: JSON.stringify(noticeData),
     });
   }
 
-  async updateNotice(id: string, noticeData: any): Promise<any> {
+  async updateNotice(id: string, noticeData: Partial<NoticeData>): Promise<ApiResponse<NoticeData>> {
     return this.request(`/api/notices/${id}`, {
       method: 'PUT',
       body: JSON.stringify(noticeData),
@@ -457,7 +650,7 @@ class ApiClient {
     return this.request(`/api/quiz${queryString}`);
   }
 
-  async submitQuizAnswer(quizId: string, answers: any): Promise<any> {
+  async submitQuizAnswer(quizId: string, answers: Record<string, unknown>): Promise<ApiResponse<unknown>> {
     return this.request(`/api/quiz/${quizId}/submit`, {
       method: 'POST',
       body: JSON.stringify(answers),
@@ -470,14 +663,14 @@ class ApiClient {
     return this.request(`/api/community${queryString}`);
   }
 
-  async createCommunityPost(postData: any): Promise<any> {
+  async createCommunityPost(postData: Partial<CommunityPostData>): Promise<ApiResponse<CommunityPostData>> {
     return this.request('/api/community', {
       method: 'POST',
       body: JSON.stringify(postData),
     });
   }
 
-  async updateCommunityPost(id: string, postData: any): Promise<any> {
+  async updateCommunityPost(id: string, postData: Partial<CommunityPostData>): Promise<ApiResponse<CommunityPostData>> {
     return this.request(`/api/community/${id}`, {
       method: 'PUT',
       body: JSON.stringify(postData),
@@ -496,7 +689,7 @@ class ApiClient {
     return this.request(`/api/shop/products${queryString}`);
   }
 
-  async createShopOrder(orderData: any): Promise<any> {
+  async createShopOrder(orderData: Partial<ShopOrderData>): Promise<ApiResponse<ShopOrderData>> {
     return this.request('/api/shop/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
@@ -508,7 +701,7 @@ class ApiClient {
     return this.request(`/api/shop/orders${queryString}`);
   }
 
-  async updateShopOrder(id: string, orderData: any): Promise<any> {
+  async updateShopOrder(id: string, orderData: Partial<ShopOrderData>): Promise<ApiResponse<ShopOrderData>> {
     return this.request(`/api/shop/orders/${id}`, {
       method: 'PUT',
       body: JSON.stringify(orderData),
@@ -531,14 +724,14 @@ class ApiClient {
     return this.request(`/api/lesson-plans${queryString}`);
   }
 
-  async createLessonPlan(planData: any): Promise<any> {
+  async createLessonPlan(planData: Partial<LessonPlanData>): Promise<ApiResponse<LessonPlanData>> {
     return this.request('/api/lesson-plans', {
       method: 'POST',
       body: JSON.stringify(planData),
     });
   }
 
-  async updateLessonPlan(id: string, planData: any): Promise<any> {
+  async updateLessonPlan(id: string, planData: Partial<LessonPlanData>): Promise<ApiResponse<LessonPlanData>> {
     return this.request(`/api/lesson-plans/${id}`, {
       method: 'PUT',
       body: JSON.stringify(planData),
@@ -557,7 +750,7 @@ class ApiClient {
     return this.request(`/api/exercise${queryString}`);
   }
 
-  async submitExerciseData(exerciseData: any): Promise<any> {
+  async submitExerciseData(exerciseData: Partial<ExerciseData>): Promise<ApiResponse<ExerciseData>> {
     return this.request('/api/exercise', {
       method: 'POST',
       body: JSON.stringify(exerciseData),
@@ -602,7 +795,7 @@ class ApiClient {
     return this.request(`/api/reports${queryString}`);
   }
 
-  async updateReport(reportId: string, reportData: any): Promise<any> {
+  async updateReport(reportId: string, reportData: Partial<ReportData>): Promise<ApiResponse<ReportData>> {
     return this.request(`/api/reports/${reportId}`, {
       method: 'PUT',
       body: JSON.stringify(reportData),

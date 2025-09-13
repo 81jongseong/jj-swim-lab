@@ -298,7 +298,7 @@ function AdminOrdersPage() {
                             `현재 상태: ${getStatusText(order.status)}\n\n새로운 상태를 선택하세요:\n1. pending (대기중)\n2. processing (처리중)\n3. shipped (배송중)\n4. delivered (배송완료)\n5. cancelled (취소됨)`
                           );
                           
-                          let status = order.status;
+                          let status: 'pending' | 'cancelled' | 'processing' | 'shipped' | 'delivered' = order.status as 'pending' | 'cancelled' | 'processing' | 'shipped' | 'delivered';
                           if (newStatus === '1' || newStatus?.toLowerCase().includes('pending')) status = 'pending';
                           else if (newStatus === '2' || newStatus?.toLowerCase().includes('processing')) status = 'processing';
                           else if (newStatus === '3' || newStatus?.toLowerCase().includes('shipped')) status = 'shipped';

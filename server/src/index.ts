@@ -52,6 +52,7 @@
  * - 2024-12-19: 인증 시스템 및 미들웨어 추가
  * - 2024-12-19: 센터 관리 및 승인 시스템 추가
  * - 2024-12-19: 보안 및 검증 미들웨어 개선
+ * - 2024-12-19: 에러 처리 표준화 (표준화된 에러 처리 미들웨어 적용)
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
@@ -100,6 +101,7 @@ import dotenv from 'dotenv';
 import { securityMiddleware } from './middleware/security';
 import { authMiddleware } from './middleware/auth';
 import { createValidationMiddleware } from './middleware/validation';
+import { errorHandler, notFoundHandler } from './utils/errorHandler';
 
 // Deprecation warning 무시 설정
 process.on('warning', (warning) => {
@@ -324,28 +326,18 @@ app.use('/api/shop/orders', ordersRoutes);
 app.use('/api/center-registrations', centerRegistrationRoutes);
 app.use('/api/center-management', centerManagementRoutes);
 
-// 404 처리
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: '요청한 엔드포인트를 찾을 수 없습니다.'
-  });
-});
+// 404 에러 처리 (라우트 등록 후)
+app.use(notFoundHandler);
 
-// 에러 핸들러
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('서버 오류:', error);
-  res.status(500).json({
-    success: false,
-    message: '서버 내부 오류가 발생했습니다.'
-  });
-});
+// 에러 처리 미들웨어 (마지막에 위치)
+app.use(errorHandler);
 
-// 서버 시작
-console.log('🚀 서버 시작 준비 중...');
-console.log(`📡 포트: ${PORT}`);
+// 서버 시작 (테스트 환경이 아닐 때만)
+if (process.env.NODE_ENV !== 'test') {
+  console.log('🚀 서버 시작 준비 중...');
+  console.log(`📡 포트: ${PORT}`);
 
-server.listen(PORT, async () => {
+  server.listen(PORT, async () => {
   console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
   console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);
   
@@ -360,9 +352,8 @@ server.listen(PORT, async () => {
     console.error('❌ MongoDB 연결 실패:', error);
     console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');
   }
-});
-
-console.log('📡 server.listen 호출 완료');
+  });
+}
 
 // Graceful shutdown
 process.on('SIGINT', () => {
@@ -397,3 +388,6 @@ process.on('SIGBREAK', () => {
 process.on('exit', () => {
   console.log('✅ 서버가 종료되었습니다.');
 });
+
+// 테스트를 위한 app 객체 export
+export { app };

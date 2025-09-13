@@ -51,6 +51,7 @@
  * - 2024-12-19: 데이터베이스 쿼리 성능 측정 구현
  * - 2024-12-19: 메모리 사용량 모니터링 구현
  * - 2024-12-19: 성능 분석 및 최적화 시스템 구현
+ * - 2024-12-19: TypeScript 타입 정의 강화 (any 타입을 구체적인 타입으로 교체)
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
@@ -92,13 +93,14 @@
  */
 
 import { logPerformance, logDatabase } from './logger';
+import { Request, Response, NextFunction } from 'express';
 
 // 성능 측정 데코레이터
 export const measurePerformance = (operation: string) => {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: object, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const start = Date.now();
       try {
         const result = await method.apply(this, args);
@@ -120,10 +122,10 @@ export const measurePerformance = (operation: string) => {
 
 // 데이터베이스 쿼리 성능 측정
 export const measureDatabaseQuery = (collection: string) => {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: object, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const start = Date.now();
       try {
         const result = await method.apply(this, args);
@@ -169,7 +171,7 @@ export const getCpuUsage = () => {
 };
 
 // 응답 시간 측정 미들웨어
-export const responseTimeMiddleware = (req: any, res: any, next: any) => {
+export const responseTimeMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   
   res.on('finish', () => {
@@ -210,13 +212,13 @@ export const batchProcess = async <T, R>(
 };
 
 // 캐시 성능 최적화
-export const memoize = <T extends (...args: any[]) => any>(
+export const memoize = <T extends (...args: unknown[]) => unknown>(
   fn: T,
   ttl: number = 300000 // 5분
 ): T => {
-  const cache = new Map<string, { value: any; timestamp: number }>();
+  const cache = new Map<string, { value: unknown; timestamp: number }>();
   
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     const key = JSON.stringify(args);
     const now = Date.now();
     const cached = cache.get(key);
@@ -233,8 +235,22 @@ export const memoize = <T extends (...args: any[]) => any>(
 };
 
 // 데이터베이스 인덱스 최적화 제안
-export const suggestIndexes = (queries: Array<{ collection: string; query: any; frequency: number }>) => {
-  const suggestions: any[] = [];
+interface QueryInfo {
+  collection: string;
+  query: Record<string, unknown>;
+  frequency: number;
+}
+
+interface IndexSuggestion {
+  collection: string;
+  fields: string[];
+  frequency: number;
+  priority: 'high' | 'medium' | 'low';
+  reason: string;
+}
+
+export const suggestIndexes = (queries: QueryInfo[]) => {
+  const suggestions: IndexSuggestion[] = [];
   
   queries.forEach(({ collection, query, frequency }) => {
     const fields = Object.keys(query);
@@ -243,7 +259,8 @@ export const suggestIndexes = (queries: Array<{ collection: string; query: any; 
         collection,
         fields,
         frequency,
-        priority: frequency > 100 ? 'high' : frequency > 50 ? 'medium' : 'low'
+        priority: frequency > 100 ? 'high' : frequency > 50 ? 'medium' : 'low',
+        reason: `Frequently used query on fields: ${fields.join(', ')}`
       });
     }
   });
@@ -265,7 +282,7 @@ export const optimizeConnectionPool = (poolSize: number = 10) => {
 };
 
 // 쿼리 최적화
-export const optimizeQuery = (query: any) => {
+export const optimizeQuery = (query: Record<string, unknown>) => {
   const optimized = { ...query };
   
   // 불필요한 필드 제거
@@ -279,7 +296,7 @@ export const optimizeQuery = (query: any) => {
   }
   
   // 페이지네이션 최적화
-  if (optimized.limit && optimized.limit > 1000) {
+  if (optimized.limit && typeof optimized.limit === 'number' && optimized.limit > 1000) {
     optimized.limit = 1000;
   }
   

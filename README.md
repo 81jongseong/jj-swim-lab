@@ -4,6 +4,13 @@
 
 ## 🚀 **최근 업데이트 (2025년 1월)**
 
+### **✅ 통합 검증 시스템 구축 (2025-01-13)**
+- **🔍 통합 검증 스크립트**: 빌드, 테스트, 린팅, 타입 체크, YAML 검증을 한번에 실행
+- **⚡ 빠른 검증 시스템**: 개발 중 빠른 피드백을 위한 경량 검증 도구
+- **📊 상세한 결과 리포트**: 색상 코딩과 진행률 표시로 가독성 향상
+- **🚀 CI/CD 통합 준비**: GitHub Actions와 연동 가능한 검증 시스템
+- **💾 커밋 전 자동 검증**: `pre-commit` 훅으로 코드 품질 보장
+
 ### **✅ 100% 테스트 커버리지 달성 (2025-01-13)**
 - **836개 테스트 모두 통과** (0개 실패)
 - **39개 테스트 스위트** 완전 커버리지
@@ -146,7 +153,38 @@ pnpm run dev:server    # 서버 (포트 5000)
 - **836 Tests Passing** (0 failures)
 - **39 Test Suites** covering all functionality
 
-### **테스트 실행 명령어**
+### **🔍 통합 검증 시스템 사용법**
+
+#### **📅 일일 작업 마무리 (모든 검증)**
+```bash
+# 모든 검증을 한번에 실행
+npm run check
+# 또는
+npm run check:all
+# 또는  
+npm run validate
+```
+
+#### **⚡ 개발 중 빠른 체크**
+```bash
+# 빠른 검증 실행 (빌드, 타입 체크, 린팅)
+npm run check:quick
+```
+
+#### **🔧 개별 검증**
+```bash
+npm run check:build    # 빌드만 검증
+npm run check:test     # 테스트만 실행
+npm run check:lint     # 린팅만 검사
+npm run check:type     # 타입 체크만 실행
+```
+
+#### **💾 커밋 전 검증**
+```bash
+npm run pre-commit
+```
+
+### **🧪 테스트 실행 명령어**
 ```bash
 # 모든 테스트 실행
 cd server

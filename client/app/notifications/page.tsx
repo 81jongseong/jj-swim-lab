@@ -79,10 +79,14 @@ function NotificationsPage() {
   const loadNotifications = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/notifications');
-      if (res.data?.notifications) {
-        setNotifications(res.data.notifications);
-        setUnreadCount(res.data.unreadCount || 0);
+      const res = await apiClient.get<{
+        success: boolean;
+        data?: { notifications?: any[]; unreadCount?: number };
+        error?: string;
+      }>('/notifications');
+      if ((res as any).data?.notifications) {
+        setNotifications((res as any).data.notifications);
+        setUnreadCount((res as any).data.unreadCount || 0);
       }
     } catch (error) {
       console.error('알림 로드 실패:', error);
@@ -92,9 +96,13 @@ function NotificationsPage() {
 
   const loadSettings = async () => {
     try {
-      const res = await apiClient.get('/notifications/settings');
-      if (res.data?.settings) {
-        setSettings(res.data.settings);
+      const res = await apiClient.get<{
+        success: boolean;
+        data?: { settings?: any };
+        error?: string;
+      }>('/notifications/settings');
+      if ((res as any).data?.settings) {
+        setSettings((res as any).data.settings);
       }
     } catch (error) {
       console.error('설정 로드 실패:', error);

@@ -178,7 +178,14 @@ export default function ShopPage() {
               </div>
               <div className="flex justify-end">
                 <button onClick={async()=>{
-                  const res = await apiClient.createShopOrder({ items: cartItems.map(ci=>({ productId: ci.productId, qty: ci.qty })) });
+                  const res = await apiClient.createShopOrder({ 
+                    items: cartItems.map(ci=>({ 
+                      productId: ci.productId, 
+                      productName: ci.name || '상품',
+                      quantity: ci.qty,
+                      price: ci.price || 0
+                    })) 
+                  });
                   if (res.error) return alert(res.error);
                   alert('주문이 생성되었습니다.');
                   clear();

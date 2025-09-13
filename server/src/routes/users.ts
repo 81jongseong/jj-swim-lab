@@ -214,8 +214,61 @@ router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: Auth
   }
 });
 
-// 전체 사용자 조회 (권한별 필터링)
-router.get('/', auth, async (req: AuthRequest, res: Response) => {
+// 특정 사용자 조회 (GET /:id 라우트를 먼저 정의)
+router.get('/:id', auth, async (req, res) => {
+  try {
+    // 디버깅 로그 출력 (콘솔 모킹으로 인해 출력되지 않을 수 있음)
+    console.log('🔍 GET /:id 라우트 호출됨:', {
+      id: req.params.id,
+      url: req.url,
+      method: req.method,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      path: req.path
+    });
+    
+    // 라우트가 호출되었는지 확인하기 위한 응답 헤더 추가
+    res.set('X-Route-Called', 'GET-:id');
+    
+    // ObjectId 유효성 검사
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: '유효하지 않은 사용자 ID입니다.' });
+    }
+    
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      console.log('❌ 사용자를 찾을 수 없음:', req.params.id);
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    console.log('✅ 사용자 찾음:', {
+      id: user._id,
+      name: user.name,
+      email: user.email
+    });
+    
+    // 권한 검증
+    if ((req as any).user.userType === 'centerAdmin') {
+      const hasAccess = await checkCenterAdminAccess((req as any).user._id, user);
+      if (!hasAccess) {
+        return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
+      }
+    } else if ((req as any).user.userType === 'instructor') {
+      const hasAccess = await checkInstructorAccess((req as any).user._id, user);
+      if (!hasAccess) {
+        return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
+      }
+    }
+    
+    return res.json(user);
+  } catch (err) {
+    console.error('사용자 조회 오류:', err);
+    return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
+  }
+});
+
+// 전체 사용자 조회 (권한별 필터링) - GET /:id 라우트 다음에 정의
+router.get('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -394,33 +447,79 @@ router.get('/stats/by-level', auth, requirePermission('reports'), async (req, re
   }
 });
 
-// 특정 사용자 조회
-router.get('/:id', auth, async (req, res) => {
+// 사용자 생성
+router.post('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    const { 
+      name, 
+      email, 
+      password, 
+      userType, 
+      phone, 
+      address,
+      level,
+      studentInfo,
+      instructorInfo,
+      centerAdminInfo,
+      superAdminInfo
+    } = req.body;
+    
+    // 필수 필드 검증
+    if (!name || !email || !password || !userType) {
+      return res.status(400).json({ 
+        success: false,
+        error: '이름, 이메일, 비밀번호, 사용자 유형은 필수입니다.' 
+      });
     }
     
-    // 권한 검증
-    if ((req as any).user.userType === 'centerAdmin') {
-      const hasAccess = await checkCenterAdminAccess((req as any).user._id, user);
-      if (!hasAccess) {
-        return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
-      }
-    } else if ((req as any).user.userType === 'instructor') {
-      const hasAccess = await checkInstructorAccess((req as any).user._id, user);
-      if (!hasAccess) {
-        return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
-      }
+    // 이메일 중복 확인
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false,
+        error: '이미 존재하는 이메일입니다.' 
+      });
     }
     
-    return res.json(user);
+    // 사용자 생성
+    const user = new User({
+      name,
+      email,
+      password,
+      userType,
+      phone,
+      address,
+      level,
+      studentInfo,
+      instructorInfo,
+      centerAdminInfo,
+      superAdminInfo
+    });
+    
+    // 사용자 유형별 권한 및 시퀀스 자동 설정
+    user.setPermissionsByType();
+    user.setFeatureSequence();
+    
+    await user.save();
+    
+    // 비밀번호 제외하고 반환
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    return res.status(201).json({
+      success: true,
+      message: '사용자가 성공적으로 생성되었습니다.',
+      data: { user: userResponse }
+    });
   } catch (err) {
-    console.error('사용자 조회 오류:', err);
-    return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
+    console.error('사용자 생성 오류:', err);
+    return res.status(400).json({ 
+      success: false,
+      error: '사용자 생성에 실패했습니다.' 
+    });
   }
 });
+
 
 // 사용자 정보 업데이트
 router.put('/:id', auth, async (req, res) => {
@@ -440,9 +539,24 @@ router.put('/:id', auth, async (req, res) => {
     } = req.body;
     
     // 권한 검증
-    if ((req as any).user.userType === 'centerAdmin') {
-      const hasAccess = await checkCenterAdminAccess((req as any).user._id, { _id: req.params.id });
-      if (!hasAccess) {
+    const currentUser = (req as any).user;
+    const targetUserId = req.params.id;
+    
+    // 본인이 아닌 경우 권한 검증
+    if (currentUser._id !== targetUserId) {
+      if (currentUser.userType === 'centerAdmin') {
+        const hasAccess = await checkCenterAdminAccess(currentUser._id, { _id: targetUserId });
+        if (!hasAccess) {
+          return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
+        }
+      } else if (currentUser.userType === 'instructor') {
+        const hasAccess = await checkInstructorAccess(currentUser._id, { _id: targetUserId });
+        if (!hasAccess) {
+          return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
+        }
+      } else if (currentUser.userType === 'student') {
+        return res.status(403).json({ error: '본인의 정보만 수정할 수 있습니다.' });
+      } else if (currentUser.userType !== 'superAdmin') {
         return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
       }
     }

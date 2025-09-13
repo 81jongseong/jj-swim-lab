@@ -1,55 +1,89 @@
 {
   "name": "jj-swim-lab",
   "version": "1.0.0",
-  "description": "JJ Swim Lab - 수영 교육 플랫폼",
+  "description": "JJ 수영장 관리 시스템",
   "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
+    "install:all": "npm install && npm run install:server && npm run install:client",
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "build": "npm run build:server && npm run build:client",
     "build:server": "cd server && npm run build",
     "build:client": "cd client && npm run build",
-    "start:prod": "npm run start:server && npm run start:client",
-    "start:server": "cd server && npm run start:prod",
-    "start:client": "cd client && npm run start:prod",
-    "clean": "rimraf server/dist client/.next client/out",
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm start",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "test:watch": "concurrently \"npm run test:watch:server\" \"npm run test:watch:client\"",
+    "test:watch:server": "cd server && npm run test:watch",
+    "test:watch:client": "cd client && npm run test:watch",
+    "test:coverage": "npm run test:coverage:server && npm run test:coverage:client",
+    "test:coverage:server": "cd server && npm run test:coverage",
+    "test:coverage:client": "cd client && npm run test:coverage",
+    "test:e2e": "npm run test:e2e:setup && npm run test:e2e:run",
+    "test:e2e:setup": "npm run start:test:env",
+    "test:e2e:run": "cd client && npm run test:e2e",
+    "test:e2e:ui": "npm run start:test:env && cd client && npm run test:e2e:ui",
+    "test:e2e:headed": "npm run start:test:env && cd client && npm run test:e2e:headed",
+    "test:e2e:debug": "npm run start:test:env && cd client && npm run test:e2e:debug",
+    "test:integration": "npm run start:test:env && cd client && npm run test:integration",
+    "test:performance": "npm run start:test:env && cd client && npm run test:performance",
+    "test:accessibility": "npm run start:test:env && cd client && npm run test:accessibility",
+    "test:all": "npm run test && npm run test:e2e",
+    "test:full": "node scripts/test-all.js",
+    "test:quick": "node scripts/quick-test.js",
+    "test:performance": "node scripts/test-performance.js",
+    "test:ci": "npm run test:ci:server && npm run test:ci:client",
+    "test:ci:server": "cd server && npm run test:ci",
+    "test:ci:client": "cd client && npm run test:ci",
+    "start:test:env": "concurrently \"npm run start:test:server\" \"npm run start:test:client\"",
+    "start:test:server": "cd server && npm run start:test",
+    "start:test:client": "cd client && npm run start:test",
     "lint": "npm run lint:server && npm run lint:client",
     "lint:server": "cd server && npm run lint",
     "lint:client": "cd client && npm run lint",
+    "lint:fix": "npm run lint:fix:server && npm run lint:fix:client",
+    "lint:fix:server": "cd server && npm run lint:fix",
+    "lint:fix:client": "cd client && npm run lint:fix",
     "type-check": "npm run type-check:server && npm run type-check:client",
     "type-check:server": "cd server && npm run type-check",
     "type-check:client": "cd client && npm run type-check",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky install"
+    "format": "npm run format:server && npm run format:client",
+    "format:server": "cd server && npm run format",
+    "format:client": "cd client && npm run format",
+    "clean": "npm run clean:server && npm run clean:client",
+    "clean:server": "cd server && npm run clean",
+    "clean:client": "cd client && npm run clean",
+    "setup": "npm run install:all && npm run build",
+    "setup:dev": "npm run install:all",
+    "health": "npm run health:server && npm run health:client",
+    "health:server": "curl -f http://localhost:5000/api/health || echo 'Server not running'",
+    "health:client": "curl -f http://localhost:3000 || echo 'Client not running'",
+    "check": "node scripts/check-all.js",
+    "check:all": "npm run check",
+    "check:quick": "node scripts/quick-check.js",
+    "check:build": "npm run build",
+    "check:test": "npm run test",
+    "check:lint": "npm run lint",
+    "check:type": "npm run type-check",
+    "validate": "npm run check",
+    "pre-commit": "npm run check:quick"
   },
-  "keywords": [
-    "swimming",
-    "education",
-    "platform"
-  ],
-  "author": "JJ Swim Lab",
-  "license": "MIT",
-  "packageManager": "pnpm@10.12.4",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
-    "concurrently": "^9.2.0",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
-    "prettier": "^3.1.0",
-    "rimraf": "^5.0.5"
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
   },
-  "dependencies": {
-    "xlsx": "^0.18.5"
-  },
-  "lint-staged": {
-    "*.{js,ts,tsx,jsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

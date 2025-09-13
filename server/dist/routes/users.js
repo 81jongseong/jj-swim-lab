@@ -90,7 +90,50 @@ router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']
         });
     }
 });
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.auth, async (req, res) => {
+    try {
+        console.log('🔍 GET /:id 라우트 호출됨:', {
+            id: req.params.id,
+            url: req.url,
+            method: req.method,
+            originalUrl: req.originalUrl,
+            baseUrl: req.baseUrl,
+            path: req.path
+        });
+        res.set('X-Route-Called', 'GET-:id');
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: '유효하지 않은 사용자 ID입니다.' });
+        }
+        const user = await User_1.User.findById(req.params.id).select('-password');
+        if (!user) {
+            console.log('❌ 사용자를 찾을 수 없음:', req.params.id);
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+        console.log('✅ 사용자 찾음:', {
+            id: user._id,
+            name: user.name,
+            email: user.email
+        });
+        if (req.user.userType === 'centerAdmin') {
+            const hasAccess = await checkCenterAdminAccess(req.user._id, user);
+            if (!hasAccess) {
+                return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
+            }
+        }
+        else if (req.user.userType === 'instructor') {
+            const hasAccess = await checkInstructorAccess(req.user._id, user);
+            if (!hasAccess) {
+                return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
+            }
+        }
+        return res.json(user);
+    }
+    catch (err) {
+        console.error('사용자 조회 오류:', err);
+        return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
+    }
+});
+router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -246,37 +289,76 @@ router.get('/stats/by-level', auth_1.auth, (0, auth_1.requirePermission)('report
         return res.status(500).json({ error: '레벨별 통계를 불러오는 데 실패했습니다.' });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.post('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
-        const user = await User_1.User.findById(req.params.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        const { name, email, password, userType, phone, address, level, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo } = req.body;
+        if (!name || !email || !password || !userType) {
+            return res.status(400).json({
+                success: false,
+                error: '이름, 이메일, 비밀번호, 사용자 유형은 필수입니다.'
+            });
         }
-        if (req.user.userType === 'centerAdmin') {
-            const hasAccess = await checkCenterAdminAccess(req.user._id, user);
-            if (!hasAccess) {
-                return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
-            }
+        const existingUser = await User_1.User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                error: '이미 존재하는 이메일입니다.'
+            });
         }
-        else if (req.user.userType === 'instructor') {
-            const hasAccess = await checkInstructorAccess(req.user._id, user);
-            if (!hasAccess) {
-                return res.status(403).json({ error: '해당 사용자에 대한 접근 권한이 없습니다.' });
-            }
-        }
-        return res.json(user);
+        const user = new User_1.User({
+            name,
+            email,
+            password,
+            userType,
+            phone,
+            address,
+            level,
+            studentInfo,
+            instructorInfo,
+            centerAdminInfo,
+            superAdminInfo
+        });
+        user.setPermissionsByType();
+        user.setFeatureSequence();
+        await user.save();
+        const userResponse = user.toObject();
+        delete userResponse.password;
+        return res.status(201).json({
+            success: true,
+            message: '사용자가 성공적으로 생성되었습니다.',
+            data: { user: userResponse }
+        });
     }
     catch (err) {
-        console.error('사용자 조회 오류:', err);
-        return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
+        console.error('사용자 생성 오류:', err);
+        return res.status(400).json({
+            success: false,
+            error: '사용자 생성에 실패했습니다.'
+        });
     }
 });
 router.put('/:id', auth_1.auth, async (req, res) => {
     try {
         const { name, phone, address, userType, level, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
-        if (req.user.userType === 'centerAdmin') {
-            const hasAccess = await checkCenterAdminAccess(req.user._id, { _id: req.params.id });
-            if (!hasAccess) {
+        const currentUser = req.user;
+        const targetUserId = req.params.id;
+        if (currentUser._id !== targetUserId) {
+            if (currentUser.userType === 'centerAdmin') {
+                const hasAccess = await checkCenterAdminAccess(currentUser._id, { _id: targetUserId });
+                if (!hasAccess) {
+                    return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
+                }
+            }
+            else if (currentUser.userType === 'instructor') {
+                const hasAccess = await checkInstructorAccess(currentUser._id, { _id: targetUserId });
+                if (!hasAccess) {
+                    return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
+                }
+            }
+            else if (currentUser.userType === 'student') {
+                return res.status(403).json({ error: '본인의 정보만 수정할 수 있습니다.' });
+            }
+            else if (currentUser.userType !== 'superAdmin') {
                 return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
             }
         }

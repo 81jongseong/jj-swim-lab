@@ -1,0 +1,138 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "JJ Swim Lab JJ Swim Lab" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "JJ Swim Lab" [ref=e8] [cursor=pointer]
+        - generic [ref=e9] [cursor=pointer]: JJ Swim Lab
+      - generic [ref=e10]:
+        - button "🏠 JJ Swim Lab ▼" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13] [cursor=pointer]: 🏠 JJ Swim Lab
+          - generic [ref=e14] [cursor=pointer]: ▼
+        - button "🤖 AI 체험 ▼" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17] [cursor=pointer]: 🤖 AI 체험
+          - generic [ref=e18] [cursor=pointer]: ▼
+        - button "🎯 체험 메뉴 ▼" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21] [cursor=pointer]: 🎯 체험 메뉴
+          - generic [ref=e22] [cursor=pointer]: ▼
+        - button "💬 커뮤니티 & 상점 ▼" [ref=e24] [cursor=pointer]:
+          - generic [ref=e25] [cursor=pointer]: 💬 커뮤니티 & 상점
+          - generic [ref=e26] [cursor=pointer]: ▼
+        - generic [ref=e27]:
+          - button "🔑 로그인/회원가입 ▼" [active] [ref=e28] [cursor=pointer]:
+            - generic [ref=e29] [cursor=pointer]: 🔑 로그인/회원가입
+            - generic [ref=e30] [cursor=pointer]: ▼
+          - generic [ref=e31]:
+            - generic [ref=e32]: 🔑 로그인/회원가입
+            - link "🔑 로그인" [ref=e33] [cursor=pointer]:
+              - /url: /auth/login
+            - link "📝 회원가입" [ref=e34] [cursor=pointer]:
+              - /url: /auth/signup
+      - generic [ref=e36]:
+        - link "로그인" [ref=e37] [cursor=pointer]:
+          - /url: /auth/login
+        - link "회원가입" [ref=e38] [cursor=pointer]:
+          - /url: /auth/signup
+  - main [ref=e39]:
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e45]:
+          - paragraph [ref=e46]: AI 기반 수영 교육 플랫폼
+          - heading "JJ Swim Lab" [level=1] [ref=e47]:
+            - generic [ref=e48]: JJ Swim Lab
+          - paragraph [ref=e49]: 개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요
+          - generic [ref=e50]:
+            - link "수강생 시작하기" [ref=e51] [cursor=pointer]:
+              - /url: /auth/signup?type=student
+            - link "강사 등록하기" [ref=e52] [cursor=pointer]:
+              - /url: /auth/signup?type=instructor
+        - img [ref=e54]
+        - generic [ref=e60]: 스크롤하여 더 알아보기
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - heading "왜 JJ Swim Lab인가요?" [level=2] [ref=e66]:
+            - generic [ref=e67]: 왜 JJ Swim Lab인가요?
+          - paragraph [ref=e68]: AI 기술과 전문 지식을 결합하여 개인 맞춤형 수영 교육을 제공합니다
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e72]: 🤖
+            - heading "AI 기반 강습법" [level=3] [ref=e73]
+            - paragraph [ref=e74]: 개인 수준과 목표에 맞는 맞춤형 수영 강습법을 AI가 추천합니다
+            - generic [ref=e76]: 개인 맞춤형
+          - generic [ref=e77]:
+            - generic [ref=e79]: ❓
+            - heading "인터랙티브 퀴즈" [level=3] [ref=e80]
+            - paragraph [ref=e81]: 수영 이론과 실기를 재미있게 학습할 수 있는 다양한 퀴즈를 제공합니다
+            - generic [ref=e83]: 학습 효과 증대
+          - generic [ref=e84]:
+            - generic [ref=e86]: 📊
+            - heading "체계적 진도 관리" [level=3] [ref=e87]
+            - paragraph [ref=e88]: 개인의 수영 실력 향상을 체계적으로 추적하고 관리합니다
+            - generic [ref=e90]: 체계적 관리
+          - generic [ref=e91]:
+            - generic [ref=e93]: 👨‍🏫
+            - heading "전문가 네트워크" [level=3] [ref=e94]
+            - paragraph [ref=e95]: 검증된 수영 강사들과 연결하여 전문적인 지도를 받을 수 있습니다
+            - generic [ref=e97]: 전문가 연결
+          - generic [ref=e98]:
+            - generic [ref=e100]: ⚡
+            - heading "실시간 피드백" [level=3] [ref=e101]
+            - paragraph [ref=e102]: 수영 자세와 기술을 실시간으로 분석하고 즉시 피드백을 제공합니다
+            - generic [ref=e104]: 즉시 피드백
+          - generic [ref=e105]:
+            - generic [ref=e107]: 💬
+            - heading "활발한 커뮤니티" [level=3] [ref=e108]
+            - paragraph [ref=e109]: 수영 애호가들과 정보를 공유하고 경험을 나눌 수 있습니다
+            - generic [ref=e111]: 정보 공유
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - heading "최신 기술로 구현된" [level=2] [ref=e115]:
+            - generic [ref=e116]: 최신 기술로 구현된
+          - paragraph [ref=e117]: Three.js와 Framer Motion을 활용한 인터랙티브한 수영 시뮬레이션
+        - generic [ref=e118]:
+          - generic [ref=e120]:
+            - generic [ref=e121]: 🏊‍♂️
+            - heading "3D 수영 시뮬레이션" [level=3] [ref=e122]
+            - paragraph [ref=e123]: Three.js 기반 인터랙티브 3D 환경
+          - generic [ref=e124]:
+            - heading "3D 파티클 시스템" [level=3] [ref=e125]
+            - paragraph [ref=e126]: 수영의 물결과 움직임을 3D로 시각화하여 더 직관적인 학습 경험을 제공합니다. WebGL 기술을 활용하여 부드럽고 반응성 있는 애니메이션을 구현했습니다.
+            - generic [ref=e127]:
+              - generic [ref=e128]: Three.js
+              - generic [ref=e129]: WebGL
+              - generic [ref=e130]: 파티클 시스템
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - heading "물결 효과 시스템" [level=2] [ref=e136]:
+            - generic [ref=e137]: 물결 효과 시스템
+          - paragraph [ref=e138]: Canvas API를 활용한 저비용 물결 애니메이션으로 수영의 자연스러운 움직임을 표현합니다
+        - generic [ref=e139]:
+          - generic [ref=e140]:
+            - generic [ref=e142]: 🎯
+            - heading "저비용 구현" [level=3] [ref=e143]
+            - paragraph [ref=e144]: GPU 가속을 활용한 효율적인 렌더링
+          - generic [ref=e145]:
+            - generic [ref=e147]: 📱
+            - heading "반응형 디자인" [level=3] [ref=e148]
+            - paragraph [ref=e149]: 모든 디바이스에서 최적화된 성능
+          - generic [ref=e150]:
+            - generic [ref=e152]: ⚡
+            - heading "실시간 애니메이션" [level=3] [ref=e153]
+            - paragraph [ref=e154]: 부드럽고 자연스러운 물결 효과
+      - generic [ref=e157]:
+        - heading "지금 시작하세요" [level=2] [ref=e158]
+        - paragraph [ref=e159]: AI 기반 수영 교육의 새로운 경험을 지금 바로 체험해보세요
+        - generic [ref=e160]:
+          - link "수강생으로 시작하기" [ref=e161] [cursor=pointer]:
+            - /url: /auth/signup?type=student
+          - link "강사로 등록하기" [ref=e162] [cursor=pointer]:
+            - /url: /auth/signup?type=instructor
+  - generic [ref=e163]:
+    - img [ref=e165]
+    - button "Open Tanstack query devtools" [ref=e213] [cursor=pointer]:
+      - img [ref=e214] [cursor=pointer]
+  - alert [ref=e262]
+```

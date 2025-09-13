@@ -239,14 +239,14 @@ function AdminReportsPage() {
                       <button
                         onClick={async () => {
                           const newStatus = prompt(
-                            `현재 상태: ${getStatusText(report.status)}\n\n새로운 상태를 선택하세요:\n1. open (열림)\n2. in_progress (처리중)\n3. resolved (해결됨)\n4. closed (닫힘)`
+                            `현재 상태: ${getStatusText(report.status)}\n\n새로운 상태를 선택하세요:\n1. draft (초안)\n2. submitted (제출됨)\n3. reviewed (검토됨)\n4. approved (승인됨)`
                           );
                           
-                          let status = report.status;
-                          if (newStatus === '1' || newStatus?.toLowerCase().includes('open')) status = 'open';
-                          else if (newStatus === '2' || newStatus?.toLowerCase().includes('progress')) status = 'in_progress';
-                          else if (newStatus === '3' || newStatus?.toLowerCase().includes('resolved')) status = 'resolved';
-                          else if (newStatus === '4' || newStatus?.toLowerCase().includes('closed')) status = 'closed';
+                          let status: 'draft' | 'submitted' | 'reviewed' | 'approved' = report.status as 'draft' | 'submitted' | 'reviewed' | 'approved';
+                          if (newStatus === '1' || newStatus?.toLowerCase().includes('draft')) status = 'draft';
+                          else if (newStatus === '2' || newStatus?.toLowerCase().includes('submitted')) status = 'submitted';
+                          else if (newStatus === '3' || newStatus?.toLowerCase().includes('reviewed')) status = 'reviewed';
+                          else if (newStatus === '4' || newStatus?.toLowerCase().includes('approved')) status = 'approved';
                           
                           if (status !== report.status) {
                             const res = await apiClient.updateReport(report._id, { status });

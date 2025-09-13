@@ -103,8 +103,14 @@ export default function ApprovalsPage() {
       setIsLoading(true);
       
       // 센터 등록 신청 데이터 가져오기
-      const centerRegistrationsResponse = await apiClient.get('/api/center-registrations');
-      const centerRegistrations = centerRegistrationsResponse.data?.registrations || [];
+      const centerRegistrationsResponse = await apiClient.get<{
+        success: boolean;
+        data?: {
+          registrations: CenterRegistration[];
+        };
+        error?: string;
+      }>('/api/center-registrations');
+      const centerRegistrations = (centerRegistrationsResponse as any)?.data?.registrations || [];
       
       // 센터 등록 신청을 ApprovalItem 형식으로 변환
       const centerApprovals: ApprovalItem[] = centerRegistrations.map((reg: CenterRegistration) => ({

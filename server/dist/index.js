@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const path_1 = __importDefault(require("path"));
@@ -10,6 +11,7 @@ const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
 const security_1 = require("./middleware/security");
+const errorHandler_1 = require("./utils/errorHandler");
 process.on('warning', (warning) => {
     if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
         return;
@@ -106,6 +108,7 @@ console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGO
 console.log('   - PORT:', process.env.PORT || '기본값 5000');
 console.log('   - NODE_ENV:', process.env.NODE_ENV || '기본값 development');
 const app = (0, express_1.default)();
+exports.app = app;
 const server = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
     cors: {
@@ -186,34 +189,24 @@ app.use('/api/ai/exercise-recommendations', ai_exercise_recommendations_1.defaul
 app.use('/api/shop/orders', orders_1.default);
 app.use('/api/center-registrations', center_registrations_1.default);
 app.use('/api/center-management', center_management_1.default);
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: '요청한 엔드포인트를 찾을 수 없습니다.'
+app.use(errorHandler_1.notFoundHandler);
+app.use(errorHandler_1.errorHandler);
+if (process.env.NODE_ENV !== 'test') {
+    console.log('🚀 서버 시작 준비 중...');
+    console.log(`📡 포트: ${PORT}`);
+    server.listen(PORT, async () => {
+        console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
+        console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);
+        try {
+            console.log('🔗 MongoDB 연결 시도 중...');
+            await (0, db_1.connectDB)();
+        }
+        catch (error) {
+            console.error('❌ MongoDB 연결 실패:', error);
+            console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');
+        }
     });
-});
-app.use((error, req, res, next) => {
-    console.error('서버 오류:', error);
-    res.status(500).json({
-        success: false,
-        message: '서버 내부 오류가 발생했습니다.'
-    });
-});
-console.log('🚀 서버 시작 준비 중...');
-console.log(`📡 포트: ${PORT}`);
-server.listen(PORT, async () => {
-    console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
-    console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);
-    try {
-        console.log('🔗 MongoDB 연결 시도 중...');
-        await (0, db_1.connectDB)();
-    }
-    catch (error) {
-        console.error('❌ MongoDB 연결 실패:', error);
-        console.log('⚠️ 서버는 계속 실행되지만 데이터베이스 연결에 실패했습니다.');
-    }
-});
-console.log('📡 server.listen 호출 완료');
+}
 process.on('SIGINT', () => {
     console.log('\n🛑 서버 종료 중...');
     mongoose_1.default.connection.close().then(() => {

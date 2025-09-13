@@ -148,8 +148,7 @@ async function extractMotionData(videoPath, outputDir) {
         const { stdout, stderr } = await (0, execAsync_1.execAsync)(command, {
             cwd: process.cwd(),
             shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/bash',
-            timeout: 300000,
-            encoding: 'utf8'
+            timeout: 300000
         });
         console.log('수정된 VideoPose3D 출력:', stdout);
         if (stderr)
@@ -168,8 +167,7 @@ async function generate3DAnimation(videoId, outputDir) {
         const { stdout, stderr } = await (0, execAsync_1.execAsync)(command, {
             cwd: process.cwd(),
             shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/bash',
-            timeout: 600000,
-            encoding: 'utf8'
+            timeout: 600000
         });
         console.log('Blender 출력:', stdout);
         if (stderr)
@@ -191,8 +189,7 @@ async function generate3DAnimationWithUserModel(videoId, outputDir, userModelPat
         const { stdout, stderr } = await (0, execAsync_1.execAsync)(command, {
             cwd: process.cwd(),
             shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/bash',
-            timeout: 600000,
-            encoding: 'utf8'
+            timeout: 600000
         });
         console.log('사용자 모델 Blender 출력:', stdout);
         if (stderr)

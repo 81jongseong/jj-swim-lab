@@ -3,9 +3,10 @@ export interface AuthenticatedUser {
     id: string;
     email: string;
     name: string;
-    userType: 'admin' | 'instructor' | 'student' | 'center_admin';
+    userType: 'admin' | 'instructor' | 'student' | 'center_admin' | 'superAdmin' | 'centerAdmin';
     centerId?: string;
     permissions: string[];
+    accessPermissions?: any;
     type?: string;
     iat: number;
     exp: number;
@@ -22,7 +23,7 @@ export declare const requireInstructor: (req: Request, res: Response, next: Next
 export declare const requireStudent: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
 export declare const requireCenterAdmin: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
 export declare const requirePermission: (permission: string) => (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-export declare const requireRole: (roles: string[]) => (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
+export declare const requireRole: (roles: string[]) => (req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare const requireCenterOwnership: (req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare const refreshTokenMiddleware: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
 export declare const hashPassword: (password: string) => Promise<string>;

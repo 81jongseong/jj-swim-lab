@@ -124,7 +124,8 @@ const suggestIndexes = (queries) => {
                 collection,
                 fields,
                 frequency,
-                priority: frequency > 100 ? 'high' : frequency > 50 ? 'medium' : 'low'
+                priority: frequency > 100 ? 'high' : frequency > 50 ? 'medium' : 'low',
+                reason: `Frequently used query on fields: ${fields.join(', ')}`
             });
         }
     });
@@ -151,7 +152,7 @@ const optimizeQuery = (query) => {
     if (optimized.sort && Object.keys(optimized.sort).length === 0) {
         delete optimized.sort;
     }
-    if (optimized.limit && optimized.limit > 1000) {
+    if (optimized.limit && typeof optimized.limit === 'number' && optimized.limit > 1000) {
         optimized.limit = 1000;
     }
     return optimized;

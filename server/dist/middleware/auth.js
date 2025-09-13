@@ -35,7 +35,10 @@ const generateTokens = (user) => {
 exports.generateTokens = generateTokens;
 const verifyToken = (token, secret) => {
     return new Promise((resolve, reject) => {
-        jsonwebtoken_1.default.verify(token, secret, (err, decoded) => {
+        jsonwebtoken_1.default.verify(token, secret, {
+            issuer: 'jj-swim-lab',
+            audience: 'jj-swim-lab-users'
+        }, (err, decoded) => {
             if (err) {
                 console.error('❌ JWT 토큰 검증 실패:', err.message);
                 reject(err);
@@ -222,12 +225,16 @@ const requirePermission = (permission) => {
                 message: '로그인해주세요.',
             });
         }
-        if (!user.permissions.includes(permission)) {
+        const hasPermissionInArray = user.permissions && user.permissions.includes(permission);
+        const hasPermissionInObject = user.accessPermissions && user.accessPermissions[permission] === true;
+        const isSuperAdmin = user.userType === 'superAdmin';
+        if (!hasPermissionInArray && !hasPermissionInObject && !isSuperAdmin) {
             console.warn('권한 없는 접근 시도:', {
                 userId: user.id,
                 userType: user.userType,
                 requiredPermission: permission,
                 userPermissions: user.permissions,
+                accessPermissions: user.accessPermissions,
                 ip: req.ip,
                 userAgent: req.get('User-Agent'),
                 url: req.url,
@@ -251,6 +258,9 @@ const requireRole = (roles) => {
                 error: '인증이 필요합니다.',
                 message: '로그인해주세요.',
             });
+        }
+        if (user.userType === 'superAdmin') {
+            return next();
         }
         if (!roles.includes(user.userType)) {
             console.warn('역할 기반 접근 거부:', {

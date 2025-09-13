@@ -145,9 +145,9 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     }
 
     // 일반 사용자는 본인 결제만 조회 가능
-    const currentUser = (req as any).user;
+    const currentUser = req.user;
     if (currentUser?.userType !== 'superAdmin') {
-      filter.user = currentUser._id;
+      filter.user = currentUser.userId;
     }
 
     const payments = await Payment.find(filter)
@@ -156,7 +156,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       .populate('relatedBooking', 'date startTime endTime')
       .sort({ createdAt: -1 });
 
-    return res.json({ payments });
+    return res.json({ success: true, message: '결제 내역 조회 성공!', data: payments });
   } catch (error) {
     console.error('결제 내역 조회 오류:', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
@@ -181,7 +181,7 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
       return res.status(403).json({ error: '조회 권한이 없습니다.' });
     }
 
-    return res.json({ payment });
+    return res.json({ success: true, message: '결제 조회 성공!', data: payment });
   } catch (error) {
     console.error('결제 조회 오류:', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
@@ -223,7 +223,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     const transactionId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const paymentData = {
-      user: (req as any).user._id,
+      user: req.user.userId,
       amount,
       paymentMethod,
       purpose,
@@ -245,15 +245,16 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     // notify user
     try {
       const io = (req as any).app.get('io');
-      if (io) io.to(`user:${String((req as any).user._id)}`).emit('notification', {
+      if (io) io.to(`user:${String(req.user.userId)}`).emit('notification', {
         type: 'payment:created',
         message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
       });
     } catch {}
 
     return res.status(201).json({
+      success: true,
       message: '결제가 생성되었습니다.',
-      payment: populatedPayment
+      data: populatedPayment
     });
   } catch (error) {
     console.error('결제 생성 오류:', error);
@@ -323,8 +324,9 @@ router.post('/:id/complete', authenticateToken, requireRole(['superAdmin']), asy
     } catch {}
 
     return res.json({
+      success: true,
       message: '결제가 완료되었습니다.',
-      payment: updatedPayment
+      data: updatedPayment
     });
   } catch (error) {
     console.error('결제 완료 처리 오류:', error);
@@ -381,8 +383,9 @@ router.post('/:id/refund', authenticateToken, requireRole(['superAdmin']), async
     } catch {}
 
     return res.json({
+      success: true,
       message: '결제가 환불되었습니다.',
-      payment: updatedPayment
+      data: updatedPayment
     });
   } catch (error) {
     console.error('결제 환불 오류:', error);
@@ -416,11 +419,15 @@ router.get('/stats/summary', authenticateToken, requireRole(['superAdmin']), asy
     }
 
     return res.json({
-      totalPayments: payments.length,
-      totalAmount,
-      paymentMethodStats,
-      purposeStats,
-      averageAmount: payments.length > 0 ? totalAmount / payments.length : 0
+      success: true,
+      message: '결제 통계 조회 성공!',
+      data: {
+        totalPayments: payments.length,
+        totalAmount,
+        paymentMethodStats,
+        purposeStats,
+        averageAmount: payments.length > 0 ? totalAmount / payments.length : 0
+      }
     });
   } catch (error) {
     console.error('결제 통계 조회 오류:', error);
@@ -545,7 +552,7 @@ router.get('/student/:studentId/courses', authenticateToken, async (req: AuthReq
     const { studentId } = req.params;
     
     // 권한 확인: 본인이거나 관리자
-    if (req.user._id !== studentId && 
+    if (req.user.userId !== studentId && 
         req.user.userType !== 'instructor' && 
         req.user.userType !== 'centerAdmin' && 
         req.user.userType !== 'superAdmin') {
@@ -801,7 +808,7 @@ router.get('/student/:studentId/courses', authenticateToken, async (req: AuthReq
     const { studentId } = req.params;
     
     // 권한 확인: 본인이거나 관리자
-    if (req.user._id !== studentId && 
+    if (req.user.userId !== studentId && 
         req.user.userType !== 'instructor' && 
         req.user.userType !== 'centerAdmin' && 
         req.user.userType !== 'superAdmin') {

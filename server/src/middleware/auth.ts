@@ -85,9 +85,10 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   name: string;
-  userType: 'admin' | 'instructor' | 'student' | 'center_admin';
+  userType: 'admin' | 'instructor' | 'student' | 'center_admin' | 'superAdmin' | 'centerAdmin';
   centerId?: string;
   permissions: string[];
+  accessPermissions?: any;
   type?: string;
   iat: number;
   exp: number;
@@ -126,7 +127,10 @@ export const generateTokens = (user: any) => {
 // JWT 토큰 검증
 export const verifyToken = (token: string, secret: string): Promise<AuthenticatedUser> => {
   return new Promise((resolve, reject) => {
-    jwt.verify(token, secret, (err, decoded) => {
+    jwt.verify(token, secret, {
+      issuer: 'jj-swim-lab',
+      audience: 'jj-swim-lab-users'
+    }, (err, decoded) => {
       if (err) {
         console.error('❌ JWT 토큰 검증 실패:', err.message);
         reject(err);
@@ -351,12 +355,22 @@ export const requirePermission = (permission: string) => {
       });
     }
     
-    if (!user.permissions.includes(permission)) {
+    // permissions 배열에서 확인
+    const hasPermissionInArray = user.permissions && user.permissions.includes(permission);
+    
+    // accessPermissions 객체에서 확인
+    const hasPermissionInObject = user.accessPermissions && user.accessPermissions[permission] === true;
+    
+    // superAdmin은 모든 권한을 가짐
+    const isSuperAdmin = user.userType === 'superAdmin';
+    
+    if (!hasPermissionInArray && !hasPermissionInObject && !isSuperAdmin) {
       console.warn('권한 없는 접근 시도:', {
         userId: user.id,
         userType: user.userType,
         requiredPermission: permission,
         userPermissions: user.permissions,
+        accessPermissions: user.accessPermissions,
         ip: req.ip,
         userAgent: req.get('User-Agent'),
         url: req.url,
@@ -384,6 +398,11 @@ export const requireRole = (roles: string[]) => {
         error: '인증이 필요합니다.',
         message: '로그인해주세요.',
       });
+    }
+    
+    // superAdmin은 모든 역할에 접근 가능
+    if (user.userType === 'superAdmin') {
+      return next();
     }
     
     if (!roles.includes(user.userType)) {

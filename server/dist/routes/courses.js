@@ -7,8 +7,9 @@ const express_1 = require("express");
 const Course_1 = require("../models/Course");
 const User_1 = require("../models/User");
 const mongoose_1 = __importDefault(require("mongoose"));
-const router = (0, express_1.Router)();
 const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+const auth_2 = require("../middleware/auth");
 const requireInstructor = async (req, res, next) => {
     try {
         const user = await User_1.User.findById(req.user.userId);
@@ -35,7 +36,7 @@ router.get('/', async (req, res) => {
             .populate('instructor', 'name userId')
             .populate('enrolledStudents.student', 'name userId')
             .sort({ createdAt: -1 });
-        return res.json({ courses });
+        return res.json({ success: true, message: '강습 과정 조회 성공!', data: courses });
     }
     catch (error) {
         console.error('강습 과정 조회 오류:', error);
@@ -57,7 +58,7 @@ router.get('/:id', async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.post('/', auth_1.auth, requireInstructor, async (req, res) => {
+router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
     try {
         const { name, description, level, duration, price, maxStudents, schedule, instructorId } = req.body;
         if (!name || !description || !level || !duration || !price || !maxStudents) {
@@ -80,8 +81,9 @@ router.post('/', auth_1.auth, requireInstructor, async (req, res) => {
         const populatedCourse = await Course_1.Course.findById(course._id)
             .populate('instructor', 'name userId');
         return res.status(201).json({
+            success: true,
             message: '강습 과정이 생성되었습니다.',
-            course: populatedCourse
+            data: populatedCourse
         });
     }
     catch (error) {
@@ -89,20 +91,40 @@ router.post('/', auth_1.auth, requireInstructor, async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.put('/:id', auth_1.auth, requireInstructor, async (req, res) => {
+router.put('/:id', auth_2.auth, requireInstructor, async (req, res) => {
     try {
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const user = await User_1.User.findById(req.user._id);
-        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user._id)) {
+        const user = await User_1.User.findById(req.user.userId);
+        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
             return res.status(403).json({ error: '수정 권한이 없습니다.' });
+        }
+        const { name, description, level, duration, price, maxStudents } = req.body;
+        if (name && typeof name !== 'string') {
+            return res.status(400).json({ error: '강습 과정명은 문자열이어야 합니다.' });
+        }
+        if (description && typeof description !== 'string') {
+            return res.status(400).json({ error: '강습 과정 설명은 문자열이어야 합니다.' });
+        }
+        if (level && !['beginner', 'intermediate', 'advanced'].includes(level)) {
+            return res.status(400).json({ error: '유효하지 않은 레벨입니다.' });
+        }
+        if (duration && (typeof duration !== 'number' || duration <= 0)) {
+            return res.status(400).json({ error: '강습 시간은 양수여야 합니다.' });
+        }
+        if (price && (typeof price !== 'number' || price < 0)) {
+            return res.status(400).json({ error: '가격은 0 이상이어야 합니다.' });
+        }
+        if (maxStudents && (typeof maxStudents !== 'number' || maxStudents <= 0)) {
+            return res.status(400).json({ error: '최대 수강생 수는 양수여야 합니다.' });
         }
         const updatedCourse = await Course_1.Course.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('instructor', 'name userId');
         return res.json({
+            success: true,
             message: '강습 과정이 수정되었습니다.',
-            course: updatedCourse
+            data: updatedCourse
         });
     }
     catch (error) {
@@ -110,25 +132,25 @@ router.put('/:id', auth_1.auth, requireInstructor, async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.delete('/:id', auth_1.auth, requireInstructor, async (req, res) => {
+router.delete('/:id', auth_2.auth, requireInstructor, async (req, res) => {
     try {
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
-        const user = await User_1.User.findById(req.user._id);
-        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user._id)) {
+        const user = await User_1.User.findById(req.user.userId);
+        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
             return res.status(403).json({ error: '삭제 권한이 없습니다.' });
         }
         await Course_1.Course.findByIdAndDelete(req.params.id);
-        return res.json({ message: '강습 과정이 삭제되었습니다.' });
+        return res.json({ success: true, message: '강습 과정이 삭제되었습니다.' });
     }
     catch (error) {
         console.error('강습 과정 삭제 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.post('/:id/enroll', auth_1.auth, async (req, res) => {
+router.post('/:id/enroll', auth_2.auth, async (req, res) => {
     try {
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
@@ -163,7 +185,7 @@ router.post('/:id/enroll', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.post('/:id/cancel', auth_1.auth, async (req, res) => {
+router.post('/:id/cancel', auth_2.auth, async (req, res) => {
     try {
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
@@ -182,10 +204,10 @@ router.post('/:id/cancel', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
+router.post('/:courseId/enroll', auth_2.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const studentId = req.user._id;
+        const studentId = req.user.userId;
         const course = await Course_1.Course.findById(courseId);
         if (!course || !course.isActive) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
@@ -223,10 +245,10 @@ router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '강습 과정 등록에 실패했습니다.' });
     }
 });
-router.post('/:courseId/unenroll', auth_1.auth, async (req, res) => {
+router.post('/:courseId/unenroll', auth_2.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const studentId = req.user._id;
+        const studentId = req.user.userId;
         const course = await Course_1.Course.findById(courseId);
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
@@ -251,7 +273,7 @@ router.post('/:courseId/unenroll', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '강습 과정 해제에 실패했습니다.' });
     }
 });
-router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
+router.put('/:courseId/progress/:studentId', auth_2.auth, async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
         const { progress, completedSteps, notes } = req.body;
@@ -293,7 +315,7 @@ router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '진도율 업데이트에 실패했습니다.' });
     }
 });
-router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
+router.get('/:courseId/student/:studentId', auth_2.auth, async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
         const course = await Course_1.Course.findById(courseId)
@@ -336,10 +358,10 @@ router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '학생 정보 조회에 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId/students', auth_1.auth, async (req, res) => {
+router.get('/instructor/:instructorId/students', auth_2.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });
@@ -399,10 +421,10 @@ router.get('/instructor/:instructorId/students', auth_1.auth, async (req, res) =
         res.status(500).json({ error: '학생 목록 조회에 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId/stats', auth_1.auth, async (req, res) => {
+router.get('/instructor/:instructorId/stats', auth_2.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });
@@ -649,10 +671,10 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
         res.status(500).json({ success: false, message: '체크리스트 단계 완료 처리에 실패했습니다.' });
     }
 });
-router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
+router.post('/:courseId/enroll', auth_2.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const studentId = req.user._id;
+        const studentId = req.user.userId;
         const course = await Course_1.Course.findById(courseId);
         if (!course || !course.isActive) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
@@ -690,10 +712,10 @@ router.post('/:courseId/enroll', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '강습 과정 등록에 실패했습니다.' });
     }
 });
-router.post('/:courseId/unenroll', auth_1.auth, async (req, res) => {
+router.post('/:courseId/unenroll', auth_2.auth, async (req, res) => {
     try {
         const { courseId } = req.params;
-        const studentId = req.user._id;
+        const studentId = req.user.userId;
         const course = await Course_1.Course.findById(courseId);
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
@@ -718,7 +740,7 @@ router.post('/:courseId/unenroll', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '강습 과정 해제에 실패했습니다.' });
     }
 });
-router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
+router.put('/:courseId/progress/:studentId', auth_2.auth, async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
         const { progress, completedSteps, notes } = req.body;
@@ -760,7 +782,7 @@ router.put('/:courseId/progress/:studentId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '진도율 업데이트에 실패했습니다.' });
     }
 });
-router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
+router.get('/:courseId/student/:studentId', auth_2.auth, async (req, res) => {
     try {
         const { courseId, studentId } = req.params;
         const course = await Course_1.Course.findById(courseId)
@@ -803,10 +825,10 @@ router.get('/:courseId/student/:studentId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '학생 정보 조회에 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId/students', auth_1.auth, async (req, res) => {
+router.get('/instructor/:instructorId/students', auth_2.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });
@@ -866,10 +888,10 @@ router.get('/instructor/:instructorId/students', auth_1.auth, async (req, res) =
         res.status(500).json({ error: '학생 목록 조회에 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId/stats', auth_1.auth, async (req, res) => {
+router.get('/instructor/:instructorId/stats', auth_2.auth, async (req, res) => {
     try {
         const { instructorId } = req.params;
-        if (req.user._id !== instructorId &&
+        if (req.user.userId !== instructorId &&
             req.user.userType !== 'centerAdmin' &&
             req.user.userType !== 'superAdmin') {
             return res.status(403).json({ error: '접근 권한이 없습니다.' });
@@ -1114,6 +1136,38 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
     catch (error) {
         console.error('체크리스트 단계 완료 처리 실패:', error);
         res.status(500).json({ success: false, message: '체크리스트 단계 완료 처리에 실패했습니다.' });
+    }
+});
+router.get('/my-courses', auth_1.auth, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
+    try {
+        const instructorId = req.user.userId;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const courses = await Course_1.Course.find({ instructor: instructorId })
+            .populate('enrolledStudents.student', 'name email')
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
+        const totalCourses = await Course_1.Course.countDocuments({ instructor: instructorId });
+        res.json({
+            success: true,
+            message: '강사 강습 과정 조회 성공!',
+            data: courses,
+            pagination: {
+                page,
+                limit,
+                total: totalCourses,
+                pages: Math.ceil(totalCourses / limit)
+            }
+        });
+    }
+    catch (error) {
+        console.error('강사 강습 과정 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '강사 강습 과정 조회에 실패했습니다.'
+        });
     }
 });
 exports.default = router;

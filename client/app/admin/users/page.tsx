@@ -180,14 +180,19 @@ function AdminUsersPage() {
         ...(filters.status !== 'all' && { status: filters.status }),
       });
 
-      const res = await apiClient.get(`/api/users?${queryParams.toString()}`);
-      if (res.users && Array.isArray(res.users)) {
-        setUsers(res.users);
+      const res = await apiClient.get<{
+        success: boolean;
+        users?: any[];
+        pagination?: { total: number; pages: number };
+        error?: string;
+      }>(`/api/users?${queryParams.toString()}`);
+      if ((res as any).users && Array.isArray((res as any).users)) {
+        setUsers((res as any).users);
         setPagination(prev => ({
           ...prev,
           page,
-          total: res.pagination?.total || 0,
-          pages: res.pagination?.pages || 0,
+          total: (res as any).pagination?.total || 0,
+          pages: (res as any).pagination?.pages || 0,
         }));
       }
     } catch (error) {

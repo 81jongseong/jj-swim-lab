@@ -1,0 +1,126 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "JJ Swim Lab JJ Swim Lab" [ref=e6]:
+        - /url: /
+        - img "JJ Swim Lab" [ref=e8]
+        - generic [ref=e9]: JJ Swim Lab
+      - generic [ref=e10]:
+        - button "🏠 JJ Swim Lab ▼" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13] [cursor=pointer]: 🏠 JJ Swim Lab
+          - generic [ref=e14] [cursor=pointer]: ▼
+        - button "🤖 AI 체험 ▼" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17] [cursor=pointer]: 🤖 AI 체험
+          - generic [ref=e18] [cursor=pointer]: ▼
+        - button "🎯 체험 메뉴 ▼" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21] [cursor=pointer]: 🎯 체험 메뉴
+          - generic [ref=e22] [cursor=pointer]: ▼
+        - button "💬 커뮤니티 & 상점 ▼" [ref=e24] [cursor=pointer]:
+          - generic [ref=e25] [cursor=pointer]: 💬 커뮤니티 & 상점
+          - generic [ref=e26] [cursor=pointer]: ▼
+        - button "🔑 로그인/회원가입 ▼" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29] [cursor=pointer]: 🔑 로그인/회원가입
+          - generic [ref=e30] [cursor=pointer]: ▼
+      - generic [ref=e32]:
+        - link "로그인" [ref=e33]:
+          - /url: /auth/login
+        - link "회원가입" [ref=e34]:
+          - /url: /auth/signup
+  - main [ref=e35]:
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e41]:
+          - paragraph [ref=e42]: AI 기반 수영 교육 플랫폼
+          - heading "JJ Swim Lab" [level=1] [ref=e43]:
+            - generic [ref=e44]: JJ Swim Lab
+          - paragraph [ref=e45]: 개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요
+          - generic [ref=e46]:
+            - link "수강생 시작하기" [ref=e47]:
+              - /url: /auth/signup?type=student
+            - link "강사 등록하기" [ref=e48]:
+              - /url: /auth/signup?type=instructor
+        - img [ref=e50]
+        - generic [ref=e56]: 스크롤하여 더 알아보기
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - heading "왜 JJ Swim Lab인가요?" [level=2] [ref=e62]:
+            - generic [ref=e63]: 왜 JJ Swim Lab인가요?
+          - paragraph [ref=e64]: AI 기술과 전문 지식을 결합하여 개인 맞춤형 수영 교육을 제공합니다
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic [ref=e68]: 🤖
+            - heading "AI 기반 강습법" [level=3] [ref=e69]
+            - paragraph [ref=e70]: 개인 수준과 목표에 맞는 맞춤형 수영 강습법을 AI가 추천합니다
+            - generic [ref=e72]: 개인 맞춤형
+          - generic [ref=e73]:
+            - generic [ref=e75]: ❓
+            - heading "인터랙티브 퀴즈" [level=3] [ref=e76]
+            - paragraph [ref=e77]: 수영 이론과 실기를 재미있게 학습할 수 있는 다양한 퀴즈를 제공합니다
+            - generic [ref=e79]: 학습 효과 증대
+          - generic [ref=e80]:
+            - generic [ref=e82]: 📊
+            - heading "체계적 진도 관리" [level=3] [ref=e83]
+            - paragraph [ref=e84]: 개인의 수영 실력 향상을 체계적으로 추적하고 관리합니다
+            - generic [ref=e86]: 체계적 관리
+          - generic [ref=e87]:
+            - generic [ref=e89]: 👨‍🏫
+            - heading "전문가 네트워크" [level=3] [ref=e90]
+            - paragraph [ref=e91]: 검증된 수영 강사들과 연결하여 전문적인 지도를 받을 수 있습니다
+            - generic [ref=e93]: 전문가 연결
+          - generic [ref=e94]:
+            - generic [ref=e96]: ⚡
+            - heading "실시간 피드백" [level=3] [ref=e97]
+            - paragraph [ref=e98]: 수영 자세와 기술을 실시간으로 분석하고 즉시 피드백을 제공합니다
+            - generic [ref=e100]: 즉시 피드백
+          - generic [ref=e101]:
+            - generic [ref=e103]: 💬
+            - heading "활발한 커뮤니티" [level=3] [ref=e104]
+            - paragraph [ref=e105]: 수영 애호가들과 정보를 공유하고 경험을 나눌 수 있습니다
+            - generic [ref=e107]: 정보 공유
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - heading "최신 기술로 구현된" [level=2] [ref=e111]:
+            - generic [ref=e112]: 최신 기술로 구현된
+          - paragraph [ref=e113]: Three.js와 Framer Motion을 활용한 인터랙티브한 수영 시뮬레이션
+        - generic [ref=e114]:
+          - generic [ref=e116]:
+            - generic [ref=e117]: 🏊‍♂️
+            - heading "3D 수영 시뮬레이션" [level=3] [ref=e118]
+            - paragraph [ref=e119]: Three.js 기반 인터랙티브 3D 환경
+          - generic [ref=e120]:
+            - heading "3D 파티클 시스템" [level=3] [ref=e121]
+            - paragraph [ref=e122]: 수영의 물결과 움직임을 3D로 시각화하여 더 직관적인 학습 경험을 제공합니다. WebGL 기술을 활용하여 부드럽고 반응성 있는 애니메이션을 구현했습니다.
+            - generic [ref=e123]:
+              - generic [ref=e124]: Three.js
+              - generic [ref=e125]: WebGL
+              - generic [ref=e126]: 파티클 시스템
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - heading "물결 효과 시스템" [level=2] [ref=e132]:
+            - generic [ref=e133]: 물결 효과 시스템
+          - paragraph [ref=e134]: Canvas API를 활용한 저비용 물결 애니메이션으로 수영의 자연스러운 움직임을 표현합니다
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e138]: 🎯
+            - heading "저비용 구현" [level=3] [ref=e139]
+            - paragraph [ref=e140]: GPU 가속을 활용한 효율적인 렌더링
+          - generic [ref=e141]:
+            - generic [ref=e143]: 📱
+            - heading "반응형 디자인" [level=3] [ref=e144]
+            - paragraph [ref=e145]: 모든 디바이스에서 최적화된 성능
+          - generic [ref=e146]:
+            - generic [ref=e148]: ⚡
+            - heading "실시간 애니메이션" [level=3] [ref=e149]
+            - paragraph [ref=e150]: 부드럽고 자연스러운 물결 효과
+      - generic [ref=e153]:
+        - heading "지금 시작하세요" [level=2] [ref=e154]
+        - paragraph [ref=e155]: AI 기반 수영 교육의 새로운 경험을 지금 바로 체험해보세요
+        - generic [ref=e156]:
+          - link "수강생으로 시작하기" [ref=e157]:
+            - /url: /auth/signup?type=student
+          - link "강사로 등록하기" [ref=e158]:
+            - /url: /auth/signup?type=instructor
+```

@@ -18,7 +18,15 @@ const router: Router = express.Router();
 // 1. 센터 정보 조회 (센터 관리자만)
 router.get('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const centerAdmin = await User.findById(req.user._id).populate('centerAdminInfo.managedCenters');
+    // ObjectId 유효성 검사
+    if (!req.user.userId || !/^[0-9a-fA-F]{24}$/.test(req.user.userId)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 사용자 ID입니다.'
+      });
+    }
+
+    const centerAdmin = await User.findById(req.user.userId).populate('centerAdminInfo.managedCenters');
     
     if (!centerAdmin?.centerAdminInfo?.managedCenters) {
       return res.status(404).json({
@@ -56,7 +64,7 @@ router.get('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthReq
 // 2. 센터 정보 수정 (센터 관리자만)
 router.put('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const centerAdmin = await User.findById(req.user._id);
+    const centerAdmin = await User.findById(req.user.userId);
     if (!centerAdmin?.centerAdminInfo?.managedCenters) {
       return res.status(404).json({
         success: false,
@@ -909,6 +917,122 @@ router.get('/optimization-suggestions', auth, requireRole(['centerAdmin']), asyn
     res.status(500).json({
       success: false,
       message: '최적화 제안 조회에 실패했습니다.'
+    });
+  }
+});
+
+// 12. 센터 통계 조회 (센터 관리자만)
+router.get('/my-center/stats', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user.userId).populate('centerAdminInfo.managedCenters');
+    
+    if (!centerAdmin?.centerAdminInfo?.managedCenters) {
+      return res.status(404).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    const centerId = centerAdmin.centerAdminInfo.managedCenters[0];
+    
+    // 센터 통계 데이터 수집
+    const totalStudents = await User.countDocuments({ 
+      userType: 'student',
+      'studentInfo.centerId': centerId 
+    });
+    
+    const totalInstructors = await User.countDocuments({ 
+      userType: 'instructor',
+      'instructorInfo.centerId': centerId 
+    });
+    
+    const totalCourses = await Course.countDocuments({ 
+      instructor: { $in: await User.find({ 'instructorInfo.centerId': centerId }).select('_id') }
+    });
+    
+    const totalBookings = await Booking.countDocuments({ 
+      centerId: centerId 
+    });
+
+    const stats = {
+      totalStudents,
+      totalInstructors,
+      totalCourses,
+      totalBookings,
+      centerCapacity: (await SwimmingCenter.findById(centerId))?.maxCapacity || 0,
+      utilizationRate: totalStudents / ((await SwimmingCenter.findById(centerId))?.maxCapacity || 1) * 100
+    };
+
+    res.json({
+      success: true,
+      message: '센터 통계 조회 성공!',
+      data: stats
+    });
+  } catch (error) {
+    console.error('센터 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 통계 조회에 실패했습니다.'
+    });
+  }
+});
+
+// 13. 센터 강습 과정 조회 (센터 관리자만)
+router.get('/my-center/courses', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user.userId).populate('centerAdminInfo.managedCenters');
+    
+    if (!centerAdmin?.centerAdminInfo?.managedCenters) {
+      return res.status(404).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    const centerId = centerAdmin.centerAdminInfo.managedCenters[0];
+    
+    // 페이지네이션 파라미터
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    
+    // 센터의 강사들 조회
+    const instructors = await User.find({ 
+      'instructorInfo.centerId': centerId 
+    }).select('_id');
+    
+    const instructorIds = instructors.map(instructor => instructor._id);
+    
+    // 센터의 강습 과정 조회
+    const courses = await Course.find({ 
+      instructor: { $in: instructorIds }
+    })
+    .populate('instructor', 'name email')
+    .populate('enrolledStudents.student', 'name email')
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+    
+    const totalCourses = await Course.countDocuments({ 
+      instructor: { $in: instructorIds }
+    });
+
+    res.json({
+      success: true,
+      message: '센터 강습 과정 조회 성공!',
+      data: courses,
+      pagination: {
+        page,
+        limit,
+        total: totalCourses,
+        pages: Math.ceil(totalCourses / limit)
+      }
+    });
+  } catch (error) {
+    console.error('센터 강습 과정 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 강습 과정 조회에 실패했습니다.'
     });
   }
 });

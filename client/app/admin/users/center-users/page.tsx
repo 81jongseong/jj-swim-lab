@@ -71,18 +71,23 @@ function CenterUsersPage() {
     try {
       // 센터 계정만 해당 센터의 사용자들을 조회
       console.log('🌐 API 호출 시작:', `/api/users?page=${page}&limit=${pagination.limit}`);
-      const res = await apiClient.get(`/api/users?page=${page}&limit=${pagination.limit}`);
+      const res = await apiClient.get<{
+        success: boolean;
+        users?: any[];
+        pagination?: { total: number };
+        error?: string;
+      }>(`/api/users?page=${page}&limit=${pagination.limit}`);
       console.log('🔍 API 응답:', res);
-      if (res.users && Array.isArray(res.users)) {
-        console.log('✅ 사용자 목록 로드 성공:', res.users.length, '명');
-        console.log('🔍 첫 번째 사용자 데이터 구조:', res.users[0]);
-        console.log('🔍 모든 사용자 데이터:', res.users);
-        setUsers(res.users);
+      if ((res as any).users && Array.isArray((res as any).users)) {
+        console.log('✅ 사용자 목록 로드 성공:', (res as any).users.length, '명');
+        console.log('🔍 첫 번째 사용자 데이터 구조:', (res as any).users[0]);
+        console.log('🔍 모든 사용자 데이터:', (res as any).users);
+        setUsers((res as any).users);
         setPagination(prev => ({
           ...prev,
           page,
-          total: res.pagination?.total || 0,
-          pages: res.pagination?.pages || 0,
+          total: (res as any).pagination?.total || 0,
+          pages: (res as any).pagination?.pages || 0,
         }));
       } else {
         console.error('❌ 응답에 users 필드가 없음:', res);

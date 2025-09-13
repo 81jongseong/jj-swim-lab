@@ -51,6 +51,7 @@
  * - 2024-12-19: 명령어 실행 결과 처리 구현
  * - 2024-12-19: 명령어 실행 에러 처리 구현
  * - 2024-12-19: 명령어 실행 로깅 시스템 구현
+ * - 2024-12-19: TypeScript 타입 정의 강화 (ExecOptions, ExecResult 인터페이스 추가)
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
@@ -91,6 +92,25 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec) as (command: string, options?: any) => Promise<{ stdout: string; stderr: string }>;
+// 명령어 실행 옵션 인터페이스
+interface ExecOptions {
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  shell?: string;
+  timeout?: number;
+  maxBuffer?: number;
+  killSignal?: NodeJS.Signals;
+  uid?: number;
+  gid?: number;
+  windowsHide?: boolean;
+}
+
+// 명령어 실행 결과 인터페이스
+interface ExecResult {
+  stdout: string;
+  stderr: string;
+}
+
+const execAsync = promisify(exec) as (command: string, options?: ExecOptions) => Promise<ExecResult>;
 
 export { execAsync };

@@ -171,13 +171,20 @@ export default function CenterManagement() {
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await apiClient.get(`/api/center-management?${params}`);
+      const response = await apiClient.get<{
+        success: boolean;
+        data?: {
+          centers: any[];
+          pagination: { total: number };
+        };
+        message?: string;
+      }>(`/api/center-management?${params}`);
       
-      if (response.success) {
-        setCenters(response.data.centers);
-        setTotalPages(response.data.pagination.total);
+      if ((response as any).success) {
+        setCenters((response as any).data.centers);
+        setTotalPages((response as any).data.pagination.total);
       } else {
-        setError(response.message || '센터 목록을 불러오는데 실패했습니다.');
+        setError((response as any).message || '센터 목록을 불러오는데 실패했습니다.');
       }
     } catch (error) {
       console.error('센터 목록 로딩 오류:', error);
@@ -189,9 +196,12 @@ export default function CenterManagement() {
 
   const loadStats = async () => {
     try {
-      const response = await apiClient.get('/api/center-management/stats/overview');
-      if (response.success) {
-        setStats(response.data);
+      const response = await apiClient.get<{
+        success: boolean;
+        data?: CenterStats;
+      }>('/api/center-management/stats/overview');
+      if ((response as any).success) {
+        setStats((response as any).data);
       }
     } catch (error) {
       console.error('센터 통계 로딩 오류:', error);

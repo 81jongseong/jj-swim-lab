@@ -87,16 +87,28 @@ function MembershipPage() {
     setLoading(true);
     try {
       // 멤버십 플랜 조회
-      const plansRes = await apiClient.get('/membership/plans');
-      if (plansRes.data?.plans) setPlans(plansRes.data.plans);
+      const plansRes = await apiClient.get<{
+        success: boolean;
+        data?: { plans?: any[] };
+        error?: string;
+      }>('/membership/plans');
+      if ((plansRes as any).data?.plans) setPlans((plansRes as any).data.plans);
 
       // 사용자 멤버십 조회
-      const membershipsRes = await apiClient.get('/membership');
-      if (membershipsRes.data?.memberships) setUserMemberships(membershipsRes.data.memberships);
+      const membershipsRes = await apiClient.get<{
+        success: boolean;
+        data?: { memberships?: any[] };
+        error?: string;
+      }>('/membership');
+      if ((membershipsRes as any).data?.memberships) setUserMemberships((membershipsRes as any).data.memberships);
 
       // 결제 내역 조회
-      const paymentsRes = await apiClient.get('/membership/payments');
-      if (paymentsRes.data?.payments) setPayments(paymentsRes.data.payments);
+      const paymentsRes = await apiClient.get<{
+        success: boolean;
+        data?: { payments?: any[] };
+        error?: string;
+      }>('/membership/payments');
+      if ((paymentsRes as any).data?.payments) setPayments((paymentsRes as any).data.payments);
     } catch (error) {
       console.error('데이터 로딩 중 오류:', error);
     }
