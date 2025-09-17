@@ -146,12 +146,23 @@ const bookingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
   },
+  centerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Center',
+    required: true,
+  },
 }, { 
   timestamps: true 
 });
 
-// 날짜와 시간으로 인덱스 생성
+// 성능 최적화를 위한 인덱스 설정
 bookingSchema.index({ date: 1, startTime: 1, endTime: 1 });
 bookingSchema.index({ user: 1, date: 1 });
+bookingSchema.index({ centerId: 1, date: 1, status: 1 }); // 센터별 예약 검색 최적화
+bookingSchema.index({ instructorId: 1, date: 1, status: 1 }); // 강사별 예약 검색 최적화
+bookingSchema.index({ courseId: 1, date: 1 }); // 강습별 예약 검색 최적화
+bookingSchema.index({ status: 1, createdAt: -1 }); // 상태별 최신 예약 검색 최적화
+bookingSchema.index({ 'payment.status': 1 }); // 결제 상태별 검색 최적화
+bookingSchema.index({ createdAt: -1 }); // 최신 예약 검색 최적화
 
 export const Booking = mongoose.model('Booking', bookingSchema); 

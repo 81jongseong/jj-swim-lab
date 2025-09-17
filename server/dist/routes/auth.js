@@ -1,11 +1,41 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const bcrypt = __importStar(require("bcryptjs"));
+const jwt = __importStar(require("jsonwebtoken"));
 const User_1 = require("../models/User");
 const router = (0, express_1.Router)();
 router.post('/signup', async (req, res) => {
@@ -23,7 +53,7 @@ router.post('/signup', async (req, res) => {
             return res.status(400).json({ error: '이미 등록된 이메일입니다.' });
         }
         const saltRounds = 12;
-        const hashedPassword = await bcryptjs_1.default.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
         const userData = {
             userId,
             name,
@@ -57,7 +87,7 @@ router.post('/signup', async (req, res) => {
             name: user.name,
             permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
         };
-        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
             expiresIn: '24h',
             issuer: 'jj-swim-lab',
             audience: 'jj-swim-lab-users'
@@ -87,7 +117,7 @@ router.get('/verify', async (req, res) => {
         }
         const token = authHeader.substring(7);
         try {
-            const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'fallback-secret', {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret', {
                 issuer: 'jj-swim-lab',
                 audience: 'jj-swim-lab-users'
             });
@@ -150,7 +180,7 @@ router.post('/login', async (req, res) => {
         console.log('  - 입력된 비밀번호:', password);
         console.log('  - 저장된 해시:', user.password);
         console.log('  - 사용자 정보:', { userId: user.userId, email: user.email });
-        const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         console.log('  - bcrypt.compare 결과:', isPasswordValid);
         if (!isPasswordValid) {
             return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
@@ -183,6 +213,7 @@ router.post('/login', async (req, res) => {
             userType: user.userType,
             email: user.email,
             name: user.name,
+            centerId: user.centerId,
             permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
         };
         console.log('🔍 JWT 토큰 페이로드 생성:', {
@@ -209,7 +240,7 @@ router.post('/login', async (req, res) => {
             });
         }
         console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
-        const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
             expiresIn: '24h',
             issuer: 'jj-swim-lab',
             audience: 'jj-swim-lab-users'
@@ -225,6 +256,7 @@ router.post('/login', async (req, res) => {
                 email: user.email,
                 userType: user.userType,
                 level: user.level,
+                centerId: user.centerId,
                 isActive: user.isActive,
                 lastLoginAt: user.lastLoginAt,
                 studentInfo: user.studentInfo,
@@ -249,7 +281,7 @@ router.get('/profile', async (req, res) => {
         if (!token) {
             return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
         }
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
         const user = await User_1.User.findById(decoded.userId).select('-password');
         if (!user) {
             return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });

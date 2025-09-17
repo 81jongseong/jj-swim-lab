@@ -11,7 +11,6 @@ const router = (0, express_1.Router)();
 router.get('/', auth_1.auth, async (req, res) => {
     try {
         const { technique, level, category, difficulty } = req.query;
-        const user = req.user;
         const filter = {};
         if (technique)
             filter.technique = technique;
@@ -67,7 +66,6 @@ router.get('/:id', auth_1.auth, async (req, res) => {
 });
 router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
-        const user = req.user;
         const { id, name, description, difficulty, category, duration, equipment, instructions, benefits } = req.body;
         if (!id || !name || !description || !difficulty || !category || !duration || !instructions || !benefits) {
             return res.status(400).json({

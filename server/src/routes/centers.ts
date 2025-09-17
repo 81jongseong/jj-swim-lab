@@ -1,6 +1,72 @@
+/**
+ * 🏢 JJ Swim Lab - 센터 관리 API 라우트
+ *
+ * =============================================================================
+ * 📋 **의존성 파일들**
+ * =============================================================================
+ * 🔗 **직접 의존성**:
+ *   - ../middleware/auth.ts (인증 미들웨어, requireRole 함수)
+ *   - ../models/SwimmingCenter.ts (수영 센터 데이터 모델)
+ *   - ../models/User.ts (사용자 데이터 모델)
+ *   - ../models/Course.ts (강습 과정 데이터 모델)
+ *   - ../models/Booking.ts (예약 데이터 모델)
+ *   - ../models/Payment.ts (결제 데이터 모델)
+ *   - mongoose (MongoDB ODM)
+ * 
+ * 🔗 **연동되는 클라이언트 파일들**:
+ *   - client/app/center-admin/ 페이지들 (센터 관리자 기능)
+ *   - client/app/admin/centers/page.tsx (관리자 센터 관리)
+ *   - client/components/center/ 센터 관련 컴포넌트들
+ * 
+ * 🔗 **데이터베이스 연동**:
+ *   - SwimmingCenter 컬렉션 (수영 센터 정보)
+ *   - User 컬렉션 (센터 관리자 및 사용자 정보)
+ *   - Course 컬렉션 (센터별 강습 과정)
+ *   - Booking 컬렉션 (센터별 예약 정보)
+ *   - Payment 컬렉션 (센터별 결제 정보)
+ *
+ * =============================================================================
+ * 🔄 **현재 구현된 기능들**
+ * =============================================================================
+ * ✅ **완전 구현**:
+ *   - GET /api/centers/my-center (센터 관리자: 내 센터 정보 조회)
+ *   - PUT /api/centers/my-center (센터 관리자: 내 센터 정보 수정)
+ *   - GET /api/centers/stats (센터 관리자: 센터 통계 조회)
+ *   - GET /api/centers (관리자: 모든 센터 목록 조회)
+ *   - POST /api/centers (관리자: 새 센터 생성)
+ *   - PUT /api/centers/:id (관리자: 센터 정보 수정)
+ *   - DELETE /api/centers/:id (관리자: 센터 삭제)
+ * 
+ * ✅ **부분 구현**:
+ *   - 센터별 사용자 관리
+ *   - 센터별 강습 과정 관리
+ *   - 센터별 예약 및 결제 관리
+ * 
+ * ❌ **미구현**:
+ *   - 센터 검색 및 필터링
+ *   - 센터별 리뷰 및 평점 시스템
+ *   - 센터별 통계 대시보드
+ *
+ * =============================================================================
+ * ⚠️ **중요한 주의사항**
+ * =============================================================================
+ * 🚨 **권한 체크**: centerAdmin, superAdmin만 센터 관리 가능
+ * 🚨 **데이터 검증**: ObjectId 유효성 검사 필수
+ * 🚨 **센터 소속**: 센터 관리자는 자신의 센터만 관리 가능
+ * 🚨 **관계 데이터**: 센터 삭제 시 관련 데이터 정리 필요
+ * 🚨 **통계 계산**: 실시간 데이터베이스 조회 기반
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-13: 초기 센터 관리 API 구현
+ * - 2025-01-13: 센터 관리자 전용 기능 추가
+ * - 2025-01-13: 관리자 센터 관리 기능 추가
+ * - 2025-01-13: 센터별 통계 및 데이터 관리 기능 추가
+ */
+
 import express, { Request, Response, Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
 import { SwimmingCenter } from '../models/SwimmingCenter';
+import { Center } from '../models/Center';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
@@ -15,18 +81,381 @@ const router: Router = express.Router();
 
 // ===== 센터 관리자 전용 기능 =====
 
+// 0. 센터 관리자 대시보드 통계 (센터 관리자만)
+router.get('/dashboard-stats', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(404).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    // 센터별 통계 계산
+    const [
+      totalMembers,
+      activeInstructors,
+      activeCourses,
+      monthlyRevenue,
+      todayBookings,
+      monthlyBookings,
+      pendingApprovals
+    ] = await Promise.all([
+      // 총 회원 수 (센터에 소속된 모든 활성 사용자)
+      User.countDocuments({
+        centerId: centerId,
+        isActive: true
+      }),
+      
+      // 활성 강사 수
+      User.countDocuments({
+        centerId: centerId,
+        userType: 'instructor',
+        isActive: true
+      }),
+      
+      // 활성 강의 수 (isActive 필드 사용)
+      Course.countDocuments({
+        centerId: centerId,
+        isActive: true
+      }),
+      
+      // 이번 달 매출 (센터별 결제)
+      Payment.aggregate([
+        {
+          $match: {
+            centerId: centerId,
+            status: 'completed',
+            createdAt: {
+              $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+              $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+            }
+          }
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      
+      // 오늘 예약 수
+      Booking.countDocuments({
+        centerId: centerId,
+        date: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          $lt: new Date(new Date().setHours(23, 59, 59, 999))
+        },
+        status: { $in: ['confirmed', 'pending'] }
+      }),
+      
+      // 월간 예약 수
+      Booking.countDocuments({
+        centerId: centerId,
+        createdAt: {
+          $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+        }
+      }),
+      
+      // 승인 대기 건수 (센터별)
+      User.countDocuments({
+        centerId: centerId,
+        status: 'pending_approval'
+      })
+    ]);
+
+    // 월별 성장률 계산 (전월 대비)
+    const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+    const thisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    
+    const [lastMonthRevenue] = await Payment.aggregate([
+      {
+        $match: {
+          centerId: centerId,
+          status: 'completed',
+          createdAt: {
+            $gte: lastMonth,
+            $lt: thisMonth
+          }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    const currentRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].total : 0;
+    const previousRevenue = lastMonthRevenue ? lastMonthRevenue.total : 0;
+    const monthlyGrowth = previousRevenue > 0 ? 
+      ((currentRevenue - previousRevenue) / previousRevenue * 100) : 0;
+
+    // 평균 평점 계산 (센터별 리뷰)
+    const [avgRating] = await User.aggregate([
+      {
+        $match: {
+          centerId: centerId,
+          userType: 'student'
+        }
+      },
+      {
+        $lookup: {
+          from: 'evaluations',
+          localField: '_id',
+          foreignField: 'studentId',
+          as: 'evaluations'
+        }
+      },
+      {
+        $unwind: '$evaluations'
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$evaluations.rating' }
+        }
+      }
+    ]);
+
+    const stats = {
+      totalMembers,
+      activeInstructors,
+      activeCourses,
+      monthlyRevenue: currentRevenue,
+      todayBookings,
+      monthlyBookings,
+      pendingApprovals,
+      monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
+      averageRating: avgRating ? Math.round(avgRating.averageRating * 10) / 10 : 0
+    };
+
+    res.json({
+      success: true,
+      message: '센터 통계 조회 성공!',
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('센터 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 통계 조회에 실패했습니다.'
+    });
+  }
+});
+
+// 0.5. 강사 대시보드 통계 (강사만)
+router.get('/instructor-dashboard-stats', auth, requireRole(['instructor']), async (req: AuthRequest, res: Response) => {
+  try {
+    const instructorId = req.user._id;
+    const centerId = req.user.centerId;
+
+    if (!centerId) {
+      return res.status(404).json({
+        success: false,
+        message: '소속 센터가 없습니다.'
+      });
+    }
+
+    // 강사별 통계 계산
+    const [
+      totalStudents,
+      activeCourses,
+      todayBookings,
+      monthlyRevenue
+    ] = await Promise.all([
+      // 총 수강생 수 (강사에게 배정된 활성 학생)
+      User.countDocuments({
+        centerId: centerId,
+        userType: 'student',
+        isActive: true,
+        instructorId: instructorId
+      }),
+      
+      // 활성 강의 수 (강사가 담당하는 강의)
+      Course.countDocuments({
+        centerId: centerId,
+        instructor: instructorId,
+        status: 'active'
+      }),
+      
+      // 오늘 예약 수 (강사 예약)
+      Booking.countDocuments({
+        centerId: centerId,
+        instructorId: instructorId,
+        date: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          $lt: new Date(new Date().setHours(23, 59, 59, 999))
+        },
+        status: { $in: ['confirmed', 'pending'] }
+      }),
+      
+      // 이번 달 수익 (강사별 결제)
+      Payment.aggregate([
+        {
+          $match: {
+            centerId: centerId,
+            instructorId: instructorId,
+            status: 'completed',
+            createdAt: {
+              $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+              $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+            }
+          }
+        },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const currentRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].total : 0;
+
+    // 평균 평점 계산 (강사별 리뷰)
+    const [avgRating] = await User.aggregate([
+      {
+        $match: {
+          centerId: centerId,
+          userType: 'student',
+          instructorId: instructorId
+        }
+      },
+      {
+        $lookup: {
+          from: 'evaluations',
+          localField: '_id',
+          foreignField: 'studentId',
+          as: 'evaluations'
+        }
+      },
+      {
+        $unwind: '$evaluations'
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$evaluations.rating' }
+        }
+      }
+    ]);
+
+    const stats = {
+      totalStudents,
+      activeCourses,
+      todayBookings,
+      monthlyRevenue: currentRevenue,
+      averageRating: avgRating ? Math.round(avgRating.averageRating * 10) / 10 : 0,
+      totalHours: todayBookings * 1 // 기본 1시간 가정
+    };
+
+    res.json({
+      success: true,
+      message: '강사 통계 조회 성공!',
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('강사 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강사 통계 조회에 실패했습니다.'
+    });
+  }
+});
+
+// 0.6. 학생 대시보드 통계 (학생만)
+router.get('/student-dashboard-stats', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+  try {
+    const studentId = req.user._id;
+    const centerId = req.user.centerId;
+
+    if (!centerId) {
+      return res.status(404).json({
+        success: false,
+        message: '소속 센터가 없습니다.'
+      });
+    }
+
+    // 학생별 통계 계산
+    const [
+      enrolledCourses,
+      completedSessions,
+      totalSessions,
+      nextClass
+    ] = await Promise.all([
+      // 등록한 강의 수
+      Booking.countDocuments({
+        centerId: centerId,
+        studentId: studentId,
+        status: { $in: ['confirmed', 'pending'] }
+      }),
+      
+      // 완료된 세션 수
+      Booking.countDocuments({
+        centerId: centerId,
+        studentId: studentId,
+        status: 'completed'
+      }),
+      
+      // 전체 세션 수
+      Booking.countDocuments({
+        centerId: centerId,
+        studentId: studentId
+      }),
+      
+      // 다음 수업 정보
+      Booking.findOne({
+        centerId: centerId,
+        studentId: studentId,
+        status: { $in: ['confirmed', 'pending'] },
+        date: { $gte: new Date() }
+      }).sort({ date: 1 }).populate('courseId', 'name').populate('instructorId', 'name')
+    ]);
+
+    // 현재 연속 출석일 계산 (최근 7일)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const recentBookings = await Booking.countDocuments({
+      centerId: centerId,
+      studentId: studentId,
+      status: 'completed',
+      date: { $gte: sevenDaysAgo }
+    });
+
+    const stats = {
+      enrolledCourses,
+      completedSessions,
+      totalSessions,
+      currentStreak: Math.min(recentBookings, 7),
+      averageRating: 4.5, // 기본값
+      nextClass: nextClass ? `${nextClass.date} ${nextClass.startTime}` : '예정된 수업 없음',
+      achievements: Math.floor(completedSessions / 5), // 5회마다 업적 1개
+      weeklyGoal: 3 // 기본 주간 목표
+    };
+
+    res.json({
+      success: true,
+      message: '학생 통계 조회 성공!',
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('학생 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '학생 통계 조회에 실패했습니다.'
+    });
+  }
+});
+
 // 1. 센터 정보 조회 (센터 관리자만)
 router.get('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     // ObjectId 유효성 검사
-    if (!req.user.userId || !/^[0-9a-fA-F]{24}$/.test(req.user.userId)) {
+    if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
       return res.status(400).json({
         success: false,
         message: '유효하지 않은 사용자 ID입니다.'
       });
     }
 
-    const centerAdmin = await User.findById(req.user.userId).populate('centerAdminInfo.managedCenters');
+    const centerAdmin = await User.findById(req.user._id).populate('centerAdminInfo.managedCenters');
     
     if (!centerAdmin?.centerAdminInfo?.managedCenters) {
       return res.status(404).json({
@@ -35,10 +464,7 @@ router.get('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthReq
       });
     }
 
-    const center = await SwimmingCenter.findById(centerAdmin.centerAdminInfo.managedCenters[0])
-      .populate('admins', 'name email')
-      .populate('instructors', 'name email instructorInfo.experience')
-      .populate('students', 'name email studentInfo.swimmingLevel');
+    const center = await Center.findById(centerAdmin.centerAdminInfo.managedCenters[0]);
 
     if (!center) {
       return res.status(404).json({
@@ -64,7 +490,7 @@ router.get('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthReq
 // 2. 센터 정보 수정 (센터 관리자만)
 router.put('/my-center', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const centerAdmin = await User.findById(req.user.userId);
+    const centerAdmin = await User.findById(req.user._id);
     if (!centerAdmin?.centerAdminInfo?.managedCenters) {
       return res.status(404).json({
         success: false,

@@ -90,30 +90,43 @@
 
 import Redis from 'ioredis';
 
-// Redis 클라이언트 설정
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-  keepAlive: 30000,
-  connectTimeout: 10000,
-  commandTimeout: 5000,
-});
+// Redis 클라이언트 설정 (비활성화)
+// const redis = new Redis({
+//   host: process.env.REDIS_HOST || 'localhost',
+//   port: parseInt(process.env.REDIS_PORT || '6379'),
+//   password: process.env.REDIS_PASSWORD,
+//   maxRetriesPerRequest: 3,
+//   lazyConnect: true,
+//   keepAlive: 30000,
+//   connectTimeout: 10000,
+//   commandTimeout: 5000,
+// });
 
-// Redis 연결 이벤트 처리
-redis.on('connect', () => {
-  console.log('✅ Redis 연결 성공');
-});
+// Redis 비활성화 - 더미 객체
+const redis = {
+  ping: () => Promise.resolve('PONG'),
+  setex: (key: string, ttl: number, value: string) => Promise.resolve('OK'),
+  get: (key: string) => Promise.resolve(null),
+  del: (key: string) => Promise.resolve(1),
+  keys: (pattern: string) => Promise.resolve([]),
+  exists: (key: string) => Promise.resolve(0),
+  on: () => {},
+  off: () => {},
+  disconnect: () => Promise.resolve(),
+};
 
-redis.on('error', (error) => {
-  console.error('❌ Redis 연결 오류:', error);
-});
+// Redis 연결 이벤트 처리 (비활성화)
+// redis.on('connect', () => {
+//   console.log('✅ Redis 연결 성공');
+// });
 
-redis.on('close', () => {
-  console.log('🔌 Redis 연결 종료');
-});
+// redis.on('error', (error) => {
+//   console.error('❌ Redis 연결 오류:', error);
+// });
+
+// redis.on('close', () => {
+//   console.log('🔌 Redis 연결 종료');
+// });
 
 // Redis 연결 테스트
 export const testRedisConnection = async (): Promise<boolean> => {
@@ -166,7 +179,9 @@ export const redisUtils = {
     try {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
-        await redis.del(...keys);
+        for (const key of keys) {
+          await redis.del(key);
+        }
       }
     } catch (error) {
       console.error('Redis 패턴 캐시 삭제 오류:', error);

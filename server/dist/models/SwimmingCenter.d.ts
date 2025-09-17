@@ -18,6 +18,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -88,14 +93,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -107,6 +105,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -126,6 +126,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -196,14 +201,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -215,6 +213,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -234,6 +234,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -304,14 +309,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -323,6 +321,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 } & {
     _id: mongoose.Types.ObjectId;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
@@ -346,6 +346,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -416,14 +421,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -435,6 +433,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -454,6 +454,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -524,14 +529,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -543,6 +541,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -562,6 +562,11 @@ export declare const SwimmingCenter: mongoose.Model<{
     admins: mongoose.Types.ObjectId[];
     email?: string;
     description?: string;
+    location?: {
+        enum: unknown[];
+        type?: string;
+        required?: unknown;
+    };
     facilities?: {
         mainPool?: {
             lanes: number;
@@ -632,14 +637,7 @@ export declare const SwimmingCenter: mongoose.Model<{
             open?: string;
         };
     };
-    location?: {
-        enum: unknown[];
-        type?: string;
-        required?: unknown;
-    };
-    website?: string;
     introduction?: string;
-    guide?: string;
     pricing?: {
         lesson?: {
             perSession?: number;
@@ -651,6 +649,8 @@ export declare const SwimmingCenter: mongoose.Model<{
             child?: number;
         };
     };
+    website?: string;
+    guide?: string;
 }> & {
     _id: mongoose.Types.ObjectId;
 }>>;

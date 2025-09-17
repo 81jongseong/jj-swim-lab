@@ -236,8 +236,24 @@ cd ..
 echo ✅ 빌드 테스트 완료
 echo.
 
-:: 8단계: 서버 및 클라이언트 시작
-echo 🚀 8단계: 애플리케이션 시작 중...
+:: 8단계: 데이터베이스 샘플 데이터 생성
+echo 🗄️ 8단계: 데이터베이스 샘플 데이터 생성 중...
+echo --------------------------------
+echo 📊 샘플 데이터 생성...
+cd server
+call node scripts/fix-and-seed-data.js
+cd ..
+echo ✅ 샘플 데이터 생성 완료
+
+:: 9단계: 통합 검증 시스템 테스트
+echo 🔍 9단계: 통합 검증 시스템 테스트 중...
+echo --------------------------------
+echo 📋 통합 검증 실행...
+call check.bat
+echo ✅ 통합 검증 완료
+
+:: 10단계: 서버 및 클라이언트 시작
+echo 🚀 10단계: 애플리케이션 시작 중...
 echo --------------------------------
 echo 🔌 서버를 시작합니다...
 start "JJ Swim Lab Server" cmd /k "cd /d "%~dp0server" && pnpm run dev"
@@ -260,8 +276,9 @@ echo    - 서버: http://localhost:5000
 echo.
 echo 📋 다음 단계:
 echo    1. MongoDB Atlas 연결 확인
-echo    2. 로그인 테스트
+echo    2. 로그인 테스트 (admin/101010, center/101010, teacher/101010, student1/101010)
 echo    3. 기능 테스트
+echo    4. 통합 검증 시스템 사용 (check.bat)
 echo.
 echo 💡 개발 완료 후 각 터미널에서 Ctrl+C로 서버를 중지할 수 있습니다.
 echo.

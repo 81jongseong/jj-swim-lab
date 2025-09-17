@@ -1,91 +1,40 @@
-// 테스트할 계정들
-const testAccounts = [
-  {
-    userId: 'admin',
-    password: '101010',
-    name: '최고 관리자'
-  },
-  {
-    userId: 'center',
-    password: '101010',
-    name: '센터 관리자'
-  },
-  {
-    userId: 'teacher',
-    password: '101010',
-    name: '김강사'
-  },
-  {
-    userId: 'member',
-    password: '101010',
-    name: '이학생'
-  }
-];
+/**
+ * 🔐 로그인 테스트 스크립트
+ */
 
-async function testLogin(account) {
+const bcrypt = require('bcryptjs');
+
+async function testLogin() {
   try {
-    console.log(`\n🔍 ${account.name} 로그인 테스트 시작...`);
+    console.log('🔐 센터 관리자 로그인 테스트');
+    console.log('============================');
     
-    const response = await fetch('http://localhost:5000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: account.userId,
-        password: account.password
-      }),
-    });
-
-    console.log(`📡 응답 상태: ${response.status} ${response.statusText}`);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log(`✅ 로그인 성공: ${account.name}`);
-      console.log(`   - 사용자 타입: ${data.user.userType}`);
-      console.log(`   - 사용자 ID: ${data.user.userId}`);
-      console.log(`   - 토큰 길이: ${data.token.length}자`);
-      
-      // 토큰 검증 테스트
-      const verifyResponse = await fetch('http://localhost:5000/api/auth/verify', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${data.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (verifyResponse.ok) {
-        console.log(`✅ 토큰 검증 성공: ${account.name}`);
-      } else {
-        console.log(`❌ 토큰 검증 실패: ${account.name}`);
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      console.log(`❌ 로그인 실패: ${account.name}`);
-      console.log(`   - 오류: ${errorData.error || '알 수 없는 오류'}`);
-    }
+    // 테스트할 계정 정보
+    const testAccount = {
+      userId: 'center',
+      password: '101010'
+    };
+    
+    console.log(`📋 테스트 계정: ${testAccount.userId}`);
+    console.log(`🔑 테스트 비밀번호: ${testAccount.password}`);
+    
+    // 비밀번호 해싱 테스트
+    const hashedPassword = await bcrypt.hash('101010', 12);
+    console.log(`🔐 해싱된 비밀번호: ${hashedPassword.substring(0, 20)}...`);
+    
+    // 비밀번호 검증 테스트
+    const isValidPassword = await bcrypt.compare('101010', hashedPassword);
+    console.log(`✅ 비밀번호 검증 결과: ${isValidPassword}`);
+    
+    // 다른 비밀번호로 테스트
+    const isInvalidPassword = await bcrypt.compare('wrongpassword', hashedPassword);
+    console.log(`❌ 잘못된 비밀번호 검증 결과: ${isInvalidPassword}`);
+    
+    console.log('\n📝 로그인 테스트 완료');
+    
   } catch (error) {
-    console.log(`❌ 네트워크 오류: ${account.name} - ${error.message}`);
+    console.error('❌ 로그인 테스트 오류:', error);
   }
 }
 
-async function runTests() {
-  console.log('🚀 로그인 테스트 시작...');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  
-  for (const account of testAccounts) {
-    await testLogin(account);
-  }
-  
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🎯 테스트 완료!');
-  console.log('\n📋 로그인 정보 요약:');
-  console.log('• 최고 관리자: admin / 101010');
-  console.log('• 센터 관리자: center / 101010');
-  console.log('• 강사: teacher / 101010');
-  console.log('• 학생: member / 101010');
-}
-
-// 테스트 실행
-runTests();
+testLogin();

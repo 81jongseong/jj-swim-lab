@@ -141,9 +141,33 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 PORT=5000
 NODE_ENV=development
 JWT_SECRET=your-secret-key
+CREATE_SAMPLE_DATA=false  # 개발 시 true로 설정
 ```
 
-### **4. 개발 서버 실행**
+### **3-1. 자동 설정 스크립트 사용 (권장)**
+```bash
+# Windows 환경
+프로젝트복사후설정.bat
+
+# PowerShell 환경
+.\scripts\프로젝트복사후설정.ps1
+```
+
+### **4. 데이터베이스 샘플 데이터 생성**
+```bash
+# 서버 디렉토리에서 실행
+cd server
+node scripts/fix-and-seed-data.js
+cd ..
+```
+
+### **5. 통합 검증 시스템 테스트**
+```bash
+# 프로젝트 루트에서 실행
+check.bat
+```
+
+### **6. 개발 서버 실행**
 ```bash
 # 전체 프로젝트 실행 (클라이언트 + 서버)
 pnpm run dev
@@ -338,10 +362,12 @@ npm run test:coverage
 
 ### **프로젝트 문서**
 - [서버 README](./server/README.md) - 서버 상세 문서
-- [현재 작업 상황](./docs/현재-작업-상황.md)
+- [서버 이전 가이드](./docs/서버-이전-가이드.md) - 새 설치 및 이전 가이드
+- [현재 작업 상황](./docs/현재-작업-상태.md)
 - [프로젝트 가이드](./docs/프로젝트-가이드.md)
 - [프로젝트 구조](./docs/프로젝트-구조.md)
 - [API 문서](./docs/API-문서.md)
+- [작업 히스토리](./docs/WORK_HISTORY.md)
 
 ### **유용한 링크**
 - [Next.js 공식 문서](https://nextjs.org/docs)

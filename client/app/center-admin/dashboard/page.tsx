@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import { Users, BookOpen, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Users, BookOpen, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Settings } from 'lucide-react';
 
 interface CenterStats {
   totalMembers: number;
@@ -55,53 +55,75 @@ const CenterAdminDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출로 교체 필요
-      const mockStats: CenterStats = {
-        totalMembers: 156,
-        activeInstructors: 8,
-        activeCourses: 24,
-        monthlyRevenue: 12500000,
-        todayBookings: 32,
-        pendingApprovals: 5,
-        monthlyGrowth: 12.5,
-        averageRating: 4.7,
-      };
+      
+      // 실제 API 호출
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/centers/dashboard-stats', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
+      if (!response.ok) {
+        throw new Error('통계 데이터를 가져올 수 없습니다.');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setStats(result.data);
+      } else {
+        throw new Error(result.message || '통계 데이터 조회에 실패했습니다.');
+      }
+
+      // 최근 활동은 현재 임시 데이터 (향후 별도 API 개발 필요)
       const mockActivities: RecentActivity[] = [
         {
           id: '1',
           type: 'new_member',
-          description: '새 회원 김학생님이 가입했습니다.',
+          description: '새 회원이 가입했습니다.',
           timestamp: '2분 전',
           status: 'success',
         },
         {
           id: '2',
           type: 'new_booking',
-          description: '이학생님이 자유형 기초반을 예약했습니다.',
+          description: '새로운 수업 예약이 있습니다.',
           timestamp: '5분 전',
           status: 'info',
         },
         {
           id: '3',
           type: 'payment',
-          description: '박학생님의 3개월 회비가 결제되었습니다.',
+          description: '결제가 완료되었습니다.',
           timestamp: '10분 전',
           status: 'success',
         },
         {
           id: '4',
           type: 'course_completed',
-          description: '최학생님이 배영 중급반을 완료했습니다.',
+          description: '수업이 완료되었습니다.',
           timestamp: '15분 전',
           status: 'success',
         },
       ];
 
-      setStats(mockStats);
       setRecentActivities(mockActivities);
     } catch (error) {
       console.error('대시보드 데이터 로딩 실패:', error);
+      // 에러 발생 시 기본값 설정
+      setStats({
+        totalMembers: 0,
+        activeInstructors: 0,
+        activeCourses: 0,
+        monthlyRevenue: 0,
+        todayBookings: 0,
+        pendingApprovals: 0,
+        monthlyGrowth: 0,
+        averageRating: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -158,7 +180,7 @@ const CenterAdminDashboard: React.FC = () => {
 
       {/* 주요 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/users'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">총 회원</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -171,7 +193,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/instructors'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">활성 강사</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -184,7 +206,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/courses'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">진행 중인 강의</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -197,7 +219,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/payments'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">이번 달 매출</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -215,7 +237,7 @@ const CenterAdminDashboard: React.FC = () => {
 
       {/* 추가 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/bookings'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">오늘 예약</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -228,7 +250,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/approvals'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">승인 대기</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -241,7 +263,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/reviews'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">평균 평점</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -254,7 +276,7 @@ const CenterAdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => window.location.href = '/center-admin/analytics'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">성장률</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -327,6 +349,14 @@ const CenterAdminDashboard: React.FC = () => {
                 <TrendingUp className="h-6 w-6 mb-2" />
                 <span>통계 보기</span>
               </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col"
+                onClick={() => window.location.href = '/center-admin/introduction'}
+              >
+                <Settings className="h-6 w-6 mb-2" />
+                <span>센터 정보 편집</span>
+              </Button>
               <Button variant="outline" className="h-20 flex flex-col">
                 <AlertCircle className="h-6 w-6 mb-2" />
                 <span>승인 관리</span>
@@ -336,11 +366,6 @@ const CenterAdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800">
-        <p className="font-semibold">개발 참고:</p>
-        <p>이 페이지의 데이터는 하드코딩이 아닌 데이터베이스에서 관리되어야 합니다.</p>
-        <p>관련 API 엔드포인트 (`/api/center-admin/dashboard` 등) 개발이 필요합니다.</p>
-      </div>
     </div>
   );
 };

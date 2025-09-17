@@ -1,4 +1,18 @@
 {
+  "_comment": "🏊‍♂️ JJ Swim Lab - 루트 패키지 설정",
+  "_description": "모노레포 구조의 전체 프로젝트 설정",
+  "_workspaces": {
+    "server": "Express.js 백엔드 서버 (포트 5000)",
+    "client": "Next.js 프론트엔드 클라이언트 (포트 3000)"
+  },
+  "_scripts": {
+    "dev": "서버와 클라이언트 동시 실행",
+    "build": "전체 프로젝트 빌드",
+    "start": "프로덕션 환경 실행",
+    "test": "전체 테스트 실행",
+    "lint": "전체 코드 린팅"
+  },
+  "_note": "이 파일은 모노레포의 전체 프로젝트를 관리하며, 서버와 클라이언트를 통합 실행합니다.",
   "name": "jj-swim-lab",
   "version": "1.0.0",
   "description": "JJ 수영장 관리 시스템",
@@ -36,12 +50,14 @@
     "test:e2e:headed": "npm run start:test:env && cd client && npm run test:e2e:headed",
     "test:e2e:debug": "npm run start:test:env && cd client && npm run test:e2e:debug",
     "test:integration": "npm run start:test:env && cd client && npm run test:integration",
-    "test:performance": "npm run start:test:env && cd client && npm run test:performance",
+    "test:performance": "node scripts/test-performance.js",
     "test:accessibility": "npm run start:test:env && cd client && npm run test:accessibility",
     "test:all": "npm run test && npm run test:e2e",
+    "check": "node scripts/check-all.js",
+    "monitor": "node scripts/real-time-monitor.js",
+    "validate": "npm run check",
     "test:full": "node scripts/test-all.js",
     "test:quick": "node scripts/quick-test.js",
-    "test:performance": "node scripts/test-performance.js",
     "test:ci": "npm run test:ci:server && npm run test:ci:client",
     "test:ci:server": "cd server && npm run test:ci",
     "test:ci:client": "cd client && npm run test:ci",
@@ -68,18 +84,25 @@
     "health": "npm run health:server && npm run health:client",
     "health:server": "curl -f http://localhost:5000/api/health || echo 'Server not running'",
     "health:client": "curl -f http://localhost:3000 || echo 'Client not running'",
-    "check": "node scripts/check-all.js",
     "check:all": "npm run check",
     "check:quick": "node scripts/quick-check.js",
     "check:build": "npm run build",
     "check:test": "npm run test",
     "check:lint": "npm run lint",
     "check:type": "npm run type-check",
-    "validate": "npm run check",
     "pre-commit": "npm run check:quick"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@next/bundle-analyzer": "^15.5.3",
+    "chokidar": "^4.0.3",
     "concurrently": "^8.2.2",
+    "eslint-plugin-sonarjs": "^3.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "npm-audit-ci-wrapper": "^3.0.2",
+    "sonarjs": "^0.2.0",
     "wait-on": "^7.2.0"
   },
   "engines": {

@@ -85,11 +85,14 @@ const nextConfig = {
   trailingSlash: false,
   generateEtags: false,
   
-  // 성능 최적화
+  // 성능 최적화 (향상된 설정)
   experimental: {
-    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react', 'react-icons'],
     optimizeCss: true,
     scrollRestoration: true,
+    // 추가 성능 최적화 (turbo 설정 제거 - 호환성 문제)
+    // 코드 스플리팅 최적화
+    esmExternals: true,
   },
   
   // 컴파일러 최적화
@@ -98,17 +101,20 @@ const nextConfig = {
     styledComponents: true,
   },
   
-  // 이미지 최적화
+  // 이미지 최적화 (강화된 설정)
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 31536000, // 1년 캐시 (성능 향상)
+    // 추가 최적화 설정
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
 
   
-  // 번들 분석기
+  // 웹팩 최적화 (향상된 설정)
   webpack: (config, { isServer, dev }) => {
     // 번들 분석기 (개발 환경에서만)
     if (!isServer && !dev && process.env.ANALYZE === 'true') {
@@ -121,6 +127,34 @@ const nextConfig = {
         })
       );
     }
+    
+    // 코드 스플리팅 최적화
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            reuseExistingChunk: true,
+          },
+        },
+      };
+    }
+    
+    // SVG 최적화
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
     
     return config;
   },

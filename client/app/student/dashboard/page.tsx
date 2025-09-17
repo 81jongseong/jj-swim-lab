@@ -66,17 +66,28 @@ const StudentDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출로 교체 필요
-      const mockStats: StudentStats = {
-        enrolledCourses: 2,
-        completedSessions: 24,
-        totalSessions: 40,
-        currentStreak: 7,
-        averageRating: 4.5,
-        nextClass: '2025-01-15 10:00',
-        achievements: 8,
-        weeklyGoal: 3,
-      };
+      
+      // 실제 API 호출
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/centers/student-dashboard-stats', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('통계 데이터를 가져올 수 없습니다.');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setStats(result.data);
+      } else {
+        throw new Error(result.message || '통계 데이터 조회에 실패했습니다.');
+      }
 
       const mockClasses: UpcomingClass[] = [
         {
@@ -126,7 +137,7 @@ const StudentDashboard: React.FC = () => {
         },
       ];
 
-      setStats(mockStats);
+      // setStats(mockStats); // mockStats 변수가 정의되지 않음 - 제거
       setUpcomingClasses(mockClasses);
       setProgressData(mockProgress);
     } catch (error) {

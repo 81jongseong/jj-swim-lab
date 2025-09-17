@@ -105,6 +105,11 @@ import { initializeSecurity } from '../lib/security'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'
 // import ServiceWorkerRegistration from './sw-register'
 import DynamicNavigation from '../components/DynamicNavigation'
+import Analytics from '../components/Analytics'
+import PerformanceMonitor from '../components/dashboard/PerformanceMonitor'
+import PWAInstallPrompt from '../components/PWAInstallPrompt'
+import OfflineIndicator from '../components/OfflineIndicator'
+import ServiceWorkerRegistration from '../components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -234,9 +239,14 @@ export default function RootLayout({
                   {children}
                 </main>
                 <ToastContainer />
-                {/* <EnhancedOfflineIndicator /> */}
-                {/* <PWAInstallPrompt /> */}
-                {/* <ServiceWorkerRegistration /> */}
+                {/* 모니터링 및 분석 도구 */}
+                <Analytics />
+                <PerformanceMonitor />
+                
+                {/* PWA 기능 */}
+                <PWAInstallPrompt />
+                <OfflineIndicator />
+                <ServiceWorkerRegistration />
               </AuthProvider>
             </ErrorProvider>
           </ReactQueryProvider>

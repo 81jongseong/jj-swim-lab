@@ -1,17 +1,26 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts", "**/*.log", "**/*.tmp"],
+  "ignore": [
+    "src/**/*.spec.ts", 
+    "src/**/*.test.ts", 
+    "**/*.log", 
+    "**/*.tmp", 
+    "src/config/redis.ts",
+    "src/**/*.js.map",
+    "dist/**/*",
+    "logs/**/*"
+  ],
   "exec": "ts-node --transpile-only src/index.ts",
   "legacyWatch": true,
-  "quiet": false,
+  "quiet": true,
   "verbose": false,
-  "delay": 1000,
+  "delay": 3000,
   "stdout": true,
   "stderr": true,
   "signal": "SIGINT",
   "restartable": "rs",
-  "ignoreRoot": [".git", "node_modules/", "dist/"],
+  "ignoreRoot": [".git", "node_modules/", "dist/", "logs/", "uploads/"],
   "env": {
     "NODE_ENV": "development"
   },

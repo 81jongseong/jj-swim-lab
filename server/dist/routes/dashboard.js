@@ -10,8 +10,8 @@ const router = (0, express_1.Router)();
 router.get('/stats', async (req, res) => {
     try {
         console.log('📊 대시보드 통계 요청 받음');
-        const totalUsers = await User_1.User.countDocuments({ status: 'active' });
-        const activeCourses = await Course_1.Course.countDocuments({ status: 'active' });
+        const totalUsers = await User_1.User.countDocuments({ isActive: true });
+        const activeCourses = await Course_1.Course.countDocuments({ isActive: true });
         const totalRevenue = await Payment_1.Payment.aggregate([
             { $match: { status: 'completed' } },
             { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -21,39 +21,30 @@ router.get('/stats', async (req, res) => {
             status: { $in: ['confirmed', 'pending'] }
         });
         const pendingApprovals = await Approval_1.Approval.countDocuments({ status: 'pending' });
-        const instructorStats = await User_1.User.aggregate([
-            { $match: { userType: 'instructor', status: 'active' } },
-            { $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: 'instructorId',
-                    as: 'students'
-                } },
-            { $project: {
-                    name: 1,
-                    studentCount: { $size: '$students' }
-                } }
-        ]);
-        const courseStats = await Course_1.Course.aggregate([
-            { $match: { status: 'active' } },
-            { $project: {
-                    name: 1,
-                    enrollmentRate: {
-                        $multiply: [
-                            { $divide: ['$currentStudents', '$maxStudents'] },
-                            100
-                        ]
-                    }
-                } }
-        ]);
+        const instructorStats = await User_1.User.find({
+            userType: 'instructor',
+            isActive: true
+        }).select('name instructorInfo.currentStudents').lean();
+        const instructorStatsFormatted = instructorStats.map(instructor => ({
+            name: instructor.name,
+            studentCount: instructor.instructorInfo?.currentStudents || 0
+        }));
+        const courseStats = await Course_1.Course.find({
+            isActive: true
+        }).select('name classInfo.currentEnrollment classInfo.maxCapacity').lean();
+        const courseStatsFormatted = courseStats.map(course => ({
+            name: course.name,
+            enrollmentRate: course.classInfo?.maxCapacity > 0 ?
+                Math.round((course.classInfo?.currentEnrollment || 0) / course.classInfo.maxCapacity * 100) : 0
+        }));
         const dashboardStats = {
             totalUsers,
             activeCourses,
             totalRevenue: revenue,
             activeBookings,
             pendingApprovals,
-            instructorStats,
-            courseStats
+            instructorStats: instructorStatsFormatted,
+            courseStats: courseStatsFormatted
         };
         console.log('✅ 대시보드 통계 생성 완료:', {
             totalUsers,

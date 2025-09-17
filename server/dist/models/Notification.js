@@ -39,7 +39,14 @@ const notificationSchema = new mongoose_1.Schema({
     userId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true
+    },
+    type: {
+        type: String,
+        enum: ['learning_progress', 'recommendation', 'lesson_plan', 'quiz', 'system', 'achievement'],
+        required: true,
+        index: true
     },
     title: {
         type: String,
@@ -51,66 +58,55 @@ const notificationSchema = new mongoose_1.Schema({
         required: true,
         maxlength: 500
     },
-    type: {
-        type: String,
-        enum: ['info', 'success', 'warning', 'error', 'course', 'booking', 'payment', 'system'],
-        default: 'info'
-    },
-    category: {
-        type: String,
-        enum: ['general', 'course', 'booking', 'payment', 'membership', 'ai_analysis', 'system'],
-        default: 'general'
+    data: {
+        type: mongoose_1.Schema.Types.Mixed,
+        default: {}
     },
     isRead: {
         type: Boolean,
-        default: false
-    },
-    isEmailSent: {
-        type: Boolean,
-        default: false
-    },
-    isPushSent: {
-        type: Boolean,
-        default: false
-    },
-    relatedId: {
-        type: mongoose_1.Schema.Types.ObjectId
-    },
-    relatedType: {
-        type: String
+        default: false,
+        index: true
     },
     priority: {
         type: String,
         enum: ['low', 'medium', 'high', 'urgent'],
-        default: 'medium'
-    },
-    scheduledAt: {
-        type: Date
+        default: 'medium',
+        index: true
     },
     expiresAt: {
-        type: Date
-    },
-    metadata: {
-        type: mongoose_1.Schema.Types.Mixed
+        type: Date,
+        index: { expireAfterSeconds: 0 }
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    collection: 'notifications'
 });
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, category: 1, createdAt: -1 });
-notificationSchema.index({ scheduledAt: 1, isEmailSent: 1 });
-notificationSchema.index({ expiresAt: 1 });
+notificationSchema.index({ type: 1, priority: 1 });
+notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 notificationSchema.virtual('isExpired').get(function () {
-    if (!this.expiresAt)
-        return false;
-    return new Date() > this.expiresAt;
+    return this.expiresAt && this.expiresAt < new Date();
 });
-notificationSchema.virtual('isScheduled').get(function () {
-    if (!this.scheduledAt)
-        return false;
-    return new Date() < this.scheduledAt;
-});
-notificationSchema.set('toJSON', { virtuals: true });
-notificationSchema.set('toObject', { virtuals: true });
+notificationSchema.methods.markAsRead = function () {
+    this.isRead = true;
+    return this.save();
+};
+notificationSchema.methods.markAsUnread = function () {
+    this.isRead = false;
+    return this.save();
+};
+notificationSchema.statics.getUnreadCount = function (userId) {
+    return this.countDocuments({ userId, isRead: false });
+};
+notificationSchema.statics.getUserNotifications = function (userId, limit = 20, skip = 0) {
+    return this.find({ userId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .populate('userId', 'name email');
+};
+notificationSchema.statics.createNotification = function (notificationData) {
+    return this.create(notificationData);
+};
 exports.Notification = mongoose_1.default.model('Notification', notificationSchema);
 //# sourceMappingURL=Notification.js.map

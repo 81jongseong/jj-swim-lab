@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseCSVFile = exports.parseExcelFile = exports.defaultExcelParser = exports.SecureExcelParser = void 0;
-const XLSX = __importStar(require("xlsx"));
+const ExcelJS = __importStar(require("exceljs"));
 const fs_1 = __importDefault(require("fs"));
 const logger_1 = require("./logger");
 class SecureExcelParser {
@@ -92,9 +92,8 @@ class SecureExcelParser {
         return data;
     }
     validateWorksheet(worksheet, sheetName) {
-        const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-        const rowCount = range.e.r + 1;
-        const columnCount = range.e.c + 1;
+        const rowCount = worksheet.rowCount;
+        const columnCount = worksheet.columnCount;
         if (rowCount > this.options.maxRows) {
             throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
         }
@@ -109,32 +108,31 @@ class SecureExcelParser {
         try {
             this.validateFile(filePath);
             (0, logger_1.logInfo)('Excel 파일 파싱 시작', { filePath });
-            const workbook = XLSX.readFile(filePath, {
-                cellDates: false,
-                cellNF: false,
-                cellStyles: false,
-                sheetStubs: false,
-                bookDeps: false,
-                bookProps: false,
-                bookSheets: false,
-                bookVBA: false,
-                password: '',
-                WTF: false
-            });
-            if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.readFile(filePath);
+            if (!workbook.worksheets || workbook.worksheets.length === 0) {
                 throw new Error('Excel 파일에 시트가 없습니다.');
             }
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+            const worksheet = workbook.worksheets[0];
+            const sheetName = worksheet.name;
             if (!worksheet) {
                 throw new Error('첫 번째 시트를 읽을 수 없습니다.');
             }
             this.validateWorksheet(worksheet, sheetName);
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-                defval: '',
-                raw: false,
-                dateNF: 'yyyy-mm-dd'
+            const jsonData = [];
+            worksheet.eachRow((row, rowNumber) => {
+                const rowData = [];
+                row.eachCell((cell, colNumber) => {
+                    let cellValue = cell.value;
+                    if (cellValue instanceof Date) {
+                        cellValue = cellValue.toISOString().split('T')[0];
+                    }
+                    if (cellValue === null || cellValue === undefined) {
+                        cellValue = '';
+                    }
+                    rowData[colNumber - 1] = cellValue;
+                });
+                jsonData[rowNumber - 1] = rowData;
             });
             let sanitizedData = jsonData;
             if (this.options.sanitizeData) {

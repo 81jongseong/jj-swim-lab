@@ -100,6 +100,7 @@ export interface User {
   email: string;
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   level: string;
+  centerId?: string;
   studentInfo?: {
     age?: number;
     emergencyContact?: string;
@@ -367,7 +368,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             window.location.href = '/admin/dashboard';
             break;
           case 'centerAdmin':
-            window.location.href = '/admin/dashboard';
+            window.location.href = '/center-admin/dashboard';
             break;
           case 'instructor':
             window.location.href = '/instructor/dashboard';

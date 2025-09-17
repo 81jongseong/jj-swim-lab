@@ -3,10 +3,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -19,10 +20,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -35,10 +37,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -55,10 +58,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -71,10 +75,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;
@@ -87,10 +92,11 @@ export declare const Payment: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     notes: string;
     status: "pending" | "completed" | "failed" | "refunded";
-    paymentMethod: "card" | "cash" | "transfer" | "online";
     user: mongoose.Types.ObjectId;
+    paymentMethod: "card" | "cash" | "transfer" | "online";
     purpose: "other" | "course" | "booking" | "membership";
     amount: number;
     currency: string;

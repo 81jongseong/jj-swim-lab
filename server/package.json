@@ -1,4 +1,25 @@
 {
+  "_comment": "🚀 JJ Swim Lab - 서버 패키지 설정",
+  "_description": "Express.js 기반 백엔드 서버 설정",
+  "_dependencies": {
+    "express": "웹 서버 프레임워크",
+    "mongoose": "MongoDB ODM",
+    "jsonwebtoken": "JWT 토큰 처리",
+    "bcryptjs": "비밀번호 해싱",
+    "socket.io": "실시간 통신",
+    "multer": "파일 업로드",
+    "cors": "CORS 처리",
+    "helmet": "보안 헤더",
+    "compression": "응답 압축"
+  },
+  "_scripts": {
+    "dev": "개발 서버 실행 (nodemon)",
+    "build": "TypeScript 컴파일",
+    "start": "프로덕션 서버 실행",
+    "test": "Jest 테스트 실행",
+    "lint": "ESLint 코드 검사"
+  },
+  "_note": "이 파일은 서버 애플리케이션의 의존성과 스크립트를 관리합니다.",
   "name": "jj-swim-lab-server",
   "version": "1.0.0",
   "description": "JJ Swim Lab Backend Server",
@@ -16,15 +37,18 @@
     "lint:fix": "eslint src/**/*.{ts,js} --fix",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "refresh-tests": "node ../scripts/auto-refresh-tests.js",
+    "test:refresh": "npm run refresh-tests && npm test"
   },
   "dependencies": {
     "@types/ioredis": "^5.0.0",
     "@types/winston": "^2.4.4",
     "bcryptjs": "^2.4.3",
-    "compression": "^1.7.4",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-rate-limit": "^6.10.0",
     "ffmpeg-static": "^5.2.0",
@@ -41,8 +65,7 @@
     "sharp": "^0.34.3",
     "socket.io": "^4.7.2",
     "three": "^0.156.1",
-    "winston": "^3.17.0",
-    "xlsx": "^0.18.5"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

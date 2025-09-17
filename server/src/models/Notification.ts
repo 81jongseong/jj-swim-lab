@@ -1,111 +1,108 @@
-import mongoose, { Schema, Document } from 'mongoose';
+/**
+ * @file Notification 모델
+ * @description 실시간 알림 시스템을 위한 알림 데이터 모델
+ * @date 2025-01-13
+ * @author JJ Swim Lab
+ */
+
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;
+  type: 'learning_progress' | 'recommendation' | 'lesson_plan' | 'quiz' | 'system' | 'achievement';
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'course' | 'booking' | 'payment' | 'system';
-  category: 'general' | 'course' | 'booking' | 'payment' | 'membership' | 'ai_analysis' | 'system';
+  data?: any;
   isRead: boolean;
-  isEmailSent: boolean;
-  isPushSent: boolean;
-  relatedId?: mongoose.Types.ObjectId; // 관련 데이터 ID (수업, 예약 등)
-  relatedType?: string; // 관련 데이터 타입
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  scheduledAt?: Date; // 예약 발송 시간
-  expiresAt?: Date; // 만료 시간
-  metadata?: Record<string, any>; // 추가 데이터
+  expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const notificationSchema = new Schema<INotification>({
-  userId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
   },
-  title: { 
-    type: String, 
+  type: {
+    type: String,
+    enum: ['learning_progress', 'recommendation', 'lesson_plan', 'quiz', 'system', 'achievement'],
+    required: true,
+    index: true
+  },
+  title: {
+    type: String,
     required: true,
     maxlength: 100
   },
-  message: { 
-    type: String, 
+  message: {
+    type: String,
     required: true,
     maxlength: 500
   },
-  type: { 
-    type: String, 
-    enum: ['info', 'success', 'warning', 'error', 'course', 'booking', 'payment', 'system'],
-    default: 'info'
+  data: {
+    type: Schema.Types.Mixed,
+    default: {}
   },
-  category: { 
-    type: String, 
-    enum: ['general', 'course', 'booking', 'payment', 'membership', 'ai_analysis', 'system'],
-    default: 'general'
+  isRead: {
+    type: Boolean,
+    default: false,
+    index: true
   },
-  isRead: { 
-    type: Boolean, 
-    default: false
-  },
-  isEmailSent: { 
-    type: Boolean, 
-    default: false 
-  },
-  isPushSent: { 
-    type: Boolean, 
-    default: false 
-  },
-  relatedId: { 
-    type: Schema.Types.ObjectId 
-  },
-  relatedType: { 
-    type: String 
-  },
-  priority: { 
-    type: String, 
+  priority: {
+    type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium'
+    default: 'medium',
+    index: true
   },
-  scheduledAt: { 
-    type: Date 
-  },
-  expiresAt: { 
-    type: Date 
-  },
-  metadata: { 
-    type: Schema.Types.Mixed 
+  expiresAt: {
+    type: Date,
+    index: { expireAfterSeconds: 0 }
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'notifications'
 });
 
-// 인덱스 추가
+// 인덱스 설정
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, category: 1, createdAt: -1 });
-notificationSchema.index({ scheduledAt: 1, isEmailSent: 1 });
-notificationSchema.index({ expiresAt: 1 });
+notificationSchema.index({ type: 1, priority: 1 });
+notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// 가상 필드: 만료 여부
+// 가상 필드
 notificationSchema.virtual('isExpired').get(function() {
-  if (!this.expiresAt) return false;
-  return new Date() > this.expiresAt;
+  return this.expiresAt && this.expiresAt < new Date();
 });
 
-// 가상 필드: 발송 예정 여부
-notificationSchema.virtual('isScheduled').get(function() {
-  if (!this.scheduledAt) return false;
-  return new Date() < this.scheduledAt;
-});
+// 메서드
+notificationSchema.methods.markAsRead = function() {
+  this.isRead = true;
+  return this.save();
+};
 
-// JSON 변환 시 가상 필드 포함
-notificationSchema.set('toJSON', { virtuals: true });
-notificationSchema.set('toObject', { virtuals: true });
+notificationSchema.methods.markAsUnread = function() {
+  this.isRead = false;
+  return this.save();
+};
+
+// 정적 메서드
+notificationSchema.statics.getUnreadCount = function(userId: string) {
+  return this.countDocuments({ userId, isRead: false });
+};
+
+notificationSchema.statics.getUserNotifications = function(userId: string, limit = 20, skip = 0) {
+  return this.find({ userId })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .skip(skip)
+    .populate('userId', 'name email');
+};
+
+notificationSchema.statics.createNotification = function(notificationData: Partial<INotification>) {
+  return this.create(notificationData);
+};
 
 export const Notification = mongoose.model<INotification>('Notification', notificationSchema);
-
-
-
-
-

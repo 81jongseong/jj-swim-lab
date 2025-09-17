@@ -5,6 +5,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -27,8 +28,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];
@@ -46,6 +47,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -68,8 +70,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];
@@ -87,6 +89,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -109,8 +112,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];
@@ -132,6 +135,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -154,8 +158,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];
@@ -173,6 +177,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -195,8 +200,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];
@@ -214,6 +219,7 @@ export declare const Course: mongoose.Model<{
 } & {
     name: string;
     instructor: mongoose.Types.ObjectId;
+    centerId: mongoose.Types.ObjectId;
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
@@ -236,8 +242,8 @@ export declare const Course: mongoose.Model<{
         enrolledAt: Date;
         progress?: {
             notes: string;
-            percentage: number;
             lastUpdated: Date;
+            percentage: number;
             completedSteps?: any;
         };
     }[];

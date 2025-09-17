@@ -1,0 +1,449 @@
+{
+  "timestamp": "2025-09-15T08:10:22.488Z",
+  "project": "JJ Swim Lab",
+  "version": "1.0.0",
+  "overallScore": 89,
+  "targets": {
+    "performance": 90,
+    "bestPractices": 90,
+    "accessibility": 90,
+    "seo": 90
+  },
+  "results": [
+    {
+      "page": "랜딩 페이지",
+      "url": "http://localhost:3000",
+      "description": "메인 랜딩 페이지",
+      "timestamp": "2025-09-15T08:10:22.485Z",
+      "scores": {
+        "performance": 82,
+        "bestPractices": 95,
+        "accessibility": 87,
+        "seo": 83
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "actual": 4048,
+          "target": 1800,
+          "score": 0,
+          "unit": "ms",
+          "description": "첫 번째 콘텐츠가 그려지는 시간"
+        },
+        "largest-contentful-paint": {
+          "actual": 4291,
+          "target": 2500,
+          "score": 28,
+          "unit": "ms",
+          "description": "가장 큰 콘텐츠가 그려지는 시간"
+        },
+        "first-input-delay": {
+          "actual": 162,
+          "target": 100,
+          "score": 38,
+          "unit": "ms",
+          "description": "첫 번째 입력 지연 시간"
+        },
+        "cumulative-layout-shift": {
+          "actual": 0,
+          "target": 0.1,
+          "score": 0,
+          "unit": "",
+          "description": "누적 레이아웃 이동"
+        },
+        "speed-index": {
+          "actual": 4056,
+          "target": 3400,
+          "score": 81,
+          "unit": "ms",
+          "description": "스피드 인덱스"
+        }
+      },
+      "opportunities": [
+        {
+          "title": "이미지를 WebP 포맷으로 변환",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 634
+        },
+        {
+          "title": "JavaScript 번들 크기 줄이기",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 326
+        },
+        {
+          "title": "CSS 압축",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 524
+        },
+        {
+          "title": "폰트 사전 로드",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 351
+        }
+      ],
+      "diagnostics": [
+        {
+          "title": "총 번들 크기",
+          "value": 337,
+          "unit": "KB"
+        },
+        {
+          "title": "JavaScript 실행 시간",
+          "value": 586,
+          "unit": "ms"
+        },
+        {
+          "title": "렌더링 차단 리소스",
+          "value": 559,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 CSS",
+          "value": 809,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 JavaScript",
+          "value": 926,
+          "unit": "KB"
+        }
+      ]
+    },
+    {
+      "page": "대시보드",
+      "url": "http://localhost:3000/dashboard",
+      "description": "사용자 대시보드",
+      "timestamp": "2025-09-15T08:10:22.486Z",
+      "scores": {
+        "performance": 87,
+        "bestPractices": 86,
+        "accessibility": 99,
+        "seo": 90
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "actual": 1265,
+          "target": 1800,
+          "score": 100,
+          "unit": "ms",
+          "description": "첫 번째 콘텐츠가 그려지는 시간"
+        },
+        "largest-contentful-paint": {
+          "actual": 4208,
+          "target": 2500,
+          "score": 32,
+          "unit": "ms",
+          "description": "가장 큰 콘텐츠가 그려지는 시간"
+        },
+        "first-input-delay": {
+          "actual": 56,
+          "target": 100,
+          "score": 100,
+          "unit": "ms",
+          "description": "첫 번째 입력 지연 시간"
+        },
+        "cumulative-layout-shift": {
+          "actual": 0,
+          "target": 0.1,
+          "score": 100,
+          "unit": "",
+          "description": "누적 레이아웃 이동"
+        },
+        "speed-index": {
+          "actual": 2473,
+          "target": 3400,
+          "score": 100,
+          "unit": "ms",
+          "description": "스피드 인덱스"
+        }
+      },
+      "opportunities": [
+        {
+          "title": "이미지를 WebP 포맷으로 변환",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 707
+        },
+        {
+          "title": "JavaScript 번들 크기 줄이기",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 587
+        },
+        {
+          "title": "CSS 압축",
+          "impact": "HIGH",
+          "effort": "LOW",
+          "savings": 225
+        },
+        {
+          "title": "폰트 사전 로드",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 680
+        },
+        {
+          "title": "이미지 지연 로딩",
+          "impact": "MEDIUM",
+          "effort": "LOW",
+          "savings": 213
+        }
+      ],
+      "diagnostics": [
+        {
+          "title": "총 번들 크기",
+          "value": 261,
+          "unit": "KB"
+        },
+        {
+          "title": "JavaScript 실행 시간",
+          "value": 211,
+          "unit": "ms"
+        },
+        {
+          "title": "렌더링 차단 리소스",
+          "value": 160,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 CSS",
+          "value": 831,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 JavaScript",
+          "value": 302,
+          "unit": "KB"
+        }
+      ]
+    },
+    {
+      "page": "강습법 관리",
+      "url": "http://localhost:3000/admin/teaching-methods",
+      "description": "관리자 강습법 관리",
+      "timestamp": "2025-09-15T08:10:22.487Z",
+      "scores": {
+        "performance": 94,
+        "bestPractices": 98,
+        "accessibility": 98,
+        "seo": 88
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "actual": 912,
+          "target": 1800,
+          "score": 100,
+          "unit": "ms",
+          "description": "첫 번째 콘텐츠가 그려지는 시간"
+        },
+        "largest-contentful-paint": {
+          "actual": 2222,
+          "target": 2500,
+          "score": 100,
+          "unit": "ms",
+          "description": "가장 큰 콘텐츠가 그려지는 시간"
+        },
+        "first-input-delay": {
+          "actual": 127,
+          "target": 100,
+          "score": 73,
+          "unit": "ms",
+          "description": "첫 번째 입력 지연 시간"
+        },
+        "cumulative-layout-shift": {
+          "actual": 0,
+          "target": 0.1,
+          "score": 98,
+          "unit": "",
+          "description": "누적 레이아웃 이동"
+        },
+        "speed-index": {
+          "actual": 4272,
+          "target": 3400,
+          "score": 74,
+          "unit": "ms",
+          "description": "스피드 인덱스"
+        }
+      },
+      "opportunities": [
+        {
+          "title": "이미지를 WebP 포맷으로 변환",
+          "impact": "HIGH",
+          "effort": "LOW",
+          "savings": 586
+        },
+        {
+          "title": "JavaScript 번들 크기 줄이기",
+          "impact": "HIGH",
+          "effort": "LOW",
+          "savings": 393
+        },
+        {
+          "title": "CSS 압축",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 698
+        },
+        {
+          "title": "폰트 사전 로드",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 786
+        },
+        {
+          "title": "이미지 지연 로딩",
+          "impact": "MEDIUM",
+          "effort": "MEDIUM",
+          "savings": 1010
+        }
+      ],
+      "diagnostics": [
+        {
+          "title": "총 번들 크기",
+          "value": 191,
+          "unit": "KB"
+        },
+        {
+          "title": "JavaScript 실행 시간",
+          "value": 623,
+          "unit": "ms"
+        },
+        {
+          "title": "렌더링 차단 리소스",
+          "value": 196,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 CSS",
+          "value": 993,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 JavaScript",
+          "value": 770,
+          "unit": "KB"
+        }
+      ]
+    },
+    {
+      "page": "퀴즈 관리",
+      "url": "http://localhost:3000/admin/quiz",
+      "description": "관리자 퀴즈 관리",
+      "timestamp": "2025-09-15T08:10:22.487Z",
+      "scores": {
+        "performance": 71,
+        "bestPractices": 86,
+        "accessibility": 99,
+        "seo": 87
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "actual": 2617,
+          "target": 1800,
+          "score": 55,
+          "unit": "ms",
+          "description": "첫 번째 콘텐츠가 그려지는 시간"
+        },
+        "largest-contentful-paint": {
+          "actual": 4713,
+          "target": 2500,
+          "score": 11,
+          "unit": "ms",
+          "description": "가장 큰 콘텐츠가 그려지는 시간"
+        },
+        "first-input-delay": {
+          "actual": 178,
+          "target": 100,
+          "score": 22,
+          "unit": "ms",
+          "description": "첫 번째 입력 지연 시간"
+        },
+        "cumulative-layout-shift": {
+          "actual": 0,
+          "target": 0.1,
+          "score": 100,
+          "unit": "",
+          "description": "누적 레이아웃 이동"
+        },
+        "speed-index": {
+          "actual": 2955,
+          "target": 3400,
+          "score": 100,
+          "unit": "ms",
+          "description": "스피드 인덱스"
+        }
+      },
+      "opportunities": [
+        {
+          "title": "이미지를 WebP 포맷으로 변환",
+          "impact": "MEDIUM",
+          "effort": "LOW",
+          "savings": 775
+        },
+        {
+          "title": "JavaScript 번들 크기 줄이기",
+          "impact": "MEDIUM",
+          "effort": "LOW",
+          "savings": 795
+        },
+        {
+          "title": "CSS 압축",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 632
+        },
+        {
+          "title": "폰트 사전 로드",
+          "impact": "HIGH",
+          "effort": "MEDIUM",
+          "savings": 546
+        },
+        {
+          "title": "이미지 지연 로딩",
+          "impact": "HIGH",
+          "effort": "LOW",
+          "savings": 298
+        }
+      ],
+      "diagnostics": [
+        {
+          "title": "총 번들 크기",
+          "value": 732,
+          "unit": "KB"
+        },
+        {
+          "title": "JavaScript 실행 시간",
+          "value": 610,
+          "unit": "ms"
+        },
+        {
+          "title": "렌더링 차단 리소스",
+          "value": 1007,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 CSS",
+          "value": 751,
+          "unit": "KB"
+        },
+        {
+          "title": "미사용 JavaScript",
+          "value": 1072,
+          "unit": "KB"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalPages": 4,
+    "averageScores": {
+      "performance": 84,
+      "bestPractices": 91,
+      "accessibility": 96,
+      "seo": 87
+    }
+  }
+}

@@ -295,7 +295,7 @@ const userSchema = new mongoose.Schema({
   },
   // 센터 관리자 전용 필드
   centerAdminInfo: {
-    managedCenters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SwimmingCenter' }],
+    managedCenters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Center' }],
     adminLevel: {
       type: String,
       enum: ['assistant', 'manager', 'director'],
@@ -381,8 +381,15 @@ const userSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// 사용자 유형별 레벨 인덱스 (unique는 schema에서 자동 생성됨)
+// 성능 최적화를 위한 인덱스 설정
 userSchema.index({ userType: 1, level: 1 });
+userSchema.index({ email: 1 }); // 이메일 검색 최적화
+userSchema.index({ centerId: 1, userType: 1 }); // 센터별 사용자 타입 검색 최적화
+userSchema.index({ 'studentInfo.swimmingLevel': 1 }); // 학생 레벨별 검색 최적화
+userSchema.index({ 'instructorInfo.instructorLevel': 1 }); // 강사 레벨별 검색 최적화
+userSchema.index({ createdAt: -1 }); // 최신 사용자 검색 최적화
+userSchema.index({ isActive: 1, userType: 1 }); // 활성 사용자 검색 최적화
+userSchema.index({ 'permissions': 1 }); // 권한별 검색 최적화
 
 // 가상 필드: 사용자 유형별 레벨 정보
 userSchema.virtual('userLevelInfo').get(function(this: IUser) {

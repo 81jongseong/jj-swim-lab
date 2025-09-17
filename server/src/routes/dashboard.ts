@@ -26,10 +26,10 @@ router.get('/stats', async (req: Request, res: Response) => {
     console.log('📊 대시보드 통계 요청 받음');
 
     // 전체 사용자 수 (활성 상태만)
-    const totalUsers = await User.countDocuments({ status: 'active' });
+    const totalUsers = await User.countDocuments({ isActive: true });
     
     // 활성 강습 과정 수
-    const activeCourses = await Course.countDocuments({ status: 'active' });
+    const activeCourses = await Course.countDocuments({ isActive: true });
     
     // 총 매출액 (완료된 결제만)
     const totalRevenue = await Payment.aggregate([
@@ -46,34 +46,27 @@ router.get('/stats', async (req: Request, res: Response) => {
     // 승인 대기 건수
     const pendingApprovals = await Approval.countDocuments({ status: 'pending' });
     
-    // 강사별 학생 수 통계
-    const instructorStats = await User.aggregate([
-      { $match: { userType: 'instructor', status: 'active' } },
-      { $lookup: {
-        from: 'users',
-        localField: '_id',
-        foreignField: 'instructorId',
-        as: 'students'
-      }},
-      { $project: {
-        name: 1,
-        studentCount: { $size: '$students' }
-      }}
-    ]);
+    // 강사별 학생 수 통계 (현재는 기본값으로 설정)
+    const instructorStats = await User.find({ 
+      userType: 'instructor', 
+      isActive: true 
+    }).select('name instructorInfo.currentStudents').lean();
+    
+    const instructorStatsFormatted = instructorStats.map(instructor => ({
+      name: instructor.name,
+      studentCount: instructor.instructorInfo?.currentStudents || 0
+    }));
     
     // 과정별 등록 현황
-    const courseStats = await Course.aggregate([
-      { $match: { status: 'active' } },
-      { $project: {
-        name: 1,
-        enrollmentRate: { 
-          $multiply: [
-            { $divide: ['$currentStudents', '$maxStudents'] }, 
-            100
-          ]
-        }
-      }}
-    ]);
+    const courseStats = await Course.find({ 
+      isActive: true 
+    }).select('name classInfo.currentEnrollment classInfo.maxCapacity').lean();
+    
+    const courseStatsFormatted = courseStats.map(course => ({
+      name: course.name,
+      enrollmentRate: course.classInfo?.maxCapacity > 0 ? 
+        Math.round((course.classInfo?.currentEnrollment || 0) / course.classInfo.maxCapacity * 100) : 0
+    }));
 
     const dashboardStats = {
       totalUsers,
@@ -81,8 +74,8 @@ router.get('/stats', async (req: Request, res: Response) => {
       totalRevenue: revenue,
       activeBookings,
       pendingApprovals,
-      instructorStats,
-      courseStats
+      instructorStats: instructorStatsFormatted,
+      courseStats: courseStatsFormatted
     };
 
     console.log('✅ 대시보드 통계 생성 완료:', {

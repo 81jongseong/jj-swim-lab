@@ -1,0 +1,134 @@
+name: 🏊‍♂️ JJ Swim Lab - 완전 검증 파이프라인
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate:
+    name: 🔍 완전 검증
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Node.js 설정
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 의존성 설치
+      run: npm ci
+      
+    - name: 🔍 자동 테스트 갱신
+      run: node scripts/auto-refresh-tests.js
+      
+    - name: 🔧 TypeScript 타입 검사
+      run: |
+        cd client && npm run type-check
+        cd ../server && npm run type-check
+        
+    - name: 🧹 ESLint 검사 (SonarJS 포함)
+      run: |
+        cd client && npm run lint
+        cd ../server && npm run lint
+        
+    - name: 🧪 Jest 테스트
+      run: |
+        cd client && npm test
+        cd ../server && npm test
+        
+    - name: 🛡️ 보안 감사
+      run: npm audit --audit-level moderate
+      
+    - name: 📦 번들 분석
+      run: cd client && npm run analyze
+      
+    - name: 🏗️ 빌드 테스트
+      run: npm run build
+      
+    - name: 🎭 E2E 테스트
+      run: |
+        cd client
+        npx playwright install
+        npm run test:e2e
+        
+    - name: 🎯 버튼 테스트
+      run: cd client && npm run test:buttons
+      
+    - name: 🔍 코드 품질 분석
+      run: node scripts/code-quality-check.js
+      
+    - name: 📊 결과 업로드
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          client/test-results/
+          client/coverage/
+          server/coverage/
+        retention-days: 7
+
+  security:
+    name: 🛡️ 보안 검사
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Node.js 설정
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: 📦 의존성 설치
+      run: npm ci
+      
+    - name: 🔒 보안 감사 (엄격)
+      run: npm audit --audit-level high
+      
+    - name: 🔍 CodeQL 분석
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript,typescript
+        
+    - name: 🔍 CodeQL 자동 빌드
+      uses: github/codeql-action/autobuild@v3
+      
+    - name: 🔍 CodeQL 분석 실행
+      uses: github/codeql-action/analyze@v3
+
+  performance:
+    name: ⚡ 성능 테스트
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Node.js 설정
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: 📦 의존성 설치
+      run: npm ci
+      
+    - name: 🏗️ 프로덕션 빌드
+      run: npm run build
+      
+    - name: 📊 번들 크기 분석
+      run: cd client && npm run analyze
+      
+    - name: ⚡ Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v10
+      with:
+        configPath: './.lighthouserc.json'
+        uploadArtifacts: true
+        temporaryPublicStorage: true

@@ -91,6 +91,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import mongoose from 'mongoose';
 import path from 'path';
 import { createServer } from 'http';
@@ -102,6 +103,9 @@ import { securityMiddleware } from './middleware/security';
 import { authMiddleware } from './middleware/auth';
 import { createValidationMiddleware } from './middleware/validation';
 import { errorHandler, notFoundHandler } from './utils/errorHandler';
+import { cache } from './middleware/cache';
+import { apiMonitoring, userActivityTracking, securityEventTracking, errorTracking } from './middleware/monitoring';
+import { trackUserActivity, trackSecurityEvents } from './middleware/userActivity';
 
 // Deprecation warning 무시 설정
 process.on('warning', (warning) => {
@@ -149,7 +153,6 @@ import checklistTemplateRoutes from './routes/checklist-template';
 import classChecklistRoutes from './routes/class-checklist';
 import classesRoutes from './routes/classes';
 import studentProgressRoutes from './routes/student-progress';
-import notificationRoutes from './routes/notifications';
 import centerLevelRoutes from './routes/center-level';
 import studentLevelRoutes from './routes/student-levels';
 import instructorRoutes from './routes/instructor';
@@ -170,14 +173,41 @@ import aiExerciseRecommendationsRoutes from './routes/ai-exercise-recommendation
 import ordersRoutes from './routes/orders';
 import centerRegistrationRoutes from './routes/center-registrations';
 import centerManagementRoutes from './routes/center-management';
+// 새로운 건강정보 및 센터 소개 라우트
+import healthConfigRoutes from './routes/health-config';
+import centerIntroductionRoutes from './routes/center-introduction';
+import exerciseRoutes from './routes/exercise';
+import youtubeVideoRoutes from './routes/youtube-videos';
+import learningProgressRoutes from './routes/learning-progress';
+import recommendationRoutes from './routes/recommendations';
+import lessonPlanRoutes from './routes/lesson-plans';
+import studentGoalRoutes from './routes/student-goals';
+import notificationRoutes from './routes/notifications';
+import monitoringRoutes from './routes/monitoring';
+import backupRoutes from './routes/backup';
+import userActivityRoutes from './routes/user-activities';
+import performanceRoutes from './routes/performance';
+import advancedAIRoutes from './routes/advancedAI';
+import instructorHistoryRoutes from './routes/instructorHistory';
+import socialCommunityRoutes from './routes/socialCommunity';
+import aiTrainingPlanRoutes from './routes/aiTrainingPlan';
+import aiInjuryPredictionRoutes from './routes/aiInjuryPrediction';
+import aiPerformancePredictionRoutes from './routes/aiPerformancePrediction';
+import medicalExercisePrescriptionRoutes from './routes/medicalExercisePrescription';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
 
 // 최소한의 필수 모델만 import (무한 로딩 해결용)
+import './models/TrainingPlan';
+import './models/InjuryPrediction';
+import './models/PerformancePrediction';
+import './models/HealthAssessment';
 import './models/User';
 import './models/Checklist';
 import './models/Center';
+import './models/InstructorHistory';
+import './models/Community';
 
 console.log('📦 기본 모델 import 완료!');
 
@@ -191,6 +221,15 @@ import './models/ExerciseRecommendation';
 import './models/Order';
 import './models/Product';
 import './models/CenterRegistration';
+import './models/YouTubeVideo';
+import './models/LearningProgress';
+import './models/Recommendation';
+import './models/LessonPlan';
+import './models/StudentGoal';
+import './models/Notification';
+import './models/UserActivity';
+// 새로운 건강정보 모델
+import './models/HealthConfig';
 
 console.log('📦 모든 모델 import 완료!');
 
@@ -257,20 +296,56 @@ const PORT = process.env.PORT || 5000;
 // 보안 미들웨어 적용
 app.use(securityMiddleware);
 
+// 압축 미들웨어 (성능 최적화)
+app.use(compression({
+  level: 6, // 압축 레벨 (1-9, 6이 균형점)
+  threshold: 1024, // 1KB 이상 파일만 압축
+  filter: (req, res) => {
+    // 이미 압축된 파일은 제외
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
 // 기본 미들웨어
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 정적 파일
-app.use('/uploads', express.static('uploads'));
+// 모니터링 미들웨어 적용
+app.use(apiMonitoring);
+app.use(userActivityTracking);
+app.use(securityEventTracking);
 
-// 기본 라우트
-app.get('/', (req, res) => {
+// 사용자 활동 추적 미들웨어 적용
+app.use(trackUserActivity);
+app.use(trackSecurityEvents);
+
+// 정적 파일 (캐싱 헤더 적용)
+app.use('/uploads', express.static('uploads', {
+  maxAge: '1y', // 1년 캐시
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // 이미지 파일에 대한 추가 캐싱 설정
+    if (path.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // CSS, JS 파일에 대한 캐싱 설정
+    if (path.match(/\.(css|js)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
+// 기본 라우트 (캐싱 적용)
+app.get('/', cache({ ttl: 300 }), (req, res) => {
   res.json({ message: 'JJ Swim Lab API 서버가 실행 중입니다!' });
 });
 
-// 헬스 체크 엔드포인트
-app.get('/api/health', (req, res) => {
+// 헬스 체크 엔드포인트 (캐싱 적용)
+app.get('/api/health', cache({ ttl: 60 }), (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({
     success: true,
@@ -331,11 +406,33 @@ app.use('/api/ai/exercise-recommendations', aiExerciseRecommendationsRoutes);
 app.use('/api/shop/orders', ordersRoutes);
 app.use('/api/center-registrations', centerRegistrationRoutes);
 app.use('/api/center-management', centerManagementRoutes);
+// 새로운 건강정보 및 센터 소개 API 라우트
+app.use('/api/health-config', healthConfigRoutes);
+app.use('/api/center-introduction', centerIntroductionRoutes);
+app.use('/api/exercise', exerciseRoutes);
+app.use('/api/youtube-videos', youtubeVideoRoutes);
+app.use('/api/learning-progress', learningProgressRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/lesson-plans', lessonPlanRoutes);
+app.use('/api/student-goals', studentGoalRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/backup', backupRoutes);
+app.use('/api/user-activities', userActivityRoutes);
+app.use('/api/performance', performanceRoutes);
+app.use('/api/advanced-ai', advancedAIRoutes);
+app.use('/api/instructor-history', instructorHistoryRoutes);
+app.use('/api/social-community', socialCommunityRoutes);
+app.use('/api/ai-training-plan', aiTrainingPlanRoutes);
+app.use('/api/ai-injury-prediction', aiInjuryPredictionRoutes);
+app.use('/api/ai-performance-prediction', aiPerformancePredictionRoutes);
+app.use('/api/medical-exercise-prescription', medicalExercisePrescriptionRoutes);
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
 
 // 에러 처리 미들웨어 (마지막에 위치)
+app.use(errorTracking);
 app.use(errorHandler);
 
 // 서버 시작 (테스트 환경이 아닐 때만)

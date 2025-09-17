@@ -36,6 +36,11 @@ const courseSchema = new mongoose_1.default.Schema({
         ref: 'User',
         required: true,
     },
+    centerId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Center',
+        required: true,
+    },
     classInfo: {
         className: { type: String, required: true },
         classType: {
@@ -107,5 +112,13 @@ const courseSchema = new mongoose_1.default.Schema({
 }, {
     timestamps: true
 });
+courseSchema.index({ centerId: 1, status: 1 });
+courseSchema.index({ instructorId: 1, status: 1 });
+courseSchema.index({ 'schedule.dayOfWeek': 1, 'schedule.startTime': 1 });
+courseSchema.index({ 'level': 1, 'category': 1 });
+courseSchema.index({ 'students.studentId': 1 });
+courseSchema.index({ createdAt: -1 });
+courseSchema.index({ 'capacity.max': 1, 'capacity.current': 1 });
+courseSchema.index({ 'price.amount': 1 });
 exports.Course = mongoose_1.default.model('Course', courseSchema);
 //# sourceMappingURL=Course.js.map

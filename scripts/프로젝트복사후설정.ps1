@@ -241,9 +241,49 @@ function Test-Performance {
     }
 }
 
-# 8단계: 서버 및 클라이언트 시작
+# 8단계: 데이터베이스 샘플 데이터 생성
+function Setup-SampleData {
+    Write-Host "🗄️ 8단계: 데이터베이스 샘플 데이터 생성 중..." -ForegroundColor Blue
+    
+    if (-not $SkipSetup -or $ForceSetup) {
+        try {
+            Write-Host "📊 샘플 데이터 생성..." -ForegroundColor Cyan
+            Set-Location server
+            node scripts/fix-and-seed-data.js
+            Set-Location ..
+            Write-Host "✅ 샘플 데이터 생성 완료" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "❌ 샘플 데이터 생성 실패: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "⚠️ 데이터베이스 연결을 확인해주세요." -ForegroundColor Yellow
+        }
+    }
+}
+
+# 9단계: 통합 검증 시스템 테스트
+function Test-IntegratedValidation {
+    Write-Host "🔍 9단계: 통합 검증 시스템 테스트 중..." -ForegroundColor Blue
+    
+    if (-not $SkipSetup -or $ForceSetup) {
+        try {
+            Write-Host "📋 통합 검증 실행..." -ForegroundColor Cyan
+            if (Test-Path "check.bat") {
+                & ".\check.bat"
+                Write-Host "✅ 통합 검증 완료" -ForegroundColor Green
+            } else {
+                Write-Host "⚠️ check.bat 파일이 없습니다." -ForegroundColor Yellow
+            }
+        }
+        catch {
+            Write-Host "❌ 통합 검증 실패: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "⚠️ 통합 검증에 문제가 있지만 계속 진행합니다." -ForegroundColor Yellow
+        }
+    }
+}
+
+# 10단계: 서버 및 클라이언트 시작
 function Start-Application {
-    Write-Host "🚀 8단계: 애플리케이션 시작 중..." -ForegroundColor Blue
+    Write-Host "🚀 10단계: 애플리케이션 시작 중..." -ForegroundColor Blue
     
     Write-Host "🔌 서버를 시작합니다..." -ForegroundColor Cyan
     Start-Process -FilePath "cmd" -ArgumentList "/k", "cd server && npm run dev" -WindowStyle Normal
@@ -279,7 +319,13 @@ try {
     # 7. 성능 테스트
     Test-Performance
     
-    # 8. 애플리케이션 시작
+    # 8. 데이터베이스 샘플 데이터 생성
+    Setup-SampleData
+    
+    # 9. 통합 검증 시스템 테스트
+    Test-IntegratedValidation
+    
+    # 10. 애플리케이션 시작
     Start-Application
     
     Write-Host "🎉 JJ Swim Lab 프로젝트 설정이 완료되었습니다!" -ForegroundColor Green
@@ -290,9 +336,12 @@ try {
     Write-Host "   - 서버: http://localhost:5000" -ForegroundColor Cyan
     
     Write-Host "📋 다음 단계:" -ForegroundColor Yellow
-    Write-Host "   1. GitHub Secrets 설정" -ForegroundColor Cyan
-    Write-Host "   2. MongoDB Atlas 연결 확인" -ForegroundColor Cyan
-    Write-Host "   3. CI/CD 파이프라인 테스트" -ForegroundColor Cyan
+    Write-Host "   1. MongoDB Atlas 연결 확인" -ForegroundColor Cyan
+    Write-Host "   2. 로그인 테스트 (admin/101010, center/101010, teacher/101010, student1/101010)" -ForegroundColor Cyan
+    Write-Host "   3. 기능 테스트" -ForegroundColor Cyan
+    Write-Host "   4. 통합 검증 시스템 사용 (check.bat)" -ForegroundColor Cyan
+    Write-Host "   5. GitHub Secrets 설정" -ForegroundColor Cyan
+    Write-Host "   6. CI/CD 파이프라인 테스트" -ForegroundColor Cyan
     
     # 성공 상태로 종료
     exit 0

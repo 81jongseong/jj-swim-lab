@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import { AIConfig, IAIConfig } from '../models/AIConfig';
+import { AIConfig } from '../models/AIConfig';
 import { auth, requirePermission } from '../middleware/auth';
 import { User } from '../models/User'; // Added import for User
 import { requireRole } from '../middleware/auth'; // Added import for requireRole

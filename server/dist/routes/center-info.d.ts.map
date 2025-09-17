@@ -1,1 +1,1 @@
-{"version":3,"file":"center-info.d.ts","sourceRoot":"","sources":["../../src/routes/center-info.ts"],"names":[],"mappings":"AAAA,OAAgB,EAAqB,MAAM,EAAE,MAAM,SAAS,CAAC;AAM7D,QAAA,MAAM,MAAM,EAAE,MAAyB,CAAC;AAkNxC,eAAe,MAAM,CAAC"}
+{"version":3,"file":"center-info.d.ts","sourceRoot":"","sources":["../../src/routes/center-info.ts"],"names":[],"mappings":"AAgEA,QAAA,MAAM,MAAM,4CAAmB,CAAC;AAofhC,eAAe,MAAM,CAAC"}

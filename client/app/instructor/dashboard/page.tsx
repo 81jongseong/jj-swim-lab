@@ -51,16 +51,28 @@ const InstructorDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출로 교체 필요
-      // 현재는 샘플 데이터
-      const mockStats: DashboardStats = {
-        totalStudents: 25,
-        activeCourses: 8,
-        todayBookings: 6,
-        averageRating: 4.8,
-        totalHours: 120,
-        monthlyRevenue: 2400000,
-      };
+      
+      // 실제 API 호출
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/centers/instructor-dashboard-stats', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('통계 데이터를 가져올 수 없습니다.');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setStats(result.data);
+      } else {
+        throw new Error(result.message || '통계 데이터 조회에 실패했습니다.');
+      }
 
       const mockBookings: UpcomingBooking[] = [
         {
@@ -86,7 +98,6 @@ const InstructorDashboard: React.FC = () => {
         },
       ];
 
-      setStats(mockStats);
       setUpcomingBookings(mockBookings);
     } catch (error) {
       console.error('대시보드 데이터 로딩 실패:', error);

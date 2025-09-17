@@ -1,6 +1,12 @@
+import './models/TrainingPlan';
+import './models/InjuryPrediction';
+import './models/PerformancePrediction';
+import './models/HealthAssessment';
 import './models/User';
 import './models/Checklist';
 import './models/Center';
+import './models/InstructorHistory';
+import './models/Community';
 import './models/AIAnalysis';
 import './models/AIEvaluationCriteria';
 import './models/SmartWatchData';
@@ -10,6 +16,14 @@ import './models/ExerciseRecommendation';
 import './models/Order';
 import './models/Product';
 import './models/CenterRegistration';
+import './models/YouTubeVideo';
+import './models/LearningProgress';
+import './models/Recommendation';
+import './models/LessonPlan';
+import './models/StudentGoal';
+import './models/Notification';
+import './models/UserActivity';
+import './models/HealthConfig';
 declare const app: import("express-serve-static-core").Express;
 export { app };
 //# sourceMappingURL=index.d.ts.map

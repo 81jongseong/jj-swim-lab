@@ -6,30 +6,313 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const SwimmingCenter_1 = require("../models/SwimmingCenter");
+const Center_1 = require("../models/Center");
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
 const Payment_1 = require("../models/Payment");
 const router = express_1.default.Router();
+router.get('/dashboard-stats', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+    try {
+        const centerAdmin = await User_1.User.findById(req.user._id);
+        const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        if (!centerId) {
+            return res.status(404).json({
+                success: false,
+                message: '관리하는 센터가 없습니다.'
+            });
+        }
+        const [totalMembers, activeInstructors, activeCourses, monthlyRevenue, todayBookings, monthlyBookings, pendingApprovals] = await Promise.all([
+            User_1.User.countDocuments({
+                centerId: centerId,
+                isActive: true
+            }),
+            User_1.User.countDocuments({
+                centerId: centerId,
+                userType: 'instructor',
+                isActive: true
+            }),
+            Course_1.Course.countDocuments({
+                centerId: centerId,
+                isActive: true
+            }),
+            Payment_1.Payment.aggregate([
+                {
+                    $match: {
+                        centerId: centerId,
+                        status: 'completed',
+                        createdAt: {
+                            $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                            $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+                        }
+                    }
+                },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                date: {
+                    $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                    $lt: new Date(new Date().setHours(23, 59, 59, 999))
+                },
+                status: { $in: ['confirmed', 'pending'] }
+            }),
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                createdAt: {
+                    $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                    $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+                }
+            }),
+            User_1.User.countDocuments({
+                centerId: centerId,
+                status: 'pending_approval'
+            })
+        ]);
+        const lastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+        const thisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const [lastMonthRevenue] = await Payment_1.Payment.aggregate([
+            {
+                $match: {
+                    centerId: centerId,
+                    status: 'completed',
+                    createdAt: {
+                        $gte: lastMonth,
+                        $lt: thisMonth
+                    }
+                }
+            },
+            { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]);
+        const currentRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].total : 0;
+        const previousRevenue = lastMonthRevenue ? lastMonthRevenue.total : 0;
+        const monthlyGrowth = previousRevenue > 0 ?
+            ((currentRevenue - previousRevenue) / previousRevenue * 100) : 0;
+        const [avgRating] = await User_1.User.aggregate([
+            {
+                $match: {
+                    centerId: centerId,
+                    userType: 'student'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'evaluations',
+                    localField: '_id',
+                    foreignField: 'studentId',
+                    as: 'evaluations'
+                }
+            },
+            {
+                $unwind: '$evaluations'
+            },
+            {
+                $group: {
+                    _id: null,
+                    averageRating: { $avg: '$evaluations.rating' }
+                }
+            }
+        ]);
+        const stats = {
+            totalMembers,
+            activeInstructors,
+            activeCourses,
+            monthlyRevenue: currentRevenue,
+            todayBookings,
+            monthlyBookings,
+            pendingApprovals,
+            monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
+            averageRating: avgRating ? Math.round(avgRating.averageRating * 10) / 10 : 0
+        };
+        res.json({
+            success: true,
+            message: '센터 통계 조회 성공!',
+            data: stats
+        });
+    }
+    catch (error) {
+        console.error('센터 통계 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 통계 조회에 실패했습니다.'
+        });
+    }
+});
+router.get('/instructor-dashboard-stats', auth_1.auth, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
+    try {
+        const instructorId = req.user._id;
+        const centerId = req.user.centerId;
+        if (!centerId) {
+            return res.status(404).json({
+                success: false,
+                message: '소속 센터가 없습니다.'
+            });
+        }
+        const [totalStudents, activeCourses, todayBookings, monthlyRevenue] = await Promise.all([
+            User_1.User.countDocuments({
+                centerId: centerId,
+                userType: 'student',
+                isActive: true,
+                instructorId: instructorId
+            }),
+            Course_1.Course.countDocuments({
+                centerId: centerId,
+                instructor: instructorId,
+                status: 'active'
+            }),
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                instructorId: instructorId,
+                date: {
+                    $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                    $lt: new Date(new Date().setHours(23, 59, 59, 999))
+                },
+                status: { $in: ['confirmed', 'pending'] }
+            }),
+            Payment_1.Payment.aggregate([
+                {
+                    $match: {
+                        centerId: centerId,
+                        instructorId: instructorId,
+                        status: 'completed',
+                        createdAt: {
+                            $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                            $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+                        }
+                    }
+                },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
+        ]);
+        const currentRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].total : 0;
+        const [avgRating] = await User_1.User.aggregate([
+            {
+                $match: {
+                    centerId: centerId,
+                    userType: 'student',
+                    instructorId: instructorId
+                }
+            },
+            {
+                $lookup: {
+                    from: 'evaluations',
+                    localField: '_id',
+                    foreignField: 'studentId',
+                    as: 'evaluations'
+                }
+            },
+            {
+                $unwind: '$evaluations'
+            },
+            {
+                $group: {
+                    _id: null,
+                    averageRating: { $avg: '$evaluations.rating' }
+                }
+            }
+        ]);
+        const stats = {
+            totalStudents,
+            activeCourses,
+            todayBookings,
+            monthlyRevenue: currentRevenue,
+            averageRating: avgRating ? Math.round(avgRating.averageRating * 10) / 10 : 0,
+            totalHours: todayBookings * 1
+        };
+        res.json({
+            success: true,
+            message: '강사 통계 조회 성공!',
+            data: stats
+        });
+    }
+    catch (error) {
+        console.error('강사 통계 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '강사 통계 조회에 실패했습니다.'
+        });
+    }
+});
+router.get('/student-dashboard-stats', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const centerId = req.user.centerId;
+        if (!centerId) {
+            return res.status(404).json({
+                success: false,
+                message: '소속 센터가 없습니다.'
+            });
+        }
+        const [enrolledCourses, completedSessions, totalSessions, nextClass] = await Promise.all([
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                studentId: studentId,
+                status: { $in: ['confirmed', 'pending'] }
+            }),
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                studentId: studentId,
+                status: 'completed'
+            }),
+            Booking_1.Booking.countDocuments({
+                centerId: centerId,
+                studentId: studentId
+            }),
+            Booking_1.Booking.findOne({
+                centerId: centerId,
+                studentId: studentId,
+                status: { $in: ['confirmed', 'pending'] },
+                date: { $gte: new Date() }
+            }).sort({ date: 1 }).populate('courseId', 'name').populate('instructorId', 'name')
+        ]);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const recentBookings = await Booking_1.Booking.countDocuments({
+            centerId: centerId,
+            studentId: studentId,
+            status: 'completed',
+            date: { $gte: sevenDaysAgo }
+        });
+        const stats = {
+            enrolledCourses,
+            completedSessions,
+            totalSessions,
+            currentStreak: Math.min(recentBookings, 7),
+            averageRating: 4.5,
+            nextClass: nextClass ? `${nextClass.date} ${nextClass.startTime}` : '예정된 수업 없음',
+            achievements: Math.floor(completedSessions / 5),
+            weeklyGoal: 3
+        };
+        res.json({
+            success: true,
+            message: '학생 통계 조회 성공!',
+            data: stats
+        });
+    }
+    catch (error) {
+        console.error('학생 통계 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '학생 통계 조회에 실패했습니다.'
+        });
+    }
+});
 router.get('/my-center', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
     try {
-        if (!req.user.userId || !/^[0-9a-fA-F]{24}$/.test(req.user.userId)) {
+        if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
             return res.status(400).json({
                 success: false,
                 message: '유효하지 않은 사용자 ID입니다.'
             });
         }
-        const centerAdmin = await User_1.User.findById(req.user.userId).populate('centerAdminInfo.managedCenters');
+        const centerAdmin = await User_1.User.findById(req.user._id).populate('centerAdminInfo.managedCenters');
         if (!centerAdmin?.centerAdminInfo?.managedCenters) {
             return res.status(404).json({
                 success: false,
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const center = await SwimmingCenter_1.SwimmingCenter.findById(centerAdmin.centerAdminInfo.managedCenters[0])
-            .populate('admins', 'name email')
-            .populate('instructors', 'name email instructorInfo.experience')
-            .populate('students', 'name email studentInfo.swimmingLevel');
+        const center = await Center_1.Center.findById(centerAdmin.centerAdminInfo.managedCenters[0]);
         if (!center) {
             return res.status(404).json({
                 success: false,
@@ -52,7 +335,7 @@ router.get('/my-center', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), 
 });
 router.put('/my-center', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
     try {
-        const centerAdmin = await User_1.User.findById(req.user.userId);
+        const centerAdmin = await User_1.User.findById(req.user._id);
         if (!centerAdmin?.centerAdminInfo?.managedCenters) {
             return res.status(404).json({
                 success: false,

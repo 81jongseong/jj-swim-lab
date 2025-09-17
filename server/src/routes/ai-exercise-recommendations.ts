@@ -100,9 +100,9 @@
  * 7. 응답 데이터 반환 및 로깅
  */
 
-import express, { Request, Response, Router } from 'express';
+import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
-import ExerciseRecommendation, { IExerciseRecommendation } from '../models/ExerciseRecommendation';
+import ExerciseRecommendation from '../models/ExerciseRecommendation';
 import { auth, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -120,7 +120,7 @@ interface AuthRequest extends Request {
 router.get('/', auth, async (req: AuthRequest, res: Response) => {
   try {
     const { technique, level, category, difficulty } = req.query;
-    const user = req.user!;
+    // const user = req.user!; // 사용되지 않는 변수
     
     // 필터 조건 구성
     const filter: any = {};
@@ -184,7 +184,7 @@ router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
 // 새 운동 추천 생성
 router.post('/', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
-    const user = req.user!;
+    // const user = req.user!; // 사용되지 않는 변수
     const {
       id,
       name,

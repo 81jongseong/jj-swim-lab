@@ -53,6 +53,11 @@ const paymentSchema = new mongoose_1.default.Schema({
         type: String,
         default: '',
     },
+    centerId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Center',
+        required: true,
+    },
     processedAt: {
         type: Date,
     },

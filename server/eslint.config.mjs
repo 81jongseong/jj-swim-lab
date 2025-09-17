@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   js.configs.recommended,
@@ -76,6 +77,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
+      'sonarjs': sonarjs,
     },
     rules: {
       // TypeScript 규칙들

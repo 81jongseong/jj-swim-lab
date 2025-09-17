@@ -78,7 +78,7 @@ const userSchema = new mongoose_1.default.Schema({
         currentStudents: { type: Number, default: 0 },
     },
     centerAdminInfo: {
-        managedCenters: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'SwimmingCenter' }],
+        managedCenters: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Center' }],
         adminLevel: {
             type: String,
             enum: ['assistant', 'manager', 'director'],
@@ -159,6 +159,13 @@ const userSchema = new mongoose_1.default.Schema({
     timestamps: true
 });
 userSchema.index({ userType: 1, level: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ centerId: 1, userType: 1 });
+userSchema.index({ 'studentInfo.swimmingLevel': 1 });
+userSchema.index({ 'instructorInfo.instructorLevel': 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ isActive: 1, userType: 1 });
+userSchema.index({ 'permissions': 1 });
 userSchema.virtual('userLevelInfo').get(function () {
     switch (this.userType) {
         case 'student':

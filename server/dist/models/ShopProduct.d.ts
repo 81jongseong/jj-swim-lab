@@ -7,9 +7,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
@@ -20,9 +20,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 }> & {
@@ -33,9 +33,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 } & {
@@ -50,9 +50,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
@@ -63,9 +63,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 }>> & mongoose.FlatRecord<{
@@ -76,9 +76,9 @@ export declare const ShopProduct: mongoose.Model<{
     isActive: boolean;
     description: string;
     price: number;
+    images: string[];
     category: string;
     stock: number;
-    images: string[];
     currency: string;
     createdBy?: mongoose.Types.ObjectId;
 }> & {

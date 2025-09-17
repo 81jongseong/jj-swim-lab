@@ -5,6 +5,7 @@ export declare const ShopOrder: mongoose.Model<{
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -12,13 +13,13 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -26,13 +27,13 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -40,7 +41,6 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 } & {
     _id: mongoose.Types.ObjectId;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
@@ -51,6 +51,7 @@ export declare const ShopOrder: mongoose.Model<{
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -58,13 +59,13 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -72,13 +73,13 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
     notes: string;
     status: "pending" | "cancelled" | "paid" | "refunded";
+    user: mongoose.Types.ObjectId;
     items: mongoose.Types.DocumentArray<{
         name: string;
         price: number;
@@ -86,7 +87,6 @@ export declare const ShopOrder: mongoose.Model<{
         qty: number;
     }>;
     totalAmount: number;
-    user: mongoose.Types.ObjectId;
 }> & {
     _id: mongoose.Types.ObjectId;
 }>>;

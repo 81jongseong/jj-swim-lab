@@ -15,7 +15,7 @@
 import express from 'express';
 import { auth as authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
-import { Course } from '../models/Course';
+// import { Course } from '../models/Course'; // 사용되지 않는 import
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
 import { Approval } from '../models/Approval';

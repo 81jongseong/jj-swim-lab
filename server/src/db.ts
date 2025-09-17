@@ -94,8 +94,9 @@ import { logInfo, logError, logDatabase } from './utils/logger';
 import { optimizeConnectionPool } from './utils/performance';
 
 
-// MongoDB Atlas URI 강제 설정
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+// MongoDB Atlas URI 강제 설정 (개발용 간단 연결 문자열)
+// 환경변수 무시하고 직접 설정
+const MONGODB_URI = 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
 
 // 환경 변수 디버깅
 console.log('🔍 db.ts에서 환경 변수 확인:');
@@ -103,23 +104,28 @@ console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '�
 console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');
 console.log('   - 사용할 URI:', MONGODB_URI.substring(0, 50) + '...');
 
-// 데이터베이스 연결 최적화 설정
+// 데이터베이스 연결 최적화 설정 (성능 향상)
 const connectionOptions = {
   bufferCommands: true,
-  autoIndex: false, // 자동 인덱스 생성 비활성화
-  serverSelectionTimeoutMS: 3000, // 5초 → 3초로 단축
-  socketTimeoutMS: 15000, // 30초 → 15초로 단축
-  maxPoolSize: 10, // 5 → 10으로 증가
-  minPoolSize: 2, // 1 → 2로 증가
+  autoIndex: false, // 자동 인덱스 생성 비활성화 (성능 향상)
+  serverSelectionTimeoutMS: 2000, // 3초 → 2초로 단축 (빠른 응답)
+  socketTimeoutMS: 10000, // 15초 → 10초로 단축 (빠른 타임아웃)
+  maxPoolSize: 15, // 10 → 15로 증가 (동시 연결 증가)
+  minPoolSize: 3, // 2 → 3으로 증가 (최소 연결 보장)
   retryWrites: true,
   w: 'majority' as const,
+  // 성능 최적화 설정
+  maxIdleTimeMS: 20000, // 30초 → 20초로 단축 (메모리 절약)
+  connectTimeoutMS: 8000, // 10초 → 8초로 단축 (빠른 연결)
+  heartbeatFrequencyMS: 8000, // 10초 → 8초로 단축 (빠른 감지)
   // 추가 성능 최적화
-  maxIdleTimeMS: 30000, // 연결 유지 시간
-  connectTimeoutMS: 10000, // 연결 타임아웃
-  heartbeatFrequencyMS: 10000, // 하트비트 주기
+  compressors: ['zlib'] as ('zlib' | 'none' | 'snappy' | 'zstd')[], // 압축 활성화 (네트워크 트래픽 감소)
+  zlibCompressionLevel: 6 as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, // 압축 레벨 (1-9, 6이 균형점)
   // 개발 환경 최적화
   ...(process.env.NODE_ENV === 'development' && {
-    // bufferMaxEntries: 0, // MongoDB 6.x에서 지원하지 않음
+    // 개발 환경에서는 더 빠른 응답을 위해 타임아웃 단축
+    serverSelectionTimeoutMS: 1000,
+    socketTimeoutMS: 5000,
   })
 };
 

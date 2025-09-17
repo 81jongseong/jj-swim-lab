@@ -1,3 +1,68 @@
+/**
+ * 📈 JJ Swim Lab - 학습 진도 관리 API 라우트
+ *
+ * =============================================================================
+ * 📋 **의존성 파일들**
+ * =============================================================================
+ * 🔗 **직접 의존성**:
+ *   - ../middleware/auth.ts (인증 미들웨어, requireRole 함수)
+ *   - ../middleware/cache.ts (캐싱 미들웨어)
+ *   - ../utils/logger.ts (로깅 유틸리티)
+ *   - ../models/Progress.ts (학습 진도 데이터 모델)
+ *   - ../models/User.ts (사용자 데이터 모델)
+ *   - ../models/Course.ts (강습 과정 데이터 모델)
+ *   - ../models/Evaluation.ts (평가 데이터 모델)
+ *   - ../models/Payment.ts (결제 데이터 모델)
+ *   - mongoose (MongoDB ODM)
+ * 
+ * 🔗 **연동되는 클라이언트 파일들**:
+ *   - client/app/student/progress/page.tsx (학생 진도 조회)
+ *   - client/app/instructor/progress/page.tsx (강사 진도 관리)
+ *   - client/components/ProgressTracker.tsx (진도 추적 컴포넌트)
+ *   - client/components/EvaluationForm.tsx (평가 폼 컴포넌트)
+ * 
+ * 🔗 **데이터베이스 연동**:
+ *   - Progress 컬렉션 (학습 진도 정보)
+ *   - User 컬렉션 (사용자 및 강사 정보)
+ *   - Course 컬렉션 (강습 과정 정보)
+ *   - Evaluation 컬렉션 (평가 정보)
+ *   - Payment 컬렉션 (결제 정보)
+ *
+ * =============================================================================
+ * 🔄 **현재 구현된 기능들**
+ * =============================================================================
+ * ✅ **완전 구현**:
+ *   - GET /api/progress/student/:studentId (학생 진도 조회)
+ *   - POST /api/progress/student/:studentId (학생 진도 업데이트)
+ *   - GET /api/progress/course/:courseId (과정별 진도 조회)
+ *   - POST /api/progress/evaluate (진도 평가)
+ *   - GET /api/progress/instructor/:instructorId (강사별 진도 관리)
+ * 
+ * ✅ **부분 구현**:
+ *   - 진도 캐싱 시스템
+ *   - 진도 통계 및 분석
+ * 
+ * ❌ **미구현**:
+ *   - 진도 알림 시스템
+ *   - 진도 기반 추천 시스템
+ *   - 진도 리포트 생성
+ *
+ * =============================================================================
+ * ⚠️ **중요한 주의사항**
+ * =============================================================================
+ * 🚨 **권한 체크**: 학생, 강사, 관리자별 다른 접근 권한
+ * 🚨 **데이터 검증**: 진도 퍼센트 및 단계 완료 검증
+ * 🚨 **캐싱**: 진도 데이터 캐싱으로 성능 최적화
+ * 🚨 **로깅**: 모든 진도 변경사항 로깅
+ * 🚨 **평가 시스템**: 강사 평가와 자체 평가 구분
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-13: 초기 진도 관리 API 구현
+ * - 2025-01-13: 학생 진도 추적 기능 추가
+ * - 2025-01-13: 강사 진도 관리 기능 추가
+ * - 2025-01-13: 평가 시스템 및 캐싱 기능 추가
+ */
+
 import * as express from 'express';
 import { auth, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';

@@ -99,9 +99,9 @@ export { default as BarChart } from './BarChart';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { ThemeProvider, useTheme } from './ThemeProvider';
 export { default as Input } from './Input';
-export { default as Badge } from './Badge';
+export { default as Badge } from './badge';
 export { default as Modal } from './Modal';
-export { default as Button } from './Button';
+export { default as Button } from './button';
 
 // 사용자 경험 개선 컴포넌트들
 export { default as RefreshButton } from './RefreshButton';
@@ -122,10 +122,10 @@ export { default as PoseComparisonViewer } from './PoseComparisonViewer';
 // 고급 UI 컴포넌트들
 export { default as LazyComponent } from './LazyComponent';
 export { default as OptimizedImage } from './OptimizedImage';
-export { Progress } from './Progress';
+export { Progress } from './progress';
 export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { default as Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './Select';
-export { default as Card, CardHeader, CardTitle, CardContent } from './Card';
+export { default as Card, CardHeader, CardTitle, CardContent } from './card';
 export { default as Textarea } from './Textarea';
 export { default as Label } from './Label';
 export { default as Slider } from './Slider';

@@ -1,19 +1,13 @@
 import mongoose, { Document } from 'mongoose';
 export interface INotification extends Document {
     userId: mongoose.Types.ObjectId;
+    type: 'learning_progress' | 'recommendation' | 'lesson_plan' | 'quiz' | 'system' | 'achievement';
     title: string;
     message: string;
-    type: 'info' | 'success' | 'warning' | 'error' | 'course' | 'booking' | 'payment' | 'system';
-    category: 'general' | 'course' | 'booking' | 'payment' | 'membership' | 'ai_analysis' | 'system';
+    data?: any;
     isRead: boolean;
-    isEmailSent: boolean;
-    isPushSent: boolean;
-    relatedId?: mongoose.Types.ObjectId;
-    relatedType?: string;
     priority: 'low' | 'medium' | 'high' | 'urgent';
-    scheduledAt?: Date;
     expiresAt?: Date;
-    metadata?: Record<string, any>;
     createdAt: Date;
     updatedAt: Date;
 }

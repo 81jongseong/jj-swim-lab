@@ -102,8 +102,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 
 const router: Router = Router();
@@ -390,6 +390,7 @@ router.post('/login', async (req: Request, res: Response) => {
       userType: user.userType,
       email: user.email,
       name: user.name,
+      centerId: user.centerId,
       permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
     };
     
@@ -442,6 +443,7 @@ router.post('/login', async (req: Request, res: Response) => {
         email: user.email,
         userType: user.userType,
         level: user.level,
+        centerId: user.centerId,
         isActive: user.isActive,
         lastLoginAt: user.lastLoginAt,
         studentInfo: user.studentInfo,

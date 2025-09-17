@@ -33,82 +33,51 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReportSchedule = exports.GeneratedReport = exports.ReportTemplate = void 0;
+exports.Report = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const reportTemplateSchema = new mongoose_1.Schema({
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    reportType: {
+const ReportSchema = new mongoose_1.Schema({
+    period: {
         type: String,
-        enum: ['user-statistics', 'revenue-analysis', 'course-performance', 'quiz-results', 'membership-analysis'],
-        required: true
+        required: true,
+        enum: ['week', 'month', 'year']
     },
-    parameters: [{
-            name: { type: String, required: true },
-            type: {
-                type: String,
-                enum: ['date-range', 'user-type', 'center-id', 'category', 'period'],
-                required: true
-            },
-            required: { type: Boolean, default: false },
-            defaultValue: { type: mongoose_1.Schema.Types.Mixed }
-        }],
-    isActive: { type: Boolean, default: true },
-    createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true }
+    totalStudents: {
+        type: Number,
+        default: 0
+    },
+    totalRevenue: {
+        type: Number,
+        default: 0
+    },
+    totalClasses: {
+        type: Number,
+        default: 0
+    },
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5
+    },
+    newStudents: {
+        type: Number,
+        default: 0
+    },
+    retentionRate: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
+    centerId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Center',
+        required: true
+    }
 }, {
     timestamps: true
 });
-const generatedReportSchema = new mongoose_1.Schema({
-    templateId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'ReportTemplate', required: true },
-    generatedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
-    parameters: { type: mongoose_1.Schema.Types.Mixed, required: true },
-    data: { type: mongoose_1.Schema.Types.Mixed, required: true },
-    format: {
-        type: String,
-        enum: ['pdf', 'excel', 'json'],
-        required: true
-    },
-    filePath: { type: String },
-    status: {
-        type: String,
-        enum: ['generating', 'completed', 'failed'],
-        required: true
-    },
-    errorMessage: { type: String },
-    completedAt: { type: Date }
-}, {
-    timestamps: true
-});
-const reportScheduleSchema = new mongoose_1.Schema({
-    templateId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'ReportTemplate', required: true },
-    name: { type: String, required: true },
-    schedule: {
-        frequency: {
-            type: String,
-            enum: ['daily', 'weekly', 'monthly', 'quarterly'],
-            required: true
-        },
-        dayOfWeek: { type: Number, min: 0, max: 6 },
-        dayOfMonth: { type: Number, min: 1, max: 31 },
-        time: { type: String, required: true },
-        timezone: { type: String, required: true }
-    },
-    recipients: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }],
-    parameters: { type: mongoose_1.Schema.Types.Mixed, required: true },
-    isActive: { type: Boolean, default: true },
-    lastRun: { type: Date },
-    nextRun: { type: Date },
-    createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true }
-}, {
-    timestamps: true
-});
-reportTemplateSchema.index({ reportType: 1, isActive: 1 });
-reportTemplateSchema.index({ createdBy: 1 });
-generatedReportSchema.index({ templateId: 1, createdAt: -1 });
-generatedReportSchema.index({ generatedBy: 1, status: 1 });
-reportScheduleSchema.index({ isActive: 1, nextRun: 1 });
-reportScheduleSchema.index({ createdBy: 1 });
-exports.ReportTemplate = mongoose_1.default.model('ReportTemplate', reportTemplateSchema);
-exports.GeneratedReport = mongoose_1.default.model('GeneratedReport', generatedReportSchema);
-exports.ReportSchedule = mongoose_1.default.model('ReportSchedule', reportScheduleSchema);
+ReportSchema.index({ centerId: 1, period: 1 }, { unique: true });
+ReportSchema.index({ createdAt: -1 });
+exports.Report = mongoose_1.default.model('Report', ReportSchema);
 //# sourceMappingURL=Report.js.map

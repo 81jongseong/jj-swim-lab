@@ -21,13 +21,13 @@
  * - 보안 모니터링 데이터
  * 
  * 🛠️ **필요한 설치 파일**
- * - xlsx 라이브러리 (최신 버전)
+ * - exceljs 라이브러리 (보안 강화된 Excel 처리)
  * - 파일 시스템 모듈
  * - 로깅 시스템
  * - 보안 검증 도구
  * 
  * ⚠️ **개발 시 주의사항**
- * 1. xlsx 패키지의 보안 취약점 인식
+ * 1. exceljs 라이브러리 사용으로 보안 취약점 해결
  * 2. 입력 데이터 검증 및 sanitization 필수
  * 3. 메모리 사용량 모니터링
  * 4. 파일 크기 및 구조 제한
@@ -48,11 +48,12 @@
  * - 2024-12-19: 입력 데이터 검증 및 sanitization 구현
  * - 2024-12-19: 메모리 사용량 제한 구현
  * - 2024-12-19: 에러 처리 및 로깅 강화 구현
+ * - 2025-01-15: exceljs 라이브러리로 마이그레이션 (보안 강화)
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (안전한 Excel 파서 완료)
+ * - 최종 수정: 2025-01-15
+ * - 상태: ✅ 완성 (exceljs 기반 안전한 Excel 파서 완료)
  * 
  * 🚀 **다음 단계**
  * - AI 기반 Excel 데이터 검증
@@ -77,14 +78,14 @@
  * 🔍 **안전한 Excel 파싱 처리 흐름**
  * 1. 파일 크기 및 형식 검증
  * 2. 파일 구조 및 메타데이터 검증
- * 3. 안전한 xlsx 라이브러리 사용
+ * 3. 안전한 exceljs 라이브러리 사용 (xlsx 대체)
  * 4. 파싱된 데이터 검증 및 sanitization
  * 5. 메모리 사용량 모니터링
  * 6. 에러 처리 및 로깅
  * 7. 안전한 데이터 반환
  */
 
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 import fs from 'fs';
 import { logError, logWarn, logInfo } from './logger';
 
@@ -181,10 +182,9 @@ export class SecureExcelParser {
   }
   
   // 워크시트 데이터 검증
-  private validateWorksheet(worksheet: XLSX.WorkSheet, sheetName: string): void {
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
-    const rowCount = range.e.r + 1;
-    const columnCount = range.e.c + 1;
+  private validateWorksheet(worksheet: ExcelJS.Worksheet, sheetName: string): void {
+    const rowCount = worksheet.rowCount;
+    const columnCount = worksheet.columnCount;
     
     if (rowCount > this.options.maxRows) {
       throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
@@ -209,25 +209,15 @@ export class SecureExcelParser {
       logInfo('Excel 파일 파싱 시작', { filePath });
       
       // 안전한 옵션으로 워크북 읽기
-      const workbook = XLSX.readFile(filePath, {
-        cellDates: false, // 날짜 자동 변환 비활성화
-        cellNF: false, // 숫자 형식 자동 변환 비활성화
-        cellStyles: false, // 스타일 정보 무시
-        sheetStubs: false, // 빈 시트 무시
-        bookDeps: false, // 의존성 정보 무시
-        bookProps: false, // 속성 정보 무시
-        bookSheets: false, // 시트 정보 무시
-        bookVBA: false, // VBA 정보 무시
-        password: '', // 암호화된 파일 처리 안함
-        WTF: false // 경고 무시
-      });
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(filePath);
       
-      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      if (!workbook.worksheets || workbook.worksheets.length === 0) {
         throw new Error('Excel 파일에 시트가 없습니다.');
       }
       
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+      const worksheet = workbook.worksheets[0];
+      const sheetName = worksheet.name;
       
       if (!worksheet) {
         throw new Error('첫 번째 시트를 읽을 수 없습니다.');
@@ -237,11 +227,25 @@ export class SecureExcelParser {
       this.validateWorksheet(worksheet, sheetName);
       
       // 데이터 추출
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1, // 배열 형태로 변환
-        defval: '', // 빈 셀 기본값
-        raw: false, // 원시 값 사용 안함
-        dateNF: 'yyyy-mm-dd' // 날짜 형식
+      const jsonData: any[][] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        const rowData: any[] = [];
+        row.eachCell((cell, colNumber) => {
+          let cellValue = cell.value;
+          
+          // 날짜 처리
+          if (cellValue instanceof Date) {
+            cellValue = cellValue.toISOString().split('T')[0]; // yyyy-mm-dd 형식
+          }
+          
+          // 빈 셀 처리
+          if (cellValue === null || cellValue === undefined) {
+            cellValue = '';
+          }
+          
+          rowData[colNumber - 1] = cellValue;
+        });
+        jsonData[rowNumber - 1] = rowData;
       });
       
       // 데이터 sanitization

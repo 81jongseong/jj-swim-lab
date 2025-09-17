@@ -7,7 +7,6 @@ module.exports = {
   plugins: [],
   rules: {
     'no-unused-vars': 'warn',
-    'no-explicit-any': 'warn',
     'no-console': 'warn'
   },
   env: {

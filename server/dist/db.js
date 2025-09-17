@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.suggestIndexes = exports.checkDatabaseHealth = exports.getDBStats = exports.disconnectDB = exports.isConnected = exports.connectDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const logger_1 = require("./utils/logger");
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+const MONGODB_URI = 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
 console.log('🔍 db.ts에서 환경 변수 확인:');
 console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
 console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');
@@ -14,16 +14,21 @@ console.log('   - 사용할 URI:', MONGODB_URI.substring(0, 50) + '...');
 const connectionOptions = {
     bufferCommands: true,
     autoIndex: false,
-    serverSelectionTimeoutMS: 3000,
-    socketTimeoutMS: 15000,
-    maxPoolSize: 10,
-    minPoolSize: 2,
+    serverSelectionTimeoutMS: 2000,
+    socketTimeoutMS: 10000,
+    maxPoolSize: 15,
+    minPoolSize: 3,
     retryWrites: true,
     w: 'majority',
-    maxIdleTimeMS: 30000,
-    connectTimeoutMS: 10000,
-    heartbeatFrequencyMS: 10000,
-    ...(process.env.NODE_ENV === 'development' && {})
+    maxIdleTimeMS: 20000,
+    connectTimeoutMS: 8000,
+    heartbeatFrequencyMS: 8000,
+    compressors: ['zlib'],
+    zlibCompressionLevel: 6,
+    ...(process.env.NODE_ENV === 'development' && {
+        serverSelectionTimeoutMS: 1000,
+        socketTimeoutMS: 5000,
+    })
 };
 mongoose_1.default.connection.on('connected', () => {
     (0, logger_1.logInfo)('✅ MongoDB 연결 성공');

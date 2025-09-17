@@ -85,5 +85,40 @@
         }
       ]
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/*", "video/*", "audio/*"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+jjswim",
+      "url": "/protocol-handler?protocol=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/file-handler",
+      "accept": {
+        "application/pdf": [".pdf"],
+        "image/*": [".png", ".jpg", ".jpeg", ".gif", ".svg"],
+        "video/*": [".mp4", ".webm", ".ogg"]
+      }
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

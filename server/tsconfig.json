@@ -1,4 +1,22 @@
 {
+  "_comment": "🔧 JJ Swim Lab - 서버 TypeScript 설정",
+  "_description": "Express.js 백엔드 서버의 TypeScript 컴파일러 설정",
+  "_dependencies": {
+    "typescript": "TypeScript 컴파일러",
+    "@types/node": "Node.js 타입 정의",
+    "@types/express": "Express.js 타입 정의",
+    "@types/mongoose": "Mongoose 타입 정의"
+  },
+  "_compilerOptions": {
+    "target": "ES2020 - 컴파일 대상 JavaScript 버전",
+    "module": "commonjs - 모듈 시스템",
+    "outDir": "./dist - 컴파일된 파일 출력 디렉토리",
+    "rootDir": "./src - 소스 파일 루트 디렉토리",
+    "strict": "false - 엄격한 타입 검사 (개발 편의성을 위해 비활성화)",
+    "sourceMap": "true - 디버깅을 위한 소스맵 생성",
+    "paths": "@/*: src/* - 경로 별칭 설정"
+  },
+  "_note": "이 파일은 서버 애플리케이션의 TypeScript 컴파일 설정을 관리합니다.",
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",

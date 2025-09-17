@@ -49,10 +49,21 @@ const bookingSchema = new mongoose_1.default.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'Course',
     },
+    centerId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Center',
+        required: true,
+    },
 }, {
     timestamps: true
 });
 bookingSchema.index({ date: 1, startTime: 1, endTime: 1 });
 bookingSchema.index({ user: 1, date: 1 });
+bookingSchema.index({ centerId: 1, date: 1, status: 1 });
+bookingSchema.index({ instructorId: 1, date: 1, status: 1 });
+bookingSchema.index({ courseId: 1, date: 1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
+bookingSchema.index({ 'payment.status': 1 });
+bookingSchema.index({ createdAt: -1 });
 exports.Booking = mongoose_1.default.model('Booking', bookingSchema);
 //# sourceMappingURL=Booking.js.map

@@ -6,12 +6,41 @@ import Button from '../../../components/ui/Button';
 import Card from '../../../components/ui/Card';
 import Input from '../../../components/ui/Input';
 import ExcelUploader from '../../../components/ExcelUploader';
+import YouTubeVideoManager from '../../../components/YouTubeVideoManager';
+
+// 강습법 카테고리 상수
+const TEACHING_METHOD_CATEGORIES = [
+  '자유형',
+  '배영',
+  '평영',
+  '접영',
+  '혼영',
+  '기초기술',
+  '호흡법',
+  '발차기',
+  '손짓',
+  '턴',
+  '스타트',
+  '안전수칙',
+  '체력향상',
+  '기타'
+] as const;
+
+// 강습법 레벨 상수
+const TEACHING_METHOD_LEVELS = [
+  { value: 'beginner', label: '초급', color: 'bg-green-100 text-green-800' },
+  { value: 'intermediate', label: '중급', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'advanced', label: '고급', color: 'bg-red-100 text-red-800' },
+  { value: '초급', label: '초급', color: 'bg-green-100 text-green-800' },
+  { value: '중급', label: '중급', color: 'bg-yellow-100 text-yellow-800' },
+  { value: '고급', label: '고급', color: 'bg-red-100 text-red-800' }
+] as const;
 
 interface TeachingMethod {
   _id: string;
   name: string;
   description: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: 'beginner' | 'intermediate' | 'advanced' | '초급' | '중급' | '고급';
   category: string;
   steps: string[];
   tips: string[];
@@ -20,6 +49,15 @@ interface TeachingMethod {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  order?: number;
+  instructorComments?: string;
+  levelChangeHistory?: Array<{
+    fromLevel: string;
+    toLevel: string;
+    changedBy: string;
+    changedAt: string;
+    reason?: string;
+  }>;
 }
 
 export default function TeachingMethodsPage() {
@@ -42,6 +80,11 @@ export default function TeachingMethodsPage() {
   const [loading, setLoading] = useState(true);
   const [steps, setSteps] = useState<string[]>([]);
   const [tips, setTips] = useState<string[]>([]);
+  const [stats, setStats] = useState<{
+    total: number;
+    byCategory: { [key: string]: number };
+    byLevel: { [key: string]: number };
+  }>({ total: 0, byCategory: {}, byLevel: {} });
 
   useEffect(() => {
     // superAdmin과 centerAdmin 모두 접근 가능
@@ -54,7 +97,30 @@ export default function TeachingMethodsPage() {
   useEffect(() => {
     console.log('🔄 methods 상태 변경 감지:', methods.length);
     filterMethods();
+    calculateStats();
   }, [methods, searchTerm, selectedLevel]);
+
+  const calculateStats = () => {
+    const byCategory: { [key: string]: number } = {};
+    const byLevel: { [key: string]: number } = {};
+
+    methods.forEach(method => {
+      // 카테고리별 통계
+      byCategory[method.category] = (byCategory[method.category] || 0) + 1;
+      
+      // 레벨별 통계
+      const levelKey = method.level === 'beginner' ? '초급' :
+                      method.level === 'intermediate' ? '중급' :
+                      method.level === 'advanced' ? '고급' : method.level;
+      byLevel[levelKey] = (byLevel[levelKey] || 0) + 1;
+    });
+
+    setStats({
+      total: methods.length,
+      byCategory,
+      byLevel
+    });
+  };
 
   useEffect(() => {
     if (editingMethod) {
@@ -474,6 +540,112 @@ export default function TeachingMethodsPage() {
           </p>
         </div>
 
+        {/* 통계 섹션 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <Card className="bg-gradient-to-r from-blue-50 to-blue-100">
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-blue-500 rounded-full">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-blue-600">총 강습법</p>
+                  <p className="text-2xl font-bold text-blue-900">{stats.total}개</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-green-50 to-green-100">
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-500 rounded-full">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-green-600">카테고리</p>
+                  <p className="text-2xl font-bold text-green-900">{Object.keys(stats.byCategory).length}개</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-50 to-purple-100">
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-3 bg-purple-500 rounded-full">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-purple-600">레벨별</p>
+                  <p className="text-2xl font-bold text-purple-900">{Object.keys(stats.byLevel).length}단계</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* 상세 통계 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📂 카테고리별 분포</h3>
+              <div className="space-y-3">
+                {Object.entries(stats.byCategory)
+                  .sort(([,a], [,b]) => b - a)
+                  .slice(0, 5)
+                  .map(([category, count]) => (
+                    <div key={category} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{category}</span>
+                      <div className="flex items-center">
+                        <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full" 
+                            style={{ width: `${(count / stats.total) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 레벨별 분포</h3>
+              <div className="space-y-3">
+                {Object.entries(stats.byLevel)
+                  .sort(([,a], [,b]) => b - a)
+                  .map(([level, count]) => (
+                    <div key={level} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{level}</span>
+                      <div className="flex items-center">
+                        <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              level === '초급' ? 'bg-green-500' :
+                              level === '중급' ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${(count / stats.total) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+
         {/* 검색 및 필터 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -594,12 +766,12 @@ export default function TeachingMethodsPage() {
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">{method.name}</h3>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    method.level === 'beginner' ? 'bg-green-100 text-green-800' :
-                    method.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-200 text-red-900'
+                    method.level === 'beginner' || method.level === '초급' ? 'bg-green-100 text-green-800' :
+                    method.level === 'intermediate' || method.level === '중급' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
                   }`}>
-                    {method.level === 'beginner' ? '초급' :
-                     method.level === 'intermediate' ? '중급' : '상급'}
+                    {method.level === 'beginner' || method.level === '초급' ? '초급' :
+                     method.level === 'intermediate' || method.level === '중급' ? '중급' : '고급'}
                   </span>
                 </div>
 
@@ -778,13 +950,19 @@ export default function TeachingMethodsPage() {
                     <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                       카테고리 *
                     </label>
-                    <Input
+                    <select
                       id="category"
                       name="category"
-                      defaultValue={editingMethod?.category}
+                      defaultValue={editingMethod?.category || '자유형'}
                       required
-                      className="w-full"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {TEACHING_METHOD_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -1047,6 +1225,17 @@ export default function TeachingMethodsPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* YouTube 비디오 섹션 */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-4">🎬 연결된 YouTube 비디오</h4>
+                    <YouTubeVideoManager 
+                      teachingMethodId={selectedMethod._id}
+                      onVideoSelect={(video) => {
+                        window.open(`https://www.youtube.com/watch?v=${video.videoId}`, '_blank');
+                      }}
+                    />
+                  </div>
 
                   <div className="flex justify-end space-x-4 pt-4 border-t">
                     <Button

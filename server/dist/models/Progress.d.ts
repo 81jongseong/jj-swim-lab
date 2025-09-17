@@ -43,11 +43,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 }, {}, {}, {}, mongoose.Document<unknown, {}, {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -92,11 +92,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 }> & {
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -141,11 +141,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 } & {
     _id: mongoose.Types.ObjectId;
 }, mongoose.Schema<any, mongoose.Model<any, any, any, any, any, any>, {}, {}, {}, {}, {
@@ -194,11 +194,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 }, mongoose.Document<unknown, {}, mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -243,11 +243,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 }>> & mongoose.FlatRecord<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
@@ -292,11 +292,11 @@ export declare const Progress: mongoose.Model<{
         score?: number;
     }[];
     notes?: string;
+    updatedBy?: mongoose.Types.ObjectId;
     center?: mongoose.Types.ObjectId;
     dueDate?: Date;
     class?: mongoose.Types.ObjectId;
     evaluationDate?: Date;
-    updatedBy?: mongoose.Types.ObjectId;
 }> & {
     _id: mongoose.Types.ObjectId;
 }>>;

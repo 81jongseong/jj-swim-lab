@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
 const express_1 = __importDefault(require("express"));
+const compression_1 = __importDefault(require("compression"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const path_1 = __importDefault(require("path"));
 const http_1 = require("http");
@@ -12,6 +13,9 @@ const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
 const security_1 = require("./middleware/security");
 const errorHandler_1 = require("./utils/errorHandler");
+const cache_1 = require("./middleware/cache");
+const monitoring_1 = require("./middleware/monitoring");
+const userActivity_1 = require("./middleware/userActivity");
 process.on('warning', (warning) => {
     if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
         return;
@@ -48,7 +52,6 @@ const checklist_template_1 = __importDefault(require("./routes/checklist-templat
 const class_checklist_1 = __importDefault(require("./routes/class-checklist"));
 const classes_1 = __importDefault(require("./routes/classes"));
 const student_progress_1 = __importDefault(require("./routes/student-progress"));
-const notifications_1 = __importDefault(require("./routes/notifications"));
 const center_level_1 = __importDefault(require("./routes/center-level"));
 const student_levels_1 = __importDefault(require("./routes/student-levels"));
 const instructor_1 = __importDefault(require("./routes/instructor"));
@@ -67,10 +70,36 @@ const ai_exercise_recommendations_1 = __importDefault(require("./routes/ai-exerc
 const orders_1 = __importDefault(require("./routes/orders"));
 const center_registrations_1 = __importDefault(require("./routes/center-registrations"));
 const center_management_1 = __importDefault(require("./routes/center-management"));
+const health_config_1 = __importDefault(require("./routes/health-config"));
+const center_introduction_1 = __importDefault(require("./routes/center-introduction"));
+const exercise_1 = __importDefault(require("./routes/exercise"));
+const youtube_videos_1 = __importDefault(require("./routes/youtube-videos"));
+const learning_progress_1 = __importDefault(require("./routes/learning-progress"));
+const recommendations_1 = __importDefault(require("./routes/recommendations"));
+const lesson_plans_1 = __importDefault(require("./routes/lesson-plans"));
+const student_goals_1 = __importDefault(require("./routes/student-goals"));
+const notifications_1 = __importDefault(require("./routes/notifications"));
+const monitoring_2 = __importDefault(require("./routes/monitoring"));
+const backup_1 = __importDefault(require("./routes/backup"));
+const user_activities_1 = __importDefault(require("./routes/user-activities"));
+const performance_1 = __importDefault(require("./routes/performance"));
+const advancedAI_1 = __importDefault(require("./routes/advancedAI"));
+const instructorHistory_1 = __importDefault(require("./routes/instructorHistory"));
+const socialCommunity_1 = __importDefault(require("./routes/socialCommunity"));
+const aiTrainingPlan_1 = __importDefault(require("./routes/aiTrainingPlan"));
+const aiInjuryPrediction_1 = __importDefault(require("./routes/aiInjuryPrediction"));
+const aiPerformancePrediction_1 = __importDefault(require("./routes/aiPerformancePrediction"));
+const medicalExercisePrescription_1 = __importDefault(require("./routes/medicalExercisePrescription"));
 console.log('📦 모델 import 시작...');
+require("./models/TrainingPlan");
+require("./models/InjuryPrediction");
+require("./models/PerformancePrediction");
+require("./models/HealthAssessment");
 require("./models/User");
 require("./models/Checklist");
 require("./models/Center");
+require("./models/InstructorHistory");
+require("./models/Community");
 console.log('📦 기본 모델 import 완료!');
 require("./models/AIAnalysis");
 require("./models/AIEvaluationCriteria");
@@ -81,6 +110,14 @@ require("./models/ExerciseRecommendation");
 require("./models/Order");
 require("./models/Product");
 require("./models/CenterRegistration");
+require("./models/YouTubeVideo");
+require("./models/LearningProgress");
+require("./models/Recommendation");
+require("./models/LessonPlan");
+require("./models/StudentGoal");
+require("./models/Notification");
+require("./models/UserActivity");
+require("./models/HealthConfig");
 console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
@@ -130,13 +167,40 @@ io.on('connection', (socket) => {
 });
 const PORT = process.env.PORT || 5000;
 app.use(security_1.securityMiddleware);
+app.use((0, compression_1.default)({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression_1.default.filter(req, res);
+    }
+}));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
-app.use('/uploads', express_1.default.static('uploads'));
-app.get('/', (req, res) => {
+app.use(monitoring_1.apiMonitoring);
+app.use(monitoring_1.userActivityTracking);
+app.use(monitoring_1.securityEventTracking);
+app.use(userActivity_1.trackUserActivity);
+app.use(userActivity_1.trackSecurityEvents);
+app.use('/uploads', express_1.default.static('uploads', {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+        if (path.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+        if (path.match(/\.(css|js)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+    }
+}));
+app.get('/', (0, cache_1.cache)({ ttl: 300 }), (req, res) => {
     res.json({ message: 'JJ Swim Lab API 서버가 실행 중입니다!' });
 });
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (0, cache_1.cache)({ ttl: 60 }), (req, res) => {
     const dbStatus = mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected';
     res.json({
         success: true,
@@ -193,7 +257,28 @@ app.use('/api/ai/exercise-recommendations', ai_exercise_recommendations_1.defaul
 app.use('/api/shop/orders', orders_1.default);
 app.use('/api/center-registrations', center_registrations_1.default);
 app.use('/api/center-management', center_management_1.default);
+app.use('/api/health-config', health_config_1.default);
+app.use('/api/center-introduction', center_introduction_1.default);
+app.use('/api/exercise', exercise_1.default);
+app.use('/api/youtube-videos', youtube_videos_1.default);
+app.use('/api/learning-progress', learning_progress_1.default);
+app.use('/api/recommendations', recommendations_1.default);
+app.use('/api/lesson-plans', lesson_plans_1.default);
+app.use('/api/student-goals', student_goals_1.default);
+app.use('/api/notifications', notifications_1.default);
+app.use('/api/monitoring', monitoring_2.default);
+app.use('/api/backup', backup_1.default);
+app.use('/api/user-activities', user_activities_1.default);
+app.use('/api/performance', performance_1.default);
+app.use('/api/advanced-ai', advancedAI_1.default);
+app.use('/api/instructor-history', instructorHistory_1.default);
+app.use('/api/social-community', socialCommunity_1.default);
+app.use('/api/ai-training-plan', aiTrainingPlan_1.default);
+app.use('/api/ai-injury-prediction', aiInjuryPrediction_1.default);
+app.use('/api/ai-performance-prediction', aiPerformancePrediction_1.default);
+app.use('/api/medical-exercise-prescription', medicalExercisePrescription_1.default);
 app.use(errorHandler_1.notFoundHandler);
+app.use(monitoring_1.errorTracking);
 app.use(errorHandler_1.errorHandler);
 if (process.env.NODE_ENV !== 'test') {
     console.log('🚀 서버 시작 준비 중...');

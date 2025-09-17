@@ -3,6 +3,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;
@@ -17,6 +18,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;
@@ -31,6 +33,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;
@@ -49,6 +52,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;
@@ -63,6 +67,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;
@@ -77,6 +82,7 @@ export declare const Booking: mongoose.Model<{
     createdAt: NativeDate;
     updatedAt: NativeDate;
 } & {
+    centerId: mongoose.Types.ObjectId;
     startTime: string;
     endTime: string;
     notes: string;

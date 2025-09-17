@@ -135,6 +135,11 @@ const courseSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  centerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Center',
+    required: true,
+  },
   // 반 정보 추가
   classInfo: {
     className: { type: String, required: true }, // 예: "자유형 기초반 A"
@@ -208,5 +213,15 @@ const courseSchema = new mongoose.Schema({
 }, { 
   timestamps: true 
 });
+
+// 성능 최적화를 위한 인덱스 설정
+courseSchema.index({ centerId: 1, status: 1 }); // 센터별 활성 강습 검색 최적화
+courseSchema.index({ instructorId: 1, status: 1 }); // 강사별 강습 검색 최적화
+courseSchema.index({ 'schedule.dayOfWeek': 1, 'schedule.startTime': 1 }); // 시간표 검색 최적화
+courseSchema.index({ 'level': 1, 'category': 1 }); // 레벨별 카테고리 검색 최적화
+courseSchema.index({ 'students.studentId': 1 }); // 학생별 강습 검색 최적화
+courseSchema.index({ createdAt: -1 }); // 최신 강습 검색 최적화
+courseSchema.index({ 'capacity.max': 1, 'capacity.current': 1 }); // 정원별 검색 최적화
+courseSchema.index({ 'price.amount': 1 }); // 가격별 검색 최적화
 
 export const Course = mongoose.model('Course', courseSchema); 

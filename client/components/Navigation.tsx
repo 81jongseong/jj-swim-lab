@@ -191,6 +191,11 @@ const userMenuStructure = {
       { href: '/center-admin/reports', label: '📊 센터 통계' },
       { href: '/center-admin/notices', label: '📢 공지사항 관리' },
     ],
+    center: [
+      { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
+      { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
+      { href: '/center-admin/settings', label: '🔧 센터 설정' },
+    ],
     health: [
       { href: '/center-admin/health', label: '📊 센터 건강 현황' },
       { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
@@ -259,6 +264,12 @@ const userMenuStructure = {
           { href: '/admin/ai-evaluation-criteria', label: '🎯 AI 평가 기준 관리' },
           { href: '/admin/ai-exercise-database', label: '💪 AI 운동 데이터베이스' },
         ],
+    health: [
+      { href: '/admin/health-config', label: '🏥 건강정보 시스템 설정' },
+      { href: '/admin/health/overview', label: '📊 전체 건강 현황' },
+      { href: '/admin/health/statistics', label: '📈 건강 통계 분석' },
+      { href: '/admin/health/ai-config', label: '🤖 건강 AI 설정' },
+    ],
     tools: [
       { href: '/admin/3d-viewer/management', label: '⚙️ 3D 뷰어 관리' },
       { href: '/admin/3d-viewer/swimming-styles', label: '🏊‍♂️ 영법 종류 관리' },
@@ -343,6 +354,7 @@ const menuGrouping = {
   ],
   centerAdmin: [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
+    { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '🤖 AI 분석', categories: ['ai'] },
@@ -354,7 +366,8 @@ const menuGrouping = {
     { groupName: '🏢 센터 & 회원', categories: ['centers', 'users'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '💰 매출 & 승인', categories: ['revenue', 'approvals'] },
-    { groupName: '🤖 AI & 건강체크', categories: ['ai'] },
+    { groupName: '🏥 건강정보 관리', categories: ['health'] },
+    { groupName: '🤖 AI 시스템', categories: ['ai'] },
     { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
   ],
