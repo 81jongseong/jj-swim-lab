@@ -1,7 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import OpenStreetMap, { MapControls, AddressSearch } from '@/components/OpenStreetMap';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+// 동적 import로 SSR 비활성화 (hydration 오류 방지)
+const OpenStreetMap = dynamic(() => import('@/components/OpenStreetMap'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 flex items-center justify-center">🗺️ 지도 로딩중...</div>
+});
+
+const MapControls = dynamic(() => import('@/components/OpenStreetMap').then(mod => ({ default: mod.MapControls })), {
+  ssr: false
+});
+
+const AddressSearch = dynamic(() => import('@/components/OpenStreetMap').then(mod => ({ default: mod.AddressSearch })), {
+  ssr: false
+});
 
 interface SwimmingCenter {
   id: string;
@@ -17,7 +31,8 @@ interface SwimmingCenter {
 export default function MapPage() {
   const [mapCenter, setMapCenter] = useState({ lat: 37.5665, lng: 126.9780 });
   const [selectedCenter, setSelectedCenter] = useState<SwimmingCenter | null>(null);
-  const [tileLayer, setTileLayer] = useState<'osm' | 'satellite' | 'terrain' | 'dark'>('osm');
+  const [tileLayer, setTileLayer] = useState<'osm' | 'satellite'>('osm');
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
   // 샘플 수영 센터 데이터
   const swimmingCenters: SwimmingCenter[] = [
@@ -86,53 +101,51 @@ export default function MapPage() {
     }
   };
 
-  const handleTileLayerChange = (layer: 'osm' | 'satellite' | 'terrain' | 'dark') => {
+  const handleTileLayerChange = (layer: 'osm' | 'satellite') => {
     setTileLayer(layer);
   };
 
   const getTileLayerName = (layer: string) => {
     switch (layer) {
-      case 'osm': return '일반 지도';
-      case 'satellite': return '위성 지도';
-      case 'terrain': return '지형 지도';
-      case 'dark': return '다크 모드';
-      default: return '일반 지도';
+      case 'osm': return '일반지도';
+      case 'satellite': return '위성지도';
+      default: return '일반지도';
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">수영 센터 찾기</h1>
-          <p className="text-xl text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요</p>
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-4">
+        {/* Page Header - 축소 */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">수영 센터 찾기</h1>
+          <p className="text-sm text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요</p>
         </div>
 
-        {/* Address Search */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">주소 검색</h3>
+        {/* Address Search - 축소 */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-2">주소 검색</h3>
           <AddressSearch onAddressSelect={handleAddressSelect} />
         </div>
 
         {/* Map Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Map */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Map - 더 넓게 */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow p-2">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">지도</h3>
                 <div className="text-sm text-gray-500">
                   현재: {getTileLayerName(tileLayer)}
                 </div>
               </div>
               
-              <div className="relative">
+              <div className="relative w-full" style={{ height: '80vh', minHeight: '600px' }}>
                 <OpenStreetMap
                   center={mapCenter}
                   zoom={13}
                   width="100%"
-                  height="600px"
+                  height="100%"
                   markers={swimmingCenters.map(center => ({
                     id: center.id,
                     position: center.position,
@@ -159,24 +172,25 @@ export default function MapPage() {
                   }))}
                   onMarkerClick={handleMarkerClick}
                   onMapClick={() => setSelectedCenter(null)}
-                  className="rounded-lg border border-gray-200"
+                  className="rounded-lg border border-gray-200 w-full h-full"
                   tileLayer={tileLayer}
+                  onMapReady={setMapInstance}
                 />
                 
                 <MapControls 
-                  map={null}
+                  map={mapInstance}
                   onTileLayerChange={handleTileLayerChange}
                 />
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar - 컴팩트 */}
+          <div className="space-y-4">
             {/* Selected Center Info */}
             {selectedCenter && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">선택된 센터</h3>
+              <div className="bg-white rounded-lg shadow p-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">선택된 센터</h3>
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-gray-900 text-lg">{selectedCenter.name}</h4>
@@ -216,9 +230,9 @@ export default function MapPage() {
             )}
 
             {/* All Centers List */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">모든 센터</h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">모든 센터</h3>
+              <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
                 {swimmingCenters.map((center) => (
                   <div 
                     key={center.id}
@@ -259,8 +273,8 @@ export default function MapPage() {
             </div>
 
             {/* Map Controls Info */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">지도 사용법</h3>
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">지도 사용법</h3>
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <span className="text-blue-600">🗺️</span>

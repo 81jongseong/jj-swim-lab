@@ -86,7 +86,7 @@ import mongoose from 'mongoose';
 import { CenterInfo } from '../models/CenterInfo';
 import { User } from '../models/User';
 import CenterRegistration from '../models/CenterRegistration';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -100,7 +100,7 @@ interface AuthRequest extends Request {
 }
 
 // 모든 센터 목록 조회 (관리자용)
-router.get('/', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { status, page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     
@@ -176,7 +176,7 @@ router.get('/', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequ
 });
 
 // 특정 센터 상세 정보 조회
-router.get('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -245,7 +245,7 @@ router.get('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin']), as
 });
 
 // 센터 상태 변경
-router.patch('/:id/status', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.patch('/:id/status', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status, reason } = req.body;
@@ -298,7 +298,7 @@ router.patch('/:id/status', auth, requireRole(['superAdmin', 'admin']), async (r
 });
 
 // 센터 정보 수정
-router.put('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -363,7 +363,7 @@ router.put('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin']), as
 });
 
 // 센터 삭제 (비활성화)
-router.delete('/:id', auth, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -412,7 +412,7 @@ router.delete('/:id', auth, requireRole(['superAdmin']), async (req: AuthRequest
 });
 
 // 센터 통계 조회
-router.get('/stats/overview', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.get('/stats/overview', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const [centerStats, userStats, recentRegistrations] = await Promise.all([
       CenterInfo.aggregate([
@@ -466,7 +466,7 @@ router.get('/stats/overview', auth, requireRole(['superAdmin', 'admin']), async 
 });
 
 // 센터별 사용자 목록 조회
-router.get('/:id/users', auth, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id/users', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { userType, page = 1, limit = 10 } = req.query;

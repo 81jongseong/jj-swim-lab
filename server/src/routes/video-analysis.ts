@@ -10,12 +10,12 @@
 
 import express, { Request, Response } from 'express';
 import { VideoAnalysisCriteria, VideoAnalysisResult } from '../models/VideoAnalysisCriteria';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 영상 분석 기준 조회
-router.get('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/criteria', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { technique, analysisType, isActive } = req.query;
     
@@ -44,7 +44,7 @@ router.get('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAd
 });
 
 // 영상 분석 기준 생성
-router.post('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/criteria', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const criteriaData = {
       ...req.body,
@@ -71,7 +71,7 @@ router.post('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superA
 });
 
 // 영상 분석 기준 수정
-router.put('/criteria/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.put('/criteria/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = {
@@ -108,7 +108,7 @@ router.put('/criteria/:id', auth, requireRole(['instructor', 'centerAdmin', 'sup
 });
 
 // 영상 분석 기준 삭제
-router.delete('/criteria/:id', auth, requireRole(['superAdmin']), async (req: any, res: Response) => {
+router.delete('/criteria/:id', authMiddleware, requireRole(['superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -136,7 +136,7 @@ router.delete('/criteria/:id', auth, requireRole(['superAdmin']), async (req: an
 });
 
 // 영상 분석 기준 활성화/비활성화
-router.patch('/criteria/:id/toggle', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.patch('/criteria/:id/toggle', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -168,7 +168,7 @@ router.patch('/criteria/:id/toggle', auth, requireRole(['instructor', 'centerAdm
 });
 
 // 영상 분석 결과 저장
-router.post('/result', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.post('/result', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const resultData = {
       ...req.body,
@@ -194,7 +194,7 @@ router.post('/result', auth, requireRole(['instructor', 'centerAdmin']), async (
 });
 
 // 영상 분석 결과 조회
-router.get('/result', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/result', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId, technique, limit = 10, offset = 0 } = req.query;
     
@@ -244,7 +244,7 @@ router.get('/result', auth, requireRole(['student', 'instructor', 'centerAdmin']
 });
 
 // 영상 분석 결과 상세 조회
-router.get('/result/:id', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/result/:id', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -281,7 +281,7 @@ router.get('/result/:id', auth, requireRole(['student', 'instructor', 'centerAdm
 });
 
 // 영상 분석 기준 템플릿 생성 (기본값)
-router.post('/criteria/template', auth, requireRole(['superAdmin']), async (req: any, res: Response) => {
+router.post('/criteria/template', authMiddleware, requireRole(['superAdmin']), async (req: any, res: Response) => {
   try {
     const { technique } = req.body;
     

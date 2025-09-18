@@ -1,12 +1,12 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { logInfo, logError } from '../utils/logger';
 
 const router: express.Router = express.Router();
 
 // 반별 학생 진행도 조회
-router.get('/class/:classId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/class/:classId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { classId } = req.params;
     
@@ -47,7 +47,7 @@ router.get('/class/:classId', auth, requireRole(['instructor', 'centerAdmin']), 
 });
 
 // 학생 진행도 업데이트
-router.put('/:studentId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { studentId } = req.params;
     const { checklistId, completedItems } = req.body;
@@ -74,7 +74,7 @@ router.put('/:studentId', auth, requireRole(['instructor', 'centerAdmin']), asyn
 });
 
 // 학생별 진행도 조회
-router.get('/student/:studentId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/student/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { studentId } = req.params;
     

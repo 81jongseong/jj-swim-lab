@@ -102,7 +102,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { EvaluationCriteria, AIEvaluationResult } from '../models/AIEvaluationCriteria';
 import ExerciseRecommendation from '../models/ExerciseRecommendation';
 import { AdvancedAIEngine } from '../utils/AdvancedAIEngine';
@@ -110,7 +110,7 @@ import { AdvancedAIEngine } from '../utils/AdvancedAIEngine';
 const router = express.Router();
 
 // 평가 기준 조회
-router.get('/evaluation-criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/evaluation-criteria', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const criteria = await EvaluationCriteria.find({ isActive: true }).sort({ technique: 1, level: 1 });
     
@@ -129,7 +129,7 @@ router.get('/evaluation-criteria', auth, requireRole(['instructor', 'centerAdmin
 });
 
 // 평가 기준 생성
-router.post('/evaluation-criteria', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/evaluation-criteria', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const criteriaData = req.body;
     
@@ -164,7 +164,7 @@ router.post('/evaluation-criteria', auth, requireRole(['centerAdmin', 'superAdmi
 });
 
 // 평가 기준 수정
-router.put('/evaluation-criteria/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.put('/evaluation-criteria/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -197,7 +197,7 @@ router.put('/evaluation-criteria/:id', auth, requireRole(['centerAdmin', 'superA
 });
 
 // 평가 기준 삭제
-router.delete('/evaluation-criteria/:id', auth, requireRole(['superAdmin']), async (req: any, res: Response) => {
+router.delete('/evaluation-criteria/:id', authMiddleware, requireRole(['superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -224,7 +224,7 @@ router.delete('/evaluation-criteria/:id', auth, requireRole(['superAdmin']), asy
 });
 
 // 운동 추천 조회
-router.get('/exercise-recommendations', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/exercise-recommendations', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { category, difficulty } = req.query;
     
@@ -249,7 +249,7 @@ router.get('/exercise-recommendations', auth, requireRole(['instructor', 'center
 });
 
 // 운동 추천 생성
-router.post('/exercise-recommendations', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/exercise-recommendations', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const recommendationData = req.body;
     
@@ -271,7 +271,7 @@ router.post('/exercise-recommendations', auth, requireRole(['centerAdmin', 'supe
 });
 
 // 운동 추천 수정
-router.put('/exercise-recommendations/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.put('/exercise-recommendations/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -304,7 +304,7 @@ router.put('/exercise-recommendations/:id', auth, requireRole(['centerAdmin', 's
 });
 
 // 운동 추천 삭제
-router.delete('/exercise-recommendations/:id', auth, requireRole(['superAdmin']), async (req: any, res: Response) => {
+router.delete('/exercise-recommendations/:id', authMiddleware, requireRole(['superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -331,7 +331,7 @@ router.delete('/exercise-recommendations/:id', auth, requireRole(['superAdmin'])
 });
 
 // AI 평가 실행
-router.post('/evaluate', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/evaluate', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const evaluationInput = req.body;
     
@@ -380,7 +380,7 @@ router.post('/evaluate', auth, requireRole(['instructor', 'centerAdmin', 'superA
 });
 
 // AI 평가 결과 조회
-router.get('/evaluation-results/:studentId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/evaluation-results/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId } = req.params;
     const { technique, limit = 10 } = req.query;
@@ -408,7 +408,7 @@ router.get('/evaluation-results/:studentId', auth, requireRole(['instructor', 'c
 });
 
 // AI 평가 결과 상세 조회
-router.get('/evaluation-results/detail/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/evaluation-results/detail/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     

@@ -113,7 +113,7 @@ import { Router, Request, Response } from 'express';
 import { Course } from '../models/Course';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -1530,7 +1530,7 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
 });
 
 // 강사별 강습 과정 조회 (강사 전용)
-router.get('/my-courses', auth, requireRole(['instructor']), async (req: AuthRequest, res: Response) => {
+router.get('/my-courses', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const instructorId = req.user.userId;
     

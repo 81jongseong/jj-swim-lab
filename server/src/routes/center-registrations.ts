@@ -87,7 +87,7 @@ import mongoose from 'mongoose';
 import CenterRegistration from '../models/CenterRegistration';
 import { User } from '../models/User';
 import { CenterInfo } from '../models/CenterInfo';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 // import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
@@ -152,7 +152,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // 센터 등록 신청 목록 조회 (관리자용)
-router.get('/', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { status, page = 1, limit = 10, search } = req.query;
     
@@ -203,7 +203,7 @@ router.get('/', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequ
 });
 
 // 특정 센터 등록 신청 조회
-router.get('/:id', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -242,7 +242,7 @@ router.get('/:id', auth, requireRole(['superAdmin', 'admin']), async (req: AuthR
 });
 
 // 센터 등록 신청 승인
-router.post('/:id/approve', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { comments } = req.body;
@@ -348,7 +348,7 @@ router.post('/:id/approve', auth, requireRole(['superAdmin', 'admin']), async (r
 });
 
 // 센터 등록 신청 거부
-router.post('/:id/reject', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.post('/:id/reject', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { rejectionReason, comments } = req.body;
@@ -405,7 +405,7 @@ router.post('/:id/reject', auth, requireRole(['superAdmin', 'admin']), async (re
 });
 
 // 센터 등록 신청 검토 시작
-router.post('/:id/review', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.post('/:id/review', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -457,7 +457,7 @@ router.post('/:id/review', auth, requireRole(['superAdmin', 'admin']), async (re
 });
 
 // 센터 등록 신청 통계 조회
-router.get('/stats/overview', auth, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+router.get('/stats/overview', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
   try {
     const stats = await CenterRegistration.aggregate([
       {

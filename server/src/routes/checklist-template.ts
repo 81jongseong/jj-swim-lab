@@ -1,12 +1,12 @@
 import express from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { ChecklistTemplate } from '../models/ChecklistTemplate';
 import { logInfo, logError } from '../utils/logger';
 
 const router = express.Router();
 
 // 체크리스트 템플릿 생성
-router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { name, description, levels, items, isPublic, tags } = req.body;
     const creatorId = (req as any).user?._id;
@@ -56,7 +56,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: e
 });
 
 // 사용 가능한 템플릿 목록 조회
-router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const userId = (req as any).user?._id;
     const centerId = (req as any).user?.centerId;
@@ -101,7 +101,7 @@ router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: ex
 });
 
 // 특정 템플릿 조회
-router.get('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/:templateId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
     const userId = (req as any).user?._id;
@@ -135,7 +135,7 @@ router.get('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), asy
 });
 
 // 템플릿 수정
-router.put('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:templateId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
     const { name, description, levels, items, isPublic, tags } = req.body;
@@ -182,7 +182,7 @@ router.put('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), asy
 });
 
 // 템플릿 삭제 (비활성화)
-router.delete('/:templateId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.delete('/:templateId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
     const userId = (req as any).user?._id;

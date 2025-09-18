@@ -384,7 +384,7 @@ export class AIPerformancePredictionService {
    * 체력 점수 계산
    */
   private static calculateFitnessScore(data: IPhysiologicalData): number {
-    const score = 50; // 기본값
+    let score = 50; // 기본값
     
     // VO2 Max 기반 점수
     if (data.vo2Max) {

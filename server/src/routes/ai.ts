@@ -4,12 +4,12 @@ import { EvaluationCriteria } from '../models/AIEvaluationCriteria';
 import { Checklist } from '../models/Checklist';
 import { AIEngine } from '../utils/AIEngine';
 import { AdvancedAIEngine } from '../utils/AdvancedAIEngine';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // AI 분석 결과 저장
-router.post('/analyze', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/analyze', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId, analysisType, technique, checklistData } = req.body;
     
@@ -82,7 +82,7 @@ router.post('/analyze', auth, requireRole(['instructor', 'centerAdmin', 'superAd
 });
 
 // AI 분석 결과 조회
-router.get('/analysis/:studentId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/analysis/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId } = req.params;
     const { analysisType, limit = 10 } = req.query;
@@ -118,7 +118,7 @@ router.get('/analysis/:studentId', auth, requireRole(['instructor', 'centerAdmin
 });
 
 // 학생별 AI 대시보드 데이터
-router.get('/dashboard/:studentId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/dashboard/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId } = req.params;
     
@@ -167,7 +167,7 @@ router.get('/dashboard/:studentId', auth, requireRole(['instructor', 'centerAdmi
 });
 
 // AI 분석 결과 업데이트
-router.put('/analysis/:analysisId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.put('/analysis/:analysisId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { analysisId } = req.params;
     const updateData = req.body;
@@ -203,7 +203,7 @@ router.put('/analysis/:analysisId', auth, requireRole(['instructor', 'centerAdmi
 });
 
 // AI 분석 결과 삭제
-router.delete('/analysis/:analysisId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.delete('/analysis/:analysisId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { analysisId } = req.params;
     
@@ -294,7 +294,7 @@ function calculatePerformanceMetrics(checklists: any[]): any {
 }
 
 // AI 설정 조회
-router.get('/config', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/config', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     // 기본 AI 설정 반환
     const defaultConfig = {
@@ -352,7 +352,7 @@ router.get('/config', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
 });
 
 // AI 설정 업데이트
-router.put('/config', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.put('/config', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const configData = req.body;
     
@@ -382,7 +382,7 @@ router.put('/config', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
 });
 
 // 고급 AI 평가 수행
-router.post('/evaluate', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.post('/evaluate', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const {
       studentId,
@@ -454,7 +454,7 @@ router.post('/evaluate', auth, requireRole(['instructor', 'centerAdmin', 'superA
 });
 
 // 평가 기준 조회
-router.get('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/criteria', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { technique } = req.query;
     
@@ -476,7 +476,7 @@ router.get('/criteria', auth, requireRole(['instructor', 'centerAdmin', 'superAd
 });
 
 // 평가 기준 생성/업데이트
-router.post('/criteria', auth, requireRole(['superAdmin']), async (req: any, res: Response) => {
+router.post('/criteria', authMiddleware, requireRole(['superAdmin']), async (req: any, res: Response) => {
   try {
     const criteriaData = req.body;
 

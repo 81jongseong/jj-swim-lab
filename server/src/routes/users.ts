@@ -104,7 +104,7 @@ import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { 
-  auth, 
+  authMiddleware, 
   requireRole, 
   requirePermission, 
   // requireLevel
@@ -117,7 +117,7 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // 센터 계정 전용 사용자 조회 (해당 센터의 강사와 회원만)
-router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/center-users', authMiddleware, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 20, userType, level, search, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -215,7 +215,7 @@ router.get('/center-users', auth, requireRole(['centerAdmin']), async (req: Auth
 });
 
 // 특정 사용자 조회 (GET /:id 라우트를 먼저 정의)
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
     // 디버깅 로그 출력 (콘솔 모킹으로 인해 출력되지 않을 수 있음)
     console.log('🔍 GET /:id 라우트 호출됨:', {
@@ -287,7 +287,7 @@ router.get('/:id', auth, async (req, res) => {
  * 📅 **수정 히스토리**
  * - 2025-01-13: API 엔드포인트 주석 추가
  */
-router.get('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -404,7 +404,7 @@ router.get('/', auth, requirePermission('userManagement'), async (req: AuthReque
 });
 
 // 사용자 유형별 통계 조회
-router.get('/stats/by-type', auth, requirePermission('reports'), async (req: AuthRequest, res: Response) => {
+router.get('/stats/by-type', authMiddleware, requirePermission('reports'), async (req: AuthRequest, res: Response) => {
   try {
     const stats = await User.aggregate([
       {
@@ -426,7 +426,7 @@ router.get('/stats/by-type', auth, requirePermission('reports'), async (req: Aut
 });
 
 // 레벨별 통계 조회
-router.get('/stats/by-level', auth, requirePermission('reports'), async (req, res) => {
+router.get('/stats/by-level', authMiddleware, requirePermission('reports'), async (req, res) => {
   try {
     const { userType } = req.query;
     
@@ -467,7 +467,7 @@ router.get('/stats/by-level', auth, requirePermission('reports'), async (req, re
 });
 
 // 사용자 생성
-router.post('/', auth, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { 
       name, 
@@ -541,7 +541,7 @@ router.post('/', auth, requirePermission('userManagement'), async (req: AuthRequ
 
 
 // 사용자 정보 업데이트
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { 
       name, 
@@ -641,7 +641,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // 사용자 레벨 업그레이드
-router.patch('/:id/upgrade-level', auth, requirePermission('userManagement'), async (req, res) => {
+router.patch('/:id/upgrade-level', authMiddleware, requirePermission('userManagement'), async (req, res) => {
   try {
     const { userType, newLevel } = req.body;
     
@@ -691,7 +691,7 @@ router.patch('/:id/upgrade-level', auth, requirePermission('userManagement'), as
 });
 
 // 사용자 삭제 (권한별)
-router.delete('/:id', auth, requirePermission('userManagement'), async (req, res) => {
+router.delete('/:id', authMiddleware, requirePermission('userManagement'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -715,7 +715,7 @@ router.delete('/:id', auth, requirePermission('userManagement'), async (req, res
 });
 
 // 사용자 활성화/비활성화
-router.patch('/:id/toggle-status', auth, requirePermission('userManagement'), async (req, res) => {
+router.patch('/:id/toggle-status', authMiddleware, requirePermission('userManagement'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {

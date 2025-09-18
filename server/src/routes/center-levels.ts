@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { CenterLevel } from '../models/CenterLevel';
 
 interface AuthRequest extends Request {
@@ -9,7 +9,7 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // 센터별 레벨 목록 조회
-router.get('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { centerId } = req.user;
     
@@ -42,7 +42,7 @@ router.get('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: Au
 });
 
 // 특정 센터 레벨 조회
-router.get('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { centerId } = req.user;
@@ -79,7 +79,7 @@ router.get('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req:
 });
 
 // 센터 레벨 생성
-router.post('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { centerId } = req.user;
     const { name, displayName, order, color, description } = req.body;
@@ -134,7 +134,7 @@ router.post('/', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: A
 });
 
 // 센터 레벨 수정
-router.put('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { centerId } = req.user;
@@ -194,7 +194,7 @@ router.put('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req:
 });
 
 // 센터 레벨 삭제
-router.delete('/:id', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { centerId } = req.user;

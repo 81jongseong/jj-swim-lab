@@ -11,12 +11,12 @@ import { LessonPlan } from '../models/LessonPlan';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
 import { LearningProgress } from '../models/LearningProgress';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 수업 계획 목록 조회
-router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { status, date, studentId } = req.query;
@@ -52,7 +52,7 @@ router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: an
 });
 
 // 특정 수업 계획 조회
-router.get('/:planId', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { planId } = req.params;
@@ -86,7 +86,7 @@ router.get('/:planId', auth, requireRole(['instructor', 'centerAdmin']), async (
 });
 
 // 수업 계획 생성
-router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const {
@@ -173,7 +173,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: a
 });
 
 // 수업 계획 수정
-router.put('/:planId', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.put('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { planId } = req.params;
@@ -223,7 +223,7 @@ router.put('/:planId', auth, requireRole(['instructor', 'centerAdmin']), async (
 });
 
 // 수업 계획 삭제
-router.delete('/:planId', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.delete('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { planId } = req.params;
@@ -256,7 +256,7 @@ router.delete('/:planId', auth, requireRole(['instructor', 'centerAdmin']), asyn
 });
 
 // 출석 체크
-router.put('/:planId/attendance', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.put('/:planId/attendance', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { planId } = req.params;
@@ -292,7 +292,7 @@ router.put('/:planId/attendance', auth, requireRole(['instructor', 'centerAdmin'
 });
 
 // 수업 피드백
-router.put('/:planId/feedback', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.put('/:planId/feedback', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { planId } = req.params;
@@ -328,7 +328,7 @@ router.put('/:planId/feedback', auth, requireRole(['instructor', 'centerAdmin'])
 });
 
 // 강사 통계 조회
-router.get('/stats/instructor', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/stats/instructor', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
 
@@ -380,7 +380,7 @@ router.get('/stats/instructor', auth, requireRole(['instructor', 'centerAdmin'])
 });
 
 // 학생별 수업 계획 조회
-router.get('/student/:studentId', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/student/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { studentId } = req.params;

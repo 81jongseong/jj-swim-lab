@@ -1,12 +1,12 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { logInfo, logError } from '../utils/logger';
 
 const router: express.Router = express.Router();
 
 // 반 목록 조회 (강사별)
-router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const userId = (req as any).user?._id;
     
@@ -65,7 +65,7 @@ router.get('/', auth, requireRole(['instructor', 'centerAdmin']), async (req: ex
 });
 
 // 반 상세 정보 조회
-router.get('/:classId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/:classId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { classId } = req.params;
     

@@ -93,16 +93,17 @@ interface HealthProfile {
   exerciseLevel?: string;
   swimmingExperience?: string;
   lastHealthCheck?: Date;
-  isPublic?: {
+  privacySettings?: {
     height: boolean;
     weight: boolean;
     bmi: boolean;
     bloodType: boolean;
     allergies: boolean;
-    medicalConditions: boolean;
+    chronicConditions: boolean;
     medications: boolean;
-    exerciseLevel: boolean;
-    swimmingExperience: boolean;
+    emergencyContact: boolean;
+    fitnessGoals: boolean;
+    activityLevel: boolean;
   };
 }
 
@@ -158,14 +159,45 @@ export default function HealthPage() {
 
   const loadHealthProfile = async () => {
     try {
-      const response = await fetch('/api/exercise/health-profile');
-      const data = await response.json();
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
       
-      if (data.success) {
+      console.log('🔍 토큰 디버깅:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        tokenStart: token?.substring(0, 20),
+        hasUser: !!savedUser,
+        user: savedUser ? JSON.parse(savedUser) : null
+      });
+      
+      if (!token) {
+        console.error('❌ 인증 토큰이 없습니다.');
+        return;
+      }
+
+      console.log('📡 API 요청 시작:', 'http://localhost:5000/api/exercise/health-profile');
+
+      const response = await fetch('http://localhost:5000/api/exercise/health-profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 응답 상태:', response.status, response.statusText);
+      
+      const data = await response.json();
+      console.log('📊 응답 데이터:', data);
+      
+      if (response.ok && data.success) {
         setHealthProfile(data.healthProfile);
+        console.log('✅ 건강 프로필 로드 성공');
+      } else {
+        console.error('❌ API 오류:', data.message || '알 수 없는 오류');
       }
     } catch (error) {
-      console.error('건강상태 로드 실패:', error);
+      console.error('💥 건강상태 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { logInfo, logError } from '../utils/logger';
 import { ClassChecklist } from '../models/ClassChecklist';
 import { ChecklistTemplate } from '../models/ChecklistTemplate';
@@ -9,7 +9,7 @@ import { TeachingMethod } from '../models/TeachingMethod';
 const router: express.Router = express.Router();
 
 // 반 체크리스트 생성 또는 업데이트 (기존 방식과 템플릿 방식 모두 지원)
-router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { classId, level, templateId, customLevel, isPrivateLesson } = req.body;
     
@@ -168,7 +168,7 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
 });
 
 // 반 체크리스트 조회
-router.get('/class/:classId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/class/:classId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { classId } = req.params;
     const { includeHidden = false } = req.query; // 숨겨진 항목 포함 여부
@@ -207,7 +207,7 @@ router.get('/class/:classId', auth, requireRole(['instructor', 'centerAdmin']), 
 });
 
 // 반 체크리스트 수정
-router.put('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:checklistId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     const { items, isActive } = req.body;
@@ -235,7 +235,7 @@ router.put('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), as
 });
 
 // 반 체크리스트 삭제
-router.delete('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.delete('/:checklistId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     
@@ -258,7 +258,7 @@ router.delete('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']),
 });
 
 // 체크리스트 항목 순서 변경 및 메시지 추가
-router.put('/:checklistId/items', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:checklistId/items', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     const { items } = req.body;
@@ -290,7 +290,7 @@ router.put('/:checklistId/items', auth, requireRole(['instructor', 'centerAdmin'
 });
 
 // 체크리스트 항목에 메시지 추가
-router.put('/:checklistId/items/:itemId/message', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:checklistId/items/:itemId/message', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId, itemId } = req.params;
     const { message } = req.body;
@@ -324,7 +324,7 @@ router.put('/:checklistId/items/:itemId/message', auth, requireRole(['instructor
 });
 
 // 개인레슨 체크리스트 항목 숨김/표시 설정
-router.put('/:checklistId/hide-items', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:checklistId/hide-items', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     const { hiddenItemIds } = req.body;
@@ -356,7 +356,7 @@ router.put('/:checklistId/hide-items', auth, requireRole(['instructor', 'centerA
 });
 
 // 개인레슨 체크리스트 커스텀 항목 추가
-router.post('/:checklistId/custom-items', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.post('/:checklistId/custom-items', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     const { customItems } = req.body;

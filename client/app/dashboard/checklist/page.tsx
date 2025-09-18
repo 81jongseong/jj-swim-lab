@@ -49,7 +49,7 @@ function MemberChecklistPage() {
       setLoading(true);
       
       // 최고관리자의 강습목록 체크리스트 가져오기
-      const response = await fetch('/api/teaching-methods', {
+      const response = await fetch('http://localhost:5000/api/teaching-methods', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ function MemberChecklistPage() {
   const loadUserProgress = async () => {
     try {
       // 학생의 체크리스트 진행상황 가져오기
-      const checklistResponse = await fetch('/api/progress/my-checklist', {
+      const checklistResponse = await fetch('http://localhost:5000/api/progress/my-checklist', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -247,18 +247,18 @@ function MemberChecklistPage() {
 
                 <div className="space-y-2">
                   <p className="text-sm text-gray-700">
-                    <span className="font-medium">단계:</span> {method.steps.length}개
+                    <span className="font-medium">단계:</span> {method.steps?.length || 0}개
                   </p>
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">순서:</span> {method.order}
                   </p>
                 </div>
 
-                {method.tips.length > 0 && (
+                {method.tips?.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-xs font-medium text-gray-500 mb-2">팁:</p>
                     <ul className="space-y-1">
-                      {method.tips.slice(0, 2).map((tip, index) => (
+                      {(method.tips || []).slice(0, 2).map((tip, index) => (
                         <li key={index} className="text-xs text-gray-600">• {tip}</li>
                       ))}
                     </ul>

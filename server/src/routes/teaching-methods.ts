@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { TeachingMethod } from '../models/TeachingMethod';
 
 interface AuthRequest extends Request {
@@ -96,7 +96,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // 강습법 생성 (강사, 센터 관리자, 총관리자만)
-router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
     
@@ -138,7 +138,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']),
 });
 
 // 강습법 수정 (생성자, 센터 관리자, 총관리자만)
-router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
@@ -192,7 +192,7 @@ router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']
 });
 
 // 강습법 삭제 (생성자, 센터 관리자, 총관리자만 - 실제 삭제)
-router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     console.log(`🗑️ 강습법 삭제 요청: ${id}`);
@@ -296,7 +296,7 @@ router.get('/stats/difficulties', async (req: Request, res: Response) => {
 });
 
 // 강습법 레벨 수정 (센터 관리자, 강사만)
-router.put('/:id/level', auth, requireRole(['centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.put('/:id/level', authMiddleware, requireRole(['centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { level, instructorComment, updatedBy } = req.body;

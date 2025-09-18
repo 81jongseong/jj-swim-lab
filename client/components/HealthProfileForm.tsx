@@ -94,6 +94,19 @@ interface HealthProfile {
   targetWeight?: number;
   targetBMI?: number;
   lastHealthCheck?: Date;
+  // 공개 설정 추가
+  privacySettings?: {
+    height: boolean;
+    weight: boolean;
+    bmi: boolean;
+    bloodType: boolean;
+    allergies: boolean;
+    chronicConditions: boolean;
+    medications: boolean;
+    emergencyContact: boolean;
+    fitnessGoals: boolean;
+    activityLevel: boolean;
+  };
 }
 
 interface HealthProfileFormProps {
@@ -107,7 +120,21 @@ export default function HealthProfileForm({
   initialData,
   showAdvanced = false
 }: HealthProfileFormProps) {
-  const [profile, setProfile] = useState<HealthProfile>(initialData || {});
+  const [profile, setProfile] = useState<HealthProfile>(initialData || {
+    // 기본 공개 설정 (안전한 정보만 공개)
+    privacySettings: {
+      height: true,
+      weight: false, // 체중은 기본 비공개
+      bmi: true,
+      bloodType: false, // 혈액형은 기본 비공개
+      allergies: false, // 알레르기는 기본 비공개
+      chronicConditions: false, // 만성질환은 기본 비공개
+      medications: false, // 복용약물은 기본 비공개
+      emergencyContact: false, // 비상연락처는 기본 비공개
+      fitnessGoals: true, // 운동목표는 기본 공개
+      activityLevel: true, // 활동수준은 기본 공개
+    }
+  });
   const [isEditing, setIsEditing] = useState(!initialData);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -141,15 +168,33 @@ export default function HealthProfileForm({
     }));
   };
 
+  // 공개 설정 토글
+  const togglePrivacySetting = (field: keyof NonNullable<HealthProfile['privacySettings']>) => {
+    setProfile(prev => ({
+      ...prev,
+      privacySettings: {
+        ...prev.privacySettings,
+        [field]: !prev.privacySettings?.[field]
+      }
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage('');
 
     try {
-      const response = await fetch('/api/exercise/health-profile', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage('인증 토큰이 없습니다. 다시 로그인해주세요.');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/exercise/health-profile', {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(profile),
@@ -320,7 +365,20 @@ export default function HealthProfileForm({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">키 (cm)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">키 (cm)</label>
+                  <button
+                    type="button"
+                    onClick={() => togglePrivacySetting('height')}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      profile.privacySettings?.height 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {profile.privacySettings?.height ? '🔓 공개' : '🔒 비공개'}
+                  </button>
+                </div>
                 <input
                   type="number"
                   value={profile.height || ''}
@@ -332,7 +390,20 @@ export default function HealthProfileForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">몸무게 (kg)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">몸무게 (kg)</label>
+                  <button
+                    type="button"
+                    onClick={() => togglePrivacySetting('weight')}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      profile.privacySettings?.weight 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {profile.privacySettings?.weight ? '🔓 공개' : '🔒 비공개'}
+                  </button>
+                </div>
                 <input
                   type="number"
                   value={profile.weight || ''}
@@ -347,7 +418,20 @@ export default function HealthProfileForm({
             
             {profile.bmi && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">BMI</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">BMI</label>
+                  <button
+                    type="button"
+                    onClick={() => togglePrivacySetting('bmi')}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      profile.privacySettings?.bmi 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {profile.privacySettings?.bmi ? '🔓 공개' : '🔒 비공개'}
+                  </button>
+                </div>
                 <div className="text-lg font-semibold text-gray-900">
                   {profile.bmi} ({getBMICategory(profile.bmi)})
                 </div>
@@ -355,7 +439,20 @@ export default function HealthProfileForm({
             )}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">혈액형</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">혈액형</label>
+                <button
+                  type="button"
+                  onClick={() => togglePrivacySetting('bloodType')}
+                  className={`text-xs px-2 py-1 rounded transition-colors ${
+                    profile.privacySettings?.bloodType 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {profile.privacySettings?.bloodType ? '🔓 공개' : '🔒 비공개'}
+                </button>
+              </div>
               <select
                 value={profile.bloodType || ''}
                 onChange={(e) => handleInputChange('bloodType', e.target.value)}
@@ -369,7 +466,20 @@ export default function HealthProfileForm({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">활동 수준</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">활동 수준</label>
+                <button
+                  type="button"
+                  onClick={() => togglePrivacySetting('activityLevel')}
+                  className={`text-xs px-2 py-1 rounded transition-colors ${
+                    profile.privacySettings?.activityLevel 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {profile.privacySettings?.activityLevel ? '🔓 공개' : '🔒 비공개'}
+                </button>
+              </div>
               <select
                 value={profile.activityLevel || ''}
                 onChange={(e) => handleInputChange('activityLevel', e.target.value)}
@@ -464,7 +574,20 @@ export default function HealthProfileForm({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">피트니스 목표</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">피트니스 목표</label>
+                <button
+                  type="button"
+                  onClick={() => togglePrivacySetting('fitnessGoals')}
+                  className={`text-xs px-2 py-1 rounded transition-colors ${
+                    profile.privacySettings?.fitnessGoals 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {profile.privacySettings?.fitnessGoals ? '🔓 공개' : '🔒 비공개'}
+                </button>
+              </div>
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <input
@@ -557,6 +680,43 @@ export default function HealthProfileForm({
               />
             </div>
           </div>
+        </div>
+
+        {/* 공개 설정 요약 */}
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <h3 className="text-sm font-semibold text-blue-800 mb-3">🔒 개인정보 공개 설정 요약</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {Object.entries(profile.privacySettings || {}).map(([key, isPublic]) => {
+              const labels: Record<string, string> = {
+                height: '키',
+                weight: '몸무게',
+                bmi: 'BMI',
+                bloodType: '혈액형',
+                allergies: '알레르기',
+                chronicConditions: '만성질환',
+                medications: '복용약물',
+                emergencyContact: '비상연락처',
+                fitnessGoals: '운동목표',
+                activityLevel: '활동수준'
+              };
+              
+              return (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-gray-700">{labels[key]}</span>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    isPublic 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {isPublic ? '🔓 공개' : '🔒 비공개'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-blue-600 mt-3">
+            💡 각 항목 옆의 버튼을 클릭하여 공개/비공개를 설정할 수 있습니다.
+          </p>
         </div>
 
         {/* 제출 버튼 */}

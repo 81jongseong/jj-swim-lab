@@ -64,7 +64,7 @@
  */
 
 import * as express from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
 import { Progress } from '../models/Progress';
@@ -96,7 +96,7 @@ const router: express.Router = express.Router();
 // ===== 강사 전용 기능 =====
 
 // 1. 강사별 학생 진도 현황 조회 (강사만)
-router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.get('/instructor/:instructorId', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { instructorId } = req.params;
     
@@ -125,7 +125,7 @@ router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async
 });
 
 // 2. 강사별 학생 체크리스트 현황 조회 (강사만)
-router.get('/instructor/:instructorId/checklist', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.get('/instructor/:instructorId/checklist', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { instructorId } = req.params;
     
@@ -157,7 +157,7 @@ router.get('/instructor/:instructorId/checklist', auth, requireRole(['instructor
 });
 
 // 3. 학생 진도 업데이트 (강사만)
-router.put('/student/:studentId', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.put('/student/:studentId', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { studentId } = req.params;
     const { courseId, skills, notes, nextGoals, completedLessons } = req.body;
@@ -218,7 +218,7 @@ router.put('/student/:studentId', auth, requireRole(['instructor']), async (req:
 });
 
 // 4. 체크리스트 생성/수정 (강사만)
-router.post('/checklist/:studentId', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.post('/checklist/:studentId', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { studentId } = req.params;
     const { courseId, checklistItems, dueDate, priority } = req.body;
@@ -268,7 +268,7 @@ router.post('/checklist/:studentId', auth, requireRole(['instructor']), async (r
 });
 
 // 5. 학생 평가 생성/수정 (강사만)
-router.post('/evaluation/:studentId', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.post('/evaluation/:studentId', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { studentId } = req.params;
     const { courseId, skills, attitude, comments } = req.body;
@@ -328,7 +328,7 @@ router.post('/evaluation/:studentId', auth, requireRole(['instructor']), async (
 });
 
 // 6. 강사별 통계 조회 (강사만)
-router.get('/instructor/:instructorId/stats', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.get('/instructor/:instructorId/stats', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const { instructorId } = req.params;
     
@@ -391,7 +391,7 @@ router.get('/instructor/:instructorId/stats', auth, requireRole(['instructor']),
 });
 
 // 7. 강사 스케줄 최적화 (강사만)
-router.get('/schedule-optimization', auth, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
+router.get('/schedule-optimization', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
     const instructor = await User.findById((req as any).user._id);
     
@@ -434,7 +434,7 @@ router.get('/schedule-optimization', auth, requireRole(['instructor']), async (r
 // ===== 학생 전용 기능 =====
 
 // 8. 내 진도 현황 조회 (학생만)
-router.get('/my-progress', auth, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
+router.get('/my-progress', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
   try {
     const progress = await Progress.find({ student: (req as any).user._id })
       .populate('course', 'name description level')
@@ -464,7 +464,7 @@ router.get('/my-progress', auth, requireRole(['student']), async (req: AuthReque
 });
 
 // 9. 체크리스트 조회 (학생만)
-router.get('/my-checklist', auth, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
+router.get('/my-checklist', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: express.Response) => {
   try {
     const checklists = await Progress.find({ 
       student: (req as any).user._id,

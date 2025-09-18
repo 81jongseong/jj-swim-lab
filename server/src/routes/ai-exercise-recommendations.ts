@@ -103,7 +103,7 @@
 import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import ExerciseRecommendation from '../models/ExerciseRecommendation';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -117,7 +117,7 @@ interface AuthRequest extends Request {
 }
 
 // 모든 운동 추천 조회
-router.get('/', auth, async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { technique, level, category, difficulty } = req.query;
     // const user = req.user!; // 사용되지 않는 변수
@@ -148,7 +148,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 특정 운동 추천 조회
-router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -182,7 +182,7 @@ router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 새 운동 추천 생성
-router.post('/', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     // const user = req.user!; // 사용되지 않는 변수
     const {
@@ -256,7 +256,7 @@ router.post('/', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instr
 });
 
 // 운동 추천 수정
-router.put('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -308,7 +308,7 @@ router.put('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'ins
 });
 
 // 운동 추천 삭제
-router.delete('/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     

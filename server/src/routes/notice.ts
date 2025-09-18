@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { auth, requirePermission } from '../middleware/auth';
+import { authMiddleware, requirePermission } from '../middleware/auth';
 import { Notice, NoticeView } from '../models/Notice';
 import { User } from '../models/User';
 
@@ -10,7 +10,7 @@ interface AuthRequest extends express.Request {
 const router: Router = express.Router();
 
 // 공지사항 목록 조회
-router.get('/', auth, async (req: AuthRequest, res) => {
+router.get('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { category, priority, isPinned, page = 1, limit = 10 } = req.query;
     const user = req.user;
@@ -62,7 +62,7 @@ router.get('/', auth, async (req: AuthRequest, res) => {
 });
 
 // 공지사항 상세 조회
-router.get('/:id', auth, async (req: AuthRequest, res) => {
+router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const notice = await Notice.findById(req.params.id)
       .populate('author', 'name email');
@@ -89,7 +89,7 @@ router.get('/:id', auth, async (req: AuthRequest, res) => {
 });
 
 // 공지사항 생성 (총관리자, 센터관리자)
-router.post('/', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.post('/', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const {
       title,
@@ -131,7 +131,7 @@ router.post('/', auth, requirePermission('noticeManagement'), async (req: AuthRe
 });
 
 // 공지사항 수정
-router.put('/:id', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.put('/:id', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const notice = await Notice.findById(req.params.id);
     if (!notice) {
@@ -158,7 +158,7 @@ router.put('/:id', auth, requirePermission('noticeManagement'), async (req: Auth
 });
 
 // 공지사항 삭제
-router.delete('/:id', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.delete('/:id', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const notice = await Notice.findById(req.params.id);
     if (!notice) {
@@ -180,7 +180,7 @@ router.delete('/:id', auth, requirePermission('noticeManagement'), async (req: A
 });
 
 // 공지사항 발행/비발행
-router.patch('/:id/publish', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.patch('/:id/publish', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const { isPublished } = req.body;
     
@@ -200,7 +200,7 @@ router.patch('/:id/publish', auth, requirePermission('noticeManagement'), async 
 });
 
 // 공지사항 고정/해제
-router.patch('/:id/pin', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.patch('/:id/pin', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const { isPinned } = req.body;
     
@@ -219,7 +219,7 @@ router.patch('/:id/pin', auth, requirePermission('noticeManagement'), async (req
 });
 
 // 사용자별 읽지 않은 공지사항 수
-router.get('/unread/count', auth, async (req: AuthRequest, res) => {
+router.get('/unread/count', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     
@@ -239,7 +239,7 @@ router.get('/unread/count', auth, async (req: AuthRequest, res) => {
 });
 
 // 공지사항 통계 (총관리자, 센터관리자)
-router.get('/stats/overview', auth, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
+router.get('/stats/overview', authMiddleware, requirePermission('noticeManagement'), async (req: AuthRequest, res) => {
   try {
     const stats = await Notice.aggregate([
       {
@@ -263,7 +263,7 @@ router.get('/stats/overview', auth, requirePermission('noticeManagement'), async
 });
 
 // 인기 공지사항 (조회수 기준)
-router.get('/popular', auth, async (req: AuthRequest, res) => {
+router.get('/popular', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { limit = 5 } = req.query;
     const user = req.user;

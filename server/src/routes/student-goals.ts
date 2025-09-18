@@ -10,12 +10,12 @@ import mongoose from 'mongoose';
 import { StudentGoal } from '../models/StudentGoal';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { LearningProgress } from '../models/LearningProgress';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 학생 목표 목록 조회
-router.get('/', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { status, priority } = req.query;
@@ -43,7 +43,7 @@ router.get('/', auth, requireRole(['student']), async (req: any, res: Response) 
 });
 
 // 특정 목표 조회
-router.get('/:goalId', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/:goalId', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { goalId } = req.params;
@@ -75,7 +75,7 @@ router.get('/:goalId', auth, requireRole(['student']), async (req: any, res: Res
 });
 
 // 목표 생성
-router.post('/', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.post('/', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const {
@@ -135,7 +135,7 @@ router.post('/', auth, requireRole(['student']), async (req: any, res: Response)
 });
 
 // 목표 수정
-router.put('/:goalId', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:goalId', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { goalId } = req.params;
@@ -183,7 +183,7 @@ router.put('/:goalId', auth, requireRole(['student']), async (req: any, res: Res
 });
 
 // 목표 삭제
-router.delete('/:goalId', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.delete('/:goalId', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { goalId } = req.params;
@@ -216,7 +216,7 @@ router.delete('/:goalId', auth, requireRole(['student']), async (req: any, res: 
 });
 
 // 마일스톤 완료 처리
-router.put('/:goalId/milestones/:milestoneIndex', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:goalId/milestones/:milestoneIndex', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { goalId, milestoneIndex } = req.params;
@@ -267,7 +267,7 @@ router.put('/:goalId/milestones/:milestoneIndex', auth, requireRole(['student'])
 });
 
 // 목표 진행률 자동 계산
-router.put('/:goalId/calculate-progress', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:goalId/calculate-progress', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { goalId } = req.params;
@@ -315,7 +315,7 @@ router.put('/:goalId/calculate-progress', auth, requireRole(['student']), async 
 });
 
 // 목표 통계 조회
-router.get('/stats/overview', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/stats/overview', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 
@@ -368,7 +368,7 @@ router.get('/stats/overview', auth, requireRole(['student']), async (req: any, r
 });
 
 // 목표 추천 생성
-router.post('/recommend', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.post('/recommend', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 

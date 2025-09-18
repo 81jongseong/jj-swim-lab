@@ -110,7 +110,6 @@ const userMenuStructure = {
     ],
     health: [
       { href: '/health', label: '🏥 건강상태 관리' },
-      { href: '/health/privacy', label: '🔒 공개 설정' },
       { href: '/health/exercise', label: '📊 운동 기록' },
       { href: '/health/ai-training', label: '🤖 AI 훈련' },
     ],

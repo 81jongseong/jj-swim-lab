@@ -11,12 +11,12 @@
 import express, { Request, Response } from 'express';
 import { SmartWatchData } from '../models/SmartWatchData';
 import { IntegratedAIEngine } from '../utils/IntegratedAIEngine';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 스마트 워치 데이터 동기화
-router.post('/sync', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.post('/sync', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const {
       sessionId,
@@ -71,7 +71,7 @@ router.post('/sync', auth, requireRole(['student', 'instructor', 'centerAdmin'])
 });
 
 // 스마트 워치 데이터 조회
-router.get('/data', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/data', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId, technique, limit = 10, offset = 0 } = req.query;
     
@@ -124,7 +124,7 @@ router.get('/data', auth, requireRole(['student', 'instructor', 'centerAdmin']),
 });
 
 // 스마트 워치 데이터 상세 조회
-router.get('/data/:sessionId', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/data/:sessionId', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const { sessionId } = req.params;
     
@@ -161,7 +161,7 @@ router.get('/data/:sessionId', auth, requireRole(['student', 'instructor', 'cent
 });
 
 // AI 분석 결과 조회
-router.get('/analysis/:sessionId', auth, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/analysis/:sessionId', authMiddleware, requireRole(['student', 'instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const { sessionId } = req.params;
     
@@ -212,7 +212,7 @@ router.get('/analysis/:sessionId', auth, requireRole(['student', 'instructor', '
 });
 
 // 통합 AI 분석 수행
-router.post('/integrated-analysis', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.post('/integrated-analysis', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const {
       studentId,

@@ -8,12 +8,12 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Notification } from '../models/Notification';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 알림 목록 조회
-router.get('/', auth, async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { page = 1, limit = 20, type, priority, isRead } = req.query;
@@ -55,7 +55,7 @@ router.get('/', auth, async (req: Request, res: Response) => {
 });
 
 // 읽지 않은 알림 개수 조회
-router.get('/unread-count', auth, async (req: Request, res: Response) => {
+router.get('/unread-count', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const count = await Notification.countDocuments({ userId, isRead: false });
@@ -75,7 +75,7 @@ router.get('/unread-count', auth, async (req: Request, res: Response) => {
 });
 
 // 알림 읽음 처리
-router.put('/:id/read', auth, async (req: Request, res: Response) => {
+router.put('/:id/read', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { id } = req.params;
@@ -115,7 +115,7 @@ router.put('/:id/read', auth, async (req: Request, res: Response) => {
 });
 
 // 모든 알림 읽음 처리
-router.put('/read-all', auth, async (req: Request, res: Response) => {
+router.put('/read-all', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
 
@@ -140,7 +140,7 @@ router.put('/read-all', auth, async (req: Request, res: Response) => {
 });
 
 // 알림 삭제
-router.delete('/:id', auth, async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { id } = req.params;
@@ -176,7 +176,7 @@ router.delete('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // 알림 생성 (관리자용)
-router.post('/', auth, requireRole(['superAdmin', 'centerAdmin']), async (req: Request, res: Response) => {
+router.post('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin']), async (req: Request, res: Response) => {
   try {
     const { userId, type, title, message, data, priority = 'medium', expiresAt } = req.body;
 

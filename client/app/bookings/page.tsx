@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ResponsiveTable, TableHeader, TableHeaderCell, TableBody } from '@/components/ui';
+// 테이블 제거 - 카드만 사용
 
 interface Booking {
   _id: string;
@@ -32,15 +32,17 @@ export default function BookingsPage() {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/bookings', {
+      const response = await fetch('http://localhost:5000/api/student/bookings', {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setBookings(data.bookings || []);
+        const result = await response.json();
+        console.log('🔍 예약 API 응답:', result);
+        setBookings(result.data || []);
       }
     } catch (error) {
       console.error('예약 목록을 가져오는데 실패했습니다:', error);
@@ -132,25 +134,17 @@ export default function BookingsPage() {
           </select>
         </div>
 
-        <ResponsiveTable>
-          <TableHeader>
-            <TableHeaderCell>사용자</TableHeaderCell>
-            <TableHeaderCell>강사</TableHeaderCell>
-            <TableHeaderCell>날짜</TableHeaderCell>
-            <TableHeaderCell>시간</TableHeaderCell>
-            <TableHeaderCell>상태</TableHeaderCell>
-            <TableHeaderCell>작업</TableHeaderCell>
-          </TableHeader>
-          <TableBody>
+        <div className="space-y-4">
           {filteredBookings.map((booking) => (
-            <div key={booking._id} className="bg-white rounded-lg shadow p-4 mb-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="font-medium">
-                    사용자: {typeof booking.user === "string" ? booking.user : booking.user?.name}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    강사: {typeof booking.instructor === "string" ? booking.instructor : booking.instructor?.name || "-"}
+            <div key={booking._id} className="bg-white rounded-lg shadow-sm p-4 mb-3 border-l-3 border-blue-500">
+              {/* 헤더 섹션 */}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">
+                    {(booking as any).courseName || '강습과정'}
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    🏊‍♂️ {(booking as any).instructorName || (typeof booking.instructor === "string" ? booking.instructor : booking.instructor?.name) || "강사"}
                   </p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
@@ -158,28 +152,75 @@ export default function BookingsPage() {
                 </span>
               </div>
               
-              <div className="text-sm text-gray-600 mb-2">
-                <p>날짜: {new Date(booking.date).toISOString().slice(0, 10)}</p>
-                <p>시간: {booking.startTime} - {booking.endTime}</p>
+              {/* 상세 정보 그리드 */}
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                <div>
+                  <p className="text-xs text-gray-900 font-medium">
+                    📅 {new Date(booking.date).toLocaleDateString('ko-KR')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-900 font-medium">
+                    ⏰ {booking.startTime}-{booking.endTime}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-900 font-medium">
+                    🏊 {(booking as any).location || '수영장'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-900 font-medium">
+                    🏊‍♀️ {(booking as any).laneNumber || '미정'}번
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-end">
+              {/* 비용 및 레벨 정보 */}
+              <div className="flex justify-between items-center mb-2 p-2 bg-gray-50 rounded">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-green-600">
+                    💰 {((booking as any).price || 50000).toLocaleString()}원
+                  </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded ${
+                    (booking as any).level === 'beginner' ? 'bg-green-100 text-green-800' :
+                    (booking as any).level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                    (booking as any).level === 'advanced' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {(booking as any).level === 'beginner' ? '초급' :
+                     (booking as any).level === 'intermediate' ? '중급' :
+                     (booking as any).level === 'advanced' ? '고급' :
+                     (booking as any).level === 'expert' ? '전문가' :
+                     (booking as any).level === 'custom' ? '맞춤' : '기본'}
+                  </span>
+                </div>
+              </div>
+
+              {/* 메모 및 특이사항 */}
+              {(booking as any).notes && (
+                <div className="mb-2 p-2 bg-blue-50 rounded">
+                  <p className="text-xs text-gray-700">📝 {(booking as any).notes}</p>
+                </div>
+              )}
+
+              {/* 액션 버튼 */}
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">
+                  예약: {new Date((booking as any).bookingDate || booking.date).toLocaleDateString('ko-KR')}
+                </span>
                 {booking.status === "confirmed" && (
                   <button
                     onClick={() => handleCancelBooking(booking._id)}
-                    className="text-red-600 hover:text-red-900 text-sm"
+                    className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
                   >
                     취소
                   </button>
                 )}
-                {booking.status === "pending" && <span className="text-gray-400">대기중</span>}
-                {booking.status === "cancelled" && <span className="text-gray-400">취소됨</span>}
-                {booking.status === "completed" && <span className="text-gray-400">완료</span>}
               </div>
             </div>
           ))}
-          </TableBody>
-        </ResponsiveTable>
+        </div>
 
         {filteredBookings.length === 0 && (
           <div className="text-center py-12">

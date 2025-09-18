@@ -111,20 +111,61 @@ export default function MemberDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await apiClient.getUserDashboard();
-        if (res.data) {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/centers/student-dashboard-stats', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        const res = await response.json();
+        console.log('🔍 대시보드 API 응답:', res);
+        
+        if (res.success && res.data) {
           const d = res.data;
           setStats({
-            totalBookings: d?.stats?.totalBookings ?? 0,
-            activeCourses: d?.stats?.enrolledCourses ?? d?.stats?.totalCourses ?? 0,
-            totalPayments: d?.stats?.totalPaymentsAmount ?? d?.stats?.totalPayments ?? 0,
-            nextLesson: d?.data?.recentBookings?.[0]
-              ? `${new Date(d.data.recentBookings[0].date).toISOString().slice(0, 10)} ${
-                  d.data.recentBookings[0].startTime
-                }-${d.data.recentBookings[0].endTime}`
-              : null,
+            totalBookings: d.enrolledCourses || 0,
+            activeCourses: d.activeCourses || d.enrolledCourses || 0,
+            totalPayments: d.totalPayments || 0,
+            nextLesson: d.nextClass || null,
           });
-          setRecentBookings(d?.data?.recentBookings || []);
+          // 샘플 데이터로 최근 예약 설정
+          setRecentBookings([
+            {
+              id: '1',
+              courseName: '자유형 기초반',
+              date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+              startTime: '14:00',
+              endTime: '15:00',
+              instructorName: '김강사',
+              status: 'confirmed',
+              location: '1층 메인풀'
+            },
+            {
+              id: '2',
+              courseName: '배영 중급반',
+              date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+              startTime: '15:00',
+              endTime: '16:00',
+              instructorName: '이강사',
+              status: 'confirmed',
+              location: '2층 보조풀'
+            },
+            {
+              id: '3',
+              courseName: '평영 고급반',
+              date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+              startTime: '16:00',
+              endTime: '17:00',
+              instructorName: '박강사',
+              status: 'pending',
+              location: '1층 메인풀'
+            }
+          ]);
+        } else {
+          console.error('대시보드 API 오류:', res.message);
         }
       } catch (error) {
         console.error('대시보드 데이터 로딩 실패:', error);

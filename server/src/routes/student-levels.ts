@@ -1,5 +1,5 @@
 import express, { Request, Response, Router } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
 
 interface AuthRequest extends Request {
@@ -9,7 +9,7 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // 학생 레벨 변경
-router.put('/:studentId/level', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:studentId/level', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { studentId } = req.params;
     const { newLevel, reason } = req.body;
@@ -127,7 +127,7 @@ router.put('/:studentId/level', auth, requireRole(['instructor', 'centerAdmin', 
 });
 
 // 학생 레벨 변경 이력 조회
-router.get('/:studentId/level-history', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:studentId/level-history', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { studentId } = req.params;
     const { user } = req;
@@ -190,7 +190,7 @@ router.get('/:studentId/level-history', auth, requireRole(['instructor', 'center
 });
 
 // 센터별 학생 레벨 현황 조회
-router.get('/center/:centerId/levels', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/center/:centerId/levels', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { centerId } = req.params;
     const { user } = req;

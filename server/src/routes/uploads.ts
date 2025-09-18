@@ -58,7 +58,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { Video } from '../models/Video';
 import { SecureExcelParser } from '../utils/secureExcelParser';
 
@@ -85,7 +85,7 @@ const upload = multer({
 });
 
 // 엑셀 파일 업로드 및 처리
-router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), upload.single('file'), async (req: Request, res: Response) => {
+router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), upload.single('file'), async (req: Request, res: Response) => {
   try {
     const file = (req as any).file as Express.Multer.File;
     if (!file) {
@@ -498,7 +498,7 @@ router.post('/excel', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
 });
 
 // 기존 업로드 라우트들...
-router.post('/', auth, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', authMiddleware, upload.single('file'), async (req: Request, res: Response) => {
   try {
     const file = (req as any).file as Express.Multer.File;
     if (!file) return res.status(400).json({ error: '파일이 필요합니다.' });
@@ -518,7 +518,7 @@ router.post('/', auth, upload.single('file'), async (req: Request, res: Response
 });
 
 // 파일 메타 조회 (소유자 또는 관리 권한 보유자만)
-router.get('/:id', auth, async (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const video = await Video.findById(req.params.id)
       .populate('owner', 'name userId')
@@ -537,7 +537,7 @@ router.get('/:id', auth, async (req: Request, res: Response) => {
 });
 
 // 원본 파일 다운로드 (권한 체크)
-router.get('/:id/download', auth, async (req: Request, res: Response) => {
+router.get('/:id/download', authMiddleware, async (req: Request, res: Response) => {
   try {
     const video = await Video.findById(req.params.id);
     if (!video) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
@@ -554,7 +554,7 @@ router.get('/:id/download', auth, async (req: Request, res: Response) => {
 });
 
 // 강사/관리자: 리뷰 상태 전환 및 피드백 저장
-router.patch('/:id/review', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: Request, res: Response) => {
+router.patch('/:id/review', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: Request, res: Response) => {
   try {
     const { status = 'reviewed', feedback, analysisResult, visibility } = req.body as any;
     const now = new Date();
@@ -576,7 +576,7 @@ router.patch('/:id/review', auth, requireRole(['instructor', 'centerAdmin', 'sup
 });
 
 // 내 업로드 목록
-router.get('/', auth, async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { status, page = 1, limit = 10 } = req.query as any;
@@ -592,7 +592,7 @@ router.get('/', auth, async (req: Request, res: Response) => {
 });
 
 // 리뷰 대기 목록(강사/관리자 전용)
-router.get('/admin/review-queue/list', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: Request, res: Response) => {
+router.get('/admin/review-queue/list', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: Request, res: Response) => {
   try {
     const { status = 'pending', page = 1, limit = 10 } = req.query as any;
     const skip = (Number(page) - 1) * Number(limit);

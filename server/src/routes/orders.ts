@@ -1,7 +1,7 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import Order, { IOrder } from '../models/Order';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ interface AuthRequest extends Request {
 }
 
 // 모든 주문 조회
-router.get('/', auth, async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { 
       page = 1, 
@@ -87,7 +87,7 @@ router.get('/', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 특정 주문 조회
-router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -132,7 +132,7 @@ router.get('/:id', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 새 주문 생성
-router.post('/', auth, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const {
@@ -212,7 +212,7 @@ router.post('/', auth, requireRole(['admin', 'centerAdmin', 'instructor']), asyn
 });
 
 // 주문 상태 업데이트
-router.patch('/:id/status', auth, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.patch('/:id/status', authMiddleware, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -267,7 +267,7 @@ router.patch('/:id/status', auth, requireRole(['admin', 'centerAdmin', 'instruct
 });
 
 // 결제 상태 업데이트
-router.patch('/:id/payment-status', auth, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.patch('/:id/payment-status', authMiddleware, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { paymentStatus } = req.body;
@@ -322,7 +322,7 @@ router.patch('/:id/payment-status', auth, requireRole(['admin', 'centerAdmin', '
 });
 
 // 주문 수정
-router.put('/:id', auth, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -394,7 +394,7 @@ router.put('/:id', auth, requireRole(['admin', 'centerAdmin', 'instructor']), as
 });
 
 // 주문 삭제 (취소)
-router.delete('/:id', auth, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -448,7 +448,7 @@ router.delete('/:id', auth, requireRole(['admin', 'centerAdmin', 'instructor']),
 });
 
 // 주문 통계
-router.get('/stats/summary', auth, async (req: AuthRequest, res: Response) => {
+router.get('/stats/summary', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const { startDate, endDate } = req.query;

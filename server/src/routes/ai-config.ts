@@ -1,6 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { AIConfig } from '../models/AIConfig';
-import { auth, requirePermission } from '../middleware/auth';
+import { authMiddleware, requirePermission } from '../middleware/auth';
 import { User } from '../models/User'; // Added import for User
 import { requireRole } from '../middleware/auth'; // Added import for requireRole
 import { Checklist } from '../models/Checklist'; // Added import for Checklist
@@ -12,7 +12,7 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // Get all AI configurations
-router.get('/', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { category, algorithmType, isActive, search } = req.query;
     
@@ -49,7 +49,7 @@ router.get('/', auth, requirePermission('aiConfigManagement'), async (req: AuthR
 });
 
 // Get specific AI configuration
-router.get('/:id', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -74,7 +74,7 @@ router.get('/:id', auth, requirePermission('aiConfigManagement'), async (req: Au
 });
 
 // Create new AI configuration
-router.post('/', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const {
       name,
@@ -143,7 +143,7 @@ router.post('/', auth, requirePermission('aiConfigManagement'), async (req: Auth
 });
 
 // Update AI configuration
-router.put('/:id', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -221,7 +221,7 @@ router.put('/:id', auth, requirePermission('aiConfigManagement'), async (req: Au
 });
 
 // Delete AI configuration
-router.delete('/:id', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -248,7 +248,7 @@ router.delete('/:id', auth, requirePermission('aiConfigManagement'), async (req:
 });
 
 // Toggle AI configuration active status
-router.patch('/:id/toggle', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.patch('/:id/toggle', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -279,7 +279,7 @@ router.patch('/:id/toggle', auth, requirePermission('aiConfigManagement'), async
 });
 
 // Export AI configuration as JSON
-router.get('/:id/export', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/:id/export', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -305,7 +305,7 @@ router.get('/:id/export', auth, requirePermission('aiConfigManagement'), async (
 });
 
 // Import AI configuration from JSON
-router.post('/import', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.post('/import', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const importData = req.body;
     
@@ -359,7 +359,7 @@ router.post('/import', auth, requirePermission('aiConfigManagement'), async (req
 });
 
 // Validate AI configuration
-router.post('/:id/validate', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/validate', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const config = await AIConfig.findById(req.params.id);
     
@@ -386,7 +386,7 @@ router.post('/:id/validate', auth, requirePermission('aiConfigManagement'), asyn
 });
 
 // Get AI configuration statistics
-router.get('/stats/overview', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/stats/overview', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const stats = await AIConfig.aggregate([
       {
@@ -445,7 +445,7 @@ router.get('/stats/overview', auth, requirePermission('aiConfigManagement'), asy
 });
 
 // Get AI configuration templates
-router.get('/templates/list', auth, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
+router.get('/templates/list', authMiddleware, requirePermission('aiConfigManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const templates = [
       {
@@ -563,7 +563,7 @@ router.get('/templates/list', auth, requirePermission('aiConfigManagement'), asy
 });
 
 // 10. AI 개인 맞춤 강습 계획 생성 (학생만)
-router.post('/lesson-plan', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+router.post('/lesson-plan', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
     const { swimmingLevel, goals, availableDays, preferredDuration } = req.body;
     
@@ -721,7 +721,7 @@ function generateAIRecommendations(currentProgress: number, level: string, goals
 }
 
 // 11. AI 진도 예측 및 최적화 (학생만)
-router.get('/progress-prediction', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+router.get('/progress-prediction', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -911,7 +911,7 @@ function generateSolutions(currentProgress: number): string[] {
 }
 
 // 12. AI 기반 강사 매칭 시스템 (학생만)
-router.get('/instructor-matching', auth, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+router.get('/instructor-matching', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
     const { preferredStyle, learningPace, communicationStyle, schedule } = req.body;
     

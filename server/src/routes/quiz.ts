@@ -1,5 +1,5 @@
 import express from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { Quiz } from '../models/Quiz';
 import { QuizAttempt } from '../models/QuizAttempt';
 
@@ -14,7 +14,7 @@ interface AuthenticatedRequest extends express.Request {
 const router: express.Router = express.Router();
 
 // 모든 퀴즈 조회 (권한에 따라 필터링)
-router.get('/', auth, async (req: AuthenticatedRequest, res) => {
+router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { page = 1, limit = 10, category, difficulty, type, search } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -71,7 +71,7 @@ router.get('/', auth, async (req: AuthenticatedRequest, res) => {
 });
 
 // 퀴즈 시도 기록 조회
-router.get('/attempts/user', auth, async (req: AuthenticatedRequest, res) => {
+router.get('/attempts/user', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const { page = 1, limit = 10, quizId, passed } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -116,7 +116,7 @@ router.get('/attempts/user', auth, async (req: AuthenticatedRequest, res) => {
 });
 
 // 특정 퀴즈 조회
-router.get('/:id', auth, async (req: AuthenticatedRequest, res) => {
+router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id)
       .populate('createdBy', 'name email')
@@ -152,7 +152,7 @@ router.get('/:id', auth, async (req: AuthenticatedRequest, res) => {
 });
 
 // 새 퀴즈 생성 (강사, 센터 관리자, 슈퍼 관리자만)
-router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
     if (!(req as any).user?._id) {
       return res.status(401).json({
@@ -240,7 +240,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']),
 });
 
 // 퀴즈 수정 (생성자 또는 슈퍼 관리자만)
-router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
     if (!(req as any).user?._id) {
       return res.status(401).json({
@@ -287,7 +287,7 @@ router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']
 });
 
 // 퀴즈 삭제 (생성자 또는 슈퍼 관리자만)
-router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
     if (!(req as any).user?._id) {
       return res.status(401).json({
@@ -331,7 +331,7 @@ router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmi
 });
 
 // 퀴즈 통계
-router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+router.get('/stats/overview', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
     if (!(req as any).user?._id) {
       return res.status(401).json({
@@ -411,7 +411,7 @@ router.get('/stats/overview', auth, requireRole(['instructor', 'centerAdmin', 's
 });
 
 // 퀴즈 복사
-router.post('/:id/copy', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+router.post('/:id/copy', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
     if (!(req as any).user?._id) {
       return res.status(401).json({

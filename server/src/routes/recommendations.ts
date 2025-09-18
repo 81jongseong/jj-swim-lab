@@ -11,12 +11,12 @@ import { Recommendation } from '../models/Recommendation';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 추천 목록 조회
-router.get('/', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { type, priority, status } = req.query;
@@ -49,7 +49,7 @@ router.get('/', auth, requireRole(['student']), async (req: any, res: Response) 
 });
 
 // 추천 생성 (AI 알고리즘)
-router.post('/generate', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.post('/generate', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 
@@ -164,7 +164,7 @@ router.post('/generate', auth, requireRole(['student']), async (req: any, res: R
 });
 
 // 추천 완료 처리
-router.put('/:recommendationId/complete', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:recommendationId/complete', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { recommendationId } = req.params;
@@ -201,7 +201,7 @@ router.put('/:recommendationId/complete', auth, requireRole(['student']), async 
 });
 
 // 추천 거부 처리
-router.put('/:recommendationId/dismiss', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:recommendationId/dismiss', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { recommendationId } = req.params;
@@ -238,7 +238,7 @@ router.put('/:recommendationId/dismiss', auth, requireRole(['student']), async (
 });
 
 // 학습 분석 조회
-router.get('/analysis', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/analysis', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 

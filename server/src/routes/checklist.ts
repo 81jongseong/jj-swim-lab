@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
 import { Checklist } from '../models/Checklist';
@@ -12,7 +12,7 @@ import { User } from '../models/User';
 const router: express.Router = express.Router();
 
 // 체크리스트 목록 조회
-router.get('/', auth, cache({ ttl: 300 }), async (req: express.Request, res: express.Response) => {
+router.get('/', authMiddleware, cache({ ttl: 300 }), async (req: express.Request, res: express.Response) => {
   try {
     const { page = 1, limit = 20, status, studentId, courseId } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -49,7 +49,7 @@ router.get('/', auth, cache({ ttl: 300 }), async (req: express.Request, res: exp
 });
 
 // 강사별 체크리스트 조회
-router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
+router.get('/instructor/:instructorId', authMiddleware, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
   try {
     const { instructorId } = req.params;
     const { page = 1, limit = 20, status } = req.query;
@@ -84,7 +84,7 @@ router.get('/instructor/:instructorId', auth, requireRole(['instructor']), async
 });
 
 // 현재 로그인한 강사의 체크리스트 조회
-router.get('/instructor/me', auth, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
+router.get('/instructor/me', authMiddleware, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
   try {
     const instructorId = (req as any).user._id;
     
@@ -102,7 +102,7 @@ router.get('/instructor/me', auth, requireRole(['instructor']), async (req: expr
 });
 
 // 학생별 체크리스트 조회
-router.get('/student/:studentId/course/:courseId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/student/:studentId/course/:courseId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { studentId, courseId } = req.params;
     
@@ -124,7 +124,7 @@ router.get('/student/:studentId/course/:courseId', auth, requireRole(['instructo
 });
 
 // 체크리스트 생성
-router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { studentId, courseId, studentLevel } = req.body;
     
@@ -188,7 +188,7 @@ router.post('/generate', auth, requireRole(['instructor', 'centerAdmin']), async
 });
 
 // 체크리스트 상세 조회
-router.get('/:checklistId', auth, async (req: express.Request, res: express.Response) => {
+router.get('/:checklistId', authMiddleware, async (req: express.Request, res: express.Response) => {
   try {
     const checklist = await Checklist.findById(req.params.checklistId)
       .populate('studentId', 'name email')
@@ -208,7 +208,7 @@ router.get('/:checklistId', auth, async (req: express.Request, res: express.Resp
 });
 
 // 체크리스트 아이템 상태 변경
-router.patch('/:checklistId/items/:itemIndex', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.patch('/:checklistId/items/:itemIndex', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId, itemIndex } = req.params;
     const { isCompleted, notes } = req.body;
@@ -247,7 +247,7 @@ router.patch('/:checklistId/items/:itemIndex', auth, requireRole(['instructor', 
 });
 
 // 체크리스트 수정
-router.patch('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.patch('/:checklistId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { status, notes, targetCompletionDate } = req.body;
     
@@ -275,7 +275,7 @@ router.patch('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), 
 });
 
 // 체크리스트 삭제
-router.delete('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.delete('/:checklistId', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const checklist = await Checklist.findByIdAndDelete(req.params.checklistId);
     
@@ -292,7 +292,7 @@ router.delete('/:checklistId', auth, requireRole(['instructor', 'centerAdmin']),
 });
 
 // 체크리스트 상태 업데이트 (강사만)
-router.put('/:checklistId/status', auth, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
+router.put('/:checklistId/status', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { checklistId } = req.params;
     const { status, notes } = req.body;
@@ -340,7 +340,7 @@ router.put('/:checklistId/status', auth, requireRole(['instructor', 'centerAdmin
 });
 
 // 강사별 성과 분석 (센터 관리자만)
-router.get('/instructor/:instructorId/performance', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+router.get('/instructor/:instructorId/performance', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { instructorId } = req.params;
     
@@ -400,7 +400,7 @@ router.get('/instructor/:instructorId/performance', auth, requireRole(['centerAd
 });
 
 // 체크리스트 템플릿 목록 조회
-router.get('/templates', auth, async (req: express.Request, res: express.Response) => {
+router.get('/templates', authMiddleware, async (req: express.Request, res: express.Response) => {
   try {
     const { page = 1, limit = 20, level, creatorType } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
@@ -455,7 +455,7 @@ router.get('/templates', auth, async (req: express.Request, res: express.Respons
 });
 
 // 체크리스트 템플릿 생성
-router.post('/templates', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+router.post('/templates', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { name, description, levels, items, tags, isPublic } = req.body;
     const user = (req as any).user;
@@ -499,7 +499,7 @@ router.post('/templates', auth, requireRole(['instructor', 'centerAdmin', 'super
 });
 
 // 체크리스트 템플릿 삭제
-router.delete('/templates/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
+router.delete('/templates/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -531,7 +531,7 @@ router.delete('/templates/:id', auth, requireRole(['instructor', 'centerAdmin', 
 });
 
 // 템플릿으로부터 체크리스트 생성
-router.post('/from-template/:templateId', auth, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
+router.post('/from-template/:templateId', authMiddleware, requireRole(['instructor']), async (req: express.Request, res: express.Response) => {
   try {
     const { templateId } = req.params;
     const { studentId, courseId } = req.body;

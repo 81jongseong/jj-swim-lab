@@ -1,11 +1,11 @@
 import express from 'express';
 import { CenterLevel } from '../models/CenterLevel';
-import { auth } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
 
 // 모든 센터 레벨 조회 (기본값 반환)
-router.get('/', auth, async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
     // 기본 레벨 설정 반환
     const defaultLevels = [
@@ -52,7 +52,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // 센터별 레벨 설정 조회
-router.get('/:centerId', auth, async (req, res) => {
+router.get('/:centerId', authMiddleware, async (req, res) => {
   try {
     const { centerId } = req.params;
     
@@ -81,7 +81,7 @@ router.get('/:centerId', auth, async (req, res) => {
 });
 
 // 센터별 레벨 설정 업데이트 (센터 관리자만)
-router.put('/:centerId', auth, async (req, res) => {
+router.put('/:centerId', authMiddleware, async (req, res) => {
   try {
     const { centerId } = req.params;
     const { levels } = req.body;
@@ -125,7 +125,7 @@ router.put('/:centerId', auth, async (req, res) => {
 });
 
 // 센터별 레벨 설정 삭제 (비활성화)
-router.delete('/:centerId', auth, async (req, res) => {
+router.delete('/:centerId', authMiddleware, async (req, res) => {
   try {
     const { centerId } = req.params;
     

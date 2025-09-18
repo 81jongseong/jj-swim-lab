@@ -92,7 +92,7 @@
  */
 
 import express, { Request, Response, Router } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { YouTubeVideo } from '../models/YouTubeVideo';
 import { TeachingMethod } from '../models/TeachingMethod';
 
@@ -198,7 +198,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // YouTube 비디오 생성 (강사, 센터 관리자, 총관리자만)
-router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, videoId, category, level, duration, teachingMethodId, tags } = req.body;
     
@@ -275,7 +275,7 @@ router.post('/', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']),
 });
 
 // YouTube 비디오 수정 (생성자, 센터 관리자, 총관리자만)
-router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description, videoId, category, level, duration, teachingMethodId, tags } = req.body;
@@ -372,7 +372,7 @@ router.put('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']
 });
 
 // YouTube 비디오 삭제 (생성자, 센터 관리자, 총관리자만)
-router.delete('/:id', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     console.log(`🗑️ YouTube 비디오 삭제 요청: ${id}`);

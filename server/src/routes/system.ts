@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
 
 const router: express.Router = express.Router();
 
 // 1. 시스템 상태 확인
-router.get('/status', auth, requireRole(['superAdmin']), async (req: Request, res: Response) => {
+router.get('/status', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     const systemStatus = {
       status: 'healthy',
@@ -32,7 +32,7 @@ router.get('/status', auth, requireRole(['superAdmin']), async (req: Request, re
 });
 
 // 2. 사용자 통계 조회
-router.get('/user-stats', auth, requireRole(['superAdmin']), async (req: Request, res: Response) => {
+router.get('/user-stats', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ 'accountStatus.isActive': true });
@@ -62,7 +62,7 @@ router.get('/user-stats', auth, requireRole(['superAdmin']), async (req: Request
 });
 
 // 3. 데이터베이스 상태 확인
-router.get('/database-status', auth, requireRole(['superAdmin']), async (req: Request, res: Response) => {
+router.get('/database-status', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     const dbStatus = {
       status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
@@ -87,7 +87,7 @@ router.get('/database-status', auth, requireRole(['superAdmin']), async (req: Re
 });
 
 // 4. 시스템 백업 및 복구
-router.post('/backup', auth, requireRole(['superAdmin']), async (req: Request, res: Response) => {
+router.post('/backup', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     // 실제로는 데이터베이스 백업 로직 구현
     const backupInfo = {
@@ -112,7 +112,7 @@ router.post('/backup', auth, requireRole(['superAdmin']), async (req: Request, r
 });
 
 // 5. 시스템 로그 조회
-router.get('/logs', auth, requireRole(['superAdmin']), async (req: Request, res: Response) => {
+router.get('/logs', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     const { type, level, startDate, endDate, limit = 100 } = req.query;
 

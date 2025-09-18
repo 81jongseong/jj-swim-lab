@@ -108,7 +108,7 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import Product, { IProduct } from '../models/Product';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -122,7 +122,7 @@ interface AuthRequest extends Request {
 }
 
 // 주문 목록 조회 (관리자용)
-router.get('/orders', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.get('/orders', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { 
       page = 1, 
@@ -309,7 +309,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // 관리자용 상품 목록 조회
-router.get('/admin/products', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.get('/admin/products', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { 
       category, 
@@ -378,7 +378,7 @@ router.get('/admin/products', auth, requireRole(['superAdmin', 'admin', 'centerA
 });
 
 // 상품 생성
-router.post('/admin/products', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.post('/admin/products', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const {
@@ -471,7 +471,7 @@ router.post('/admin/products', auth, requireRole(['superAdmin', 'admin', 'center
 });
 
 // 상품 수정
-router.put('/admin/products/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.put('/admin/products/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -547,7 +547,7 @@ router.put('/admin/products/:id', auth, requireRole(['superAdmin', 'admin', 'cen
 });
 
 // 상품 삭제
-router.delete('/admin/products/:id', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.delete('/admin/products/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -593,7 +593,7 @@ router.delete('/admin/products/:id', auth, requireRole(['superAdmin', 'admin', '
 });
 
 // 상품 상태 업데이트
-router.patch('/admin/products/:id/status', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.patch('/admin/products/:id/status', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -648,7 +648,7 @@ router.patch('/admin/products/:id/status', auth, requireRole(['superAdmin', 'adm
 });
 
 // 상품 통계
-router.get('/admin/stats', auth, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+router.get('/admin/stats', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
     const { startDate, endDate } = req.query;

@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 import { Video3DConversionEngine } from '../utils/Video3DConversionEngine';
 import { VideoAnalysisResult } from '../models/VideoAnalysisCriteria';
 import { execAsync } from '../utils/execAsync';
@@ -93,7 +93,7 @@ const modelUpload = multer({
  * POST /api/video-3d-analysis/upload
  * 동영상 업로드 및 3D 변환 분석
  */
-router.post('/upload', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), upload.fields([
+router.post('/upload', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), upload.fields([
   { name: 'video', maxCount: 1 },
   { name: 'customModel', maxCount: 1 }
 ]), async (req: any, res: Response) => {
@@ -289,7 +289,7 @@ router.post('/upload', auth, requireRole(['instructor', 'centerAdmin', 'superAdm
  * GET /api/video-3d-analysis/results/:analysisId
  * 3D 분석 결과 조회
  */
-router.get('/results/:analysisId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/results/:analysisId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { analysisId } = req.params;
 
@@ -323,7 +323,7 @@ router.get('/results/:analysisId', auth, requireRole(['instructor', 'centerAdmin
  * GET /api/video-3d-analysis/student/:studentId
  * 학생의 3D 분석 결과 목록 조회
  */
-router.get('/student/:studentId', auth, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.get('/student/:studentId', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { studentId } = req.params;
     const { technique, limit = 10 } = req.query;
@@ -357,7 +357,7 @@ router.get('/student/:studentId', auth, requireRole(['instructor', 'centerAdmin'
  * DELETE /api/video-3d-analysis/results/:analysisId
  * 3D 분석 결과 삭제
  */
-router.delete('/results/:analysisId', auth, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
+router.delete('/results/:analysisId', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), async (req: any, res: Response) => {
   try {
     const { analysisId } = req.params;
 

@@ -10,12 +10,12 @@ import mongoose from 'mongoose';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
-import { auth, requireRole } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
 
 // 학습 진도 조회 (학생 본인)
-router.get('/', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { category, level, status } = req.query;
@@ -67,7 +67,7 @@ router.get('/', auth, requireRole(['student']), async (req: any, res: Response) 
 });
 
 // 특정 강습법 진도 조회
-router.get('/:teachingMethodId', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/:teachingMethodId', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { teachingMethodId } = req.params;
@@ -119,7 +119,7 @@ router.get('/:teachingMethodId', auth, requireRole(['student']), async (req: any
 });
 
 // 학습 진도 업데이트
-router.put('/:teachingMethodId', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.put('/:teachingMethodId', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
     const { teachingMethodId } = req.params;
@@ -173,7 +173,7 @@ router.put('/:teachingMethodId', auth, requireRole(['student']), async (req: any
 });
 
 // 학습 통계 조회
-router.get('/stats/overview', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/stats/overview', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 
@@ -244,7 +244,7 @@ router.get('/stats/overview', auth, requireRole(['student']), async (req: any, r
 });
 
 // 카테고리별 진도 조회
-router.get('/stats/by-category', auth, requireRole(['student']), async (req: any, res: Response) => {
+router.get('/stats/by-category', authMiddleware, requireRole(['student']), async (req: any, res: Response) => {
   try {
     const studentId = req.user.id;
 
@@ -285,7 +285,7 @@ router.get('/stats/by-category', auth, requireRole(['student']), async (req: any
 });
 
 // 강사용 학생 진도 조회
-router.get('/instructor/students', auth, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
+router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'centerAdmin']), async (req: any, res: Response) => {
   try {
     const instructorId = req.user.id;
     const { studentId, category, level } = req.query;

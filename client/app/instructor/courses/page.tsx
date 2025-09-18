@@ -71,7 +71,7 @@ export default function InstructorCoursesPage() {
         endDate: '2025-03-31',
         status: 'active',
         totalSessions: 24,
-        completedSessions: 8,
+        completedSessions: 12,
         location: '1층 메인풀',
         description: '자유형의 기본 자세와 호흡법을 익히는 초급 과정입니다.'
       },
@@ -102,6 +102,48 @@ export default function InstructorCoursesPage() {
         completedSessions: 16,
         location: '1층 메인풀',
         description: '접영의 고급 기술과 타이밍을 완성하는 고급 과정입니다.'
+      },
+      {
+        id: '4',
+        name: '평영 기초반',
+        level: 'beginner',
+        currentStudents: 7,
+        maxStudents: 10,
+        startDate: '2025-01-20',
+        endDate: '2025-04-20',
+        status: 'active',
+        totalSessions: 18,
+        completedSessions: 3,
+        location: '2층 보조풀',
+        description: '평영의 기본 동작과 킥을 배우는 초급 과정입니다.'
+      },
+      {
+        id: '5',
+        name: '개인 맞춤 강습',
+        level: 'advanced',
+        currentStudents: 1,
+        maxStudents: 1,
+        startDate: '2025-01-10',
+        endDate: '2025-02-28',
+        status: 'active',
+        totalSessions: 12,
+        completedSessions: 8,
+        location: '1층 메인풀',
+        description: '개인별 수준에 맞춘 맞춤형 수영 강습입니다.'
+      },
+      {
+        id: '6',
+        name: '성인 수영교실',
+        level: 'beginner',
+        currentStudents: 12,
+        maxStudents: 15,
+        startDate: '2025-01-05',
+        endDate: '2025-06-30',
+        status: 'active',
+        totalSessions: 40,
+        completedSessions: 15,
+        location: '1층 메인풀',
+        description: '성인을 위한 기초 수영 교실입니다.'
       }
     ];
 
