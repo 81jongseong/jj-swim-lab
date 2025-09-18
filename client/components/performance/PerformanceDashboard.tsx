@@ -6,10 +6,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import Card from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Progress } from '@/components/ui/Progress';
 import { 
   Activity, 
   Database, 
@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Memory,
+  // Memory, // 사용하지 않음
   HardDrive,
   RefreshCw,
   Trash2,
@@ -240,7 +240,7 @@ const PerformanceDashboard: React.FC = () => {
             onClick={toggleMemoryTracking}
             className={memoryTracking ? 'bg-green-50 border-green-200' : ''}
           >
-            <Memory className="w-4 h-4 mr-2" />
+            <span className="w-4 h-4 mr-2">💾</span>
             메모리 추적 {memoryTracking ? 'ON' : 'OFF'}
           </Button>
           <Button onClick={refreshData} disabled={loading}>

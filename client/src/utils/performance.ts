@@ -1,5 +1,5 @@
 // 고급 성능 최적화 유틸리티
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 
 // 디바운스 함수 (고급 TypeScript 패턴)
 export function debounce<T extends (...args: any[]) => any>(
@@ -202,7 +202,7 @@ export function analyzeBundle() {
     firstPaint: performance.getEntriesByName('first-paint')[0]?.startTime || 0,
     firstContentfulPaint: performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0,
     largestContentfulPaint: performance.getEntriesByName('largest-contentful-paint')[0]?.startTime || 0,
-    cumulativeLayoutShift: performance.getEntriesByName('cumulative-layout-shift')[0]?.value || 0
+    cumulativeLayoutShift: (performance.getEntriesByName('cumulative-layout-shift')[0] as any)?.value || 0
   };
 }
 

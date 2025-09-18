@@ -273,7 +273,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
       case 'student':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => window.location.href = '/courses'}>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => { window.location.href = '/courses'; }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5" />

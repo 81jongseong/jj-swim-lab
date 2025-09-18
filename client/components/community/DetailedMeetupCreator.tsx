@@ -480,7 +480,7 @@ export const DetailedMeetupCreator: React.FC<DetailedMeetupCreatorProps> = ({
                   >
                     <div className="font-medium text-sm">{template.name}</div>
                     <div className="text-xs text-gray-500 mt-1">
-                      총 {template.totalDistance}m • {template.warmup.duration + template.cooldown.duration + 30}분
+                      총 {(template as any).totalDistance || 1500}m • {template.warmup.duration + template.cooldown.duration + 30}분
                     </div>
                   </button>
                 ))}

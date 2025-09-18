@@ -702,7 +702,7 @@ export default function CommunityPage() {
                             type="number"
                             min="2"
                             max="20"
-                            value={newPost.meetupDetails.maxParticipants}
+                            value={String(newPost.meetupDetails.maxParticipants)}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
                               meetupDetails: { ...prev.meetupDetails, maxParticipants: parseInt(e.target.value) }
@@ -718,7 +718,7 @@ export default function CommunityPage() {
                           <Input
                             type="number"
                             min="0"
-                            value={newPost.meetupDetails.cost}
+                            value={String(newPost.meetupDetails.cost)}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
                               meetupDetails: { ...prev.meetupDetails, cost: parseInt(e.target.value) || 0 }

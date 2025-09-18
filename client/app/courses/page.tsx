@@ -6,11 +6,11 @@ import apiClient from "@/utils/api";
 interface ApiCourse {
   _id: string;
   name: string;
-  instructor?: { name: string; userId: string } | string;
+  instructor?: { _id: string; name: string; userId?: string } | string;
   level: "beginner" | "intermediate" | "advanced";
   description: string;
   price: number;
-  duration: string;
+  duration: number;
   maxStudents: number;
   enrolledStudents?: Array<{ student: string; status: string } | any>;
   isActive?: boolean;

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 // 고급 TypeScript 패턴: Generic Types와 Utility Types 활용
 type QueryKey = readonly unknown[];
@@ -18,6 +18,8 @@ interface AdvancedQueryOptions<TData = QueryData, TError = Error> extends Omit<U
   refetchOnMount?: boolean;
   retry?: boolean | number;
   retryDelay?: number | ((retryAttempt: number, error: TError) => number);
+  onSuccess?: (data: TData) => void;
+  onError?: (error: TError) => void;
 }
 
 interface AdvancedMutationOptions<TData = MutationData, TError = Error, TVariables = MutationVariables> extends Omit<UseMutationOptions<TData, TError, TVariables>, 'mutationFn'> {
@@ -36,14 +38,21 @@ export function useAdvancedQuery<TData = QueryData, TError = Error>(
 
   const query = useQuery({
     ...options,
-    onSuccess: (data) => {
-      setLastFetchTime(new Date());
-      options.onSuccess?.(data);
-    },
-    onError: (error) => {
-      options.onError?.(error);
-    },
   });
+
+  // onSuccess/onError를 useEffect로 처리 (React Query v5 호환)
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      setLastFetchTime(new Date());
+      options.onSuccess?.(query.data);
+    }
+  }, [query.isSuccess, query.data]);
+
+  useEffect(() => {
+    if (query.isError && query.error) {
+      options.onError?.(query.error);
+    }
+  }, [query.isError, query.error]);
 
   const refetch = useCallback(async () => {
     setIsRefetching(true);
@@ -144,13 +153,13 @@ export const queryKeys = {
   },
   teachingMethods: {
     all: ['teachingMethods'] as const,
-    list: (filters?: Record<string, unknown>) => [...queryKeys.teachingMethods.all, 'list', filters].filter(Boolean) as const,
+    list: (filters?: Record<string, unknown>) => [...queryKeys.teachingMethods.all, 'list', filters].filter(Boolean),
     detail: (id: string) => [...queryKeys.teachingMethods.all, 'detail', id] as const,
     categories: () => [...queryKeys.teachingMethods.all, 'categories'] as const,
   },
   quizzes: {
     all: ['quizzes'] as const,
-    list: (filters?: Record<string, unknown>) => [...queryKeys.quizzes.all, 'list', filters].filter(Boolean) as const,
+    list: (filters?: Record<string, unknown>) => [...queryKeys.quizzes.all, 'list', filters].filter(Boolean),
     detail: (id: string) => [...queryKeys.quizzes.all, 'detail', id] as const,
     results: (userId: string) => [...queryKeys.quizzes.all, 'results', userId] as const,
   },

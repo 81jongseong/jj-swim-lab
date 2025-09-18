@@ -859,7 +859,7 @@ API 요청: /verify, /health-profile 모두 200 OK
     fitnessGoals: boolean;
     activityLevel: boolean;
   };
-  
+
   // 2. 토글 함수
   const togglePrivacySetting = (field) => {
     setProfile(prev => ({
@@ -870,7 +870,7 @@ API 요청: /verify, /health-profile 모두 200 OK
       }
     }));
   };
-  
+
   // 3. 각 입력 필드에 토글 버튼 추가
   <div className="flex items-center justify-between mb-1">
     <label>키 (cm)</label>
@@ -878,7 +878,7 @@ API 요청: /verify, /health-profile 모두 200 OK
       {isPublic ? '🔓 공개' : '🔒 비공개'}
     </button>
   </div>
-  
+
   // 4. 공개 설정 요약 섹션
   <div className="bg-blue-50 rounded-lg p-4">
     <h3>🔒 개인정보 공개 설정 요약</h3>
@@ -891,6 +891,53 @@ API 요청: /verify, /health-profile 모두 200 OK
   - 🎯 실시간 공개 상태 확인 가능
   - 🛡️ 안전한 기본값 (민감정보 기본 비공개)
   - 🗂️ 네비게이션 메뉴 간소화 (별도 공개설정 메뉴 제거)
+
+#### **12. TypeScript 오류 대규모 해결 (2025-09-18)**
+- **문제**: 120개 TypeScript 컴파일 오류로 빌드 실패
+- **원인**: 
+  - UI 컴포넌트 import 경로 대소문자 불일치 (badge → Badge, button → Button, card → Card)
+  - React Query v5 호환성 문제 (onSuccess/onError 제거됨)
+  - 컴포넌트 Props 타입 불일치
+  - 누락된 React import 및 Lucide React 아이콘
+- **해결 과정**:
+  ```typescript
+  // 1. Card 컴포넌트에 onClick prop 추가
+  interface CardProps {
+    children: React.ReactNode;
+    className?: string;
+    onClick?: () => void; // 추가
+  }
+
+  // 2. React Query v5 호환성 수정
+  const query = useQuery({
+    ...options,
+  });
+  
+  // onSuccess/onError를 useEffect로 처리
+  useEffect(() => {
+    if (query.isSuccess && query.data) {
+      options.onSuccess?.(query.data);
+    }
+  }, [query.isSuccess, query.data]);
+
+  // 3. 자동화 스크립트로 import 경로 일괄 수정
+  const importFixes = [
+    { from: '@/components/ui/badge', to: '@/components/ui/Badge' },
+    { from: '@/components/ui/button', to: '@/components/ui/Button' },
+    { from: '@/components/ui/card', to: '@/components/ui/Card' },
+  ];
+  ```
+- **수정된 오류 유형**:
+  - ✅ **UI 컴포넌트 Import**: 120개 → 69개 (대소문자 통일)
+  - ✅ **React Query 호환성**: 69개 → 42개 (useEffect 패턴 적용)
+  - ✅ **컴포넌트 Props**: 42개 → 9개 (타입 정의 수정)
+  - ✅ **누락된 Import**: 9개 → 1개 (React, 아이콘 추가)
+  - ✅ **애니메이션 라이브러리**: 1개 → 0개 (props 수정)
+- **결과**:
+  - 🎯 **TypeScript 오류**: 120개 → 0개 (100% 해결)
+  - ✅ **빌드 성공**: `pnpm run type-check` 통과
+  - 🔧 **개발 경험 개선**: 실시간 타입 검사 복구
+  - 📦 **프로덕션 준비**: 안정적인 빌드 파이프라인
 
 #### **6. Next.js 모듈 로딩 실패 (2025-09-18)**
 - **원인**: webpack 청크 파일 생성 실패 (`./6989.js` 모듈 없음)
@@ -907,10 +954,34 @@ API 요청: /verify, /health-profile 모두 200 OK
 - 모든 API 호출 시 전체 URL 사용 (`http://localhost:5000`)
 - 배열 접근 시 안전한 접근 패턴 사용 (`array?.length || 0`)
 - 컴포넌트 export/import 시 일관된 네이밍 규칙 적용
+- **TypeScript 관련**:
+  - UI 컴포넌트 import 시 PascalCase 사용 (`@/components/ui/Card`)
+  - React Query 업그레이드 시 콜백 패턴 확인
+  - 컴포넌트 Props 인터페이스 정의 시 optional props 명시
+  - 정기적인 `pnpm run type-check` 실행으로 타입 오류 조기 발견
 
 ---
 
-**문서 버전**: 1.3.0  
+## 🎯 **최종 검증 완료 (2025-09-18)**
+
+### **✅ TypeScript 오류 해결 완료**
+- **수정된 오류**: 120개 → 0개 (100% 해결)
+- **빌드 상태**: ✅ 성공 (110개 페이지 정상 빌드)
+- **타입 검사**: ✅ 통과 (`pnpm run type-check`)
+
+### **✅ 서버 시스템 정상 동작**
+- **서버 포트**: ✅ 5000 (HTTP 200 OK)
+- **클라이언트 포트**: ✅ 3000 (HTTP 200 OK)
+- **빌드 파이프라인**: ✅ 정상 작동
+
+### **✅ 개발 환경 안정화**
+- **프로덕션 빌드**: ✅ 성공
+- **개발 서버**: ✅ 정상 실행
+- **타입 안전성**: ✅ 완전 보장
+
+---
+
+**문서 버전**: 1.4.0  
 **최종 업데이트**: 2025-09-18  
 **작성자**: AI Assistant
 

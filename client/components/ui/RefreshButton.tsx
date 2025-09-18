@@ -46,7 +46,7 @@ export function RefreshButton({
   return (
     <Button
       variant={variant}
-      size={size}
+      size={size === 'md' ? 'default' : size}
       onClick={handleRefresh}
       disabled={disabled || isRefreshing}
       className={`transition-all duration-200 ${className}`}

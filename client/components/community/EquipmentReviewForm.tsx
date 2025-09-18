@@ -255,7 +255,7 @@ export const EquipmentReviewForm: React.FC<EquipmentReviewFormProps> = ({
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                  <Clock className="h-4 w-4 mr-2" />
+                  <span className="h-4 w-4 mr-2">⏰</span>
                   사용 기간 *
                 </label>
                 <input

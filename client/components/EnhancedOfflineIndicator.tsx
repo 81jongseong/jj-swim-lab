@@ -201,7 +201,7 @@ export default function EnhancedOfflineIndicator() {
 
               <Button
                 size="sm"
-                variant="danger"
+                variant="destructive"
                 onClick={clearOfflineData}
                 className="text-xs h-6 px-2"
               >

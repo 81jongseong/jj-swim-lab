@@ -153,7 +153,7 @@ export function InfiniteVirtualizedList<T extends VirtualizedItem>({
   const handleScroll = useCallback((scrollTop: number) => {
     if (isLoading || !hasMore) return;
 
-    const { totalHeight } = props;
+    const totalHeight = items.length * props.itemHeight;
     const scrollBottom = scrollTop + props.containerHeight;
     const distanceFromBottom = totalHeight - scrollBottom;
 
@@ -173,7 +173,7 @@ export function InfiniteVirtualizedList<T extends VirtualizedItem>({
     const loadingItem = {
       id: 'loading',
       type: 'loading'
-    } as T;
+    } as unknown as T;
 
     return hasMore ? [...items, loadingItem] : items;
   }, [items, hasMore]);

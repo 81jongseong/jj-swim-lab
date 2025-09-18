@@ -88,7 +88,7 @@ export default function MapPage() {
     }
   ];
 
-  const handleAddressSelect = (address: string, position: { lat: number; lng: number }) => {
+  const handleAddressSelect = (position: { lat: number; lng: number }) => {
     setMapCenter(position);
     setSelectedCenter(null);
   };

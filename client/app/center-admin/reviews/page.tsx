@@ -254,7 +254,7 @@ const CenterAdminReviewsPage: React.FC = () => {
                     </Button>
                     <Button
                       size="sm"
-                      variant="danger"
+                      variant="destructive"
                       onClick={() => handleStatusChange(review.id, 'rejected')}
                     >
                       거부

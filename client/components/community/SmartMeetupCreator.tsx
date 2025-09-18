@@ -518,7 +518,7 @@ export const SmartMeetupCreator: React.FC<SmartMeetupCreatorProps> = ({
                       }))}
                       className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300"
                     >
-                      <Minus className="h-4 w-4" />
+                      <span className="h-4 w-4">➖</span>
                     </button>
                     <span className="text-xl font-bold w-8 text-center">{formData.participants.min}</span>
                     <button
@@ -529,7 +529,7 @@ export const SmartMeetupCreator: React.FC<SmartMeetupCreatorProps> = ({
                       }))}
                       className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300"
                     >
-                      <Plus className="h-4 w-4" />
+                      <span className="h-4 w-4">➕</span>
                     </button>
                   </div>
                 </div>
@@ -545,7 +545,7 @@ export const SmartMeetupCreator: React.FC<SmartMeetupCreatorProps> = ({
                       }))}
                       className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300"
                     >
-                      <Minus className="h-4 w-4" />
+                      <span className="h-4 w-4">➖</span>
                     </button>
                     <span className="text-xl font-bold w-8 text-center">{formData.participants.max}</span>
                     <button
@@ -556,7 +556,7 @@ export const SmartMeetupCreator: React.FC<SmartMeetupCreatorProps> = ({
                       }))}
                       className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300"
                     >
-                      <Plus className="h-4 w-4" />
+                      <span className="h-4 w-4">➕</span>
                     </button>
                   </div>
                 </div>

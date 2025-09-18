@@ -52,7 +52,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {/* 기능 카드 1 */}
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               className="bg-card p-8 rounded-lg shadow-lg text-center"
             >
               <div className="text-5xl text-primary mb-4">
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
             {/* 기능 카드 2 */}
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               className="bg-card p-8 rounded-lg shadow-lg text-center"
             >
               <div className="text-5xl text-primary mb-4">
@@ -80,7 +80,7 @@ export default function LandingPage() {
 
             {/* 기능 카드 3 */}
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               className="bg-card p-8 rounded-lg shadow-lg text-center"
             >
               <div className="text-5xl text-primary mb-4">
@@ -117,7 +117,7 @@ export default function LandingPage() {
             고급 3D 기술을 활용하여 실제와 같은 수영 환경에서 연습하고 분석합니다.
           </motion.p>
           <motion.div
-            variants={motionPresets.fadeIn}
+            variants={motionPresets.appear}
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
@@ -175,7 +175,9 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="relative w-full h-80 md:h-96"
             >
-              <LottiePlayer animationPath="/animations/learning.json" />
+              <div className="w-full h-64 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-4xl">🏊‍♂️</span>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -195,7 +197,7 @@ export default function LandingPage() {
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
@@ -205,7 +207,7 @@ export default function LandingPage() {
               <p className="text-xl text-muted-foreground">정확한 자세 분석</p>
             </motion.div>
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
@@ -215,7 +217,7 @@ export default function LandingPage() {
               <p className="text-xl text-muted-foreground">실력 향상</p>
             </motion.div>
             <motion.div
-              variants={motionPresets.fadeIn}
+              variants={motionPresets.appear}
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
@@ -266,7 +268,9 @@ export default function LandingPage() {
       </section>
 
       {/* 워터 리플 배경 */}
-      <WaterRippleBackground />
+      <WaterRippleBackground>
+        <div></div>
+      </WaterRippleBackground>
     </div>
   );
 }

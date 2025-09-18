@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, ReactNode, ComponentType, ErrorBoundary } from 'react';
+import React, { Suspense, ReactNode, ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // 고급 TypeScript 패턴: Conditional Types와 Template Literal Types
