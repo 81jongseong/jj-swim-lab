@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const Product_1 = __importDefault(require("../models/Product"));
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-router.get('/orders', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.get('/orders', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { page = 1, limit = 20, status, paymentStatus, customerName, orderNumber, startDate, endDate } = req.query;
         const user = req.user;
@@ -152,7 +152,7 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
-router.get('/admin/products', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.get('/admin/products', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { category, subCategory, search, status, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
         const user = req.user;
@@ -203,7 +203,7 @@ router.get('/admin/products', auth_1.auth, (0, auth_1.requireRole)(['superAdmin'
         });
     }
 });
-router.post('/admin/products', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.post('/admin/products', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const user = req.user;
         const { name, description, price, originalPrice, category, subCategory, brand, sku, stock, minStock, maxStock, images, tags, specifications, isDigital, isPhysical, shippingRequired } = req.body;
@@ -267,7 +267,7 @@ router.post('/admin/products', auth_1.auth, (0, auth_1.requireRole)(['superAdmin
         });
     }
 });
-router.put('/admin/products/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.put('/admin/products/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -325,7 +325,7 @@ router.put('/admin/products/:id', auth_1.auth, (0, auth_1.requireRole)(['superAd
         });
     }
 });
-router.delete('/admin/products/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.delete('/admin/products/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -361,7 +361,7 @@ router.delete('/admin/products/:id', auth_1.auth, (0, auth_1.requireRole)(['supe
         });
     }
 });
-router.patch('/admin/products/:id/status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.patch('/admin/products/:id/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -406,7 +406,7 @@ router.patch('/admin/products/:id/status', auth_1.auth, (0, auth_1.requireRole)(
         });
     }
 });
-router.get('/admin/stats', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.get('/admin/stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const user = req.user;
         const { startDate, endDate } = req.query;

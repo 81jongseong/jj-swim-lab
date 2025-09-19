@@ -87,6 +87,7 @@ interface Center {
   shortDescription: string;
   description: string;
   status: 'active' | 'inactive' | 'suspended' | 'maintenance';
+  grade: 'bronze' | 'silver' | 'gold' | 'platinum'; // 🏆 센터 등급 추가
   contact: {
     email: string;
     phone: string;
@@ -115,6 +116,14 @@ interface Center {
   images?: {
     mainImage?: string;
     facilityImages?: string[];
+  };
+  performance?: {
+    memberCount: number;
+    instructorCount: number;
+    monthlyRevenue: number;
+    customerSatisfaction: number;
+    safetyRecord: number;
+    operatingMonths: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -152,13 +161,15 @@ export default function CenterManagement() {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [regionFilter, setRegionFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     loadCenters();
     loadStats();
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, searchTerm, statusFilter, regionFilter, gradeFilter]);
 
   const loadCenters = async () => {
     try {
@@ -170,6 +181,8 @@ export default function CenterManagement() {
       
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (regionFilter !== 'all') params.append('region', regionFilter);
+      if (gradeFilter !== 'all') params.append('grade', gradeFilter);
 
       const response = await apiClient.get<{
         success: boolean;
@@ -181,8 +194,37 @@ export default function CenterManagement() {
       }>(`/api/center-management?${params}`);
       
       if ((response as any).success) {
-        setCenters((response as any).data.centers);
-        setTotalPages((response as any).data.pagination.total);
+        let filteredCenters = (response as any).data.centers;
+        
+        // 클라이언트 측 추가 필터링 (서버에서 처리되지 않은 필터들)
+        if (regionFilter !== 'all') {
+          filteredCenters = filteredCenters.filter((center: any) => 
+            center.address?.city?.includes(regionFilter) || 
+            center.address?.province?.includes(regionFilter) ||
+            center.address?.address1?.includes(regionFilter)
+          );
+        }
+        
+        if (gradeFilter !== 'all') {
+          filteredCenters = filteredCenters.filter((center: any) => 
+            center.grade === gradeFilter
+          );
+        }
+        
+        // 센터명으로 추가 검색 필터링
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          filteredCenters = filteredCenters.filter((center: any) => 
+            center.name?.toLowerCase().includes(searchLower) ||
+            center.contact?.email?.toLowerCase().includes(searchLower) ||
+            center.address?.address1?.toLowerCase().includes(searchLower) ||
+            center.address?.city?.toLowerCase().includes(searchLower) ||
+            center.address?.province?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        setCenters(filteredCenters);
+        setTotalPages(Math.ceil(filteredCenters.length / 10));
       } else {
         setError((response as any).message || '센터 목록을 불러오는데 실패했습니다.');
       }
@@ -246,6 +288,26 @@ export default function CenterManagement() {
       'maintenance': 'bg-yellow-100 text-yellow-800'
     };
     return colorMap[status as keyof typeof colorMap] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getCenterGradeColor = (grade: string) => {
+    const gradeColorMap = {
+      'bronze': 'bg-orange-100 text-orange-800 border-orange-300',
+      'silver': 'bg-gray-100 text-gray-800 border-gray-300',
+      'gold': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'platinum': 'bg-purple-100 text-purple-800 border-purple-300'
+    };
+    return gradeColorMap[grade as keyof typeof gradeColorMap] || 'bg-gray-100 text-gray-800 border-gray-300';
+  };
+
+  const getCenterGradeKorean = (grade: string) => {
+    const gradeMap = {
+      'bronze': '⭐ 1급 센터',
+      'silver': '⭐⭐ 2급 센터', 
+      'gold': '⭐⭐⭐ 3급 센터',
+      'platinum': '⭐⭐⭐⭐ 특급 센터'
+    };
+    return gradeMap[grade as keyof typeof gradeMap] || '⭐ 1급 센터';
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -324,147 +386,359 @@ export default function CenterManagement() {
 
       {/* 검색 및 필터 */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
+        <form onSubmit={handleSearch} className="flex flex-col gap-4">
+          {/* 검색어 입력 */}
+          <div>
             <input
               type="text"
-              placeholder="센터명, 이메일, 주소로 검색..."
+              placeholder="센터명, 이메일, 주소, 지역으로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div className="md:w-48">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">모든 상태</option>
-              <option value="active">활성</option>
-              <option value="inactive">비활성</option>
-              <option value="suspended">정지</option>
-              <option value="maintenance">점검중</option>
-            </select>
+          
+          {/* 필터 옵션들 */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="md:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">모든 상태</option>
+                <option value="active">✅ 활성</option>
+                <option value="inactive">❌ 비활성</option>
+                <option value="suspended">🚫 정지</option>
+                <option value="maintenance">🔧 점검중</option>
+              </select>
+            </div>
+            
+            <div className="md:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">지역</label>
+              <select
+                value={regionFilter}
+                onChange={(e) => setRegionFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">모든 지역</option>
+                <option value="서울">🏙️ 서울특별시</option>
+                <option value="부산">🌊 부산광역시</option>
+                <option value="대구">🏔️ 대구광역시</option>
+                <option value="인천">✈️ 인천광역시</option>
+                <option value="광주">🌸 광주광역시</option>
+                <option value="대전">🚄 대전광역시</option>
+                <option value="울산">🏭 울산광역시</option>
+                <option value="세종">🏛️ 세종특별자치시</option>
+                <option value="경기">🏘️ 경기도</option>
+                <option value="강원">⛰️ 강원특별자치도</option>
+                <option value="충북">🌲 충청북도</option>
+                <option value="충남">🌾 충청남도</option>
+                <option value="전북">🌿 전북특별자치도</option>
+                <option value="전남">🌊 전라남도</option>
+                <option value="경북">🍎 경상북도</option>
+                <option value="경남">🏖️ 경상남도</option>
+                <option value="제주">🏝️ 제주특별자치도</option>
+              </select>
+            </div>
+            
+            <div className="md:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-1">등급</label>
+              <select
+                value={gradeFilter}
+                onChange={(e) => setGradeFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">모든 등급</option>
+                <option value="bronze">⭐ 1급 센터</option>
+                <option value="silver">⭐⭐ 2급 센터</option>
+                <option value="gold">⭐⭐⭐ 3급 센터</option>
+                <option value="platinum">⭐⭐⭐⭐ 특급 센터</option>
+              </select>
+            </div>
+            
+            <div className="flex items-end gap-2">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+              >
+                🔍 검색
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setRegionFilter('all');
+                  setGradeFilter('all');
+                  setCurrentPage(1);
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors whitespace-nowrap"
+              >
+                🔄 초기화
+              </button>
+            </div>
           </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            검색
-          </button>
         </form>
+        
+        {/* 활성 필터 표시 */}
+        {(searchTerm || statusFilter !== 'all' || regionFilter !== 'all' || gradeFilter !== 'all') && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <span className="font-medium">🔍 활성 필터:</span>
+                {searchTerm && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    검색: "{searchTerm}"
+                  </span>
+                )}
+                {statusFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    상태: {statusFilter === 'active' ? '✅ 활성' : 
+                          statusFilter === 'inactive' ? '❌ 비활성' : 
+                          statusFilter === 'suspended' ? '🚫 정지' : '🔧 점검중'}
+                  </span>
+                )}
+                {regionFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    지역: {regionFilter}
+                  </span>
+                )}
+                {gradeFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    등급: {gradeFilter === 'bronze' ? '⭐ 1급' :
+                           gradeFilter === 'silver' ? '⭐⭐ 2급' :
+                           gradeFilter === 'gold' ? '⭐⭐⭐ 3급' : '⭐⭐⭐⭐ 특급'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setRegionFilter('all');
+                  setGradeFilter('all');
+                  setCurrentPage(1);
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                모든 필터 해제
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 센터 목록 */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">센터 목록</h2>
-        </div>
-
+      {/* 센터 목록 - 카드 형식 */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">센터 목록</h2>
+        
         {error && (
-          <div className="p-6 text-center text-red-600">
-            <p>{error}</p>
-            <button
-              onClick={loadCenters}
-              className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-            >
-              다시 시도
-            </button>
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-red-600">
+              <svg className="mx-auto h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <p className="text-lg font-medium mb-2">데이터를 불러오는데 실패했습니다</p>
+              <p className="text-sm mb-4">{error}</p>
+              <button
+                onClick={loadCenters}
+                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              >
+                🔄 다시 시도
+              </button>
+            </div>
           </div>
         )}
 
-        {centers.length === 0 && !loading ? (
-          <div className="p-6 text-center text-gray-500">
-            <p>등록된 센터가 없습니다.</p>
+        {centers.length === 0 && !loading && !error ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-gray-500">
+              <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <p className="text-lg font-medium">등록된 센터가 없습니다</p>
+              <p className="text-sm">새로운 센터 등록을 기다리고 있습니다.</p>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    센터 정보
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    연락처
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    통계
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    등록일
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {centers.map((center) => (
-                  <tr key={center._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{center.name}</div>
-                        <div className="text-sm text-gray-500">{center.shortDescription}</div>
-                        <div className="text-sm text-gray-500">
-                          {center.address.city} {center.address.province}
+        ) : !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {centers.map((center) => (
+              <div key={center._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200">
+                {/* 카드 헤더 */}
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center flex-1">
+                      <div className="flex-shrink-0 h-12 w-12">
+                        <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{center.contact.email}</div>
-                      <div className="text-sm text-gray-500">{center.contact.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="ml-4 flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">
+                          {center.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 line-clamp-1">
+                          {center.shortDescription || `${center.address.city} ${center.address.province}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-shrink-0 space-y-2">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(center.status)}`}>
                         {getStatusKorean(center.status)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>사용자: {center.stats?.userCount || 0}명</div>
-                      <div>최근 신청: {center.stats?.recentRegistrations || 0}건</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(center.createdAt).toLocaleDateString('ko-KR')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedCenter(center);
-                            setShowModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          상세보기
-                        </button>
-                        <div className="relative">
-                          <select
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleStatusChange(center._id, e.target.value);
-                                e.target.value = '';
-                              }
-                            }}
-                            className="text-sm border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="">상태 변경</option>
-                            <option value="active">활성</option>
-                            <option value="inactive">비활성</option>
-                            <option value="suspended">정지</option>
-                            <option value="maintenance">점검중</option>
-                          </select>
+                      <div className={`inline-flex px-2 py-1 text-xs font-bold rounded-md border ${getCenterGradeColor(center.grade)}`}>
+                        {getCenterGradeKorean(center.grade)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 카드 본문 */}
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {/* 연락처 정보 */}
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-gray-900">{center.contact.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-gray-900">{center.contact.phone}</p>
+                      </div>
+                    </div>
+                    
+                    {/* 주소 정보 */}
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-gray-900 line-clamp-1">{center.address.address1}</p>
+                      </div>
+                    </div>
+                    
+                    {/* 등록일 */}
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-gray-900">{new Date(center.createdAt).toLocaleDateString('ko-KR')}</p>
+                      </div>
+                    </div>
+                    
+                    {/* 센터 성과 지표 */}
+                    {center.performance && (
+                      <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                        <h4 className="text-xs font-bold text-blue-800 mb-2">📊 센터 성과</h4>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>회원: {center.performance.memberCount}명</div>
+                          <div>강사: {center.performance.instructorCount}명</div>
+                          <div>만족도: ⭐{center.performance.customerSatisfaction}/5.0</div>
+                          <div>운영: {Math.floor(center.performance.operatingMonths/12)}년 {center.performance.operatingMonths%12}개월</div>
                         </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                    
+                    {/* 기본 통계 정보 */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{center.stats?.userCount || 0}</div>
+                        <div className="text-xs text-gray-500">사용자</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{center.stats?.recentRegistrations || 0}</div>
+                        <div className="text-xs text-gray-500">최근 신청</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{center.facilities?.length || 0}</div>
+                        <div className="text-xs text-gray-500">시설</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 카드 푸터 */}
+                <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => {
+                        setSelectedCenter(center);
+                        setShowModal(true);
+                      }}
+                      className="flex-1 px-3 py-2 text-xs font-medium bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      📋 상세보기
+                    </button>
+                    <div className="flex-1">
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleStatusChange(center._id, e.target.value);
+                            e.target.value = '';
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-xs font-medium bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        <option value="">⚙️ 상태 변경</option>
+                        <option value="active">▶️ 활성</option>
+                        <option value="inactive">⏸️ 비활성</option>
+                        <option value="suspended">🚫 정지</option>
+                        <option value="maintenance">🔧 점검중</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* 센터 등급 관리 */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const reason = prompt(`센터 등급을 ${getCenterGradeKorean(e.target.value)}로 변경하는 이유를 입력하세요:`);
+                            if (reason) {
+                              // TODO: 센터 등급 변경 API 호출
+                              console.log(`센터 등급 변경: ${center._id} → ${e.target.value}, 사유: ${reason}`);
+                              alert(`센터 등급이 ${getCenterGradeKorean(e.target.value)}로 변경되었습니다.`);
+                            }
+                            e.target.value = '';
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 transition-colors"
+                      >
+                        <option value="">🏆 등급 변경</option>
+                        <option value="bronze">⭐ 1급 센터</option>
+                        <option value="silver">⭐⭐ 2급 센터</option>
+                        <option value="gold">⭐⭐⭐ 3급 센터</option>
+                        <option value="platinum">⭐⭐⭐⭐ 특급 센터</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -529,6 +803,12 @@ export default function CenterManagement() {
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedCenter.status)}`}>
                         {getStatusKorean(selectedCenter.status)}
                       </span>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">센터 등급</label>
+                      <div className={`inline-flex px-3 py-2 text-sm font-bold rounded-lg border-2 ${getCenterGradeColor(selectedCenter.grade)}`}>
+                        {getCenterGradeKorean(selectedCenter.grade)}
+                      </div>
                     </div>
                   </div>
                 </div>

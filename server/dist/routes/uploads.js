@@ -27,7 +27,7 @@ const upload = (0, multer_1.default)({
     storage,
     limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') },
 });
-router.post('/excel', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), upload.single('file'), async (req, res) => {
+router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), upload.single('file'), async (req, res) => {
     try {
         const file = req.file;
         if (!file) {
@@ -363,7 +363,7 @@ router.post('/excel', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
         });
     }
 });
-router.post('/', auth_1.auth, upload.single('file'), async (req, res) => {
+router.post('/', auth_1.authMiddleware, upload.single('file'), async (req, res) => {
     try {
         const file = req.file;
         if (!file)
@@ -383,7 +383,7 @@ router.post('/', auth_1.auth, upload.single('file'), async (req, res) => {
         res.status(500).json({ error: '업로드에 실패했습니다.' });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const video = await Video_1.Video.findById(req.params.id)
             .populate('owner', 'name userId')
@@ -402,7 +402,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '조회에 실패했습니다.' });
     }
 });
-router.get('/:id/download', auth_1.auth, async (req, res) => {
+router.get('/:id/download', auth_1.authMiddleware, async (req, res) => {
     try {
         const video = await Video_1.Video.findById(req.params.id);
         if (!video)
@@ -419,7 +419,7 @@ router.get('/:id/download', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '다운로드에 실패했습니다.' });
     }
 });
-router.patch('/:id/review', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { status = 'reviewed', feedback, analysisResult, visibility } = req.body;
         const now = new Date();
@@ -441,7 +441,7 @@ router.patch('/:id/review', auth_1.auth, (0, auth_1.requireRole)(['instructor', 
         res.status(500).json({ error: '리뷰 업데이트에 실패했습니다.' });
     }
 });
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
         const { status, page = 1, limit = 10 } = req.query;
@@ -457,7 +457,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '목록 조회에 실패했습니다.' });
     }
 });
-router.get('/admin/review-queue/list', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/admin/review-queue/list', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { status = 'pending', page = 1, limit = 10 } = req.query;
         const skip = (Number(page) - 1) * Number(limit);

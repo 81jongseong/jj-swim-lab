@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const Notification_1 = require("../models/Notification");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { page = 1, limit = 20, type, priority, isRead } = req.query;
@@ -47,7 +47,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/unread-count', auth_1.auth, async (req, res) => {
+router.get('/unread-count', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const count = await Notification_1.Notification.countDocuments({ userId, isRead: false });
@@ -65,7 +65,7 @@ router.get('/unread-count', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.put('/:id/read', auth_1.auth, async (req, res) => {
+router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
@@ -99,7 +99,7 @@ router.put('/:id/read', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.put('/read-all', auth_1.auth, async (req, res) => {
+router.put('/read-all', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const result = await Notification_1.Notification.updateMany({ userId, isRead: false }, { isRead: true });
@@ -118,7 +118,7 @@ router.put('/read-all', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.delete('/:id', auth_1.auth, async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
@@ -149,7 +149,7 @@ router.delete('/:id', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
     try {
         const { userId, type, title, message, data, priority = 'medium', expiresAt } = req.body;
         if (!userId || !type || !title || !message) {

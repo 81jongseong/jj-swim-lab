@@ -8,7 +8,6 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
-// import { Center } from '../models/Center'; // 사용되지 않는 import
 import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
 import { Payment } from '../models/Payment';

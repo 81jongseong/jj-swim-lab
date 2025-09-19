@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const Order_1 = __importDefault(require("../models/Order"));
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 20, status, paymentStatus, customerName, orderNumber, startDate, endDate } = req.query;
         const user = req.user;
@@ -63,7 +63,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -100,7 +100,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const user = req.user;
         const { customerId, customerName, customerEmail, customerPhone, items, paymentMethod, shippingAddress, notes } = req.body;
@@ -159,7 +159,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', '
         });
     }
 });
-router.patch('/:id/status', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.patch('/:id/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -204,7 +204,7 @@ router.patch('/:id/status', auth_1.auth, (0, auth_1.requireRole)(['admin', 'cent
         });
     }
 });
-router.patch('/:id/payment-status', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.patch('/:id/payment-status', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const { paymentStatus } = req.body;
@@ -249,7 +249,7 @@ router.patch('/:id/payment-status', auth_1.auth, (0, auth_1.requireRole)(['admin
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -304,7 +304,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin',
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -346,7 +346,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['admin', 'centerAdmi
         });
     }
 });
-router.get('/stats/summary', auth_1.auth, async (req, res) => {
+router.get('/stats/summary', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
         const { startDate, endDate } = req.query;

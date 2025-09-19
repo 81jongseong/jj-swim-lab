@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const CenterLevel_1 = require("../models/CenterLevel");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { centerId } = req.user;
         if (!centerId && req.user.userType !== 'superAdmin') {
@@ -35,7 +35,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin
         });
     }
 });
-router.get('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { centerId } = req.user;
@@ -66,7 +66,7 @@ router.get('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAd
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { centerId } = req.user;
         const { name, displayName, order, color, description } = req.body;
@@ -112,7 +112,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmi
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { centerId } = req.user;
@@ -164,7 +164,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAd
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { centerId } = req.user;

@@ -7,7 +7,7 @@ import { getCenterLevels, updateCenterLevels, type CenterLevel } from '../../../
 import { Plus, Trash2, Save, X, GripVertical } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
 
-function CenterLevelsManagement() {
+function StudentLevelsManagement() {
   const { user } = useAuth();
   const [centerLevels, setCenterLevels] = useState<CenterLevel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,13 +91,12 @@ function CenterLevelsManagement() {
     } catch (error) {
       console.error('❌ 센터 레벨 로드 실패:', error);
       
-      // 에러가 발생해도 기본 레벨을 설정
+      // 에러가 발생해도 기본 레벨을 설정 (메달 등급 시스템)
       const defaultLevels = [
-        { name: '기초', order: 1, description: '수영을 처음 시작하는 단계', color: '#10B981' },
-        { name: '초급', order: 2, description: '기본 동작을 익히는 단계', color: '#3B82F6' },
-        { name: '중급', order: 3, description: '자유형과 배영을 배우는 단계', color: '#F59E0B' },
-        { name: '상급', order: 4, description: '평영과 접영을 배우는 단계', color: '#EF4444' },
-        { name: '마스터', order: 5, description: '고급 기술과 경영을 배우는 단계', color: '#8B5CF6' }
+        { name: '🥉 브론즈', order: 1, description: '수영 초보자 - 물에 익숙해지기', color: '#CD7F32' },
+        { name: '🥈 실버', order: 2, description: '기본 영법 습득자 - 자유형과 배영', color: '#C0C0C0' },
+        { name: '🥇 골드', order: 3, description: '고급 기술 보유자 - 평영과 접영', color: '#FFD700' },
+        { name: '💎 플래티넘', order: 4, description: '마스터 수준 - 모든 영법과 고급 기술', color: '#E5E4E2' }
       ];
       
       const defaultCenterLevel = {
@@ -206,10 +205,10 @@ function CenterLevelsManagement() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          🎯 센터별 레벨 설정
+          🏊‍♂️ 학생 수영 레벨 설정
         </h1>
         <p className="text-sm text-gray-600">
-          {getCenterId(user!) || '센터'}의 수영 레벨을 설정하고 관리하세요
+          센터에서 사용할 학생들의 수영 실력 레벨을 설정하고 관리하세요 (센터 등급과는 다릅니다)
         </p>
       </div>
 
@@ -218,7 +217,7 @@ function CenterLevelsManagement() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <GripVertical className="w-5 h-5" />
-              레벨 구성
+              🏊‍♂️ 학생 수영 레벨 구성
             </CardTitle>
             
             {!isEditing ? (
@@ -388,6 +387,6 @@ function CenterLevelsManagement() {
   );
 }
 
-export default withAuth(CenterLevelsManagement, { 
+export default withAuth(StudentLevelsManagement, { 
   requireTypes: ['centerAdmin', 'superAdmin'] 
 });

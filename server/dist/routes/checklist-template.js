@@ -8,7 +8,7 @@ const auth_1 = require("../middleware/auth");
 const ChecklistTemplate_1 = require("../models/ChecklistTemplate");
 const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { name, description, levels, items, isPublic, tags } = req.body;
         const creatorId = req.user?._id;
@@ -51,7 +51,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
         res.status(500).json({ error: '체크리스트 템플릿 생성에 실패했습니다.' });
     }
 });
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const userId = req.user?._id;
         const centerId = req.user?.centerId;
@@ -89,7 +89,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin
         res.status(500).json({ error: '체크리스트 템플릿 목록 조회에 실패했습니다.' });
     }
 });
-router.get('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/:templateId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { templateId } = req.params;
         const userId = req.user?._id;
@@ -116,7 +116,7 @@ router.get('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', '
         res.status(500).json({ error: '체크리스트 템플릿 조회에 실패했습니다.' });
     }
 });
-router.put('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:templateId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { templateId } = req.params;
         const { name, description, levels, items, isPublic, tags } = req.body;
@@ -153,7 +153,7 @@ router.put('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', '
         res.status(500).json({ error: '체크리스트 템플릿 수정에 실패했습니다.' });
     }
 });
-router.delete('/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.delete('/:templateId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { templateId } = req.params;
         const userId = req.user?._id;

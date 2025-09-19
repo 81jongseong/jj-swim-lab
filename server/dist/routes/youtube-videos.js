@@ -9,7 +9,7 @@ const YouTubeVideo_1 = require("../models/YouTubeVideo");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const router = express_1.default.Router();
 const extractVideoId = (url) => {
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
     const match = url.match(regex);
     return match ? match[1] : '';
 };
@@ -85,7 +85,7 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { title, description, videoId, category, level, duration, teachingMethodId, tags } = req.body;
         if (!title || !description || !videoId || !category || !level) {
@@ -149,7 +149,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { title, description, videoId, category, level, duration, teachingMethodId, tags } = req.body;
@@ -235,7 +235,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         console.log(`🗑️ YouTube 비디오 삭제 요청: ${id}`);

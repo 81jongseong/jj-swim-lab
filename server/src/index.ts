@@ -157,6 +157,7 @@ import centerLevelRoutes from './routes/center-level';
 import studentLevelRoutes from './routes/student-levels';
 import instructorRoutes from './routes/instructor';
 import instructorManagementRoutes from './routes/instructorManagement';
+import instructorEvaluationRoutes from './routes/instructor-evaluation';
 import revenueRoutes from './routes/revenue';
 import approvalRoutes from './routes/approvals';
 // 사용자 유형별 라우트
@@ -391,6 +392,7 @@ app.use('/api/center-levels', centerLevelRoutes);
 app.use('/api/student-levels', studentLevelRoutes);
 app.use('/api/instructor', instructorRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
+app.use('/api/instructor-evaluation', instructorEvaluationRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/approvals', approvalRoutes);
 // 사용자 유형별 API 라우트

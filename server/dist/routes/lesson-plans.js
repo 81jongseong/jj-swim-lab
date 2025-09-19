@@ -10,7 +10,7 @@ const TeachingMethod_1 = require("../models/TeachingMethod");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { status, date, studentId } = req.query;
@@ -43,7 +43,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin
         });
     }
 });
-router.get('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { planId } = req.params;
@@ -73,7 +73,7 @@ router.get('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cent
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { title, description, teachingMethods, students, duration, date, time, location, objectives, materials, notes, centerId } = req.body;
@@ -137,7 +137,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
         });
     }
 });
-router.put('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { planId } = req.params;
@@ -179,7 +179,7 @@ router.put('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cent
         });
     }
 });
-router.delete('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.delete('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { planId } = req.params;
@@ -207,7 +207,7 @@ router.delete('/:planId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'c
         });
     }
 });
-router.put('/:planId/attendance', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:planId/attendance', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { planId } = req.params;
@@ -238,7 +238,7 @@ router.put('/:planId/attendance', auth_1.auth, (0, auth_1.requireRole)(['instruc
         });
     }
 });
-router.put('/:planId/feedback', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:planId/feedback', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { planId } = req.params;
@@ -269,7 +269,7 @@ router.put('/:planId/feedback', auth_1.auth, (0, auth_1.requireRole)(['instructo
         });
     }
 });
-router.get('/stats/instructor', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/stats/instructor', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const stats = await LessonPlan_1.LessonPlan.aggregate([
@@ -315,7 +315,7 @@ router.get('/stats/instructor', auth_1.auth, (0, auth_1.requireRole)(['instructo
         });
     }
 });
-router.get('/student/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { studentId } = req.params;

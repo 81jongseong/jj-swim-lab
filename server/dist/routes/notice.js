@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Notice_1 = require("../models/Notice");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { category, priority, isPinned, page = 1, limit = 10 } = req.query;
         const user = req.user;
@@ -51,7 +51,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         res.status(500).json({ message: '공지사항 목록 조회 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const notice = await Notice_1.Notice.findById(req.params.id)
             .populate('author', 'name email');
@@ -68,7 +68,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         return res.status(500).json({ message: '공지사항 조회 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const { title, content, category, priority, targetUserTypes, targetCenters, isPublished, expiresAt, attachments, tags, isPinned, allowComments } = req.body;
         const notice = new Notice_1.Notice({
@@ -94,7 +94,7 @@ router.post('/', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'),
         return res.status(500).json({ message: '공지사항 생성 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const notice = await Notice_1.Notice.findById(req.params.id);
         if (!notice) {
@@ -114,7 +114,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'
         return res.status(500).json({ message: '공지사항 수정 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const notice = await Notice_1.Notice.findById(req.params.id);
         if (!notice) {
@@ -131,7 +131,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('noticeManageme
         res.status(500).json({ message: '공지사항 삭제 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.patch('/:id/publish', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.patch('/:id/publish', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const { isPublished } = req.body;
         const notice = await Notice_1.Notice.findById(req.params.id);
@@ -147,7 +147,7 @@ router.patch('/:id/publish', auth_1.auth, (0, auth_1.requirePermission)('noticeM
         res.status(500).json({ message: '공지사항 상태 변경 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.patch('/:id/pin', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.patch('/:id/pin', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const { isPinned } = req.body;
         const notice = await Notice_1.Notice.findById(req.params.id);
@@ -162,7 +162,7 @@ router.patch('/:id/pin', auth_1.auth, (0, auth_1.requirePermission)('noticeManag
         res.status(500).json({ message: '공지사항 고정 상태 변경 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.get('/unread/count', auth_1.auth, async (req, res) => {
+router.get('/unread/count', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
         const query = { isPublished: true };
@@ -177,7 +177,7 @@ router.get('/unread/count', auth_1.auth, async (req, res) => {
         res.status(500).json({ message: '읽지 않은 공지사항 수 조회 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requirePermission)('noticeManagement'), async (req, res) => {
     try {
         const stats = await Notice_1.Notice.aggregate([
             {
@@ -199,7 +199,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requirePermission)('notice
         res.status(500).json({ message: '공지사항 통계 조회 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
-router.get('/popular', auth_1.auth, async (req, res) => {
+router.get('/popular', auth_1.authMiddleware, async (req, res) => {
     try {
         const { limit = 5 } = req.query;
         const user = req.user;

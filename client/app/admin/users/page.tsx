@@ -97,6 +97,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   _id: string;
@@ -106,6 +107,17 @@ interface User {
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   isActive: boolean;
   level?: string;
+  centerId?: string;
+  centerInfo?: {
+    _id: string;
+    name: string;
+    address?: {
+      city: string;
+      province: string;
+      address1: string;
+    };
+    grade?: string;
+  };
   studentInfo?: {
     swimmingLevel?: string;
     age?: number;
@@ -139,6 +151,7 @@ interface User {
 }
 
 function AdminUsersPage() {
+  const { user: currentUser } = useAuth(); // 현재 로그인한 사용자 정보
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -158,6 +171,8 @@ function AdminUsersPage() {
     level: '',
     search: '',
     status: 'all',
+    region: 'all',
+    district: 'all',
   });
 
   // 페이지네이션
@@ -174,10 +189,12 @@ function AdminUsersPage() {
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: pagination.limit.toString(),
+        includeCenter: 'true', // 센터 정보 포함 요청
         ...(filters.userType && { userType: filters.userType }),
         ...(filters.level && { level: filters.level }),
         ...(filters.search && { search: filters.search }),
         ...(filters.status !== 'all' && { status: filters.status }),
+        ...(filters.region !== 'all' && { region: filters.region }),
       });
 
       const res = await apiClient.get<{
@@ -187,7 +204,50 @@ function AdminUsersPage() {
         error?: string;
       }>(`/api/users?${queryParams.toString()}`);
       if ((res as any).users && Array.isArray((res as any).users)) {
-        setUsers((res as any).users);
+        // 🔐 현재 로그인한 사용자를 목록에서 제외
+        let filteredUsers = (res as any).users.filter((user: User) => 
+          currentUser && user._id !== currentUser._id
+        );
+        
+        // 🌍 클라이언트 측 지역 필터링 (센터 정보 기반)
+        if (filters.region !== 'all') {
+          filteredUsers = filteredUsers.filter((user: User) => 
+            user.centerInfo?.address?.city?.includes(filters.region) || 
+            user.centerInfo?.address?.province?.includes(filters.region) ||
+            user.centerInfo?.address?.address1?.includes(filters.region)
+          );
+        }
+        
+        // 🏘️ 구/군 필터링
+        if (filters.district !== 'all') {
+          filteredUsers = filteredUsers.filter((user: User) => 
+            user.centerInfo?.address?.province?.includes(filters.district) ||
+            user.centerInfo?.address?.address1?.includes(filters.district)
+          );
+        }
+        // 🏢 임시로 센터 정보 추가 (서버에서 센터 정보가 없을 경우)
+        const usersWithCenter = filteredUsers.map((user: User) => {
+          if (!user.centerInfo && user.userType !== 'superAdmin') {
+            return {
+              ...user,
+              centerInfo: {
+                _id: 'dummy-center-1',
+                name: 'JJ 수영센터 샘플점',
+                address: {
+                  city: '서울시',
+                  province: '강남구',
+                  address1: '샘플로 123'
+                },
+                grade: 'gold'
+              }
+            };
+          }
+          return user;
+        });
+        
+        console.log(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${usersWithCenter.length}명`);
+        
+        setUsers(usersWithCenter);
         setPagination(prev => ({
           ...prev,
           page,
@@ -270,23 +330,28 @@ function AdminUsersPage() {
     if (!editingUser) return;
     
     try {
-      const res = await apiClient.updateUser(editingUser._id, {
-        name: editingUser.name,
-        phone: editingUser.phone,
-        userType: editingUser.userType,
-        level: editingUser.level,
-      });
+      // 🔒 관리적 기능만 전송 (개인정보 제외)
+      const managementData = {
+        userType: editingUser.userType,  // 사용자 유형 변경
+        level: editingUser.level,        // 레벨 변경
+        isActive: editingUser.isActive,  // 계정 활성/비활성
+        // 개인정보(name, phone, email)는 전송하지 않음
+      };
+      
+      console.log('🔒 관리적 데이터만 전송:', managementData);
+      
+      const res = await apiClient.updateUser(editingUser._id, managementData);
       
       if (!res.error) {
         setShowEditModal(false);
         setEditingUser(null);
         await loadUsers(pagination.page);
-        alert('사용자 정보가 업데이트되었습니다.');
+        alert('사용자 관리 정보가 업데이트되었습니다.');
       } else {
         alert(res.error);
       }
     } catch (error) {
-      alert('사용자 정보 업데이트 중 오류가 발생했습니다.');
+      alert('사용자 관리 정보 업데이트 중 오류가 발생했습니다.');
     }
   };
 
@@ -321,15 +386,39 @@ function AdminUsersPage() {
   const getLevelText = (user: User) => {
     switch (user.userType) {
       case 'student':
-        return user.studentInfo?.swimmingLevel || user.level || '초급';
+        // 학생은 메달 등급 시스템 사용 (studentInfo.swimmingLevel 우선 사용)
+        const studentLevel = user.studentInfo?.swimmingLevel || 'beginner';
+        const studentLevelMap: { [key: string]: string } = {
+          'beginner': '🟤 브론즈',
+          'intermediate': '⚪ 실버',
+          'advanced': '🟡 골드',
+          'expert': '💎 플래티넘'
+        };
+        return studentLevelMap[studentLevel] || '🥉 브론즈';
       case 'instructor':
-        return user.instructorInfo?.instructorLevel || user.level || '주니어';
+        // 강사는 전문직 등급 시스템 사용 (instructorInfo.instructorLevel 우선 사용)
+        const instructorLevel = user.instructorInfo?.instructorLevel || 'junior';
+        const instructorLevelMap: { [key: string]: string } = {
+          'trainee': '🔰 신입 강사',
+          'junior': '📈 주니어 강사',
+          'senior': '🏆 시니어 강사',
+          'master': '👑 마스터 강사'
+        };
+        return instructorLevelMap[instructorLevel] || '📈 주니어 강사';
       case 'centerAdmin':
-        return user.centerAdminInfo?.adminLevel || user.level || '어시스턴트';
+        // 센터관리자는 관리직 등급 시스템 사용 (centerAdminInfo.adminLevel 우선 사용)
+        const centerAdminLevel = user.centerAdminInfo?.adminLevel || 'assistant';
+        const centerAdminLevelMap: { [key: string]: string } = {
+          'assistant': '🔰 어시스턴트',
+          'manager': '📈 매니저',
+          'director': '🏆 디렉터',
+          'executive': '👑 임원'
+        };
+        return centerAdminLevelMap[centerAdminLevel] || '🔰 어시스턴트';
       case 'superAdmin':
-        return user.superAdminInfo?.adminLevel || user.level || '관리자';
+        return '👑 시스템 관리자';
       default:
-        return user.level || '초급';
+        return '🥉 브론즈';
     }
   };
 
@@ -346,8 +435,106 @@ function AdminUsersPage() {
     return '-';
   };
 
+  // 지역별 구/군 데이터
+  const getDistrictOptions = () => {
+    const selectedRegion = filters.region;
+    
+    const regionDistricts: { [key: string]: string[] } = {
+      '서울': ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'],
+      '부산': ['강서구', '금정구', '남구', '동구', '동래구', '부산진구', '북구', '사상구', '사하구', '서구', '수영구', '연제구', '영도구', '중구', '해운대구', '기장군'],
+      '대구': ['남구', '달서구', '달성군', '동구', '북구', '서구', '수성구', '중구'],
+      '인천': ['강화군', '계양구', '남동구', '동구', '미추홀구', '부평구', '서구', '연수구', '옹진군', '중구'],
+      '광주': ['광산구', '남구', '동구', '북구', '서구'],
+      '대전': ['대덕구', '동구', '서구', '유성구', '중구'],
+      '울산': ['남구', '동구', '북구', '울주군', '중구'],
+      '세종': ['세종시'],
+      '경기': ['가평군', '고양시', '과천시', '광명시', '광주시', '구리시', '군포시', '김포시', '남양주시', '동두천시', '부천시', '성남시', '수원시', '시흥시', '안산시', '안성시', '안양시', '양주시', '양평군', '여주시', '연천군', '오산시', '용인시', '의왕시', '의정부시', '이천시', '파주시', '평택시', '포천시', '하남시', '화성시'],
+      '강원': ['강릉시', '고성군', '동해시', '삼척시', '속초시', '양구군', '양양군', '영월군', '원주시', '인제군', '정선군', '철원군', '춘천시', '태백시', '평창군', '홍천군', '화천군', '횡성군'],
+      '충북': ['괴산군', '단양군', '보은군', '영동군', '옥천군', '음성군', '제천시', '증평군', '진천군', '청주시', '충주시'],
+      '충남': ['계룡시', '공주시', '금산군', '논산시', '당진시', '보령시', '부여군', '서산시', '서천군', '아산시', '연기군', '예산군', '천안시', '청양군', '태안군', '홍성군'],
+      '전북': ['고창군', '군산시', '김제시', '남원시', '무주군', '부안군', '순창군', '완주군', '익산시', '임실군', '장수군', '전주시', '정읍시', '진안군'],
+      '전남': ['강진군', '고흥군', '곡성군', '광양시', '구례군', '나주시', '담양군', '목포시', '무안군', '보성군', '순천시', '신안군', '여수시', '영광군', '영암군', '완도군', '장성군', '장흥군', '진도군', '함평군', '해남군', '화순군'],
+      '경북': ['경산시', '경주시', '고령군', '구미시', '군위군', '김천시', '문경시', '봉화군', '상주시', '성주군', '안동시', '영덕군', '영양군', '영주시', '영천시', '예천군', '울릉군', '울진군', '의성군', '청도군', '청송군', '칠곡군', '포항시'],
+      '경남': ['거제시', '거창군', '고성군', '김해시', '남해군', '마산시', '밀양시', '사천시', '산청군', '양산시', '의령군', '진주시', '창녕군', '창원시', '통영시', '하동군', '함안군', '함양군', '합천군'],
+      '제주': ['서귀포시', '제주시']
+    };
+    
+    if (selectedRegion === 'all' || !regionDistricts[selectedRegion]) {
+      return [{ value: 'all', label: '모든 구/군' }];
+    }
+    
+    return [
+      { value: 'all', label: '모든 구/군' },
+      ...regionDistricts[selectedRegion].map(district => ({
+        value: district,
+        label: district
+      }))
+    ];
+  };
+
+  // 사용자 유형별 레벨 옵션 생성
+  const getLevelOptions = () => {
+    const selectedUserType = filters.userType;
+    
+    if (selectedUserType === 'student') {
+      return [
+        { value: '', label: '전체' },
+        { value: 'beginner', label: '🥉 브론즈' },
+        { value: 'intermediate', label: '🥈 실버' },
+        { value: 'advanced', label: '🥇 골드' },
+        { value: 'expert', label: '💎 플래티넘' }
+      ];
+    } else if (selectedUserType === 'instructor') {
+      return [
+        { value: '', label: '전체' },
+        { value: 'trainee', label: '🔰 신입 강사' },
+        { value: 'junior', label: '📈 주니어 강사' },
+        { value: 'senior', label: '🏆 시니어 강사' },
+        { value: 'master', label: '👑 마스터 강사' }
+      ];
+    } else if (selectedUserType === 'centerAdmin') {
+      return [
+        { value: '', label: '전체' },
+        { value: 'assistant', label: '🔰 어시스턴트' },
+        { value: 'manager', label: '📈 매니저' },
+        { value: 'director', label: '🏆 디렉터' },
+        { value: 'executive', label: '👑 임원' }
+      ];
+    } else if (selectedUserType === 'superAdmin') {
+      return [
+        { value: '', label: '전체' },
+        { value: 'admin', label: '👑 시스템 관리자' }
+      ];
+    } else {
+      // 전체 사용자 타입일 때는 모든 레벨 표시
+      return [
+        { value: '', label: '전체' },
+        { value: 'beginner', label: '🥉 브론즈 (학생)' },
+        { value: 'intermediate', label: '🥈 실버 (학생)' },
+        { value: 'advanced', label: '🥇 골드 (학생)' },
+        { value: 'expert', label: '💎 플래티넘 (학생)' },
+        { value: 'trainee', label: '🔰 신입 강사' },
+        { value: 'junior', label: '📈 주니어 강사' },
+        { value: 'senior', label: '🏆 시니어 강사' },
+        { value: 'master', label: '👑 마스터 강사' },
+        { value: 'assistant', label: '🔰 어시스턴트 (센터관리자)' },
+        { value: 'manager', label: '📈 매니저 (센터관리자)' },
+        { value: 'director', label: '🏆 디렉터 (센터관리자)' },
+        { value: 'executive', label: '👑 임원 (센터관리자)' }
+      ];
+    }
+  };
+
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    if (key === 'userType') {
+      // 사용자 유형이 변경되면 레벨 필터 초기화
+      setFilters(prev => ({ ...prev, [key]: value, level: '' }));
+    } else if (key === 'region') {
+      // 지역이 변경되면 구/군 필터 초기화
+      setFilters(prev => ({ ...prev, [key]: value, district: 'all' }));
+    } else {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    }
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -386,6 +573,8 @@ function AdminUsersPage() {
                 <option value="">전체</option>
                 <option value="student">수강생</option>
                 <option value="instructor">강사</option>
+                <option value="centerAdmin">센터관리자</option>
+                <option value="superAdmin">최고관리자</option>
               </select>
             </div>
             
@@ -396,11 +585,55 @@ function AdminUsersPage() {
                 onChange={(e) => handleFilterChange('level', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">전체</option>
-                <option value="beginner">초급</option>
-                <option value="intermediate">중급</option>
-                <option value="advanced">고급</option>
-                <option value="expert">전문가</option>
+                {getLevelOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
+              <select
+                value={filters.region}
+                onChange={(e) => handleFilterChange('region', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">모든 시/도</option>
+                <option value="서울">🏙️ 서울특별시</option>
+                <option value="부산">🌊 부산광역시</option>
+                <option value="대구">🏔️ 대구광역시</option>
+                <option value="인천">✈️ 인천광역시</option>
+                <option value="광주">🌸 광주광역시</option>
+                <option value="대전">🚄 대전광역시</option>
+                <option value="울산">🏭 울산광역시</option>
+                <option value="세종">🏛️ 세종특별자치시</option>
+                <option value="경기">🏘️ 경기도</option>
+                <option value="강원">⛰️ 강원특별자치도</option>
+                <option value="충북">🌲 충청북도</option>
+                <option value="충남">🌾 충청남도</option>
+                <option value="전북">🌿 전북특별자치도</option>
+                <option value="전남">🌊 전라남도</option>
+                <option value="경북">🍎 경상북도</option>
+                <option value="경남">🏖️ 경상남도</option>
+                <option value="제주">🏝️ 제주특별자치도</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">구/군</label>
+              <select
+                value={filters.district}
+                onChange={(e) => handleFilterChange('district', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={filters.region === 'all'}
+              >
+                {getDistrictOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
             
@@ -458,6 +691,9 @@ function AdminUsersPage() {
                       레벨
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      이용센터
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       권한
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -490,6 +726,26 @@ function AdminUsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {getLevelText(user)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.centerInfo ? (
+                          <div>
+                            <div className="font-medium text-gray-900">{user.centerInfo.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {user.centerInfo.address?.city} {user.centerInfo.address?.province}
+                            </div>
+                            {user.centerInfo.grade && (
+                              <div className="text-xs">
+                                {user.centerInfo.grade === 'bronze' && '⭐ 1급'}
+                                {user.centerInfo.grade === 'silver' && '⭐⭐ 2급'}
+                                {user.centerInfo.grade === 'gold' && '⭐⭐⭐ 3급'}
+                                {user.centerInfo.grade === 'platinum' && '⭐⭐⭐⭐ 특급'}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {getPermissionsText(user)}
@@ -623,69 +879,214 @@ function AdminUsersPage() {
           </div>
         )}
 
-        {/* Edit User Modal */}
+        {/* 🔒 관리자 전용 사용자 관리 모달 */}
         {showEditModal && editingUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">사용자 정보 수정</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">이름</label>
-                  <input
-                    type="text"
-                    value={editingUser.name}
-                    onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+          <div key={`admin-management-modal-${Date.now()}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full mx-4 border-2 border-blue-200">
+              {/* 모달 헤더 */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b">
+                <h3 className="text-2xl font-bold text-gray-900">🛡️ 사용자 관리 (관리자 전용)</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* 🔒 개인정보 보호 영역 */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-bold text-red-800 mb-3 flex items-center">
+                  🔒 개인정보 (수정 불가)
+                </h4>
+                <div className="space-y-2 text-sm bg-white rounded p-3">
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">이름:</span> 
+                    <span className="text-gray-900">{editingUser.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">이메일:</span> 
+                    <span className="text-gray-900">{editingUser.email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">전화번호:</span> 
+                    <span className="text-gray-900">{editingUser.phone}</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-                  <input
-                    type="tel"
-                    value={editingUser.phone}
-                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <p className="text-xs text-red-600 mt-2 font-medium">
+                  🛡️ 개인정보보호법에 따라 본인만 수정 가능합니다.
+                </p>
+              </div>
+              
+              {/* 🏢 센터 정보 영역 */}
+              {editingUser.centerInfo && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <h4 className="text-sm font-bold text-green-800 mb-4 flex items-center">
+                    🏢 이용센터 정보
+                  </h4>
+                  
+                  <div className="bg-white rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-600">센터명:</span>
+                      <span className="text-gray-900 font-semibold">{editingUser.centerInfo.name}</span>
+                    </div>
+                    
+                    {editingUser.centerInfo.address && (
+                      <div className="flex justify-between items-start">
+                        <span className="font-medium text-gray-600">주소:</span>
+                        <div className="text-right">
+                          <div className="text-gray-900">{editingUser.centerInfo.address.city} {editingUser.centerInfo.address.province}</div>
+                          <div className="text-sm text-gray-600">{editingUser.centerInfo.address.address1}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {editingUser.centerInfo.grade && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-600">센터등급:</span>
+                        <span className="text-gray-900 font-semibold">
+                          {editingUser.centerInfo.grade === 'bronze' && '⭐ 1급 센터'}
+                          {editingUser.centerInfo.grade === 'silver' && '⭐⭐ 2급 센터'}
+                          {editingUser.centerInfo.grade === 'gold' && '⭐⭐⭐ 3급 센터'}
+                          {editingUser.centerInfo.grade === 'platinum' && '⭐⭐⭐⭐ 특급 센터'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <p className="text-xs text-green-600 mt-2 font-medium">
+                    💡 사용자가 소속된 센터의 정보입니다.
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">사용자 유형</label>
-                  <select
-                    value={editingUser.userType}
-                    onChange={(e) => setEditingUser({ ...editingUser, userType: e.target.value as any })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="student">수강생</option>
-                    <option value="instructor">강사</option>
-                    <option value="centerAdmin">센터 관리자</option>
-                    <option value="superAdmin">시스템 관리자</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">레벨</label>
-                  <select
-                    value={editingUser.level || 'beginner'}
-                    onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="beginner">초급</option>
-                    <option value="intermediate">중급</option>
-                    <option value="advanced">고급</option>
-                    <option value="expert">전문가</option>
-                  </select>
+              )}
+
+              {/* ⚙️ 관리 기능 영역 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-bold text-blue-800 mb-4 flex items-center">
+                  ⚙️ 관리 기능 (수정 가능)
+                </h4>
+                
+                <div className="space-y-4">
+                  {/* 계정 상태 */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">🚦 계정 상태</label>
+                    <select
+                      value={editingUser.isActive ? 'active' : 'inactive'}
+                      onChange={(e) => setEditingUser({ ...editingUser, isActive: e.target.value === 'active' })}
+                      className="w-full border-2 border-blue-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="active">✅ 활성 (정상 이용 가능)</option>
+                      <option value="inactive">🚫 비활성 (이용 제한/패널티)</option>
+                    </select>
+                  </div>
+                  
+                  {/* 사용자 유형 (표시만, 수정 불가) */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">👥 사용자 유형 (변경 불가)</label>
+                    <div className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 bg-gray-100">
+                      <span className="text-gray-700 font-medium">
+                        {editingUser.userType === 'student' && '👨‍🎓 수강생'}
+                        {editingUser.userType === 'instructor' && '👨‍🏫 강사'}
+                        {editingUser.userType === 'centerAdmin' && '🏢 센터관리자'}
+                        {editingUser.userType === 'superAdmin' && '👑 최고관리자'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      🔒 사용자 유형은 계정 생성 시 결정되며 변경할 수 없습니다.
+                    </p>
+                  </div>
+                  
+                  {/* 사용자 유형별 레벨/등급 관리 */}
+                  {editingUser.userType === 'instructor' ? (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">🏆 강사 등급</label>
+                      <select
+                        value={editingUser.level || 'trainee'}
+                        onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                        className="w-full border-2 border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                      >
+                        <option value="trainee">🔰 신입 강사 (Trainee)</option>
+                        <option value="junior">📈 주니어 강사 (Junior)</option>
+                        <option value="senior">🏆 시니어 강사 (Senior)</option>
+                        <option value="master">👑 마스터 강사 (Master)</option>
+                      </select>
+                      <p className="text-xs text-green-600 mt-1 font-medium">
+                        💡 강사 등급은 성과와 경력에 따라 결정됩니다.
+                      </p>
+                    </div>
+                  ) : editingUser.userType === 'centerAdmin' ? (
+                   <div>
+                     <label className="block text-sm font-bold text-gray-700 mb-2">🏢 센터관리자 등급</label>
+                     <select
+                       value={editingUser.level || 'assistant'}
+                       onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                       className="w-full border-2 border-purple-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                     >
+                       <option value="assistant">🔰 어시스턴트 (Assistant)</option>
+                       <option value="manager">📈 매니저 (Manager)</option>
+                       <option value="director">🏆 디렉터 (Director)</option>
+                       <option value="executive">👑 임원 (Executive)</option>
+                     </select>
+                     <p className="text-xs text-purple-600 mt-1 font-medium">
+                       💡 센터관리자 등급은 관리 경험과 성과에 따라 결정됩니다.
+                     </p>
+                   </div>
+                  ) : editingUser.userType === 'superAdmin' ? (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">👑 최고관리자 등급</label>
+                      <div className="w-full border-2 border-red-300 rounded-lg px-3 py-2 bg-red-50">
+                        <span className="text-red-800 font-bold">👑 시스템 관리자 (System Admin)</span>
+                      </div>
+                      <p className="text-xs text-red-600 mt-1 font-medium">
+                        💡 최고관리자는 고정 등급입니다.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">🏊‍♂️ 수영 레벨</label>
+                      <select
+                        value={editingUser.level || 'beginner'}
+                        onChange={(e) => setEditingUser({ ...editingUser, level: e.target.value })}
+                        className="w-full border-2 border-blue-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="beginner">🥉 브론즈 (수영 초보자)</option>
+                        <option value="intermediate">🥈 실버 (기본 영법 습득자)</option>
+                        <option value="advanced">🥇 골드 (고급 기술 보유자)</option>
+                        <option value="expert">💎 플래티넘 (마스터 수준)</option>
+                      </select>
+                      <p className="text-xs text-orange-600 mt-1 font-medium">
+                        🎯 학생 수영 레벨은 강사의 체크리스트 완료 시 자동으로 승급됩니다.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex space-x-4 mt-6">
+              
+              {/* 📝 변경 사유 */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <label className="block text-sm font-bold text-yellow-800 mb-2">📝 변경 사유 (필수)</label>
+                <textarea
+                  placeholder="계정 상태나 권한 변경 사유를 상세히 입력하세요..."
+                  className="w-full border-2 border-yellow-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 h-24 resize-none bg-white"
+                />
+                <p className="text-xs text-yellow-700 mt-2 font-medium">
+                  ⚠️ 관리 작업 기록을 위해 변경 사유를 반드시 입력해주세요.
+                </p>
+              </div>
+              
+              {/* 버튼 */}
+              <div className="flex space-x-4">
                 <button
                   onClick={handleUpdateUser}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg shadow-lg"
                 >
-                  수정
+                  🔧 관리 정보 수정
                 </button>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                  className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors font-bold text-lg shadow-lg"
                 >
-                  취소
+                  ❌ 취소
                 </button>
               </div>
             </div>

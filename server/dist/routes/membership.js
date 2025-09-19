@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = __importStar(require("express"));
 const auth_1 = require("../middleware/auth");
@@ -39,7 +29,7 @@ const cache_1 = require("../middleware/cache");
 const logger_1 = require("../utils/logger");
 const Membership_1 = require("../models/Membership");
 const router = express.Router();
-router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
     try {
         const { page = 1, limit = 10, status, type } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -70,7 +60,7 @@ router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) 
         res.status(500).json({ error: '멤버십 목록을 불러오는데 실패했습니다.' });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const membership = await Membership_1.UserMembership.findById(req.params.id)
             .populate('userId', 'name email phone')
@@ -85,7 +75,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '멤버십 정보를 불러오는데 실패했습니다.' });
     }
 });
-router.post('/', auth_1.auth, async (req, res) => {
+router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { userId, centerId, type, startDate, endDate, price, status = 'active' } = req.body;
         const membership = new Membership_1.UserMembership({
@@ -105,7 +95,7 @@ router.post('/', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '멤버십 생성에 실패했습니다.' });
     }
 });
-router.put('/:id', auth_1.auth, async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const { type, startDate, endDate, price, status } = req.body;
         const membership = await Membership_1.UserMembership.findByIdAndUpdate(req.params.id, { startDate, endDate, status }, { new: true });
@@ -120,7 +110,7 @@ router.put('/:id', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '멤버십 수정에 실패했습니다.' });
     }
 });
-router.delete('/:id', auth_1.auth, async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const membership = await Membership_1.UserMembership.findByIdAndDelete(req.params.id);
         if (!membership) {
@@ -134,7 +124,7 @@ router.delete('/:id', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '멤버십 삭제에 실패했습니다.' });
     }
 });
-router.get('/plans/list', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
+router.get('/plans/list', auth_1.authMiddleware, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
     try {
         const plans = await Membership_1.MembershipPlan.find({ isActive: true }).sort({ price: 1 });
         res.json({ plans });
@@ -144,7 +134,7 @@ router.get('/plans/list', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (
         res.status(500).json({ error: '멤버십 플랜을 불러오는데 실패했습니다.' });
     }
 });
-router.post('/plans', auth_1.auth, async (req, res) => {
+router.post('/plans', auth_1.authMiddleware, async (req, res) => {
     try {
         const { name, description, price, duration, features, maxClassesPerMonth, maxVideoUploads, prioritySupport } = req.body;
         const plan = new Membership_1.MembershipPlan({
@@ -166,7 +156,7 @@ router.post('/plans', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '멤버십 플랜 생성에 실패했습니다.' });
     }
 });
-router.get('/payments', auth_1.auth, async (req, res) => {
+router.get('/payments', auth_1.authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 20 } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -192,7 +182,7 @@ router.get('/payments', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '결제 내역을 불러오는데 실패했습니다.' });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, cache_1.cache)({ ttl: 600 }), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, cache_1.cache)({ ttl: 600 }), async (req, res) => {
     try {
         const totalMemberships = await Membership_1.UserMembership.countDocuments();
         const activeMemberships = await Membership_1.UserMembership.countDocuments({ status: 'active' });

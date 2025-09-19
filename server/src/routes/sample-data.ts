@@ -14,7 +14,11 @@ import { Booking } from '../models/Booking';
 import { Payment } from '../models/Payment';
 import { ExerciseData } from '../models/ExerciseData';
 import { HealthData } from '../models/HealthData';
-import { authMiddleware, requireRole, AuthRequest } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
+
+interface AuthRequest extends express.Request {
+  user?: any;
+}
 
 const router = express.Router();
 
@@ -131,15 +135,15 @@ router.post('/generate-dashboard-data', authMiddleware, requireRole(['student', 
       // 3. 결제 데이터 생성
       const existingPayments = await Payment.countDocuments({ userId: userId });
       if (existingPayments === 0) {
-        const userBookings = await Booking.find({ studentId: userId }).populate('courseId');
+        const userBookings = await Booking.find({ studentId: userId }).populate('course');
         
         for (const booking of userBookings) {
           const payment = new Payment({
             userId: userId,
             bookingId: booking._id,
-            courseId: booking.courseId._id,
+            courseId: booking.course._id,
             centerId: centerId,
-            amount: booking.courseId.pricing?.discountPrice || 50000,
+            amount: (booking.course as any).pricing?.discountPrice || 50000,
             paymentMethod: ['card', 'transfer'][Math.floor(Math.random() * 2)],
             status: 'completed',
             transactionId: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -251,3 +255,6 @@ router.post('/generate-dashboard-data', authMiddleware, requireRole(['student', 
 });
 
 export default router;
+
+
+

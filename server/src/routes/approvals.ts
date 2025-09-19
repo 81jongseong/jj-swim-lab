@@ -15,48 +15,87 @@
 import express from 'express';
 import { auth as authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
-// import { Course } from '../models/Course'; // 사용되지 않는 import
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
 import { Approval } from '../models/Approval';
 import mongoose from 'mongoose';
+// 사용되지 않는 import 제거됨:
+// import { Course } from '../models/Course';
 
 const router = express.Router();
 
-// 권한 확인 미들웨어
+/**
+ * 🔐 승인 관리 권한 확인 미들웨어
+ * 
+ * 📋 **기능**
+ * - 승인 관리 기능에 접근할 수 있는 권한 확인
+ * - superAdmin과 centerAdmin만 승인 처리 가능
+ * - 권한 없는 사용자 접근 차단
+ * 
+ * 🎯 **허용 계정**
+ * - superAdmin: 모든 승인 요청 처리 가능
+ * - centerAdmin: 자신의 센터 관련 승인 요청만 처리 가능
+ * - instructor, student: 접근 불가
+ * 
+ * @param req Express 요청 객체 (user 정보 포함)
+ * @param res Express 응답 객체
+ * @param next 다음 미들웨어 함수
+ */
 const requireAdmin = (req: any, res: any, next: any) => {
+  // 승인 관리 권한이 있는 계정 타입 확인
   if (!['superAdmin', 'centerAdmin'].includes(req.user.userType)) {
     return res.status(403).json({
       success: false,
-      message: '접근 권한이 없습니다.'
+      message: '승인 관리 권한이 없습니다. 관리자 계정이 필요합니다.'
     });
   }
   next();
 };
 
-// 승인 요청 목록 조회
+/**
+ * 📋 승인 요청 목록 조회 API
+ * 
+ * 📋 **기능**
+ * - 계정별 승인 요청 목록 조회 (권한별 필터링)
+ * - 상태별, 유형별 필터링 지원
+ * - 페이지네이션을 통한 대용량 데이터 처리
+ * - 실제 데이터베이스 연동 (하드코딩 없음)
+ * 
+ * 🎯 **계정별 조회 범위**
+ * - superAdmin: 모든 승인 요청 조회 가능
+ * - centerAdmin: 자신의 센터 관련 승인 요청만 조회 가능
+ * 
+ * @route GET /api/approvals
+ * @param status 승인 상태 필터 (pending/approved/rejected/all)
+ * @param type 승인 유형 필터 (course_enrollment/instructor_registration/payment_approval/all)
+ * @param page 페이지 번호 (기본값: 1)
+ * @param limit 페이지당 항목 수 (기본값: 20)
+ */
 router.get('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
-    const { userType, centerId } = req.user;
-    const { status, type, page = 1, limit = 20 } = req.query;
+    // 🔍 요청자 정보 및 쿼리 파라미터 추출
+    const { userType, centerId } = req.user;  // 요청자 계정 정보
+    const { status, type, page = 1, limit = 20 } = req.query;  // 필터링 옵션
 
-    // 기본 쿼리 조건
+    // 🔍 기본 쿼리 조건 구성 (계정별 접근 범위 제한)
     const queryCondition: any = {};
     if (userType === 'centerAdmin' && centerId) {
+      // 센터관리자: 자신의 센터 관련 승인 요청만 조회
       queryCondition.centerId = centerId;
     }
+    // superAdmin: 모든 승인 요청 조회 (추가 조건 없음)
 
-    // 상태별 필터링
+    // 📊 상태별 필터링 (pending/approved/rejected)
     if (status && status !== 'all') {
       queryCondition.status = status;
     }
 
-    // 유형별 필터링
+    // 📂 유형별 필터링 (course_enrollment/instructor_registration/payment_approval)
     if (type && type !== 'all') {
       queryCondition.type = type;
     }
 
-    // 페이지네이션
+    // 📄 페이지네이션 설정
     const skip = (Number(page) - 1) * Number(limit);
 
     // 승인 요청 목록 조회

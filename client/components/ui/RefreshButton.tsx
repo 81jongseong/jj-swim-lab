@@ -14,7 +14,7 @@ import Button from './Button';
 interface RefreshButtonProps {
   onRefresh: () => Promise<void> | void;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'outline' | 'default' | 'secondary';
+  variant?: 'outline' | 'primary' | 'secondary';
   className?: string;
   disabled?: boolean;
   tooltip?: string;
@@ -46,7 +46,7 @@ export function RefreshButton({
   return (
     <Button
       variant={variant}
-      size={size === 'md' ? 'default' : size}
+      size={size}
       onClick={handleRefresh}
       disabled={disabled || isRefreshing}
       className={`transition-all duration-200 ${className}`}

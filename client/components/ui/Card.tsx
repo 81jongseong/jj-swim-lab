@@ -72,7 +72,7 @@ interface CardContentProps {
 const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => {
   return (
     <div 
-      className={`bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-200 ${className} ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
       onClick={onClick}
     >
       {children}
@@ -86,7 +86,7 @@ const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => {
  */
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
   return (
-    <div className={`px-6 py-4 border-b border-gray-200 bg-gray-50 ${className}`}>
+    <div className={`px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 ${className}`}>
       {children}
     </div>
   );
@@ -122,7 +122,7 @@ export const CardDescription: React.FC<CardDescriptionProps> = ({ children, clas
  */
 export const CardContent: React.FC<CardContentProps> = ({ children, className = '' }) => {
   return (
-    <div className={`px-6 py-4 ${className}`}>
+    <div className={`px-6 py-5 ${className}`}>
       {children}
     </div>
   );

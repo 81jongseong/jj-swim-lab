@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const userId = req.user?._id;
         if (!userId) {
@@ -59,7 +59,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin
         res.status(500).json({ error: '반 목록을 불러오는데 실패했습니다.' });
     }
 });
-router.get('/:classId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/:classId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { classId } = req.params;
         const mockClass = {

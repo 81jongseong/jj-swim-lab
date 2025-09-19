@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Button, Input, Card, Badge } from '@/components/ui';
 
 interface User {
@@ -10,9 +11,20 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  userType: 'student' | 'instructor';
+  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   isActive: boolean;
   level?: string;
+  centerId?: string;
+  centerInfo?: {
+    _id: string;
+    name: string;
+    address?: {
+      city: string;
+      province: string;
+      address1: string;
+    };
+    grade?: string;
+  };
   studentInfo?: {
     swimmingLevel?: string;
     age?: number;
@@ -24,10 +36,18 @@ interface User {
     experience?: string;
     specialties?: string[];
   };
+  centerAdminInfo?: {
+    adminLevel?: string;
+    permissions?: string[];
+  };
+  superAdminInfo?: {
+    systemPermissions?: string[];
+  };
   createdAt: string;
 }
 
 function CenterUsersPage() {
+  const { user: currentUser } = useAuth(); // 현재 로그인한 사용자 정보
   console.log('🧪 TEST: CenterUsersPage 컴포넌트 렌더링 시작');
   console.log('🔍 현재 시간:', new Date().toISOString());
   console.log('🔍 컴포넌트가 실행되고 있습니다!');
@@ -82,7 +102,14 @@ function CenterUsersPage() {
         console.log('✅ 사용자 목록 로드 성공:', (res as any).users.length, '명');
         console.log('🔍 첫 번째 사용자 데이터 구조:', (res as any).users[0]);
         console.log('🔍 모든 사용자 데이터:', (res as any).users);
-        setUsers((res as any).users);
+        
+        // 🔐 현재 로그인한 사용자를 목록에서 제외
+        const filteredUsers = (res as any).users.filter((user: User) => 
+          currentUser && user._id !== currentUser._id
+        );
+        console.log(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${filteredUsers.length}명`);
+        
+        setUsers(filteredUsers);
         setPagination(prev => ({
           ...prev,
           page,
@@ -130,16 +157,52 @@ function CenterUsersPage() {
   };
 
   const getUserTypeLabel = (userType: string) => {
-    return userType === 'instructor' ? '강사' : '회원';
+    switch (userType) {
+      case 'student': return '수강생';
+      case 'instructor': return '강사';
+      case 'centerAdmin': return '센터관리자';
+      case 'superAdmin': return '최고관리자';
+      default: return userType;
+    }
   };
 
-  const getLevelLabel = (level: string) => {
-    const levelMap: { [key: string]: string } = {
-      'beginner': '초급',
-      'intermediate': '중급',
-      'advanced': '상급',
-    };
-    return levelMap[level] || level;
+  const getLevelLabel = (user: User) => {
+    switch (user.userType) {
+      case 'student':
+        // 학생은 메달 등급 시스템 사용 (studentInfo.swimmingLevel 우선 사용)
+        const studentLevel = user.studentInfo?.swimmingLevel || 'beginner';
+        const studentLevelMap: { [key: string]: string } = {
+          'beginner': '🥉 브론즈',
+          'intermediate': '🥈 실버',
+          'advanced': '🥇 골드',
+          'expert': '💎 플래티넘'
+        };
+        return studentLevelMap[studentLevel] || '🥉 브론즈';
+      case 'instructor':
+        // 강사는 전문직 등급 시스템 사용 (instructorInfo.instructorLevel 우선 사용)
+        const instructorLevel = user.instructorInfo?.instructorLevel || 'junior';
+        const instructorLevelMap: { [key: string]: string } = {
+          'trainee': '🔰 신입 강사',
+          'junior': '📈 주니어 강사',
+          'senior': '🏆 시니어 강사',
+          'master': '👑 마스터 강사'
+        };
+        return instructorLevelMap[instructorLevel] || '📈 주니어 강사';
+      case 'centerAdmin':
+        // 센터관리자는 관리직 등급 시스템 사용 (centerAdminInfo.adminLevel 우선 사용)
+        const centerAdminLevel = user.centerAdminInfo?.adminLevel || 'assistant';
+        const centerAdminLevelMap: { [key: string]: string } = {
+          'assistant': '🔰 어시스턴트',
+          'manager': '📈 매니저',
+          'director': '🏆 디렉터',
+          'executive': '👑 임원'
+        };
+        return centerAdminLevelMap[centerAdminLevel] || '🔰 어시스턴트';
+      case 'superAdmin':
+        return '👑 시스템 관리자';
+      default:
+        return '🥉 브론즈';
+    }
   };
 
   // 필터링된 사용자 목록
@@ -211,8 +274,10 @@ function CenterUsersPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">전체</option>
+              <option value="student">수강생</option>
               <option value="instructor">강사</option>
-              <option value="student">회원</option>
+              <option value="centerAdmin">센터관리자</option>
+              <option value="superAdmin">최고관리자</option>
             </select>
           </div>
           
@@ -224,9 +289,10 @@ function CenterUsersPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">전체</option>
-              <option value="beginner">초급</option>
-              <option value="intermediate">중급</option>
-              <option value="advanced">상급</option>
+              <option value="beginner">🥉 브론즈</option>
+              <option value="intermediate">🥈 실버</option>
+              <option value="advanced">🥇 골드</option>
+              <option value="expert">💎 플래티넘</option>
             </select>
           </div>
           
@@ -303,7 +369,7 @@ function CenterUsersPage() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getLevelLabel(user.level || 'beginner')}
+                    {getLevelLabel(user)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(user.isActive)}

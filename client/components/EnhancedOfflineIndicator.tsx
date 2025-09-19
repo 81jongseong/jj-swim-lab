@@ -127,7 +127,7 @@ export default function EnhancedOfflineIndicator() {
             {/* 데이터베이스 상태 */}
             <div className="flex items-center justify-between text-xs">
               <span>데이터베이스:</span>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="secondary" className="text-xs">
                 {isDBReady ? '✅ 준비됨' : '⏳ 초기화 중'}
               </Badge>
             </div>
@@ -201,7 +201,7 @@ export default function EnhancedOfflineIndicator() {
 
               <Button
                 size="sm"
-                variant="destructive"
+                variant="secondary"
                 onClick={clearOfflineData}
                 className="text-xs h-6 px-2"
               >

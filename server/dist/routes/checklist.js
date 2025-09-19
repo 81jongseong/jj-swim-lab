@@ -13,7 +13,7 @@ const TeachingMethod_1 = require("../models/TeachingMethod");
 const Course_1 = require("../models/Course");
 const User_1 = require("../models/User");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, cache_1.cache)({ ttl: 300 }), async (req, res) => {
     try {
         const { page = 1, limit = 20, status, studentId, courseId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -48,7 +48,7 @@ router.get('/', auth_1.auth, (0, cache_1.cache)({ ttl: 300 }), async (req, res) 
         res.status(500).json({ error: '체크리스트 목록을 불러오는데 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId', auth_1.auth, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
+router.get('/instructor/:instructorId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
     try {
         const { instructorId } = req.params;
         const { page = 1, limit = 20, status } = req.query;
@@ -79,7 +79,7 @@ router.get('/instructor/:instructorId', auth_1.auth, (0, auth_1.requireRole)(['i
         res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
     }
 });
-router.get('/instructor/me', auth_1.auth, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
+router.get('/instructor/me', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
     try {
         const instructorId = req.user._id;
         const checklists = await Checklist_1.Checklist.find({ instructorId })
@@ -94,7 +94,7 @@ router.get('/instructor/me', auth_1.auth, (0, auth_1.requireRole)(['instructor']
         res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
     }
 });
-router.get('/student/:studentId/course/:courseId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/student/:studentId/course/:courseId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, courseId } = req.params;
         const checklist = await Checklist_1.Checklist.findOne({ studentId, courseId })
@@ -111,7 +111,7 @@ router.get('/student/:studentId/course/:courseId', auth_1.auth, (0, auth_1.requi
         res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
     }
 });
-router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, courseId, studentLevel } = req.body;
         if (!studentId || !courseId || !studentLevel) {
@@ -161,7 +161,7 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         res.status(500).json({ error: '체크리스트 생성에 실패했습니다.' });
     }
 });
-router.get('/:checklistId', auth_1.auth, async (req, res) => {
+router.get('/:checklistId', auth_1.authMiddleware, async (req, res) => {
     try {
         const checklist = await Checklist_1.Checklist.findById(req.params.checklistId)
             .populate('studentId', 'name email')
@@ -177,7 +177,7 @@ router.get('/:checklistId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '체크리스트를 불러오는데 실패했습니다.' });
     }
 });
-router.patch('/:checklistId/items/:itemIndex', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.patch('/:checklistId/items/:itemIndex', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId, itemIndex } = req.params;
         const { isCompleted, notes } = req.body;
@@ -211,7 +211,7 @@ router.patch('/:checklistId/items/:itemIndex', auth_1.auth, (0, auth_1.requireRo
         res.status(500).json({ error: '아이템 상태 변경에 실패했습니다.' });
     }
 });
-router.patch('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.patch('/:checklistId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { status, notes, targetCompletionDate } = req.body;
         const updateData = {};
@@ -233,7 +233,7 @@ router.patch('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor'
         res.status(500).json({ error: '체크리스트 수정에 실패했습니다.' });
     }
 });
-router.delete('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.delete('/:checklistId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const checklist = await Checklist_1.Checklist.findByIdAndDelete(req.params.checklistId);
         if (!checklist) {
@@ -247,7 +247,7 @@ router.delete('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor
         res.status(500).json({ error: '체크리스트 삭제에 실패했습니다.' });
     }
 });
-router.put('/:checklistId/status', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:checklistId/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const { status, notes } = req.body;
@@ -284,7 +284,7 @@ router.put('/:checklistId/status', auth_1.auth, (0, auth_1.requireRole)(['instru
         res.status(500).json({ error: '체크리스트 상태 업데이트에 실패했습니다.' });
     }
 });
-router.get('/instructor/:instructorId/performance', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/instructor/:instructorId/performance', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { instructorId } = req.params;
         const instructor = await User_1.User.findById(instructorId);
@@ -331,7 +331,7 @@ router.get('/instructor/:instructorId/performance', auth_1.auth, (0, auth_1.requ
         res.status(500).json({ error: '성과 분석에 실패했습니다.' });
     }
 });
-router.get('/templates', auth_1.auth, async (req, res) => {
+router.get('/templates', auth_1.authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 20, level, creatorType } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -377,7 +377,7 @@ router.get('/templates', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '템플릿 목록 조회에 실패했습니다.' });
     }
 });
-router.post('/templates', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/templates', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { name, description, levels, items, tags, isPublic } = req.body;
         const user = req.user;
@@ -414,7 +414,7 @@ router.post('/templates', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'c
         res.status(500).json({ error: '템플릿 생성에 실패했습니다.' });
     }
 });
-router.delete('/templates/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/templates/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -439,7 +439,7 @@ router.delete('/templates/:id', auth_1.auth, (0, auth_1.requireRole)(['instructo
         res.status(500).json({ error: '템플릿 삭제에 실패했습니다.' });
     }
 });
-router.post('/from-template/:templateId', auth_1.auth, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
+router.post('/from-template/:templateId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
     try {
         const { templateId } = req.params;
         const { studentId, courseId } = req.body;

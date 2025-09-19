@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const ExerciseRecommendation_1 = __importDefault(require("../models/ExerciseRecommendation"));
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { technique, level, category, difficulty } = req.query;
         const filter = {};
@@ -35,7 +35,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
@@ -64,7 +64,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id, name, description, difficulty, category, duration, equipment, instructions, benefits } = req.body;
         if (!id || !name || !description || !difficulty || !category || !duration || !instructions || !benefits) {
@@ -115,7 +115,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'c
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -154,7 +154,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {

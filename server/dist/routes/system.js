@@ -8,7 +8,7 @@ const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
-router.get('/status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.get('/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const systemStatus = {
             status: 'healthy',
@@ -32,7 +32,7 @@ router.get('/status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), asyn
         });
     }
 });
-router.get('/user-stats', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.get('/user-stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const totalUsers = await User_1.User.countDocuments();
         const activeUsers = await User_1.User.countDocuments({ 'accountStatus.isActive': true });
@@ -59,7 +59,7 @@ router.get('/user-stats', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), 
         });
     }
 });
-router.get('/database-status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.get('/database-status', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const dbStatus = {
             status: mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected',
@@ -82,7 +82,7 @@ router.get('/database-status', auth_1.auth, (0, auth_1.requireRole)(['superAdmin
         });
     }
 });
-router.post('/backup', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.post('/backup', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const backupInfo = {
             timestamp: new Date().toISOString(),
@@ -104,7 +104,7 @@ router.post('/backup', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), asy
         });
     }
 });
-router.get('/logs', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.get('/logs', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { type, level, startDate, endDate, limit = 100 } = req.query;
         const logs = [

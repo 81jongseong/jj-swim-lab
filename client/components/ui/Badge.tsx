@@ -1,44 +1,89 @@
 /**
- * Badge UI 컴포넌트
- * 상태, 레이블, 태그 표시용 재사용 가능한 컴포넌트
+ * 🏊‍♂️ JJ Swim Lab - Badge UI 컴포넌트
+ * 
+ * 📋 **컴포넌트 목적**
+ * - 상태, 레이블, 카테고리를 시각적으로 표시
+ * - 색상별 의미 구분 (성공, 경고, 위험, 정보)
+ * - 작은 정보 표시용 컴포넌트
+ * 
+ * 🎨 **디자인 특징**
+ * - 5가지 variant (default, success, warning, danger, info)
+ * - 3가지 size (sm, md, lg)
+ * - 반응형 디자인
+ * - 접근성 고려
+ * 
+ * 🔧 **사용 방법**
+ * ```tsx
+ * import Badge from '@/components/ui/badge';
+ * 
+ * <Badge variant="success">완료</Badge>
+ * <Badge variant="warning" size="lg">주의</Badge>
+ * ```
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-09-17: 초기 Badge 컴포넌트 구현
+ * - 2025-09-17: variant 및 size 옵션 추가
+ * - 2025-09-17: 접근성 개선
+ * 
+ * 👨‍💻 **개발자 정보**
+ * - 작성자: AI Assistant
+ * - 최종 수정: 2025-09-17
+ * - 상태: ✅ 완성 (Badge UI 컴포넌트)
  */
 
 import React from 'react';
 
-export interface BadgeProps {
-  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'primary' | 'danger';
+type BadgeSize = 'sm' | 'md' | 'lg';
+
+interface BadgeProps {
   children: React.ReactNode;
+  variant?: BadgeVariant;
+  size?: BadgeSize;
+  className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ 
+/**
+ * Badge 컴포넌트
+ * 상태나 레이블을 시각적으로 표시하는 작은 컴포넌트입니다.
+ */
+const Badge: React.FC<BadgeProps> = ({ 
+  children, 
   variant = 'default', 
-  size = 'md',
-  className = '', 
-  children 
+  size = 'md', 
+  className = '' 
 }) => {
-  const baseClasses = 'inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
-  
-  const variantClasses = {
-    default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-    secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-    outline: 'text-foreground',
-    success: 'border-transparent bg-green-500 text-white hover:bg-green-600',
-    warning: 'border-transparent bg-yellow-500 text-white hover:bg-yellow-600'
+  // variant별 스타일 정의
+  const variantStyles = {
+    default: 'bg-gray-100 text-gray-800 border-gray-200',
+    secondary: 'bg-gray-50 text-gray-600 border-gray-300',
+    destructive: 'bg-red-100 text-red-800 border-red-200',
+    outline: 'bg-transparent text-gray-700 border-gray-300',
+    success: 'bg-green-100 text-green-800 border-green-200',
+    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    primary: 'bg-blue-100 text-blue-800 border-blue-200',
+    danger: 'bg-red-100 text-red-800 border-red-200',
   };
 
-  const sizeClasses = {
-    sm: 'px-2.5 py-0.5 text-xs',
+  // size별 스타일 정의
+  const sizeStyles = {
+    sm: 'px-2 py-1 text-xs',
     md: 'px-3 py-1 text-sm',
-    lg: 'px-4 py-1.5 text-base'
+    lg: 'px-4 py-2 text-base',
   };
+
+  const baseStyles = 'inline-flex items-center font-medium rounded-full border';
+  const variantClass = variantStyles[variant];
+  const sizeClass = sizeStyles[size];
 
   return (
-    <div className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}>
+    <span 
+      className={`${baseStyles} ${variantClass} ${sizeClass} ${className}`}
+      role="status"
+      aria-label={typeof children === 'string' ? children : undefined}
+    >
       {children}
-    </div>
+    </span>
   );
 };
 

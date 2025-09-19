@@ -172,5 +172,7 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    // @tailwindcss/line-clamp는 Tailwind CSS v3.3부터 기본 포함
+  ],
 }

@@ -539,7 +539,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
                   </div>
                   <div className="flex items-center gap-2">
                     {isCompleted && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Badge variant="success" className="bg-green-100 text-green-800">
                         완료
                       </Badge>
                     )}

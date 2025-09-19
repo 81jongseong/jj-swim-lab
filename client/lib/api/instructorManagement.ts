@@ -138,10 +138,12 @@ export interface Instructor {
   phone: string;
   userType: 'instructor';
   centerId: string;
+  level: string;
   specialization: string;
+  specialties?: string[];
   experience: number;
   rating: number;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | string;
   joinDate: string;
   lastActive: string;
   bio?: string;

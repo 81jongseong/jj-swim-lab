@@ -8,7 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+router.get('/center-users', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
     try {
         const { page = 1, limit = 20, userType, level, search, status } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -90,7 +90,7 @@ router.get('/center-users', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin']
         });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         console.log('🔍 GET /:id 라우트 호출됨:', {
             id: req.params.id,
@@ -133,7 +133,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
     }
 });
-router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -232,7 +232,7 @@ router.get('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), as
         return res.status(500).json({ error: '사용자 목록을 불러오는 데 실패했습니다.' });
     }
 });
-router.get('/stats/by-type', auth_1.auth, (0, auth_1.requirePermission)('reports'), async (req, res) => {
+router.get('/stats/by-type', auth_1.authMiddleware, (0, auth_1.requirePermission)('reports'), async (req, res) => {
     try {
         const stats = await User_1.User.aggregate([
             {
@@ -252,7 +252,7 @@ router.get('/stats/by-type', auth_1.auth, (0, auth_1.requirePermission)('reports
         return res.status(500).json({ error: '사용자 통계를 불러오는 데 실패했습니다.' });
     }
 });
-router.get('/stats/by-level', auth_1.auth, (0, auth_1.requirePermission)('reports'), async (req, res) => {
+router.get('/stats/by-level', auth_1.authMiddleware, (0, auth_1.requirePermission)('reports'), async (req, res) => {
     try {
         const { userType } = req.query;
         let levelField = '';
@@ -289,9 +289,9 @@ router.get('/stats/by-level', auth_1.auth, (0, auth_1.requirePermission)('report
         return res.status(500).json({ error: '레벨별 통계를 불러오는 데 실패했습니다.' });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
-        const { name, email, password, userType, phone, address, level, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo } = req.body;
+        const { userId, name, email, password, userType, phone, address, level, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo } = req.body;
         if (!name || !email || !password || !userType) {
             return res.status(400).json({
                 success: false,
@@ -306,6 +306,7 @@ router.post('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), a
             });
         }
         const user = new User_1.User({
+            userId,
             name,
             email,
             password,
@@ -337,9 +338,9 @@ router.post('/', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), a
         });
     }
 });
-router.put('/:id', auth_1.auth, async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { name, phone, address, userType, level, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
+        const { userId, name, phone, address, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
         const currentUser = req.user;
         const targetUserId = req.params.id;
         if (currentUser._id !== targetUserId) {
@@ -362,17 +363,40 @@ router.put('/:id', auth_1.auth, async (req, res) => {
                 return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
             }
         }
-        const updateData = { name, phone, address };
+        const updateData = {};
+        if (currentUser._id === targetUserId) {
+            if (name)
+                updateData.name = name;
+            if (phone)
+                updateData.phone = phone;
+            if (address)
+                updateData.address = address;
+        }
+        else {
+            console.log('🔒 개인정보 수정 제한: 관리자는 개인정보를 수정할 수 없습니다.');
+        }
+        if (userId) {
+            updateData.userId = userId;
+        }
+        if (password) {
+            const bcrypt = require('bcryptjs');
+            const saltRounds = 12;
+            updateData.password = await bcrypt.hash(password, saltRounds);
+        }
         if (userType) {
             updateData.userType = userType;
-            const user = new User_1.User({ userType });
-            user.setPermissionsByType();
-            user.setFeatureSequence();
-            updateData.accessPermissions = user.accessPermissions;
-            updateData.featureSequence = user.featureSequence;
+            const tempUser = new User_1.User({ userType });
+            tempUser.setPermissionsByType();
+            tempUser.setFeatureSequence();
+            updateData.accessPermissions = tempUser.accessPermissions;
+            updateData.featureSequence = tempUser.featureSequence;
         }
         if (level) {
             updateData.level = level;
+        }
+        if (typeof req.body.isActive === 'boolean') {
+            updateData.isActive = req.body.isActive;
+            console.log(`🔒 계정 상태 변경: ${updateData.isActive ? '활성' : '비활성'}`);
         }
         if (studentInfo) {
             updateData.studentInfo = studentInfo;
@@ -386,10 +410,10 @@ router.put('/:id', auth_1.auth, async (req, res) => {
         if (superAdminInfo) {
             updateData.superAdminInfo = superAdminInfo;
         }
-        if (accessPermissions) {
+        if (accessPermissions && currentUser.userType === 'superAdmin') {
             updateData.accessPermissions = accessPermissions;
         }
-        if (featureSequence) {
+        if (featureSequence && currentUser.userType === 'superAdmin') {
             updateData.featureSequence = featureSequence;
         }
         const user = await User_1.User.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true }).select('-password');
@@ -403,7 +427,7 @@ router.put('/:id', auth_1.auth, async (req, res) => {
         return res.status(400).json({ error: '사용자 정보 업데이트에 실패했습니다.' });
     }
 });
-router.patch('/:id/upgrade-level', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.patch('/:id/upgrade-level', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const { userType, newLevel } = req.body;
         if (!userType || !newLevel) {
@@ -441,7 +465,7 @@ router.patch('/:id/upgrade-level', auth_1.auth, (0, auth_1.requirePermission)('u
         return res.status(400).json({ error: '레벨 업그레이드에 실패했습니다.' });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const user = await User_1.User.findById(req.params.id);
         if (!user) {
@@ -461,7 +485,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('userManagement
         return res.status(500).json({ error: '사용자 삭제에 실패했습니다.' });
     }
 });
-router.patch('/:id/toggle-status', auth_1.auth, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
+router.patch('/:id/toggle-status', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const user = await User_1.User.findById(req.params.id);
         if (!user) {

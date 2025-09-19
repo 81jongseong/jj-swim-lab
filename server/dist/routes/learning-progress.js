@@ -10,7 +10,7 @@ const TeachingMethod_1 = require("../models/TeachingMethod");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { category, level, status } = req.query;
@@ -55,7 +55,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, r
         });
     }
 });
-router.get('/:teachingMethodId', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/:teachingMethodId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { teachingMethodId } = req.params;
@@ -99,7 +99,7 @@ router.get('/:teachingMethodId', auth_1.auth, (0, auth_1.requireRole)(['student'
         });
     }
 });
-router.put('/:teachingMethodId', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:teachingMethodId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { teachingMethodId } = req.params;
@@ -150,7 +150,7 @@ router.put('/:teachingMethodId', auth_1.auth, (0, auth_1.requireRole)(['student'
         });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const stats = await LearningProgress_1.LearningProgress.aggregate([
@@ -212,7 +212,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['student']),
         });
     }
 });
-router.get('/stats/by-category', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/stats/by-category', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const categoryStats = await LearningProgress_1.LearningProgress.aggregate([
@@ -250,7 +250,7 @@ router.get('/stats/by-category', auth_1.auth, (0, auth_1.requireRole)(['student'
         });
     }
 });
-router.get('/instructor/students', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const instructorId = req.user.id;
         const { studentId, category, level } = req.query;

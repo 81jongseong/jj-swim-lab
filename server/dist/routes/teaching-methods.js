@@ -80,7 +80,7 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
         if (!name || !description || !category || !steps) {
@@ -117,7 +117,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
@@ -170,7 +170,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         console.log(`🗑️ 강습법 삭제 요청: ${id}`);
@@ -261,7 +261,7 @@ router.get('/stats/difficulties', async (req, res) => {
         });
     }
 });
-router.put('/:id/level', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'instructor']), async (req, res) => {
+router.put('/:id/level', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
         const { level, instructorComment, updatedBy } = req.body;

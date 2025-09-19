@@ -8,7 +8,7 @@ const auth_1 = require("../middleware/auth");
 const ExerciseData_1 = require("../models/ExerciseData");
 const User_1 = require("../models/User");
 const router = express_1.default.Router();
-router.post('/session/start', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
+router.post('/session/start', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
         const { exerciseType, notes } = req.body;
         const userId = req.user._id;
@@ -58,7 +58,7 @@ router.post('/session/start', (0, auth_1.requireRole)(['student', 'instructor'])
         });
     }
 });
-router.put('/session/:sessionId/update', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
+router.put('/session/:sessionId/update', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
         const { sessionId } = req.params;
         const { intensity, heartRate, movementSpeed, calories: caloriesData, poseData } = req.body;
@@ -156,7 +156,7 @@ router.put('/session/:sessionId/complete', (0, auth_1.requireRole)(['student', '
         });
     }
 });
-router.get('/stats', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
+router.get('/stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
         const userId = req.user._id;
         const { days = 30 } = req.query;
@@ -283,7 +283,7 @@ router.delete('/session/:sessionId', (0, auth_1.requireRole)(['student', 'instru
         });
     }
 });
-router.put('/health-profile', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
+router.put('/health-profile', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
         const userId = req.user._id;
         const healthData = req.body;
@@ -321,7 +321,7 @@ router.put('/health-profile', (0, auth_1.requireRole)(['student', 'instructor'])
         });
     }
 });
-router.get('/health-profile', (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
+router.get('/health-profile', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
         const userId = req.user._id;
         const user = await User_1.User.findById(userId).select('studentInfo.healthProfile');

@@ -8,7 +8,7 @@ const SmartWatchData_1 = require("../models/SmartWatchData");
 const IntegratedAIEngine_1 = require("../utils/IntegratedAIEngine");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.post('/sync', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.post('/sync', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { sessionId, deviceInfo, sessionInfo, performanceMetrics, detailedData } = req.body;
         if (!sessionId || !deviceInfo || !sessionInfo || !performanceMetrics) {
@@ -49,7 +49,7 @@ router.post('/sync', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructo
         });
     }
 });
-router.get('/data', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.get('/data', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, technique, limit = 10, offset = 0 } = req.query;
         const query = {};
@@ -92,7 +92,7 @@ router.get('/data', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor
         });
     }
 });
-router.get('/data/:sessionId', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.get('/data/:sessionId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { sessionId } = req.params;
         const data = await SmartWatchData_1.SmartWatchData.findOne({ sessionId })
@@ -122,7 +122,7 @@ router.get('/data/:sessionId', auth_1.auth, (0, auth_1.requireRole)(['student', 
         });
     }
 });
-router.get('/analysis/:sessionId', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.get('/analysis/:sessionId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { sessionId } = req.params;
         const data = await SmartWatchData_1.SmartWatchData.findOne({ sessionId })
@@ -165,7 +165,7 @@ router.get('/analysis/:sessionId', auth_1.auth, (0, auth_1.requireRole)(['studen
         });
     }
 });
-router.post('/integrated-analysis', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/integrated-analysis', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, technique, smartWatchSessionId, videoAnalysisId, instructorObservations, manualMetrics } = req.body;
         if (!studentId || !technique || !instructorObservations) {

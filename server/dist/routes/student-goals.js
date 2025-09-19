@@ -10,7 +10,7 @@ const TeachingMethod_1 = require("../models/TeachingMethod");
 const LearningProgress_1 = require("../models/LearningProgress");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { status, priority } = req.query;
@@ -35,7 +35,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, r
         });
     }
 });
-router.get('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { goalId } = req.params;
@@ -63,7 +63,7 @@ router.get('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), async 
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { title, description, targetDate, teachingMethods, priority, milestones } = req.body;
@@ -108,7 +108,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, 
         });
     }
 });
-router.put('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { goalId } = req.params;
@@ -148,7 +148,7 @@ router.put('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), async 
         });
     }
 });
-router.delete('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.delete('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { goalId } = req.params;
@@ -176,7 +176,7 @@ router.delete('/:goalId', auth_1.auth, (0, auth_1.requireRole)(['student']), asy
         });
     }
 });
-router.put('/:goalId/milestones/:milestoneIndex', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:goalId/milestones/:milestoneIndex', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { goalId, milestoneIndex } = req.params;
@@ -221,7 +221,7 @@ router.put('/:goalId/milestones/:milestoneIndex', auth_1.auth, (0, auth_1.requir
         });
     }
 });
-router.put('/:goalId/calculate-progress', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:goalId/calculate-progress', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { goalId } = req.params;
@@ -261,7 +261,7 @@ router.put('/:goalId/calculate-progress', auth_1.auth, (0, auth_1.requireRole)([
         });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const stats = await StudentGoal_1.StudentGoal.aggregate([
@@ -308,7 +308,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['student']),
         });
     }
 });
-router.post('/recommend', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.post('/recommend', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const progressData = await LearningProgress_1.LearningProgress.find({ studentId })

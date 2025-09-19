@@ -1,113 +1,164 @@
 /**
- * 📊 JJ Swim Lab - ResponsiveTable UI 컴포넌트
+ * 🏊‍♂️ JJ Swim Lab - 반응형 테이블 UI 컴포넌트
  * 
  * 📋 **컴포넌트 목적**
- * - 반응형 테이블 컴포넌트로 다양한 화면 크기에서 최적화된 표시
- * - 수영 관련 데이터를 테이블 형태로 표시
- * - 모바일에서는 카드 형태로 변환하여 가독성 향상
- * - 접근성을 고려한 테이블 구조 및 네비게이션
+ * - 모든 화면 크기에서 최적화된 테이블 표시
+ * - 가로 스크롤과 세로 스크롤 지원
+ * - 모바일에서도 사용하기 편한 테이블
  * 
- * 🔄 **주요 기능**
- * - 반응형 테이블 레이아웃
- * - 모바일 카드 변환
- * - 접근성 지원 (ARIA 속성, 키보드 네비게이션)
- * - 스크롤 및 오버플로우 처리
- * - 커스터마이징 가능한 스타일
+ * 🎨 **디자인 특징**
+ * - 가로 스크롤: 내용이 잘리지 않음
+ * - 고정 헤더: 스크롤 시에도 헤더 보임
+ * - 반응형 패딩: 화면 크기별 최적화
+ * - 호버 효과: 행별 하이라이트
  * 
- * 🗄️ **데이터 연동**
- * - 테이블 헤더 및 데이터
- * - 반응형 레이아웃 설정
- * - 접근성 속성 및 ARIA 값
- * - 스크롤 및 오버플로우 상태
- * - 모바일 변환 설정
- * 
- * 🛠️ **필요한 설치 파일**
- * - React (기본 컴포넌트)
- * - 반응형 디자인 라이브러리
- * - 접근성 도구 및 라이브러리
- * - Tailwind CSS (스타일링)
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 반응형 디자인의 일관성 유지
- * 2. 모바일 변환 시 데이터 가독성
- * 3. 접근성 표준 준수
- * 4. 테이블 성능 및 렌더링 최적화
- * 5. 다양한 데이터 형식 지원
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] 반응형 테이블 레이아웃 확인
- * - [ ] 모바일 카드 변환 검증
- * - [ ] 접근성 속성 확인
- * - [ ] 스크롤 및 오버플로우 처리 확인
- * - [ ] 성능 및 렌더링 최적화 확인
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 구현 (기본 반응형 테이블)
- * - 2024-12-19: 모바일 카드 변환 시스템 구현
- * - 2024-12-19: 접근성 지원 시스템 구현
- * - 2024-12-19: 성능 최적화 시스템 구현
- * 
- * 👨‍💻 **개발자 정보**
- * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (반응형 테이블 UI 컴포넌트 완료)
- * 
- * 🚀 **다음 단계**
- * - 고급 테이블 기능 (정렬, 필터링 등)
- * - 실시간 데이터 업데이트
- * - 성능 최적화
- * - 접근성 개선
- * 
- * 💡 **사용 예시**
+ * 🔧 **사용 방법**
  * ```tsx
- * <ResponsiveTable 
- *   data={tableData}
- *   columns={tableColumns}
- *   mobileCard={true}
- *   accessible={true}
- *   responsive={true}
- * />
+ * import { ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/ResponsiveTable';
+ * 
+ * <ResponsiveTable>
+ *   <TableHeader>
+ *     <TableRow>
+ *       <TableCell header>이름</TableCell>
+ *       <TableCell header>이메일</TableCell>
+ *     </TableRow>
+ *   </TableHeader>
+ *   <TableBody>
+ *     <TableRow>
+ *       <TableCell>김강사</TableCell>
+ *       <TableCell>kim@example.com</TableCell>
+ *     </TableRow>
+ *   </TableBody>
+ * </ResponsiveTable>
  * ```
  */
 
-'use client';
-
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 interface ResponsiveTableProps {
   children: React.ReactNode;
   className?: string;
-  mobileCard?: boolean;
-  accessible?: boolean;
-  responsive?: boolean;
+  maxHeight?: string;
 }
 
-const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
-  children,
-  className,
-  mobileCard = true,
-  accessible = true,
-  responsive = true,
-  ...props
+interface TableHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface TableBodyProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface TableRowProps {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+interface TableCellProps {
+  children: React.ReactNode;
+  className?: string;
+  header?: boolean;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
+  minWidth?: string;
+}
+
+/**
+ * 반응형 테이블 컨테이너
+ */
+export const ResponsiveTable: React.FC<ResponsiveTableProps> = ({ 
+  children, 
+  className = '', 
+  maxHeight = '70vh' 
 }) => {
   return (
-    <div
-      className={cn(
-        'overflow-x-auto',
-        responsive && 'w-full',
-        className
-      )}
-      role={accessible ? 'table' : undefined}
-      aria-label={accessible ? '데이터 테이블' : undefined}
-      {...props}
-    >
-      <table className="min-w-full divide-y divide-gray-200">
-        {children}
-      </table>
+    <div className={`bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden ${className}`}>
+      <div 
+        className="overflow-x-auto overflow-y-auto"
+        style={{ maxHeight }}
+      >
+        <table className="min-w-full divide-y divide-gray-200">
+          {children}
+        </table>
+      </div>
     </div>
   );
 };
 
-export default ResponsiveTable;
+/**
+ * 테이블 헤더
+ */
+export const TableHeader: React.FC<TableHeaderProps> = ({ children, className = '' }) => {
+  return (
+    <thead className={`bg-gray-50 sticky top-0 z-10 ${className}`}>
+      {children}
+    </thead>
+  );
+};
 
+/**
+ * 테이블 바디
+ */
+export const TableBody: React.FC<TableBodyProps> = ({ children, className = '' }) => {
+  return (
+    <tbody className={`bg-white divide-y divide-gray-200 ${className}`}>
+      {children}
+    </tbody>
+  );
+};
+
+/**
+ * 테이블 행
+ */
+export const TableRow: React.FC<TableRowProps> = ({ 
+  children, 
+  className = '', 
+  onClick 
+}) => {
+  return (
+    <tr 
+      className={`hover:bg-gray-50 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      onClick={onClick}
+    >
+      {children}
+    </tr>
+  );
+};
+
+/**
+ * 테이블 셀
+ */
+export const TableCell: React.FC<TableCellProps> = ({ 
+  children, 
+  className = '', 
+  header = false,
+  align = 'left',
+  width,
+  minWidth = '120px'
+}) => {
+  const baseClasses = header 
+    ? 'px-3 sm:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider'
+    : 'px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+    
+  const alignClasses = {
+    left: 'text-left',
+    center: 'text-center', 
+    right: 'text-right'
+  };
+
+  const Tag = header ? 'th' : 'td';
+
+  return (
+    <Tag 
+      className={`${baseClasses} ${alignClasses[align]} ${className}`}
+      style={{ width, minWidth }}
+    >
+      {children}
+    </Tag>
+  );
+};
+
+export default ResponsiveTable;

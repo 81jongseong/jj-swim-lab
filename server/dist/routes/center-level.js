@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const CenterLevel_1 = require("../models/CenterLevel");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const defaultLevels = [
             {
@@ -51,7 +51,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/:centerId', auth_1.auth, async (req, res) => {
+router.get('/:centerId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { centerId } = req.params;
         let centerLevel = await CenterLevel_1.CenterLevel.findOne({ centerId });
@@ -75,7 +75,7 @@ router.get('/:centerId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '센터 레벨 조회에 실패했습니다.' });
     }
 });
-router.put('/:centerId', auth_1.auth, async (req, res) => {
+router.put('/:centerId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { centerId } = req.params;
         const { levels } = req.body;
@@ -106,7 +106,7 @@ router.put('/:centerId', auth_1.auth, async (req, res) => {
         res.status(500).json({ error: '센터 레벨 업데이트에 실패했습니다.' });
     }
 });
-router.delete('/:centerId', auth_1.auth, async (req, res) => {
+router.delete('/:centerId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { centerId } = req.params;
         if (req.user?.userType !== 'superAdmin' &&

@@ -10,7 +10,7 @@ const ClassChecklist_1 = require("../models/ClassChecklist");
 const ChecklistTemplate_1 = require("../models/ChecklistTemplate");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const router = express_1.default.Router();
-router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { classId, level, templateId, customLevel, isPrivateLesson } = req.body;
         if (!classId) {
@@ -138,7 +138,7 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         res.status(500).json({ error: '반 체크리스트 생성/업데이트에 실패했습니다.' });
     }
 });
-router.get('/class/:classId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.get('/class/:classId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { classId } = req.params;
         const { includeHidden = false } = req.query;
@@ -165,7 +165,7 @@ router.get('/class/:classId', auth_1.auth, (0, auth_1.requireRole)(['instructor'
         res.status(500).json({ error: '반 체크리스트를 불러오는데 실패했습니다.' });
     }
 });
-router.put('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:checklistId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const { items, isActive } = req.body;
@@ -190,7 +190,7 @@ router.put('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 
         res.status(500).json({ error: '반 체크리스트 수정에 실패했습니다.' });
     }
 });
-router.delete('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.delete('/:checklistId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const checklist = await ClassChecklist_1.ClassChecklist.findById(checklistId);
@@ -209,7 +209,7 @@ router.delete('/:checklistId', auth_1.auth, (0, auth_1.requireRole)(['instructor
         res.status(500).json({ error: '반 체크리스트 삭제에 실패했습니다.' });
     }
 });
-router.put('/:checklistId/items', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:checklistId/items', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const { items } = req.body;
@@ -235,7 +235,7 @@ router.put('/:checklistId/items', auth_1.auth, (0, auth_1.requireRole)(['instruc
         res.status(500).json({ error: '체크리스트 항목 수정에 실패했습니다.' });
     }
 });
-router.put('/:checklistId/items/:itemId/message', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:checklistId/items/:itemId/message', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId, itemId } = req.params;
         const { message } = req.body;
@@ -262,7 +262,7 @@ router.put('/:checklistId/items/:itemId/message', auth_1.auth, (0, auth_1.requir
         res.status(500).json({ error: '메시지 추가에 실패했습니다.' });
     }
 });
-router.put('/:checklistId/hide-items', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.put('/:checklistId/hide-items', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const { hiddenItemIds } = req.body;
@@ -287,7 +287,7 @@ router.put('/:checklistId/hide-items', auth_1.auth, (0, auth_1.requireRole)(['in
         res.status(500).json({ error: '항목 숨김 설정에 실패했습니다.' });
     }
 });
-router.post('/:checklistId/custom-items', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/:checklistId/custom-items', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { checklistId } = req.params;
         const { customItems } = req.body;

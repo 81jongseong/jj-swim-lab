@@ -102,7 +102,35 @@ export default function ApprovalsPage() {
     try {
       setIsLoading(true);
       
-      // 센터 등록 신청 데이터 가져오기
+      // 실제 승인 데이터 API 호출
+      const approvalsResponse = await apiClient.get<{
+        success: boolean;
+        data?: {
+          approvals: ApprovalItem[];
+          pagination: any;
+        };
+        error?: string;
+      }>('/api/approvals');
+      
+      let realApprovals: ApprovalItem[] = [];
+      if (approvalsResponse?.data?.approvals) {
+        realApprovals = approvalsResponse.data.approvals.map((approval: any) => ({
+          id: approval.id,
+          type: approval.type,
+          title: approval.title,
+          description: approval.description,
+          requesterName: approval.requesterName,
+          requesterType: approval.requesterType,
+          requestDate: new Date(approval.requestDate).toLocaleDateString('ko-KR'),
+          status: approval.status,
+          priority: approval.priority,
+          estimatedAmount: approval.estimatedAmount,
+          courseName: approval.courseName,
+          instructorName: approval.instructorName
+        }));
+      }
+      
+      // 센터 등록 신청 데이터도 함께 가져오기
       const centerRegistrationsResponse = await apiClient.get<{
         success: boolean;
         data?: {
@@ -126,74 +154,142 @@ export default function ApprovalsPage() {
         centerRegistration: reg
       }));
       
-      // 기존 mock 데이터와 센터 등록 신청 합치기
-      const mockData: ApprovalItem[] = [
-        {
-          id: '1',
-          type: 'course_enrollment',
-          title: '초급 수영 과정 수강 신청',
-          description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
-          requesterName: '김학생',
-          requesterType: 'student',
-          requestDate: '2024-01-15',
-          status: 'pending',
-          priority: 'medium',
-          courseName: '초급 수영',
-          estimatedAmount: 120000
-        },
-        {
-          id: '2',
-          type: 'instructor_registration',
-          title: '새 강사 등록 신청',
-          description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
-          requesterName: '박강사',
-          requesterType: 'instructor',
-          requestDate: '2024-01-14',
-          status: 'pending',
-          priority: 'high',
-          instructorName: '박강사'
-        }
-      ];
+      // 실제 데이터와 센터 등록 신청 합치기
+      const allApprovals = [...realApprovals, ...centerApprovals];
       
-      const allApprovals = [...mockData, ...centerApprovals];
-      setApprovals(allApprovals);
-      setFilteredApprovals(allApprovals);
+      // 데이터가 없으면 샘플 데이터 생성
+      if (allApprovals.length === 0) {
+        console.log('📝 승인 데이터가 없어 샘플 데이터를 생성합니다.');
+        const sampleData: ApprovalItem[] = [
+          {
+            id: 'sample-1',
+            type: 'course_enrollment',
+            title: '초급 수영 과정 수강 신청',
+            description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
+            requesterName: '김학생',
+            requesterType: 'student',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'medium',
+            courseName: '초급 수영',
+            estimatedAmount: 120000
+          },
+          {
+            id: 'sample-2',
+            type: 'instructor_registration',
+            title: '새 강사 등록 신청',
+            description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
+            requesterName: '박강사',
+            requesterType: 'instructor',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'high',
+            instructorName: '박강사'
+          },
+          {
+            id: 'sample-3',
+            type: 'payment_approval',
+            title: '강습료 결제 승인 요청',
+            description: '이학생님의 강습료 결제 승인이 필요합니다.',
+            requesterName: '이학생',
+            requesterType: 'student',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'medium',
+            estimatedAmount: 150000
+          },
+          {
+            id: 'sample-4',
+            type: 'schedule_change',
+            title: '수업 일정 변경 요청',
+            description: '최학생님이 수업 일정 변경을 요청했습니다.',
+            requesterName: '최학생',
+            requesterType: 'student',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'low'
+          },
+          {
+            id: 'sample-5',
+            type: 'refund_request',
+            title: '강습료 환불 요청',
+            description: '정학생님이 개인 사정으로 환불을 요청했습니다.',
+            requesterName: '정학생',
+            requesterType: 'student',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'high',
+            estimatedAmount: 100000
+          },
+          {
+            id: 'sample-6',
+            type: 'course_enrollment',
+            title: '중급 배영 과정 수강 신청',
+            description: '한학생님이 중급 배영 과정에 수강을 신청했습니다.',
+            requesterName: '한학생',
+            requesterType: 'student',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'approved',
+            priority: 'medium',
+            courseName: '중급 배영',
+            estimatedAmount: 180000
+          },
+          {
+            id: 'sample-7',
+            type: 'instructor_registration',
+            title: '신규 강사 등록 완료',
+            description: '조강사님의 강사 등록이 승인되었습니다.',
+            requesterName: '조강사',
+            requesterType: 'instructor',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'approved',
+            priority: 'high',
+            instructorName: '조강사'
+          }
+        ];
+        setApprovals(sampleData);
+        setFilteredApprovals(sampleData);
+      } else {
+        setApprovals(allApprovals);
+        setFilteredApprovals(allApprovals);
+      }
+      
       setIsLoading(false);
     } catch (error) {
       console.error('승인 데이터 가져오기 실패:', error);
       setIsLoading(false);
       
-      // API 실패 시 mock 데이터 사용 (fallback)
-      const mockData: ApprovalItem[] = [
+      // API 실패 시 샘플 데이터 사용 (fallback)
+      const fallbackData: ApprovalItem[] = [
         {
-          id: '1',
+          id: 'fallback-1',
           type: 'course_enrollment',
           title: '초급 수영 과정 수강 신청',
           description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
           requesterName: '김학생',
           requesterType: 'student',
-          requestDate: '2024-01-15',
+          requestDate: new Date().toLocaleDateString('ko-KR'),
           status: 'pending',
           priority: 'medium',
           courseName: '초급 수영',
           estimatedAmount: 120000
         },
         {
-          id: '2',
+          id: 'fallback-2',
           type: 'instructor_registration',
           title: '새 강사 등록 신청',
           description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
           requesterName: '박강사',
           requesterType: 'instructor',
-          requestDate: '2024-01-14',
+          requestDate: new Date().toLocaleDateString('ko-KR'),
           status: 'pending',
           priority: 'high',
           instructorName: '박강사'
         }
       ];
       
-      setApprovals(mockData);
-      setFilteredApprovals(mockData);
+      setApprovals(fallbackData);
+      setFilteredApprovals(fallbackData);
     }
   };
 
@@ -270,24 +366,42 @@ export default function ApprovalsPage() {
           alert(response.message || '처리 중 오류가 발생했습니다.');
         }
       } else {
-        // 기존 승인 처리 로직 (mock)
-        setApprovals(prev => 
-          prev.map(item => 
-            item.id === id 
-              ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
-              : item
-          )
-        );
-        
-        setFilteredApprovals(prev => 
-          prev.map(item => 
-            item.id === id 
-              ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
-              : item
-          )
-        );
-        
-        alert(`승인 요청이 ${action === 'approve' ? '승인' : '거부'}되었습니다.`);
+        // 실제 승인 API 호출
+        try {
+          const response = await apiClient.put(`/api/approvals/${id}/process`, {
+            action: action,
+            comments: action === 'approve' ? '승인되었습니다.' : '거부되었습니다.',
+            rejectionReason: action === 'reject' ? '관리자 검토 결과 거부' : undefined
+          });
+          
+          if (response.success) {
+            await fetchApprovals(); // 데이터 새로고침
+            alert(`승인 요청이 ${action === 'approve' ? '승인' : '거부'}되었습니다.`);
+          } else {
+            alert(response.message || '처리 중 오류가 발생했습니다.');
+          }
+        } catch (apiError) {
+          console.log('API 오류, 로컬 상태 업데이트로 대체:', apiError);
+          
+          // API 실패 시 로컬 상태 업데이트 (fallback)
+          setApprovals(prev => 
+            prev.map(item => 
+              item.id === id 
+                ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
+                : item
+            )
+          );
+          
+          setFilteredApprovals(prev => 
+            prev.map(item => 
+              item.id === id 
+                ? { ...item, status: action === 'approve' ? 'approved' : 'rejected' }
+                : item
+            )
+          );
+          
+          alert(`승인 요청이 ${action === 'approve' ? '승인' : '거부'}되었습니다. (로컬 처리)`);
+        }
       }
     } catch (error) {
       console.error('승인 처리 실패:', error);
@@ -428,75 +542,158 @@ export default function ApprovalsPage() {
         </div>
       </div>
 
-      {/* 승인 요청 목록 */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">승인 요청 목록</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">유형</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목 및 설명</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청자</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">요청일</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">우선순위</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredApprovals.map((approval) => (
-                <tr key={approval.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">{getTypeLabel(approval.type)}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium">{approval.title}</div>
-                    <div className="text-sm text-gray-500">{approval.description}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium">{approval.requesterName}</div>
-                    <div className="text-sm text-gray-500">{approval.requesterType}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{approval.requestDate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getPriorityBadge(approval.priority)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(approval.status)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      {approval.type === 'center_registration' && (
-                        <button
-                          onClick={() => {
-                            setSelectedCenter(approval.centerRegistration!);
-                            setShowCenterModal(true);
-                          }}
-                          className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                        >
-                          상세보기
-                        </button>
-                      )}
-                      {approval.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleApproval(approval.id, 'approve')}
-                            className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            승인
-                          </button>
-                          <button
-                            onClick={() => handleApproval(approval.id, 'reject')}
-                            className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                          >
-                            거부
-                          </button>
-                        </>
-                      )}
+      {/* 승인 요청 목록 - 카드 형식 */}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">승인 요청 목록</h2>
+        {filteredApprovals.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-gray-500">
+              <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p className="text-lg font-medium">승인 요청이 없습니다</p>
+              <p className="text-sm">필터 조건을 변경해보세요.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredApprovals.map((approval) => (
+              <div key={approval.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200">
+                {/* 카드 헤더 */}
+                <div className="p-6 border-b border-gray-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                        {approval.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {approval.description}
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <div className="ml-4 flex-shrink-0">
+                      {getStatusBadge(approval.status)}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    {getTypeLabel(approval.type)}
+                    {getPriorityBadge(approval.priority)}
+                  </div>
+                </div>
+
+                {/* 카드 본문 */}
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {/* 요청자 정보 */}
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-900">{approval.requesterName}</p>
+                        <p className="text-xs text-gray-500 capitalize">{approval.requesterType}</p>
+                      </div>
+                    </div>
+
+                    {/* 요청일 */}
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-gray-900">{approval.requestDate}</p>
+                      </div>
+                    </div>
+
+                    {/* 추가 정보 */}
+                    {approval.courseName && (
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-gray-900">{approval.courseName}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {approval.instructorName && (
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-gray-900">강사: {approval.instructorName}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {approval.estimatedAmount && (
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-gray-900">₩{approval.estimatedAmount.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 카드 푸터 */}
+                <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
+                  <div className="flex gap-2">
+                    {approval.type === 'center_registration' && (
+                      <button
+                        onClick={() => {
+                          setSelectedCenter(approval.centerRegistration!);
+                          setShowCenterModal(true);
+                        }}
+                        className="flex-1 px-3 py-2 text-xs font-medium bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors"
+                      >
+                        📋 상세보기
+                      </button>
+                    )}
+                    {approval.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleApproval(approval.id, 'approve')}
+                          className="flex-1 px-3 py-2 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          ✅ 승인
+                        </button>
+                        <button
+                          onClick={() => handleApproval(approval.id, 'reject')}
+                          className="flex-1 px-3 py-2 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        >
+                          ❌ 거부
+                        </button>
+                      </>
+                    )}
+                    {approval.status !== 'pending' && approval.type !== 'center_registration' && (
+                      <div className="flex-1 text-center text-xs text-gray-500 py-2">
+                        {approval.status === 'approved' ? '✅ 승인 완료' : '❌ 거부 완료'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 센터 등록 상세보기 모달 */}

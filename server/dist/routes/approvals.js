@@ -15,7 +15,7 @@ const requireAdmin = (req, res, next) => {
     if (!['superAdmin', 'centerAdmin'].includes(req.user.userType)) {
         return res.status(403).json({
             success: false,
-            message: '접근 권한이 없습니다.'
+            message: '승인 관리 권한이 없습니다. 관리자 계정이 필요합니다.'
         });
     }
     next();

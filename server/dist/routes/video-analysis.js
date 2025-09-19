@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const VideoAnalysisCriteria_1 = require("../models/VideoAnalysisCriteria");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { technique, analysisType, isActive } = req.query;
         const query = {};
@@ -33,7 +33,7 @@ router.get('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cen
         });
     }
 });
-router.post('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const criteriaData = {
             ...req.body,
@@ -56,7 +56,7 @@ router.post('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         });
     }
 });
-router.put('/criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/criteria/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = {
@@ -84,7 +84,7 @@ router.put('/criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 
         });
     }
 });
-router.delete('/criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.delete('/criteria/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const criteria = await VideoAnalysisCriteria_1.VideoAnalysisCriteria.findByIdAndDelete(id);
@@ -107,7 +107,7 @@ router.delete('/criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin
         });
     }
 });
-router.patch('/criteria/:id/toggle', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.patch('/criteria/:id/toggle', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const criteria = await VideoAnalysisCriteria_1.VideoAnalysisCriteria.findById(id);
@@ -134,7 +134,7 @@ router.patch('/criteria/:id/toggle', auth_1.auth, (0, auth_1.requireRole)(['inst
         });
     }
 });
-router.post('/result', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
+router.post('/result', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const resultData = {
             ...req.body,
@@ -156,7 +156,7 @@ router.post('/result', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cent
         });
     }
 });
-router.get('/result', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.get('/result', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { studentId, technique, limit = 10, offset = 0 } = req.query;
         const query = {};
@@ -199,7 +199,7 @@ router.get('/result', auth_1.auth, (0, auth_1.requireRole)(['student', 'instruct
         });
     }
 });
-router.get('/result/:id', auth_1.auth, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
+router.get('/result/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const result = await VideoAnalysisCriteria_1.VideoAnalysisResult.findById(id)
@@ -229,7 +229,7 @@ router.get('/result/:id', auth_1.auth, (0, auth_1.requireRole)(['student', 'inst
         });
     }
 });
-router.post('/criteria/template', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.post('/criteria/template', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { technique } = req.body;
         if (!technique) {

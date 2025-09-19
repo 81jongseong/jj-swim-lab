@@ -7,8 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { RefreshCw, Server, Users, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 

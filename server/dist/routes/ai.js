@@ -11,7 +11,7 @@ const AIEngine_1 = require("../utils/AIEngine");
 const AdvancedAIEngine_1 = require("../utils/AdvancedAIEngine");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.post('/analyze', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/analyze', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId, analysisType, technique, checklistData } = req.body;
         if (!studentId || !analysisType) {
@@ -71,7 +71,7 @@ router.post('/analyze', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cen
         });
     }
 });
-router.get('/analysis/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/analysis/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const { analysisType, limit = 10 } = req.query;
@@ -101,7 +101,7 @@ router.get('/analysis/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instru
         });
     }
 });
-router.get('/dashboard/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/dashboard/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const [recentAnalyses, checklists] = await Promise.all([
@@ -139,7 +139,7 @@ router.get('/dashboard/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instr
         });
     }
 });
-router.put('/analysis/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/analysis/:analysisId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { analysisId } = req.params;
         const updateData = req.body;
@@ -166,7 +166,7 @@ router.put('/analysis/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['instr
         });
     }
 });
-router.delete('/analysis/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/analysis/:analysisId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { analysisId } = req.params;
         const analysis = await AIAnalysis_1.AIAnalysis.findOneAndUpdate({
@@ -236,7 +236,7 @@ function calculatePerformanceMetrics(checklists) {
         consistency: Math.round(consistency * 100)
     };
 }
-router.get('/config', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/config', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const defaultConfig = {
             postureAnalysis: {
@@ -290,7 +290,7 @@ router.get('/config', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
         });
     }
 });
-router.put('/config', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/config', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const configData = req.body;
         if (!configData) {
@@ -313,7 +313,7 @@ router.put('/config', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
         });
     }
 });
-router.post('/evaluate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/evaluate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId, technique, performanceMetrics, instructorObservations } = req.body;
         if (!studentId || !technique) {
@@ -366,7 +366,7 @@ router.post('/evaluate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         });
     }
 });
-router.get('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { technique } = req.query;
         const query = technique ? { technique } : {};
@@ -384,7 +384,7 @@ router.get('/criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cen
         });
     }
 });
-router.post('/criteria', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.post('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const criteriaData = req.body;
         const criteria = await AIEvaluationCriteria_1.EvaluationCriteria.findOneAndUpdate({ technique: criteriaData.technique }, criteriaData, { upsert: true, new: true });

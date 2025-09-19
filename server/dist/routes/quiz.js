@@ -8,7 +8,7 @@ const auth_1 = require("../middleware/auth");
 const Quiz_1 = require("../models/Quiz");
 const QuizAttempt_1 = require("../models/QuizAttempt");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 10, category, difficulty, type, search } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -57,7 +57,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/attempts/user', auth_1.auth, async (req, res) => {
+router.get('/attempts/user', auth_1.authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 10, quizId, passed } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
@@ -96,7 +96,7 @@ router.get('/attempts/user', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.get('/:id', auth_1.auth, async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const quiz = await Quiz_1.Quiz.findById(req.params.id)
             .populate('createdBy', 'name email')
@@ -127,7 +127,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         if (!req.user?._id) {
             return res.status(401).json({
@@ -195,7 +195,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmi
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         if (!req.user?._id) {
             return res.status(401).json({
@@ -231,7 +231,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAd
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         if (!req.user?._id) {
             return res.status(401).json({
@@ -267,7 +267,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cente
         });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         if (!req.user?._id) {
             return res.status(401).json({
@@ -340,7 +340,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['instructor'
         });
     }
 });
-router.post('/:id/copy', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/:id/copy', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         if (!req.user?._id) {
             return res.status(401).json({

@@ -9,7 +9,7 @@ const LearningProgress_1 = require("../models/LearningProgress");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { type, priority, status } = req.query;
@@ -40,7 +40,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, r
         });
     }
 });
-router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         await Recommendation_1.Recommendation.deleteMany({ studentId, status: 'active' });
@@ -134,7 +134,7 @@ router.post('/generate', auth_1.auth, (0, auth_1.requireRole)(['student']), asyn
         });
     }
 });
-router.put('/:recommendationId/complete', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:recommendationId/complete', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { recommendationId } = req.params;
@@ -166,7 +166,7 @@ router.put('/:recommendationId/complete', auth_1.auth, (0, auth_1.requireRole)([
         });
     }
 });
-router.put('/:recommendationId/dismiss', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.put('/:recommendationId/dismiss', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const { recommendationId } = req.params;
@@ -198,7 +198,7 @@ router.put('/:recommendationId/dismiss', auth_1.auth, (0, auth_1.requireRole)(['
         });
     }
 });
-router.get('/analysis', auth_1.auth, (0, auth_1.requireRole)(['student']), async (req, res) => {
+router.get('/analysis', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user.id;
         const progressData = await LearningProgress_1.LearningProgress.find({ studentId })

@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
         });
     }
 });
-router.get('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { status, page = 1, limit = 10, search } = req.query;
         const filter = {};
@@ -94,7 +94,7 @@ router.get('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), a
         });
     }
 });
-router.get('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
@@ -128,7 +128,7 @@ router.get('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin'])
         });
     }
 });
-router.post('/:id/approve', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { comments } = req.body;
@@ -220,7 +220,7 @@ router.post('/:id/approve', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 
         });
     }
 });
-router.post('/:id/reject', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.post('/:id/reject', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { rejectionReason, comments } = req.body;
@@ -269,7 +269,7 @@ router.post('/:id/reject', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', '
         });
     }
 });
-router.post('/:id/review', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.post('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -313,7 +313,7 @@ router.post('/:id/review', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', '
         });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const stats = await CenterRegistration_1.default.aggregate([
             {

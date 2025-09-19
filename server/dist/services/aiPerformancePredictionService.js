@@ -561,7 +561,7 @@ class AIPerformancePredictionService {
             [PerformancePrediction_1.SwimmingEvent.MEDLEY_200]: 240,
             [PerformancePrediction_1.SwimmingEvent.MEDLEY_400]: 520
         };
-        let baseTime = baseTimes[event];
+        const baseTime = baseTimes[event];
         const levelMultipliers = {
             'beginner': 1.3,
             'intermediate': 1.1,

@@ -94,14 +94,38 @@ export default function AdminCoursesPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
-  const [lanes, setLanes] = useState<Lane[]>([
-    { id: 1, name: '1번 레인', status: 'available', currentCourse: null },
-    { id: 2, name: '2번 레인', status: 'occupied', currentCourse: '초급 자유형' },
-    { id: 3, name: '3번 레인', status: 'maintenance', currentCourse: null },
-    { id: 4, name: '4번 레인', status: 'available', currentCourse: null },
-    { id: 5, name: '5번 레인', status: 'occupied', currentCourse: '중급 접영' },
-    { id: 6, name: '6번 레인', status: 'available', currentCourse: null },
-  ]);
+  const [lanes, setLanes] = useState<Lane[]>([]);
+  
+  // 동적 레인 설정
+  const [laneConfig, setLaneConfig] = useState({
+    totalLanes: 8, // 기본 8개 레인
+    activeStart: 1,
+    activeEnd: 8,
+    poolType: 'standard' as 'standard' | 'olympic' | 'kids' | 'therapy'
+  });
+
+  // 레인 동적 생성 함수
+  const generateDynamicLanes = (config: typeof laneConfig) => {
+    const newLanes: Lane[] = [];
+    
+    for (let i = 1; i <= config.totalLanes; i++) {
+      const isActive = i >= config.activeStart && i <= config.activeEnd;
+      
+      newLanes.push({
+        id: i,
+        name: `${i}번 레인`,
+        status: isActive ? 'available' : 'maintenance',
+        currentCourse: null
+      });
+    }
+    
+    setLanes(newLanes);
+  };
+
+  // 레인 설정 변경 시 레인 재생성
+  useEffect(() => {
+    generateDynamicLanes(laneConfig);
+  }, [laneConfig]);
 
   // 레인 설정 상태
   const [showLaneSettings, setShowLaneSettings] = useState(false);
@@ -445,37 +469,80 @@ export default function AdminCoursesPage() {
           </div>
         </div>
 
-        {/* 레인 상태 */}
+        {/* 동적 레인 상태 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">레인 상태</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              🏊‍♂️ 레인 상태 ({laneConfig.totalLanes}개 레인)
+            </h2>
+            <div className="text-sm text-gray-600">
+              활성: {laneConfig.activeStart}-{laneConfig.activeEnd}번 
+              ({laneConfig.totalLanes % 2 === 0 ? '짝수' : '홀수'} 레인)
+            </div>
+          </div>
+          
+          {/* 레인 사용률 요약 */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="text-lg font-bold text-green-600">
+                {lanes.filter(lane => lane.status === 'available').length}
+              </div>
+              <div className="text-xs text-green-700">사용가능</div>
+            </div>
+            <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+              <div className="text-lg font-bold text-red-600">
+                {lanes.filter(lane => lane.status === 'occupied').length}
+              </div>
+              <div className="text-xs text-red-700">사용중</div>
+            </div>
+            <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="text-lg font-bold text-yellow-600">
+                {lanes.filter(lane => lane.status === 'maintenance').length}
+              </div>
+              <div className="text-xs text-yellow-700">점검중</div>
+            </div>
+          </div>
+          
+          {/* 동적 레인 그리드 */}
+          <div 
+            className="grid gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(laneConfig.totalLanes, 10)}, 1fr)`,
+              maxHeight: laneConfig.totalLanes > 10 ? '300px' : 'auto',
+              overflowY: laneConfig.totalLanes > 10 ? 'auto' : 'visible'
+            }}
+          >
             {lanes.map((lane) => (
               <div
                 key={lane.id}
-                className={`p-4 rounded-lg border-2 ${
+                className={`p-3 rounded-lg border-2 transition-all duration-200 ${
                   lane.status === 'available'
-                    ? 'border-green-300 bg-green-50'
+                    ? 'border-green-300 bg-green-50 hover:bg-green-100'
                     : lane.status === 'occupied'
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-yellow-300 bg-yellow-50'
+                    ? 'border-blue-300 bg-blue-50 hover:bg-blue-100'
+                    : 'border-red-300 bg-red-50 hover:bg-red-100'
                 }`}
               >
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="text-xl mb-2">
+                    {lane.status === 'available' ? '✅' :
+                     lane.status === 'occupied' ? '🏊‍♂️' : '🔧'}
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 mb-1">
                     {lane.name}
                   </div>
-                  <div className={`text-sm font-medium ${
+                  <div className={`text-xs font-medium ${
                     lane.status === 'available'
                       ? 'text-green-700'
                       : lane.status === 'occupied'
-                      ? 'text-red-700'
-                      : 'text-yellow-700'
+                      ? 'text-blue-700'
+                      : 'text-red-700'
                   }`}>
-                    {lane.status === 'available' ? '사용 가능' :
-                     lane.status === 'occupied' ? '사용 중' : '점검 중'}
+                    {lane.status === 'available' ? '사용가능' :
+                     lane.status === 'occupied' ? '사용중' : '점검중'}
                   </div>
                   {lane.currentCourse && (
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="text-xs text-gray-600 mt-1 truncate">
                       {lane.currentCourse}
                     </div>
                   )}
@@ -794,24 +861,113 @@ export default function AdminCoursesPage() {
                 </div>
 
                 <div className="space-y-6">
+                  {/* 동적 레인 수 설정 */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">레인 수</label>
-                    <div className="flex gap-2">
-                      {[4, 6, 8, 10].map((count) => (
-                        <button
-                          key={count}
-                          type="button"
-                          onClick={() => setLaneCount(count)}
-                          className={`px-4 py-2 border rounded-md transition-colors ${
-                            laneCount === count
-                              ? 'bg-blue-100 border-blue-500 text-blue-700'
-                              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {count}개
-                        </button>
-                      ))}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🏊‍♂️ 총 레인 수 (1-20개 지원)
+                    </label>
+                    <div className="space-y-4">
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={laneConfig.totalLanes}
+                        onChange={(e) => setLaneConfig({
+                          ...laneConfig,
+                          totalLanes: parseInt(e.target.value) || 1,
+                          activeEnd: Math.min(parseInt(e.target.value) || 1, laneConfig.activeEnd)
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      
+                      {/* 프리셋 버튼 */}
+                      <div className="flex flex-wrap gap-2">
+                        {[4, 6, 8, 10, 12, 15, 20].map((count) => (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => setLaneConfig({
+                              ...laneConfig,
+                              totalLanes: count,
+                              activeStart: 1,
+                              activeEnd: count
+                            })}
+                            className={`px-3 py-1 text-sm border rounded-md transition-colors ${
+                              laneConfig.totalLanes === count
+                                ? 'bg-blue-100 border-blue-500 text-blue-700'
+                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {count}개
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="text-xs text-gray-500">
+                        현재 설정: {laneConfig.totalLanes}개 레인 
+                        {laneConfig.totalLanes % 2 === 0 ? '(짝수)' : '(홀수)'}
+                      </div>
                     </div>
+                  </div>
+                  
+                  {/* 활성 레인 범위 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🎯 활성 레인 범위
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-600">시작 레인</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={laneConfig.totalLanes}
+                          value={laneConfig.activeStart}
+                          onChange={(e) => setLaneConfig({
+                            ...laneConfig,
+                            activeStart: parseInt(e.target.value) || 1
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">종료 레인</label>
+                        <input
+                          type="number"
+                          min={laneConfig.activeStart}
+                          max={laneConfig.totalLanes}
+                          value={laneConfig.activeEnd}
+                          onChange={(e) => setLaneConfig({
+                            ...laneConfig,
+                            activeEnd: parseInt(e.target.value) || laneConfig.totalLanes
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      활성 레인: {laneConfig.activeEnd - laneConfig.activeStart + 1}개
+                    </div>
+                  </div>
+                  
+                  {/* 수영장 타입 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🏊‍♀️ 수영장 타입
+                    </label>
+                    <select
+                      value={laneConfig.poolType}
+                      onChange={(e) => setLaneConfig({
+                        ...laneConfig,
+                        poolType: e.target.value as any
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="standard">표준 풀 (25m) - 레인당 8명</option>
+                      <option value="olympic">올림픽 풀 (50m) - 레인당 12명</option>
+                      <option value="kids">어린이 풀 - 레인당 6명</option>
+                      <option value="therapy">재활 풀 - 레인당 4명</option>
+                    </select>
                   </div>
 
                   <div>

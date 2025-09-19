@@ -470,6 +470,7 @@ router.get('/stats/by-level', authMiddleware, requirePermission('reports'), asyn
 router.post('/', authMiddleware, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { 
+      userId,
       name, 
       email, 
       password, 
@@ -502,6 +503,7 @@ router.post('/', authMiddleware, requirePermission('userManagement'), async (req
     
     // 사용자 생성
     const user = new User({
+      userId,
       name,
       email,
       password,
@@ -540,86 +542,155 @@ router.post('/', authMiddleware, requirePermission('userManagement'), async (req
 });
 
 
+/**
+ * 👤 사용자 정보 업데이트 API
+ * 
+ * 📋 **기능**
+ * - 사용자 기본 정보 및 타입별 상세 정보 수정
+ * - 권한별 접근 제어 (본인/센터관리자/강사/최고관리자)
+ * - 사용자 타입 변경 시 권한 자동 재설정
+ * - 4가지 계정 타입별 전용 필드 업데이트
+ * 
+ * 🔄 **업데이트 과정**
+ * 1. 요청자 권한 검증 (본인 또는 관리 권한)
+ * 2. 사용자 타입별 접근 권한 확인
+ * 3. 업데이트 데이터 검증 및 구성
+ * 4. 사용자 타입 변경 시 권한 재설정
+ * 5. 데이터베이스 업데이트 실행
+ * 
+ * 🎯 **4가지 계정별 업데이트 규칙**
+ * - student: 본인만 수정 가능
+ * - instructor: 본인 + 담당 학생 수정 가능
+ * - centerAdmin: 본인 + 센터 소속 사용자 수정 가능
+ * - superAdmin: 모든 사용자 수정 가능
+ * 
+ * 📅 **수정 히스토리**
+ * - 2025-09-19: 권한별 접근 제어 주석 추가
+ */
 // 사용자 정보 업데이트
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { 
-      name, 
-      phone, 
-      address, 
-      userType, 
-      level,
-      studentInfo,
-      instructorInfo,
-      centerAdminInfo,
-      superAdminInfo,
-      accessPermissions,
-      featureSequence
+      userId,  // 사용자 로그인 ID
+      name,    // 사용자 이름
+      phone,   // 전화번호
+      address, // 주소
+      userType, // 사용자 타입 (student/instructor/centerAdmin/superAdmin)
+      level,    // 사용자 레벨
+      password, // 비밀번호 (있는 경우 해싱 처리)
+      studentInfo,      // 학생 전용 정보
+      instructorInfo,   // 강사 전용 정보
+      centerAdminInfo,  // 센터관리자 전용 정보
+      superAdminInfo,   // 최고관리자 전용 정보
+      accessPermissions, // 접근 권한 설정
+      featureSequence   // 기능 시퀀스 설정
     } = req.body;
     
-    // 권한 검증
-    const currentUser = (req as any).user;
-    const targetUserId = req.params.id;
+    // 🔐 권한 검증 - 4가지 계정별 수정 권한 체크
+    const currentUser = (req as any).user;  // 요청자 정보
+    const targetUserId = req.params.id;     // 수정 대상 사용자 ID
     
-    // 본인이 아닌 경우 권한 검증
+    // 본인이 아닌 경우 계정별 권한 검증
     if (currentUser._id !== targetUserId) {
       if (currentUser.userType === 'centerAdmin') {
+        // 센터관리자: 자신이 관리하는 센터의 사용자만 수정 가능
         const hasAccess = await checkCenterAdminAccess(currentUser._id, { _id: targetUserId });
         if (!hasAccess) {
           return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
         }
       } else if (currentUser.userType === 'instructor') {
+        // 강사: 자신이 담당하는 학생만 수정 가능
         const hasAccess = await checkInstructorAccess(currentUser._id, { _id: targetUserId });
         if (!hasAccess) {
           return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
         }
       } else if (currentUser.userType === 'student') {
+        // 학생: 본인의 정보만 수정 가능
         return res.status(403).json({ error: '본인의 정보만 수정할 수 있습니다.' });
       } else if (currentUser.userType !== 'superAdmin') {
+        // 최고관리자가 아닌 기타 타입: 수정 불가
         return res.status(403).json({ error: '해당 사용자에 대한 수정 권한이 없습니다.' });
       }
+      // superAdmin은 모든 사용자 수정 가능
     }
     
-    const updateData: any = { name, phone, address };
+    // 📝 기본 업데이트 데이터 구성
+    const updateData: any = {};
     
-    // 사용자 유형별 정보 업데이트
+    // 🔒 개인정보 수정 권한 체크 (본인만 가능)
+    if (currentUser._id === targetUserId) {
+      // 본인인 경우에만 개인정보 수정 가능
+      if (name) updateData.name = name;         // 사용자 이름
+      if (phone) updateData.phone = phone;      // 전화번호  
+      if (address) updateData.address = address; // 주소
+    } else {
+      // 타인인 경우 개인정보 수정 불가 (관리적 기능만 가능)
+      console.log('🔒 개인정보 수정 제한: 관리자는 개인정보를 수정할 수 없습니다.');
+    }
+    
+    // 🔑 사용자 로그인 ID 업데이트 (있는 경우)
+    if (userId) {
+      updateData.userId = userId;
+    }
+    
+    // 🔒 비밀번호 업데이트 (있는 경우 해싱 처리)
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const saltRounds = 12;
+      updateData.password = await bcrypt.hash(password, saltRounds);
+    }
+    
+    // 👥 사용자 유형 변경 시 권한 자동 재설정
     if (userType) {
       updateData.userType = userType;
       
       // 사용자 유형별 권한 및 시퀀스 자동 설정
-      const user = new User({ userType });
-      user.setPermissionsByType();
-      user.setFeatureSequence();
+      const tempUser = new User({ userType });
+      tempUser.setPermissionsByType();   // 타입별 기본 권한 설정
+      tempUser.setFeatureSequence();     // 타입별 기능 시퀀스 설정
       
-      updateData.accessPermissions = user.accessPermissions;
-      updateData.featureSequence = user.featureSequence;
+      updateData.accessPermissions = tempUser.accessPermissions;
+      updateData.featureSequence = tempUser.featureSequence;
     }
     
+    // 📊 사용자 레벨 업데이트
     if (level) {
       updateData.level = level;
     }
     
+    // ⚙️ 계정 활성/비활성 상태 업데이트 (관리자 권한)
+    if (typeof req.body.isActive === 'boolean') {
+      updateData.isActive = req.body.isActive;
+      console.log(`🔒 계정 상태 변경: ${updateData.isActive ? '활성' : '비활성'}`);
+    }
+    
+    // 🎓 학생 전용 정보 업데이트
     if (studentInfo) {
       updateData.studentInfo = studentInfo;
     }
     
+    // 👨‍🏫 강사 전용 정보 업데이트
     if (instructorInfo) {
       updateData.instructorInfo = instructorInfo;
     }
     
+    // 🏢 센터관리자 전용 정보 업데이트
     if (centerAdminInfo) {
       updateData.centerAdminInfo = centerAdminInfo;
     }
     
+    // 👑 최고관리자 전용 정보 업데이트
     if (superAdminInfo) {
       updateData.superAdminInfo = superAdminInfo;
     }
     
-    if (accessPermissions) {
+    // 🔐 접근 권한 직접 설정 (관리자만 가능)
+    if (accessPermissions && currentUser.userType === 'superAdmin') {
       updateData.accessPermissions = accessPermissions;
     }
     
-    if (featureSequence) {
+    // 🔄 기능 시퀀스 직접 설정 (관리자만 가능)
+    if (featureSequence && currentUser.userType === 'superAdmin') {
       updateData.featureSequence = featureSequence;
     }
     
@@ -735,49 +806,118 @@ router.patch('/:id/toggle-status', authMiddleware, requirePermission('userManage
   }
 });
 
-// 센터 관리자 접근 권한 확인
+/**
+ * 🏢 센터 관리자 접근 권한 확인 함수
+ * 
+ * 📋 **기능**
+ * - 센터관리자가 특정 사용자에 대한 관리 권한이 있는지 확인
+ * - 센터별 사용자 그룹 관리를 위한 권한 검증
+ * - 강사와 학생의 센터 소속 여부 확인
+ * 
+ * 🔄 **검증 과정**
+ * 1. 관리자 정보 조회 및 타입 확인
+ * 2. 관리자가 관리하는 센터 목록 조회
+ * 3. 대상 사용자의 센터 소속 여부 확인
+ * 4. 권한 여부 반환 (true/false)
+ * 
+ * @param adminId 센터관리자 사용자 ID
+ * @param user 권한 확인 대상 사용자 객체
+ * @returns 접근 권한 여부 (boolean)
+ */
 async function checkCenterAdminAccess(adminId: string, user: any): Promise<boolean> {
+  // 센터관리자 정보 조회
   const admin = await User.findById(adminId);
   if (!admin || admin.userType !== 'centerAdmin') return false;
   
+  // 관리하는 센터 목록 조회
   const managedCenters = admin.centerAdminInfo?.managedCenters || [];
   
-  // 강사인 경우 할당된 센터 확인
+  // 강사인 경우: 할당된 센터가 관리 센터와 일치하는지 확인
   if (user.userType === 'instructor') {
     const assignedCenters = user.instructorInfo?.assignedCenters || [];
     return assignedCenters.some((centerId: any) => managedCenters.includes(centerId));
   }
   
-  // 수강생인 경우 등록된 강습 과정의 센터 확인
+  // 학생인 경우: 등록된 강습 과정의 센터가 관리 센터와 일치하는지 확인
   if (user.userType === 'student') {
     const enrolledCourses = user.studentInfo?.enrolledCourses || [];
-    // 여기서는 간단히 true로 반환 (실제로는 강습 과정의 센터 확인 필요)
+    // TODO: 실제로는 Course 모델을 통해 강습 과정의 센터 확인 필요
+    // 현재는 임시로 true 반환 (향후 개선 필요)
     return true;
   }
   
   return false;
 }
 
-// 강사 접근 권한 확인
+/**
+ * 👨‍🏫 강사 접근 권한 확인 함수
+ * 
+ * 📋 **기능**
+ * - 강사가 특정 학생에 대한 관리 권한이 있는지 확인
+ * - 강사-학생 관계를 통한 권한 검증
+ * - 강습 과정을 통한 담당 학생 여부 확인
+ * 
+ * 🔄 **검증 과정**
+ * 1. 대상 사용자가 학생인지 확인
+ * 2. 강사 정보 조회 및 타입 확인
+ * 3. 강사-학생 관계 확인 (강습 과정 기반)
+ * 4. 권한 여부 반환 (true/false)
+ * 
+ * @param instructorId 강사 사용자 ID
+ * @param user 권한 확인 대상 사용자 객체 (학생)
+ * @returns 접근 권한 여부 (boolean)
+ */
 async function checkInstructorAccess(instructorId: string, user: any): Promise<boolean> {
+  // 대상이 학생이 아니면 권한 없음
   if (user.userType !== 'student') return false;
   
+  // 강사 정보 조회 및 타입 확인
   const instructor = await User.findById(instructorId);
   if (!instructor || instructor.userType !== 'instructor') return false;
   
-  // 강사의 학생인지 확인 (실제로는 강습 과정을 통해 확인)
+  // TODO: 실제로는 Course 모델을 통해 강사-학생 관계 확인 필요
+  // 현재는 임시로 true 반환 (향후 개선 필요)
+  // 강사의 담당 학생인지 확인 (강습 과정 기반)
   return true;
 }
 
-// 센터별 강습 과정 가져오기
+/**
+ * 🏢 센터별 강습 과정 조회 함수
+ * 
+ * 📋 **기능**
+ * - 특정 센터에서 진행되는 모든 강습 과정 조회
+ * - 센터관리자의 권한 범위 확인을 위한 데이터 제공
+ * - 센터별 강습 현황 및 통계 데이터 지원
+ * 
+ * @param centerId 센터 ID
+ * @returns 센터의 강습 과정 ID 배열
+ * 
+ * TODO: Course 모델과 연동하여 실제 데이터 조회 구현 필요
+ */
 async function getCenterCourses(centerId: string): Promise<string[]> {
-  // 실제로는 Course 모델에서 센터별 강습 과정을 조회
+  // TODO: 실제로는 Course 모델에서 센터별 강습 과정을 조회
+  // const courses = await Course.find({ centerId }).select('_id');
+  // return courses.map(course => course._id.toString());
   return [];
 }
 
-// 강사별 강습 과정 가져오기
+/**
+ * 👨‍🏫 강사별 강습 과정 조회 함수
+ * 
+ * 📋 **기능**
+ * - 특정 강사가 담당하는 모든 강습 과정 조회
+ * - 강사의 권한 범위 확인을 위한 데이터 제공
+ * - 강사별 담당 학생 및 강습 현황 지원
+ * 
+ * @param instructorId 강사 ID
+ * @returns 강사의 담당 강습 과정 ID 배열
+ * 
+ * TODO: Course 모델과 연동하여 실제 데이터 조회 구현 필요
+ */
 async function getInstructorCourses(instructorId: string): Promise<string[]> {
-  // 실제로는 Course 모델에서 강사별 강습 과정을 조회
+  // TODO: 실제로는 Course 모델에서 강사별 강습 과정을 조회
+  // const courses = await Course.find({ instructorId }).select('_id');
+  // return courses.map(course => course._id.toString());
   return [];
 }
 

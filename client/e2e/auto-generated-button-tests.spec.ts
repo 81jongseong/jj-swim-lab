@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 /**
  * 자동 생성된 버튼 테스트
  * 
- * 생성 시간: 2025-09-18T14:19:52.702Z
+ * 생성 시간: 2025-09-19T13:12:44.030Z
  * 총 페이지 수: 109개
- * 총 버튼 수: 268개
+ * 총 버튼 수: 267개
  * 
  * 주의: 이 파일은 자동으로 생성됩니다. 수동으로 편집하지 마세요.
  * 버튼을 추가하거나 수정한 후 다시 생성하려면:
@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
  */
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /3d-viewer
 // 발견된 버튼 수: 2개
 
@@ -134,7 +134,7 @@ test.describe('3d-viewer - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /accessibility
 // 발견된 버튼 수: 5개
 
@@ -366,7 +366,7 @@ test.describe('accessibility - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/3d-viewer/drills
 // 발견된 버튼 수: 3개
 
@@ -524,7 +524,7 @@ test.describe('drills - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/3d-viewer/swimming-styles
 // 발견된 버튼 수: 3개
 
@@ -682,7 +682,7 @@ test.describe('swimming-styles - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/ai-config
 // 발견된 버튼 수: 8개
 
@@ -1025,7 +1025,7 @@ test.describe('ai-config - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/ai-config/recommendations
 // 발견된 버튼 수: 3개
 
@@ -1183,7 +1183,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/ai-model-management
 // 발견된 버튼 수: 1개
 
@@ -1268,7 +1268,7 @@ test.describe('ai-model-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/approvals
 // 발견된 버튼 수: 2개
 
@@ -1389,7 +1389,7 @@ test.describe('approvals - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/bookings
 // 발견된 버튼 수: 10개
 
@@ -1806,7 +1806,7 @@ test.describe('bookings - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/center-info
 // 발견된 버튼 수: 2개
 
@@ -1927,7 +1927,7 @@ test.describe('center-info - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/center-management
 // 발견된 버튼 수: 3개
 
@@ -1951,9 +1951,9 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
   });
 
 
-  test('버튼 "검색" 테스트 (/admin/center-management) #1', async ({ page }) => {
+  test('버튼 "🔍 검색" 테스트 (/admin/center-management) #1', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "검색" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔍 검색" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -1979,7 +1979,7 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "검색" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "🔍 검색" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -1988,9 +1988,9 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "다시 시도" 테스트 (/admin/center-management) #2', async ({ page }) => {
+  test('버튼 "🔄 다시 시도" 테스트 (/admin/center-management) #2', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "다시 시도" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔄 다시 시도" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -2016,7 +2016,7 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "🔄 다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -2025,9 +2025,9 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "다시 시도" 테스트 (/admin/center-management) #3', async ({ page }) => {
+  test('버튼 "🔄 다시 시도" 테스트 (/admin/center-management) #3', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "다시 시도" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔄 다시 시도" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -2053,7 +2053,7 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "🔄 다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -2085,7 +2085,7 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/centers
 // 발견된 버튼 수: 4개
 
@@ -2280,7 +2280,7 @@ test.describe('centers - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/courses
 // 발견된 버튼 수: 4개
 
@@ -2475,7 +2475,7 @@ test.describe('courses - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/dashboard
 // 발견된 버튼 수: 2개
 
@@ -2598,9 +2598,9 @@ test.describe('dashboard - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/instructor-management
-// 발견된 버튼 수: 3개
+// 발견된 버튼 수: 2개
 
 test.describe('instructor-management - 자동 생성된 버튼 테스트', () => {
   test.beforeEach(async ({ page }) => {
@@ -2659,44 +2659,7 @@ test.describe('instructor-management - 자동 생성된 버튼 테스트', () =>
     }
   });
 
-  test('버튼 "상세보기" 테스트 (/admin/instructor-management) #2', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "상세보기" }).first();
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "상세보기" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/admin/instructor-management');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "검색" 테스트 (/admin/instructor-management) #3', async ({ page }) => {
+  test('버튼 "검색" 테스트 (/admin/instructor-management) #2', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
     const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "검색" }).first();
     
@@ -2756,7 +2719,7 @@ test.describe('instructor-management - 자동 생성된 버튼 테스트', () =>
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/instructors
 // 발견된 버튼 수: 10개
 
@@ -3173,7 +3136,7 @@ test.describe('instructors - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/lesson-plans
 // 발견된 버튼 수: 4개
 
@@ -3368,7 +3331,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/notices
 // 발견된 버튼 수: 2개
 
@@ -3491,7 +3454,7 @@ test.describe('notices - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/quiz
 // 발견된 버튼 수: 4개
 
@@ -3686,7 +3649,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/quiz-management
 // 발견된 버튼 수: 1개
 
@@ -3771,7 +3734,7 @@ test.describe('quiz-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/student-levels
 // 발견된 버튼 수: 2개
 
@@ -3892,7 +3855,7 @@ test.describe('student-levels - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/teaching-methods
 // 발견된 버튼 수: 3개
 
@@ -4051,7 +4014,7 @@ test.describe('teaching-methods - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/users/center-users
 // 발견된 버튼 수: 4개
 
@@ -4248,7 +4211,7 @@ test.describe('center-users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /admin/users
 // 발견된 버튼 수: 6개
 
@@ -4346,9 +4309,9 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "수정" 테스트 (/admin/users) #3', async ({ page }) => {
+  test('버튼 "🔧 관리 정보 수정" 테스트 (/admin/users) #3', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "수정" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔧 관리 정보 수정" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -4374,7 +4337,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "수정" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "🔧 관리 정보 수정" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -4457,9 +4420,9 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "수정" 테스트 (/admin/users) #6', async ({ page }) => {
+  test('버튼 "🔧 관리 정보 수정" 테스트 (/admin/users) #6', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "수정" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔧 관리 정보 수정" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -4485,7 +4448,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "수정" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "🔧 관리 정보 수정" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -4517,7 +4480,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /ai-evaluation
 // 발견된 버튼 수: 1개
 
@@ -4601,7 +4564,7 @@ test.describe('ai-evaluation - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /auth/login
 // 발견된 버튼 수: 1개
 
@@ -4686,7 +4649,7 @@ test.describe('login - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /auth/signup
 // 발견된 버튼 수: 1개
 
@@ -4771,7 +4734,7 @@ test.describe('signup - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/health
 // 발견된 버튼 수: 6개
 
@@ -5040,7 +5003,7 @@ test.describe('health - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/notices
 // 발견된 버튼 수: 1개
 
@@ -5125,7 +5088,7 @@ test.describe('notices - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/payments
 // 발견된 버튼 수: 12개
 
@@ -5628,7 +5591,7 @@ test.describe('payments - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/reports
 // 발견된 버튼 수: 6개
 
@@ -5903,7 +5866,7 @@ test.describe('reports - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/reviews
 // 발견된 버튼 수: 12개
 
@@ -6406,7 +6369,7 @@ test.describe('reviews - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/settings
 // 발견된 버튼 수: 2개
 
@@ -6527,7 +6490,7 @@ test.describe('settings - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /center-admin/users
 // 발견된 버튼 수: 6개
 
@@ -6802,7 +6765,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /community/new
 // 발견된 버튼 수: 4개
 
@@ -6999,7 +6962,7 @@ test.describe('new - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /community
 // 발견된 버튼 수: 4개
 
@@ -7196,7 +7159,7 @@ test.describe('community - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /community/[id]
 // 발견된 버튼 수: 2개
 
@@ -7317,7 +7280,7 @@ test.describe('[id] - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/checklist
 // 발견된 버튼 수: 2개
 
@@ -7438,7 +7401,7 @@ test.describe('checklist - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/courses
 // 발견된 버튼 수: 4개
 
@@ -7635,7 +7598,7 @@ test.describe('courses - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/dashboard
 // 발견된 버튼 수: 1개
 
@@ -7719,7 +7682,7 @@ test.describe('dashboard - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/health/overview
 // 발견된 버튼 수: 2개
 
@@ -7840,7 +7803,7 @@ test.describe('overview - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/health/progress
 // 발견된 버튼 수: 2개
 
@@ -7961,7 +7924,7 @@ test.describe('progress - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/health/recommendations
 // 발견된 버튼 수: 2개
 
@@ -8082,7 +8045,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/health/students
 // 발견된 버튼 수: 2개
 
@@ -8203,7 +8166,7 @@ test.describe('students - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/lesson-planner
 // 발견된 버튼 수: 2개
 
@@ -8324,7 +8287,7 @@ test.describe('lesson-planner - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/progress
 // 발견된 버튼 수: 5개
 
@@ -8558,7 +8521,7 @@ test.describe('progress - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/reviews
 // 발견된 버튼 수: 4개
 
@@ -8755,7 +8718,7 @@ test.describe('reviews - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.031Z
 // 페이지: /instructor/schedule
 // 발견된 버튼 수: 2개
 
@@ -8876,7 +8839,7 @@ test.describe('schedule - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /instructor/students
 // 발견된 버튼 수: 10개
 
@@ -9299,7 +9262,7 @@ test.describe('students - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /instructor/teaching-methods
 // 발견된 버튼 수: 10개
 
@@ -9724,7 +9687,7 @@ test.describe('teaching-methods - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /instructor/templates
 // 발견된 버튼 수: 11개
 
@@ -10178,7 +10141,7 @@ test.describe('templates - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /localization
 // 발견된 버튼 수: 4개
 
@@ -10373,7 +10336,7 @@ test.describe('localization - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /map
 // 발견된 버튼 수: 1개
 
@@ -10457,7 +10420,7 @@ test.describe('map - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /membership
 // 발견된 버튼 수: 10개
 
@@ -10882,7 +10845,7 @@ test.describe('membership - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /mobile-learning
 // 발견된 버튼 수: 4개
 
@@ -11079,7 +11042,7 @@ test.describe('mobile-learning - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /news
 // 발견된 버튼 수: 1개
 
@@ -11163,7 +11126,7 @@ test.describe('news - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /notifications
 // 발견된 버튼 수: 11개
 
@@ -11625,7 +11588,7 @@ test.describe('notifications - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /payments
 // 발견된 버튼 수: 1개
 
@@ -11709,7 +11672,7 @@ test.describe('payments - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /personalized-dashboard
 // 발견된 버튼 수: 2개
 
@@ -11832,7 +11795,7 @@ test.describe('personalized-dashboard - 자동 생성된 버튼 테스트', () =
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /quiz
 // 발견된 버튼 수: 6개
 
@@ -12103,7 +12066,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /quiz/[id]
 // 발견된 버튼 수: 4개
 
@@ -12300,7 +12263,7 @@ test.describe('[id] - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /student/recommendations
 // 발견된 버튼 수: 4개
 
@@ -12495,7 +12458,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /uploads
 // 발견된 버튼 수: 2개
 
@@ -12616,7 +12579,7 @@ test.describe('uploads - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /user-role-integration
 // 발견된 버튼 수: 4개
 
@@ -12815,7 +12778,7 @@ test.describe('user-role-integration - 자동 생성된 버튼 테스트', () =>
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-18T14:19:52.703Z
+// 자동 생성된 테스트 코드 - 2025-09-19T13:12:44.032Z
 // 페이지: /video-upload
 // 발견된 버튼 수: 6개
 

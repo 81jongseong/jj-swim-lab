@@ -1568,4 +1568,204 @@ router.get('/my-courses', authMiddleware, requireRole(['instructor']), async (re
   }
 });
 
+/**
+ * 👁️ 최고관리자용 강습 과정 감독 API
+ * GET /api/courses/oversight
+ * - 전체 센터의 강습 과정 현황 조회
+ * - 승인 상태별 필터링 지원
+ */
+router.get('/oversight', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    // 간단한 더미 데이터로 우선 응답 (실제 구현은 추후)
+    const dummyOversightData = [
+      {
+        _id: '1',
+        title: '초급 자유형 기초반',
+        description: '수영 초보자를 위한 자유형 기초 강습',
+        level: 'beginner',
+        duration: 60,
+        maxStudents: 8,
+        price: 80000,
+        centerId: 'center1',
+        centerName: 'JJ 수영장 강남점',
+        centerRegion: '서울 강남구',
+        instructor: { _id: 'inst1', name: '김강사', rating: 4.5 },
+        enrollmentCount: 6,
+        revenue: 480000,
+        satisfaction: 4.3,
+        status: 'active',
+        approvalStatus: 'approved',
+        createdAt: '2025-01-15',
+        lastUpdated: '2025-01-18'
+      },
+      {
+        _id: '2',
+        title: '중급 4영법 마스터반',
+        description: '4가지 영법을 모두 배우는 중급 과정',
+        level: 'intermediate',
+        duration: 75,
+        maxStudents: 6,
+        price: 120000,
+        centerId: 'center2',
+        centerName: 'JJ 수영장 홍대점',
+        centerRegion: '서울 마포구',
+        instructor: { _id: 'inst2', name: '이강사', rating: 4.7 },
+        enrollmentCount: 4,
+        revenue: 480000,
+        satisfaction: 4.6,
+        status: 'active',
+        approvalStatus: 'pending',
+        createdAt: '2025-01-10',
+        lastUpdated: '2025-01-17'
+      },
+      {
+        _id: '3',
+        title: '고급 접영 마스터반',
+        description: '접영 마스터 및 경기 준비 과정',
+        level: 'advanced',
+        duration: 90,
+        maxStudents: 4,
+        price: 180000,
+        centerId: 'center1',
+        centerName: 'JJ 수영장 강남점',
+        centerRegion: '서울 강남구',
+        instructor: { _id: 'inst3', name: '박강사', rating: 4.8 },
+        enrollmentCount: 3,
+        revenue: 540000,
+        satisfaction: 4.9,
+        status: 'active',
+        approvalStatus: 'approved',
+        createdAt: '2025-01-12',
+        lastUpdated: '2025-01-16'
+      }
+    ];
+    
+    res.json({
+      success: true,
+      data: dummyOversightData,
+      pagination: {
+        current: 1,
+        limit: 10,
+        total: dummyOversightData.length,
+        pages: 1
+      }
+    });
+    
+  } catch (error) {
+    console.error('강습 과정 감독 데이터 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강습 과정 감독 데이터 조회 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
+/**
+ * 📊 센터별 강습 과정 통계 API
+ * GET /api/courses/center-stats
+ * - 센터별 강습 과정 운영 현황 통계
+ * - 수익, 만족도, 승인률 등 종합 분석
+ */
+router.get('/center-stats', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    // 간단한 더미 통계 데이터로 우선 응답
+    const dummyCenterStats = [
+      {
+        centerId: 'center1',
+        centerName: 'JJ 수영장 강남점',
+        region: '서울 강남구',
+        totalCourses: 8,
+        activeCourses: 7,
+        totalEnrollments: 45,
+        totalRevenue: 3600000,
+        averageSatisfaction: 4.4,
+        approvalRate: 87.5
+      },
+      {
+        centerId: 'center2',
+        centerName: 'JJ 수영장 홍대점',
+        region: '서울 마포구',
+        totalCourses: 6,
+        activeCourses: 5,
+        totalEnrollments: 32,
+        totalRevenue: 2400000,
+        averageSatisfaction: 4.2,
+        approvalRate: 83.3
+      },
+      {
+        centerId: 'center3',
+        centerName: 'JJ 수영장 잠실점',
+        region: '서울 송파구',
+        totalCourses: 10,
+        activeCourses: 9,
+        totalEnrollments: 58,
+        totalRevenue: 4200000,
+        averageSatisfaction: 4.6,
+        approvalRate: 90.0
+      }
+    ];
+    
+    res.json({
+      success: true,
+      data: dummyCenterStats
+    });
+    
+  } catch (error) {
+    console.error('센터별 강습 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터별 강습 통계 조회 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
+/**
+ * ✅ 강습 과정 승인/거부 API
+ * PUT /api/courses/:id/approval
+ * - 최고관리자가 강습 과정 승인/거부
+ */
+router.put('/:id/approval', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { action, reason } = req.body;
+    
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 액션입니다. (approve 또는 reject)'
+      });
+    }
+    
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: '강습 과정을 찾을 수 없습니다.'
+      });
+    }
+    
+    // 승인 상태 업데이트
+    // 승인/거부 대신 활성/비활성 상태로 관리
+    course.isActive = action === 'approve';
+    
+    await course.save();
+    
+    res.json({
+      success: true,
+      message: `강습 과정이 성공적으로 ${action === 'approve' ? '승인' : '거부'}되었습니다.`,
+      data: course
+    });
+    
+  } catch (error) {
+    console.error('강습 과정 승인 처리 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강습 과정 승인 처리 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
 export default router; 

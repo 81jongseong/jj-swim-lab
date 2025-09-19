@@ -85,7 +85,7 @@ const modelUpload = (0, multer_1.default)({
         }
     }
 });
-router.post('/upload', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), upload.fields([
+router.post('/upload', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), upload.fields([
     { name: 'video', maxCount: 1 },
     { name: 'customModel', maxCount: 1 }
 ]), async (req, res) => {
@@ -242,7 +242,7 @@ router.post('/upload', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'cent
         });
     }
 });
-router.get('/results/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/results/:analysisId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { analysisId } = req.params;
         const analysisResult = await VideoAnalysisCriteria_1.VideoAnalysisResult.findById(analysisId)
@@ -268,7 +268,7 @@ router.get('/results/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['instru
         });
     }
 });
-router.get('/student/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const { technique, limit = 10 } = req.query;
@@ -294,7 +294,7 @@ router.get('/student/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instruc
         });
     }
 });
-router.delete('/results/:analysisId', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.delete('/results/:analysisId', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { analysisId } = req.params;
         const analysisResult = await VideoAnalysisCriteria_1.VideoAnalysisResult.findByIdAndDelete(analysisId);

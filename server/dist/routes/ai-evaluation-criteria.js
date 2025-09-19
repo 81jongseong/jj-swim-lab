@@ -9,7 +9,7 @@ const AIEvaluationCriteria_1 = require("../models/AIEvaluationCriteria");
 const ExerciseRecommendation_1 = __importDefault(require("../models/ExerciseRecommendation"));
 const AdvancedAIEngine_1 = require("../utils/AdvancedAIEngine");
 const router = express_1.default.Router();
-router.get('/evaluation-criteria', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/evaluation-criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const criteria = await AIEvaluationCriteria_1.EvaluationCriteria.find({ isActive: true }).sort({ technique: 1, level: 1 });
         res.json({
@@ -26,7 +26,7 @@ router.get('/evaluation-criteria', auth_1.auth, (0, auth_1.requireRole)(['instru
         });
     }
 });
-router.post('/evaluation-criteria', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/evaluation-criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const criteriaData = req.body;
         const existing = await AIEvaluationCriteria_1.EvaluationCriteria.findOne({
@@ -55,7 +55,7 @@ router.post('/evaluation-criteria', auth_1.auth, (0, auth_1.requireRole)(['cente
         });
     }
 });
-router.put('/evaluation-criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/evaluation-criteria/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -80,7 +80,7 @@ router.put('/evaluation-criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['ce
         });
     }
 });
-router.delete('/evaluation-criteria/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.delete('/evaluation-criteria/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const criteria = await AIEvaluationCriteria_1.EvaluationCriteria.findByIdAndDelete(id);
@@ -103,7 +103,7 @@ router.delete('/evaluation-criteria/:id', auth_1.auth, (0, auth_1.requireRole)([
         });
     }
 });
-router.get('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/exercise-recommendations', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { category, difficulty } = req.query;
         const filter = {};
@@ -126,7 +126,7 @@ router.get('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['i
         });
     }
 });
-router.post('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/exercise-recommendations', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const recommendationData = req.body;
         const recommendation = new ExerciseRecommendation_1.default(recommendationData);
@@ -145,7 +145,7 @@ router.post('/exercise-recommendations', auth_1.auth, (0, auth_1.requireRole)(['
         });
     }
 });
-router.put('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/exercise-recommendations/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -170,7 +170,7 @@ router.put('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)
         });
     }
 });
-router.delete('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+router.delete('/exercise-recommendations/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const recommendation = await ExerciseRecommendation_1.default.findByIdAndDelete(id);
@@ -193,7 +193,7 @@ router.delete('/exercise-recommendations/:id', auth_1.auth, (0, auth_1.requireRo
         });
     }
 });
-router.post('/evaluate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.post('/evaluate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const evaluationInput = req.body;
         if (!evaluationInput.studentId || !evaluationInput.technique || !evaluationInput.level) {
@@ -235,7 +235,7 @@ router.post('/evaluate', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'ce
         });
     }
 });
-router.get('/evaluation-results/:studentId', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/evaluation-results/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const { technique, limit = 10 } = req.query;
@@ -260,7 +260,7 @@ router.get('/evaluation-results/:studentId', auth_1.auth, (0, auth_1.requireRole
         });
     }
 });
-router.get('/evaluation-results/detail/:id', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/evaluation-results/detail/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const result = await AIEvaluationCriteria_1.AIEvaluationResult.findById(id)

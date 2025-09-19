@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const router = express_1.default.Router();
-router.put('/:studentId/level', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.put('/:studentId/level', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const { newLevel, reason } = req.body;
@@ -98,7 +98,7 @@ router.put('/:studentId/level', auth_1.auth, (0, auth_1.requireRole)(['instructo
         });
     }
 });
-router.get('/:studentId/level-history', auth_1.auth, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/:studentId/level-history', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
         const { user } = req;
@@ -152,7 +152,7 @@ router.get('/:studentId/level-history', auth_1.auth, (0, auth_1.requireRole)(['i
         });
     }
 });
-router.get('/center/:centerId/levels', auth_1.auth, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
+router.get('/center/:centerId/levels', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { centerId } = req.params;
         const { user } = req;

@@ -10,7 +10,7 @@ const User_1 = require("../models/User");
 const auth_2 = require("../middleware/auth");
 const Checklist_1 = require("../models/Checklist");
 const router = express_1.default.Router();
-router.get('/', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const { category, algorithmType, isActive, search } = req.query;
         const filter = {};
@@ -45,7 +45,7 @@ router.get('/', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement')
         return;
     }
 });
-router.get('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -67,7 +67,7 @@ router.get('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagemen
         });
     }
 });
-router.post('/', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const { name, description, category, algorithmType, version, configData, uiConfig } = req.body;
         const existingConfig = await AIConfig_1.AIConfig.findOne({ name });
@@ -118,7 +118,7 @@ router.post('/', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'
         });
     }
 });
-router.put('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -183,7 +183,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagemen
         });
     }
 });
-router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -206,7 +206,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManage
         });
     }
 });
-router.patch('/:id/toggle', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.patch('/:id/toggle', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -232,7 +232,7 @@ router.patch('/:id/toggle', auth_1.auth, (0, auth_1.requirePermission)('aiConfig
         });
     }
 });
-router.get('/:id/export', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.get('/:id/export', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -254,7 +254,7 @@ router.get('/:id/export', auth_1.auth, (0, auth_1.requirePermission)('aiConfigMa
         });
     }
 });
-router.post('/import', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.post('/import', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const importData = req.body;
         if (!importData.name || !importData.category || !importData.algorithmType) {
@@ -297,7 +297,7 @@ router.post('/import', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManag
         });
     }
 });
-router.post('/:id/validate', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.post('/:id/validate', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const config = await AIConfig_1.AIConfig.findById(req.params.id);
         if (!config) {
@@ -320,7 +320,7 @@ router.post('/:id/validate', auth_1.auth, (0, auth_1.requirePermission)('aiConfi
         });
     }
 });
-router.get('/stats/overview', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const stats = await AIConfig_1.AIConfig.aggregate([
             {
@@ -375,7 +375,7 @@ router.get('/stats/overview', auth_1.auth, (0, auth_1.requirePermission)('aiConf
         });
     }
 });
-router.get('/templates/list', auth_1.auth, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
+router.get('/templates/list', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
         const templates = [
             {
@@ -491,7 +491,7 @@ router.get('/templates/list', auth_1.auth, (0, auth_1.requirePermission)('aiConf
         });
     }
 });
-router.post('/lesson-plan', auth_1.auth, (0, auth_2.requireRole)(['student']), async (req, res) => {
+router.post('/lesson-plan', auth_1.authMiddleware, (0, auth_2.requireRole)(['student']), async (req, res) => {
     try {
         const { swimmingLevel, goals, availableDays, preferredDuration } = req.body;
         const user = await User_1.User.findById(req.user._id);
@@ -629,7 +629,7 @@ function generateAIRecommendations(currentProgress, level, goals) {
     }
     return recommendations;
 }
-router.get('/progress-prediction', auth_1.auth, (0, auth_2.requireRole)(['student']), async (req, res) => {
+router.get('/progress-prediction', auth_1.authMiddleware, (0, auth_2.requireRole)(['student']), async (req, res) => {
     try {
         const user = await User_1.User.findById(req.user._id);
         if (!user) {
@@ -809,7 +809,7 @@ function generateSolutions(currentProgress) {
     }
     return solutions;
 }
-router.get('/instructor-matching', auth_1.auth, (0, auth_2.requireRole)(['student']), async (req, res) => {
+router.get('/instructor-matching', auth_1.authMiddleware, (0, auth_2.requireRole)(['student']), async (req, res) => {
     try {
         const { preferredStyle, learningPace, communicationStyle, schedule } = req.body;
         const matching = {

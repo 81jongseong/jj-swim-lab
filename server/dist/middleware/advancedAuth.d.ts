@@ -35,7 +35,7 @@ export declare const requireReadPermission: (req: AuthenticatedRequest, res: Res
 export declare const requireWritePermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare const requireDeletePermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare const requireAdminPermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-export declare function requireCenterAccess(centerId: string): (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
+export declare function requireCenterAccess(centerId: string): (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare function checkPermission(permission: Permission): (req: AuthenticatedRequest, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
 export declare function checkRole(role: UserRole): (req: AuthenticatedRequest, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
 export declare function refreshToken(req: AuthenticatedRequest, res: Response, next: NextFunction): void;
@@ -44,15 +44,15 @@ export declare function securityHeaders(req: Request, res: Response, next: NextF
 export declare function requestLogging(req: AuthenticatedRequest, res: Response, next: NextFunction): void;
 declare const _default: {
     authenticate: typeof authenticate;
-    requireSuperAdmin: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireCenterAdmin: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireInstructor: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireStudent: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireGuest: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireReadPermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireWritePermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireDeletePermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    requireAdminPermission: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireSuperAdmin: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireCenterAdmin: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireInstructor: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireStudent: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireGuest: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireReadPermission: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireWritePermission: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireDeletePermission: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    requireAdminPermission: (req: AuthenticatedRequest, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
     requireCenterAccess: typeof requireCenterAccess;
     checkPermission: typeof checkPermission;
     checkRole: typeof checkRole;
