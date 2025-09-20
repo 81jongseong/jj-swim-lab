@@ -28,12 +28,12 @@ export interface IQuiz extends Document {
     description: string;
     category: string;
     difficulty: 'beginner' | 'intermediate' | 'advanced';
-    type: 'multiple-choice' | 'essay';
+    type: 'multiple-choice' | 'short-answer';
     questions: Array<{
         question: string;
-        type: 'multiple-choice' | 'essay';
+        type: 'multiple-choice' | 'short-answer';
         options?: string[];
-        correctAnswer: string | string[];
+        correctAnswer: string | number | string[];
         explanation?: string;
         points: number;
     }>;

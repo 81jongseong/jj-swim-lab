@@ -11,7 +11,7 @@ interface ReportItem {
   description: string;
   status: string;
   priority: string;
-  reporter: {
+  reportedBy: {
     name: string;
     email: string;
   };
@@ -207,8 +207,8 @@ function AdminReportsPage() {
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-gray-600">📝 신고자</div>
                       <div className="bg-gray-50 p-3 rounded-lg">
-                        <div className="font-medium text-gray-900">{report.reporter.name}</div>
-                        <div className="text-sm text-gray-600">{report.reporter.email}</div>
+                        <div className="font-medium text-gray-900">{report.reportedBy?.name || '알 수 없음'}</div>
+                        <div className="text-sm text-gray-600">{report.reportedBy?.email || '-'}</div>
                       </div>
                     </div>
                     

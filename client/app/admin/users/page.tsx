@@ -165,6 +165,8 @@ function AdminUsersPage() {
     level: 'beginner',
   });
 
+  // 기존 구조로 복원 - 탭 제거
+
   // 필터링 상태
   const [filters, setFilters] = useState({
     userType: '',
@@ -183,6 +185,8 @@ function AdminUsersPage() {
     pages: 0,
   });
 
+  // 전체 사용자 로드 함수 제거
+
   const loadUsers = async (page = 1) => {
     setLoading(true);
     try {
@@ -190,6 +194,7 @@ function AdminUsersPage() {
         page: page.toString(),
         limit: pagination.limit.toString(),
         includeCenter: 'true', // 센터 정보 포함 요청
+        userType: 'student', // 회원 관리 페이지이므로 학생만 표시
         ...(filters.userType && { userType: filters.userType }),
         ...(filters.level && { level: filters.level }),
         ...(filters.search && { search: filters.search }),
@@ -264,7 +269,7 @@ function AdminUsersPage() {
 
   useEffect(() => { 
     loadUsers(1);
-  }, [filters]);
+  }, [filters]); // 기존 구조로 복원
 
   const handleAddUser = () => {
     setShowAddModal(true);
@@ -559,22 +564,26 @@ function AdminUsersPage() {
           </button>
         </div>
 
+        {/* Page Title */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">👥 회원 관리</h3>
+          <p className="text-gray-600">학생 회원들의 정보를 관리합니다.</p>
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">필터 및 검색</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 필터 및 검색</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">사용자 유형</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">회원 상태</label>
               <select
-                value={filters.userType}
-                onChange={(e) => handleFilterChange('userType', e.target.value)}
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">전체</option>
-                <option value="student">수강생</option>
-                <option value="instructor">강사</option>
-                <option value="centerAdmin">센터관리자</option>
-                <option value="superAdmin">최고관리자</option>
+                <option value="all">전체</option>
+                <option value="active">활성</option>
+                <option value="inactive">비활성</option>
               </select>
             </div>
             
@@ -881,10 +890,10 @@ function AdminUsersPage() {
 
         {/* 🔒 관리자 전용 사용자 관리 모달 */}
         {showEditModal && editingUser && (
-          <div key={`admin-management-modal-${Date.now()}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full mx-4 border-2 border-blue-200">
-              {/* 모달 헤더 */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b">
+          <div key={`admin-management-modal-${Date.now()}`} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] border-2 border-blue-200 flex flex-col">
+              {/* 모달 헤더 (고정) */}
+              <div className="flex items-center justify-between p-6 pb-4 border-b flex-shrink-0">
                 <h3 className="text-2xl font-bold text-gray-900">🛡️ 사용자 관리 (관리자 전용)</h3>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -893,6 +902,9 @@ function AdminUsersPage() {
                   ✕
                 </button>
               </div>
+              
+              {/* 모달 컨텐츠 (스크롤 가능) */}
+              <div className="flex-1 overflow-y-auto p-6">
               
               {/* 🔒 개인정보 보호 영역 */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -1074,20 +1086,24 @@ function AdminUsersPage() {
                 </p>
               </div>
               
-              {/* 버튼 */}
-              <div className="flex space-x-4">
-                <button
-                  onClick={handleUpdateUser}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg shadow-lg"
-                >
-                  🔧 관리 정보 수정
-                </button>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors font-bold text-lg shadow-lg"
-                >
-                  ❌ 취소
-                </button>
+              </div>
+              
+              {/* 모달 하단 버튼 (고정) */}
+              <div className="flex-shrink-0 p-6 pt-4 border-t bg-gray-50 rounded-b-xl">
+                <div className="flex space-x-4">
+                  <button
+                    onClick={handleUpdateUser}
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg shadow-lg"
+                  >
+                    💾 저장
+                  </button>
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors font-bold text-lg shadow-lg"
+                  >
+                    ❌ 닫기
+                  </button>
+                </div>
               </div>
             </div>
           </div>

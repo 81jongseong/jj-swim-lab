@@ -1,86 +1,270 @@
+/**
+ * @file 강습 계획 템플릿 관리 페이지 (최고관리자)
+ * @description 단계별 커리큘럼 템플릿 생성 및 관리
+ * @date 2025-09-20
+ * @author JJ Swim Lab
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
-/**
- * 강습 계획 관리 페이지
- * 2025-09-13: 404 오류 해결을 위해 생성
- * 기능: 강습 계획 생성, 수정, 삭제, 관리
- */
-
-interface LessonPlan {
-  id: string;
-  title: string;
-  description: string;
-  level: string;
-  duration: number;
+interface CurriculumStage {
+  stageNumber: number;
+  stageName: string;
+  duration: number; // 주 단위
+  sessions: number;
   objectives: string[];
-  activities: string[];
+  teachingMethods: string[];
+  assessmentCriteria: string[];
   materials: string[];
-  instructor: string;
-  createdAt: string;
-  updatedAt: string;
+  safetyNotes: string[];
+  progressRequirements: string[];
+}
+
+interface SpecialStage {
+  stageName: string;
+  description: string;
+  isOptional: boolean;
+  duration: number;
+  prerequisites: string[];
+  objectives: string[];
+  teachingMethods: string[];
+}
+
+interface LessonPlanTemplate {
+  _id?: string;
+  templateName: string;
+  description: string;
+  category: string;
+  level: string;
+  totalDuration: number; // 주 단위
+  totalSessions: number;
+  sessionDuration: number; // 분
+  stages: CurriculumStage[];
+  specialStages: SpecialStage[];
+  isPublic: boolean;
+  usageCount?: number;
+  rating?: number;
 }
 
 export default function LessonPlansPage() {
   const { user, loading } = useAuth();
-  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [templates, setTemplates] = useState<LessonPlanTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<LessonPlanTemplate | null>(null);
+  
+  const [newTemplate, setNewTemplate] = useState<LessonPlanTemplate>({
+    templateName: '',
+    description: '',
+    category: 'freestyle',
+    level: 'beginner',
+    totalDuration: 12, // 3개월
+    totalSessions: 24,
+    sessionDuration: 60,
+    stages: [
+      {
+        stageNumber: 1,
+        stageName: '1단계: 기초 적응',
+        duration: 4,
+        sessions: 8,
+        objectives: [''],
+        teachingMethods: [''],
+        assessmentCriteria: [''],
+        materials: [''],
+        safetyNotes: [''],
+        progressRequirements: ['']
+      }
+    ],
+    specialStages: [],
+    isPublic: true
+  });
 
-  // 기본 강습 계획 데이터 (하드코딩)
-  const defaultLessonPlans: LessonPlan[] = [
-    {
-      id: '1',
-      title: '자유형 기초 강습 계획',
-      description: '초급자를 위한 자유형 기본 동작 학습 계획',
-      level: '초급',
-      duration: 60,
-      objectives: ['물에 익숙해지기', '기본 자유형 동작 익히기', '호흡법 배우기'],
-      activities: ['워밍업', '플로터 킥 연습', '팔 동작 연습', '전체 동작 연습'],
-      materials: ['플로터', '수영 보드', '고글'],
-      instructor: '김강사',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: '배영 중급 강습 계획',
-      description: '중급자를 위한 배영 고급 기술 학습 계획',
-      level: '중급',
-      duration: 90,
-      objectives: ['올바른 배영 자세', '효율적인 킥 동작', '고급 호흡법'],
-      activities: ['스트레칭', '배영 킥 연습', '팔 동작 연습', '전체 동작 연습'],
-      materials: ['수영 보드', '고글', '노트북'],
-      instructor: '이강사',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  const [filters, setFilters] = useState({
+    category: 'all',
+    level: 'all',
+    search: ''
+  });
+
+  // 템플릿 로드
+  const loadTemplates = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const queryParams = new URLSearchParams({
+        ...(filters.category !== 'all' && { category: filters.category }),
+        ...(filters.level !== 'all' && { level: filters.level }),
+        ...(filters.search && { search: filters.search })
+      });
+
+      const response = await fetch(`http://localhost:5000/api/lesson-plan-templates?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setTemplates(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('템플릿 로드 오류:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    // 실제로는 API에서 데이터를 가져와야 함
-    setLessonPlans(defaultLessonPlans);
-    setIsLoading(false);
-  }, []);
+    if (user?.userType === 'superAdmin') {
+      loadTemplates();
+    }
+  }, [user, filters]);
+
+  const addStage = () => {
+    const newStageNumber = newTemplate.stages.length + 1;
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: [...prev.stages, {
+        stageNumber: newStageNumber,
+        stageName: `${newStageNumber}단계: `,
+        duration: 4,
+        sessions: 8,
+        objectives: [''],
+        teachingMethods: [''],
+        assessmentCriteria: [''],
+        materials: [''],
+        safetyNotes: [''],
+        progressRequirements: ['']
+      }]
+    }));
+  };
+
+  const removeStage = (index: number) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: prev.stages.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateStage = (index: number, field: string, value: any) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: prev.stages.map((stage, i) => 
+        i === index ? { ...stage, [field]: value } : stage
+      )
+    }));
+  };
+
+  const updateStageArray = (stageIndex: number, field: string, arrayIndex: number, value: string) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: prev.stages.map((stage, i) => {
+        if (i === stageIndex) {
+          const newArray = [...(stage as any)[field]];
+          newArray[arrayIndex] = value;
+          return { ...stage, [field]: newArray };
+        }
+        return stage;
+      })
+    }));
+  };
+
+  const addToStageArray = (stageIndex: number, field: string) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: prev.stages.map((stage, i) => {
+        if (i === stageIndex) {
+          return { ...stage, [field]: [...(stage as any)[field], ''] };
+        }
+        return stage;
+      })
+    }));
+  };
+
+  const removeFromStageArray = (stageIndex: number, field: string, arrayIndex: number) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      stages: prev.stages.map((stage, i) => {
+        if (i === stageIndex) {
+          return { ...stage, [field]: (stage as any)[field].filter((_: any, idx: number) => idx !== arrayIndex) };
+        }
+        return stage;
+      })
+    }));
+  };
+
+  const saveTemplate = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:5000/api/lesson-plan-templates', {
+        method: editingTemplate ? 'PUT' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newTemplate)
+      });
+
+      if (response.ok) {
+        alert('템플릿이 저장되었습니다!');
+        setShowCreateModal(false);
+        setEditingTemplate(null);
+        loadTemplates();
+      } else {
+        alert('템플릿 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('템플릿 저장 오류:', error);
+      alert('템플릿 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons: { [key: string]: string } = {
+      freestyle: '🏊‍♂️',
+      backstroke: '🏊‍♀️',
+      breaststroke: '🐸',
+      butterfly: '🦋',
+      mixed: '🔄',
+      basic: '🎯',
+      advanced: '🏆'
+    };
+    return icons[category] || '📋';
+  };
+
+  const getLevelBadge = (level: string) => {
+    const badges: { [key: string]: { icon: string; color: string } } = {
+      beginner: { icon: '🥉', color: 'bg-green-100 text-green-800' },
+      intermediate: { icon: '🥈', color: 'bg-yellow-100 text-yellow-800' },
+      advanced: { icon: '🥇', color: 'bg-red-100 text-red-800' }
+    };
+    return badges[level] || { icon: '📊', color: 'bg-gray-100 text-gray-800' };
+  };
 
   if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+          <p className="mt-4 text-gray-600">템플릿을 불러오는 중...</p>
         </div>
       </div>
     );
   }
 
-  if (!user || (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin')) {
+  if (!user || user.userType !== 'superAdmin') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">접근 권한 없음</h1>
-          <p className="text-gray-600">이 페이지에 접근할 권한이 없습니다.</p>
+          <p className="text-gray-600">최고관리자만 접근할 수 있습니다.</p>
         </div>
       </div>
     );
@@ -89,177 +273,450 @@ export default function LessonPlansPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">강습 계획 관리</h1>
-        <p className="text-gray-600">강습 계획을 생성하고 관리합니다</p>
-      </div>
-
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 계획</p>
-              <p className="text-2xl font-bold text-gray-900">{lessonPlans.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">초급 계획</p>
-              <p className="text-2xl font-bold text-gray-900">{lessonPlans.filter(p => p.level === '초급').length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">중급 계획</p>
-              <p className="text-2xl font-bold text-gray-900">{lessonPlans.filter(p => p.level === '중급').length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">강사 수</p>
-              <p className="text-2xl font-bold text-gray-900">{new Set(lessonPlans.map(p => p.instructor)).size}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 강습 계획 목록 */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">강습 계획 목록</h2>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            새 계획 생성
-          </button>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  계획명
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  설명
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  레벨
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  시간
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  강사
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  활동 수
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {lessonPlans.map((plan) => (
-                <tr key={plan.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">
-                            📋
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {plan.title}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: {plan.id}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {plan.description}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      plan.level === '초급' 
-                        ? 'bg-green-100 text-green-800' 
-                        : plan.level === '중급'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {plan.level}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.duration}분
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.instructor}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {plan.activities.length}개
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      보기
-                    </button>
-                    <button className="text-indigo-600 hover:text-indigo-900 mr-3">
-                      편집
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 개발 노트 */}
-      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h3 className="text-sm font-medium text-yellow-800 mb-2">🚧 개발 상태</h3>
-        <p className="text-sm text-yellow-700">
-          이 페이지는 현재 개발 중입니다. 실제 데이터베이스 연동이 필요합니다.
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">📋 강습 계획 템플릿 관리</h1>
+        <p className="text-gray-600">
+          단계별 커리큘럼 템플릿을 생성하여 모든 센터에서 사용할 수 있도록 합니다
         </p>
       </div>
+
+      {/* 필터 및 검색 */}
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">🔍 템플릿 검색</label>
+            <input
+              type="text"
+              placeholder="템플릿 이름, 설명으로 검색..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">📊 카테고리</label>
+            <select
+              value={filters.category}
+              onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            >
+              <option value="all">🎯 모든 카테고리</option>
+              <option value="freestyle">🏊‍♂️ 자유형</option>
+              <option value="backstroke">🏊‍♀️ 배영</option>
+              <option value="breaststroke">🐸 평영</option>
+              <option value="butterfly">🦋 접영</option>
+              <option value="mixed">🔄 혼영</option>
+              <option value="basic">🎯 기초</option>
+              <option value="advanced">🏆 고급</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">📈 난이도</label>
+            <select
+              value={filters.level}
+              onChange={(e) => setFilters(prev => ({ ...prev, level: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            >
+              <option value="all">🎯 모든 난이도</option>
+              <option value="beginner">🥉 초급</option>
+              <option value="intermediate">🥈 중급</option>
+              <option value="advanced">🥇 고급</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setEditingTemplate(null);
+                setNewTemplate({
+                  templateName: '',
+                  description: '',
+                  category: 'freestyle',
+                  level: 'beginner',
+                  totalDuration: 12,
+                  totalSessions: 24,
+                  sessionDuration: 60,
+                  stages: [{
+                    stageNumber: 1,
+                    stageName: '1단계: 기초 적응',
+                    duration: 4,
+                    sessions: 8,
+                    objectives: [''],
+                    teachingMethods: [''],
+                    assessmentCriteria: [''],
+                    materials: [''],
+                    safetyNotes: [''],
+                    progressRequirements: ['']
+                  }],
+                  specialStages: [],
+                  isPublic: true
+                });
+                setShowCreateModal(true);
+              }}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            >
+              ✨ 새 커리큘럼 템플릿 생성
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 템플릿 목록 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {templates.map((template) => (
+          <div key={template._id} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200">
+            <div className="p-6">
+              {/* 템플릿 헤더 */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{getCategoryIcon(template.category)}</span>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">{template.templateName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelBadge(template.level).color}`}>
+                        {getLevelBadge(template.level).icon} {template.level}
+                      </span>
+                      <span className="text-sm text-gray-500">📅 {template.totalDuration}주</span>
+                      <span className="text-sm text-gray-500">📚 {template.totalSessions}회</span>
+                    </div>
+                  </div>
+                </div>
+                {(template.rating || 0) > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-yellow-400">⭐</span>
+                    <span className="text-sm font-medium">{(template.rating || 0).toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 템플릿 설명 */}
+              <p className="text-gray-600 text-sm mb-4">{template.description}</p>
+
+              {/* 단계 정보 */}
+              <div className="space-y-2 mb-4">
+                <h4 className="font-semibold text-gray-900 text-sm">📋 커리큘럼 단계</h4>
+                {template.stages.map((stage, index) => (
+                  <div key={index} className="bg-gray-50 rounded p-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{stage.stageName}</span>
+                      <span className="text-xs text-gray-500">{stage.duration}주 ({stage.sessions}회)</span>
+                    </div>
+                  </div>
+                ))}
+                {template.specialStages.length > 0 && (
+                  <div className="bg-yellow-50 rounded p-2">
+                    <span className="text-sm font-medium text-yellow-700">
+                      ⭐ 특별 과정: {template.specialStages.length}개
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 템플릿 정보 */}
+              <div className="space-y-1 mb-4 text-sm text-gray-500">
+                <div className="flex justify-between">
+                  <span>사용 횟수:</span>
+                  <span className="font-medium">{template.usageCount || 0}회</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>공개 여부:</span>
+                  <span className="font-medium">{template.isPublic ? '🌍 공개' : '🔒 비공개'}</span>
+                </div>
+              </div>
+
+              {/* 액션 버튼 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditingTemplate(template);
+                    setNewTemplate(template);
+                    setShowCreateModal(true);
+                  }}
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  ✏️ 수정
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`"${template.templateName}" 템플릿을 삭제하시겠습니까?`)) {
+                      // TODO: 삭제 API 호출
+                    }
+                  }}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {templates.length === 0 && !isLoading && (
+          <div className="col-span-full text-center py-12">
+            <div className="text-6xl mb-4">📋</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">템플릿이 없습니다</h3>
+            <p className="text-gray-600 mb-4">
+              첫 번째 강습 과정 커리큘럼 템플릿을 생성해보세요
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              ✨ 첫 템플릿 만들기
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 템플릿 생성/수정 모달 */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">
+                {editingTemplate ? '✏️ 커리큘럼 템플릿 수정' : '✨ 새 커리큘럼 템플릿 생성'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingTemplate(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-6">
+                {/* 기본 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📋 템플릿 이름</label>
+                    <input
+                      type="text"
+                      placeholder="예: 자유형 마스터 과정"
+                      value={newTemplate.templateName}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, templateName: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📊 카테고리</label>
+                    <select
+                      value={newTemplate.category}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="freestyle">🏊‍♂️ 자유형</option>
+                      <option value="backstroke">🏊‍♀️ 배영</option>
+                      <option value="breaststroke">🐸 평영</option>
+                      <option value="butterfly">🦋 접영</option>
+                      <option value="mixed">🔄 혼영</option>
+                      <option value="basic">🎯 기초</option>
+                      <option value="advanced">🏆 고급</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">📝 템플릿 설명</label>
+                  <textarea
+                    placeholder="이 강습 과정의 전반적인 목표와 특징을 설명하세요"
+                    value={newTemplate.description}
+                    onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📅 전체 기간 (주)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="52"
+                      value={newTemplate.totalDuration}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, totalDuration: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📚 총 세션 수</label>
+                    <input
+                      type="number"
+                      min="4"
+                      max="200"
+                      value={newTemplate.totalSessions}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, totalSessions: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">⏱️ 1회 수업 시간 (분)</label>
+                    <input
+                      type="number"
+                      min="30"
+                      max="180"
+                      step="15"
+                      value={newTemplate.sessionDuration}
+                      onChange={(e) => setNewTemplate(prev => ({ ...prev, sessionDuration: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* 단계별 커리큘럼 */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900">📋 단계별 커리큘럼</h4>
+                    <button
+                      onClick={addStage}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      ➕ 단계 추가
+                    </button>
+                  </div>
+                  
+                  {newTemplate.stages.map((stage, stageIndex) => (
+                    <div key={stageIndex} className="border border-gray-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-semibold text-gray-900">단계 {stage.stageNumber}</h5>
+                        {newTemplate.stages.length > 1 && (
+                          <button
+                            onClick={() => removeStage(stageIndex)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            🗑️ 삭제
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">단계 이름</label>
+                          <input
+                            type="text"
+                            placeholder="예: 1단계: 물 적응 및 기본 자세"
+                            value={stage.stageName}
+                            onChange={(e) => updateStage(stageIndex, 'stageName', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">기간 (주)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={stage.duration}
+                              onChange={(e) => updateStage(stageIndex, 'duration', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">세션 수</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={stage.sessions}
+                              onChange={(e) => updateStage(stageIndex, 'sessions', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 목표 */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs font-medium text-gray-600">🎯 단계 목표</label>
+                          <button
+                            onClick={() => addToStageArray(stageIndex, 'objectives')}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            ➕ 추가
+                          </button>
+                        </div>
+                        {stage.objectives.map((objective, objIndex) => (
+                          <div key={objIndex} className="flex gap-2 mb-1">
+                            <input
+                              type="text"
+                              placeholder="이 단계에서 달성할 목표"
+                              value={objective}
+                              onChange={(e) => updateStageArray(stageIndex, 'objectives', objIndex, e.target.value)}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            {stage.objectives.length > 1 && (
+                              <button
+                                onClick={() => removeFromStageArray(stageIndex, 'objectives', objIndex)}
+                                className="text-red-600 hover:text-red-800 text-xs"
+                              >
+                                ❌
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* 강습법 */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs font-medium text-gray-600">📚 사용할 강습법</label>
+                          <button
+                            onClick={() => addToStageArray(stageIndex, 'teachingMethods')}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            ➕ 추가
+                          </button>
+                        </div>
+                        {stage.teachingMethods.map((method, methodIndex) => (
+                          <div key={methodIndex} className="flex gap-2 mb-1">
+                            <input
+                              type="text"
+                              placeholder="이 단계에서 사용할 강습법"
+                              value={method}
+                              onChange={(e) => updateStageArray(stageIndex, 'teachingMethods', methodIndex, e.target.value)}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            {stage.teachingMethods.length > 1 && (
+                              <button
+                                onClick={() => removeFromStageArray(stageIndex, 'teachingMethods', methodIndex)}
+                                className="text-red-600 hover:text-red-800 text-xs"
+                              >
+                                ❌
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-shrink-0 p-6 border-t bg-gray-50">
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setEditingTemplate(null);
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  ❌ 취소
+                </button>
+                <button
+                  onClick={saveTemplate}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  💾 저장
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

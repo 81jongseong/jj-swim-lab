@@ -106,6 +106,12 @@ import { errorHandler, notFoundHandler } from './utils/errorHandler';
 import { cache } from './middleware/cache';
 import { apiMonitoring, userActivityTracking, securityEventTracking, errorTracking } from './middleware/monitoring';
 import { trackUserActivity, trackSecurityEvents } from './middleware/userActivity';
+import { pageTrackingMiddleware, cleanupOldPageVisits } from './middleware/pageTracking';
+import { maintenanceModeMiddleware } from './middleware/maintenanceMode';
+import { dynamicRateLimitMiddleware } from './middleware/dynamicRateLimit';
+import { emailService } from './services/emailService';
+import { backupService } from './services/backupService';
+import { performanceService } from './services/performanceService';
 
 // Deprecation warning 무시 설정
 process.on('warning', (warning) => {
@@ -183,6 +189,7 @@ import youtubeVideoRoutes from './routes/youtube-videos';
 import learningProgressRoutes from './routes/learning-progress';
 import recommendationRoutes from './routes/recommendations';
 import lessonPlanRoutes from './routes/lesson-plans';
+import lessonPlanTemplateRoutes from './routes/lesson-plan-templates';
 import studentGoalRoutes from './routes/student-goals';
 import notificationRoutes from './routes/notifications';
 import monitoringRoutes from './routes/monitoring';
@@ -232,6 +239,10 @@ import './models/Notification';
 import './models/UserActivity';
 // 새로운 건강정보 모델
 import './models/HealthConfig';
+import './models/AdminReport';
+import './models/SystemConfig';
+import './models/LoginLog';
+import './models/PageVisit';
 
 console.log('📦 모든 모델 import 완료!');
 
@@ -298,6 +309,12 @@ const PORT = process.env.PORT || 5000;
 // 보안 미들웨어 적용
 app.use(securityMiddleware);
 
+// 점검 모드 체크 (가장 먼저 적용) - 임시 비활성화
+// app.use(maintenanceModeMiddleware);
+
+// 동적 API 요청 제한 - 임시 비활성화  
+// app.use(dynamicRateLimitMiddleware);
+
 // 압축 미들웨어 (성능 최적화)
 app.use(compression({
   level: 6, // 압축 레벨 (1-9, 6이 균형점)
@@ -322,6 +339,7 @@ app.use(securityEventTracking);
 
 // 사용자 활동 추적 미들웨어 적용
 app.use(trackUserActivity);
+app.use(pageTrackingMiddleware);
 app.use(trackSecurityEvents);
 
 // 정적 파일 (캐싱 헤더 적용)
@@ -374,7 +392,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/membership', membershipRoutes);
-app.use('/api/report', reportRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/ai-config', aiConfigRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/teaching-methods', teachingMethodsRoutes);
@@ -418,6 +436,7 @@ app.use('/api/youtube-videos', youtubeVideoRoutes);
 app.use('/api/learning-progress', learningProgressRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/lesson-plans', lessonPlanRoutes);
+app.use('/api/lesson-plan-templates', lessonPlanTemplateRoutes);
 app.use('/api/student-goals', studentGoalRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/monitoring', monitoringRoutes);
@@ -451,6 +470,28 @@ if (process.env.NODE_ENV !== 'test') {
   try {
     console.log('🔗 MongoDB 연결 시도 중...');
     await connectDB();
+    
+    // 오래된 로그 정리 (서버 시작 시)
+    console.log('🗑️ 오래된 로그 정리 중...');
+    await cleanupOldPageVisits();
+    
+    // 시스템 서비스 초기화 - 백업 서비스만 활성화
+    console.log('🔧 백업 서비스만 초기화 중...');
+    await backupService.startBackupService();
+    // await performanceService.loadAndApplySettings();
+    
+    // 시스템 시작 알림 - 임시 비활성화
+    // await emailService.sendSystemAlert(
+    //   'JJ Swim Lab 서버가 성공적으로 시작되었습니다.',
+    //   {
+    //     port: PORT,
+    //     environment: process.env.NODE_ENV || 'development',
+    //     timestamp: new Date().toISOString(),
+    //     uptime: process.uptime()
+    //   }
+    // );
+    
+    console.log('🎉 기본 서버 시작 완료!');
     
     // 데이터베이스 연결 성공 후 시드 데이터 실행 (일시 비활성화)
     // console.log('🌱 테스트 데이터 시드 시작...');

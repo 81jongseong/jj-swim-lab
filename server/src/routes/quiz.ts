@@ -175,16 +175,19 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
       assignedTo
     } = req.body;
 
-    // 필수 필드 검증
-    if (!title || !description || !category || !type || !questions || questions.length === 0) {
+    // 필수 필드 검증 (문제는 선택사항으로 변경)
+    if (!title || !description || !category || !type) {
       return res.status(400).json({
         success: false,
         message: '필수 필드가 누락되었습니다.'
       });
     }
+    
+    // questions가 없으면 빈 배열로 초기화
+    const questionList = questions || [];
 
-    // 문제 유형별 검증
-    for (const question of questions) {
+    // 문제 유형별 검증 (문제가 있을 때만)
+    for (const question of questionList) {
       if (question.type === 'multiple-choice') {
         if (!question.options || question.options.length !== 4) {
           return res.status(400).json({
@@ -198,11 +201,11 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
             message: '4지선다 문제의 정답은 0-3 사이의 인덱스여야 합니다.'
           });
         }
-      } else if (question.type === 'essay') {
-        if (!question.correctAnswer || typeof question.correctAnswer !== 'string') {
+      } else if (question.type === 'short-answer') {
+        if (!question.correctAnswer || (Array.isArray(question.correctAnswer) && question.correctAnswer.length === 0)) {
           return res.status(400).json({
             success: false,
-            message: '주관식 문제의 정답을 입력해주세요.'
+            message: '단답형 문제의 정답 키워드를 입력해주세요.'
           });
         }
       }
@@ -214,7 +217,7 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
       category,
       difficulty: difficulty || 'beginner',
       type,
-      questions,
+      questions: questionList,
       timeLimit,
       passingScore: passingScore || 70,
       maxAttempts: maxAttempts || 3,
@@ -258,12 +261,18 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
       });
     }
 
-    // 권한 확인
-    if ((req as any).user.userType !== 'superAdmin' && quiz.createdBy.toString() !== (req as any).user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: '이 퀴즈를 수정할 권한이 없습니다.'
-      });
+    // 권한 확인 (superAdmin은 모든 퀴즈 수정 가능)
+    if ((req as any).user.userType === 'superAdmin') {
+      // superAdmin은 모든 퀴즈 수정 가능 (생성자가 null이어도 OK)
+      console.log('✅ superAdmin 권한으로 퀴즈 수정 진행');
+    } else {
+      // 일반 사용자는 본인이 생성한 퀴즈만 수정 가능
+      if (!quiz.createdBy || quiz.createdBy.toString() !== (req as any).user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: '이 퀴즈를 수정할 권한이 없습니다.'
+        });
+      }
     }
 
     const updatedQuiz = await Quiz.findByIdAndUpdate(
@@ -289,6 +298,8 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
 // 퀴즈 삭제 (생성자 또는 슈퍼 관리자만)
 router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
+    console.log(`🗑️ 퀴즈 삭제 요청: ID=${req.params.id}, 사용자=${(req as any).user?.userType}`);
+
     if (!(req as any).user?._id) {
       return res.status(401).json({
         success: false,
@@ -299,33 +310,49 @@ router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 
     const quiz = await Quiz.findById(req.params.id);
 
     if (!quiz) {
+      console.log(`❌ 퀴즈를 찾을 수 없음: ${req.params.id}`);
       return res.status(404).json({
         success: false,
         message: '퀴즈를 찾을 수 없습니다.'
       });
     }
 
-    // 권한 확인
-    if ((req as any).user.userType !== 'superAdmin' && quiz.createdBy.toString() !== (req as any).user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: '이 퀴즈를 삭제할 권한이 없습니다.'
-      });
+    console.log(`📋 퀴즈 정보: 제목="${quiz.title}", 생성자=${quiz.createdBy}, 활성=${quiz.isActive}`);
+
+    // 권한 확인 (superAdmin은 모든 퀴즈 삭제 가능)
+    if ((req as any).user.userType === 'superAdmin') {
+      console.log('✅ superAdmin 권한으로 퀴즈 삭제 진행');
+    } else {
+      // 일반 사용자는 본인이 생성한 퀴즈만 삭제 가능
+      if (!quiz.createdBy || quiz.createdBy.toString() !== (req as any).user._id.toString()) {
+        console.log(`❌ 권한 없음: 요청자=${(req as any).user._id}, 생성자=${quiz.createdBy}`);
+        return res.status(403).json({
+          success: false,
+          message: '이 퀴즈를 삭제할 권한이 없습니다.'
+        });
+      }
     }
 
     // 소프트 삭제
-    quiz.isActive = false;
-    await quiz.save();
+    try {
+      quiz.isActive = false;
+      const savedQuiz = await quiz.save();
+      console.log(`✅ 퀴즈 소프트 삭제 완료: ${savedQuiz.title}`);
 
-    res.json({
-      success: true,
-      message: '퀴즈가 성공적으로 삭제되었습니다!'
-    });
+      res.json({
+        success: true,
+        message: '퀴즈가 성공적으로 삭제되었습니다!'
+      });
+    } catch (saveError) {
+      console.error('❌ 퀴즈 저장 실패:', saveError);
+      throw saveError;
+    }
+
   } catch (error) {
-    console.error('퀴즈 삭제 실패:', error);
+    console.error('❌ 퀴즈 삭제 실패:', error);
     res.status(500).json({
       success: false,
-      message: '퀴즈 삭제에 실패했습니다.'
+      message: `퀴즈 삭제에 실패했습니다: ${error.message}`
     });
   }
 });

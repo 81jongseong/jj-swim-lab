@@ -190,6 +190,9 @@ const userMenuStructure = {
       { href: '/center-admin/reports', label: '📊 센터 통계' },
       { href: '/center-admin/notices', label: '📢 공지사항 관리' },
     ],
+    approvals: [
+      { href: '/center-admin/approvals', label: '⏳ 센터 승인', description: '강습신청/결제/환불/일정변경 승인' },
+    ],
     center: [
       { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
       { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
@@ -215,18 +218,16 @@ const userMenuStructure = {
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+    ],
+    levels: [
+      { href: '/center-admin/lesson-plans', label: '📋 강습 계획 관리' },
     ]
   },
   superAdmin: {
     dashboard: [
       { href: '/', label: '🏠 홈' },
       { href: '/admin/dashboard', label: '📊 최고관리자 대시보드' },
-      { href: '/admin/center-management', label: '🏢 센터 감독' },
-      { href: '/admin/users', label: '👥 전체 회원 관리' },
-      { href: '/admin/instructor-management', label: '📊 강사 상세 관리' },
       { href: '/admin/course-oversight', label: '👁️ 강습 과정 감독' },
-      { href: '/admin/payments', label: '💰 전체 결제 관리' },
-      { href: '/admin/reports', label: '📊 전체 통계' },
       { href: '/admin/system', label: '⚙️ 시스템 설정' },
     ],
     centers: [
@@ -235,13 +236,12 @@ const userMenuStructure = {
       { href: '/admin/centers/statistics', label: '📊 센터 통계' },
     ],
     users: [
-      { href: '/admin/users', label: '👥 전체 회원 관리' },
-      { href: '/admin/instructors', label: '👨‍🏫 전체 강사 관리' },
-      { href: '/admin/instructor-management', label: '📊 강사 상세 관리' },
+      { href: '/admin/users', label: '👥 회원 관리' },
+      { href: '/admin/instructor-management', label: '👨‍🏫 강사 관리' },
     ],
     levels: [
+      { href: '/admin/lesson-plans', label: '📋 강습 계획 템플릿' },
       { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
-      { href: '/admin/lesson-plans', label: '📋 강습 계획 관리' },
       { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
     ],
     revenue: [
@@ -250,8 +250,7 @@ const userMenuStructure = {
       { href: '/admin/reports', label: '📊 전체 통계' },
     ],
     approvals: [
-      { href: '/admin/approvals', label: '⏳ 승인대기' },
-      { href: '/admin/centers/approval', label: '⏳ 센터 승인' },
+      { href: '/admin/approvals', label: '⏳ 시스템 승인', description: '회원가입/강사등록/센터등록 승인' },
     ],
             ai: [
           { href: '/ai-analysis', label: '🤖 AI 분석' },
@@ -353,6 +352,7 @@ const menuGrouping = {
   ],
   centerAdmin: [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
+    { groupName: '⏳ 센터 승인', categories: ['approvals'] },
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
@@ -362,9 +362,11 @@ const menuGrouping = {
   ],
   superAdmin: [
     { groupName: '📊 최고 관리', categories: ['dashboard'] },
-    { groupName: '🏢 센터 & 회원', categories: ['centers', 'users'] },
+    { groupName: '🏢 센터 감독', categories: ['centers'] },
+    { groupName: '👥 사용자 관리', categories: ['users'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
-    { groupName: '💰 매출 & 승인', categories: ['revenue', 'approvals'] },
+    { groupName: '💰 매출 관리', categories: ['revenue'] },
+    { groupName: '⏳ 시스템 승인', categories: ['approvals'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
     { groupName: '🤖 AI 시스템', categories: ['ai'] },
     { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },

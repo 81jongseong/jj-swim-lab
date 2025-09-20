@@ -16,6 +16,8 @@ const errorHandler_1 = require("./utils/errorHandler");
 const cache_1 = require("./middleware/cache");
 const monitoring_1 = require("./middleware/monitoring");
 const userActivity_1 = require("./middleware/userActivity");
+const pageTracking_1 = require("./middleware/pageTracking");
+const backupService_1 = require("./services/backupService");
 process.on('warning', (warning) => {
     if (warning.name === 'DeprecationWarning' && warning.message.includes('util._extend')) {
         return;
@@ -78,6 +80,7 @@ const youtube_videos_1 = __importDefault(require("./routes/youtube-videos"));
 const learning_progress_1 = __importDefault(require("./routes/learning-progress"));
 const recommendations_1 = __importDefault(require("./routes/recommendations"));
 const lesson_plans_1 = __importDefault(require("./routes/lesson-plans"));
+const lesson_plan_templates_1 = __importDefault(require("./routes/lesson-plan-templates"));
 const student_goals_1 = __importDefault(require("./routes/student-goals"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
 const monitoring_2 = __importDefault(require("./routes/monitoring"));
@@ -119,6 +122,10 @@ require("./models/StudentGoal");
 require("./models/Notification");
 require("./models/UserActivity");
 require("./models/HealthConfig");
+require("./models/AdminReport");
+require("./models/SystemConfig");
+require("./models/LoginLog");
+require("./models/PageVisit");
 console.log('📦 모든 모델 import 완료!');
 console.log('🚀 index.ts 모듈 로딩 시작...');
 setTimeout(() => {
@@ -184,6 +191,7 @@ app.use(monitoring_1.apiMonitoring);
 app.use(monitoring_1.userActivityTracking);
 app.use(monitoring_1.securityEventTracking);
 app.use(userActivity_1.trackUserActivity);
+app.use(pageTracking_1.pageTrackingMiddleware);
 app.use(userActivity_1.trackSecurityEvents);
 app.use('/uploads', express_1.default.static('uploads', {
     maxAge: '1y',
@@ -226,7 +234,7 @@ app.use('/api/payments', payments_1.default);
 app.use('/api/progress', progress_1.default);
 app.use('/api/quiz', quiz_1.default);
 app.use('/api/membership', membership_1.default);
-app.use('/api/report', report_1.default);
+app.use('/api/reports', report_1.default);
 app.use('/api/ai-config', ai_config_1.default);
 app.use('/api/uploads', uploads_1.default);
 app.use('/api/teaching-methods', teaching_methods_1.default);
@@ -266,6 +274,7 @@ app.use('/api/youtube-videos', youtube_videos_1.default);
 app.use('/api/learning-progress', learning_progress_1.default);
 app.use('/api/recommendations', recommendations_1.default);
 app.use('/api/lesson-plans', lesson_plans_1.default);
+app.use('/api/lesson-plan-templates', lesson_plan_templates_1.default);
 app.use('/api/student-goals', student_goals_1.default);
 app.use('/api/notifications', notifications_1.default);
 app.use('/api/monitoring', monitoring_2.default);
@@ -291,6 +300,11 @@ if (process.env.NODE_ENV !== 'test') {
         try {
             console.log('🔗 MongoDB 연결 시도 중...');
             await (0, db_1.connectDB)();
+            console.log('🗑️ 오래된 로그 정리 중...');
+            await (0, pageTracking_1.cleanupOldPageVisits)();
+            console.log('🔧 백업 서비스만 초기화 중...');
+            await backupService_1.backupService.startBackupService();
+            console.log('🎉 기본 서버 시작 완료!');
         }
         catch (error) {
             console.error('❌ MongoDB 연결 실패:', error);

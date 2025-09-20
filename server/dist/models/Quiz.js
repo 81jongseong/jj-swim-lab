@@ -48,7 +48,7 @@ const QuizSchema = new mongoose_1.Schema({
     },
     type: {
         type: String,
-        enum: ['multiple-choice', 'essay'],
+        enum: ['multiple-choice', 'short-answer'],
         required: true
     },
     questions: [{
@@ -59,7 +59,7 @@ const QuizSchema = new mongoose_1.Schema({
             },
             type: {
                 type: String,
-                enum: ['multiple-choice', 'essay'],
+                enum: ['multiple-choice', 'short-answer'],
                 required: true
             },
             options: [{

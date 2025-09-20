@@ -5,12 +5,12 @@ export interface IQuiz extends Document {
   description: string;
   category: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  type: 'multiple-choice' | 'essay';
+  type: 'multiple-choice' | 'short-answer';
   questions: Array<{
     question: string;
-    type: 'multiple-choice' | 'essay';
+    type: 'multiple-choice' | 'short-answer';
     options?: string[]; // 4지선다용
-    correctAnswer: string | string[]; // 4지선다: 정답 인덱스, 주관식: 정답 텍스트
+    correctAnswer: string | number | string[]; // 4지선다: 정답 인덱스, 단답형: 정답 텍스트/배열
     explanation?: string;
     points: number;
   }>;
@@ -48,7 +48,7 @@ const QuizSchema = new Schema<IQuiz>({
   },
   type: { 
     type: String, 
-    enum: ['multiple-choice', 'essay'], 
+    enum: ['multiple-choice', 'short-answer'], 
     required: true 
   },
   questions: [{
@@ -59,7 +59,7 @@ const QuizSchema = new Schema<IQuiz>({
     },
     type: { 
       type: String, 
-      enum: ['multiple-choice', 'essay'], 
+      enum: ['multiple-choice', 'short-answer'], 
       required: true 
     },
     options: [{ 

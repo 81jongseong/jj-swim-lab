@@ -31,8 +31,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;
@@ -54,8 +54,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;
@@ -77,8 +77,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;
@@ -104,8 +104,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;
@@ -127,8 +127,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;
@@ -150,8 +150,8 @@ export declare const SkillTemplate: mongoose.Model<{
     level: "beginner" | "intermediate" | "advanced";
     isActive: boolean;
     description: string;
-    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     createdBy: mongoose.Types.ObjectId;
+    category: "technique" | "breathing" | "freestyle" | "backstroke" | "breaststroke" | "butterfly" | "diving" | "endurance" | "turning";
     practiceDrills: {
         name: string;
         description: string;

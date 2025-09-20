@@ -337,9 +337,12 @@ class ApiClient {
       console.log(`📊 응답 데이터:`, data);
 
       if (!response.ok) {
-        console.error(`❌ API 오류: ${response.status} - ${data.error || data.message || '알 수 없는 오류'}`);
+        const errorMessage = data.error || data.message || '알 수 없는 오류';
+        const errorDetails = typeof data === 'object' ? JSON.stringify(data) : String(data);
+        console.error(`❌ API 오류: ${response.status} - ${errorMessage}`);
+        console.error(`📋 오류 상세:`, errorDetails);
         return { 
-          error: data.error || data.message || '요청에 실패했습니다.',
+          error: errorMessage,
           status: response.status,
           details: data,
           success: false
@@ -827,25 +830,25 @@ class ApiClient {
   // ===== 신고 관리 API =====
   async getReports(params?: { limit?: number; status?: string; type?: string }): Promise<any> {
     const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return this.request(`/api/reports${queryString}`);
+    return this.request(`/api/reports/admin${queryString}`);
   }
 
   async updateReport(reportId: string, reportData: Partial<ReportData>): Promise<ApiResponse<ReportData>> {
-    return this.request(`/api/reports/${reportId}`, {
+    return this.request(`/api/reports/admin/${reportId}`, {
       method: 'PUT',
       body: JSON.stringify(reportData),
     });
   }
 
   async updateReportStatus(reportId: string, status: string): Promise<any> {
-    return this.request(`/api/reports/${reportId}/status`, {
+    return this.request(`/api/reports/admin/${reportId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   }
 
   async deleteReport(reportId: string): Promise<any> {
-    return this.request(`/api/reports/${reportId}`, {
+    return this.request(`/api/reports/admin/${reportId}`, {
       method: 'DELETE',
     });
   }

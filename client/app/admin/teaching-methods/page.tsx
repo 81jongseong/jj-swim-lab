@@ -648,8 +648,10 @@ export default function TeachingMethodsPage() {
 
         {/* 검색 및 필터 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
+          {/* 검색 및 필터 영역 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">🔍 강습법 검색</label>
               <Input
                 type="text"
                 placeholder="강습법 이름, 설명, 카테고리로 검색..."
@@ -658,39 +660,44 @@ export default function TeachingMethodsPage() {
                 className="w-full"
               />
             </div>
-            <div className="w-full md:w-48">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">📊 난이도 필터</label>
               <select
                 value={selectedLevel}
                 onChange={(e) => setSelectedLevel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               >
-                <option value="all">모든 난이도</option>
-                <option value="beginner">초급</option>
-                <option value="intermediate">중급</option>
-                <option value="advanced">상급</option>
+                <option value="all">🎯 모든 난이도</option>
+                <option value="beginner">🥉 초급</option>
+                <option value="intermediate">🥈 중급</option>
+                <option value="advanced">🥇 상급</option>
               </select>
             </div>
+          </div>
+
+          {/* 버튼 영역 */}
+          <div className="flex flex-wrap gap-3 justify-end">
             {!isCenterAdmin && (
-              <Button
-                onClick={() => {
-                  setIsFormOpen(true);
-                  setEditingMethod(null);
-                  setSteps([]);
-                  setTips([]);
-                }}
-                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
-              >
-                ✨ 새 강습법 추가
-              </Button>
-            )}
-            {!isCenterAdmin && (
-              <Button
-                onClick={() => setIsExcelUploaderOpen(true)}
-                variant="outline"
-                className="px-6 py-2 border-green-500 text-green-700 hover:bg-green-50"
-              >
-                📊 엑셀 업로드
-              </Button>
+              <>
+                <Button
+                  onClick={() => {
+                    setIsFormOpen(true);
+                    setEditingMethod(null);
+                    setSteps([]);
+                    setTips([]);
+                  }}
+                  className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+                >
+                  ✨ 새 강습법 추가
+                </Button>
+                <Button
+                  onClick={() => setIsExcelUploaderOpen(true)}
+                  variant="outline"
+                  className="px-6 py-2 border-green-500 text-green-700 hover:bg-green-50 shadow-md"
+                >
+                  📊 엑셀 업로드
+                </Button>
+              </>
             )}
             <Button
               onClick={() => {
@@ -698,63 +705,10 @@ export default function TeachingMethodsPage() {
                 fetchTeachingMethods();
               }}
               variant="outline"
-              className="px-6 py-2 border-blue-500 text-blue-700 hover:bg-blue-50"
+              className="px-6 py-2 border-blue-500 text-blue-700 hover:bg-blue-50 shadow-md"
             >
               🔄 새로고침
             </Button>
-            {!isCenterAdmin && (
-              <Button
-                onClick={async () => {
-                  if (confirm('정말로 모든 강습법을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-                    try {
-                      console.log('🗑️ 모든 강습법 삭제 시작...');
-                      
-                      // 모든 강습법 ID 수집
-                      const methodIds = methods.map(m => m._id);
-                      console.log(`📋 삭제할 강습법 개수: ${methodIds.length}`);
-                      
-                      // 각 강습법을 개별적으로 삭제
-                      let deletedCount = 0;
-                      for (const methodId of methodIds) {
-                        try {
-                          const response = await fetch(`http://localhost:5000/api/teaching-methods/${methodId}`, {
-                            method: 'DELETE',
-                            headers: {
-                              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                              'Method': 'DELETE',
-                              'Content-Type': 'application/json'
-                            }
-                          });
-                          
-                          if (response.ok) {
-                            deletedCount++;
-                            console.log(`✅ 삭제 완료: ${methodId}`);
-                          } else {
-                            console.error(`❌ 삭제 실패: ${methodId}`);
-                          }
-                        } catch (error) {
-                          console.error(`❌ 삭제 중 오류: ${methodId}`, error);
-                        }
-                      }
-                      
-                      console.log(`🗑️ 모든 강습법 삭제 완료: ${deletedCount}개 삭제됨`);
-                      alert(`모든 강습법이 삭제되었습니다. (${deletedCount}개)`);
-                      
-                      // 데이터베이스에서 최신 상태 가져오기
-                      fetchTeachingMethods();
-                      
-                    } catch (error) {
-                      console.error('❌ 모든 강습법 삭제 중 오류:', error);
-                      alert('모든 강습법 삭제 중 오류가 발생했습니다.');
-                    }
-                  }
-                }}
-                variant="outline"
-                className="px-6 py-2 border-red-500 text-red-700 hover:bg-red-50"
-              >
-                🗑️ 모든 강습법 삭제
-              </Button>
-            )}
           </div>
         </div>
 

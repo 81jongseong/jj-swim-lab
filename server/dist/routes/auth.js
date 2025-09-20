@@ -27,6 +27,7 @@ const express_1 = require("express");
 const bcrypt = __importStar(require("bcryptjs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const User_1 = require("../models/User");
+const LoginLog_1 = require("../models/LoginLog");
 const router = (0, express_1.Router)();
 router.post('/signup', async (req, res) => {
     try {
@@ -235,6 +236,21 @@ router.post('/login', async (req, res) => {
             issuer: 'jj-swim-lab',
             audience: 'jj-swim-lab-users'
         });
+        try {
+            const loginLog = new LoginLog_1.LoginLog({
+                userId: user._id,
+                userType: user.userType,
+                loginTime: new Date(),
+                ipAddress: req.ip || req.connection.remoteAddress || 'unknown',
+                userAgent: req.get('User-Agent') || 'unknown',
+                isActive: true
+            });
+            await loginLog.save();
+            console.log('✅ 로그인 로그 기록 완료');
+        }
+        catch (logError) {
+            console.warn('⚠️ 로그인 로그 기록 실패:', logError);
+        }
         return res.json({
             success: true,
             message: '로그인이 완료되었습니다.',

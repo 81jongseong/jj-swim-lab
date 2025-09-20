@@ -24,6 +24,10 @@ import './models/StudentGoal';
 import './models/Notification';
 import './models/UserActivity';
 import './models/HealthConfig';
+import './models/AdminReport';
+import './models/SystemConfig';
+import './models/LoginLog';
+import './models/PageVisit';
 declare const app: import("express-serve-static-core").Express;
 export { app };
 //# sourceMappingURL=index.d.ts.map

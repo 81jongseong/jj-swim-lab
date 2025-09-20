@@ -105,6 +105,7 @@ import { Router, Request, Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { LoginLog } from '../models/LoginLog';
 
 const router: Router = Router();
 
@@ -431,6 +432,23 @@ router.post('/login', async (req: Request, res: Response) => {
         audience: 'jj-swim-lab-users'
       }
     );
+
+    // 로그인 로그 기록
+    try {
+      const loginLog = new LoginLog({
+        userId: user._id,
+        userType: user.userType,
+        loginTime: new Date(),
+        ipAddress: req.ip || req.connection.remoteAddress || 'unknown',
+        userAgent: req.get('User-Agent') || 'unknown',
+        isActive: true
+      });
+      await loginLog.save();
+      console.log('✅ 로그인 로그 기록 완료');
+    } catch (logError) {
+      console.warn('⚠️ 로그인 로그 기록 실패:', logError);
+      // 로그 기록 실패해도 로그인은 계속 진행
+    }
 
     return res.json({
       success: true,

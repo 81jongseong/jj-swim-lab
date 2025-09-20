@@ -1,54 +1,22 @@
 /**
- * 백업 서비스
- * 데이터베이스 백업, 복구, 버전 관리를 담당합니다.
+ * @file 자동 백업 서비스
+ * @description 시스템 설정에 따라 자동으로 데이터베이스 백업을 수행하는 서비스입니다.
+ * @date 2025-09-19
+ * @author JJ Swim Lab
  */
 
+import { SystemConfig } from '../models/SystemConfig';
+import { emailService } from './emailService';
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
-
-// 백업 정보 인터페이스
-interface BackupInfo {
-  id: string;
-  timestamp: Date;
-  type: 'full' | 'incremental' | 'schema';
-  size: number;
-  status: 'success' | 'failed' | 'in_progress';
-  description?: string;
-  filePath: string;
-}
-
-// 복구 정보 인터페이스
-interface RestoreInfo {
-  id: string;
-  timestamp: Date;
-  backupId: string;
-  status: 'success' | 'failed' | 'in_progress';
-  description?: string;
-}
 
 class BackupService {
   private static instance: BackupService;
-  private backupDir: string;
-  private restoreDir: string;
-  private backups: BackupInfo[] = [];
-  private restores: RestoreInfo[] = [];
+  private backupInterval: NodeJS.Timeout | null = null;
+  private isRunning: boolean = false;
 
-  private constructor() {
-    // 백업 디렉토리 설정
-    this.backupDir = path.join(process.cwd(), 'backups');
-    this.restoreDir = path.join(process.cwd(), 'restores');
-    
-    // 디렉토리 생성
-    this.ensureDirectories();
-    
-    // 기존 백업 정보 로드
-    this.loadBackupHistory();
-  }
+  private constructor() {}
 
   public static getInstance(): BackupService {
     if (!BackupService.instance) {
@@ -57,343 +25,194 @@ class BackupService {
     return BackupService.instance;
   }
 
-  /**
-   * 필요한 디렉토리 생성
-   */
-  private ensureDirectories(): void {
-    if (!fs.existsSync(this.backupDir)) {
-      fs.mkdirSync(this.backupDir, { recursive: true });
-    }
-    if (!fs.existsSync(this.restoreDir)) {
-      fs.mkdirSync(this.restoreDir, { recursive: true });
-    }
-  }
-
-  /**
-   * 백업 히스토리 로드
-   */
-  private loadBackupHistory(): void {
-    const historyFile = path.join(this.backupDir, 'backup-history.json');
-    if (fs.existsSync(historyFile)) {
-      try {
-        const data = fs.readFileSync(historyFile, 'utf8');
-        this.backups = JSON.parse(data);
-      } catch (error) {
-        console.error('백업 히스토리 로드 실패:', error);
-        this.backups = [];
-      }
-    }
-  }
-
-  /**
-   * 백업 히스토리 저장
-   */
-  private saveBackupHistory(): void {
-    const historyFile = path.join(this.backupDir, 'backup-history.json');
+  // 백업 서비스 시작
+  public async startBackupService(): Promise<void> {
     try {
-      fs.writeFileSync(historyFile, JSON.stringify(this.backups, null, 2));
+      console.log('💾 자동 백업 서비스 시작...');
+      
+      // 기존 스케줄 정리
+      if (this.backupInterval) {
+        clearInterval(this.backupInterval);
+      }
+
+      // 초기 백업 설정 확인
+      await this.checkAndScheduleBackup();
+      
+      // 1시간마다 백업 설정 재확인
+      this.backupInterval = setInterval(async () => {
+        await this.checkAndScheduleBackup();
+      }, 60 * 60 * 1000); // 1시간
+
+      this.isRunning = true;
+      console.log('✅ 자동 백업 서비스 시작 완료');
     } catch (error) {
-      console.error('백업 히스토리 저장 실패:', error);
+      console.error('자동 백업 서비스 시작 오류:', error);
     }
   }
 
-  /**
-   * 전체 데이터베이스 백업
-   */
-  public async createFullBackup(description?: string): Promise<BackupInfo> {
-    const backupId = `backup_${Date.now()}`;
-    const timestamp = new Date();
-    
-    const backupInfo: BackupInfo = {
-      id: backupId,
-      timestamp,
-      type: 'full',
-      size: 0,
-      status: 'in_progress',
-      description,
-      filePath: ''
-    };
-
-    this.backups.push(backupInfo);
-    this.saveBackupHistory();
-
+  // 백업 설정 확인 및 스케줄링
+  private async checkAndScheduleBackup(): Promise<void> {
     try {
-      console.log(`🔄 전체 백업 시작: ${backupId}`);
+      const systemConfig = await SystemConfig.findOne({ isActive: true });
       
-      // MongoDB URI에서 데이터베이스명 추출
-      const mongoUri = process.env.MONGODB_URI || '';
-      const dbName = this.extractDatabaseName(mongoUri);
-      
-      if (!dbName) {
-        throw new Error('데이터베이스명을 추출할 수 없습니다.');
+      if (!systemConfig || !systemConfig.backup.autoBackup) {
+        console.log('💾 자동 백업 비활성화 상태');
+        return;
       }
 
-      // 백업 파일 경로
-      const backupFileName = `${backupId}_full.json`;
-      const backupFilePath = path.join(this.backupDir, backupFileName);
-      
-      // mongodump 명령어 실행
-      const dumpCommand = `mongodump --uri="${mongoUri}" --out="${this.backupDir}/${backupId}"`;
-      await execAsync(dumpCommand);
-      
-      // 백업 파일 크기 계산
-      const stats = fs.statSync(path.join(this.backupDir, backupId));
-      backupInfo.size = this.getDirectorySize(path.join(this.backupDir, backupId));
-      backupInfo.filePath = backupFilePath;
-      backupInfo.status = 'success';
-      
-      console.log(`✅ 전체 백업 완료: ${backupId} (${this.formatBytes(backupInfo.size)})`);
-      
+      const backupInterval = systemConfig.backup.backupInterval * 60 * 60 * 1000; // 시간을 밀리초로
+      const lastBackup = systemConfig.backup.lastBackup;
+      const now = new Date();
+
+      if (!lastBackup || (now.getTime() - lastBackup.getTime()) >= backupInterval) {
+        console.log('💾 백업 실행 조건 충족, 백업 시작...');
+        await this.performBackup(systemConfig);
+      } else {
+        const nextBackup = new Date(lastBackup.getTime() + backupInterval);
+        console.log(`💾 다음 백업 예정: ${nextBackup.toLocaleString()}`);
+      }
     } catch (error) {
-      console.error(`❌ 전체 백업 실패: ${backupId}`, error);
-      backupInfo.status = 'failed';
+      console.error('백업 스케줄 확인 오류:', error);
     }
-
-    this.saveBackupHistory();
-    return backupInfo;
   }
 
-  /**
-   * 스키마만 백업 (구조만)
-   */
-  public async createSchemaBackup(description?: string): Promise<BackupInfo> {
-    const backupId = `schema_${Date.now()}`;
-    const timestamp = new Date();
-    
-    const backupInfo: BackupInfo = {
-      id: backupId,
-      timestamp,
-      type: 'schema',
-      size: 0,
-      status: 'in_progress',
-      description,
-      filePath: ''
-    };
-
-    this.backups.push(backupInfo);
-    this.saveBackupHistory();
-
+  // 실제 백업 수행
+  private async performBackup(systemConfig: any): Promise<void> {
     try {
-      console.log(`🔄 스키마 백업 시작: ${backupId}`);
+      console.log('💾 데이터베이스 백업 시작...');
       
-      // 모든 모델의 스키마 정보 수집
-      const schemas: any = {};
-      const models = mongoose.models;
-      
-      for (const [modelName, model] of Object.entries(models)) {
-        schemas[modelName] = {
-          collectionName: model.collection.name,
-          schema: model.schema.obj,
-          indexes: model.schema.indexes()
-        };
+      const backupDir = path.join(process.cwd(), 'backups');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(backupDir, `backup-${timestamp}.json`);
+
+      // 백업 디렉토리 생성
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
       }
-      
-      // 스키마 파일 저장
-      const schemaFileName = `${backupId}_schema.json`;
-      const schemaFilePath = path.join(this.backupDir, schemaFileName);
-      
-      fs.writeFileSync(schemaFilePath, JSON.stringify(schemas, null, 2));
-      
-      backupInfo.size = fs.statSync(schemaFilePath).size;
-      backupInfo.filePath = schemaFilePath;
-      backupInfo.status = 'success';
-      
-      console.log(`✅ 스키마 백업 완료: ${backupId} (${this.formatBytes(backupInfo.size)})`);
-      
+
+      // 주요 컬렉션 백업
+      const collections = ['users', 'centers', 'courses', 'bookings', 'payments'];
+      const backupData: any = {
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        collections: {}
+      };
+
+      for (const collectionName of collections) {
+        try {
+          const collection = mongoose.connection.db.collection(collectionName);
+          const documents = await collection.find({}).toArray();
+          backupData.collections[collectionName] = documents;
+          console.log(`✅ ${collectionName} 컬렉션 백업 완료 (${documents.length}개 문서)`);
+        } catch (collectionError) {
+          console.warn(`⚠️ ${collectionName} 컬렉션 백업 실패:`, collectionError);
+        }
+      }
+
+      // 백업 파일 저장
+      fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
+      console.log(`✅ 백업 파일 저장 완료: ${backupPath}`);
+
+      // 백업 완료 시간 업데이트
+      await SystemConfig.findByIdAndUpdate(systemConfig._id, {
+        'backup.lastBackup': new Date()
+      });
+
+      // 오래된 백업 파일 정리
+      await this.cleanupOldBackups(systemConfig.backup.retentionDays);
+
+      // 백업 완료 알림
+      await emailService.sendSystemAlert(
+        `데이터베이스 백업이 성공적으로 완료되었습니다.`,
+        {
+          backupPath,
+          collections: Object.keys(backupData.collections),
+          totalDocuments: Object.values(backupData.collections).reduce((sum: number, docs: any) => sum + docs.length, 0)
+        }
+      );
+
+      console.log('🎉 데이터베이스 백업 완료!');
     } catch (error) {
-      console.error(`❌ 스키마 백업 실패: ${backupId}`, error);
-      backupInfo.status = 'failed';
+      console.error('백업 수행 오류:', error);
+      
+      // 백업 실패 알림
+      await emailService.sendErrorAlert(
+        `데이터베이스 백업에 실패했습니다: ${error.message}`,
+        { error: error.message }
+      );
     }
-
-    this.saveBackupHistory();
-    return backupInfo;
   }
 
-  /**
-   * 데이터베이스 복구
-   */
-  public async restoreFromBackup(backupId: string, description?: string): Promise<RestoreInfo> {
-    const restoreId = `restore_${Date.now()}`;
-    const timestamp = new Date();
-    
-    const restoreInfo: RestoreInfo = {
-      id: restoreId,
-      timestamp,
-      backupId,
-      status: 'in_progress',
-      description
-    };
-
-    this.restores.push(restoreInfo);
-
+  // 오래된 백업 파일 정리
+  private async cleanupOldBackups(retentionDays: number): Promise<void> {
     try {
-      console.log(`🔄 데이터베이스 복구 시작: ${restoreId} (백업: ${backupId})`);
+      const backupDir = path.join(process.cwd(), 'backups');
       
-      const backup = this.backups.find(b => b.id === backupId);
-      if (!backup) {
-        throw new Error(`백업을 찾을 수 없습니다: ${backupId}`);
+      if (!fs.existsSync(backupDir)) {
+        return;
       }
 
-      if (backup.status !== 'success') {
-        throw new Error(`백업이 성공하지 않았습니다: ${backupId}`);
+      const files = fs.readdirSync(backupDir);
+      const now = Date.now();
+      const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
+
+      let deletedCount = 0;
+      
+      for (const file of files) {
+        if (file.startsWith('backup-') && file.endsWith('.json')) {
+          const filePath = path.join(backupDir, file);
+          const stats = fs.statSync(filePath);
+          
+          if (now - stats.mtime.getTime() > retentionMs) {
+            fs.unlinkSync(filePath);
+            deletedCount++;
+            console.log(`🗑️ 오래된 백업 파일 삭제: ${file}`);
+          }
+        }
       }
 
-      const mongoUri = process.env.MONGODB_URI || '';
-      const dbName = this.extractDatabaseName(mongoUri);
-      
-      if (!dbName) {
-        throw new Error('데이터베이스명을 추출할 수 없습니다.');
+      if (deletedCount > 0) {
+        console.log(`🗑️ 총 ${deletedCount}개의 오래된 백업 파일 정리 완료`);
       }
-
-      // mongorestore 명령어 실행
-      const restoreCommand = `mongorestore --uri="${mongoUri}" --drop "${this.backupDir}/${backupId}"`;
-      await execAsync(restoreCommand);
-      
-      restoreInfo.status = 'success';
-      console.log(`✅ 데이터베이스 복구 완료: ${restoreId}`);
-      
     } catch (error) {
-      console.error(`❌ 데이터베이스 복구 실패: ${restoreId}`, error);
-      restoreInfo.status = 'failed';
+      console.error('백업 파일 정리 오류:', error);
     }
-
-    return restoreInfo;
   }
 
-  /**
-   * 백업 목록 조회
-   */
-  public getBackups(): BackupInfo[] {
-    return this.backups.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  /**
-   * 복구 목록 조회
-   */
-  public getRestores(): RestoreInfo[] {
-    return this.restores.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  /**
-   * 백업 삭제
-   */
-  public async deleteBackup(backupId: string): Promise<boolean> {
+  // 수동 백업 실행
+  public async triggerManualBackup(): Promise<boolean> {
     try {
-      const backup = this.backups.find(b => b.id === backupId);
-      if (!backup) {
+      const systemConfig = await SystemConfig.findOne({ isActive: true });
+      
+      if (!systemConfig) {
+        console.error('시스템 설정을 찾을 수 없습니다.');
         return false;
       }
 
-      // 백업 파일 삭제
-      if (backup.filePath && fs.existsSync(backup.filePath)) {
-        fs.unlinkSync(backup.filePath);
-      }
-
-      // 백업 디렉토리 삭제
-      const backupDirPath = path.join(this.backupDir, backupId);
-      if (fs.existsSync(backupDirPath)) {
-        fs.rmSync(backupDirPath, { recursive: true, force: true });
-      }
-
-      // 백업 정보에서 제거
-      this.backups = this.backups.filter(b => b.id !== backupId);
-      this.saveBackupHistory();
-
-      console.log(`✅ 백업 삭제 완료: ${backupId}`);
+      await this.performBackup(systemConfig);
       return true;
     } catch (error) {
-      console.error(`❌ 백업 삭제 실패: ${backupId}`, error);
+      console.error('수동 백업 실행 오류:', error);
       return false;
     }
   }
 
-  /**
-   * 자동 백업 스케줄링
-   */
-  public scheduleAutoBackup(intervalHours: number = 24): void {
-    setInterval(async () => {
-      try {
-        console.log('🔄 자동 백업 실행 중...');
-        await this.createFullBackup('자동 백업');
-      } catch (error) {
-        console.error('❌ 자동 백업 실패:', error);
-      }
-    }, intervalHours * 60 * 60 * 1000);
-  }
-
-  /**
-   * MongoDB URI에서 데이터베이스명 추출
-   */
-  private extractDatabaseName(uri: string): string | null {
-    try {
-      const url = new URL(uri);
-      return url.pathname.substring(1) || null;
-    } catch (error) {
-      return null;
+  // 백업 서비스 중지
+  public stopBackupService(): void {
+    if (this.backupInterval) {
+      clearInterval(this.backupInterval);
+      this.backupInterval = null;
     }
+    this.isRunning = false;
+    console.log('💾 자동 백업 서비스 중지');
   }
 
-  /**
-   * 디렉토리 크기 계산
-   */
-  private getDirectorySize(dirPath: string): number {
-    let size = 0;
-    const files = fs.readdirSync(dirPath);
-    
-    for (const file of files) {
-      const filePath = path.join(dirPath, file);
-      const stats = fs.statSync(filePath);
-      
-      if (stats.isDirectory()) {
-        size += this.getDirectorySize(filePath);
-      } else {
-        size += stats.size;
-      }
-    }
-    
-    return size;
-  }
-
-  /**
-   * 바이트를 읽기 쉬운 형태로 변환
-   */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  /**
-   * 백업 상태 요약
-   */
-  public getBackupSummary(): any {
-    const totalBackups = this.backups.length;
-    const successfulBackups = this.backups.filter(b => b.status === 'success').length;
-    const failedBackups = this.backups.filter(b => b.status === 'failed').length;
-    const totalSize = this.backups.reduce((sum, b) => sum + b.size, 0);
-    
-    const lastBackup = this.backups
-      .filter(b => b.status === 'success')
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-
+  // 백업 서비스 상태 확인
+  public getStatus(): { isRunning: boolean } {
     return {
-      totalBackups,
-      successfulBackups,
-      failedBackups,
-      successRate: totalBackups > 0 ? (successfulBackups / totalBackups) * 100 : 0,
-      totalSize: this.formatBytes(totalSize),
-      lastBackup: lastBackup ? {
-        id: lastBackup.id,
-        timestamp: lastBackup.timestamp,
-        type: lastBackup.type,
-        size: this.formatBytes(lastBackup.size)
-      } : null
+      isRunning: this.isRunning
     };
   }
 }
 
-export default BackupService;
+export const backupService = BackupService.getInstance();
