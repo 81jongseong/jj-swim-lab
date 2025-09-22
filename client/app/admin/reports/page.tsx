@@ -131,14 +131,14 @@ function AdminReportsPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-single-line">📊 리포트 관리</h1>
-          <p className="text-gray-600">JJ Swim Lab의 모든 리포트와 이슈를 쉽게 관리하세요</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-single-line">🎧 고객지원 관리</h1>
+          <p className="text-gray-600">고객의 버그 신고, 기능 요청, 불만사항, 제안사항을 체계적으로 관리하세요</p>
         </div>
 
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">📋 리포트 목록</h2>
+              <h2 className="text-lg font-semibold text-gray-900">📋 고객지원 요청 목록</h2>
               <div className="flex flex-col sm:flex-row gap-3">
                 <select
                   value={filterStatus}
@@ -288,7 +288,7 @@ function AdminReportsPage() {
 
                     {selectedReport?._id === report._id && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <h5 className="font-semibold text-gray-900 text-base mb-3">📊 리포트 상세정보</h5>
+                        <h5 className="font-semibold text-gray-900 text-base mb-3">🎧 고객지원 요청 상세정보</h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <div className="font-medium text-gray-700">리포트 ID:</div>
@@ -322,12 +322,12 @@ function AdminReportsPage() {
 
             {filteredReports.length === 0 && (
               <div className="text-center py-16">
-                <div className="text-6xl mb-4">📊</div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-2">리포트가 없습니다</h3>
+                <div className="text-6xl mb-4">🎧</div>
+                <h3 className="text-2xl font-bold text-gray-700 mb-2">고객지원 요청이 없습니다</h3>
                 <p className="text-gray-500 mb-6">
                   {filterStatus !== 'all' || filterType !== 'all' 
-                    ? '선택한 필터에 맞는 리포트가 없습니다' 
-                    : '아직 리포트가 제출되지 않았습니다'
+                    ? '선택한 필터에 맞는 고객지원 요청이 없습니다' 
+                    : '아직 고객지원 요청이 제출되지 않았습니다'
                   }
                 </p>
                 {(filterStatus !== 'all' || filterType !== 'all') && (

@@ -1,0 +1,455 @@
+{
+  "lastUpdatedKST": "2025-01-22T00:00:00+09:00",
+  "strokes": ["자유형", "배영", "평영", "접영", "기본배영", "사이드스트로크"],
+  "conditions": [
+    {
+      "id": "cervical_disc",
+      "name": "경추 디스크",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "cervical_stenosis",
+      "name": "경추 협착증",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "cervical_spondylosis",
+      "name": "경추 척추증",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "cervical_whiplash",
+      "name": "경추 외상(채찍질 손상)",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "cervical_tension",
+      "name": "경추 긴장성 통증",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "cervical",
+      "name": "경추(목) 증상/디스크/협착",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영(머리들기)", "한쪽 편호흡 과다", "접영"],
+      "modifications": [
+        "스노클로 경추 회전 최소화",
+        "양측호흡·짧은 스트로크·몸통 롤 활용",
+        "머리 양(+) 굴곡/회피: 수면 높이 낮게 유지"
+      ],
+      "tools": ["프런트 스노클", "풀부이(필요 시)", "저부피 고글"],
+      "sessionExample": "배영 25m×6(20~30″휴식), 자유형(스노클) 25m×6, 킥 최소화 드릴 10′",
+      "evidenceKeys": ["snorkel_neck_mech", "swimming_shoulders_review"]
+    },
+    {
+      "id": "shoulder_impingement",
+      "name": "어깨 충돌 증후군",
+      "recommended": ["평영(팔 작게)", "짧은 자유형", "배영(볼륨 조절)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "큰 패들", "고볼륨 반복/폭발적 스타트·턴"],
+      "modifications": [
+        "하이엘보 캐치·견갑 하부 안정화(하부 승모/전거근)",
+        "스트로크 길이 단축·양측호흡",
+        "패들은 통증 해소 후 말기에 점진"
+      ],
+      "tools": ["스노클", "미니 패들(후기)", "풀부이"],
+      "sessionExample": "자유형(짧게) 25m×8, 배영 25m×6, 기술 드릴(캐치업 등) 10′",
+      "evidenceKeys": ["swimmer_shoulder_overview", "freestyle_impingement_phase"]
+    },
+    {
+      "id": "shoulder_rotator_cuff",
+      "name": "회전근개 손상",
+      "recommended": ["평영(팔 작게)", "짧은 자유형", "배영(볼륨 조절)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "큰 패들", "고볼륨 반복/폭발적 스타트·턴"],
+      "modifications": [
+        "하이엘보 캐치·견갑 하부 안정화(하부 승모/전거근)",
+        "스트로크 길이 단축·양측호흡",
+        "패들은 통증 해소 후 말기에 점진"
+      ],
+      "tools": ["스노클", "미니 패들(후기)", "풀부이"],
+      "sessionExample": "자유형(짧게) 25m×8, 배영 25m×6, 기술 드릴(캐치업 등) 10′",
+      "evidenceKeys": ["swimmer_shoulder_overview", "freestyle_impingement_phase"]
+    },
+    {
+      "id": "shoulder_frozen",
+      "name": "오십견(동결견)",
+      "recommended": ["평영(팔 작게)", "짧은 자유형", "배영(볼륨 조절)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "큰 패들", "고볼륨 반복/폭발적 스타트·턴"],
+      "modifications": [
+        "하이엘보 캐치·견갑 하부 안정화(하부 승모/전거근)",
+        "스트로크 길이 단축·양측호흡",
+        "패들은 통증 해소 후 말기에 점진"
+      ],
+      "tools": ["스노클", "미니 패들(후기)", "풀부이"],
+      "sessionExample": "자유형(짧게) 25m×8, 배영 25m×6, 기술 드릴(캐치업 등) 10′",
+      "evidenceKeys": ["swimmer_shoulder_overview", "freestyle_impingement_phase"]
+    },
+    {
+      "id": "shoulder_instability",
+      "name": "어깨 불안정성",
+      "recommended": ["평영(팔 작게)", "짧은 자유형", "배영(볼륨 조절)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "큰 패들", "고볼륨 반복/폭발적 스타트·턴"],
+      "modifications": [
+        "하이엘보 캐치·견갑 하부 안정화(하부 승모/전거근)",
+        "스트로크 길이 단축·양측호흡",
+        "패들은 통증 해소 후 말기에 점진"
+      ],
+      "tools": ["스노클", "미니 패들(후기)", "풀부이"],
+      "sessionExample": "자유형(짧게) 25m×8, 배영 25m×6, 기술 드릴(캐치업 등) 10′",
+      "evidenceKeys": ["swimmer_shoulder_overview", "freestyle_impingement_phase"]
+    },
+    {
+      "id": "shoulder",
+      "name": "어깨(충돌/회전근개/불안정성)",
+      "recommended": ["평영(팔 작게)", "짧은 자유형", "배영(볼륨 조절)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "큰 패들", "고볼륨 반복/폭발적 스타트·턴"],
+      "modifications": [
+        "하이엘보 캐치·견갑 하부 안정화(하부 승모/전거근)",
+        "스트로크 길이 단축·양측호흡",
+        "패들은 통증 해소 후 말기에 점진"
+      ],
+      "tools": ["스노클", "미니 패들(후기)", "풀부이"],
+      "sessionExample": "자유형(짧게) 25m×8, 배영 25m×6, 기술 드릴(캐치업 등) 10′",
+      "evidenceKeys": ["swimmer_shoulder_overview", "freestyle_impingement_phase"]
+    },
+    {
+      "id": "lumbar_disc",
+      "name": "허리 디스크",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "lumbar_strain",
+      "name": "허리 근육 긴장",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "lumbar_spondylolisthesis",
+      "name": "척추 전방전위증",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "lumbar_spondylosis",
+      "name": "척추증",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "lumbar_facet",
+      "name": "척추 관절증",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "lumbar",
+      "name": "허리(요통/디스크/분리증·전방전위)",
+      "recommended": ["배영", "중립척추 자유형", "수중보행·아쿠아조깅", "기본배영"],
+      "avoidOrCaution": ["접영", "돌핀킥/핀 과신전", "큰 웨이브 동작"],
+      "modifications": [
+        "킥 강도 낮추고 코어 중립 유지",
+        "벽 차기·플립턴은 말기에",
+        "핀은 단거리·저강도부터 반응 확인"
+      ],
+      "tools": ["아쿠아 벨트", "짧은 핀(후기)", "풀부이"],
+      "sessionExample": "수중보행 10′ → 배영 25m×8 → 자유형 25m×6(킥 가볍게) → 스트레칭",
+      "evidenceKeys": ["swim_lowback_scoping", "aquatic_for_lbp"]
+    },
+    {
+      "id": "hip",
+      "name": "고관절(OA/FAI/와순)",
+      "recommended": ["자유형", "배영(플러터킥 완만)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영 킥(외회전/외전) 통증 시 제한", "접영 초기 회피"],
+      "modifications": [
+        "스트로크 위주·킥 강도 낮춤",
+        "통증 기준(0~10≤3) 점진 증량",
+        "평영킥은 무증상 시 말기 단계 재도입"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "자유형 50m×6(가벼운 킥) + 배영 50m×4",
+      "evidenceKeys": ["aquatic_ex_oa_cochrane", "aquatic_ex_meta_2022"]
+    },
+    {
+      "id": "knee",
+      "name": "무릎(OA/슬개대퇴통증/MCL/반월상)",
+      "recommended": ["자유형", "배영", "상체 드릴", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["평영 킥(외반·경골 외회전)", "무통 전까지 패들/핀 지양"],
+      "modifications": [
+        "풀부이로 킥 감소",
+        "짧은 구간 반복, 통증 발생 시 즉시 중단",
+        "점진 부하(주 10~20% 증량)"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "상체드릴 25m×8 + 배영 25m×6",
+      "evidenceKeys": ["breaststroker_knee_mcl", "patellofemoral_breaststroke"]
+    },
+    {
+      "id": "anklefoot",
+      "name": "발목·발(아킬레스건·거골하 관절)",
+      "recommended": ["자유형(킥 완만)", "배영(킥 완만)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["강한 돌핀킥", "딱딱한 롱핀(과도한 저측굴곡)"],
+      "modifications": [
+        "킥보드 오래 사용 지양",
+        "상·하체 분리 드릴 조합",
+        "핀은 소프트·숏핀부터"
+      ],
+      "tools": ["소프트 숏핀", "풀부이"],
+      "sessionExample": "자유형 25m×10(킥 약하게) + 기술드릴 10′",
+      "evidenceKeys": ["ankle_pf_dolphin_limited"]
+    },
+    {
+      "id": "wrist",
+      "name": "손목·손(수근관/건염/관절염)",
+      "recommended": ["자유형(손목 중립)", "배영", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "강한 그립", "과도한 손목 굴곡", "평영(손목 과신전)"],
+      "modifications": [
+        "손목 중립 자세 유지",
+        "스트로크 시 손목 부드럽게",
+        "통증 시 풀부이 사용"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "자유형 25m×8(손목 부드럽게) + 배영 25m×6",
+      "evidenceKeys": ["wrist_carpal_tunnel", "swimming_hand_position"]
+    },
+    {
+      "id": "elbow",
+      "name": "팔꿈치(테니스/골프 엘보·건염)",
+      "recommended": ["자유형(팔꿈치 부드럽게)", "배영", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "강한 팔꿈치 신전", "과도한 회전", "평영(팔꿈치 과신전)"],
+      "modifications": [
+        "팔꿈치 부드러운 동작",
+        "스트로크 길이 단축",
+        "통증 시 풀부이 사용"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "자유형 25m×6(팔꿈치 부드럽게) + 배영 25m×6",
+      "evidenceKeys": ["elbow_tendinitis_swimming", "freestyle_elbow_mechanics"]
+    },
+    {
+      "id": "inflammatory",
+      "name": "염증성 관절염(RA/강직성 척추염 등)",
+      "recommended": ["자유형(저강도)", "배영", "기본배영", "사이드스트로크", "수중 유산소+저항+가동성 조합"],
+      "avoidOrCaution": ["접영", "급성 염증기 고강도·고볼륨", "평영(관절 부하)"],
+      "modifications": [
+        "수온 33~36°C, 피로 관리",
+        "통증·피로 일지 기반 강도조절",
+        "코어/견갑 안정화 드릴 포함"
+      ],
+      "tools": ["아쿠아 덤벨/누들", "스노클"],
+      "sessionExample": "수중 순환운동 20′ + 가벼운 자유형/배영",
+      "evidenceKeys": ["eular_2018_pa", "axspa_water_exercise"]
+    },
+    {
+      "id": "gout",
+      "name": "통풍",
+      "recommended": ["자유형(저강도)", "배영", "기본배영", "사이드스트로크", "발작기 후 저충격 수중운동 재개"],
+      "avoidOrCaution": ["접영", "평영", "급성 발작기 통증 관절 반복 사용"],
+      "modifications": [
+        "의학적 안정화 후 점진 재개",
+        "체중·식이·요산 관리 병행"
+      ],
+      "tools": ["아쿠아 벨트"],
+      "sessionExample": "수중보행 10′ → 자유형 25m×6(저강도)",
+      "evidenceKeys": ["acr_gout_2020", "gout_exercise_general"]
+    },
+    {
+      "id": "arthroplasty",
+      "name": "인공관절 수술 후(고관절/무릎/견관절)",
+      "recommended": ["자유형(저강도)", "배영", "기본배영", "사이드스트로크", "상처 치유 후 입수(보통 2~6주)"],
+      "avoidOrCaution": ["접영", "평영", "초기 벽차기/빠른 턴", "평영킥은 말기 무증상 시 단계적"],
+      "modifications": [
+        "봉합·피부상태 확인 후 시작",
+        "속도보다 기술·정렬 우선"
+      ],
+      "tools": ["스노클", "풀부이"],
+      "sessionExample": "수중보행 10′ → 자유형 25m×6 → 배영 25m×4",
+      "evidenceKeys": ["early_aquatic_post_tka", "arthroplasty_swim_safe"]
+    },
+    {
+      "id": "scoliosis",
+      "name": "척추 측만증",
+      "recommended": ["배영", "대칭적 자유형", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["비대칭적 동작", "한쪽 편호흡 과다", "접영", "평영(비대칭)"],
+      "modifications": [
+        "대칭성 유지",
+        "양쪽 팔 균등 사용",
+        "수영 후 척추 교정 운동"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "배영 25m×8 + 대칭적 자유형 25m×6",
+      "evidenceKeys": ["scoliosis_swimming_management", "spinal_deformity_aquatic"]
+    },
+    {
+      "id": "spinal_stenosis",
+      "name": "척추관 협착증",
+      "recommended": ["배영", "자유형(스노클)", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "평영", "과도한 척추 신전", "강한 킥 동작"],
+      "modifications": [
+        "척추 신전 최소화",
+        "부드러운 동작 사용",
+        "수영 후 척추 스트레칭"
+      ],
+      "tools": ["스노클", "풀부이"],
+      "sessionExample": "배영 25m×8 + 자유형(스노클) 25m×6",
+      "evidenceKeys": ["spinal_stenosis_aquatic", "narrow_canal_swimming"]
+    },
+    {
+      "id": "general_joint_pain",
+      "name": "일반 관절 통증",
+      "recommended": ["자유형(저강도)", "배영", "기본배영", "사이드스트로크"],
+      "avoidOrCaution": ["접영", "평영(통증 시)", "고강도 운동"],
+      "modifications": [
+        "통증 수준에 따른 강도 조절",
+        "점진적 운동량 증가",
+        "충분한 휴식과 스트레칭"
+      ],
+      "tools": ["풀부이", "스노클"],
+      "sessionExample": "자유형 25m×6(저강도) + 배영 25m×4 + 스트레칭 10′",
+      "evidenceKeys": ["aquatic_ex_oa_cochrane", "aquatic_ex_meta_2022"]
+    }
+  ],
+  "matrix": [
+    { "conditionId": "cervical_disc", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "cervical_stenosis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "cervical_spondylosis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "cervical_whiplash", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "cervical_tension", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_impingement", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_rotator_cuff", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_frozen", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_instability", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar_disc", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar_strain", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar_spondylolisthesis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar_spondylosis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar_facet", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "hip", "자유형": 2, "배영": 2, "평영": 1, "접영": 1, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "knee", "자유형": 3, "배영": 3, "평영": 0, "접영": 1, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "anklefoot", "자유형": 2, "배영": 2, "평영": 2, "접영": 1, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "wrist", "자유형": 2, "배영": 2, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "elbow", "자유형": 2, "배영": 2, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "inflammatory", "자유형": 2, "배영": 2, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "gout", "자유형": 1, "배영": 1, "평영": 0, "접영": 0, "기본배영": 2, "사이드스트로크": 2 },
+    { "conditionId": "arthroplasty", "자유형": 2, "배영": 2, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "scoliosis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "spinal_stenosis", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "general_joint_pain", "자유형": 2, "배영": 2, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "cervical", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_rotator_cuff", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_frozen", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "shoulder_instability", "자유형": 2, "배영": 1, "평영": 3, "접영": 0, "기본배영": 3, "사이드스트로크": 3 },
+    { "conditionId": "lumbar", "자유형": 2, "배영": 3, "평영": 1, "접영": 0, "기본배영": 3, "사이드스트로크": 3 }
+  ],
+  "evidenceRegistry": [
+    { "key": "aquatic_ex_oa_cochrane", "label": "Cochrane 2016 – 무릎/고관절 OA에서 수중운동 효과", "link": "", "note": "통증·기능 소폭 개선(단기간). (링크 보강 예정)" },
+    { "key": "aquatic_ex_meta_2022", "label": "메타분석 2022 – OA 수중운동 QOL 포함 개선", "link": "", "note": "국제 메타분석. (링크 보강 예정)" },
+    { "key": "eular_2018_pa", "label": "EULAR 2018 – 염증성 관절염/OA 운동 권고", "link": "", "note": "" },
+    { "key": "axspa_water_exercise", "label": "강직성 척추염 수중운동 권고(요약)", "link": "", "note": "(링크 보강 예정)" },
+    { "key": "swimmer_shoulder_overview", "label": "수영 어깨 종설(충돌/회전근개)", "link": "", "note": "" },
+    { "key": "freestyle_impingement_phase", "label": "자유형 충돌 위험 구간 분석", "link": "", "note": "" },
+    { "key": "swim_lowback_scoping", "label": "수영과 요통 스코핑 리뷰", "link": "", "note": "(링크 보강 예정)" },
+    { "key": "aquatic_for_lbp", "label": "요통 대상 수중운동 효과 근거", "link": "", "note": "(링크 보강 예정)" },
+    { "key": "breaststroker_knee_mcl", "label": "평영킥과 MCL 스트레스", "link": "", "note": "" },
+    { "key": "patellofemoral_breaststroke", "label": "평영과 슬개대퇴부하", "link": "", "note": "" },
+    { "key": "snorkel_neck_mech", "label": "스노클 사용 시 경·견갑대 부담 변화", "link": "", "note": "" },
+    { "key": "ankle_pf_dolphin_limited", "label": "돌핀킥/발목 저측굴곡 부하(근거 제한)", "link": "", "note": "확실하지 않음" },
+    { "key": "acr_gout_2020", "label": "ACR 2020 통풍 진료지침(발작기 관리)", "link": "", "note": "" },
+    { "key": "gout_exercise_general", "label": "통풍과 운동(일반 권고 요약)", "link": "", "note": "(무작위근거 제한)" },
+    { "key": "early_aquatic_post_tka", "label": "TKA/THA 후 조기 수중재활 안전성", "link": "", "note": "" },
+    { "key": "arthroplasty_swim_safe", "label": "관절치환술 후 수영의 안전성", "link": "", "note": "" },
+    { "key": "wrist_carpal_tunnel", "label": "수근관 증후군과 수영", "link": "", "note": "" },
+    { "key": "swimming_hand_position", "label": "수영 시 손목 위치와 부상", "link": "", "note": "" },
+    { "key": "elbow_tendinitis_swimming", "label": "팔꿈치 건염과 수영", "link": "", "note": "" },
+    { "key": "freestyle_elbow_mechanics", "label": "자유형 팔꿈치 역학", "link": "", "note": "" },
+    { "key": "scoliosis_swimming_management", "label": "척추 측만증 수영 관리", "link": "", "note": "" },
+    { "key": "spinal_deformity_aquatic", "label": "척추 변형과 수중운동", "link": "", "note": "" },
+    { "key": "spinal_stenosis_aquatic", "label": "척추관 협착증과 수중운동", "link": "", "note": "" },
+    { "key": "narrow_canal_swimming", "label": "협착증 환자 수영 가이드라인", "link": "", "note": "" }
+  ]
+}

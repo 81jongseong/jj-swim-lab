@@ -40,6 +40,7 @@
 import express, { Request, Response } from 'express';
 import { HealthConfig } from '../models/HealthConfig';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { EvidenceBasedWeightSystem } from '../utils/EvidenceBasedWeights';
 
 const router = express.Router();
 
@@ -257,7 +258,58 @@ router.put('/fields/:fieldId', authMiddleware, requireRole(['superAdmin']), asyn
 });
 
 /**
- * AI 알고리즘 설정 업데이트 (최고관리자 전용)
+ * 건강정보 항목 삭제 (최고관리자 전용)
+ * DELETE /api/health-config/fields/:fieldId
+ */
+router.delete('/fields/:fieldId', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    console.log('🗑️ 건강정보 항목 삭제 요청');
+
+    const { fieldId } = req.params;
+    const userId = (req as any).user._id;
+
+    const healthConfig = await HealthConfig.findOne({ isActive: true });
+
+    if (!healthConfig) {
+      return res.status(404).json({
+        success: false,
+        message: '건강정보 설정을 찾을 수 없습니다.'
+      });
+    }
+
+    const fieldIndex = healthConfig.healthFields.findIndex(f => f.id === fieldId);
+
+    if (fieldIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: '해당 건강정보 항목을 찾을 수 없습니다.'
+      });
+    }
+
+    // 항목 삭제
+    const deletedField = healthConfig.healthFields[fieldIndex];
+    healthConfig.healthFields.splice(fieldIndex, 1);
+
+    healthConfig.updatedBy = userId;
+    await healthConfig.save();
+
+    res.json({
+      success: true,
+      message: '건강정보 항목이 삭제되었습니다.',
+      data: deletedField
+    });
+
+  } catch (error) {
+    console.error('건강정보 항목 삭제 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '건강정보 항목을 삭제할 수 없습니다.'
+    });
+  }
+});
+
+/**
+ * AI 알고리즘 설정 업데이트 (최고관리자 전용) - 가중치 수정 차단
  * PUT /api/health-config/ai
  */
 router.put('/ai', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
@@ -267,16 +319,41 @@ router.put('/ai', authMiddleware, requireRole(['superAdmin']), async (req: AuthR
     const aiConfigData = req.body;
     const userId = (req as any).user._id;
 
+    // 가중치 수정 시도 감지 및 차단
+    if (aiConfigData.weights || aiConfigData.parameters?.weights) {
+      console.log('🚫 가중치 수정 시도 차단됨');
+      return res.status(403).json({
+        success: false,
+        message: '가중치는 과학적 근거 없이는 수정할 수 없습니다.',
+        error: 'WEIGHT_MODIFICATION_BLOCKED',
+        requiredSteps: [
+          '과학적 근거 문서 제출 (연구 논문, 가이드라인)',
+          '의학 전문가 승인',
+          '수정 사유 상세 설명 (최소 50자)',
+          '임상 검증 결과 제시',
+          '시스템 관리자 최종 승인'
+        ],
+        currentWeights: 'EvidenceBasedWeightSystem에서 관리됨'
+      });
+    }
+
     let healthConfig = await HealthConfig.findOne({ isActive: true });
 
     if (!healthConfig) {
       healthConfig = await createDefaultHealthConfig(userId);
     }
 
-    // AI 설정 업데이트
+    // 가중치를 제외한 다른 설정만 업데이트
+    const { weights, parameters, ...allowedConfig } = aiConfigData;
+    const safeParameters = parameters ? {
+      ...parameters,
+      weights: undefined // 가중치 제거
+    } : undefined;
+
     healthConfig.aiConfig = {
       ...healthConfig.aiConfig,
-      ...aiConfigData,
+      ...allowedConfig,
+      ...(safeParameters && { parameters: safeParameters }),
       lastUpdated: new Date()
     };
 
@@ -285,7 +362,7 @@ router.put('/ai', authMiddleware, requireRole(['superAdmin']), async (req: AuthR
 
     res.json({
       success: true,
-      message: 'AI 알고리즘 설정이 업데이트되었습니다.',
+      message: 'AI 알고리즘 설정이 업데이트되었습니다. (가중치는 과학적 근거 기반으로 보호됨)',
       data: healthConfig.aiConfig
     });
 
@@ -459,5 +536,73 @@ async function createDefaultHealthConfig(createdBy: string) {
   await defaultConfig.save();
   return defaultConfig;
 }
+
+// 과학적 근거 기반 가중치 조회
+router.get('/evidence-based-weights', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const weights = EvidenceBasedWeightSystem.generateEvidenceBasedWeights();
+    const validation = EvidenceBasedWeightSystem.validateWeights(weights);
+    const algorithmEvidence = EvidenceBasedWeightSystem.getAlgorithmEvidence();
+
+    res.json({
+      success: true,
+      data: {
+        weights,
+        validation,
+        algorithmEvidence,
+        lastUpdated: new Date().toISOString(),
+        source: 'EvidenceBasedWeightSystem'
+      }
+    });
+  } catch (error) {
+    console.error('과학적 근거 기반 가중치 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '과학적 근거 기반 가중치 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+// 가중치 수정 권한 확인
+router.post('/validate-weight-modification', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { modificationReason, evidenceProvided, adminLevel } = req.body;
+
+    const validation = EvidenceBasedWeightSystem.canModifyWeights(
+      adminLevel || 'superAdmin',
+      modificationReason,
+      evidenceProvided
+    );
+
+    res.json({
+      success: true,
+      data: validation
+    });
+  } catch (error) {
+    console.error('가중치 수정 권한 확인 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '가중치 수정 권한 확인 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+// 알고리즘별 과학적 근거 조회
+router.get('/algorithm-evidence', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const algorithmEvidence = EvidenceBasedWeightSystem.getAlgorithmEvidence();
+
+    res.json({
+      success: true,
+      data: algorithmEvidence
+    });
+  } catch (error) {
+    console.error('알고리즘 과학적 근거 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '알고리즘 과학적 근거 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
 
 export default router;

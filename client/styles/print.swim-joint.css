@@ -1,0 +1,382 @@
+/* 관절질환별 수영 영법 가이드 인쇄용 CSS */
+
+/* 인쇄 전용 스타일 */
+@media print {
+  /* 기본 설정 */
+  @page {
+    size: A4;
+    margin: 12mm;
+    @top-center {
+      content: "JJ Swim Lab - 관절질환별 수영 영법 가이드";
+      font-size: 10pt;
+      color: #666;
+    }
+    @bottom-center {
+      content: "https://jjswim.com/guides/swim-joint-guide";
+      font-size: 9pt;
+      color: #999;
+    }
+  }
+
+  /* 인쇄 시 숨길 요소들 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 인쇄용 헤더 */
+  .print-header {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40mm;
+    background: white;
+    border-bottom: 2px solid #333;
+    z-index: 1000;
+  }
+
+  .print-header-content {
+    padding: 8mm 0;
+    text-align: center;
+  }
+
+  .print-title {
+    font-size: 18pt;
+    font-weight: bold;
+    margin: 0 0 4mm 0;
+    color: #333;
+  }
+
+  .print-meta {
+    font-size: 9pt;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .print-meta span {
+    margin: 0 2mm;
+  }
+
+  /* 인쇄용 푸터 */
+  .print-footer {
+    display: block !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20mm;
+    background: white;
+    border-top: 1px solid #ccc;
+    z-index: 1000;
+  }
+
+  .print-footer-content {
+    padding: 4mm 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8pt;
+    color: #666;
+  }
+
+  .print-page-info {
+    text-align: left;
+  }
+
+  .print-footer-text {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .print-footer-text span {
+    margin: 1pt 0;
+  }
+
+  /* 페이지 구분 */
+  .page-break {
+    page-break-before: always;
+  }
+
+  .page-break-avoid {
+    page-break-inside: avoid;
+  }
+
+  /* 본문 스타일 */
+  body {
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #333;
+    background: white !important;
+  }
+
+  /* 제목 스타일 */
+  h1 {
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 6mm 0 4mm 0;
+    color: #333;
+  }
+
+  h2 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 4mm 0 3mm 0;
+    color: #333;
+  }
+
+  h3 {
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 3mm 0 2mm 0;
+    color: #333;
+  }
+
+  h4 {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 2mm 0 1mm 0;
+    color: #333;
+  }
+
+  /* 텍스트 스타일 */
+  p {
+    margin: 2mm 0;
+    text-align: justify;
+  }
+
+  /* 리스트 스타일 */
+  ul, ol {
+    margin: 2mm 0;
+    padding-left: 4mm;
+  }
+
+  li {
+    margin: 1mm 0;
+  }
+
+  /* 테이블 스타일 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0;
+    font-size: 9pt;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 2mm;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+
+  /* 카드 스타일 */
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 4pt;
+    margin: 3mm 0;
+    padding: 3mm;
+    background: white;
+  }
+
+  .card-header {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+  }
+
+  .card-title {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  /* 배지 스타일 */
+  .badge {
+    display: inline-block;
+    padding: 1pt 2pt;
+    border-radius: 2pt;
+    font-size: 8pt;
+    font-weight: normal;
+    margin: 1pt;
+    border: 1px solid #ccc;
+  }
+
+  /* 색상 배지 */
+  .bg-green-100 { background-color: #dcfce7 !important; }
+  .text-green-800 { color: #166534 !important; }
+  .bg-blue-100 { background-color: #dbeafe !important; }
+  .text-blue-800 { color: #1e40af !important; }
+  .bg-yellow-100 { background-color: #fef3c7 !important; }
+  .text-yellow-800 { color: #92400e !important; }
+  .bg-red-100 { background-color: #fee2e2 !important; }
+  .text-red-800 { color: #991b1b !important; }
+  .bg-purple-100 { background-color: #f3e8ff !important; }
+  .text-purple-800 { color: #6b21a8 !important; }
+  .bg-gray-100 { background-color: #f3f4f6 !important; }
+  .text-gray-800 { color: #374151 !important; }
+
+  /* 구분선 */
+  .separator {
+    border-top: 1px solid #eee;
+    margin: 3mm 0;
+  }
+
+  /* 경고 박스 */
+  .alert {
+    border: 1px solid #fbbf24;
+    background-color: #fef3c7;
+    padding: 3mm;
+    border-radius: 4pt;
+    margin: 3mm 0;
+  }
+
+  /* 인쇄 시 숨길 UI 요소들 */
+  .print-hide {
+    display: none !important;
+  }
+
+  /* 탭 컨텐츠 */
+  .tab-content {
+    display: block !important;
+  }
+
+  /* 아코디언 */
+  .accordion-content {
+    display: block !important;
+  }
+
+  /* 드롭다운, 토글 등 */
+  .dropdown-menu,
+  .toggle-group,
+  .sheet,
+  .dialog {
+    display: none !important;
+  }
+
+  /* 버튼 */
+  button {
+    display: none !important;
+  }
+
+  /* 아이콘 */
+  .lucide {
+    display: none !important;
+  }
+
+  /* 툴팁 */
+  .tooltip {
+    display: none !important;
+  }
+
+  /* 반응형 숨김 */
+  .md\\:hidden {
+    display: block !important;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* 인쇄 시 보이게 할 요소들 */
+  .print-show {
+    display: block !important;
+  }
+
+  /* 페이지 번호 */
+  .print-page-number::after {
+    content: "페이지 " counter(page);
+  }
+
+  /* 인쇄 시 색상 최적화 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* 인쇄 시 여백 최적화 */
+  .container {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 인쇄 시 그리드 레이아웃 */
+  .grid {
+    display: block !important;
+  }
+
+  .grid > * {
+    width: 100% !important;
+    margin-bottom: 3mm !important;
+  }
+
+  /* 인쇄 시 플렉스 레이아웃 */
+  .flex {
+    display: block !important;
+  }
+
+  .flex > * {
+    display: block !important;
+    margin-bottom: 1mm !important;
+  }
+
+  /* 인쇄 시 공간 절약 */
+  .space-y-4 > * + * {
+    margin-top: 2mm !important;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 3mm !important;
+  }
+
+  .space-y-8 > * + * {
+    margin-top: 4mm !important;
+  }
+
+  /* 인쇄 시 패딩 조정 */
+  .p-4, .p-6, .p-8 {
+    padding: 2mm !important;
+  }
+
+  .px-4, .px-6, .px-8 {
+    padding-left: 2mm !important;
+    padding-right: 2mm !important;
+  }
+
+  .py-4, .py-6, .py-8 {
+    padding-top: 2mm !important;
+    padding-bottom: 2mm !important;
+  }
+
+  /* 인쇄 시 마진 조정 */
+  .m-4, .m-6, .m-8 {
+    margin: 2mm !important;
+  }
+
+  .mx-4, .mx-6, .mx-8 {
+    margin-left: 2mm !important;
+    margin-right: 2mm !important;
+  }
+
+  .my-4, .my-6, .my-8 {
+    margin-top: 2mm !important;
+    margin-bottom: 2mm !important;
+  }
+}
+
+/* 화면에서만 보이는 요소들 */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}

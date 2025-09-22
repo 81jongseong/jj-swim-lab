@@ -187,8 +187,8 @@ const nextConfig = {
     ignoreDuringBuilds: process.env.NODE_ENV === 'production',
   },
   
-  // 출력 설정
-  output: 'standalone', // Docker 컨테이너에 최적화
+  // 출력 설정 (Windows 환경에서 symlink 문제로 비활성화)
+  // output: 'standalone', // Docker 컨테이너에 최적화
   
   // 실험적 기능 설정 (Next.js 14 호환)
   experimental: {

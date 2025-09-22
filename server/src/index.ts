@@ -203,6 +203,8 @@ import aiTrainingPlanRoutes from './routes/aiTrainingPlan';
 import aiInjuryPredictionRoutes from './routes/aiInjuryPrediction';
 import aiPerformancePredictionRoutes from './routes/aiPerformancePrediction';
 import medicalExercisePrescriptionRoutes from './routes/medicalExercisePrescription';
+import healthExerciseAIRoutes from './routes/health-exercise-ai';
+import exercisePrescriptionRoutes from './routes/exercise-prescription';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -450,6 +452,8 @@ app.use('/api/ai-training-plan', aiTrainingPlanRoutes);
 app.use('/api/ai-injury-prediction', aiInjuryPredictionRoutes);
 app.use('/api/ai-performance-prediction', aiPerformancePredictionRoutes);
 app.use('/api/medical-exercise-prescription', medicalExercisePrescriptionRoutes);
+app.use('/api/health-exercise-ai', healthExerciseAIRoutes);
+app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);

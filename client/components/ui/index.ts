@@ -123,7 +123,7 @@ export { default as PoseComparisonViewer } from './PoseComparisonViewer';
 export { default as LazyComponent } from './LazyComponent';
 export { default as OptimizedImage } from './OptimizedImage';
 export { Progress } from './Progress';
-export { default as Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { default as Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './Select';
 export { default as Card, CardHeader, CardTitle, CardContent } from './Card';
 export { default as Textarea } from './Textarea';

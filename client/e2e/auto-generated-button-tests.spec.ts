@@ -3,9 +3,9 @@ import { test, expect } from '@playwright/test';
 /**
  * 자동 생성된 버튼 테스트
  * 
- * 생성 시간: 2025-09-19T15:13:03.922Z
- * 총 페이지 수: 110개
- * 총 버튼 수: 271개
+ * 생성 시간: 2025-09-22T13:15:19.078Z
+ * 총 페이지 수: 118개
+ * 총 버튼 수: 275개
  * 
  * 주의: 이 파일은 자동으로 생성됩니다. 수동으로 편집하지 마세요.
  * 버튼을 추가하거나 수정한 후 다시 생성하려면:
@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
  */
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /3d-viewer
 // 발견된 버튼 수: 2개
 
@@ -134,7 +134,7 @@ test.describe('3d-viewer - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /accessibility
 // 발견된 버튼 수: 5개
 
@@ -366,7 +366,7 @@ test.describe('accessibility - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/3d-viewer/drills
 // 발견된 버튼 수: 3개
 
@@ -524,7 +524,7 @@ test.describe('drills - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/3d-viewer/swimming-styles
 // 발견된 버튼 수: 3개
 
@@ -682,7 +682,7 @@ test.describe('swimming-styles - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/ai-config
 // 발견된 버튼 수: 8개
 
@@ -1025,7 +1025,7 @@ test.describe('ai-config - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/ai-config/recommendations
 // 발견된 버튼 수: 3개
 
@@ -1183,7 +1183,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/ai-model-management
 // 발견된 버튼 수: 1개
 
@@ -1268,7 +1268,7 @@ test.describe('ai-model-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/approvals
 // 발견된 버튼 수: 2개
 
@@ -1389,7 +1389,7 @@ test.describe('approvals - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/bookings
 // 발견된 버튼 수: 10개
 
@@ -1806,7 +1806,7 @@ test.describe('bookings - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/center-info
 // 발견된 버튼 수: 2개
 
@@ -1927,7 +1927,7 @@ test.describe('center-info - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/center-management
 // 발견된 버튼 수: 3개
 
@@ -2085,7 +2085,7 @@ test.describe('center-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/centers
 // 발견된 버튼 수: 4개
 
@@ -2280,7 +2280,7 @@ test.describe('centers - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/course-oversight
 // 발견된 버튼 수: 2개
 
@@ -2403,7 +2403,7 @@ test.describe('course-oversight - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/courses
 // 발견된 버튼 수: 4개
 
@@ -2598,7 +2598,7 @@ test.describe('courses - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/dashboard
 // 발견된 버튼 수: 2개
 
@@ -2721,7 +2721,7 @@ test.describe('dashboard - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/instructor-management
 // 발견된 버튼 수: 2개
 
@@ -2842,7 +2842,7 @@ test.describe('instructor-management - 자동 생성된 버튼 테스트', () =>
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/instructors
 // 발견된 버튼 수: 10개
 
@@ -3259,7 +3259,7 @@ test.describe('instructors - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/lesson-plans
 // 발견된 버튼 수: 4개
 
@@ -3283,9 +3283,9 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
   });
 
 
-  test('버튼 "새 계획 생성" 테스트 (/admin/lesson-plans) #1', async ({ page }) => {
+  test('버튼 "➕ 단계 추가" 테스트 (/admin/lesson-plans) #1', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "새 계획 생성" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "➕ 단계 추가" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3311,7 +3311,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "새 계획 생성" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "➕ 단계 추가" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3320,9 +3320,9 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "보기" 테스트 (/admin/lesson-plans) #2', async ({ page }) => {
+  test('버튼 "💾 저장" 테스트 (/admin/lesson-plans) #2', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "보기" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 저장" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3348,7 +3348,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "보기" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "💾 저장" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3357,9 +3357,9 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "편집" 테스트 (/admin/lesson-plans) #3', async ({ page }) => {
+  test('버튼 "➕ 단계 추가" 테스트 (/admin/lesson-plans) #3', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "편집" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "➕ 단계 추가" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3385,7 +3385,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "편집" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "➕ 단계 추가" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3394,9 +3394,9 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "삭제" 테스트 (/admin/lesson-plans) #4', async ({ page }) => {
+  test('버튼 "💾 저장" 테스트 (/admin/lesson-plans) #4', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "삭제" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 저장" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3422,7 +3422,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "삭제" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "💾 저장" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3454,7 +3454,7 @@ test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.923Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/notices
 // 발견된 버튼 수: 2개
 
@@ -3577,7 +3577,7 @@ test.describe('notices - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/quiz
 // 발견된 버튼 수: 4개
 
@@ -3601,9 +3601,10 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
   });
 
 
-  test('버튼 "새 퀴즈 생성" 테스트 (/admin/quiz) #1', async ({ page }) => {
+  test('버튼 "버튼_1" 테스트 (/admin/quiz) #1', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "새 퀴즈 생성" }).first();
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[0]; // 복잡한 버튼 (인덱스: 0)
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3629,7 +3630,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "새 퀴즈 생성" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "버튼_1" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3638,9 +3639,10 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "보기" 테스트 (/admin/quiz) #2', async ({ page }) => {
+  test('버튼 "버튼_2" 테스트 (/admin/quiz) #2', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "보기" }).first();
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[1]; // 복잡한 버튼 (인덱스: 1)
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3666,7 +3668,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "보기" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "버튼_2" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3675,9 +3677,10 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "편집" 테스트 (/admin/quiz) #3', async ({ page }) => {
+  test('버튼 "버튼_3" 테스트 (/admin/quiz) #3', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "편집" }).first();
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[2]; // 복잡한 버튼 (인덱스: 2)
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3703,7 +3706,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "편집" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "버튼_3" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3712,9 +3715,10 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "삭제" 테스트 (/admin/quiz) #4', async ({ page }) => {
+  test('버튼 "버튼_4" 테스트 (/admin/quiz) #4', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "삭제" }).first();
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[3]; // 복잡한 버튼 (인덱스: 3)
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -3740,7 +3744,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "삭제" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "버튼_4" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -3772,7 +3776,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/quiz-management
 // 발견된 버튼 수: 1개
 
@@ -3857,7 +3861,7 @@ test.describe('quiz-management - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/student-levels
 // 발견된 버튼 수: 2개
 
@@ -3978,7 +3982,278 @@ test.describe('student-levels - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
+// 페이지: /admin/system
+// 발견된 버튼 수: 6개
+
+test.describe('system - 자동 생성된 버튼 테스트', () => {
+  test.beforeEach(async ({ page }) => {
+    // 로그인 필요 페이지 확인
+    if ('/admin/system'.includes('admin') || '/admin/system'.includes('center-admin') || '/admin/system'.includes('instructor') || '/admin/system'.includes('accessibility')) {
+      try {
+        await page.goto('http://localhost:3000/auth/login');
+        await page.waitForTimeout(500);
+        await page.fill('input[name="userId"]', 'center');
+        await page.fill('input[name="password"]', '101010');
+        await page.click('button[type="submit"]');
+        await page.waitForTimeout(1000);
+      } catch (error) {
+        console.log('로그인 실패, 게스트 상태로 계속');
+      }
+    }
+    await page.goto('http://localhost:3000/admin/system');
+    await page.waitForTimeout(500);
+  });
+
+
+  test('버튼 "🔄 새로고침" 테스트 (/admin/system) #1', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔄 새로고침" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "🔄 새로고침" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "💾 지금 백업 실행" 테스트 (/admin/system) #2', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 지금 백업 실행" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "💾 지금 백업 실행" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "버튼_3" 테스트 (/admin/system) #3', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[2]; // 복잡한 버튼 (인덱스: 2)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_3" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "🔄 새로고침" 테스트 (/admin/system) #4', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔄 새로고침" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "🔄 새로고침" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "💾 지금 백업 실행" 테스트 (/admin/system) #5', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 지금 백업 실행" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "💾 지금 백업 실행" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "버튼_6" 테스트 (/admin/system) #6', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[5]; // 복잡한 버튼 (인덱스: 5)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_6" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/admin/system');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('모든 버튼의 접근성 테스트 (/admin/system)', async ({ page }) => {
+    const buttons = await page.locator('button, [role="button"]').all();
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      
+      if (await button.isVisible()) {
+        // 키보드 포커스 가능한지 확인
+        await button.focus();
+        await page.keyboard.press('Tab');
+        
+        // 버튼이 스크린 리더에서 읽을 수 있는지 확인
+        const ariaLabel = await button.getAttribute('aria-label');
+        const buttonText = await button.textContent();
+        
+        expect(ariaLabel || buttonText).toBeTruthy();
+      }
+    }
+  });
+});
+
+
+
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/teaching-methods
 // 발견된 버튼 수: 3개
 
@@ -4137,7 +4412,7 @@ test.describe('teaching-methods - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/users/center-users
 // 발견된 버튼 수: 4개
 
@@ -4334,7 +4609,7 @@ test.describe('center-users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /admin/users
 // 발견된 버튼 수: 6개
 
@@ -4432,9 +4707,9 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "🔧 관리 정보 수정" 테스트 (/admin/users) #3', async ({ page }) => {
+  test('버튼 "💾 저장" 테스트 (/admin/users) #3', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔧 관리 정보 수정" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 저장" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -4460,7 +4735,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "🔧 관리 정보 수정" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "💾 저장" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -4543,9 +4818,9 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     }
   });
 
-  test('버튼 "🔧 관리 정보 수정" 테스트 (/admin/users) #6', async ({ page }) => {
+  test('버튼 "💾 저장" 테스트 (/admin/users) #6', async ({ page }) => {
     // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🔧 관리 정보 수정" }).first();
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "💾 저장" }).first();
     
     // 버튼이 보이는지 확인 (빠른 설정)
     try {
@@ -4571,7 +4846,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
     
     // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
     const newUrl = page.url();
-    console.log(`버튼 "🔧 관리 정보 수정" 클릭: ${currentUrl} → ${newUrl}`);
+    console.log(`버튼 "💾 저장" 클릭: ${currentUrl} → ${newUrl}`);
     
     // 원래 페이지로 돌아가기 (필요한 경우)
     if (newUrl !== currentUrl) {
@@ -4603,7 +4878,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /ai-evaluation
 // 발견된 버튼 수: 1개
 
@@ -4687,7 +4962,7 @@ test.describe('ai-evaluation - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /auth/login
 // 발견된 버튼 수: 1개
 
@@ -4772,7 +5047,7 @@ test.describe('login - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /auth/signup
 // 발견된 버튼 수: 1개
 
@@ -4857,7 +5132,128 @@ test.describe('signup - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
+// 페이지: /center-admin/approvals
+// 발견된 버튼 수: 2개
+
+test.describe('approvals - 자동 생성된 버튼 테스트', () => {
+  test.beforeEach(async ({ page }) => {
+    // 로그인 필요 페이지 확인
+    if ('/center-admin/approvals'.includes('admin') || '/center-admin/approvals'.includes('center-admin') || '/center-admin/approvals'.includes('instructor') || '/center-admin/approvals'.includes('accessibility')) {
+      try {
+        await page.goto('http://localhost:3000/auth/login');
+        await page.waitForTimeout(500);
+        await page.fill('input[name="userId"]', 'center');
+        await page.fill('input[name="password"]', '101010');
+        await page.click('button[type="submit"]');
+        await page.waitForTimeout(1000);
+      } catch (error) {
+        console.log('로그인 실패, 게스트 상태로 계속');
+      }
+    }
+    await page.goto('http://localhost:3000/center-admin/approvals');
+    await page.waitForTimeout(500);
+  });
+
+
+  test('버튼 "새로고침" 테스트 (/center-admin/approvals) #1', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "새로고침" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "새로고침" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/center-admin/approvals');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "새로고침" 테스트 (/center-admin/approvals) #2', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "새로고침" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "새로고침" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/center-admin/approvals');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('모든 버튼의 접근성 테스트 (/center-admin/approvals)', async ({ page }) => {
+    const buttons = await page.locator('button, [role="button"]').all();
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      
+      if (await button.isVisible()) {
+        // 키보드 포커스 가능한지 확인
+        await button.focus();
+        await page.keyboard.press('Tab');
+        
+        // 버튼이 스크린 리더에서 읽을 수 있는지 확인
+        const ariaLabel = await button.getAttribute('aria-label');
+        const buttonText = await button.textContent();
+        
+        expect(ariaLabel || buttonText).toBeTruthy();
+      }
+    }
+  });
+});
+
+
+
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/courses
 // 발견된 버튼 수: 2개
 
@@ -4980,7 +5376,7 @@ test.describe('courses - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/health
 // 발견된 버튼 수: 6개
 
@@ -5249,7 +5645,128 @@ test.describe('health - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
+// 페이지: /center-admin/lesson-plans
+// 발견된 버튼 수: 2개
+
+test.describe('lesson-plans - 자동 생성된 버튼 테스트', () => {
+  test.beforeEach(async ({ page }) => {
+    // 로그인 필요 페이지 확인
+    if ('/center-admin/lesson-plans'.includes('admin') || '/center-admin/lesson-plans'.includes('center-admin') || '/center-admin/lesson-plans'.includes('instructor') || '/center-admin/lesson-plans'.includes('accessibility')) {
+      try {
+        await page.goto('http://localhost:3000/auth/login');
+        await page.waitForTimeout(500);
+        await page.fill('input[name="userId"]', 'center');
+        await page.fill('input[name="password"]', '101010');
+        await page.click('button[type="submit"]');
+        await page.waitForTimeout(1000);
+      } catch (error) {
+        console.log('로그인 실패, 게스트 상태로 계속');
+      }
+    }
+    await page.goto('http://localhost:3000/center-admin/lesson-plans');
+    await page.waitForTimeout(500);
+  });
+
+
+  test('버튼 "✏️ 수정" 테스트 (/center-admin/lesson-plans) #1', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "✏️ 수정" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "✏️ 수정" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/center-admin/lesson-plans');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "🗑️ 삭제" 테스트 (/center-admin/lesson-plans) #2', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "🗑️ 삭제" }).first();
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "🗑️ 삭제" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/center-admin/lesson-plans');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('모든 버튼의 접근성 테스트 (/center-admin/lesson-plans)', async ({ page }) => {
+    const buttons = await page.locator('button, [role="button"]').all();
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      
+      if (await button.isVisible()) {
+        // 키보드 포커스 가능한지 확인
+        await button.focus();
+        await page.keyboard.press('Tab');
+        
+        // 버튼이 스크린 리더에서 읽을 수 있는지 확인
+        const ariaLabel = await button.getAttribute('aria-label');
+        const buttonText = await button.textContent();
+        
+        expect(ariaLabel || buttonText).toBeTruthy();
+      }
+    }
+  });
+});
+
+
+
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/notices
 // 발견된 버튼 수: 1개
 
@@ -5334,7 +5851,7 @@ test.describe('notices - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/payments
 // 발견된 버튼 수: 12개
 
@@ -5837,7 +6354,7 @@ test.describe('payments - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/reports
 // 발견된 버튼 수: 6개
 
@@ -6112,7 +6629,7 @@ test.describe('reports - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/reviews
 // 발견된 버튼 수: 12개
 
@@ -6615,7 +7132,7 @@ test.describe('reviews - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/settings
 // 발견된 버튼 수: 2개
 
@@ -6736,7 +7253,7 @@ test.describe('settings - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /center-admin/users
 // 발견된 버튼 수: 6개
 
@@ -7011,7 +7528,7 @@ test.describe('users - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /community/new
 // 발견된 버튼 수: 4개
 
@@ -7208,7 +7725,7 @@ test.describe('new - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /community
 // 발견된 버튼 수: 4개
 
@@ -7405,7 +7922,7 @@ test.describe('community - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /community/[id]
 // 발견된 버튼 수: 2개
 
@@ -7526,7 +8043,7 @@ test.describe('[id] - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/checklist
 // 발견된 버튼 수: 2개
 
@@ -7647,7 +8164,7 @@ test.describe('checklist - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/courses
 // 발견된 버튼 수: 4개
 
@@ -7844,7 +8361,7 @@ test.describe('courses - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/dashboard
 // 발견된 버튼 수: 1개
 
@@ -7928,7 +8445,206 @@ test.describe('dashboard - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
+// 페이지: /instructor/exercise-prescription
+// 발견된 버튼 수: 4개
+
+test.describe('exercise-prescription - 자동 생성된 버튼 테스트', () => {
+  test.beforeEach(async ({ page }) => {
+    // 로그인 필요 페이지 확인
+    if ('/instructor/exercise-prescription'.includes('admin') || '/instructor/exercise-prescription'.includes('center-admin') || '/instructor/exercise-prescription'.includes('instructor') || '/instructor/exercise-prescription'.includes('accessibility')) {
+      try {
+        await page.goto('http://localhost:3000/auth/login');
+        await page.waitForTimeout(500);
+        await page.fill('input[name="userId"]', 'center');
+        await page.fill('input[name="password"]', '101010');
+        await page.click('button[type="submit"]');
+        await page.waitForTimeout(1000);
+      } catch (error) {
+        console.log('로그인 실패, 게스트 상태로 계속');
+      }
+    }
+    await page.goto('http://localhost:3000/instructor/exercise-prescription');
+    await page.waitForTimeout(500);
+  });
+
+
+  test('버튼 "버튼_1" 테스트 (/instructor/exercise-prescription) #1', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[0]; // 복잡한 버튼 (인덱스: 0)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_1" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/instructor/exercise-prescription');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "버튼_2" 테스트 (/instructor/exercise-prescription) #2', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[1]; // 복잡한 버튼 (인덱스: 1)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_2" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/instructor/exercise-prescription');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "버튼_3" 테스트 (/instructor/exercise-prescription) #3', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[2]; // 복잡한 버튼 (인덱스: 2)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_3" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/instructor/exercise-prescription');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('버튼 "버튼_4" 테스트 (/instructor/exercise-prescription) #4', async ({ page }) => {
+    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
+    const buttons = await page.locator('button, [role="button"]').all();
+    const button = buttons[3]; // 복잡한 버튼 (인덱스: 3)
+    
+    // 버튼이 보이는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
+      return;
+    }
+    
+    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
+    try {
+      await expect(button).toBeEnabled({ timeout: 1000 });
+    } catch (error) {
+      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
+    }
+    
+    // 현재 URL 저장
+    const currentUrl = page.url();
+    
+    // 버튼 클릭
+    await button.click();
+    await page.waitForTimeout(1000);
+    
+    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
+    const newUrl = page.url();
+    console.log(`버튼 "버튼_4" 클릭: ${currentUrl} → ${newUrl}`);
+    
+    // 원래 페이지로 돌아가기 (필요한 경우)
+    if (newUrl !== currentUrl) {
+      await page.goto('http://localhost:3000/instructor/exercise-prescription');
+      await page.waitForTimeout(1000);
+    }
+  });
+
+  test('모든 버튼의 접근성 테스트 (/instructor/exercise-prescription)', async ({ page }) => {
+    const buttons = await page.locator('button, [role="button"]').all();
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      
+      if (await button.isVisible()) {
+        // 키보드 포커스 가능한지 확인
+        await button.focus();
+        await page.keyboard.press('Tab');
+        
+        // 버튼이 스크린 리더에서 읽을 수 있는지 확인
+        const ariaLabel = await button.getAttribute('aria-label');
+        const buttonText = await button.textContent();
+        
+        expect(ariaLabel || buttonText).toBeTruthy();
+      }
+    }
+  });
+});
+
+
+
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/health/overview
 // 발견된 버튼 수: 2개
 
@@ -8049,7 +8765,7 @@ test.describe('overview - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/health/progress
 // 발견된 버튼 수: 2개
 
@@ -8170,7 +8886,7 @@ test.describe('progress - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/health/recommendations
 // 발견된 버튼 수: 2개
 
@@ -8291,7 +9007,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/health/students
 // 발견된 버튼 수: 2개
 
@@ -8412,7 +9128,7 @@ test.describe('students - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/lesson-planner
 // 발견된 버튼 수: 2개
 
@@ -8533,7 +9249,7 @@ test.describe('lesson-planner - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/progress
 // 발견된 버튼 수: 5개
 
@@ -8767,7 +9483,7 @@ test.describe('progress - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/reviews
 // 발견된 버튼 수: 4개
 
@@ -8964,7 +9680,7 @@ test.describe('reviews - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/schedule
 // 발견된 버튼 수: 2개
 
@@ -9085,430 +9801,7 @@ test.describe('schedule - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
-// 페이지: /instructor/students
-// 발견된 버튼 수: 10개
-
-test.describe('students - 자동 생성된 버튼 테스트', () => {
-  test.beforeEach(async ({ page }) => {
-    // 로그인 필요 페이지 확인
-    if ('/instructor/students'.includes('admin') || '/instructor/students'.includes('center-admin') || '/instructor/students'.includes('instructor') || '/instructor/students'.includes('accessibility')) {
-      try {
-        await page.goto('http://localhost:3000/auth/login');
-        await page.waitForTimeout(500);
-        await page.fill('input[name="userId"]', 'center');
-        await page.fill('input[name="password"]', '101010');
-        await page.click('button[type="submit"]');
-        await page.waitForTimeout(1000);
-      } catch (error) {
-        console.log('로그인 실패, 게스트 상태로 계속');
-      }
-    }
-    await page.goto('http://localhost:3000/instructor/students');
-    await page.waitForTimeout(500);
-  });
-
-
-  test('버튼 "다시 시도" 테스트 (/instructor/students) #1', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "다시 시도" }).first();
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_2" 테스트 (/instructor/students) #2', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[1]; // 복잡한 버튼 (인덱스: 1)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_2" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_3" 테스트 (/instructor/students) #3', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[2]; // 복잡한 버튼 (인덱스: 2)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_3" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "저장" 테스트 (/instructor/students) #4', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "저장" }).first();
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "저장" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_5" 테스트 (/instructor/students) #5', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[4]; // 복잡한 버튼 (인덱스: 4)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_5" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "다시 시도" 테스트 (/instructor/students) #6', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "다시 시도" }).first();
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "다시 시도" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_7" 테스트 (/instructor/students) #7', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[6]; // 복잡한 버튼 (인덱스: 6)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_7" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_8" 테스트 (/instructor/students) #8', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[7]; // 복잡한 버튼 (인덱스: 7)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_8" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "저장" 테스트 (/instructor/students) #9', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const button = page.locator('button, [role="button"], .button, [class*="button"]').filter({ hasText: "저장" }).first();
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "저장" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('버튼 "버튼_10" 테스트 (/instructor/students) #10', async ({ page }) => {
-    // 버튼 찾기 (복잡한 텍스트의 경우 인덱스로 찾기)
-    const buttons = await page.locator('button, [role="button"]').all();
-    const button = buttons[9]; // 복잡한 버튼 (인덱스: 9)
-    
-    // 버튼이 보이는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeVisible({ timeout: 3000 });
-    } catch (error) {
-      console.log('버튼을 찾을 수 없습니다. 스킵합니다.');
-      return;
-    }
-    
-    // 버튼이 활성화되어 있는지 확인 (빠른 설정)
-    try {
-      await expect(button).toBeEnabled({ timeout: 1000 });
-    } catch (error) {
-      console.log('버튼이 비활성화되어 있습니다. 계속 진행합니다.');
-    }
-    
-    // 현재 URL 저장
-    const currentUrl = page.url();
-    
-    // 버튼 클릭
-    await button.click();
-    await page.waitForTimeout(1000);
-    
-    // 클릭 후 상태 확인 (페이지 이동 또는 모달 열림 등)
-    const newUrl = page.url();
-    console.log(`버튼 "버튼_10" 클릭: ${currentUrl} → ${newUrl}`);
-    
-    // 원래 페이지로 돌아가기 (필요한 경우)
-    if (newUrl !== currentUrl) {
-      await page.goto('http://localhost:3000/instructor/students');
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test('모든 버튼의 접근성 테스트 (/instructor/students)', async ({ page }) => {
-    const buttons = await page.locator('button, [role="button"]').all();
-    
-    for (let i = 0; i < buttons.length; i++) {
-      const button = buttons[i];
-      
-      if (await button.isVisible()) {
-        // 키보드 포커스 가능한지 확인
-        await button.focus();
-        await page.keyboard.press('Tab');
-        
-        // 버튼이 스크린 리더에서 읽을 수 있는지 확인
-        const ariaLabel = await button.getAttribute('aria-label');
-        const buttonText = await button.textContent();
-        
-        expect(ariaLabel || buttonText).toBeTruthy();
-      }
-    }
-  });
-});
-
-
-
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/teaching-methods
 // 발견된 버튼 수: 10개
 
@@ -9933,7 +10226,7 @@ test.describe('teaching-methods - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /instructor/templates
 // 발견된 버튼 수: 11개
 
@@ -10387,7 +10680,7 @@ test.describe('templates - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /localization
 // 발견된 버튼 수: 4개
 
@@ -10582,7 +10875,7 @@ test.describe('localization - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /map
 // 발견된 버튼 수: 1개
 
@@ -10666,7 +10959,7 @@ test.describe('map - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /membership
 // 발견된 버튼 수: 10개
 
@@ -11091,7 +11384,7 @@ test.describe('membership - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /mobile-learning
 // 발견된 버튼 수: 4개
 
@@ -11288,7 +11581,7 @@ test.describe('mobile-learning - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /news
 // 발견된 버튼 수: 1개
 
@@ -11372,7 +11665,7 @@ test.describe('news - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /notifications
 // 발견된 버튼 수: 11개
 
@@ -11834,7 +12127,7 @@ test.describe('notifications - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /payments
 // 발견된 버튼 수: 1개
 
@@ -11918,7 +12211,7 @@ test.describe('payments - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /personalized-dashboard
 // 발견된 버튼 수: 2개
 
@@ -12041,7 +12334,7 @@ test.describe('personalized-dashboard - 자동 생성된 버튼 테스트', () =
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /quiz
 // 발견된 버튼 수: 6개
 
@@ -12312,7 +12605,7 @@ test.describe('quiz - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /quiz/[id]
 // 발견된 버튼 수: 4개
 
@@ -12509,7 +12802,7 @@ test.describe('[id] - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /student/recommendations
 // 발견된 버튼 수: 4개
 
@@ -12704,7 +12997,7 @@ test.describe('recommendations - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /uploads
 // 발견된 버튼 수: 2개
 
@@ -12825,7 +13118,7 @@ test.describe('uploads - 자동 생성된 버튼 테스트', () => {
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /user-role-integration
 // 발견된 버튼 수: 4개
 
@@ -13024,7 +13317,7 @@ test.describe('user-role-integration - 자동 생성된 버튼 테스트', () =>
 
 
 
-// 자동 생성된 테스트 코드 - 2025-09-19T15:13:03.924Z
+// 자동 생성된 테스트 코드 - 2025-09-22T13:15:19.079Z
 // 페이지: /video-upload
 // 발견된 버튼 수: 6개
 

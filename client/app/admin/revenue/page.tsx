@@ -61,9 +61,11 @@ export default function RevenuePage() {
   const fetchRevenueData = async () => {
     try {
       setIsLoading(true);
+      console.log('🔍 Revenue 데이터 로드 시작...');
       
       // 실제 API 호출
       const apiResponse = await getRevenueStats();
+      console.log('✅ Revenue API 응답:', apiResponse);
       setApiData(apiResponse.data);
       
       // API 데이터를 기존 형식으로 변환
@@ -95,7 +97,12 @@ export default function RevenuePage() {
       setRevenueData(transformedData);
       setIsLoading(false);
     } catch (error) {
-      console.error('매출 데이터 가져오기 실패:', error);
+      console.error('❌ 매출 데이터 가져오기 실패:', error);
+      console.error('❌ 오류 상세:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setIsLoading(false);
       
       // API 실패 시 mock 데이터 사용 (fallback)

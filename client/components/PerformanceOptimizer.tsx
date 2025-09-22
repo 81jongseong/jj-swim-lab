@@ -76,7 +76,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Progress from '@/components/ui/Progress';
 import Badge from '@/components/ui/Badge';
-import Tabs, { TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
 interface PerformanceMetrics {
   memoryUsage: number;

@@ -98,7 +98,9 @@ const TableHeader: React.FC<TableHeaderProps> = ({
       role={accessible ? 'rowgroup' : undefined}
       {...props}
     >
-      {children}
+      <tr>
+        {children}
+      </tr>
     </thead>
   );
 };

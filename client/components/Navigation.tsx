@@ -92,7 +92,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
@@ -143,6 +143,7 @@ const userMenuStructure = {
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
       { href: '/instructor/schedule', label: '📅 일정 관리' },
+      { href: '/instructor/exercise-prescription', label: '🏃‍♂️ 운동 처방' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
     reports: [
@@ -191,7 +192,7 @@ const userMenuStructure = {
       { href: '/center-admin/notices', label: '📢 공지사항 관리' },
     ],
     approvals: [
-      { href: '/center-admin/approvals', label: '⏳ 센터 승인', description: '강습신청/결제/환불/일정변경 승인' },
+      { href: '/center-admin/approvals', label: '⏳ 회원 강습 승인', description: '강습신청/결제/환불/일정변경 승인' },
     ],
     center: [
       { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
@@ -203,6 +204,7 @@ const userMenuStructure = {
       { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
       { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
       { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
+      { href: '/center-admin/algorithm-performance', label: '📈 알고리즘 성과' },
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
@@ -247,10 +249,10 @@ const userMenuStructure = {
     revenue: [
       { href: '/admin/payments', label: '💰 전체 결제 관리' },
       { href: '/admin/revenue', label: '💰 총매출 관리' },
-      { href: '/admin/reports', label: '📊 전체 통계' },
     ],
-    approvals: [
-      { href: '/admin/approvals', label: '⏳ 시스템 승인', description: '회원가입/강사등록/센터등록 승인' },
+    customerSupport: [
+      { href: '/admin/reports', label: '🎧 고객지원 관리' },
+      { href: '/admin/approvals', label: '✅ 가입 승인', description: '강사등록/센터등록 승인' },
     ],
             ai: [
           { href: '/ai-analysis', label: '🤖 AI 분석' },
@@ -264,6 +266,8 @@ const userMenuStructure = {
         ],
     health: [
       { href: '/admin/health-config', label: '🏥 건강정보 시스템 설정' },
+      { href: '/admin/exercise-prescription', label: '🏃‍♂️ 운동 처방 가이드' },
+      { href: '/admin/algorithm-analytics', label: '📈 알고리즘 분석' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황' },
       { href: '/admin/health/statistics', label: '📈 건강 통계 분석' },
       { href: '/admin/health/ai-config', label: '🤖 건강 AI 설정' },
@@ -366,7 +370,7 @@ const menuGrouping = {
     { groupName: '👥 사용자 관리', categories: ['users'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '💰 매출 관리', categories: ['revenue'] },
-    { groupName: '⏳ 시스템 승인', categories: ['approvals'] },
+    { groupName: '🎧 고객지원', categories: ['customerSupport'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
     { groupName: '🤖 AI 시스템', categories: ['ai'] },
     { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },
@@ -383,6 +387,22 @@ const menuGrouping = {
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 모바일 메뉴가 열릴 때 현재 페이지 항목으로 스크롤
+  useEffect(() => {
+    if (isMenuOpen) {
+      setTimeout(() => {
+        const activeMenuItem = document.querySelector('[data-active="true"]');
+        if (activeMenuItem) {
+          activeMenuItem.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
+    }
+  }, [isMenuOpen]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
@@ -448,8 +468,8 @@ export default function Navigation() {
       if (isMobile) {
         // 모바일 메뉴 렌더링
         return (
-          <div key={groupIndex} className="px-3 py-2 border-b border-gray-200">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          <div key={groupIndex} className="py-2 border-b border-gray-200">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">
               {group.groupName}
             </div>
             {group.categories.map(category => {
@@ -458,10 +478,31 @@ export default function Navigation() {
                 <Link
                   key={`${category}-${itemIndex}`}
                   href={item.href}
-                  className={`block px-3 py-2 text-sm text-gray-700 hover:text-blue-600 transition-colors ${
-                    pathname === item.href ? 'text-blue-600 font-semibold' : ''
+                  data-active={pathname === item.href}
+                  className={`block px-3 py-2 text-sm transition-colors rounded-md mx-2 ${
+                    pathname === item.href 
+                      ? 'bg-blue-500 text-white font-bold border-l-3 border-blue-700 shadow-sm' 
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMenuOpen(false);
+                    // 포커스된 메뉴가 화면에 보이도록 스크롤
+                    if (pathname === item.href) {
+                      e.preventDefault();
+                      setTimeout(() => {
+                        const element = e.currentTarget;
+                        element.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'center' 
+                        });
+                      }, 100);
+                    } else {
+                      // 페이지 상단으로 스크롤
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
                 >
                   {item.label}
                 </Link>
@@ -502,7 +543,17 @@ export default function Navigation() {
                     <Link
                       key={`${category}-${itemIndex}`}
                       href={item.href}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      className={`block px-4 py-2 text-sm transition-colors ${
+                        pathname === item.href 
+                          ? 'bg-blue-100 text-blue-700 font-semibold border-r-2 border-blue-600' 
+                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                      }`}
+                      onClick={() => {
+                        // 페이지 상단으로 스크롤
+                        setTimeout(() => {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                      }}
                     >
                       {item.label}
                     </Link>
@@ -592,14 +643,14 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Menu - 반응형으로 자동 조정 */}
+        {/* Mobile Menu - 햄버거 버튼 아래 오른쪽 정렬 */}
         {isMenuOpen && (
-          <div className="lg:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t max-h-96 overflow-y-auto">
+          <div className="lg:hidden absolute top-16 right-4 z-50 bg-white border border-gray-200 rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]">
+            <div className="px-4 pt-3 pb-3 space-y-1 max-h-[70vh] overflow-y-auto">
               {renderMenuGroups(true)}
               
               {isLoggedIn ? (
-                <div className="px-3 py-2 border-t border-gray-200">
+                <div className="px-4 py-2 border-t border-gray-200">
                   <div className="text-sm text-gray-700 mb-2">
                     {userName}님 환영합니다
                   </div>
@@ -611,7 +662,7 @@ export default function Navigation() {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors"
+                    className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors"
                   >
                     로그아웃
                   </button>

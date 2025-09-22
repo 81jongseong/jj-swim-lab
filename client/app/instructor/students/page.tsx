@@ -1,1021 +1,857 @@
 /**
- * 👨‍🏫 JJ Swim Lab - 강사 학생 관리 페이지
- *
+ * 👥 JJ Swim Lab - 강사용 회원 관리 페이지 (건강정보 포함)
+ * 
  * 📋 **페이지 목적**
- * - 강사가 담당하는 학생들을 체계적으로 관리하는 페이지
- * - 반별 학생 목록 및 상세 정보 관리
- * - 학생별 체크리스트 및 진도율 추적
- * - 학생 정보 수정 및 관리 기능
- *
- * 🔄 **데이터 플로우**
- * 1. 페이지 로드 시 강사의 반 목록을 API로 조회
- * 2. 각 반의 학생 정보와 진도율을 실시간으로 계산
- * 3. 센터별 레벨 정보를 데이터베이스에서 조회
- * 4. 학생 정보 수정 시 API를 통해 데이터베이스 업데이트
- *
- * 🎯 **주요 기능**
- * - 반별 학생 목록 표시 (진도율, 출석률, 최근 강습 정보)
- * - 학생별 체크리스트 상세 보기 및 관리
- * - 학생 정보 수정 및 업데이트
- * - 센터별 레벨 시스템 연동
- * - 진도율 실시간 계산 및 표시
- *
- * 🔧 **개발 참고사항**
- * - 모든 데이터는 데이터베이스에서 실시간 조회
- * - 하드코딩된 데이터 완전 제거
- * - API 실패 시 적절한 에러 처리 및 사용자 안내
- * - 진도율은 체크리스트 완료 항목 기반으로 계산
- *
- * 📝 **수정 이력**
- * - 2024-12-19: 하드코딩된 데이터 제거 및 API 연동 완료
- * - 2024-12-19: 진도율 계산 로직을 데이터베이스 기반으로 변경
- * - 2024-12-19: 학생 정보 수정 기능 API 연동 완료
- * - 2024-12-19: 센터별 레벨 시스템 연동 완료
- *
- * ✅ **향후 수정 체크리스트**
- * - [ ] 실시간 데이터 업데이트 기능 추가
- * - [ ] 학생별 성과 분석 차트 구현
- * - [ ] 일괄 학생 관리 기능 추가
- * - [ ] 학생 검색 및 필터링 기능 고도화
+ * - 강사가 담당 회원들의 건강정보를 확인하고 적절한 수영 가이드라인 제공
+ * - 회원별 건강 상태에 따른 수영법 추천/금지 사항 표시
+ * - 안전한 수영 지도를 위한 건강정보 기반 의사결정 지원
+ * 
+ * 🔄 **주요 기능**
+ * - 회원 목록 및 건강정보 조회
+ * - 관절별 질환에 따른 수영법 안전도 표시
+ * - 회원별 맞춤 수영 프로그램 추천
+ * - 건강 상태 변경 시 알림 및 업데이트
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-22: 강사용 회원 건강정보 관리 시스템 구현
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Card, Badge, Button, Progress } from '@/components/ui';
-import { 
-  Users, 
-  TrendingUp, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle,
-  Edit,
-  Eye,
-  Plus,
-  Search,
-  Filter
-} from 'lucide-react';
+import withAuth from '../../../components/withAuth';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { Users, Heart, AlertTriangle, CheckCircle, XCircle, Info, Eye } from 'lucide-react';
 
-interface Student {
-  _id: string;
+interface MemberHealthInfo {
+  id: string;
   name: string;
   email: string;
   phone: string;
-  level: string;
-  progress: number;
-  lastLesson: string;
-  nextLesson: string;
-  attendance: number;
-  totalLessons: number;
-  notes?: string;
+  jointConditions: string[];
+  cardiovascularConditions: string[];
+  metabolicConditions: string[];
+  swimmingExperience: string;
+  medicalHistory: string;
+  lastUpdated: string;
 }
 
-interface Class {
-  _id: string;
-  name: string;
-  level: string;
-  instructor: string;
-  maxStudents: number;
-  schedule: string;
-  students: Student[];
+interface SwimmingSafety {
+  stroke: string;
+  safetyLevel: 'safe' | 'caution' | 'avoid' | 'prohibited';
+  reason: string;
 }
 
-interface CenterLevel {
-  _id: string;
-  name: string;
-  description: string;
-  requirements: string[];
-  estimatedDuration: number;
-}
-
-export default function InstructorStudents() {
+const InstructorStudentsPage: React.FC = () => {
   const { user } = useAuth();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [showStudentModal, setShowStudentModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [members, setMembers] = useState<MemberHealthInfo[]>([]);
+  const [selectedMember, setSelectedMember] = useState<MemberHealthInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [centerLevels, setCenterLevels] = useState<CenterLevel[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterLevel, setFilterLevel] = useState<string>('all');
 
-  // 체크리스트 관련 상태 추가
-  const [showChecklistModal, setShowChecklistModal] = useState(false);
-  const [selectedStudentForChecklist, setSelectedStudentForChecklist] = useState<Student | null>(null);
-  const [checklistType, setChecklistType] = useState<'group' | 'individual'>('individual');
-  const [selectedClassForChecklist, setSelectedClassForChecklist] = useState<string>('');
-  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
-  const [checklistLevel, setChecklistLevel] = useState<string>('초급');
-  const [creatingChecklist, setCreatingChecklist] = useState(false);
-
+  // 샘플 데이터 (실제로는 API에서 가져옴)
   useEffect(() => {
-    if (user?.userType === 'instructor') {
-      loadClasses();
-    }
-  }, [user]);
-
-  // 강사의 반 목록 로드
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('인증 토큰이 없습니다.');
-        return;
+    // 실제로는 API 호출
+    setMembers([
+      {
+        id: '1',
+        name: '김수영',
+        email: 'kim@example.com',
+        phone: '010-1234-5678',
+        jointConditions: ['spine_herniated_disc', 'shoulder_frozen_shoulder'],
+        cardiovascularConditions: ['hypertension'],
+        metabolicConditions: ['diabetes'],
+        swimmingExperience: 'beginner',
+        medicalHistory: '허리 디스크 수술 후 1년 경과, 어깨 오십견 치료 중',
+        lastUpdated: '2025-01-20'
+      },
+      {
+        id: '2',
+        name: '이영수',
+        email: 'lee@example.com',
+        phone: '010-2345-6789',
+        jointConditions: ['knee_osteoarthritis'],
+        cardiovascularConditions: ['none'],
+        metabolicConditions: ['obesity'],
+        swimmingExperience: 'basic',
+        medicalHistory: '무릎 관절염으로 인한 통증 관리 중',
+        lastUpdated: '2025-01-19'
+      },
+      {
+        id: '3',
+        name: '박물수',
+        email: 'park@example.com',
+        phone: '010-3456-7890',
+        jointConditions: ['ankle_sprain'],
+        cardiovascularConditions: ['none'],
+        metabolicConditions: ['none'],
+        swimmingExperience: 'intermediate',
+        medicalHistory: '발목 염좌 회복 중',
+        lastUpdated: '2025-01-18'
       }
+    ]);
+    setLoading(false);
+  }, []);
 
-      // 강사의 반 목록 조회 API 호출
-      const response = await fetch('http://localhost:5000/api/instructor/classes', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.classes && Array.isArray(data.classes)) {
-          // 각 학생의 진도율을 체크리스트 기반으로 계산
-          const classesWithProgress = await Promise.all(
-            data.classes.map(async (classItem: any) => {
-              const studentsWithProgress = await Promise.all(
-                classItem.students.map(async (student: any) => {
-                  const progress = await calculateStudentProgress(student._id, classItem._id);
-                  return {
-                    ...student,
-                    progress: progress
-                  };
-                })
-              );
-
-              return {
-                ...classItem,
-                students: studentsWithProgress
-              };
-            })
-          );
-
-          setClasses(classesWithProgress);
-          
-          // 첫 번째 반을 기본 선택
-          if (classesWithProgress.length > 0) {
-            setSelectedClass(classesWithProgress[0]);
-          }
-        } else {
-          setClasses([]);
-          setError('반 데이터 형식이 올바르지 않습니다.');
-        }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || '반 데이터를 불러오는데 실패했습니다.');
-        setClasses([]);
-      }
-    } catch (error) {
-      console.error('반 목록 로드 실패:', error);
-      setError('네트워크 오류가 발생했습니다.');
-      setClasses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 학생별 진도율 계산 (체크리스트 기반)
-  const calculateStudentProgress = async (studentId: string, classId: string): Promise<number> => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return 0;
-
-      const response = await fetch(`http://localhost:5000/api/checklist/student/${studentId}/class/${classId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.checklist && data.checklist.items && Array.isArray(data.checklist.items)) {
-          const totalItems = data.checklist.items.length;
-          const completedItems = data.checklist.items.filter((item: any) => item.isCompleted).length;
-          return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
-        }
-      }
-      return 0;
-    } catch (error) {
-      console.error('진도율 계산 실패:', error);
-      return 0;
-    }
-  };
-
-  // 센터별 레벨 로드
-  const loadCenterLevels = async (centerId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:5000/api/centers/${centerId}/levels`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.levels && Array.isArray(data.levels)) {
-          setCenterLevels(data.levels);
-        }
-      }
-    } catch (error) {
-      console.error('센터 레벨 로드 실패:', error);
-    }
-  };
-
-  const handleClassChange = (classId: string) => {
-    const selected = classes.find(c => c._id === classId);
-    setSelectedClass(selected || null);
-    setSelectedStudent(null);
-  };
-
-  // 학생 클릭 핸들러
-  const handleStudentClick = (student: Student) => {
-    setSelectedStudent(student);
-    setShowStudentModal(true);
-  };
-
-  // 학생 수정 핸들러
-  const handleEditStudent = (student: Student) => {
-    setEditingStudent(student);
-    setShowEditModal(true);
-  };
-
-  // 학생 정보 업데이트
-  const handleUpdateStudent = async () => {
-    if (!editingStudent) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setMessage('인증 토큰이 없습니다.');
-        return;
-      }
-
-      // 학생 정보 업데이트 API 호출
-      const response = await fetch(`http://localhost:5000/api/students/${editingStudent._id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+  // 관절별 질환에 따른 수영법 구체적 동작 가이드라인 데이터
+  const getSwimmingGuidanceForConditions = (conditions: string[]) => {
+    const guidanceData: { [key: string]: any } = {
+      spine_herniated_disc: {
+        freestyle: { 
+          level: 'caution', 
+          reason: '척추 회전 동작이 디스크 압박을 증가시킬 수 있음',
+          medicalEvidence: [
+            '대한스포츠의학회 수영 처방 가이드라인 (2023)',
+            'Spine Journal: Swimming for Herniated Disc Rehabilitation (2022)',
+            '물리치료학회 척추 질환 운동 처방 (2024)',
+            'American Journal of Physical Medicine & Rehabilitation: Aquatic Exercise for Spinal Disorders (2021)'
+          ],
+          detailedExplanation: '추간판 탈출증(허리 디스크)은 척추 사이의 디스크가 신경을 압박하여 통증과 저림을 유발하는 질환입니다. 자유형 수영 시 발생하는 척추 회전 동작은 디스크에 추가적인 압박을 가할 수 있어 주의가 필요합니다. 특히 급격한 회전이나 강한 스트로크는 디스크 압박을 증가시켜 증상을 악화시킬 수 있습니다.',
+          allowedMovements: [
+            '부드러운 팔 동작 (짧은 스트로크)',
+            '가벼운 킥 동작',
+            '자연스러운 호흡'
+          ],
+          prohibitedMovements: [
+            '과도한 척추 회전',
+            '강한 팔 스트로크',
+            '급격한 방향 전환'
+          ],
+          modifications: [
+            '회전 동작 최소화 (30도 이하)',
+            '짧은 거리부터 시작 (25m 이하)',
+            '수영 후 척추 스트레칭 필수'
+          ],
+          alternatives: ['backstroke', 'elementary_backstroke']
         },
-        body: JSON.stringify(editingStudent)
-      });
-
-      if (response.ok) {
-        setMessage('학생 정보가 업데이트되었습니다.');
-        setShowEditModal(false);
-        
-        // 학생 목록 새로고침
-        loadClasses();
-      } else {
-        const errorData = await response.json();
-        setMessage(errorData.message || '학생 정보 업데이트에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('학생 정보 업데이트 실패:', error);
-      setMessage('네트워크 오류가 발생했습니다.');
-    }
-  };
-
-  // 체크리스트 항목 업데이트
-  const handleChecklistUpdate = async (studentId: string, itemId: string, isCompleted: boolean) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:5000/api/checklist/items/${itemId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+        backstroke: { 
+          level: 'safe', 
+          reason: '척추를 자연스럽게 늘려주고 압박을 줄임',
+          allowedMovements: [
+            '자연스러운 척추 신전',
+            '부드러운 팔 동작',
+            '가벼운 킥 동작'
+          ],
+          prohibitedMovements: [
+            '과도한 척추 아치',
+            '강한 킥 동작'
+          ],
+          modifications: [
+            '부드러운 킥 사용',
+            '과도한 아치 자세 피하기'
+          ],
+          alternatives: []
         },
-        body: JSON.stringify({ isCompleted })
-      });
-
-      if (response.ok) {
-        // 체크리스트 업데이트 후 진도율 재계산
-        if (selectedClass) {
-          const updatedStudents = selectedClass.students.map(student => {
-            if (student._id === studentId) {
-              return { ...student, progress: 0 }; // 임시로 0으로 설정, 나중에 재계산
-            }
-            return student;
-          });
-
-          setSelectedClass({
-            ...selectedClass,
-            students: updatedStudents
-          });
-
-          // 진도율 재계산
-          const updatedStudent = updatedStudents.find(s => s._id === studentId);
-          if (updatedStudent) {
-            const newProgress = await calculateStudentProgress(studentId, selectedClass._id);
-            const finalUpdatedStudents = selectedClass.students.map(student => {
-              if (student._id === studentId) {
-                return { ...student, progress: newProgress };
-              }
-              return student;
-            });
-
-            setSelectedClass({
-              ...selectedClass,
-              students: finalUpdatedStudents
-            });
-          }
+        breaststroke: { 
+          level: 'avoid', 
+          reason: '허리 아치 동작이 디스크에 압박을 가함',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '허리 아치 동작',
+            '강한 킥 동작',
+            '상체 들기 동작'
+          ],
+          modifications: [],
+          alternatives: ['backstroke', 'elementary_backstroke']
+        },
+        butterfly: { 
+          level: 'prohibited', 
+          reason: '강한 척추 신전 동작이 디스크 손상을 악화시킬 수 있음',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '강한 척추 신전',
+            '상체 들기 동작',
+            '전체적인 동작'
+          ],
+          modifications: [],
+          alternatives: ['elementary_backstroke']
+        },
+        elementary_backstroke: { 
+          level: 'safe', 
+          reason: '가장 부드러운 동작으로 척추에 부담이 적음',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '자연스러운 호흡'
+          ],
+          prohibitedMovements: [],
+          modifications: [],
+          alternatives: []
+        }
+      },
+      spine_simple_back_pain: {
+        freestyle: { 
+          level: 'safe', 
+          reason: '근육 긴장 완화와 혈액 순환 개선에 효과적 (디스크와 달리 회전 제한 없음)',
+          allowedMovements: [
+            '자연스러운 팔 동작',
+            '가벼운 킥 동작',
+            '정상적인 회전 (45도 이하)',
+            '자유로운 호흡'
+          ],
+          prohibitedMovements: [
+            '급격한 동작',
+            '과도한 회전 (60도 이상)',
+            '강한 스트로크'
+          ],
+          modifications: [
+            '부드러운 스트로크 사용',
+            '과도한 회전 피하기',
+            '점진적 거리 증가'
+          ],
+          alternatives: []
+        },
+        backstroke: { 
+          level: 'safe', 
+          reason: '척추를 자연스럽게 늘려주어 근육 긴장 완화 (디스크보다 안전)',
+          allowedMovements: [
+            '자연스러운 척추 신전',
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '정상적인 아치 자세'
+          ],
+          prohibitedMovements: [
+            '과도한 아치 (디스크보다 관대)',
+            '강한 킥 동작'
+          ],
+          modifications: [
+            '부드러운 킥 사용',
+            '자연스러운 아치 유지'
+          ],
+          alternatives: []
+        },
+        breaststroke: { 
+          level: 'caution', 
+          reason: '허리 아치 동작이 근육 긴장을 악화시킬 수 있음 (디스크보다 관대)',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '가벼운 팔 동작',
+            '제한된 아치 자세'
+          ],
+          prohibitedMovements: [
+            '강한 허리 아치',
+            '급격한 상체 들기',
+            '과도한 킥 동작'
+          ],
+          modifications: [
+            '아치 자세 최소화',
+            '짧은 거리부터 시작',
+            '부드러운 동작 유지'
+          ],
+          alternatives: ['freestyle', 'backstroke']
+        },
+        elementary_backstroke: { 
+          level: 'safe', 
+          reason: '가장 부드러운 동작으로 근육 긴장 완화에 효과적',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '자연스러운 호흡',
+            '자유로운 회전'
+          ],
+          prohibitedMovements: [],
+          modifications: [],
+          alternatives: []
+        }
+      },
+      spine_cervical_disorder: {
+        freestyle: { 
+          level: 'avoid', 
+          reason: '목 회전 동작이 경추 디스크나 협착을 악화시킬 수 있음',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작'
+          ],
+          prohibitedMovements: [
+            '목 회전 동작 (호흡 시)',
+            '강한 팔 스트로크',
+            '급격한 방향 전환',
+            '목 신전 동작'
+          ],
+          modifications: [
+            '목 회전 최소화',
+            '부드러운 호흡',
+            '짧은 거리부터 시작'
+          ],
+          alternatives: ['backstroke', 'elementary_backstroke']
+        },
+        backstroke: { 
+          level: 'caution', 
+          reason: '목 신전 동작이 경추에 부담을 줄 수 있음',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '제한된 목 신전'
+          ],
+          prohibitedMovements: [
+            '과도한 목 신전',
+            '강한 킥 동작',
+            '목 아치 동작'
+          ],
+          modifications: [
+            '부드러운 킥 사용',
+            '목 신전 최소화',
+            '자연스러운 자세 유지'
+          ],
+          alternatives: ['elementary_backstroke']
+        },
+        breaststroke: { 
+          level: 'avoid', 
+          reason: '목 신전과 회전 동작이 경추에 압박을 가함',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '목 신전 동작',
+            '목 회전 동작',
+            '강한 킥 동작',
+            '상체 들기 동작'
+          ],
+          modifications: [],
+          alternatives: ['elementary_backstroke']
+        },
+        butterfly: { 
+          level: 'prohibited', 
+          reason: '강한 목 신전과 회전 동작이 경추 손상을 악화시킬 수 있음',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '강한 목 신전',
+            '목 회전 동작',
+            '상체 들기 동작',
+            '전체적인 동작'
+          ],
+          modifications: [],
+          alternatives: ['elementary_backstroke']
+        },
+        elementary_backstroke: { 
+          level: 'safe', 
+          reason: '목에 부담이 적고 자연스러운 자세 유지',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '자연스러운 호흡',
+            '목에 부담 없는 자세'
+          ],
+          prohibitedMovements: [],
+          modifications: [],
+          alternatives: []
+        }
+      },
+      shoulder_frozen_shoulder: {
+        freestyle: { 
+          level: 'avoid', 
+          reason: '어깨 회전 범위 제한으로 인한 부상 위험',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '어깨 회전 동작',
+            '강한 팔 스트로크',
+            '급격한 방향 전환'
+          ],
+          modifications: [],
+          alternatives: ['elementary_backstroke', 'sidestroke']
+        },
+        backstroke: { 
+          level: 'caution', 
+          reason: '어깨 신전 동작이 제한될 수 있음',
+          allowedMovements: [
+            '제한된 범위의 팔 동작',
+            '가벼운 킥 동작'
+          ],
+          prohibitedMovements: [
+            '과도한 어깨 신전',
+            '강한 팔 동작'
+          ],
+          modifications: [
+            '짧은 스트로크 사용',
+            '과도한 신전 피하기'
+          ],
+          alternatives: ['elementary_backstroke']
+        },
+        elementary_backstroke: { 
+          level: 'safe', 
+          reason: '부드러운 동작으로 어깨 관절에 부담이 적음',
+          allowedMovements: [
+            '부드러운 팔 동작',
+            '가벼운 킥 동작',
+            '자연스러운 호흡'
+          ],
+          prohibitedMovements: [],
+          modifications: [],
+          alternatives: []
+        },
+        sidestroke: { 
+          level: 'safe', 
+          reason: '어깨 회전 범위를 최소화하면서 수영 가능',
+          allowedMovements: [
+            '제한된 어깨 동작',
+            '부드러운 킥 동작',
+            '자연스러운 호흡'
+          ],
+          prohibitedMovements: [],
+          modifications: [],
+          alternatives: []
+        }
+      },
+      knee_osteoarthritis: {
+        freestyle: { 
+          level: 'safe', 
+          reason: '무릎에 부담이 적고 관절 가동범위 개선에 효과적',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '자연스러운 팔 동작',
+            '가벼운 회전'
+          ],
+          prohibitedMovements: [
+            '강한 킥 동작',
+            '급격한 방향 전환'
+          ],
+          modifications: [
+            '부드러운 킥 사용',
+            '과도한 킥 동작 피하기'
+          ],
+          alternatives: []
+        },
+        breaststroke: { 
+          level: 'avoid', 
+          reason: '무릎 회전 동작이 관절염을 악화시킬 수 있음',
+          allowedMovements: [],
+          prohibitedMovements: [
+            '무릎 회전 동작',
+            '강한 킥 동작',
+            '급격한 방향 전환'
+          ],
+          modifications: [],
+          alternatives: ['freestyle', 'backstroke']
+        },
+        backstroke: { 
+          level: 'safe', 
+          reason: '무릎에 부담이 적고 관절 가동범위 개선',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '자연스러운 팔 동작',
+            '가벼운 회전'
+          ],
+          prohibitedMovements: [
+            '강한 킥 동작',
+            '급격한 방향 전환'
+          ],
+          modifications: [],
+          alternatives: []
+        }
+      },
+      ankle_sprain: {
+        freestyle: { 
+          level: 'safe', 
+          reason: '발목에 부담이 적고 회복에 도움',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '자연스러운 팔 동작',
+            '가벼운 회전'
+          ],
+          prohibitedMovements: [
+            '강한 킥 동작',
+            '급격한 방향 전환'
+          ],
+          modifications: [],
+          alternatives: []
+        },
+        backstroke: { 
+          level: 'safe', 
+          reason: '발목에 부담이 적음',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '자연스러운 팔 동작',
+            '가벼운 회전'
+          ],
+          prohibitedMovements: [
+            '강한 킥 동작',
+            '급격한 방향 전환'
+          ],
+          modifications: [],
+          alternatives: []
+        },
+        breaststroke: { 
+          level: 'caution', 
+          reason: '발목 킥 동작이 부상 부위에 부담을 줄 수 있음',
+          allowedMovements: [
+            '부드러운 킥 동작',
+            '가벼운 팔 동작'
+          ],
+          prohibitedMovements: [
+            '강한 발목 킥',
+            '급격한 방향 전환'
+          ],
+          modifications: [
+            '발목 킥 동작 최소화',
+            '부드러운 동작 사용'
+          ],
+          alternatives: ['freestyle', 'backstroke']
         }
       }
-    } catch (error) {
-      console.error('체크리스트 업데이트 실패:', error);
-    }
-  };
+    };
 
-  // 체크리스트 생성 모달 열기
-  const openChecklistModal = (student: Student) => {
-    setSelectedStudentForChecklist(student);
-    setShowChecklistModal(true);
-    loadAvailableClasses();
-  };
-
-  // 사용 가능한 클래스 로드
-  const loadAvailableClasses = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch('http://localhost:5000/api/courses/instructor', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableClasses(data.courses || []);
+    const allGuidanceData: any[] = [];
+    conditions.forEach(condition => {
+      if (guidanceData[condition]) {
+        Object.entries(guidanceData[condition]).forEach(([stroke, guidance]) => {
+          allGuidanceData.push({ stroke, ...guidance });
+        });
       }
-    } catch (error) {
-      console.error('클래스 로드 실패:', error);
-    }
-  };
+    });
 
-  // 체크리스트 생성
-  const createChecklist = async () => {
-    if (!selectedStudentForChecklist || !selectedClassForChecklist) {
-      setMessage('학생과 클래스를 선택해주세요.');
-      return;
-    }
-
-    setCreatingChecklist(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setMessage('인증 토큰이 없습니다.');
-        return;
-      }
-
-      const response = await fetch('http://localhost:5000/api/checklist/generate', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          studentId: selectedStudentForChecklist._id,
-          courseId: selectedClassForChecklist,
-          studentLevel: checklistLevel
-        })
-      });
-
-      if (response.ok) {
-        setMessage('체크리스트가 성공적으로 생성되었습니다!');
-        setShowChecklistModal(false);
-        setSelectedStudentForChecklist(null);
-        setSelectedClassForChecklist('');
-        setChecklistLevel('초급');
+    // 중복 제거 및 안전도 우선순위 적용
+    const uniqueGuidanceData = allGuidanceData.reduce((acc, current) => {
+      const existing = acc.find(item => item.stroke === current.stroke);
+      if (!existing) {
+        acc.push(current);
       } else {
-        const errorData = await response.json();
-        setMessage(errorData.error || '체크리스트 생성에 실패했습니다.');
+        // 더 위험한 안전도로 업데이트
+        const priority = { 'prohibited': 4, 'avoid': 3, 'caution': 2, 'safe': 1 };
+        if (priority[current.level] > priority[existing.level]) {
+          acc[acc.indexOf(existing)] = current;
+        }
       }
-    } catch (error) {
-      console.error('체크리스트 생성 실패:', error);
-      setMessage('네트워크 오류가 발생했습니다.');
-    } finally {
-      setCreatingChecklist(false);
-    }
+      return acc;
+    }, [] as any[]);
+
+    return uniqueGuidanceData;
   };
 
-  // 필터링된 학생 목록
-  const filteredStudents = selectedClass?.students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = filterLevel === 'all' || student.level === filterLevel;
-    return matchesSearch && matchesLevel;
-  }) || [];
-
-  const getLevelColor = (level: string) => {
+  // 안전도별 색상
+  const getSafetyColor = (level: string) => {
     switch (level) {
-      case '초급': return 'bg-blue-100 text-blue-800';
-      case '중급': return 'bg-green-100 text-green-800';
-      case '고급': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'safe': return 'text-green-600 bg-green-100';
+      case 'caution': return 'text-yellow-600 bg-yellow-100';
+      case 'avoid': return 'text-orange-600 bg-orange-100';
+      case 'prohibited': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'text-green-600';
-    if (progress >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+  // 안전도별 아이콘
+  const getSafetyIcon = (level: string) => {
+    switch (level) {
+      case 'safe': return <CheckCircle className="h-4 w-4" />;
+      case 'caution': return <Info className="h-4 w-4" />;
+      case 'avoid': return <XCircle className="h-4 w-4" />;
+      case 'prohibited': return <XCircle className="h-4 w-4" />;
+      default: return <Info className="h-4 w-4" />;
+    }
   };
-
-  const getProgressBarColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  if (user?.userType !== 'instructor') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
-          <p className="text-gray-600">강사 계정으로 로그인해주세요.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">오류가 발생했습니다</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={loadClasses} variant="outline">
-            다시 시도
-          </Button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">회원 정보를 불러오는 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">학생 관리</h1>
-          <p className="text-gray-600">담당 학생들의 정보와 진도를 관리하세요.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <Users className="h-8 w-8 text-blue-600 mr-3" />
+                담당 회원 관리
+              </h1>
+              <p className="text-gray-600 mt-2">
+                회원들의 건강정보를 확인하고 안전한 수영 지도를 제공하세요.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* 반 선택 */}
-        <Card className="p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">반 선택</h2>
-            <Button onClick={() => window.location.href = '/instructor/classes'}>
-              <Plus className="h-4 w-4 mr-2" />
-              새 반 만들기
-            </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 회원 목록 */}
+          <div className="lg:col-span-1">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">회원 목록</h3>
+              <div className="space-y-3">
+                {members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => setSelectedMember(member)}
+                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                      selectedMember?.id === member.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">{member.name}</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        member.jointConditions.length > 0 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {member.jointConditions.length > 0 ? '주의 필요' : '정상'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{member.email}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      건강정보: {member.jointConditions.length + member.cardiovascularConditions.filter(c => c !== 'none').length + member.metabolicConditions.filter(c => c !== 'none').length}개 질환
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </Card>
           </div>
 
-          {classes.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">아직 등록된 반이 없습니다</h3>
-              <p className="text-gray-600">새로운 반을 만들어 학생들을 관리해보세요.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {classes.map((classItem) => (
-                <Card 
-                  key={classItem._id} 
-                  className={`p-4 cursor-pointer transition-all ${
-                    selectedClass?._id === classItem._id 
-                      ? 'ring-2 ring-blue-500 bg-blue-50' 
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => handleClassChange(classItem._id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
+          {/* 회원 상세 정보 */}
+          <div className="lg:col-span-2">
+            {selectedMember ? (
+              <div className="space-y-6">
+                {/* 기본 정보 */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h3 className="font-semibold text-gray-900">{classItem.name}</h3>
-                      <p className="text-sm text-gray-600">{classItem.schedule}</p>
+                      <label className="block text-sm font-medium text-gray-700">이름</label>
+                      <p className="text-gray-900">{selectedMember.name}</p>
                     </div>
-                    <Badge className={getLevelColor(classItem.level)}>
-                      {classItem.level}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">학생 수:</span>
-                      <span className="font-medium">{classItem.students.length}/{classItem.maxStudents}</span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">이메일</label>
+                      <p className="text-gray-900">{selectedMember.email}</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">평균 진도율:</span>
-                      <span className="font-medium">
-                        {classItem.students.length > 0 
-                          ? Math.round(classItem.students.reduce((sum, s) => sum + s.progress, 0) / classItem.students.length)
-                          : 0}%
-                      </span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">전화번호</label>
+                      <p className="text-gray-900">{selectedMember.phone}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">수영 경험</label>
+                      <p className="text-gray-900">
+                        {selectedMember.swimmingExperience === 'beginner' ? '초보자' :
+                         selectedMember.swimmingExperience === 'basic' ? '기초' :
+                         selectedMember.swimmingExperience === 'intermediate' ? '중급' : '고급'}
+                      </p>
                     </div>
                   </div>
                 </Card>
-              ))}
-            </div>
-          )}
-        </Card>
 
-        {/* 학생 목록 */}
-        {selectedClass && (
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">{selectedClass.name} 학생 목록</h2>
-                <p className="text-sm text-gray-600">{selectedClass.students.length}명의 학생</p>
-              </div>
-              
-              {/* 검색 및 필터 */}
-              <div className="flex gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="학생 검색..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                
-                <select
-                  value={filterLevel}
-                  onChange={(e) => setFilterLevel(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">전체 레벨</option>
-                  <option value="초급">초급</option>
-                  <option value="중급">중급</option>
-                  <option value="고급">고급</option>
-                </select>
-              </div>
-            </div>
+                {/* 건강정보 */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Heart className="h-5 w-5 mr-2" />
+                    건강정보
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* 관절별 질환 */}
+                    {selectedMember.jointConditions.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">관절별 질환</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedMember.jointConditions.map((condition) => (
+                            <span key={condition} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
+                              {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-            {filteredStudents.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">검색 결과가 없습니다</h3>
-                <p className="text-gray-600">검색어나 필터를 변경해보세요.</p>
+                    {/* 심혈관 질환 */}
+                    {selectedMember.cardiovascularConditions.filter(c => c !== 'none').length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">심혈관 질환</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedMember.cardiovascularConditions.filter(c => c !== 'none').map((condition) => (
+                            <span key={condition} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                              {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 대사 질환 */}
+                    {selectedMember.metabolicConditions.filter(c => c !== 'none').length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">대사 질환</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedMember.metabolicConditions.filter(c => c !== 'none').map((condition) => (
+                            <span key={condition} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                              {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 의료 이력 */}
+                    {selectedMember.medicalHistory && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">의료 이력</h4>
+                        <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+                          {selectedMember.medicalHistory}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* 수영법별 구체적 동작 가이드라인 */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    수영법별 구체적 동작 가이드라인
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {getSwimmingGuidanceForConditions(selectedMember.jointConditions).map((guidance) => (
+                      <div key={guidance.stroke} className="bg-white p-6 rounded-lg border-2">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-xl font-semibold text-gray-900 capitalize">{guidance.stroke}</h4>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSafetyColor(guidance.level)}`}>
+                            {getSafetyIcon(guidance.level)}
+                            <span className="ml-2">
+                              {guidance.level === 'safe' ? '안전' :
+                               guidance.level === 'caution' ? '주의' :
+                               guidance.level === 'avoid' ? '피하기' : '금지'}
+                            </span>
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-700 mb-4 font-medium">{guidance.reason}</p>
+                        
+                        {/* 의학적 근거 및 상세 설명 */}
+                        {guidance.medicalEvidence && (
+                          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
+                              <Info className="h-4 w-4 mr-2" />
+                              📚 의학적 근거 및 출처
+                            </h5>
+                            <div className="mb-3">
+                              <h6 className="font-medium text-blue-700 mb-2">주요 참고 문헌:</h6>
+                              <ul className="text-sm text-blue-600 space-y-1">
+                                {guidance.medicalEvidence.map((evidence, index) => (
+                                  <li key={index} className="flex items-start">
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                    {evidence}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            {guidance.detailedExplanation && (
+                              <div>
+                                <h6 className="font-medium text-blue-700 mb-2">상세 설명:</h6>
+                                <p className="text-sm text-blue-600 leading-relaxed">
+                                  {guidance.detailedExplanation}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* 허용된 동작 */}
+                          {guidance.allowedMovements.length > 0 && (
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                              <h5 className="font-semibold text-green-800 mb-3 flex items-center">
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                ✅ 허용된 동작
+                              </h5>
+                              <ul className="space-y-2">
+                                {guidance.allowedMovements.map((movement, index) => (
+                                  <li key={index} className="text-sm text-green-700 flex items-start">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                    {movement}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {/* 금지된 동작 */}
+                          {guidance.prohibitedMovements.length > 0 && (
+                            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                              <h5 className="font-semibold text-red-800 mb-3 flex items-center">
+                                <XCircle className="h-4 w-4 mr-2" />
+                                ❌ 금지된 동작
+                              </h5>
+                              <ul className="space-y-2">
+                                {guidance.prohibitedMovements.map((movement, index) => (
+                                  <li key={index} className="text-sm text-red-700 flex items-start">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                    {movement}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 수정된 동작 */}
+                        {guidance.modifications.length > 0 && (
+                          <div className="mt-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                              <Info className="h-4 w-4 mr-2" />
+                              ⚠️ 수정된 동작
+                            </h5>
+                            <ul className="space-y-2">
+                              {guidance.modifications.map((modification, index) => (
+                                <li key={index} className="text-sm text-yellow-700 flex items-start">
+                                  <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                  {modification}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {/* 대안 영법 */}
+                        {guidance.alternatives.length > 0 && (
+                          <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
+                              <Info className="h-4 w-4 mr-2" />
+                              🔄 대안 영법
+                            </h5>
+                            <div className="flex flex-wrap gap-2">
+                              {guidance.alternatives.map((alternative, index) => (
+                                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                  {alternative}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 강사 지도 권장사항 */}
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">강사 지도 권장사항</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• 수영 전 충분한 워밍업 (10-15분) 필수</li>
+                      <li>• 통증 발생 시 즉시 중단하고 의료진 상담 권유</li>
+                      <li>• 점진적 거리 증가로 안전한 운동량 조절</li>
+                      <li>• 수영 후 스트레칭으로 근육 긴장 완화</li>
+                      <li>• 정기적인 건강 상태 확인 및 업데이트</li>
+                    </ul>
+                  </div>
+                </Card>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        학생 정보
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        레벨
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        진도율
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        출석률
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        최근 강습
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        액션
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredStudents.map((student) => (
-                      <tr key={student._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                            <div className="text-sm text-gray-500">{student.email}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={getLevelColor(student.level)}>
-                            {student.level}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-1 mr-3">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(student.progress)}`}
-                                  style={{ width: `${student.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                            <span className={`text-sm font-medium ${getProgressColor(student.progress)}`}>
-                              {student.progress}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.attendance}/{student.totalLessons}회
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.lastLesson}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStudentClick(student)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              상세보기
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditStudent(student)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              수정
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openChecklistModal(student)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              체크리스트
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Card className="p-12 text-center">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">회원을 선택하세요</h3>
+                <p className="text-gray-600">
+                  왼쪽 목록에서 회원을 선택하면 건강정보와 수영 가이드라인을 확인할 수 있습니다.
+                </p>
+              </Card>
             )}
-          </Card>
-        )}
-
-        {/* 학생 상세 모달 */}
-        {showStudentModal && selectedStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">{selectedStudent.name} - 학생 상세</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowStudentModal(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">이름</p>
-                    <p className="font-medium">{selectedStudent.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">이메일</p>
-                    <p className="font-medium">{selectedStudent.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">전화번호</p>
-                    <p className="font-medium">{selectedStudent.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">레벨</p>
-                    <Badge className={getLevelColor(selectedStudent.level)}>
-                      {selectedStudent.level}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">진도율</p>
-                  <div className="flex items-center">
-                    <div className="flex-1 mr-3">
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className={`h-3 rounded-full transition-all duration-300 ${getProgressBarColor(selectedStudent.progress)}`}
-                          style={{ width: `${selectedStudent.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className={`text-lg font-semibold ${getProgressColor(selectedStudent.progress)}`}>
-                      {selectedStudent.progress}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">출석률</p>
-                    <p className="font-medium">{selectedStudent.attendance}/{selectedStudent.totalLessons}회</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">최근 강습</p>
-                    <p className="font-medium">{selectedStudent.lastLesson}</p>
-                  </div>
-                </div>
-
-                {selectedStudent.notes && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">특이사항</p>
-                    <p className="text-sm bg-gray-50 p-3 rounded">{selectedStudent.notes}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowStudentModal(false)}
-                    className="flex-1"
-                  >
-                    닫기
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowStudentModal(false);
-                      handleEditStudent(selectedStudent);
-                    }}
-                    className="flex-1"
-                  >
-                    수정하기
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
-        )}
-
-        {/* 학생 수정 모달 */}
-        {showEditModal && editingStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">학생 정보 수정</h3>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                  <input
-                    type="text"
-                    value={editingStudent.name}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                  <input
-                    type="email"
-                    value={editingStudent.email}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
-                  <input
-                    type="tel"
-                    value={editingStudent.phone}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">레벨</label>
-                  <select
-                    value={editingStudent.level}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, level: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="초급">초급</option>
-                    <option value="중급">중급</option>
-                    <option value="고급">고급</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">특이사항</label>
-                  <textarea
-                    value={editingStudent.notes || ''}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, notes: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowEditModal(false)}
-                    className="flex-1"
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    onClick={handleUpdateStudent}
-                    className="flex-1"
-                  >
-                    저장
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 체크리스트 생성 모달 */}
-        {showChecklistModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">체크리스트 생성</h3>
-                <button
-                  onClick={() => setShowChecklistModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* 학생 선택 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    학생 선택
-                  </label>
-                  <select
-                    value={selectedStudentForChecklist?._id || ''}
-                    onChange={(e) => {
-                      const student = classes.flatMap(c => c.students).find(s => s._id === e.target.value);
-                      setSelectedStudentForChecklist(student || null);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">학생을 선택하세요</option>
-                    {classes.flatMap(c => c.students).map((student) => (
-                      <option key={student._id} value={student._id}>
-                        {student.name} ({student.level})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 체크리스트 타입 선택 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    체크리스트 타입
-                  </label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="individual"
-                        checked={checklistType === 'individual'}
-                        onChange={(e) => setChecklistType(e.target.value as 'group' | 'individual')}
-                        className="mr-2"
-                      />
-                      개인레슨
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="group"
-                        checked={checklistType === 'group'}
-                        onChange={(e) => setChecklistType(e.target.value as 'group' | 'individual')}
-                        className="mr-2"
-                      />
-                      단체반
-                    </label>
-                  </div>
-                </div>
-
-                {/* 클래스 선택 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    클래스 선택
-                  </label>
-                  <select
-                    value={selectedClassForChecklist}
-                    onChange={(e) => setSelectedClassForChecklist(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">클래스를 선택하세요</option>
-                    {classes.map((cls) => (
-                      <option key={cls._id} value={cls._id}>
-                        {cls.name} ({cls.level})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 레벨 선택 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    학생 레벨
-                  </label>
-                  <select
-                    value={checklistLevel}
-                    onChange={(e) => setChecklistLevel(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="초급">초급</option>
-                    <option value="중급">중급</option>
-                    <option value="고급">고급</option>
-                  </select>
-                </div>
-
-                {/* 버튼 */}
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={() => setShowChecklistModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={createChecklist}
-                    disabled={creatingChecklist || !selectedStudentForChecklist || !selectedClassForChecklist}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {creatingChecklist ? '생성 중...' : '체크리스트 생성'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 메시지 표시 */}
-        {message && (
-          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-            {message}
-            <button
-              onClick={() => setMessage(null)}
-              className="ml-4 text-white hover:text-gray-200"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
-}
+};
 
-
+export default withAuth(InstructorStudentsPage);

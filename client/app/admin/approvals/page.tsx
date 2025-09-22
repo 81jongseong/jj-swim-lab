@@ -74,16 +74,14 @@ interface CenterRegistration {
 
 interface ApprovalItem {
   id: string;
-  type: 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request' | 'center_registration';
+  type: 'instructor_registration' | 'center_registration';
   title: string;
   description: string;
   requesterName: string;
-  requesterType: 'student' | 'instructor' | 'centerAdmin';
+  requesterType: 'instructor' | 'centerAdmin';
   requestDate: string;
   status: 'pending' | 'approved' | 'rejected';
   priority: 'low' | 'medium' | 'high';
-  estimatedAmount?: number;
-  courseName?: string;
   instructorName?: string;
   centerRegistration?: CenterRegistration;
 }
@@ -93,7 +91,7 @@ export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [filteredApprovals, setFilteredApprovals] = useState<ApprovalItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'course_enrollment' | 'instructor_registration' | 'payment_approval' | 'schedule_change' | 'refund_request' | 'center_registration'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'instructor_registration' | 'center_registration'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCenter, setSelectedCenter] = useState<CenterRegistration | null>(null);
   const [showCenterModal, setShowCenterModal] = useState(false);
@@ -114,7 +112,12 @@ export default function ApprovalsPage() {
       
       let realApprovals: ApprovalItem[] = [];
       if (approvalsResponse?.data?.approvals) {
-        realApprovals = approvalsResponse.data.approvals.map((approval: any) => ({
+        // 어드민에서는 강사 등록과 센터 등록만 표시
+        const filteredApprovals = approvalsResponse.data.approvals.filter((approval: any) => 
+          approval.type === 'instructor_registration' || approval.type === 'center_registration'
+        );
+        
+        realApprovals = filteredApprovals.map((approval: any) => ({
           id: approval.id,
           type: approval.type,
           title: approval.title,
@@ -124,10 +127,10 @@ export default function ApprovalsPage() {
           requestDate: new Date(approval.requestDate).toLocaleDateString('ko-KR'),
           status: approval.status,
           priority: approval.priority,
-          estimatedAmount: approval.estimatedAmount,
-          courseName: approval.courseName,
           instructorName: approval.instructorName
         }));
+        
+        console.log(`✅ 어드민 승인 데이터 필터링 완료: 전체 ${approvalsResponse.data.approvals.length}개 중 ${realApprovals.length}개 표시 (강사/센터 등록만)`);
       }
       
       // 센터 등록 신청 데이터도 함께 가져오기
@@ -163,19 +166,6 @@ export default function ApprovalsPage() {
         const sampleData: ApprovalItem[] = [
           {
             id: 'sample-1',
-            type: 'course_enrollment',
-            title: '초급 수영 과정 수강 신청',
-            description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
-            requesterName: '김학생',
-            requesterType: 'student',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
-            status: 'pending',
-            priority: 'medium',
-            courseName: '초급 수영',
-            estimatedAmount: 120000
-          },
-          {
-            id: 'sample-2',
             type: 'instructor_registration',
             title: '새 강사 등록 신청',
             description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
@@ -187,64 +177,38 @@ export default function ApprovalsPage() {
             instructorName: '박강사'
           },
           {
+            id: 'sample-2',
+            type: 'center_registration',
+            title: 'JJ 수영장 센터 등록 신청',
+            description: '김센터장님이 JJ 수영장 센터 등록을 신청했습니다.',
+            requesterName: '김센터장',
+            requesterType: 'centerAdmin',
+            requestDate: new Date().toLocaleDateString('ko-KR'),
+            status: 'pending',
+            priority: 'high'
+          },
+          {
             id: 'sample-3',
-            type: 'payment_approval',
-            title: '강습료 결제 승인 요청',
-            description: '이학생님의 강습료 결제 승인이 필요합니다.',
-            requesterName: '이학생',
-            requesterType: 'student',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
-            status: 'pending',
-            priority: 'medium',
-            estimatedAmount: 150000
-          },
-          {
-            id: 'sample-4',
-            type: 'schedule_change',
-            title: '수업 일정 변경 요청',
-            description: '최학생님이 수업 일정 변경을 요청했습니다.',
-            requesterName: '최학생',
-            requesterType: 'student',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
-            status: 'pending',
-            priority: 'low'
-          },
-          {
-            id: 'sample-5',
-            type: 'refund_request',
-            title: '강습료 환불 요청',
-            description: '정학생님이 개인 사정으로 환불을 요청했습니다.',
-            requesterName: '정학생',
-            requesterType: 'student',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
-            status: 'pending',
-            priority: 'high',
-            estimatedAmount: 100000
-          },
-          {
-            id: 'sample-6',
-            type: 'course_enrollment',
-            title: '중급 배영 과정 수강 신청',
-            description: '한학생님이 중급 배영 과정에 수강을 신청했습니다.',
-            requesterName: '한학생',
-            requesterType: 'student',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
-            status: 'approved',
-            priority: 'medium',
-            courseName: '중급 배영',
-            estimatedAmount: 180000
-          },
-          {
-            id: 'sample-7',
             type: 'instructor_registration',
             title: '신규 강사 등록 완료',
             description: '조강사님의 강사 등록이 승인되었습니다.',
             requesterName: '조강사',
             requesterType: 'instructor',
-            requestDate: new Date().toLocaleDateString('ko-KR'),
+            requestDate: new Date(Date.now() - 86400000).toLocaleDateString('ko-KR'),
             status: 'approved',
             priority: 'high',
             instructorName: '조강사'
+          },
+          {
+            id: 'sample-4',
+            type: 'center_registration',
+            title: '아쿠아 센터 등록 거부',
+            description: '서류 미비로 아쿠아 센터 등록이 거부되었습니다.',
+            requesterName: '이센터장',
+            requesterType: 'centerAdmin',
+            requestDate: new Date(Date.now() - 172800000).toLocaleDateString('ko-KR'),
+            status: 'rejected',
+            priority: 'medium'
           }
         ];
         setApprovals(sampleData);
@@ -263,19 +227,6 @@ export default function ApprovalsPage() {
       const fallbackData: ApprovalItem[] = [
         {
           id: 'fallback-1',
-          type: 'course_enrollment',
-          title: '초급 수영 과정 수강 신청',
-          description: '김학생님이 초급 수영 과정에 수강을 신청했습니다.',
-          requesterName: '김학생',
-          requesterType: 'student',
-          requestDate: new Date().toLocaleDateString('ko-KR'),
-          status: 'pending',
-          priority: 'medium',
-          courseName: '초급 수영',
-          estimatedAmount: 120000
-        },
-        {
-          id: 'fallback-2',
           type: 'instructor_registration',
           title: '새 강사 등록 신청',
           description: '박강사님이 새로운 강사로 등록을 신청했습니다.',
@@ -285,6 +236,17 @@ export default function ApprovalsPage() {
           status: 'pending',
           priority: 'high',
           instructorName: '박강사'
+        },
+        {
+          id: 'fallback-2',
+          type: 'center_registration',
+          title: '새 센터 등록 신청',
+          description: '김센터장님이 새로운 센터 등록을 신청했습니다.',
+          requesterName: '김센터장',
+          requesterType: 'centerAdmin',
+          requestDate: new Date().toLocaleDateString('ko-KR'),
+          status: 'pending',
+          priority: 'high'
         }
       ];
       
@@ -456,11 +418,7 @@ export default function ApprovalsPage() {
 
   const getTypeFilterLabel = (type: string) => {
     switch (type) {
-      case 'course_enrollment': return '수강 신청';
       case 'instructor_registration': return '강사 등록';
-      case 'payment_approval': return '결제 승인';
-      case 'schedule_change': return '일정 변경';
-      case 'refund_request': return '환불 요청';
       case 'center_registration': return '센터 등록';
       default: return '전체';
     }
@@ -474,8 +432,8 @@ export default function ApprovalsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">승인 대기 관리</h1>
-          <p className="text-gray-600">승인 대기 중인 요청들을 관리하고 처리합니다.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">✅ 가입 승인</h1>
+          <p className="text-gray-600">강사 등록 및 센터 등록 요청을 승인하고 관리합니다.</p>
         </div>
         <button
           onClick={fetchApprovals}
@@ -531,11 +489,7 @@ export default function ApprovalsPage() {
               className="border border-gray-300 rounded-md px-3 py-2 text-sm"
             >
               <option value="all">전체</option>
-              <option value="course_enrollment">수강 신청</option>
               <option value="instructor_registration">강사 등록</option>
-              <option value="payment_approval">결제 승인</option>
-              <option value="schedule_change">일정 변경</option>
-              <option value="refund_request">환불 요청</option>
               <option value="center_registration">센터 등록</option>
             </select>
           </div>
@@ -612,19 +566,6 @@ export default function ApprovalsPage() {
                     </div>
 
                     {/* 추가 정보 */}
-                    {approval.courseName && (
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-gray-900">{approval.courseName}</p>
-                        </div>
-                      </div>
-                    )}
-
                     {approval.instructorName && (
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -634,19 +575,6 @@ export default function ApprovalsPage() {
                         </div>
                         <div className="ml-3">
                           <p className="text-sm text-gray-900">강사: {approval.instructorName}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {approval.estimatedAmount && (
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-gray-900">₩{approval.estimatedAmount.toLocaleString()}</p>
                         </div>
                       </div>
                     )}

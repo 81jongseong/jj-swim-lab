@@ -11,8 +11,29 @@ function AdminPaymentsPage() {
 
   const load = async () => {
     setLoading(true);
-    const res = await apiClient.getPayments();
-    if (res.data?.payments) setPayments(res.data.payments);
+    try {
+      console.log('🔍 결제 데이터 로드 시작...');
+      const res = await apiClient.getPayments();
+      console.log('📊 API 응답:', res);
+      
+      // 다양한 응답 형태 처리
+      let paymentsData = [];
+      if (res.data?.payments) {
+        paymentsData = res.data.payments;
+      } else if (res.data && Array.isArray(res.data)) {
+        paymentsData = res.data;
+      } else if (res.payments) {
+        paymentsData = res.payments;
+      } else if (Array.isArray(res)) {
+        paymentsData = res;
+      }
+      
+      console.log('💳 결제 데이터:', paymentsData.length, '개');
+      setPayments(paymentsData);
+    } catch (error) {
+      console.error('❌ 결제 데이터 로드 오류:', error);
+      setPayments([]);
+    }
     setLoading(false);
   };
 
@@ -133,6 +154,37 @@ function AdminPaymentsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* 빈 상태 UI */}
+          {filtered.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">💳</div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">결제 내역이 없습니다</h3>
+              <p className="text-gray-500 mb-6">
+                아직 결제 내역이 없습니다. 새로운 결제를 추가해보세요.
+              </p>
+              <button
+                onClick={async () => {
+                  const amount = Number(prompt('금액(원):', '10000') || '0');
+                  if (!amount) return;
+                  const res = await apiClient.createPayment({ 
+                    amount, 
+                    paymentMethod: 'cash', 
+                    purpose: 'other',
+                    notes: '테스트 결제'
+                  });
+                  if (!res.error) {
+                    await load();
+                  } else {
+                    alert(res.error);
+                  }
+                }}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                💳 테스트 결제 추가
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
