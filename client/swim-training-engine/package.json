@@ -1,0 +1,49 @@
+{
+  "name": "jj-swim-training-engine",
+  "version": "1.0.0",
+  "description": "JJ Swim Lab - 수영 트레이닝 규칙 엔진",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node scripts/demo.ts",
+    "demo": "ts-node scripts/demo.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "clean": "rm -rf dist",
+    "lint": "echo 'Linting skipped'",
+    "lint:fix": "echo 'Linting skipped'"
+  },
+  "keywords": [
+    "swimming",
+    "training",
+    "health",
+    "orthopedics",
+    "exercise-prescription",
+    "typescript"
+  ],
+  "author": "JJ Swim Lab",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {},
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [".ts"],
+    "globals": {
+      "ts-jest": {
+        "useESM": true
+      }
+    },
+    "moduleNameMapping": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
+  }
+}
