@@ -267,12 +267,9 @@ const userMenuStructure = {
       { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
       { href: '/admin/algorithm-analytics', label: '📈 시스템 사용 통계' },
     ],
-    tools: [
-      { href: '/admin/3d-viewer/swimming-styles', label: '🏊‍♂️ 영법 종류 관리' },
-    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
+      { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어 · 영법 관리' },
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
