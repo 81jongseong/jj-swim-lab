@@ -40,10 +40,14 @@ export default function ThreeDViewerPage() {
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
   
-  // 영법 관리 상태
+  // 통합 데이터 관리 (영법 + 드릴)
+  const [dataType, setDataType] = useState<'strokes' | 'drills'>('strokes'); // 영법 or 드릴
   const [swimmingStyles, setSwimmingStyles] = useState<any[]>([]);
-  const [showStyleModal, setShowStyleModal] = useState(false);
-  const [editingStyle, setEditingStyle] = useState<any>(null);
+  const [drills, setDrills] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  
+  // 영법 폼
   const [styleForm, setStyleForm] = useState({
     name: '',
     displayName: '',
@@ -56,12 +60,27 @@ export default function ThreeDViewerPage() {
     cautions: ''
   });
 
-  // 영법 데이터 로드
+  // 드릴 폼
+  const [drillForm, setDrillForm] = useState({
+    title: '',
+    stroke: 'FR',
+    description: '',
+    tags: '',
+    cues: '',
+    cautions: '',
+    isPublicDemo: true
+  });
+
+  // 데이터 로드
   useEffect(() => {
     if (isAdminMode) {
-      loadSwimmingStyles();
+      if (dataType === 'strokes') {
+        loadSwimmingStyles();
+      } else {
+        loadDrills();
+      }
     }
-  }, [isAdminMode]);
+  }, [isAdminMode, dataType]);
 
   const loadSwimmingStyles = async () => {
     try {
@@ -83,6 +102,26 @@ export default function ThreeDViewerPage() {
     }
   };
 
+  const loadDrills = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/swim-drills', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setDrills(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('드릴 로드 오류:', error);
+    }
+  };
+
   // 영법 생성/수정
   const handleSaveStyle = async () => {
     try {
@@ -93,11 +132,11 @@ export default function ThreeDViewerPage() {
         cautions: styleForm.cautions.split(',').map(c => c.trim()).filter(c => c)
       };
 
-      const url = editingStyle 
-        ? `http://localhost:5000/api/swimming-styles/${editingStyle._id}`
+      const url = editingItem 
+        ? `http://localhost:5000/api/swimming-styles/${editingItem._id}`
         : 'http://localhost:5000/api/swimming-styles';
       
-      const method = editingStyle ? 'PUT' : 'POST';
+      const method = editingItem ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -109,9 +148,9 @@ export default function ThreeDViewerPage() {
       });
 
       if (response.ok) {
-        alert(editingStyle ? '영법이 수정되었습니다!' : '영법이 생성되었습니다!');
-        setShowStyleModal(false);
-        setEditingStyle(null);
+        alert(editingItem ? '영법이 수정되었습니다!' : '영법이 생성되었습니다!');
+        setShowModal(false);
+        setEditingItem(null);
         resetStyleForm();
         loadSwimmingStyles();
       } else {
@@ -123,12 +162,56 @@ export default function ThreeDViewerPage() {
     }
   };
 
-  // 영법 삭제
-  const handleDeleteStyle = async (id: string) => {
+  // 드릴 생성/수정
+  const handleSaveDrill = async () => {
+    try {
+      const payload = {
+        ...drillForm,
+        tags: drillForm.tags.split(',').map(t => t.trim()).filter(t => t),
+        cues: drillForm.cues.split(',').map(c => c.trim()).filter(c => c),
+        cautions: drillForm.cautions.split(',').map(c => c.trim()).filter(c => c)
+      };
+
+      const url = editingItem 
+        ? `http://localhost:5000/api/swim-drills/${editingItem._id}`
+        : 'http://localhost:5000/api/swim-drills';
+      
+      const method = editingItem ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert(editingItem ? '드릴이 수정되었습니다!' : '드릴이 생성되었습니다!');
+        setShowModal(false);
+        setEditingItem(null);
+        resetDrillForm();
+        loadDrills();
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('저장 오류:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 삭제
+  const handleDelete = async (id: string, type: 'strokes' | 'drills') => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/swimming-styles/${id}`, {
+      const url = type === 'strokes'
+        ? `http://localhost:5000/api/swimming-styles/${id}`
+        : `http://localhost:5000/api/swim-drills/${id}`;
+
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -136,8 +219,8 @@ export default function ThreeDViewerPage() {
       });
 
       if (response.ok) {
-        alert('영법이 삭제되었습니다!');
-        loadSwimmingStyles();
+        alert(type === 'strokes' ? '영법이 삭제되었습니다!' : '드릴이 삭제되었습니다!');
+        type === 'strokes' ? loadSwimmingStyles() : loadDrills();
       }
     } catch (error) {
       console.error('삭제 오류:', error);
@@ -156,6 +239,18 @@ export default function ThreeDViewerPage() {
       tags: '',
       cues: '',
       cautions: ''
+    });
+  };
+
+  const resetDrillForm = () => {
+    setDrillForm({
+      title: '',
+      stroke: 'FR',
+      description: '',
+      tags: '',
+      cues: '',
+      cautions: '',
+      isPublicDemo: true
     });
   };
 
@@ -211,83 +306,164 @@ export default function ThreeDViewerPage() {
           )}
         </div>
 
-        {/* 관리자 모드: 영법 관리 UI */}
+        {/* 관리자 모드: 통합 관리 UI */}
         {isAdminMode && (
           <div className="mb-6 p-4 bg-white rounded-lg shadow border-2 border-blue-200">
+            {/* 탭 전환 */}
+            <div className="flex gap-2 mb-4 border-b">
+              <button
+                onClick={() => setDataType('strokes')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  dataType === 'strokes'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                🏊‍♂️ 영법 ({swimmingStyles.length})
+              </button>
+              <button
+                onClick={() => setDataType('drills')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  dataType === 'drills'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                🎯 드릴 ({drills.length})
+              </button>
+            </div>
+
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">
-                영법 데이터 관리 ({swimmingStyles.length}개)
+                {dataType === 'strokes' ? '영법 관리' : '드릴 관리'}
               </h2>
               <button
                 onClick={() => {
-                  resetStyleForm();
-                  setEditingStyle(null);
-                  setShowStyleModal(true);
+                  if (dataType === 'strokes') {
+                    resetStyleForm();
+                  } else {
+                    resetDrillForm();
+                  }
+                  setEditingItem(null);
+                  setShowModal(true);
                 }}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
-                + 영법 추가
+                + {dataType === 'strokes' ? '영법' : '드릴'} 추가
               </button>
             </div>
 
             {/* 영법 목록 */}
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {swimmingStyles.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>등록된 영법이 없습니다. "영법 추가" 버튼을 눌러 추가하세요.</p>
-                </div>
-              ) : (
-                swimmingStyles.map((style: any) => (
-                  <div key={style._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{style.displayName}</span>
-                        <span className="text-xs text-gray-500">({style.name})</span>
-                        {style.isPublicDemo && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                            🌍 공개
-                          </span>
-                        )}
-                        {!style.isActive && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
-                            비활성
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">{style.description}</p>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => {
-                          setEditingStyle(style);
-                          setStyleForm({
-                            name: style.name,
-                            displayName: style.displayName,
-                            description: style.description,
-                            difficulty: style.difficulty,
-                            isActive: style.isActive,
-                            isPublicDemo: style.isPublicDemo,
-                            tags: (style.tags || []).join(', '),
-                            cues: (style.cues || []).join(', '),
-                            cautions: (style.cautions || []).join(', ')
-                          });
-                          setShowStyleModal(true);
-                        }}
-                        className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded hover:bg-blue-200"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDeleteStyle(style._id)}
-                        className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
-                      >
-                        삭제
-                      </button>
-                    </div>
+            {dataType === 'strokes' && (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {swimmingStyles.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>등록된 영법이 없습니다. "영법 추가" 버튼을 눌러 추가하세요.</p>
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  swimmingStyles.map((style: any) => (
+                    <div key={style._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{style.displayName}</span>
+                          <span className="text-xs text-gray-500">({style.name})</span>
+                          {style.isPublicDemo && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              🌍 공개
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">{style.description}</p>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setEditingItem(style);
+                            setStyleForm({
+                              name: style.name,
+                              displayName: style.displayName,
+                              description: style.description,
+                              difficulty: style.difficulty,
+                              isActive: style.isActive,
+                              isPublicDemo: style.isPublicDemo,
+                              tags: (style.tags || []).join(', '),
+                              cues: (style.cues || []).join(', '),
+                              cautions: (style.cautions || []).join(', ')
+                            });
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded hover:bg-blue-200"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDelete(style._id, 'strokes')}
+                          className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* 드릴 목록 */}
+            {dataType === 'drills' && (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {drills.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>등록된 드릴이 없습니다. "드릴 추가" 버튼을 눌러 추가하세요.</p>
+                  </div>
+                ) : (
+                  drills.map((drill: any) => (
+                    <div key={drill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{drill.title}</span>
+                          <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
+                            {drill.stroke}
+                          </span>
+                          {drill.isPublicDemo && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              🌍 공개
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">{drill.description}</p>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setEditingItem(drill);
+                            setDrillForm({
+                              title: drill.title,
+                              stroke: drill.stroke,
+                              description: drill.description,
+                              tags: (drill.tags || []).join(', '),
+                              cues: (drill.cues || []).join(', '),
+                              cautions: (drill.cautions || []).join(', '),
+                              isPublicDemo: drill.isPublicDemo
+                            });
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded hover:bg-blue-200"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDelete(drill._id, 'drills')}
+                          className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -376,14 +552,14 @@ export default function ThreeDViewerPage() {
         </div>
       </div>
 
-      {/* 영법 추가/수정 모달 */}
-      {showStyleModal && (
+      {/* 통합 추가/수정 모달 */}
+      {showModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
           onClick={() => {
-            setShowStyleModal(false);
-            setEditingStyle(null);
-            resetStyleForm();
+            setShowModal(false);
+            setEditingItem(null);
+            dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
           }}
         >
           <div 
@@ -392,33 +568,39 @@ export default function ThreeDViewerPage() {
           >
             <div className="p-6 border-b">
               <h2 className="text-2xl font-bold text-gray-900">
-                {editingStyle ? '영법 수정' : '영법 추가'}
+                {dataType === 'strokes' 
+                  ? (editingItem ? '영법 수정' : '영법 추가')
+                  : (editingItem ? '드릴 수정' : '드릴 추가')
+                }
               </h2>
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">영어명 *</label>
-                  <input
-                    type="text"
-                    value={styleForm.name}
-                    onChange={(e) => setStyleForm({ ...styleForm, name: e.target.value.toLowerCase() })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="예: freestyle"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">한글명 *</label>
-                  <input
-                    type="text"
-                    value={styleForm.displayName}
-                    onChange={(e) => setStyleForm({ ...styleForm, displayName: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="예: 자유형"
-                  />
-                </div>
-              </div>
+              {dataType === 'strokes' ? (
+                // 영법 폼
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">영어명 *</label>
+                      <input
+                        type="text"
+                        value={styleForm.name}
+                        onChange={(e) => setStyleForm({ ...styleForm, name: e.target.value.toLowerCase() })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="예: freestyle"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">한글명 *</label>
+                      <input
+                        type="text"
+                        value={styleForm.displayName}
+                        onChange={(e) => setStyleForm({ ...styleForm, displayName: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="예: 자유형"
+                      />
+                    </div>
+                  </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">설명 *</label>
@@ -477,45 +659,130 @@ export default function ThreeDViewerPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={styleForm.isActive}
-                    onChange={(e) => setStyleForm({ ...styleForm, isActive: e.target.checked })}
-                    className="w-5 h-5 rounded"
-                  />
-                  <span className="text-sm font-medium">활성화</span>
-                </label>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={styleForm.isActive}
+                        onChange={(e) => setStyleForm({ ...styleForm, isActive: e.target.checked })}
+                        className="w-5 h-5 rounded"
+                      />
+                      <span className="text-sm font-medium">활성화</span>
+                    </label>
 
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={styleForm.isPublicDemo}
-                    onChange={(e) => setStyleForm({ ...styleForm, isPublicDemo: e.target.checked })}
-                    className="w-5 h-5 rounded"
-                  />
-                  <span className="text-sm font-medium">🌍 체험 공개</span>
-                </label>
-              </div>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={styleForm.isPublicDemo}
+                        onChange={(e) => setStyleForm({ ...styleForm, isPublicDemo: e.target.checked })}
+                        className="w-5 h-5 rounded"
+                      />
+                      <span className="text-sm font-medium">🌍 체험 공개</span>
+                    </label>
+                  </div>
+                </>
+              ) : (
+                // 드릴 폼
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">드릴명 *</label>
+                    <input
+                      type="text"
+                      value={drillForm.title}
+                      onChange={(e) => setDrillForm({ ...drillForm, title: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 하이엘보 캐치 드릴"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">영법 *</label>
+                    <select
+                      value={drillForm.stroke}
+                      onChange={(e) => setDrillForm({ ...drillForm, stroke: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="FR">자유형</option>
+                      <option value="BK">배영</option>
+                      <option value="BR">평영</option>
+                      <option value="FL">접영</option>
+                      <option value="IM">IM</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">설명 *</label>
+                    <textarea
+                      value={drillForm.description}
+                      onChange={(e) => setDrillForm({ ...drillForm, description: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      placeholder="드릴 설명을 입력하세요"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">태그 (쉼표로 구분)</label>
+                    <input
+                      type="text"
+                      value={drillForm.tags}
+                      onChange={(e) => setDrillForm({ ...drillForm, tags: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 캐치, 기술"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">코칭 큐 (쉼표로 구분)</label>
+                    <input
+                      type="text"
+                      value={drillForm.cues}
+                      onChange={(e) => setDrillForm({ ...drillForm, cues: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 전완 세우기, 시선 아래 45°"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">주의사항 (쉼표로 구분)</label>
+                    <input
+                      type="text"
+                      value={drillForm.cautions}
+                      onChange={(e) => setDrillForm({ ...drillForm, cautions: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: 어깨 충돌 민감 시 주의"
+                    />
+                  </div>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={drillForm.isPublicDemo}
+                      onChange={(e) => setDrillForm({ ...drillForm, isPublicDemo: e.target.checked })}
+                      className="w-5 h-5 rounded"
+                    />
+                    <span className="text-sm font-medium">🌍 체험 공개</span>
+                  </label>
+                </>
+              )}
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
               <button
                 onClick={() => {
-                  setShowStyleModal(false);
-                  setEditingStyle(null);
-                  resetStyleForm();
+                  setShowModal(false);
+                  setEditingItem(null);
+                  dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
                 }}
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
               >
                 취소
               </button>
               <button
-                onClick={handleSaveStyle}
+                onClick={dataType === 'strokes' ? handleSaveStyle : handleSaveDrill}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                {editingStyle ? '수정하기' : '추가하기'}
+                {editingItem ? '수정하기' : '추가하기'}
               </button>
             </div>
           </div>
