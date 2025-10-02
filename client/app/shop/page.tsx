@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../../components/ui';
-import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -305,9 +302,9 @@ export default function ShopPage() {
                 최고의 수영 용품들을 만나보세요.
               </p>
             </div>
-            <Button
+            <button
               onClick={() => setShowCart(true)}
-              className="relative bg-blue-600 hover:bg-blue-700"
+              className="relative bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               🛒 장바구니
               {getTotalItems() > 0 && (
@@ -315,7 +312,7 @@ export default function ShopPage() {
                   {getTotalItems()}
                 </span>
               )}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -323,12 +320,12 @@ export default function ShopPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <Input
+              <input
                 type="text"
                 placeholder="상품명 또는 설명으로 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -363,7 +360,7 @@ export default function ShopPage() {
         {/* 상품 목록 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <Card key={product._id} className="hover:shadow-lg transition-shadow duration-200">
+            <div key={product._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
               <div className="p-4">
                 <div className="relative mb-4">
                   <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
@@ -413,15 +410,15 @@ export default function ShopPage() {
                   </div>
                 </div>
 
-                <Button
+                <button
                   onClick={() => addToCart(product)}
                   disabled={product.stock === 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   {product.stock === 0 ? '품절' : '장바구니 추가'}
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 
@@ -504,20 +501,20 @@ export default function ShopPage() {
                     </div>
 
                     <div className="flex justify-end space-x-4">
-                      <Button
+                      <button
                         onClick={() => setShowCart(false)}
-                        variant="outline"
+                        className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         계속 쇼핑
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         onClick={() => {
                           alert('주문 기능은 준비 중입니다.');
                         }}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         주문하기
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}
