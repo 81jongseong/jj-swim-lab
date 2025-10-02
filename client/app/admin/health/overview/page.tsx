@@ -77,8 +77,17 @@ export default function HealthOverviewPage() {
   useEffect(() => {
     if (authLoading) return;
     
-    if (!user || user.userType !== 'admin') {
-      alert('최고관리자 권한이 필요합니다');
+    console.log('🔍 건강 현황 - 사용자 확인:', { user, userType: user?.userType });
+    
+    if (!user) {
+      alert('로그인이 필요합니다');
+      window.location.href = '/login';
+      return;
+    }
+    
+    // 관리자 권한 체크 (admin, centerAdmin 모두 허용)
+    if (user.userType !== 'admin' && user.userType !== 'centerAdmin') {
+      alert('관리자 권한이 필요합니다');
       window.location.href = '/';
       return;
     }

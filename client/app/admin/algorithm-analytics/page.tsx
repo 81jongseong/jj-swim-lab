@@ -37,8 +37,18 @@ export default function AlgorithmAnalyticsPage() {
   useEffect(() => {
     if (authLoading) return;
     
-    if (!user || user.userType !== 'admin') {
-      alert('최고관리자 권한이 필요합니다');
+    console.log('🔍 알고리즘 분석 - 사용자 확인:', { user, userType: user?.userType });
+    
+    if (!user) {
+      alert('로그인이 필요합니다');
+      window.location.href = '/login';
+      return;
+    }
+    
+    // 최고관리자가 아니면 접근 차단 (하지만 실제로는 모든 관리자에게 허용)
+    // userType이 'admin', 'centerAdmin' 모두 허용
+    if (user.userType !== 'admin' && user.userType !== 'centerAdmin') {
+      alert('관리자 권한이 필요합니다');
       window.location.href = '/';
       return;
     }
