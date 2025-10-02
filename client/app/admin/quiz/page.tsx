@@ -175,21 +175,44 @@ export default function QuizManagementPage() {
     }
   };
 
-  // 수정 시작
-  const startEdit = (quiz: Quiz) => {
-    setEditingQuiz(quiz);
-    setFormData({
-      title: quiz.title,
-      description: quiz.description,
-      category: quiz.category,
-      difficulty: quiz.level || 'beginner',
-      type: 'practice',
-      timeLimit: quiz.timeLimit,
-      isActive: quiz.isActive,
-      isPublicDemo: quiz.isPublicDemo || false,
-      questions: Array.isArray(quiz.questions) ? quiz.questions : []
-    });
-    setShowCreateModal(true);
+  // 수정 시작 (DB에서 전체 데이터 다시 불러오기)
+  const startEdit = async (quiz: Quiz) => {
+    try {
+      // DB에서 전체 퀴즈 정보 다시 불러오기 (questions 배열 포함)
+      const response = await fetch(`http://localhost:5000/api/quiz/${quiz.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          const fullQuiz = data.data;
+          setEditingQuiz(quiz);
+          setFormData({
+            title: fullQuiz.title,
+            description: fullQuiz.description,
+            category: fullQuiz.category,
+            difficulty: fullQuiz.difficulty || 'beginner',
+            type: fullQuiz.type || 'practice',
+            timeLimit: fullQuiz.timeLimit || 30,
+            isActive: fullQuiz.isActive,
+            isPublicDemo: fullQuiz.isPublicDemo || false,
+            questions: Array.isArray(fullQuiz.questions) ? fullQuiz.questions : []
+          });
+          setShowCreateModal(true);
+        } else {
+          alert('퀴즈 정보를 불러오는데 실패했습니다.');
+        }
+      } else {
+        alert('퀴즈 정보를 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('퀴즈 정보 불러오기 오류:', error);
+      alert('퀴즈 정보를 불러오는 중 오류가 발생했습니다.');
+    }
   };
 
   // 폼 초기화
@@ -224,6 +247,26 @@ export default function QuizManagementPage() {
 
   // 문제 추가
   const handleAddQuestion = () => {
+    // 필수 필드 검증
+    if (!questionForm.question.trim()) {
+      alert('문제를 입력해주세요.');
+      return;
+    }
+
+    if (questionForm.type === 'multiple-choice') {
+      // 4지선다: 모든 선택지 입력 확인
+      if (questionForm.options.some(opt => !opt.trim())) {
+        alert('모든 선택지를 입력해주세요.');
+        return;
+      }
+    } else {
+      // 단답형: 정답 키워드 확인
+      if (!questionForm.correctAnswer || (typeof questionForm.correctAnswer === 'string' && !questionForm.correctAnswer.trim())) {
+        alert('정답 키워드를 입력해주세요.');
+        return;
+      }
+    }
+
     const newQuestions = [...formData.questions, questionForm];
     setFormData({ ...formData, questions: newQuestions });
     resetQuestionForm();
@@ -232,6 +275,26 @@ export default function QuizManagementPage() {
 
   // 문제 수정
   const handleUpdateQuestion = () => {
+    // 필수 필드 검증
+    if (!questionForm.question.trim()) {
+      alert('문제를 입력해주세요.');
+      return;
+    }
+
+    if (questionForm.type === 'multiple-choice') {
+      // 4지선다: 모든 선택지 입력 확인
+      if (questionForm.options.some(opt => !opt.trim())) {
+        alert('모든 선택지를 입력해주세요.');
+        return;
+      }
+    } else {
+      // 단답형: 정답 키워드 확인
+      if (!questionForm.correctAnswer || (typeof questionForm.correctAnswer === 'string' && !questionForm.correctAnswer.trim())) {
+        alert('정답 키워드를 입력해주세요.');
+        return;
+      }
+    }
+
     const newQuestions = [...formData.questions];
     newQuestions[editingQuestionIndex] = questionForm;
     setFormData({ ...formData, questions: newQuestions });
@@ -461,13 +524,35 @@ export default function QuizManagementPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+            <div className="p-6 border-t bg-gray-50 flex justify-between gap-2">
               <button
-                onClick={() => setSelectedQuiz(null)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                onClick={() => {
+                  if (confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) {
+                    setSelectedQuiz(null);
+                    handleDelete(selectedQuiz.id);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
-                닫기
+                🗑️ 삭제
               </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedQuiz(null);
+                    startEdit(selectedQuiz);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ✏️ 수정
+                </button>
+                <button
+                  onClick={() => setSelectedQuiz(null)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
             </div>
           </div>
         </div>
