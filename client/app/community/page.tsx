@@ -250,7 +250,7 @@ export default function CommunityPage() {
 
   // 최고 관리자 기능
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('이 게시글을 완전히 삭제하시겠습니까?')) return;
+    if (!confirm('이 게시글을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
 
     try {
       const response = await fetch(`http://localhost:5000/api/community/posts/${postId}`, {
@@ -261,17 +261,23 @@ export default function CommunityPage() {
       });
 
       if (response.ok) {
-        alert('게시글이 삭제되었습니다.');
-        fetchPosts();
+        alert('✅ 게시글이 삭제되었습니다.');
+        // 로컬에서도 즉시 제거
+        setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
+      } else {
+        const data = await response.json();
+        alert(`삭제 실패: ${data.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
       console.error('삭제 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      // API가 없어도 로컬에서 제거 (임시)
+      setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
+      alert('⚠️ 게시글이 임시로 삭제되었습니다 (API 미연결)');
     }
   };
 
   const handleBlindPost = async (postId: string) => {
-    if (!confirm('이 게시글을 블라인드 처리하시겠습니까?')) return;
+    if (!confirm('이 게시글을 블라인드 처리하시겠습니까?\n\n일반 사용자에게는 보이지 않게 됩니다.')) return;
 
     try {
       const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
@@ -283,18 +289,31 @@ export default function CommunityPage() {
       });
 
       if (response.ok) {
-        alert('게시글이 블라인드 처리되었습니다.');
-        fetchPosts();
+        alert('✅ 게시글이 블라인드 처리되었습니다.');
+        // 로컬에서도 즉시 반영
+        setPosts(prevPosts => prevPosts.map(p => 
+          p._id === postId ? { ...p, isBlinded: true } : p
+        ));
+      } else {
+        const data = await response.json();
+        alert(`블라인드 실패: ${data.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
       console.error('블라인드 오류:', error);
-      alert('블라인드 처리 중 오류가 발생했습니다.');
+      // API가 없어도 로컬에서 처리 (임시)
+      setPosts(prevPosts => prevPosts.map(p => 
+        p._id === postId ? { ...p, isBlinded: true } : p
+      ));
+      alert('⚠️ 게시글이 임시로 블라인드 처리되었습니다 (API 미연결)');
     }
   };
 
   const handleWarnAuthor = async (postId: string, authorId: string) => {
-    const reason = prompt('경고 사유를 입력하세요:');
-    if (!reason) return;
+    const reason = prompt('⚠️ 경고 사유를 입력하세요:\n\n예시: 욕설 사용, 부적절한 표현, 광고성 게시글');
+    if (!reason || reason.trim() === '') {
+      alert('경고 사유를 입력해야 합니다.');
+      return;
+    }
 
     try {
       const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/warn`, {
@@ -307,12 +326,22 @@ export default function CommunityPage() {
       });
 
       if (response.ok) {
-        alert('작성자에게 경고가 발송되었습니다.');
-        fetchPosts();
+        alert(`✅ 작성자에게 경고가 발송되었습니다.\n\n사유: ${reason}`);
+        // 로컬에서도 즉시 반영
+        setPosts(prevPosts => prevPosts.map(p => 
+          p._id === postId ? { ...p, warnings: (p.warnings || 0) + 1 } : p
+        ));
+      } else {
+        const data = await response.json();
+        alert(`경고 발송 실패: ${data.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
       console.error('경고 발송 오류:', error);
-      alert('경고 발송 중 오류가 발생했습니다.');
+      // API가 없어도 로컬에서 처리 (임시)
+      setPosts(prevPosts => prevPosts.map(p => 
+        p._id === postId ? { ...p, warnings: (p.warnings || 0) + 1 } : p
+      ));
+      alert(`⚠️ 경고가 임시로 처리되었습니다 (API 미연결)\n\n사유: ${reason}`);
     }
   };
 
@@ -334,6 +363,68 @@ export default function CommunityPage() {
     } catch (error) {
       console.error('규칙 저장 오류:', error);
       alert('규칙 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleJoinMeetup = async (postId: string) => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    const post = posts.find(p => p._id === postId);
+    if (!post?.meetupDetails) return;
+
+    if (!confirm(`🏊‍♂️ 번개모임 참가 신청\n\n📍 장소: ${post.meetupDetails.location}\n⏰ 시간: ${post.meetupDetails.time}\n💰 비용: ${post.meetupDetails.cost.toLocaleString()}원\n\n참가하시겠습니까?`)) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/join`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user._id || user.id,
+          userName: user.name
+        })
+      });
+
+      if (response.ok) {
+        alert('✅ 번개모임 참가 신청이 완료되었습니다!\n\n주최자가 연락처를 공유할 예정입니다.');
+        // 로컬에서도 즉시 반영
+        setPosts(prevPosts => prevPosts.map(p => {
+          if (p._id === postId && p.meetupDetails) {
+            return {
+              ...p,
+              meetupDetails: {
+                ...p.meetupDetails,
+                currentParticipants: p.meetupDetails.currentParticipants + 1
+              }
+            };
+          }
+          return p;
+        }));
+      } else {
+        const data = await response.json();
+        alert(`참가 신청 실패: ${data.message || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('참가 신청 오류:', error);
+      // API가 없어도 로컬에서 처리 (임시)
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p._id === postId && p.meetupDetails) {
+          return {
+            ...p,
+            meetupDetails: {
+              ...p.meetupDetails,
+              currentParticipants: p.meetupDetails.currentParticipants + 1
+            }
+          };
+        }
+        return p;
+      }));
+      alert('⚠️ 참가 신청이 임시로 처리되었습니다 (API 미연결)\n\n실제 참가는 주최자에게 별도 연락하세요.');
     }
   };
 
@@ -565,7 +656,10 @@ export default function CommunityPage() {
                               </span>
                             </div>
                             {user && post.meetupDetails.currentParticipants < post.meetupDetails.maxParticipants && (
-                              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
+                              <button 
+                                onClick={() => handleJoinMeetup(post._id)}
+                                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                              >
                                 참가 신청
                               </button>
                             )}
