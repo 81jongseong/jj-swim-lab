@@ -93,13 +93,17 @@ export default function HealthOverviewPage() {
       return;
     }
     
+    console.log('✅ 권한 체크 통과 - loadUsers 호출');
     loadUsers();
   }, [user, authLoading]);
 
   const loadUsers = async () => {
+    console.log('📡 loadUsers 함수 실행 시작');
     try {
       setLoading(true);
+      console.log('🔗 API 호출: /api/users');
       const response = await apiClient.get('/api/users');
+      console.log('📊 API 응답:', response);
       
       if (response && response.data && response.data.success) {
         setUsers(response.data.users || []);

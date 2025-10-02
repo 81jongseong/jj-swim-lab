@@ -76,15 +76,19 @@ export default function SystemAnalyticsPage() {
       return;
     }
     
+    console.log('✅ 권한 체크 통과 - loadData 호출');
     loadData();
   }, [user, authLoading]);
 
   const loadData = async () => {
+    console.log('📡 loadData 함수 실행 시작');
     try {
       setLoading(true);
       
       // 회원 데이터 로드
+      console.log('🔗 API 호출: /api/users');
       const usersResponse = await apiClient.get('/api/users');
+      console.log('📊 Users API 응답:', usersResponse);
       if (usersResponse && usersResponse.data && usersResponse.data.success) {
         setUsers(usersResponse.data.users || []);
       } else {
