@@ -1,6 +1,21 @@
+/**
+ * 📊 JJ Swim Lab - 프로그램 생성 통계 페이지
+ * 
+ * 📋 **페이지 목적**
+ * - 수영 엔진에서 생성된 프로그램의 통계 분석
+ * - 실제 LocalStorage 데이터 기반
+ * 
+ * 🗄️ **데이터 연동**
+ * - getProgramStats() from programStorage.ts
+ * 
+ * 📅 **생성일**: 2025-01-22
+ */
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../../hooks/useAuth';
+import { getProgramStats } from '../../../lib/swimlab/utils/programStorage';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -8,84 +23,71 @@ import {
   Clock,
   Target,
   AlertCircle,
-  CheckCircle,
   RefreshCw,
-  Download,
-  Filter,
   Calendar,
-  Activity,
-  Zap,
-  Brain,
-  Award
+  Activity
 } from 'lucide-react';
 
 export default function AlgorithmAnalyticsPage() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedMetric, setSelectedMetric] = useState('accuracy');
-
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // 실제 프로그램 생성 통계 가져오기
+  const stats = useMemo(() => getProgramStats(), [refreshKey]);
+  
   useEffect(() => {
-    // 샘플 데이터 로드
-    const sampleAnalytics = {
-      overview: {
-        totalUsers: 1250,
-        activeUsers: 890,
-        totalSessions: 4560,
-        avgSessionTime: 35,
-        accuracy: 87.5,
-        performance: 92.3
-      },
-      metrics: {
-        accuracy: {
-          current: 87.5,
-          previous: 84.2,
-          trend: 'up'
-        },
-        performance: {
-          current: 92.3,
-          previous: 89.1,
-          trend: 'up'
-        },
-        userSatisfaction: {
-          current: 4.2,
-          previous: 4.0,
-          trend: 'up'
-        }
-      },
-      charts: {
-        accuracyOverTime: [
-          { date: '2024-01-01', accuracy: 85.2 },
-          { date: '2024-01-02', accuracy: 86.1 },
-          { date: '2024-01-03', accuracy: 87.3 },
-          { date: '2024-01-04', accuracy: 86.8 },
-          { date: '2024-01-05', accuracy: 87.5 }
-        ],
-        userEngagement: [
-          { date: '2024-01-01', users: 120 },
-          { date: '2024-01-02', users: 135 },
-          { date: '2024-01-03', users: 142 },
-          { date: '2024-01-04', users: 138 },
-          { date: '2024-01-05', users: 145 }
-        ]
-      }
-    };
+    if (authLoading) return;
     
-    setTimeout(() => {
-      setAnalytics(sampleAnalytics);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (!user || user.userType !== 'admin') {
+      alert('최고관리자 권한이 필요합니다');
+      window.location.href = '/';
+      return;
+    }
+    
+    setLoading(false);
+  }, [user, authLoading]);
+  
+  // 시간 범위별 필터링
+  const filteredStats = useMemo(() => {
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (timeRange) {
+      case '7d':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        cutoffDate = new Date(0);
+    }
+    
+    const recentPrograms = stats.programs.filter(p => 
+      new Date(p.createdAt) >= cutoffDate
+    );
+    
+    return {
+      ...stats,
+      recentCount: recentPrograms.length,
+      recentPrograms
+    };
+  }, [stats, timeRange]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">알고리즘 분석 데이터를 불러오는 중...</p>
-            </div>
+            <RefreshCw className="h-12 w-12 text-blue-600 animate-spin" />
           </div>
         </div>
       </div>
@@ -93,214 +95,166 @@ export default function AlgorithmAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 페이지 헤더 */}
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">📊 알고리즘 분석</h1>
-          <p className="text-gray-600">
-            AI 알고리즘의 성능과 사용자 만족도를 분석합니다.
-          </p>
-        </div>
-
-        {/* 필터 및 컨트롤 */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="7d">최근 7일</option>
-                <option value="30d">최근 30일</option>
-                <option value="90d">최근 90일</option>
-                <option value="1y">최근 1년</option>
-              </select>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <BarChart3 className="h-8 w-8 text-blue-500" />
+                프로그램 생성 통계
+              </h1>
+              <p className="text-gray-600">
+                수영 엔진에서 생성된 프로그램의 통계와 분석 데이터입니다
+              </p>
             </div>
-            <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <button
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
               새로고침
             </button>
           </div>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-2" />
-            리포트 다운로드
-          </button>
+        </div>
+
+        {/* 필터 */}
+        <div className="mb-6 flex items-center gap-4">
+          <Calendar className="h-5 w-5 text-gray-500" />
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="7d">최근 7일</option>
+            <option value="30d">최근 30일</option>
+            <option value="90d">최근 90일</option>
+            <option value="1y">최근 1년</option>
+          </select>
         </div>
 
         {/* 주요 지표 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">전체 사용자</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalUsers.toLocaleString()}</p>
-              </div>
-              <Users className="w-8 h-8 text-blue-600" />
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">총 생성 프로그램</div>
+              <Target className="h-5 w-5 text-blue-500" />
             </div>
-            <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-600">+12.5%</span>
-              <span className="text-gray-500 ml-1">전월 대비</span>
+            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              선택 기간: {filteredStats.recentCount}개
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">활성 사용자</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.activeUsers.toLocaleString()}</p>
-              </div>
-              <Activity className="w-8 h-8 text-green-600" />
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">참여 선수</div>
+              <Users className="h-5 w-5 text-green-500" />
             </div>
-            <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-600">+8.3%</span>
-              <span className="text-gray-500 ml-1">전월 대비</span>
+            <div className="text-3xl font-bold text-gray-900">{stats.athletes}명</div>
+            <div className="text-xs text-gray-500 mt-1">
+              고유 선수 수
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">알고리즘 정확도</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.accuracy}%</p>
-              </div>
-              <Target className="w-8 h-8 text-purple-600" />
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">최근 1주</div>
+              <Clock className="h-5 w-5 text-purple-500" />
             </div>
-            <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-600">+3.3%</span>
-              <span className="text-gray-500 ml-1">전월 대비</span>
+            <div className="text-3xl font-bold text-gray-900">{stats.recentCount}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              지난 7일간 생성
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">시스템 성능</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.overview.performance}%</p>
-              </div>
-              <Zap className="w-8 h-8 text-yellow-600" />
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">평균 프로그램 길이</div>
+              <Activity className="h-5 w-5 text-orange-500" />
             </div>
-            <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-600">+3.2%</span>
-              <span className="text-gray-500 ml-1">전월 대비</span>
+            <div className="text-3xl font-bold text-gray-900">
+              {stats.programs.length > 0 
+                ? (stats.programs.reduce((sum, p) => sum + (p.numDays || 0), 0) / stats.programs.length).toFixed(1)
+                : 0}일
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              주간 계획 평균
             </div>
           </div>
         </div>
 
-        {/* 상세 분석 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* 정확도 추이 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">알고리즘 정확도 추이</h3>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">정확도</span>
+        {/* 생성 타입 분포 */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+          <h3 className="text-lg font-semibold mb-4">생성 타입 분포</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {filteredStats.recentPrograms.filter(p => p.type === 'weekly').length}
               </div>
+              <div className="text-sm text-gray-600">주간 계획</div>
             </div>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">차트 데이터</p>
-                <p className="text-sm text-gray-500">정확도: {analytics.overview.accuracy}%</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {filteredStats.recentPrograms.filter(p => p.type === 'race').length}
               </div>
+              <div className="text-sm text-gray-600">경기 준비</div>
             </div>
-          </div>
-
-          {/* 사용자 참여도 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">사용자 참여도</h3>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">활성 사용자</span>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {filteredStats.recentPrograms.filter(p => p.athleteIds && p.athleteIds.length > 1).length}
               </div>
-            </div>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">차트 데이터</p>
-                <p className="text-sm text-gray-500">활성 사용자: {analytics.overview.activeUsers}명</p>
-              </div>
+              <div className="text-sm text-gray-600">팀 프로그램</div>
             </div>
           </div>
         </div>
 
-        {/* 성능 지표 상세 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">성능 지표 상세</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 border border-gray-200 rounded-lg">
-              <Brain className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <h4 className="font-medium text-gray-900">AI 정확도</h4>
-              <p className="text-2xl font-bold text-blue-600 mt-2">{analytics.metrics.accuracy.current}%</p>
-              <div className="flex items-center justify-center mt-2">
-                <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+{analytics.metrics.accuracy.current - analytics.metrics.accuracy.previous}%</span>
-              </div>
-            </div>
-
-            <div className="text-center p-4 border border-gray-200 rounded-lg">
-              <Zap className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-              <h4 className="font-medium text-gray-900">시스템 성능</h4>
-              <p className="text-2xl font-bold text-yellow-600 mt-2">{analytics.metrics.performance.current}%</p>
-              <div className="flex items-center justify-center mt-2">
-                <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+{analytics.metrics.performance.current - analytics.metrics.performance.previous}%</span>
-              </div>
-            </div>
-
-            <div className="text-center p-4 border border-gray-200 rounded-lg">
-              <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <h4 className="font-medium text-gray-900">사용자 만족도</h4>
-              <p className="text-2xl font-bold text-purple-600 mt-2">{analytics.metrics.userSatisfaction.current}/5.0</p>
-              <div className="flex items-center justify-center mt-2">
-                <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+{analytics.metrics.userSatisfaction.current - analytics.metrics.userSatisfaction.previous}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 알림 및 권장사항 */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
-              주의사항
-            </h3>
+        {/* 최근 생성 프로그램 */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold mb-4">최근 생성 프로그램</h3>
+          {filteredStats.recentPrograms.length > 0 ? (
             <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3"></div>
-                <p className="text-sm text-gray-700">정확도가 90% 미만인 구간이 감지되었습니다.</p>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3"></div>
-                <p className="text-sm text-gray-700">일부 사용자 그룹에서 성능 저하가 관찰됩니다.</p>
-              </div>
+              {filteredStats.recentPrograms.slice(0, 10).map((program) => (
+                <div key={program.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      {program.athleteIds && program.athleteIds.length > 0 
+                        ? `${program.athleteIds.join(', ')} - ${program.type === 'weekly' ? '주간 계획' : '경기 준비'}`
+                        : `프로그램 #${program.id.slice(0, 8)}`}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(program.createdAt).toLocaleString('ko-KR')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-600">
+                      {program.numDays || 0}일
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {program.weeklyMeters || 0}m
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              선택한 기간에 생성된 프로그램이 없습니다
+            </div>
+          )}
+        </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
-              권장사항
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3"></div>
-                <p className="text-sm text-gray-700">알고리즘 모델을 업데이트하여 정확도를 향상시키세요.</p>
-              </div>
-              <div className="flex items-start">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3"></div>
-                <p className="text-sm text-gray-700">사용자 피드백을 수집하여 모델을 개선하세요.</p>
+        {/* 데이터 수집 안내 */}
+        <div className="mt-8 bg-blue-50 p-6 rounded-lg border border-blue-200">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <div className="font-semibold mb-1">데이터 수집 방법</div>
+              <div className="text-blue-800">
+                • 프로그램 생성 데이터는 LocalStorage에 저장됩니다<br/>
+                • 수영 엔진의 "컨디션 설정" 탭에서 프로그램을 생성하면 자동으로 통계에 반영됩니다<br/>
+                • 실시간으로 업데이트되며 브라우저 캐시 삭제 시 초기화됩니다
               </div>
             </div>
           </div>
