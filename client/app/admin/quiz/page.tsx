@@ -50,7 +50,8 @@ export default function QuizManagementPage() {
     options: ['', '', '', ''],
     correctAnswer: 0,
     explanation: '',
-    points: 10
+    points: 10,
+    isRandomized: false // ✅ 랜덤 버전 여부
   });
   
   // AI 자동 생성 상태
@@ -242,7 +243,8 @@ export default function QuizManagementPage() {
       options: ['', '', '', ''],
       correctAnswer: 0,
       explanation: '',
-      points: 10
+      points: 10,
+      isRandomized: false
     });
     setEditingQuestion(null);
     setEditingQuestionIndex(-1);
@@ -353,7 +355,8 @@ export default function QuizManagementPage() {
         ...questionForm,
         question: question,
         options: [correctOption, ...wrongOptions].slice(0, 4),
-        correctAnswer: 0
+        correctAnswer: 0,
+        isRandomized: true // ✅ 자동 생성 = 랜덤 버전
       });
     } else if (questionForm.type === 'ox') {
       // OX 퀴즈 생성
@@ -364,12 +367,13 @@ export default function QuizManagementPage() {
         ...questionForm,
         question: question + ' (O/X)',
         options: ['O (맞다)', 'X (틀리다)'],
-        correctAnswer: isTrue ? 0 : 1
+        correctAnswer: isTrue ? 0 : 1,
+        isRandomized: true // ✅ 자동 생성 = 랜덤 버전
       });
     }
 
     setIsGenerating(false);
-    alert('해설을 기반으로 문제가 생성되었습니다! 수정해서 사용하세요.');
+    alert('해설을 기반으로 문제가 생성되었습니다! "랜덤 버전" 체크박스를 활성화하면 매번 답이 바뀝니다.');
   };
 
   if (loading || isLoading) {
@@ -758,8 +762,13 @@ export default function QuizManagementPage() {
                           <div className="font-medium text-sm text-gray-900">
                             {index + 1}. {q.question}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {q.type === 'multiple-choice' ? '4지선다' : q.type === 'ox' ? 'OX퀴즈' : '단답형'} · {q.points}점
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                            <span>{q.type === 'multiple-choice' ? '4지선다' : q.type === 'ox' ? 'OX퀴즈' : '단답형'} · {q.points}점</span>
+                            {q.isRandomized && (
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-semibold">
+                                🎲 랜덤
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-1 ml-2">
@@ -969,6 +978,34 @@ export default function QuizManagementPage() {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   min="1"
                 />
+              </div>
+
+              {/* 랜덤 버전 설정 */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <label className="flex items-start space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={questionForm.isRandomized}
+                    onChange={(e) => setQuestionForm({ ...questionForm, isRandomized: e.target.checked })}
+                    className="mt-1 w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <div className="font-semibold text-purple-900 text-sm flex items-center gap-2">
+                      🎲 랜덤 버전 (답 변경 모드)
+                    </div>
+                    <p className="text-xs text-purple-700 mt-1">
+                      체크 시 학생이 퀴즈를 풀 때마다 보기 순서가 섞이거나 정답 위치가 바뀝니다.
+                    </p>
+                    <div className="mt-2 space-y-1">
+                      <div className="text-xs text-purple-800">
+                        <strong>· 고정 버전:</strong> 기출문제처럼 문제와 답이 항상 동일
+                      </div>
+                      <div className="text-xs text-purple-800">
+                        <strong>· 랜덤 버전:</strong> 해설 기반으로 매번 다른 문제/보기 생성
+                      </div>
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>
 

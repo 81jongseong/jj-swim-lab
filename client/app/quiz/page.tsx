@@ -157,7 +157,44 @@ export default function QuizPage() {
   };
 
   const startQuiz = (quiz: Quiz) => {
-    setSelectedQuiz(quiz);
+    // 🎲 랜덤 문제 처리: 보기 순서 섞기
+    const processedQuiz = {
+      ...quiz,
+      questions: quiz.questions.map((q: any) => {
+        if (q.isRandomized && q.type === 'multiple-choice') {
+          // 보기 순서 섞기
+          const shuffled = [...q.options].map((opt, idx) => ({ opt, idx }));
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          
+          // 새로운 정답 인덱스 찾기
+          const newCorrectIndex = shuffled.findIndex(item => item.idx === q.correctAnswer);
+          
+          return {
+            ...q,
+            options: shuffled.map(item => item.opt),
+            correctAnswer: newCorrectIndex,
+            _originalCorrectAnswer: q.correctAnswer // 원본 저장
+          };
+        } else if (q.isRandomized && q.type === 'ox') {
+          // OX 퀴즈: 랜덤하게 O/X 반전
+          const shouldFlip = Math.random() > 0.5;
+          if (shouldFlip) {
+            return {
+              ...q,
+              question: q.question.replace('올바른', '잘못된').replace('맞는', '틀린'),
+              correctAnswer: q.correctAnswer === 0 ? 1 : 0, // 정답 반전
+              _isFlipped: true
+            };
+          }
+        }
+        return q;
+      })
+    };
+    
+    setSelectedQuiz(processedQuiz);
     setCurrentQuestionIndex(0);
     setAnswers(new Array(quiz.questions.length).fill(-1));
     setTimeLeft(quiz.timeLimit * 60); // 초 단위로 변환
