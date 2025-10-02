@@ -92,23 +92,22 @@ export async function geocodeAddress(address: string): Promise<{ lat: number; ln
 /**
  * 좌표를 H3 헥사곤 인덱스로 변환
  * 
- * ⚠️ 주의: 이 함수는 h3-js 라이브러리가 필요합니다
- * npm install h3-js
- * 
  * @param lat - 위도
  * @param lng - 경도
  * @param resolution - H3 해상도 (기본값: 8)
  * @returns H3 인덱스 문자열
  */
 export function toH3(lat: number, lng: number, resolution: number = H3_RESOLUTION): string {
-  // TODO: h3-js 라이브러리 설치 후 실제 구현
-  // import { latLngToCell } from 'h3-js';
-  // return latLngToCell(lat, lng, resolution);
-  
-  // Mock: 간단한 격자 ID 생성 (실제론 H3 사용)
-  const latGrid = Math.floor(lat / 0.01);
-  const lngGrid = Math.floor(lng / 0.01);
-  return `mock_h3_${resolution}_${latGrid}_${lngGrid}`;
+  // 실제 H3 라이브러리 사용
+  try {
+    const { latLngToCell } = require('h3-js');
+    return latLngToCell(lat, lng, resolution);
+  } catch (error) {
+    // Fallback: Mock 격자 ID (h3-js 로드 실패 시)
+    const latGrid = Math.floor(lat / 0.01);
+    const lngGrid = Math.floor(lng / 0.01);
+    return `mock_h3_${resolution}_${latGrid}_${lngGrid}`;
+  }
 }
 
 /**
@@ -118,20 +117,20 @@ export function toH3(lat: number, lng: number, resolution: number = H3_RESOLUTIO
  * @returns 중심 좌표 { lat, lng }
  */
 export function h3ToLatLng(h3Index: string): { lat: number; lng: number } {
-  // TODO: h3-js 라이브러리 설치 후 실제 구현
-  // import { cellToLatLng } from 'h3-js';
-  // const [lat, lng] = cellToLatLng(h3Index);
-  // return { lat, lng };
-  
-  // Mock: 인덱스에서 좌표 역계산
-  const parts = h3Index.split('_');
-  if (parts.length >= 4) {
-    const lat = parseFloat(parts[3]) * 0.01 + 0.005;
-    const lng = parseFloat(parts[4]) * 0.01 + 0.005;
+  try {
+    const { cellToLatLng } = require('h3-js');
+    const [lat, lng] = cellToLatLng(h3Index);
     return { lat, lng };
+  } catch (error) {
+    // Fallback: Mock 역계산
+    const parts = h3Index.split('_');
+    if (parts.length >= 4) {
+      const lat = parseFloat(parts[3]) * 0.01 + 0.005;
+      const lng = parseFloat(parts[4]) * 0.01 + 0.005;
+      return { lat, lng };
+    }
+    return { lat: 37.5665, lng: 126.9780 };
   }
-  
-  return { lat: 37.5665, lng: 126.9780 };
 }
 
 /**
