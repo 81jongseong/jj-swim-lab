@@ -268,16 +268,11 @@ const userMenuStructure = {
       { href: '/admin/algorithm-analytics', label: '📈 시스템 사용 통계' },
     ],
     tools: [
-      { href: '/admin/3d-viewer/management', label: '⚙️ 3D 뷰어 관리' },
       { href: '/admin/3d-viewer/swimming-styles', label: '🏊‍♂️ 영법 종류 관리' },
-      { href: '/admin/3d-viewer/drills', label: '🎯 드릴 관리' },
-      { href: '/admin/3d-viewer/models', label: '📦 3D 모델 관리' },
-      { href: '/3d-viewer', label: '🧪 기본 3D 뷰어' },
-      { href: '/3d-viewer/advanced', label: '🚀 고급 3D 뷰어' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
+      { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
@@ -294,15 +289,10 @@ const userMenuStructure = {
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
     ],
-    ai: [
-      { href: '/ai-analysis', label: '🤖 AI 분석 데모' },
-      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈 체험' },
       { href: '/health', label: '🏥 건강체크 체험' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
-      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
     ],
     health: [
       { href: '/health', label: '🏥 건강체크 체험' },
@@ -369,7 +359,6 @@ const menuGrouping = {
   ],
   guest: [
     { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
-    { groupName: '🤖 AI 체험', categories: ['ai'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience', 'health', 'tools'] },
     { groupName: '💬 커뮤니티 & 상점', categories: ['community', 'shop', 'map'] },
     { groupName: '🔑 로그인/회원가입', categories: ['auth'] }
