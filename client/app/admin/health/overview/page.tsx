@@ -101,11 +101,25 @@ export default function HealthOverviewPage() {
       setLoading(true);
       const response = await apiClient.get('/api/users');
       
-      if (response.data.success) {
+      if (response && response.data && response.data.success) {
         setUsers(response.data.users || []);
+      } else {
+        console.warn('회원 데이터 응답 없음');
+        setUsers([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('회원 데이터 로드 오류:', error);
+      
+      // 토큰 만료 시 재로그인
+      if (error?.response?.status === 401 || error?.code === 'TOKEN_EXPIRED') {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return;
+      }
+      
+      setUsers([]);
     } finally {
       setLoading(false);
     }

@@ -85,14 +85,17 @@ export default function SystemAnalyticsPage() {
       
       // 회원 데이터 로드
       const usersResponse = await apiClient.get('/api/users');
-      if (usersResponse.data.success) {
+      if (usersResponse && usersResponse.data && usersResponse.data.success) {
         setUsers(usersResponse.data.users || []);
+      } else {
+        console.warn('회원 데이터 응답 없음');
+        setUsers([]);
       }
       
       // 사용자 활동 로드 (있으면)
       try {
         const activitiesResponse = await apiClient.get('/api/user-activities');
-        if (activitiesResponse.data.success) {
+        if (activitiesResponse && activitiesResponse.data && activitiesResponse.data.success) {
           setActivities(activitiesResponse.data.activities || []);
         }
       } catch (err) {
@@ -100,8 +103,21 @@ export default function SystemAnalyticsPage() {
         setActivities([]);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('데이터 로드 오류:', error);
+      
+      // 토큰 만료 시 재로그인
+      if (error?.response?.status === 401 || error?.code === 'TOKEN_EXPIRED') {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return;
+      }
+      
+      // 기본값 설정
+      setUsers([]);
+      setActivities([]);
     } finally {
       setLoading(false);
     }
