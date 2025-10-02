@@ -173,8 +173,12 @@ export default function SwimTrainingEnginePage() {
   const [conditionIds, setConditionIds] = useState<string[]>([]);
   const [teamSelectedIds, setTeamSelectedIds] = useState<string[]>([]);
   
-  // 프로그램 통계
-  const stats = getProgramStats();
+  // 프로그램 통계 (클라이언트에서만 실행)
+  const [stats, setStats] = useState({ total: 0, athletes: 0, recentCount: 0, programs: [] });
+  
+  useEffect(() => {
+    setStats(getProgramStats());
+  }, []);
 
   // 엔진 통계
   const [engineStats, setEngineStats] = useState({
