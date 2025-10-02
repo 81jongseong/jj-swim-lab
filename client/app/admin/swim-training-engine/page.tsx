@@ -391,7 +391,7 @@ export default function SwimTrainingEnginePage() {
                   최적의 수영 프로그램을 자동으로 생성하는 AI 시스템입니다.
                 </p>
                 <p className="mb-4">
-                  의료진의 검토를 거친 <strong className="text-blue-600">{dataPackCounts.conditionsMSK28}개 MSK 질환 + {dataPackCounts.conditionsAll}개 전체 질환</strong> 가이드라인과 
+                  <strong className="text-blue-600">{dataPackCounts.conditionsMSK28}개 MSK 질환 + {dataPackCounts.conditionsAll}개 전체 질환</strong> 가이드라인과 
                   <strong className="text-green-600"> {dataPackCounts.strokeGuides}가지 영법</strong>별 운동 프로그램을 기반으로 
                   안전하고 효과적인 맞춤형 수영 교육을 제공합니다.
                 </p>
@@ -1050,14 +1050,6 @@ export default function SwimTrainingEnginePage() {
                     (기본 {jointConditionsBase.length} + 커스텀 {allConditions.length - jointConditionsBase.length})
                   </div>
                 </div>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-lg mt-3">
-                <p className="text-sm text-blue-700 mb-3">
-                  의료진의 검토를 거친 <strong>{dataPackCounts.conditionsMSK28}개 MSK 질환 + {dataPackCounts.conditionsAll}개 전체 질환</strong> 가이드라인과 
-                  <strong> {dataPackCounts.strokeGuides}가지 영법</strong>별 운동 프로그램을 기반으로 안전하고 효과적인 수영 프로그램을 제공합니다.
-                  <br/>
-                  <span className="text-xs">의학적 근거: {SWIMLAB_EVIDENCE.length}개 신뢰할 수 있는 출처 (JOSPT, Cochrane, JAMA, WHO, CDC 등)</span>
-                </p>
               </div>
               
               {/* 카테고리 필터 */}

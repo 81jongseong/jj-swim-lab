@@ -187,6 +187,10 @@ import centerManagementRoutes from './routes/center-management';
 // 새로운 건강정보 및 센터 소개 라우트
 import healthConfigRoutes from './routes/health-config';
 import centerIntroductionRoutes from './routes/center-introduction';
+// 수영 엔진 데이터 라우트
+import swimTrainingMethodsRoutes from './routes/swim-training-methods';
+import swimDrillsRoutes from './routes/swim-drills';
+import swimConditionsRoutes from './routes/swim-conditions';
 import exerciseRoutes from './routes/exercise';
 import sampleDataRoutes from './routes/sample-data';
 import youtubeVideoRoutes from './routes/youtube-videos';
@@ -444,6 +448,10 @@ app.use('/api/ai-config', aiConfigRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/teaching-methods', teachingMethodsRoutes);
 app.use('/api/update-levels', updateLevelsRoutes);
+// 수영 엔진 데이터 API
+app.use('/api/swim-training-methods', swimTrainingMethodsRoutes);
+app.use('/api/swim-drills', swimDrillsRoutes);
+app.use('/api/swim-conditions', swimConditionsRoutes);
 // app.use('/api/community', communityRoutes); // 임시 비활성화
 app.use('/api/shop', shopRoutes);
 app.use('/api/system', systemRoutes);
