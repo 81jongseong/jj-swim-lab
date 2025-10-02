@@ -82,29 +82,44 @@ router.post('/posts', authMiddleware, async (req: Request, res: Response) => {
     const { title, content, category, meetupDetails } = req.body;
     const user = (req as any).user;
 
+    console.log('📝 게시글 작성 요청:', { title, category, user: user?.name });
+
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      });
+    }
+
     const newPost = new CommunityPost({
       title,
       content,
-      category,
+      category: category || 'general',
       author: {
-        name: user.name,
-        userId: user._id || user.id
+        name: user.name || '익명',
+        userId: user._id?.toString() || user.id?.toString() || 'unknown'
       },
-      meetupDetails: category === 'meetup' ? meetupDetails : undefined
+      meetupDetails: category === 'meetup' ? {
+        ...meetupDetails,
+        currentParticipants: meetupDetails?.currentParticipants || 0,
+        participants: meetupDetails?.participants || []
+      } : undefined
     });
 
     await newPost.save();
+
+    console.log('✅ 게시글 생성 성공:', newPost._id);
 
     res.json({
       success: true,
       post: newPost,
       message: '게시글이 작성되었습니다.'
     });
-  } catch (error) {
-    console.error('게시글 작성 오류:', error);
+  } catch (error: any) {
+    console.error('❌ 게시글 작성 오류:', error);
     res.status(500).json({ 
       success: false, 
-      message: '게시글 작성 중 오류가 발생했습니다.' 
+      message: error.message || '게시글 작성 중 오류가 발생했습니다.' 
     });
   }
 });
