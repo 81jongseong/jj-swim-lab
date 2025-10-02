@@ -64,6 +64,12 @@ export default function CommunityPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // 디버깅용
+  useEffect(() => {
+    console.log('🔍 커뮤니티 페이지 - 사용자:', user);
+    console.log('🔍 isFormOpen:', isFormOpen);
+  }, [user, isFormOpen]);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [communityRules, setCommunityRules] = useState({
     title: '커뮤니티 운영 규칙',
@@ -116,7 +122,18 @@ export default function CommunityPage() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출 대신 풍부한 샘플 데이터 사용
+      
+      // 실제 API 호출
+      const response = await fetch('http://localhost:5000/api/community/posts');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.posts || []);
+        setLoading(false);
+        return;
+      }
+      
+      // API 실패 시 샘플 데이터 사용
       const mockPosts: Post[] = [
         {
           _id: '1',
@@ -538,7 +555,10 @@ export default function CommunityPage() {
                 </button>
               )}
               <button
-                onClick={() => setIsFormOpen(true)}
+                onClick={() => {
+                  console.log('글쓰기 버튼 클릭, user:', user);
+                  setIsFormOpen(true);
+                }}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
               >
                 ✍️ 글쓰기
@@ -757,7 +777,7 @@ export default function CommunityPage() {
         )}
 
         {/* 게시글 작성 모달 */}
-        {isFormOpen && (
+        {isFormOpen && user && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
               <div className="mt-3">
