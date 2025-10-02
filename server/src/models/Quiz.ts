@@ -5,7 +5,8 @@ export interface IQuiz extends Document {
   description: string;
   category: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  type: 'multiple-choice' | 'short-answer';
+  type: 'multiple-choice' | 'short-answer' | 'practice' | 'test' | 'survey';
+  isPublicDemo?: boolean; // 체험 모드 공개 여부
   questions: Array<{
     question: string;
     type: 'multiple-choice' | 'short-answer';
@@ -48,8 +49,12 @@ const QuizSchema = new Schema<IQuiz>({
   },
   type: { 
     type: String, 
-    enum: ['multiple-choice', 'short-answer'], 
+    enum: ['multiple-choice', 'short-answer', 'practice', 'test', 'survey'], 
     required: true 
+  },
+  isPublicDemo: {
+    type: Boolean,
+    default: false
   },
   questions: [{
     question: { 
