@@ -275,9 +275,7 @@ const userMenuStructure = {
     health: [
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/algorithm-analytics', label: '📈 알고리즘 분석' },
-      { href: '/admin/health/overview', label: '📊 전체 건강 현황' },
-      { href: '/admin/health/statistics', label: '📈 건강 통계 분석' },
-      { href: '/admin/health/ai-config', label: '🤖 건강 AI 설정' },
+      { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
     ],
     tools: [
       { href: '/admin/3d-viewer/management', label: '⚙️ 3D 뷰어 관리' },

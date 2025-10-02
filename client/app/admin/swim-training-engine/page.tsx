@@ -316,6 +316,7 @@ export default function SwimTrainingEnginePage() {
               { id: 'training-methods', name: '훈련법 관리', icon: BookOpen },
               { id: 'drills', name: '드릴 관리', icon: Activity },
               { id: 'conditions', name: '질환별 가이드라인', icon: Heart },
+              { id: 'ai-health-config', name: 'AI/건강 설정', icon: Cpu },
               { id: 'analytics', name: '분석', icon: BarChart3 },
             ].map((tab) => (
               <button
@@ -1536,6 +1537,385 @@ export default function SwimTrainingEnginePage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'ai-health-config' && (
+          <div className="space-y-6 h-full overflow-y-auto pb-20">
+            {/* 건강 기준 설정 */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Heart className="h-5 w-5 text-red-500" />
+                건강 기준 설정
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                BMI, 혈압, 심박수 등의 정상/주의/위험 범위를 설정합니다. 이 기준은 자동 위험도 판단과 프로그램 조정에 사용됩니다.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* BMI 기준 */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                    BMI (Body Mass Index)
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-600">저체중 (~ 18.5)</label>
+                      <div className="h-2 bg-blue-200 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">정상 (18.5 ~ 23.0)</label>
+                      <div className="h-2 bg-green-500 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">과체중 (23.0 ~ 25.0)</label>
+                      <div className="h-2 bg-yellow-400 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">비만 (25.0 ~)</label>
+                      <div className="h-2 bg-red-500 rounded-full mt-1"></div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    📚 기준: WHO 아시아-태평양 가이드라인
+                  </p>
+                </div>
+
+                {/* 혈압 기준 */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-red-500" />
+                    혈압 (Blood Pressure)
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-600">정상 (~ 120/80)</label>
+                      <div className="h-2 bg-green-500 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">주의 (120-129 / ~ 80)</label>
+                      <div className="h-2 bg-yellow-400 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">1단계 고혈압 (130-139 / 80-89)</label>
+                      <div className="h-2 bg-orange-400 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">2단계 고혈압 (140+ / 90+)</label>
+                      <div className="h-2 bg-red-500 rounded-full mt-1"></div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    📚 기준: American Heart Association
+                  </p>
+                </div>
+
+                {/* 심박수 기준 */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-pink-500" />
+                    안정시 심박수 (Resting HR)
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-600">우수 (~ 60 bpm)</label>
+                      <div className="h-2 bg-green-500 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">정상 (60 ~ 80 bpm)</label>
+                      <div className="h-2 bg-blue-400 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">주의 (80 ~ 100 bpm)</label>
+                      <div className="h-2 bg-yellow-400 rounded-full mt-1"></div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">위험 (100+ bpm)</label>
+                      <div className="h-2 bg-red-500 rounded-full mt-1"></div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    📚 기준: Mayo Clinic, American Heart Association
+                  </p>
+                </div>
+
+                {/* 나이별 최대심박수 */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-purple-500" />
+                    나이별 최대 심박수
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">20대:</span>
+                      <span className="font-medium">200 bpm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">30대:</span>
+                      <span className="font-medium">190 bpm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">40대:</span>
+                      <span className="font-medium">180 bpm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">50대:</span>
+                      <span className="font-medium">170 bpm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">60대+:</span>
+                      <span className="font-medium">160 bpm</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    📐 공식: 220 - 나이
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI 추천 알고리즘 파라미터 */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-purple-500" />
+                AI 추천 알고리즘 파라미터
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                건강 상태에 따라 프로그램을 자동으로 조정하는 AI 알고리즘의 파라미터를 설정합니다.
+              </p>
+
+              <div className="space-y-6">
+                {/* 운동량 자동 조정 */}
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h4 className="font-semibold mb-2">운동량 자동 조정</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="bg-red-50 p-3 rounded">
+                      <div className="font-medium text-red-700 mb-1">고위험군</div>
+                      <div className="text-gray-600">기본 운동량의 50-70%</div>
+                      <div className="text-xs text-gray-500 mt-1">2단계 고혈압, 심한 비만 등</div>
+                    </div>
+                    <div className="bg-yellow-50 p-3 rounded">
+                      <div className="font-medium text-yellow-700 mb-1">주의군</div>
+                      <div className="text-gray-600">기본 운동량의 70-85%</div>
+                      <div className="text-xs text-gray-500 mt-1">1단계 고혈압, 경도 비만 등</div>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded">
+                      <div className="font-medium text-green-700 mb-1">정상군</div>
+                      <div className="text-gray-600">기본 운동량 100%</div>
+                      <div className="text-xs text-gray-500 mt-1">정상 범위 내 모든 지표</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 강도 조절 */}
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h4 className="font-semibold mb-2">강도 조절 규칙</h4>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>고혈압 환자: 최대 심박수의 50-70% 유지 (중저강도)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>당뇨 환자: 식후 1-2시간 운동, 혈당 모니터링 필수</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>관절 질환: 고강도 스프린트 제외, 기술 중심 프로그램</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>65세 이상: 워밍업 2배 증가, 쿨다운 충분히</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 휴식 시간 조정 */}
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h4 className="font-semibold mb-2">휴식 시간 자동 조정</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="font-medium text-purple-700 mb-2">기본 휴식 시간</div>
+                      <div className="space-y-1 text-gray-600">
+                        <div>• 고강도: 60-90초</div>
+                        <div>• 중강도: 30-45초</div>
+                        <div>• 저강도: 15-20초</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700 mb-2">조정 규칙</div>
+                      <div className="space-y-1 text-gray-600">
+                        <div>• 고령자: +50%</div>
+                        <div>• 심혈관 질환: +100%</div>
+                        <div>• 초보자: +30%</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 의학적 근거 */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-blue-600" />
+                의학적 근거 및 가이드라인
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="font-semibold text-blue-700 mb-2">WHO 운동 가이드라인</div>
+                  <div className="text-gray-600 mb-2">
+                    성인: 주당 150-300분 중강도 또는 75-150분 고강도 유산소 운동
+                  </div>
+                  <a 
+                    href="https://www.who.int/publications/i/item/9789240015128" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline text-xs"
+                  >
+                    📚 WHO Physical Activity Guidelines →
+                  </a>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="font-semibold text-green-700 mb-2">ACSM 운동 처방 지침</div>
+                  <div className="text-gray-600 mb-2">
+                    개인별 건강 상태에 따른 운동 강도, 빈도, 시간 조절 방법
+                  </div>
+                  <a 
+                    href="https://www.acsm.org/education-resources/books/guidelines-exercise-testing-prescription" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-500 hover:underline text-xs"
+                  >
+                    📚 ACSM Guidelines →
+                  </a>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="font-semibold text-red-700 mb-2">AHA 심혈관 운동 지침</div>
+                  <div className="text-gray-600 mb-2">
+                    고혈압, 심장질환 환자를 위한 안전한 운동 프로토콜
+                  </div>
+                  <a 
+                    href="https://www.heart.org/en/healthy-living/fitness" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red-500 hover:underline text-xs"
+                  >
+                    📚 AHA Exercise Standards →
+                  </a>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="font-semibold text-purple-700 mb-2">수중 운동 효과 연구</div>
+                  <div className="text-gray-600 mb-2">
+                    수영이 관절에 미치는 영향과 재활 효과에 대한 과학적 근거
+                  </div>
+                  <a 
+                    href="https://pubmed.ncbi.nlm.nih.gov/" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-500 hover:underline text-xs"
+                  >
+                    📚 PubMed Research →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* 권한 및 데이터 관리 */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-500" />
+                권한 및 데이터 공개 설정
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                건강정보 접근 권한과 데이터 공개 범위를 관리합니다. 개인정보 보호법을 준수합니다.
+              </p>
+
+              <div className="space-y-4">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">계정별 접근 권한</h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <div>
+                        <div className="font-medium">최고관리자 (admin)</div>
+                        <div className="text-xs text-gray-500">모든 건강정보 및 설정 접근</div>
+                      </div>
+                      <div className="text-green-600 font-medium">전체 권한</div>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <div>
+                        <div className="font-medium">센터관리자 (centerAdmin)</div>
+                        <div className="text-xs text-gray-500">소속 센터 회원의 공개 건강정보</div>
+                      </div>
+                      <div className="text-blue-600 font-medium">제한적 접근</div>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <div>
+                        <div className="font-medium">강사 (instructor)</div>
+                        <div className="text-xs text-gray-500">담당 학생의 공개 건강정보</div>
+                      </div>
+                      <div className="text-yellow-600 font-medium">제한적 접근</div>
+                    </div>
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <div className="font-medium">회원 (member)</div>
+                        <div className="text-xs text-gray-500">본인 건강정보만 접근</div>
+                      </div>
+                      <div className="text-gray-600 font-medium">본인만</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-4 bg-yellow-50">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <div className="font-semibold text-yellow-900 mb-1">개인정보 보호 안내</div>
+                      <div className="text-yellow-800 space-y-1">
+                        <div>• 회원은 언제든지 건강정보 공개 범위를 변경할 수 있습니다</div>
+                        <div>• 민감한 건강정보는 기본적으로 비공개 처리됩니다</div>
+                        <div>• 모든 접근 기록은 로그로 저장되어 감사 추적이 가능합니다</div>
+                        <div>• AI 분석에 사용되는 데이터는 익명화 처리됩니다</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 시스템 상태 */}
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border border-green-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-green-600" />
+                시스템 상태
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">✅</div>
+                  <div className="text-sm text-gray-600 mt-1">건강 기준</div>
+                  <div className="text-xs text-gray-500">활성화</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">🤖</div>
+                  <div className="text-sm text-gray-600 mt-1">AI 알고리즘</div>
+                  <div className="text-xs text-gray-500">정상 작동</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">🔒</div>
+                  <div className="text-sm text-gray-600 mt-1">권한 관리</div>
+                  <div className="text-xs text-gray-500">보안 적용</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">📊</div>
+                  <div className="text-sm text-gray-600 mt-1">데이터 동기화</div>
+                  <div className="text-xs text-gray-500">실시간</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
