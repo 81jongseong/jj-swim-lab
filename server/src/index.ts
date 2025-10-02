@@ -217,6 +217,7 @@ import healthExerciseAIRoutes from './routes/health-exercise-ai';
 import exercisePrescriptionRoutes from './routes/exercise-prescription';
 import healthInputRoutes from './routes/health-input';
 import swimEngineRoutes from './routes/swim-engine';
+import geoAggregateRoutes from './routes/geo-aggregate';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -515,6 +516,7 @@ app.use('/api/health-exercise-ai', healthExerciseAIRoutes);
 app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
 app.use('/api/health', healthInputRoutes);
 app.use('/api/swim-engine', swimEngineRoutes);
+app.use('/api/geo', geoAggregateRoutes);
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
