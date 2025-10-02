@@ -23,6 +23,20 @@ export default function QuizManagementPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  
+  // 생성/수정 모달 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '수영 이론',
+    difficulty: '초급',
+    timeLimit: 30,
+    isActive: true,
+    isPublicDemo: false,
+    questions: [] as any[]
+  });
 
   useEffect(() => {
     if (user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin')) {
@@ -66,6 +80,116 @@ export default function QuizManagementPage() {
     }
   };
 
+  // 퀴즈 생성
+  const handleCreate = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/quiz', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert('퀴즈가 생성되었습니다!');
+        setShowCreateModal(false);
+        resetForm();
+        loadQuizzes();
+      } else {
+        alert('퀴즈 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('퀴즈 생성 오류:', error);
+      alert('퀴즈 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 퀴즈 수정
+  const handleUpdate = async () => {
+    if (!editingQuiz) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/quiz/${editingQuiz.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert('퀴즈가 수정되었습니다!');
+        setShowCreateModal(false);
+        setEditingQuiz(null);
+        resetForm();
+        loadQuizzes();
+      } else {
+        alert('퀴즈 수정에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('퀴즈 수정 오류:', error);
+      alert('퀴즈 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 퀴즈 삭제
+  const handleDelete = async (quizId: string) => {
+    if (!confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/quiz/${quizId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        alert('퀴즈가 삭제되었습니다!');
+        loadQuizzes();
+      } else {
+        alert('퀴즈 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('퀴즈 삭제 오류:', error);
+      alert('퀴즈 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 수정 시작
+  const startEdit = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    setFormData({
+      title: quiz.title,
+      description: quiz.description,
+      category: quiz.category,
+      difficulty: quiz.level || '초급',
+      timeLimit: quiz.timeLimit,
+      isActive: quiz.isActive,
+      isPublicDemo: quiz.isPublicDemo || false,
+      questions: []
+    });
+    setShowCreateModal(true);
+  };
+
+  // 폼 초기화
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      category: '수영 이론',
+      difficulty: '초급',
+      timeLimit: 30,
+      isActive: true,
+      isPublicDemo: false,
+      questions: []
+    });
+    setEditingQuiz(null);
+  };
+
   if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -87,9 +211,20 @@ export default function QuizManagementPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 관리</h1>
-        <p className="text-gray-600">퀴즈를 생성하고 관리합니다</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 관리</h1>
+          <p className="text-gray-600">퀴즈를 생성하고 관리합니다</p>
+        </div>
+        <button
+          onClick={() => {
+            resetForm();
+            setShowCreateModal(true);
+          }}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          + 새 퀴즈 생성
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -144,7 +279,7 @@ export default function QuizManagementPage() {
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">{quiz.description}</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div className="bg-gray-50 p-2 rounded">
                     <div className="text-gray-500">카테고리</div>
                     <div className="font-medium">{quiz.category}</div>
@@ -162,19 +297,37 @@ export default function QuizManagementPage() {
                     <div className="font-medium">{quiz.timeLimit}분</div>
                   </div>
                 </div>
+                
+                {/* 수정/삭제 버튼 */}
+                <div className="flex gap-2 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => startEdit(quiz)}
+                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                  >
+                    ✏️ 수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(quiz.id)}
+                    className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm font-medium"
+                  >
+                    🗑️ 삭제
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-        <div className="font-semibold mb-1">✅ 퀴즈 관리 시스템 복원 완료!</div>
+      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+        <div className="font-semibold mb-1">✅ 퀴즈 관리 시스템 - 전체 CRUD 기능!</div>
         <ul className="list-disc list-inside space-y-1">
-          <li>퀴즈 목록 표시 (DB 연동)</li>
-          <li>체험 공개 상태 표시</li>
-          <li>통계 대시보드</li>
-          <li>카드 클릭으로 상세보기</li>
+          <li>✅ 퀴즈 생성 (기본 정보)</li>
+          <li>✅ 퀴즈 조회 및 목록 표시</li>
+          <li>✅ 퀴즈 수정</li>
+          <li>✅ 퀴즈 삭제</li>
+          <li>✅ 체험 모드 공개 설정</li>
+          <li>🔄 문제 추가 기능은 추후 구현 예정</li>
         </ul>
       </div>
 
@@ -250,6 +403,136 @@ export default function QuizManagementPage() {
                 className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
                 닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 생성/수정 모달 */}
+      {showCreateModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowCreateModal(false);
+            resetForm();
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingQuiz ? '퀴즈 수정' : '새 퀴즈 생성'}
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">제목 *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="퀴즈 제목을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">설명 *</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="퀴즈 설명을 입력하세요"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 *</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="수영 이론">수영 이론</option>
+                    <option value="수영 기술">수영 기술</option>
+                    <option value="안전 수칙">안전 수칙</option>
+                    <option value="건강 관리">건강 관리</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">난이도 *</label>
+                  <select
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="초급">초급</option>
+                    <option value="중급">중급</option>
+                    <option value="고급">고급</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시간 제한 (분) *</label>
+                <input
+                  type="number"
+                  value={formData.timeLimit}
+                  onChange={(e) => setFormData({ ...formData, timeLimit: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  min="1"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">활성화</span>
+                </label>
+
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublicDemo}
+                    onChange={(e) => setFormData({ ...formData, isPublicDemo: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">🌍 체험 모드 공개</span>
+                </label>
+              </div>
+
+              <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-800">
+                ℹ️ 문제 추가 기능은 추후 구현 예정입니다. 현재는 기본 정보만 저장됩니다.
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={editingQuiz ? handleUpdate : handleCreate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {editingQuiz ? '수정하기' : '생성하기'}
               </button>
             </div>
           </div>
