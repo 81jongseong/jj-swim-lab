@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button, Input } from '../../components/ui';
-import { Card } from '../../components/ui/card';
+// UI 컴포넌트를 HTML 요소로 교체하여 Element type is invalid 오류 방지
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
 
 /**
@@ -430,29 +429,29 @@ export default function CommunityPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <Input
+              <input
                 type="text"
                 placeholder="게시글 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex gap-2">
               {user?.userType === 'superAdmin' && (
-                <Button
+                <button
                   onClick={() => setShowRulesModal(true)}
-                  className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
                 >
                   ⚙️ 운영 규칙
-                </Button>
+                </button>
               )}
-              <Button
+              <button
                 onClick={() => setIsFormOpen(true)}
-                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
               >
                 ✍️ 글쓰기
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -500,7 +499,7 @@ export default function CommunityPage() {
           {filteredPosts
             .filter(post => selectedCategory === 'all' || post.category === selectedCategory)
             .map((post) => (
-              <Card key={post._id} className="hover:shadow-lg transition-shadow duration-200">
+              <div key={post._id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
@@ -631,7 +630,7 @@ export default function CommunityPage() {
                     </div>
                   )}
                 </div>
-              </Card>
+              </div>
             ))}
         </div>
 
@@ -649,15 +648,15 @@ export default function CommunityPage() {
                 {categories.find(c => c.value === selectedCategory)?.description}에 관한 첫 번째 글을 작성해보세요!
               </p>
               {user && (
-                <Button 
+                <button 
                   onClick={() => {
                     setNewPost(prev => ({ ...prev, category: selectedCategory === 'all' ? 'general' : selectedCategory }));
                     setIsFormOpen(true);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >
                   첫 글 작성하기
-                </Button>
+                </button>
               )}
             </div>
           </div>
@@ -907,16 +906,19 @@ export default function CommunityPage() {
                   )}
 
                   <div className="flex justify-end space-x-4">
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
                       onClick={() => setIsFormOpen(false)}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
                     >
                       취소
-                    </Button>
-                    <Button type="submit">
+                    </button>
+                    <button 
+                      type="submit"
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    >
                       작성
-                    </Button>
+                    </button>
                   </div>
                 </form>
               </div>
