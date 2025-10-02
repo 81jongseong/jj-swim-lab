@@ -1,6 +1,44 @@
 # 🛠️ JJ Swim Lab 개발 문서
 
-## 📅 최근 업데이트 (2025-09-30)
+## 📅 최근 업데이트 (2025-01-22)
+
+### 🐛 **서버 오류 수정 (2025-01-22)**
+
+#### ❌ **오류:**
+```
+TSError: Unable to compile TypeScript:
+src/index.ts:138:14 - error TS1005: '=' expected.
+138 import center-levelsRoutes from './routes/center-levels';
+
+JavaScript 변수명에 하이픈(-) 사용 불가
+```
+
+#### ✅ **해결 방법:**
+```javascript
+// 잘못된 코드:
+import center-levelsRoutes from './routes/center-levels';
+app.use('/api/center-levels', centerLevelRoutes);
+
+// 수정된 코드:
+import centerLevelsRoutes from './routes/center-levels';
+app.use('/api/center-levels', centerLevelsRoutes);
+```
+
+**수정된 변수명:**
+- ❌ `center-levelsRoutes` → ✅ `centerLevelsRoutes`
+- ❌ `ai-evaluation-criteriaRoutes` → ✅ `aiEvaluationCriteriaRoutes`
+- ❌ `ai-exercise-recommendationsRoutes` → ✅ `aiExerciseRecommendationsRoutes`
+- ❌ `health-inputRoutes` → ✅ `healthInputRoutes`
+- 중복 제거: `noticeRoutes` (중복 import 삭제)
+
+**중요:**
+- JavaScript 변수명은 camelCase 사용
+- 하이픈(-) 사용 시 컴파일 오류 발생
+- URL 경로는 하이픈 사용 가능 (예: `/api/center-levels`)
+
+---
+
+## 📅 이전 업데이트 (2025-09-30)
 
 ### 🚀 **SwimLab Data Pack v4 통합 완료 (2025-09-30)**
 

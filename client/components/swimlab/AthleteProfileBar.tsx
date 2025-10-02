@@ -78,14 +78,34 @@ export default function AthleteProfileBar({
 
   return (
     <>
-    <div className="flex flex-wrap items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border rounded-lg">
-      {/* 회원 DB에서 선수 추가 - 모바일 터치 타깃 40px+ */}
-      <button 
-        className="border rounded px-3 py-2 text-xs md:text-sm bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium min-h-[40px] shadow-md"
-        onClick={() => setShowMemberModal(true)}
-      >
-        ➕ 회원 불러오기 (다중 선택)
-      </button>
+    <div className="space-y-3">
+      {/* 회원 불러오기 버튼 (강조) */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4 shadow-lg">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">👥</span>
+            <div className="text-white">
+              <div className="font-semibold">회원 불러오기</div>
+              <div className="text-xs opacity-90">DB에서 실제 회원 정보를 가져옵니다</div>
+            </div>
+          </div>
+          <button 
+            className="px-4 py-2 bg-white hover:bg-gray-100 text-blue-600 font-medium rounded-lg min-h-[40px] shadow-md transition-all"
+            onClick={() => setShowMemberModal(true)}
+          >
+            ➕ 불러오기
+          </button>
+        </div>
+      </div>
+
+      {/* 선수 목록 및 관리 버튼 영역 */}
+      <div className="flex flex-wrap items-center gap-2 p-4 bg-white border-2 border-gray-200 rounded-lg">
+        {/* 선수 목록 라벨 */}
+        {items.length > 0 && (
+          <div className="text-sm font-medium text-gray-600 mr-2">
+            선수 목록 ({items.length}명):
+          </div>
+        )}
 
       {/* 선수 목록 (칩) - 모바일 터치 타깃 40px+ */}
       {items.map(p => {
@@ -130,14 +150,29 @@ export default function AthleteProfileBar({
         );
       })}
 
-      {/* 구분선 */}
-      {items.length > 0 && (
-        <div className="w-px h-6 bg-gray-300" />
-      )}
+        {/* 안내 메시지 (선수 없을 때) */}
+        {items.length === 0 && (
+          <div className="text-sm text-gray-400 py-2">
+            위의 "➕ 불러오기" 버튼을 클릭하여 회원을 추가하세요
+          </div>
+        )}
+
+        {/* 구분선 */}
+        {items.length > 0 && (
+          <div className="w-full border-t border-gray-300 my-2"></div>
+        )}
+
+        {/* 관리 버튼 라벨 */}
+        {items.length > 0 && (
+          <div className="w-full text-sm font-medium text-gray-600 mb-1">
+            선수 관리 기능:
+          </div>
+        )}
 
       {/* 현재 컨디션 → 저장 (선택 1명 필요) - 모바일 터치 40px+ */}
+      {items.length > 0 && (
       <button 
-        className="border rounded px-3 py-2 text-xs md:text-sm bg-green-50 hover:bg-green-100 text-green-700 border-green-200 min-h-[40px]"
+        className="border-2 rounded-lg px-4 py-2 text-sm bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 text-green-700 border-green-300 min-h-[44px] font-medium shadow-sm"
         onClick={() => {
           const id = selected[0]; 
           if (!id) return alert('저장할 선수를 하나 선택하세요.');
@@ -150,10 +185,12 @@ export default function AthleteProfileBar({
       >
         💾 컨디션 저장
       </button>
+      )}
 
       {/* 목표 편집 (선택 1명) - NEW! */}
+      {items.length > 0 && (
       <button 
-        className="border rounded px-3 py-2 text-xs md:text-sm bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 min-h-[40px]"
+        className="border-2 rounded-lg px-4 py-2 text-sm bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 border-purple-300 min-h-[44px] font-medium shadow-sm"
         onClick={() => {
           const id = selected[0]; 
           if (!id) return alert('편집할 선수를 하나 선택하세요.');
@@ -164,10 +201,12 @@ export default function AthleteProfileBar({
       >
         🎯 목표 편집
       </button>
+      )}
 
       {/* 불러오기 (선택 1명) */}
+      {items.length > 0 && (
       <button 
-        className="border rounded px-3 py-2 text-xs md:text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 min-h-[40px]"
+        className="border-2 rounded-lg px-4 py-2 text-sm bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-700 border-blue-300 min-h-[44px] font-medium shadow-sm"
         onClick={() => {
           const id = selected[0]; 
           if (!id) return alert('불러올 선수를 하나 선택하세요.');
@@ -179,10 +218,12 @@ export default function AthleteProfileBar({
       >
         📥 불러오기
       </button>
+      )}
 
       {/* 삭제 (선택 1명) */}
+      {items.length > 0 && (
       <button 
-        className="border rounded px-3 py-2 text-xs md:text-sm bg-red-50 hover:bg-red-100 text-red-700 border-red-200 min-h-[40px]"
+        className="border-2 rounded-lg px-4 py-2 text-sm bg-gradient-to-r from-red-50 to-orange-50 hover:from-red-100 hover:to-orange-100 text-red-700 border-red-300 min-h-[44px] font-medium shadow-sm"
         onClick={() => {
           const id = selected[0]; 
           if (!id) return alert('삭제할 선수를 하나 선택하세요.');
@@ -196,13 +237,22 @@ export default function AthleteProfileBar({
       >
         🗑️ 삭제
       </button>
-
-      {/* 선택 상태 표시 */}
-      {selected.length > 0 && (
-        <div className="text-xs md:text-sm text-gray-600 ml-2">
-          선택: {selected.length}명
-        </div>
       )}
+
+        {/* 선택 상태 표시 */}
+        {selected.length > 0 && (
+          <div className="w-full mt-2 pt-2 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                ✅ 선택: {selected.length}명
+              </span>
+              <span className="text-gray-500 text-xs">
+                프로그램 생성 시 이 {selected.length}명의 프로그램이 생성됩니다
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
 
     {/* 목표 편집 모달 (하단 드로어 형태 - 모바일 우선) */}

@@ -135,9 +135,8 @@ import { connectDB } from './db';
 import { runSeedData } from './utils/seedData';
 
 // 라우트 임포트
-import center-levelsRoutes from './routes/center-levels';
+import centerLevelsRoutes from './routes/center-levels';
 import exampleRoutes from './routes/example';
-import noticeRoutes from './routes/notice';
 import runPipelineRoutes from './routes/runPipeline';
 import authRoutes from './routes/auth';
 import dashboardRoutes from './routes/dashboard';
@@ -426,9 +425,9 @@ app.get('/api/health', cache({ ttl: 60 }), (req, res) => {
 });
 
 // API 라우트 등록
-app.use('/api/ai-evaluation-criteria', ai-evaluation-criteriaRoutes);
-app.use('/api/ai-exercise-recommendations', ai-exercise-recommendationsRoutes);
-app.use('/api/health-input', health-inputRoutes);
+app.use('/api/ai-evaluation-criteria', aiEvaluationCriteriaRoutes);
+app.use('/api/ai-exercise-recommendations', aiExerciseRecommendationsRoutes);
+app.use('/api/health-input', healthInputRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
@@ -455,7 +454,7 @@ app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/student-progress', studentProgressRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/center-levels', centerLevelRoutes);
+app.use('/api/center-levels', centerLevelsRoutes);
 app.use('/api/student-levels', studentLevelRoutes);
 app.use('/api/instructor', instructorRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
