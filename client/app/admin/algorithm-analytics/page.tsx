@@ -192,7 +192,7 @@ export default function AlgorithmAnalyticsPage() {
               <Activity className="h-5 w-5 text-orange-500" />
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {stats.programs.length > 0 
+              {stats.programs && stats.programs.length > 0 
                 ? (stats.programs.reduce((sum, p) => sum + (p.numDays || 0), 0) / stats.programs.length).toFixed(1)
                 : 0}일
             </div>
@@ -208,19 +208,19 @@ export default function AlgorithmAnalyticsPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {filteredStats.recentPrograms.filter(p => p.type === 'weekly').length}
+                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.type === 'weekly').length || 0}
               </div>
               <div className="text-sm text-gray-600">주간 계획</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {filteredStats.recentPrograms.filter(p => p.type === 'race').length}
+                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.type === 'race').length || 0}
               </div>
               <div className="text-sm text-gray-600">경기 준비</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {filteredStats.recentPrograms.filter(p => p.athleteIds && p.athleteIds.length > 1).length}
+                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.athleteIds && p.athleteIds.length > 1).length || 0}
               </div>
               <div className="text-sm text-gray-600">팀 프로그램</div>
             </div>
@@ -230,7 +230,7 @@ export default function AlgorithmAnalyticsPage() {
         {/* 최근 생성 프로그램 */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <h3 className="text-lg font-semibold mb-4">최근 생성 프로그램</h3>
-          {filteredStats.recentPrograms.length > 0 ? (
+          {filteredStats.recentPrograms && filteredStats.recentPrograms.length > 0 ? (
             <div className="space-y-3">
               {filteredStats.recentPrograms.slice(0, 10).map((program) => (
                 <div key={program.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
