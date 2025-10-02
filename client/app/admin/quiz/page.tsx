@@ -22,6 +22,7 @@ export default function QuizManagementPage() {
   const { user, loading } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
 
   useEffect(() => {
     if (user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin')) {
@@ -122,7 +123,11 @@ export default function QuizManagementPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {quizzes.map((quiz) => (
-              <div key={quiz.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div 
+                key={quiz.id} 
+                onClick={() => setSelectedQuiz(quiz)}
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer"
+              >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold text-gray-900">{quiz.title}</h3>
                   <div className="flex flex-col gap-1">
@@ -169,9 +174,87 @@ export default function QuizManagementPage() {
           <li>퀴즈 목록 표시 (DB 연동)</li>
           <li>체험 공개 상태 표시</li>
           <li>통계 대시보드</li>
-          <li>생성/수정/삭제 기능은 추후 추가 예정</li>
+          <li>카드 클릭으로 상세보기</li>
         </ul>
       </div>
+
+      {/* 퀴즈 상세보기 모달 */}
+      {selectedQuiz && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedQuiz(null)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-start">
+                <h2 className="text-2xl font-bold text-gray-900">{selectedQuiz.title}</h2>
+                <button
+                  onClick={() => setSelectedQuiz(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-1">설명</div>
+                <p className="text-gray-900">{selectedQuiz.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm font-medium text-gray-500 mb-1">카테고리</div>
+                  <div className="text-gray-900">{selectedQuiz.category}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm font-medium text-gray-500 mb-1">난이도</div>
+                  <div className="text-gray-900">{selectedQuiz.level}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm font-medium text-gray-500 mb-1">문제 수</div>
+                  <div className="text-gray-900">{selectedQuiz.questions}개</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm font-medium text-gray-500 mb-1">시간 제한</div>
+                  <div className="text-gray-900">{selectedQuiz.timeLimit}분</div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  selectedQuiz.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {selectedQuiz.isActive ? '✅ 활성' : '❌ 비활성'}
+                </div>
+                {selectedQuiz.isPublicDemo && (
+                  <div className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    🌍 체험 모드 공개
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600">
+                <div>생성일: {new Date(selectedQuiz.createdAt).toLocaleString('ko-KR')}</div>
+                <div>수정일: {new Date(selectedQuiz.updatedAt).toLocaleString('ko-KR')}</div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+              <button
+                onClick={() => setSelectedQuiz(null)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
