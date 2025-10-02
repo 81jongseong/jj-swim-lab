@@ -123,17 +123,23 @@ export default function CommunityPage() {
     try {
       setLoading(true);
       
-      // 실제 API 호출
-      const response = await fetch('http://localhost:5000/api/community/posts');
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts || []);
-        setLoading(false);
-        return;
+      // 실제 API 호출 시도
+      try {
+        const response = await fetch('http://localhost:5000/api/community/posts');
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.posts && data.posts.length > 0) {
+            setPosts(data.posts);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.warn('⚠️ API 연결 실패, 샘플 데이터 사용:', apiError);
       }
       
-      // API 실패 시 샘플 데이터 사용
+      // API 실패 또는 데이터 없을 시 샘플 데이터 사용
       const mockPosts: Post[] = [
         {
           _id: '1',
