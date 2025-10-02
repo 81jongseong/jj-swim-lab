@@ -140,12 +140,12 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
-          // CSP 헤더 (개발 환경에서는 완화 - API 요청 허용)
+          // CSP 헤더 (개발 환경에서는 완화 - API 요청 및 외부 리소스 허용)
           {
             key: 'Content-Security-Policy',
             value: process.env.NODE_ENV === 'production' 
-              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000;"
-              : "default-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000;",
+              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 https://unpkg.com https://*.tile.openstreetmap.org;"
+              : "default-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000 https://unpkg.com https://*.tile.openstreetmap.org;",
           },
         ],
       },
