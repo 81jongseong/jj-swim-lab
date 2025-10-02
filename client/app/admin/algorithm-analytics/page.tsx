@@ -32,10 +32,7 @@ export default function AlgorithmAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
-  const [refreshKey, setRefreshKey] = useState(0);
-  
-  // 실제 프로그램 생성 통계 가져오기
-  const stats = useMemo(() => getProgramStats(), [refreshKey]);
+  const [stats, setStats] = useState({ total: 0, athletes: 0, recentCount: 0, programs: [] as any[] });
   
   useEffect(() => {
     if (authLoading) return;
@@ -46,11 +43,21 @@ export default function AlgorithmAnalyticsPage() {
       return;
     }
     
+    // 클라이언트에서만 LocalStorage 데이터 로드
+    setStats(getProgramStats());
     setLoading(false);
   }, [user, authLoading]);
   
   // 시간 범위별 필터링
   const filteredStats = useMemo(() => {
+    if (!stats.programs || stats.programs.length === 0) {
+      return {
+        ...stats,
+        recentCount: 0,
+        recentPrograms: []
+      };
+    }
+    
     const now = new Date();
     let cutoffDate: Date;
     
@@ -110,7 +117,7 @@ export default function AlgorithmAnalyticsPage() {
               </p>
             </div>
             <button
-              onClick={() => setRefreshKey(prev => prev + 1)}
+              onClick={() => setStats(getProgramStats())}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
