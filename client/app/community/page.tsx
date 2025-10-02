@@ -702,13 +702,14 @@ export default function CommunityPage() {
                     <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                       제목 *
                     </label>
-                    <Input
+                    <input
                       id="title"
+                      type="text"
                       value={newPost.title}
                       onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="게시글 제목을 입력하세요"
                       required
-                      className="w-full"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -740,7 +741,8 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             장소 *
                           </label>
-                          <Input
+                          <input
+                            type="text"
                             value={newPost.meetupDetails.location}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
@@ -748,6 +750,7 @@ export default function CommunityPage() {
                             }))}
                             placeholder="예: 잠실 수영장 3층"
                             required
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                         
@@ -755,8 +758,9 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             날짜 *
                           </label>
-                          <Input
+                          <input
                             type="date"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             value={newPost.meetupDetails.date}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
@@ -770,7 +774,9 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             시간 *
                           </label>
-                          <Input
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             value={newPost.meetupDetails.time}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
@@ -810,7 +816,9 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             거리 *
                           </label>
-                          <Input
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             value={newPost.meetupDetails.distance}
                             onChange={(e) => setNewPost(prev => ({
                               ...prev,
@@ -849,8 +857,9 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             최대 인원 *
                           </label>
-                          <Input
+                          <input
                             type="number"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             min="2"
                             max="20"
                             value={String(newPost.meetupDetails.maxParticipants)}
@@ -866,8 +875,9 @@ export default function CommunityPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             비용 (원)
                           </label>
-                          <Input
+                          <input
                             type="number"
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             min="0"
                             value={String(newPost.meetupDetails.cost)}
                             onChange={(e) => setNewPost(prev => ({
