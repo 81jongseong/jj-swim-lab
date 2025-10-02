@@ -105,8 +105,16 @@ export default function HealthOverviewPage() {
       const response = await apiClient.get('/api/users');
       console.log('📊 API 응답:', response);
       
-      if (response && response.data && response.data.success) {
-        setUsers(response.data.users || []);
+      // API 응답 형식이 { users: [...] } 또는 { success: true, users: [...] } 둘 다 지원
+      if (response && response.data) {
+        const users = response.data.users || response.data;
+        if (Array.isArray(users)) {
+          setUsers(users);
+          console.log(`✅ ${users.length}명의 회원 데이터 로드 완료`);
+        } else {
+          console.warn('회원 데이터 배열이 아님:', typeof users);
+          setUsers([]);
+        }
       } else {
         console.warn('회원 데이터 응답 없음');
         setUsers([]);
