@@ -71,7 +71,37 @@ export default function QuizPage() {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      // 실제 API 호출 대신 임시 데이터 사용
+      
+      // 실제 API에서 공개된 퀴즈만 가져오기
+      try {
+        const response = await fetch('http://localhost:5000/api/quiz?isPublicDemo=true', {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.data)) {
+            const publicQuizzes = data.data.filter((quiz: any) => quiz.isPublicDemo && quiz.isActive);
+            setQuizzes(publicQuizzes.map((quiz: any) => ({
+              _id: quiz._id,
+              title: quiz.title,
+              description: quiz.description,
+              difficulty: quiz.difficulty,
+              category: quiz.category,
+              timeLimit: quiz.timeLimit,
+              isActive: quiz.isActive,
+              questions: quiz.questions || []
+            })));
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.warn('API 호출 실패, 임시 데이터 사용:', apiError);
+      }
+      
+      // API 실패 시 임시 데이터 사용
       const mockQuizzes: Quiz[] = [
         {
           _id: '1',

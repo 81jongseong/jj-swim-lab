@@ -26,6 +26,7 @@ interface Quiz {
   }>;
   timeLimit: number;
   isActive: boolean;
+  isPublicDemo?: boolean; // 체험 모드 공개 여부
   createdAt: string;
   updatedAt: string;
 }
@@ -82,6 +83,7 @@ export default function QuizManagementPage() {
     customCategory: '', // 커스텀 카테고리
     level: 'beginner',
     timeLimit: 30,
+    isPublicDemo: false, // 체험 모드 공개 여부
     questions: [] as Array<{
       question: string;
       type: 'multiple-choice' | 'short-answer';
@@ -219,7 +221,8 @@ export default function QuizManagementPage() {
             newQuiz.level,
             ...newQuiz.questions.map(q => q.type) // 문제 타입도 태그로 추가
           ], 
-          isActive: true
+          isActive: true,
+          isPublicDemo: newQuiz.isPublicDemo || false // 체험 모드 공개 여부
         })
       });
       
@@ -250,6 +253,7 @@ export default function QuizManagementPage() {
       customCategory: '',
       level: 'beginner',
       timeLimit: 30,
+      isPublicDemo: false,
       questions: []
     });
   };
@@ -312,6 +316,7 @@ export default function QuizManagementPage() {
       customCategory: '',
       level: quiz.difficulty,
       timeLimit: quiz.timeLimit || 30,
+      isPublicDemo: quiz.isPublicDemo || false,
       questions: Array.isArray(quiz.questions) ? quiz.questions.map(q => ({
         question: q.question,
         type: q.type as 'multiple-choice' | 'short-answer',
@@ -355,6 +360,7 @@ export default function QuizManagementPage() {
           difficulty: newQuiz.level,
           type: newQuiz.questions.length > 0 ? newQuiz.questions[0].type : 'multiple-choice',
           timeLimit: newQuiz.timeLimit,
+          isPublicDemo: newQuiz.isPublicDemo || false, // 체험 모드 공개 여부
           questions: newQuiz.questions.map(q => ({
             question: q.question,
             type: q.type,
@@ -563,6 +569,11 @@ export default function QuizManagementPage() {
                     }`}>
                       {quiz.isActive ? '✅ 활성' : '❌ 비활성'}
                     </span>
+                    {quiz.isPublicDemo && (
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        🌍 체험 공개
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -758,30 +769,31 @@ export default function QuizManagementPage() {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-blue-800 mb-2">
-                          카테고리
-                        </label>
-                        <select
-                          value={newQuiz.category}
-                          onChange={(e) => {
-                            setNewQuiz(prev => ({ 
-                              ...prev, 
-                              category: e.target.value,
-                              customCategory: e.target.value === 'custom' ? prev.customCategory : ''
-                            }));
-                          }}
-                          className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="freestyle">🏊‍♂️ 자유형</option>
-                          <option value="backstroke">🏊‍♀️ 배영</option>
-                          <option value="breaststroke">🏊 평영</option>
-                          <option value="butterfly">🦋 접영</option>
-                          <option value="safety">🚨 안전</option>
-                          <option value="theory">📚 이론</option>
-                          <option value="custom">✨ 직접 입력</option>
-                        </select>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">
+                            카테고리
+                          </label>
+                          <select
+                            value={newQuiz.category}
+                            onChange={(e) => {
+                              setNewQuiz(prev => ({ 
+                                ...prev, 
+                                category: e.target.value,
+                                customCategory: e.target.value === 'custom' ? prev.customCategory : ''
+                              }));
+                            }}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="freestyle">🏊‍♂️ 자유형</option>
+                            <option value="backstroke">🏊‍♀️ 배영</option>
+                            <option value="breaststroke">🏊 평영</option>
+                            <option value="butterfly">🦋 접영</option>
+                            <option value="safety">🚨 안전</option>
+                            <option value="theory">📚 이론</option>
+                            <option value="custom">✨ 직접 입력</option>
+                          </select>
                         
                         {newQuiz.category === 'custom' && (
                           <div className="mt-2">
@@ -827,6 +839,26 @@ export default function QuizManagementPage() {
                           className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
+                    </div>
+                    
+                    {/* 체험 공개 설정 */}
+                    <div className="bg-blue-100 rounded-lg p-3 mt-4">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newQuiz.isPublicDemo || false}
+                          onChange={(e) => setNewQuiz(prev => ({ ...prev, isPublicDemo: e.target.checked }))}
+                          className="rounded border-blue-400 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                        />
+                        <div>
+                          <span className="text-sm font-semibold text-blue-900">
+                            🌍 체험 모드에 공개
+                          </span>
+                          <p className="text-xs text-blue-700 mt-1">
+                            체크 시 비회원도 이 퀴즈를 체험할 수 있습니다
+                          </p>
+                        </div>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -1230,6 +1262,26 @@ export default function QuizManagementPage() {
                           className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
+                    </div>
+                    
+                    {/* 체험 공개 설정 */}
+                    <div className="bg-blue-100 rounded-lg p-3 mt-4">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newQuiz.isPublicDemo || false}
+                          onChange={(e) => setNewQuiz(prev => ({ ...prev, isPublicDemo: e.target.checked }))}
+                          className="rounded border-blue-400 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                        />
+                        <div>
+                          <span className="text-sm font-semibold text-blue-900">
+                            🌍 체험 모드에 공개
+                          </span>
+                          <p className="text-xs text-blue-700 mt-1">
+                            체크 시 비회원도 이 퀴즈를 체험할 수 있습니다
+                          </p>
+                        </div>
+                      </label>
                     </div>
                   </div>
                 </div>
