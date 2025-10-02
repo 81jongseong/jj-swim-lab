@@ -172,26 +172,51 @@ const CenterAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cent
   </div>
 );
 
-// 최고 관리자용 센터 정보 뷰
+// 최고 관리자용 - JJ Swim Lab 프로그램 소개 뷰
 const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState(centerInfo);
+  const [programInfo, setProgramInfo] = useState({
+    title: 'JJ Swim Lab - 스마트 수영 교육 플랫폼',
+    subtitle: 'AI 기반 맞춤형 수영 교육 솔루션',
+    description: 'JJ Swim Lab은 수영장 센터와 강사, 회원을 연결하는 통합 수영 교육 관리 플랫폼입니다. AI 기반 건강 분석, 맞춤형 훈련 프로그램 생성, 실시간 진도 관리 등 첨단 기술을 활용하여 효율적이고 체계적인 수영 교육을 지원합니다.',
+    mainFeatures: [
+      '🏊‍♂️ AI 기반 맞춤형 훈련 프로그램 자동 생성',
+      '📊 회원 건강 프로필 및 컨디션 관리',
+      '📈 실시간 진도 추적 및 평가 시스템',
+      '👥 센터·강사·회원 통합 관리',
+      '📱 모바일 반응형 UI',
+      '🔔 실시간 알림 시스템'
+    ],
+    targetUsers: [
+      '수영장 센터: 회원 및 강사 통합 관리',
+      '강사: 수업 일정 및 학생 진도 관리',
+      '회원: 개인 맞춤 훈련 프로그램 및 건강 체크'
+    ],
+    supportHours: {
+      weekday: '평일 09:00 - 18:00',
+      weekend: '주말/공휴일 휴무'
+    },
+    contact: {
+      email: 'support@jjswimlab.com',
+      phone: '02-1234-5678',
+      kakaotalk: '@jjswimlab'
+    }
+  });
 
   const handleSave = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/center-info', {
+      const response = await fetch('http://localhost:5000/api/program-info', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(programInfo)
       });
 
       if (response.ok) {
-        alert('센터 정보가 저장되었습니다!');
+        alert('프로그램 소개가 저장되었습니다!');
         setIsEditing(false);
-        window.location.reload();
       } else {
         alert('저장에 실패했습니다.');
       }
@@ -205,14 +230,13 @@ const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cente
     <div className="space-y-8">
       <div className="bg-red-50 border-l-4 border-red-400 p-4 flex justify-between items-center">
         <p className="text-red-700">
-          안녕하세요, <strong>{user.name}</strong> 최고 관리자님! 소개 페이지를 편집할 수 있습니다.
+          안녕하세요, <strong>{user.name}</strong> 최고 관리자님! 프로그램 소개 페이지를 편집할 수 있습니다.
         </p>
         <button
           onClick={() => {
             if (isEditing) {
               handleSave();
             } else {
-              setEditForm(centerInfo);
               setIsEditing(true);
             }
           }}
@@ -228,24 +252,24 @@ const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cente
 
       {isEditing ? (
         <div className="bg-white rounded-lg shadow-lg p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">센터 정보 편집</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">프로그램 소개 편집</h2>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">센터명 *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">프로그램 제목 *</label>
             <input
               type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              value={programInfo.title}
+              onChange={(e) => setProgramInfo({ ...programInfo, title: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">간단 소개 *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">부제목 *</label>
             <input
               type="text"
-              value={editForm.shortDescription}
-              onChange={(e) => setEditForm({ ...editForm, shortDescription: e.target.value })}
+              value={programInfo.subtitle}
+              onChange={(e) => setProgramInfo({ ...programInfo, subtitle: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
@@ -253,29 +277,70 @@ const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cente
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">상세 설명 *</label>
             <textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              value={programInfo.description}
+              onChange={(e) => setProgramInfo({ ...programInfo, description: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg"
               rows={5}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">주소 *</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">고객 지원 시간</label>
+            <div className="grid grid-cols-2 gap-4">
               <input
                 type="text"
-                value={editForm.address}
-                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                placeholder="평일"
+                value={programInfo.supportHours.weekday}
+                onChange={(e) => setProgramInfo({ 
+                  ...programInfo, 
+                  supportHours: { ...programInfo.supportHours, weekday: e.target.value }
+                })}
+                className="px-3 py-2 border rounded-lg"
+              />
+              <input
+                type="text"
+                placeholder="주말/공휴일"
+                value={programInfo.supportHours.weekend}
+                onChange={(e) => setProgramInfo({ 
+                  ...programInfo, 
+                  supportHours: { ...programInfo.supportHours, weekend: e.target.value }
+                })}
+                className="px-3 py-2 border rounded-lg"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">전화번호 *</label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+            <div className="space-y-2">
+              <input
+                type="email"
+                placeholder="이메일"
+                value={programInfo.contact.email}
+                onChange={(e) => setProgramInfo({ 
+                  ...programInfo, 
+                  contact: { ...programInfo.contact, email: e.target.value }
+                })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
               <input
                 type="text"
-                value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                placeholder="전화번호"
+                value={programInfo.contact.phone}
+                onChange={(e) => setProgramInfo({ 
+                  ...programInfo, 
+                  contact: { ...programInfo.contact, phone: e.target.value }
+                })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+              <input
+                type="text"
+                placeholder="카카오톡 ID"
+                value={programInfo.contact.kakaotalk}
+                onChange={(e) => setProgramInfo({ 
+                  ...programInfo, 
+                  contact: { ...programInfo.contact, kakaotalk: e.target.value }
+                })}
                 className="w-full px-3 py-2 border rounded-lg"
               />
             </div>
@@ -297,7 +362,79 @@ const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cente
           </div>
         </div>
       ) : (
-        <GuestCenterView centerInfo={centerInfo} />
+        <div className="space-y-8">
+          {/* 메인 소개 */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">{programInfo.title}</h1>
+            <p className="text-xl text-blue-600 font-semibold mb-6">{programInfo.subtitle}</p>
+            <p className="text-gray-700 leading-relaxed max-w-4xl mx-auto">{programInfo.description}</p>
+          </div>
+
+          {/* 주요 기능 */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">🎯 주요 기능</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {programInfo.mainFeatures.map((feature, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                  <span className="text-blue-600 text-xl">{feature.split(' ')[0]}</span>
+                  <span className="text-gray-700">{feature.substring(feature.indexOf(' ') + 1)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 사용 대상 */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">👥 사용 대상</h2>
+            <div className="space-y-3">
+              {programInfo.targetUsers.map((target, index) => (
+                <div key={index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                  <span className="text-2xl">•</span>
+                  <p className="text-gray-700 pt-1">{target}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 고객 지원 */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">⏰ 고객 지원 시간</h3>
+              <div className="space-y-2 text-gray-700">
+                <p><strong>평일:</strong> {programInfo.supportHours.weekday}</p>
+                <p><strong>주말/공휴일:</strong> {programInfo.supportHours.weekend}</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">📞 문의처</h3>
+              <div className="space-y-2 text-gray-700">
+                <p><strong>이메일:</strong> {programInfo.contact.email}</p>
+                <p><strong>전화:</strong> {programInfo.contact.phone}</p>
+                <p><strong>카카오톡:</strong> {programInfo.contact.kakaotalk}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 기술 스택 */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">🛠️ 기술 스택</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-semibold text-gray-900 mb-2">Frontend</h4>
+                <p className="text-sm text-gray-600">Next.js, React, TypeScript, Tailwind CSS</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-semibold text-gray-900 mb-2">Backend</h4>
+                <p className="text-sm text-gray-600">Node.js, Express, MongoDB</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-semibold text-gray-900 mb-2">AI/Engine</h4>
+                <p className="text-sm text-gray-600">Swim Training Engine, Health Analytics</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
