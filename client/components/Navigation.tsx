@@ -261,6 +261,7 @@ const userMenuStructure = {
     ],
     customerSupport: [
       { href: '/admin/reports', label: '🎧 고객지원 관리' },
+      { href: '/admin/notices', label: '📢 공지사항 관리' },
     ],
     health: [
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
