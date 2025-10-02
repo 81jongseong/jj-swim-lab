@@ -10,7 +10,8 @@ interface Quiz {
   category: string;
   difficulty: string;
   level?: string;
-  questions: number | Array<any>;
+  questions: Array<any>; // ✅ 항상 배열
+  questionsCount?: number; // ✅ 표시용 개수
   timeLimit: number;
   isActive: boolean;
   isPublicDemo?: boolean;
@@ -77,7 +78,8 @@ export default function QuizManagementPage() {
             description: quiz.description,
             category: quiz.category,
             level: quiz.difficulty,
-            questions: quiz.questions?.length || 0,
+            questions: quiz.questions || [], // ✅ 실제 문제 배열 저장
+            questionsCount: quiz.questions?.length || 0, // ✅ 개수는 별도 필드
             timeLimit: quiz.timeLimit || 0,
             isActive: quiz.isActive,
             isPublicDemo: quiz.isPublicDemo,
@@ -352,7 +354,7 @@ export default function QuizManagementPage() {
                   </div>
                   <div className="bg-gray-50 p-2 rounded">
                     <div className="text-gray-500">문제 수</div>
-                    <div className="font-medium">{quiz.questions}개</div>
+                    <div className="font-medium">{quiz.questionsCount || quiz.questions?.length || 0}개</div>
                   </div>
                   <div className="bg-gray-50 p-2 rounded">
                     <div className="text-gray-500">시간</div>
@@ -432,7 +434,7 @@ export default function QuizManagementPage() {
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm font-medium text-gray-500 mb-1">문제 수</div>
-                  <div className="text-gray-900">{selectedQuiz.questions}개</div>
+                  <div className="text-gray-900">{selectedQuiz.questionsCount || selectedQuiz.questions?.length || 0}개</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm font-medium text-gray-500 mb-1">시간 제한</div>
