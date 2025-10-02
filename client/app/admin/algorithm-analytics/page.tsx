@@ -91,17 +91,24 @@ export default function SystemAnalyticsPage() {
       console.log('📊 Users API 응답:', usersResponse);
       
       // API 응답 형식이 { users: [...] } 또는 { success: true, users: [...] } 둘 다 지원
+      console.log('🔍 usersResponse:', usersResponse);
+      console.log('🔍 usersResponse.data:', usersResponse?.data);
+      console.log('🔍 usersResponse.data.users:', usersResponse?.data?.users);
+      
       if (usersResponse && usersResponse.data) {
         const users = usersResponse.data.users || usersResponse.data;
+        console.log('🔍 추출된 users:', users);
+        console.log('🔍 Array.isArray(users):', Array.isArray(users));
+        
         if (Array.isArray(users)) {
           setUsers(users);
           console.log(`✅ ${users.length}명의 회원 데이터 로드 완료`);
         } else {
-          console.warn('회원 데이터 배열이 아님:', typeof users);
+          console.warn('❌ 회원 데이터 배열이 아님:', typeof users, users);
           setUsers([]);
         }
       } else {
-        console.warn('회원 데이터 응답 없음');
+        console.warn('❌ 회원 데이터 응답 없음');
         setUsers([]);
       }
       
