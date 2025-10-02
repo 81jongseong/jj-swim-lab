@@ -173,16 +173,135 @@ const CenterAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cent
 );
 
 // 최고 관리자용 센터 정보 뷰
-const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => (
-  <div className="space-y-8">
-    <div className="bg-red-50 border-l-4 border-red-400 p-4">
-      <p className="text-red-700">
-        안녕하세요, <strong>{user.name}</strong> 최고 관리자님! 전체 시스템을 관리하고 계시는군요.
-      </p>
+const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ centerInfo, user }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState(centerInfo);
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/center-info', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editForm)
+      });
+
+      if (response.ok) {
+        alert('센터 정보가 저장되었습니다!');
+        setIsEditing(false);
+        window.location.reload();
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('저장 오류:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-red-50 border-l-4 border-red-400 p-4 flex justify-between items-center">
+        <p className="text-red-700">
+          안녕하세요, <strong>{user.name}</strong> 최고 관리자님! 소개 페이지를 편집할 수 있습니다.
+        </p>
+        <button
+          onClick={() => {
+            if (isEditing) {
+              handleSave();
+            } else {
+              setEditForm(centerInfo);
+              setIsEditing(true);
+            }
+          }}
+          className={`px-4 py-2 rounded-lg font-medium ${
+            isEditing 
+              ? 'bg-green-600 text-white hover:bg-green-700' 
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {isEditing ? '💾 저장하기' : '✏️ 편집 모드'}
+        </button>
+      </div>
+
+      {isEditing ? (
+        <div className="bg-white rounded-lg shadow-lg p-8 space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">센터 정보 편집</h2>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">센터명 *</label>
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">간단 소개 *</label>
+            <input
+              type="text"
+              value={editForm.shortDescription}
+              onChange={(e) => setEditForm({ ...editForm, shortDescription: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">상세 설명 *</label>
+            <textarea
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg"
+              rows={5}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">주소 *</label>
+              <input
+                type="text"
+                value={editForm.address}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">전화번호 *</label>
+              <input
+                type="text"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              저장하기
+            </button>
+          </div>
+        </div>
+      ) : (
+        <GuestCenterView centerInfo={centerInfo} />
+      )}
     </div>
-    <GuestCenterView centerInfo={centerInfo} />
-  </div>
-);
+  );
+};
 
 export default function AboutPage() {
   const { user, loading } = useAuth();
@@ -224,13 +343,13 @@ export default function AboutPage() {
         name: '김수영',
         specialty: '자유형 전문',
         experience: '15년 경력, 국가대표 선수 출신',
-        image: '/api/placeholder/100/100'
+        image: '/images/instructors/default-avatar.png'
       },
       {
         name: '박철수',
         specialty: '초급자 교육 전문',
         experience: '10년 경력, 어린이 수영 교육 전문가',
-        image: '/api/placeholder/100/100'
+        image: '/images/instructors/default-avatar.png'
       }
     ],
     courses: [
