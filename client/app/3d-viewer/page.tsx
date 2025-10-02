@@ -57,7 +57,9 @@ export default function ThreeDViewerPage() {
     isPublicDemo: true,
     tags: '',
     cues: '',
-    cautions: ''
+    cautions: '',
+    modelUrl: '',
+    poster: ''
   });
 
   // 드릴 폼
@@ -68,8 +70,58 @@ export default function ThreeDViewerPage() {
     tags: '',
     cues: '',
     cautions: '',
-    isPublicDemo: true
+    isPublicDemo: true,
+    modelUrl: '',
+    poster: ''
   });
+
+  // 파일 업로드 상태
+  const [uploadingModel, setUploadingModel] = useState(false);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+
+  // 파일 업로드 핸들러
+  const handleFileUpload = async (file: File, type: 'model' | 'poster') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      type === 'model' ? setUploadingModel(true) : setUploadingPoster(true);
+
+      const response = await fetch('http://localhost:5000/api/uploads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const fileUrl = data.url || data.path;
+
+        if (dataType === 'strokes') {
+          setStyleForm({
+            ...styleForm,
+            [type === 'model' ? 'modelUrl' : 'poster']: fileUrl
+          });
+        } else {
+          setDrillForm({
+            ...drillForm,
+            [type === 'model' ? 'modelUrl' : 'poster']: fileUrl
+          });
+        }
+
+        alert(`${type === 'model' ? '3D 모델' : '썸네일'} 업로드 완료!`);
+      } else {
+        alert('업로드 실패');
+      }
+    } catch (error) {
+      console.error('업로드 오류:', error);
+      alert('업로드 중 오류 발생');
+    } finally {
+      type === 'model' ? setUploadingModel(false) : setUploadingPoster(false);
+    }
+  };
 
   // 데이터 로드
   useEffect(() => {
@@ -238,7 +290,9 @@ export default function ThreeDViewerPage() {
       isPublicDemo: true,
       tags: '',
       cues: '',
-      cautions: ''
+      cautions: '',
+      modelUrl: '',
+      poster: ''
     });
   };
 
@@ -250,7 +304,9 @@ export default function ThreeDViewerPage() {
       tags: '',
       cues: '',
       cautions: '',
-      isPublicDemo: true
+      isPublicDemo: true,
+      modelUrl: '',
+      poster: ''
     });
   };
 
@@ -288,9 +344,9 @@ export default function ThreeDViewerPage() {
             </h1>
             <p className="text-gray-600 text-sm md:text-base">
               3D 애니메이션으로 정확한 수영 동작을 학습하세요
-            </p>
-          </div>
-          
+        </p>
+      </div>
+
           {/* 관리자 모드 토글 */}
           {user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin') && (
             <button
@@ -388,7 +444,9 @@ export default function ThreeDViewerPage() {
                               isPublicDemo: style.isPublicDemo,
                               tags: (style.tags || []).join(', '),
                               cues: (style.cues || []).join(', '),
-                              cautions: (style.cautions || []).join(', ')
+                              cautions: (style.cautions || []).join(', '),
+                              modelUrl: style.modelUrl || '',
+                              poster: style.poster || ''
                             });
                             setShowModal(true);
                           }}
@@ -444,7 +502,9 @@ export default function ThreeDViewerPage() {
                               tags: (drill.tags || []).join(', '),
                               cues: (drill.cues || []).join(', '),
                               cautions: (drill.cautions || []).join(', '),
-                              isPublicDemo: drill.isPublicDemo
+                              isPublicDemo: drill.isPublicDemo,
+                              modelUrl: drill.modelUrl || '',
+                              poster: drill.poster || ''
                             });
                             setShowModal(true);
                           }}
@@ -452,13 +512,13 @@ export default function ThreeDViewerPage() {
                         >
                           수정
                         </button>
-                        <button
+          <button 
                           onClick={() => handleDelete(drill._id, 'drills')}
                           className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
-                        >
+          >
                           삭제
-                        </button>
-                      </div>
+          </button>
+        </div>
                     </div>
                   ))
                 )}
@@ -472,16 +532,16 @@ export default function ThreeDViewerPage() {
           {/* 좌측: 카드 그리드 */}
           <div>
             <DrillGrid />
-          </div>
+      </div>
 
           {/* 우측: 스티키 3D 뷰어 (데스크톱만) */}
           <div className="hidden md:block">
             <div className="sticky top-4">
               <ThreeDPlayer />
-            </div>
+        </div>
           </div>
         </div>
-
+        
         {/* 모바일: 하단 드로어 */}
         {isMobile && showMobileDrawer && selectedId && (
           <div
@@ -520,15 +580,15 @@ export default function ThreeDViewerPage() {
               <li>우측(모바일: 하단 드로어)에서 3D 애니메이션을 확인하세요</li>
               <li>재생 속도, 카메라 각도, 코칭 큐 등을 조절할 수 있습니다</li>
               <li className="text-orange-700">⚠️ 현재 3D 모델 준비 중 - 플레이스홀더로 표시됩니다</li>
-            </ul>
-          </div>
+          </ul>
         </div>
+      </div>
 
         {/* 기술 정보 (개발자용) */}
         <div className="mt-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-xs text-gray-600">
           <div className="font-semibold text-gray-900 mb-2">🛠️ 구현 상태</div>
           <div className="grid md:grid-cols-2 gap-2">
-            <div>
+          <div>
               <div className="font-medium text-gray-800">✅ 완료:</div>
               <ul className="list-disc list-inside mt-1">
                 <li>카드 그리드 UI</li>
@@ -536,9 +596,9 @@ export default function ThreeDViewerPage() {
                 <li>Zustand 상태 관리</li>
                 <li>반응형 레이아웃</li>
                 <li>재생 제어 UI</li>
-              </ul>
-            </div>
-            <div>
+            </ul>
+          </div>
+          <div>
               <div className="font-medium text-gray-800">⏳ 예정:</div>
               <ul className="list-disc list-inside mt-1">
                 <li>Three.js 통합</li>
@@ -546,7 +606,7 @@ export default function ThreeDViewerPage() {
                 <li>카메라 프리셋 동작</li>
                 <li>코칭 큐 오버레이</li>
                 <li>DB API 연동</li>
-              </ul>
+            </ul>
             </div>
           </div>
         </div>
@@ -659,6 +719,53 @@ export default function ThreeDViewerPage() {
                 />
               </div>
 
+                  {/* 3D 파일 업로드 */}
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-purple-900 text-sm mb-3">📦 3D 모델 & 썸네일</h3>
+                    
+                    <div className="space-y-3">
+                      {/* 3D 모델 업로드 */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">3D 모델 (.glb, .gltf)</label>
+                        <input
+                          type="file"
+                          accept=".glb,.gltf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'model');
+                          }}
+                          disabled={uploadingModel}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                        />
+                        {(dataType === 'strokes' ? styleForm.modelUrl : drillForm.modelUrl) && (
+                          <p className="text-xs text-green-600 mt-1">
+                            ✅ 업로드됨: {(dataType === 'strokes' ? styleForm.modelUrl : drillForm.modelUrl).substring(0, 50)}...
+                          </p>
+                        )}
+                      </div>
+
+                      {/* 썸네일 업로드 */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">썸네일 (.jpg, .png)</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'poster');
+                          }}
+                          disabled={uploadingPoster}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                        />
+                        {(dataType === 'strokes' ? styleForm.poster : drillForm.poster) && (
+                          <p className="text-xs text-green-600 mt-1">
+                            ✅ 업로드됨: {(dataType === 'strokes' ? styleForm.poster : drillForm.poster).substring(0, 50)}...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-4">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -752,6 +859,47 @@ export default function ThreeDViewerPage() {
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                       placeholder="예: 어깨 충돌 민감 시 주의"
                     />
+                  </div>
+
+                  {/* 3D 파일 업로드 (드릴도 동일) */}
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-purple-900 text-sm mb-3">📦 3D 모델 & 썸네일</h3>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">3D 모델 (.glb, .gltf)</label>
+                        <input
+                          type="file"
+                          accept=".glb,.gltf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'model');
+                          }}
+                          disabled={uploadingModel}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                        />
+                        {drillForm.modelUrl && (
+                          <p className="text-xs text-green-600 mt-1">✅ 업로드됨</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">썸네일 (.jpg, .png)</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'poster');
+                          }}
+                          disabled={uploadingPoster}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 disabled:opacity-50"
+                        />
+                        {drillForm.poster && (
+                          <p className="text-xs text-green-600 mt-1">✅ 업로드됨</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <label className="flex items-center space-x-2 cursor-pointer">
