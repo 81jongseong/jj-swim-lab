@@ -75,24 +75,66 @@ router.post('/input', authMiddleware, async (req: AuthRequest, res: Response) =>
       });
     }
 
-    // 건강정보 업데이트
-    user.healthInfo = {
-      ...user.healthInfo,
-      ...healthData,
+    // BMI 자동 계산
+    let bmi = undefined;
+    if (healthData.height && healthData.weight) {
+      bmi = healthData.weight / Math.pow(healthData.height / 100, 2);
+    }
+
+    // BMI 기반 비만도 자동 분류
+    let obesityStatus = 'normal';
+    if (bmi) {
+      if (bmi < 18.5) obesityStatus = 'underweight';
+      else if (bmi < 23.0) obesityStatus = 'normal';
+      else if (bmi < 25.0) obesityStatus = 'overweight';
+      else obesityStatus = 'obese';
+    }
+
+    // 혈압 기반 고혈압 자동 분류
+    let hypertensionStatus = 'normal';
+    if (healthData.bloodPressure?.systolic && healthData.bloodPressure?.diastolic) {
+      const { systolic, diastolic } = healthData.bloodPressure;
+      if (systolic < 120 && diastolic < 80) hypertensionStatus = 'normal';
+      else if (systolic < 130 && diastolic < 80) hypertensionStatus = 'elevated';
+      else if (systolic < 140 || diastolic < 90) hypertensionStatus = 'stage1';
+      else hypertensionStatus = 'stage2';
+    }
+
+    // 건강정보 업데이트 (healthProfile에 저장)
+    user.healthProfile = {
+      age: healthData.age,
+      gender: healthData.gender,
+      height: healthData.height,
+      weight: healthData.weight,
+      bmi, // 자동 계산된 BMI
+      bloodPressure: healthData.bloodPressure,
+      obesityStatus, // 자동 분류된 비만도
+      hypertensionStatus, // 자동 분류된 고혈압 단계
+      chronicConditions: healthData.chronicConditions || [],
+      allergies: healthData.allergies || [],
+      medications: healthData.medications || [],
+      emergencyContact: healthData.emergencyContact,
+      specialConditions: healthData.specialConditions,
       lastUpdated: new Date()
     };
 
     await user.save();
 
     console.log('✅ 건강정보 저장 완료:', userId);
+    console.log('  - BMI:', bmi?.toFixed(1), '→', obesityStatus);
+    console.log('  - 혈압:', healthData.bloodPressure?.systolic, '/', healthData.bloodPressure?.diastolic, '→', hypertensionStatus);
 
     res.json({
       success: true,
       message: '건강정보가 성공적으로 저장되었습니다.',
       data: {
         userId: user._id,
-        healthInfo: user.healthInfo,
-        lastUpdated: user.healthInfo.lastUpdated
+        healthProfile: user.healthProfile,
+        autoClassification: {
+          bmi: bmi?.toFixed(1),
+          obesityStatus,
+          hypertensionStatus
+        }
       }
     });
 
