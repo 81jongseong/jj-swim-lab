@@ -66,7 +66,7 @@
  * import { Button, Input, Modal } from '@/components/ui';
  * 
  * // 전체 UI 라이브러리 import
- * import * as UI from '@/components/ui';
+ * import * as UI from '';
  * 
  * // 사용 예시
  * <Button type="primary">클릭하세요</Button>
@@ -95,49 +95,50 @@
  */
 
 // 기본 UI 컴포넌트들
-export { default as BarChart } from './BarChart';
-export { default as LoadingSpinner } from './LoadingSpinner';
-export { ThemeProvider, useTheme } from './ThemeProvider';
-export { default as Input } from './Input';
-export { default as Badge } from './Badge';
-export { default as Modal } from './Modal';
-export { default as Button } from './Button';
+export { default as BarChart } from './barchart';
+export { default as LoadingSpinner } from './loadingspinner';
+export { ThemeProvider, useTheme } from './themeprovider';
+export { Input } from './input';
+export { Badge } from './badge';
+export { default as Modal } from './modal';
+export { Button } from './button';
 
 // 사용자 경험 개선 컴포넌트들
-export { default as RefreshButton } from './RefreshButton';
-export { default as Toast } from './Toast';
-export { default as ToastContainer } from './ToastContainer';
+export { default as RefreshButton } from './refreshbutton';
+export { default as toast } from './toast';
+export { default as ToastContainer } from './toastcontainer';
 
 // 배포 및 안정성 컴포넌트들
-export { ErrorBoundary } from './ErrorBoundary';
-export { ErrorToast } from './ErrorToast';
-export { ErrorProvider } from './ErrorProvider';
-export { default as PerformanceMonitor } from './PerformanceMonitor';
+export { ErrorBoundary } from './errorboundary';
+export { default as ErrorToast } from './errortoast';
+export { ErrorProvider } from './errorprovider';
 
 // 3D 뷰어 컴포넌트
-export { default as ThreeDViewer } from './ThreeDViewer';
-export { default as SwimmingPoseModel } from './SwimmingPoseModel';
-export { default as PoseComparisonViewer } from './PoseComparisonViewer';
+export { default as ThreeDViewer } from './threedviewer';
+export { default as SwimmingPoseModel } from './swimmingposemodel';
+export { default as PoseComparisonViewer } from './posecomparisonviewer';
 
 // 고급 UI 컴포넌트들
-export { default as LazyComponent } from './LazyComponent';
-export { default as OptimizedImage } from './OptimizedImage';
-export { Progress } from './Progress';
-export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
-export { default as Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './Select';
-export { default as Card, CardHeader, CardTitle, CardContent } from './Card';
-export { default as Textarea } from './Textarea';
-export { default as Label } from './Label';
-export { default as Slider } from './Slider';
-export { default as Switch } from './Switch';
+export { default as LazyComponent } from './lazycomponent';
+export { default as OptimizedImage } from './optimizedimage';
+export { Progress as progress } from './progress';
+export { Checkbox } from './checkbox';
+export { Alert, AlertTitle, AlertDescription } from './alert';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
+export { Card, CardHeader, CardTitle, CardContent } from './card';
+export { default as Textarea } from './textarea';
+export { Label } from './label';
+export { default as Slider } from './slider';
+export { default as Switch } from './switch';
 
 // 테이블 컴포넌트들
-export { default as ResponsiveTable } from './ResponsiveTable';
-export { default as TableHeader } from './TableHeader';
-export { default as TableHeaderCell } from './TableHeaderCell';
-export { default as TableBody } from './TableBody';
-export { default as TableRow } from './TableRow';
-export { default as TableCell } from './TableCell';
+export { default as ResponsiveTable } from './responsivetable';
+export { default as TableHeader } from './tableheader';
+export { default as TableHeaderCell } from './tableheadercell';
+export { default as TableBody } from './tablebody';
+export { default as TableRow } from './tablerow';
+export { default as TableCell } from './tablecell';
 
 // 컴포넌트 타입 및 인터페이스 (필요한 경우에만 export)
 // export type { BarChartProps } from './BarChart';

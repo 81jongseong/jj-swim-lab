@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const HealthConfig_1 = require("../models/HealthConfig");
 const auth_1 = require("../middleware/auth");
+const EvidenceBasedWeights_1 = require("../utils/EvidenceBasedWeights");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
@@ -169,25 +170,84 @@ router.put('/fields/:fieldId', auth_1.authMiddleware, (0, auth_1.requireRole)(['
         });
     }
 });
+router.delete('/fields/:fieldId', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+    try {
+        console.log('🗑️ 건강정보 항목 삭제 요청');
+        const { fieldId } = req.params;
+        const userId = req.user._id;
+        const healthConfig = await HealthConfig_1.HealthConfig.findOne({ isActive: true });
+        if (!healthConfig) {
+            return res.status(404).json({
+                success: false,
+                message: '건강정보 설정을 찾을 수 없습니다.'
+            });
+        }
+        const fieldIndex = healthConfig.healthFields.findIndex(f => f.id === fieldId);
+        if (fieldIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: '해당 건강정보 항목을 찾을 수 없습니다.'
+            });
+        }
+        const deletedField = healthConfig.healthFields[fieldIndex];
+        healthConfig.healthFields.splice(fieldIndex, 1);
+        healthConfig.updatedBy = userId;
+        await healthConfig.save();
+        res.json({
+            success: true,
+            message: '건강정보 항목이 삭제되었습니다.',
+            data: deletedField
+        });
+    }
+    catch (error) {
+        console.error('건강정보 항목 삭제 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '건강정보 항목을 삭제할 수 없습니다.'
+        });
+    }
+});
 router.put('/ai', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         console.log('🤖 AI 알고리즘 설정 업데이트 요청');
         const aiConfigData = req.body;
         const userId = req.user._id;
+        if (aiConfigData.weights || aiConfigData.parameters?.weights) {
+            console.log('🚫 가중치 수정 시도 차단됨');
+            return res.status(403).json({
+                success: false,
+                message: '가중치는 과학적 근거 없이는 수정할 수 없습니다.',
+                error: 'WEIGHT_MODIFICATION_BLOCKED',
+                requiredSteps: [
+                    '과학적 근거 문서 제출 (연구 논문, 가이드라인)',
+                    '의학 전문가 승인',
+                    '수정 사유 상세 설명 (최소 50자)',
+                    '임상 검증 결과 제시',
+                    '시스템 관리자 최종 승인'
+                ],
+                currentWeights: 'EvidenceBasedWeightSystem에서 관리됨'
+            });
+        }
         let healthConfig = await HealthConfig_1.HealthConfig.findOne({ isActive: true });
         if (!healthConfig) {
             healthConfig = await createDefaultHealthConfig(userId);
         }
+        const { weights, parameters, ...allowedConfig } = aiConfigData;
+        const safeParameters = parameters ? {
+            ...parameters,
+            weights: undefined
+        } : undefined;
         healthConfig.aiConfig = {
             ...healthConfig.aiConfig,
-            ...aiConfigData,
+            ...allowedConfig,
+            ...(safeParameters && { parameters: safeParameters }),
             lastUpdated: new Date()
         };
         healthConfig.updatedBy = userId;
         await healthConfig.save();
         res.json({
             success: true,
-            message: 'AI 알고리즘 설정이 업데이트되었습니다.',
+            message: 'AI 알고리즘 설정이 업데이트되었습니다. (가중치는 과학적 근거 기반으로 보호됨)',
             data: healthConfig.aiConfig
         });
     }
@@ -342,5 +402,62 @@ async function createDefaultHealthConfig(createdBy) {
     await defaultConfig.save();
     return defaultConfig;
 }
+router.get('/evidence-based-weights', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const weights = EvidenceBasedWeights_1.EvidenceBasedWeightSystem.generateEvidenceBasedWeights();
+        const validation = EvidenceBasedWeights_1.EvidenceBasedWeightSystem.validateWeights(weights);
+        const algorithmEvidence = EvidenceBasedWeights_1.EvidenceBasedWeightSystem.getAlgorithmEvidence();
+        res.json({
+            success: true,
+            data: {
+                weights,
+                validation,
+                algorithmEvidence,
+                lastUpdated: new Date().toISOString(),
+                source: 'EvidenceBasedWeightSystem'
+            }
+        });
+    }
+    catch (error) {
+        console.error('과학적 근거 기반 가중치 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '과학적 근거 기반 가중치 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.post('/validate-weight-modification', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+    try {
+        const { modificationReason, evidenceProvided, adminLevel } = req.body;
+        const validation = EvidenceBasedWeights_1.EvidenceBasedWeightSystem.canModifyWeights(adminLevel || 'superAdmin', modificationReason, evidenceProvided);
+        res.json({
+            success: true,
+            data: validation
+        });
+    }
+    catch (error) {
+        console.error('가중치 수정 권한 확인 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '가중치 수정 권한 확인 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.get('/algorithm-evidence', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const algorithmEvidence = EvidenceBasedWeights_1.EvidenceBasedWeightSystem.getAlgorithmEvidence();
+        res.json({
+            success: true,
+            data: algorithmEvidence
+        });
+    }
+    catch (error) {
+        console.error('알고리즘 과학적 근거 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '알고리즘 과학적 근거 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
 exports.default = router;
 //# sourceMappingURL=health-config.js.map

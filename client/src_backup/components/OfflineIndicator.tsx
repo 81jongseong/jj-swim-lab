@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
+import Button from '@/components/ui/button';
+import Card from '@/components/ui/card';
 
 /**
  * 오프라인 상태 표시 컴포넌트

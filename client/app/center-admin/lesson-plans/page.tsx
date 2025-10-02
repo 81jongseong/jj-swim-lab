@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function CenterLessonPlansPage() {
   const { user, loading } = useAuth();

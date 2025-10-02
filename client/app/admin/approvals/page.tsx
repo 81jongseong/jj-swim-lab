@@ -15,8 +15,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import apiClient from '@/utils/api';
+import { useAuth } from '../../../hooks/useAuth';
+import apiClient from '../../../utils/api';
 
 interface CenterRegistration {
   _id: string;

@@ -1,216 +1,154 @@
-/**
- * @file 센터 관리자 공지사항 관리 페이지
- * @description 센터 관리자가 공지사항을 작성, 수정, 삭제할 수 있는 페이지입니다.
- * @date 2025-09-14
- * @author JJ Swim Lab
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
-import { Plus, Edit, Trash2, Eye, Calendar, User, AlertCircle } from 'lucide-react';
+import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
+import withAuth from '@/components/withAuth';
 
 interface Notice {
-  id: string;
+  _id: string;
   title: string;
   content: string;
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  isImportant: boolean;
+  type: 'general' | 'important' | 'maintenance' | 'event';
   status: 'draft' | 'published' | 'archived';
+  priority: 'low' | 'medium' | 'high';
+  targetAudience: string[];
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  publishedAt?: Date;
+  views: number;
+  attachments?: string[];
 }
 
-const CenterAdminNoticesPage: React.FC = () => {
+function NoticesManagement() {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    isImportant: false,
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    fetchNotices();
-  }, []);
+    if (user) {
+      loadNotices();
+    }
+  }, [user]);
 
-  const fetchNotices = async () => {
+  const loadNotices = async () => {
     try {
-      setLoading(true);
-      
-      // 실제 API 호출
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/centers/notices', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('공지사항 데이터를 가져올 수 없습니다.');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setNotices(result.data);
-      } else {
-        throw new Error(result.message || '공지사항 데이터 조회에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('공지사항 데이터 로딩 실패:', error);
-      
-      // 임시 데이터 (개발용)
-      const mockNotices: Notice[] = [
+      setIsLoading(true);
+      // 임시 데이터
+      const tempNotices: Notice[] = [
         {
-          id: '1',
-          title: '수영장 이용 안내',
-          content: '수영장 이용 시 안전수칙을 준수해 주시기 바랍니다.',
-          author: '센터 관리자',
-          createdAt: '2025-09-14',
-          updatedAt: '2025-09-14',
-          isImportant: true,
+          _id: '1',
+          title: '수영장 정기 점검 안내',
+          content: '수영장 정기 점검으로 인해 1월 25일 오후 2시부터 6시까지 이용이 제한됩니다.',
+          type: 'maintenance',
           status: 'published',
+          priority: 'high',
+          targetAudience: ['all'],
+          authorId: 'admin001',
+          authorName: '관리자',
+          createdAt: new Date('2024-01-20'),
+          publishedAt: new Date('2024-01-20'),
+          views: 156
         },
         {
-          id: '2',
-          title: '강의 일정 변경 안내',
-          content: '다음 주 강의 일정이 변경되었습니다. 확인해 주세요.',
-          author: '센터 관리자',
-          createdAt: '2025-09-13',
-          updatedAt: '2025-09-13',
-          isImportant: false,
+          _id: '2',
+          title: '신규 강사 모집',
+          content: 'JJ Swim Lab에서 함께할 열정적인 강사를 모집합니다. 자세한 내용은 문의 바랍니다.',
+          type: 'general',
           status: 'published',
+          priority: 'medium',
+          targetAudience: ['instructors'],
+          authorId: 'admin001',
+          authorName: '관리자',
+          createdAt: new Date('2024-01-18'),
+          publishedAt: new Date('2024-01-18'),
+          views: 89
         },
         {
-          id: '3',
-          title: '새로운 강사 합류',
-          content: '새로운 강사가 합류했습니다. 환영해 주세요.',
-          author: '센터 관리자',
-          createdAt: '2025-09-12',
-          updatedAt: '2025-09-12',
-          isImportant: false,
-          status: 'draft',
-        },
+          _id: '3',
+          title: '수영 대회 개최 안내',
+          content: '센터 내 수영 대회가 2월 15일에 개최됩니다. 참가 신청은 2월 1일까지입니다.',
+          type: 'event',
+          status: 'published',
+          priority: 'medium',
+          targetAudience: ['students'],
+          authorId: 'admin001',
+          authorName: '관리자',
+          createdAt: new Date('2024-01-15'),
+          publishedAt: new Date('2024-01-15'),
+          views: 234
+        }
       ];
-      
-      setNotices(mockNotices);
+      setNotices(tempNotices);
+    } catch (error) {
+      console.error('공지사항 로드 실패:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const token = localStorage.getItem('token');
-      const url = editingNotice 
-        ? `http://localhost:5000/api/centers/notices/${editingNotice.id}`
-        : 'http://localhost:5000/api/centers/notices';
-      
-      const method = editingNotice ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          author: user?.name || '센터 관리자',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('공지사항 저장에 실패했습니다.');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setShowForm(false);
-        setEditingNotice(null);
-        setFormData({ title: '', content: '', isImportant: false });
-        fetchNotices();
-      } else {
-        throw new Error(result.message || '공지사항 저장에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('공지사항 저장 실패:', error);
-      alert('공지사항 저장에 실패했습니다.');
-    }
+  const getTypeLabel = (type: string) => {
+    const types: { [key: string]: string } = {
+      'general': '일반',
+      'important': '중요',
+      'maintenance': '점검',
+      'event': '이벤트'
+    };
+    return types[type] || type;
   };
 
-  const handleEdit = (notice: Notice) => {
-    setEditingNotice(notice);
-    setFormData({
-      title: notice.title,
-      content: notice.content,
-      isImportant: notice.isImportant,
-    });
-    setShowForm(true);
+  const getTypeColor = (type: string) => {
+    const colors: { [key: string]: string } = {
+      'general': 'bg-blue-100 text-blue-800',
+      'important': 'bg-red-100 text-red-800',
+      'maintenance': 'bg-yellow-100 text-yellow-800',
+      'event': 'bg-green-100 text-green-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleDelete = async (noticeId: string) => {
-    if (!confirm('정말로 이 공지사항을 삭제하시겠습니까?')) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/centers/notices/${noticeId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('공지사항 삭제에 실패했습니다.');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        fetchNotices();
-      } else {
-        throw new Error(result.message || '공지사항 삭제에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('공지사항 삭제 실패:', error);
-      alert('공지사항 삭제에 실패했습니다.');
-    }
+  const getStatusLabel = (status: string) => {
+    const statuses: { [key: string]: string } = {
+      'draft': '임시저장',
+      'published': '발행',
+      'archived': '보관'
+    };
+    return statuses[status] || status;
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'published':
-        return <Badge variant="default">발행됨</Badge>;
-      case 'draft':
-        return <Badge variant="secondary">임시저장</Badge>;
-      case 'archived':
-        return <Badge variant="outline">보관됨</Badge>;
-      default:
-        return <Badge variant="secondary">알 수 없음</Badge>;
-    }
+  const getStatusColor = (status: string) => {
+    const colors: { [key: string]: string } = {
+      'draft': 'bg-gray-100 text-gray-800',
+      'published': 'bg-green-100 text-green-800',
+      'archived': 'bg-yellow-100 text-yellow-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  if (loading) {
+  const getPriorityLabel = (priority: string) => {
+    const priorities: { [key: string]: string } = {
+      'low': '낮음',
+      'medium': '보통',
+      'high': '높음'
+    };
+    return priorities[priority] || priority;
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors: { [key: string]: string } = {
+      'low': 'bg-green-100 text-green-800',
+      'medium': 'bg-yellow-100 text-yellow-800',
+      'high': 'bg-red-100 text-red-800'
+    };
+    return colors[priority] || 'bg-gray-100 text-gray-800';
+  };
+
+  if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -221,158 +159,159 @@ const CenterAdminNoticesPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           공지사항 관리
         </h1>
-        <p className="text-gray-600">
-          센터 공지사항을 작성하고 관리하세요.
-        </p>
+        <p className="text-gray-600">센터의 공지사항을 작성하고 관리하세요</p>
       </div>
 
-      {/* 공지사항 작성/수정 폼 */}
-      {showForm && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>
-              {editingNotice ? '공지사항 수정' : '새 공지사항 작성'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  제목
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  내용
-                </label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isImportant"
-                  checked={formData.isImportant}
-                  onChange={(e) => setFormData({ ...formData, isImportant: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isImportant" className="ml-2 text-sm text-gray-700">
-                  중요 공지사항
-                </label>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button type="submit">
-                  {editingNotice ? '수정' : '작성'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingNotice(null);
-                    setFormData({ title: '', content: '', isImportant: false });
-                  }}
-                >
-                  취소
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Bell className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 공지사항</p>
+              <p className="text-2xl font-bold text-gray-900">{notices.length}개</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Eye className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">발행된 공지</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {notices.filter(notice => notice.status === 'published').length}개
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Calendar className="w-8 h-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">이번 달 공지</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {notices.filter(notice => 
+                  notice.createdAt.getMonth() === new Date().getMonth() &&
+                  notice.createdAt.getFullYear() === new Date().getFullYear()
+                ).length}개
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <User className="w-8 h-8 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 조회수</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {notices.reduce((sum, notice) => sum + notice.views, 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 공지사항 목록 */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">공지사항 목록</h2>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          새 공지사항
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {notices.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">공지사항이 없습니다.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          notices.map((notice) => (
-            <Card key={notice.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-lg font-semibold">{notice.title}</h3>
-                      {notice.isImportant && (
-                        <Badge variant="destructive">중요</Badge>
-                      )}
-                      {getStatusBadge(notice.status)}
-                    </div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          {notice.author}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {notice.createdAt}
-                        </span>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-900">공지사항 목록</h3>
+          <button 
+            onClick={() => setIsCreating(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            새 공지사항 작성
+          </button>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  제목
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  유형
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  상태
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  우선순위
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  작성자
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  조회수
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  작성일
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  액션
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {notices.map((notice) => (
+                <tr key={notice._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{notice.title}</div>
+                      <div className="text-sm text-gray-500 truncate max-w-xs">
+                        {notice.content}
                       </div>
                     </div>
-                    <p className="text-gray-800 whitespace-pre-wrap">{notice.content}</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(notice)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    수정
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDelete(notice.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    삭제
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800">
-        <p className="font-semibold">개발 참고:</p>
-        <p>이 페이지의 데이터는 하드코딩이 아닌 데이터베이스에서 관리되어야 합니다.</p>
-        <p>관련 API 엔드포인트 (`/api/centers/notices` 등) 개발이 필요합니다.</p>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(notice.type)}`}>
+                      {getTypeLabel(notice.type)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(notice.status)}`}>
+                      {getStatusLabel(notice.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(notice.priority)}`}>
+                      {getPriorityLabel(notice.priority)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {notice.authorName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {notice.views}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {notice.createdAt.toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button className="text-green-600 hover:text-green-900">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button className="text-red-600 hover:text-red-900">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
-};
+}
 
-export default CenterAdminNoticesPage;
+export default withAuth(NoticesManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});

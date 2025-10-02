@@ -73,8 +73,8 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import Button from './Button';
-import Card, { CardContent, CardHeader, CardTitle } from './Card';
+import { Button } from './button';
+import { Card, CardContent, CardHeader, CardTitle } from './card';
 
 interface Props {
   children: ReactNode;

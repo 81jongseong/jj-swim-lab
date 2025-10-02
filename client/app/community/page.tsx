@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import Input from '../../components/ui/Input';
+import { Button } from '../../components/ui';
+import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui';
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
 
 /**

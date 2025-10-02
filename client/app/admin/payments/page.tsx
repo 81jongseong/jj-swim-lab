@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import apiClient from '@/utils/api';
-import withAuth from '@/components/withAuth';
+import apiClient from '../../../utils/api';
+import withAuth from '../../../components/withAuth';
 
 function AdminPaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);

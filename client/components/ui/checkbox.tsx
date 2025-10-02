@@ -1,10 +1,15 @@
-"use client"
+/**
+ * Checkbox 컴포넌트
+ * 
+ * 연동되는 데이터: 없음
+ * 연동되는 파일: 모든 페이지의 체크박스 요소
+ */
 
 import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
@@ -28,3 +33,5 @@ const Checkbox = React.forwardRef<
 Checkbox.displayName = CheckboxPrimitive.Root.displayName
 
 export { Checkbox }
+export default Checkbox
+

@@ -120,7 +120,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
 router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
+        const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist } = req.body;
         const method = await TeachingMethod_1.TeachingMethod.findById(id);
         if (!method) {
             return res.status(404).json({
@@ -148,6 +148,8 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
             method.steps = Array.isArray(steps) ? steps : [steps];
         if (tips)
             method.tips = Array.isArray(tips) ? tips : [];
+        if (checklist)
+            method.checklist = Array.isArray(checklist) ? checklist : [];
         if (videoUrl !== undefined)
             method.videoUrl = videoUrl;
         if (imageUrl !== undefined)

@@ -127,14 +127,29 @@ export function useNotifications(userId?: string) {
     const base = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
     // dynamic import to avoid SSR issues
     const connect = async () => {
-      const { io } = await import('socket.io-client');
-      socketRef.current = io(base, { transports: ['websocket'] });
-      socketRef.current.on('connect', () => {
-        if (userId) socketRef.current.emit('register', { userId });
-      });
-      socketRef.current.on('notification', (payload: AppNotification) => {
-        setNotifications(prev => [{ ...payload, createdAt: new Date().toISOString() }, ...prev]);
-      });
+      try {
+        const { io } = await import('socket.io-client');
+        socketRef.current = io(base, { 
+          transports: ['websocket'],
+          reconnection: true,
+          reconnectionDelay: 5000,
+          reconnectionAttempts: 3
+        });
+        
+        socketRef.current.on('connect', () => {
+          if (userId) socketRef.current.emit('register', { userId });
+        });
+        
+        socketRef.current.on('notification', (payload: AppNotification) => {
+          setNotifications(prev => [{ ...payload, createdAt: new Date().toISOString() }, ...prev]);
+        });
+        
+        socketRef.current.on('connect_error', (error) => {
+          console.warn('WebSocket 연결 실패 (정상 동작, 실시간 알림만 비활성화):', error.message);
+        });
+      } catch (error) {
+        console.warn('WebSocket 초기화 실패 (정상 동작, 실시간 알림만 비활성화):', error);
+      }
     };
     connect();
     return () => {

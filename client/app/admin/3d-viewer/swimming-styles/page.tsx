@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../../../../hooks/useAuth';
 
 /**
  * 3D 뷰어 - 수영 스타일 관리 페이지

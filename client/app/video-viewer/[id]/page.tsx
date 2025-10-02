@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-// import ThreeJSAnimationViewer from '@/components/ThreeJSAnimationViewer';
+// import ThreeJSAnimationViewer from './../../components/ThreeJSAnimationViewer';
 
 interface VideoData {
   videoId: string;

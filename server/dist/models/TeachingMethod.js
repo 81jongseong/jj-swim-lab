@@ -55,6 +55,10 @@ const TeachingMethodSchema = new mongoose_1.Schema({
             type: String,
             trim: true
         }],
+    checklist: [{
+            type: String,
+            trim: true
+        }],
     videoUrl: {
         type: String,
         trim: true

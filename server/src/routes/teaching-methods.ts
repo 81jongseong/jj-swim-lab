@@ -141,7 +141,7 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
 router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
+    const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist } = req.body;
     
     const method = await TeachingMethod.findById(id);
     
@@ -169,6 +169,7 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
     if (level) method.level = level;
     if (steps) method.steps = Array.isArray(steps) ? steps : [steps];
     if (tips) method.tips = Array.isArray(tips) ? tips : [];
+    if (checklist) method.checklist = Array.isArray(checklist) ? checklist : []; // 체크리스트 업데이트 추가
     if (videoUrl !== undefined) method.videoUrl = videoUrl;
     if (imageUrl !== undefined) method.imageUrl = imageUrl;
     if (req.body.order !== undefined) method.order = req.body.order; // 순서 정보 업데이트

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
+    "module": "ES2022",
     "moduleResolution": "node",
     "lib": ["ES2022"],
     "outDir": "./dist",
@@ -30,17 +30,13 @@
     "verbatimModuleSyntax": false
   },
   "include": [
-    "src/**/*.ts",
-    "scripts/**/*.ts",
-    "tests/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "../**/*",
-    "../data/**/*",
-    "../app/**/*",
-    "../components/**/*"
+    "tests",
+    "scripts"
   ],
   "ts-node": {
     "esm": true,

@@ -72,8 +72,8 @@
 
 import { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
-import Button from './ui/Button';
-import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
+import Button from './ui/button';
+import Card from './ui/card';
 
 interface ExcelUploaderProps {
   onUploadSuccess?: (data: any[]) => void;
@@ -238,14 +238,13 @@ export default function ExcelUploader({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <div className="p-6">
+        <div className="flex items-center gap-2 mb-4">
           <Upload className="w-5 h-5" />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-gray-600">{description}</p>
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{description}</p>
         
         {/* 드래그 앤 드롭 영역 */}
         <div
@@ -361,7 +360,8 @@ export default function ExcelUploader({
             )}
           </div>
         )}
-      </CardContent>
+        </div>
+      </div>
     </Card>
   );
 }

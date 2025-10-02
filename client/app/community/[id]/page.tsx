@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '@/utils/api';
-import withAuth from '@/components/withAuth';
+import apiClient from '../../../utils/api';
+import withAuth from '../../../components/withAuth';
 
 interface Post { _id: string; title: string; content: string; author?: any; tags?: string[]; createdAt?: string }
 interface Comment { _id: string; content: string; author?: any; createdAt?: string }

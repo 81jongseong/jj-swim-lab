@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import apiClient from '@/utils/api';
+import apiClient from './../utils/api';
 
 interface CenterInfoEditorProps {
   centerInfo: any;

@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { AuthProvider } from '@/hooks/useAuth'
+import { AuthProvider } from 'hooks/useAuth'
 import Navigation from '../components/Navigation'
 // import EnhancedOfflineIndicator from '../components/EnhancedOfflineIndicator'
 // import PWAInstallPrompt from '../components/PWAInstallPrompt'

@@ -1,32 +1,22 @@
-/**
- * 👤 JJ Swim Lab - 회원 가입 페이지 (건강정보 포함)
- * 
- * 📋 **페이지 목적**
- * - 회원 가입 시 기본 정보와 건강정보를 함께 입력
- * - 관절별 질환 정보를 선택하여 수영 가이드라인 제공
- * - 강사와 센터가 회원의 건강 상태를 인지할 수 있도록 함
- * 
- * 🔄 **주요 기능**
- * - 기본 회원 정보 입력 (이름, 이메일, 비밀번호)
- * - 건강정보 선택 (관절별 질환, 심혈관, 대사 질환 등)
- * - 수영 경험 수준 선택
- * - 개인정보 동의 및 약관 동의
- * 
- * 📅 **개발 히스토리**
- * - 2025-01-22: 건강정보 포함 회원 가입 시스템 구현
- */
-
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { User, Heart, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
+import { 
+  User, 
+  Mail, 
+  Lock, 
+  Phone, 
+  Calendar,
+  MapPin,
+  Heart,
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff
+} from 'lucide-react';
 
-const SignupPage: React.FC = () => {
-  const router = useRouter();
-  const [step, setStep] = useState(1);
+export default function SignupPage() {
   const [formData, setFormData] = useState({
     // 기본 정보
     name: '',
@@ -36,448 +26,533 @@ const SignupPage: React.FC = () => {
     phone: '',
     birthDate: '',
     gender: '',
+    address: '',
     
-    // 건강정보
-    jointConditions: [] as string[],
-    cardiovascularConditions: [] as string[],
-    metabolicConditions: [] as string[],
-    swimmingExperience: '',
+    // 건강 정보
+    height: '',
+    weight: '',
+    bloodType: '',
     medicalHistory: '',
+    currentMedications: '',
+    allergies: '',
+    emergencyContact: '',
+    emergencyPhone: '',
     
-    // 약관 동의
+    // 운동 정보
+    exerciseExperience: '',
+    preferredSwimmingStyle: '',
+    fitnessGoals: '',
+    availableTime: '',
+    
+    // 계정 정보
+    accountType: 'student',
     agreeTerms: false,
-    agreePrivacy: false,
-    agreeHealthInfo: false
+    agreePrivacy: false
   });
 
-  // 관절별 질환 옵션
-  const jointConditionOptions = [
-    { value: 'spine_herniated_disc', label: '허리 디스크', category: '척추' },
-    { value: 'spine_simple_back_pain', label: '단순 요통', category: '척추' },
-    { value: 'spine_cervical_disorder', label: '목 디스크', category: '척추' },
-    { value: 'shoulder_frozen_shoulder', label: '오십견', category: '어깨' },
-    { value: 'shoulder_impingement', label: '어깨 충돌 증후군', category: '어깨' },
-    { value: 'shoulder_rotator_cuff_tear', label: '회전근개 파열', category: '어깨' },
-    { value: 'knee_osteoarthritis', label: '무릎 관절염', category: '무릎' },
-    { value: 'knee_meniscus_tear', label: '반월상 연골 손상', category: '무릎' },
-    { value: 'knee_acl_injury', label: '전방 십자인대 손상', category: '무릎' },
-    { value: 'ankle_sprain', label: '발목 염좌', category: '발목' },
-    { value: 'ankle_plantar_fasciitis', label: '족저근막염', category: '발목' },
-    { value: 'wrist_carpal_tunnel', label: '수근관 증후군', category: '손목' },
-    { value: 'elbow_tennis_elbow', label: '테니스 엘보', category: '팔꿈치' },
-    { value: 'hip_arthritis', label: '고관절 관절염', category: '고관절' }
-  ];
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState<any>({});
 
-  // 심혈관 질환 옵션
-  const cardiovascularOptions = [
-    { value: 'hypertension', label: '고혈압' },
-    { value: 'heart_disease', label: '심장질환' },
-    { value: 'arrhythmia', label: '부정맥' },
-    { value: 'chest_pain', label: '흉통' },
-    { value: 'none', label: '해당없음' }
-  ];
+  const totalSteps = 4;
 
-  // 대사 질환 옵션
-  const metabolicOptions = [
-    { value: 'diabetes', label: '당뇨병' },
-    { value: 'prediabetes', label: '당뇨 전단계' },
-    { value: 'metabolic_syndrome', label: '대사 증후군' },
-    { value: 'obesity', label: '비만' },
-    { value: 'none', label: '해당없음' }
-  ];
+  const validateStep = (step: number) => {
+    const newErrors: any = {};
 
-  // 수영 경험 수준 옵션
-  const swimmingExperienceOptions = [
-    { value: 'beginner', label: '초보자 (수영 경험 없음)' },
-    { value: 'basic', label: '기초 (기본 자유형 가능)' },
-    { value: 'intermediate', label: '중급 (여러 영법 가능)' },
-    { value: 'advanced', label: '고급 (모든 영법 숙련)' }
-  ];
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleArrayChange = (field: string, value: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: checked 
-        ? [...prev[field as keyof typeof prev] as string[], value]
-        : (prev[field as keyof typeof prev] as string[]).filter(item => item !== value)
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (step < 3) {
-      setStep(step + 1);
-      return;
-    }
-
-    // 최종 제출
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        router.push('/auth/login?message=signup-success');
-      } else {
-        const error = await response.json();
-        alert(`가입 실패: ${error.message}`);
+    if (step === 1) {
+      if (!formData.name) newErrors.name = '이름을 입력해주세요';
+      if (!formData.email) newErrors.email = '이메일을 입력해주세요';
+      if (!formData.password) newErrors.password = '비밀번호를 입력해주세요';
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = '비밀번호가 일치하지 않습니다';
       }
-    } catch (error) {
-      alert('가입 중 오류가 발생했습니다.');
+      if (!formData.phone) newErrors.phone = '전화번호를 입력해주세요';
+    }
+
+    if (step === 2) {
+      if (!formData.birthDate) newErrors.birthDate = '생년월일을 입력해주세요';
+      if (!formData.gender) newErrors.gender = '성별을 선택해주세요';
+      if (!formData.height) newErrors.height = '키를 입력해주세요';
+      if (!formData.weight) newErrors.weight = '몸무게를 입력해주세요';
+    }
+
+    if (step === 3) {
+      if (!formData.exerciseExperience) newErrors.exerciseExperience = '운동 경험을 선택해주세요';
+      if (!formData.preferredSwimmingStyle) newErrors.preferredSwimmingStyle = '선호하는 수영 스타일을 선택해주세요';
+    }
+
+    if (step === 4) {
+      if (!formData.agreeTerms) newErrors.agreeTerms = '이용약관에 동의해주세요';
+      if (!formData.agreePrivacy) newErrors.agreePrivacy = '개인정보처리방침에 동의해주세요';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-        <User className="h-6 w-6 mr-2" />
-        기본 정보 입력
-      </h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 *</label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인 *</label>
-          <input
-            type="password"
-            value={formData.confirmPassword}
-            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleInputChange('phone', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">생년월일</label>
-          <input
-            type="date"
-            value={formData.birthDate}
-            onChange={(e) => handleInputChange('birthDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
-          <select
-            value={formData.gender}
-            onChange={(e) => handleInputChange('gender', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">선택하세요</option>
-            <option value="male">남성</option>
-            <option value="female">여성</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  );
+  const handlePrev = () => {
+    setCurrentStep(currentStep - 1);
+  };
 
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-        <Heart className="h-6 w-6 mr-2" />
-        건강정보 입력
-      </h2>
-      
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-          <div>
-            <h4 className="font-medium text-blue-900 mb-1">건강정보 수집 목적</h4>
-            <p className="text-sm text-blue-700">
-              회원님의 건강 상태를 파악하여 안전하고 효과적인 수영 프로그램을 제공하기 위해 수집합니다.
-              강사와 센터 관리자가 회원님의 건강 상태를 인지하고 적절한 수영 가이드라인을 제공할 수 있습니다.
-            </p>
-          </div>
-        </div>
-      </div>
+  const handleSubmit = () => {
+    if (validateStep(currentStep)) {
+      // 회원가입 처리
+      console.log('회원가입 데이터:', formData);
+      alert('회원가입이 완료되었습니다!');
+    }
+  };
 
-      {/* 관절별 질환 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">관절별 질환 (해당사항 선택)</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {jointConditionOptions.map((option) => (
-            <label key={option.value} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">기본 정보</h2>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <User className="w-4 h-4 inline mr-2" />
+                이름 *
+              </label>
               <input
-                type="checkbox"
-                checked={formData.jointConditions.includes(option.value)}
-                onChange={(e) => handleArrayChange('jointConditions', option.value, e.target.checked)}
-                className="mr-3"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="이름을 입력하세요"
               />
-              <div>
-                <div className="font-medium text-gray-900">{option.label}</div>
-                <div className="text-sm text-gray-500">{option.category}</div>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* 심혈관 질환 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">심혈관 질환 (해당사항 선택)</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {cardiovascularOptions.map((option) => (
-            <label key={option.value} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.cardiovascularConditions.includes(option.value)}
-                onChange={(e) => handleArrayChange('cardiovascularConditions', option.value, e.target.checked)}
-                className="mr-3"
-              />
-              <span className="font-medium text-gray-900">{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* 대사 질환 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">대사 질환 (해당사항 선택)</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {metabolicOptions.map((option) => (
-            <label key={option.value} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.metabolicConditions.includes(option.value)}
-                onChange={(e) => handleArrayChange('metabolicConditions', option.value, e.target.checked)}
-                className="mr-3"
-              />
-              <span className="font-medium text-gray-900">{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* 수영 경험 수준 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">수영 경험 수준</label>
-        <div className="space-y-2">
-          {swimmingExperienceOptions.map((option) => (
-            <label key={option.value} className="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-              <input
-                type="radio"
-                name="swimmingExperience"
-                value={option.value}
-                checked={formData.swimmingExperience === option.value}
-                onChange={(e) => handleInputChange('swimmingExperience', e.target.value)}
-                className="mr-3"
-              />
-              <span className="font-medium text-gray-900">{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* 기타 의료 이력 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">기타 의료 이력 (선택사항)</label>
-        <textarea
-          value={formData.medicalHistory}
-          onChange={(e) => handleInputChange('medicalHistory', e.target.value)}
-          placeholder="수영과 관련된 기타 건강 상태나 주의사항을 입력해주세요..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={3}
-        />
-      </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-        <CheckCircle className="h-6 w-6 mr-2" />
-        약관 동의
-      </h2>
-      
-      <div className="space-y-4">
-        <label className="flex items-start">
-          <input
-            type="checkbox"
-            checked={formData.agreeTerms}
-            onChange={(e) => handleInputChange('agreeTerms', e.target.checked)}
-            className="mr-3 mt-1"
-            required
-          />
-          <div>
-            <span className="font-medium text-gray-900">서비스 이용약관 동의 *</span>
-            <p className="text-sm text-gray-600 mt-1">
-              JJ Swim Lab 서비스 이용약관에 동의합니다.
-            </p>
-          </div>
-        </label>
-
-        <label className="flex items-start">
-          <input
-            type="checkbox"
-            checked={formData.agreePrivacy}
-            onChange={(e) => handleInputChange('agreePrivacy', e.target.checked)}
-            className="mr-3 mt-1"
-            required
-          />
-          <div>
-            <span className="font-medium text-gray-900">개인정보 처리방침 동의 *</span>
-            <p className="text-sm text-gray-600 mt-1">
-              개인정보 수집, 이용, 처리에 동의합니다.
-            </p>
-          </div>
-        </label>
-
-        <label className="flex items-start">
-          <input
-            type="checkbox"
-            checked={formData.agreeHealthInfo}
-            onChange={(e) => handleInputChange('agreeHealthInfo', e.target.checked)}
-            className="mr-3 mt-1"
-            required
-          />
-          <div>
-            <span className="font-medium text-gray-900">건강정보 처리 동의 *</span>
-            <p className="text-sm text-gray-600 mt-1">
-              건강정보 수집 및 강사/센터 관리자와의 공유에 동의합니다.
-            </p>
-          </div>
-        </label>
-      </div>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
-          <div>
-            <h4 className="font-medium text-yellow-900 mb-1">중요 안내</h4>
-            <p className="text-sm text-yellow-700">
-              입력하신 건강정보는 강사와 센터 관리자가 안전한 수영 프로그램을 제공하기 위해 활용됩니다.
-              정확한 정보를 입력해주시면 더욱 효과적인 수영 가이드라인을 받으실 수 있습니다.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full">
-        <Card className="p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">회원 가입</h1>
-            <p className="text-gray-600 mt-2">안전한 수영을 위한 건강정보를 함께 입력해주세요</p>
-          </div>
-
-          {/* 진행 단계 표시 */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              {[1, 2, 3].map((stepNumber) => (
-                <div key={stepNumber} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step >= stepNumber 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {stepNumber}
-                  </div>
-                  {stepNumber < 3 && (
-                    <div className={`w-16 h-1 mx-2 ${
-                      step > stepNumber ? 'bg-blue-600' : 'bg-gray-200'
-                    }`} />
-                  )}
-                </div>
-              ))}
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>기본 정보</span>
-              <span>건강정보</span>
-              <span>약관 동의</span>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Mail className="w-4 h-4 inline mr-2" />
+                이메일 *
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="이메일을 입력하세요"
+              />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
-          </div>
 
-          <form onSubmit={handleSubmit}>
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-            {step === 3 && renderStep3()}
-
-            <div className="flex justify-between mt-8">
-              {step > 1 && (
-                <Button
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Lock className="w-4 h-4 inline mr-2" />
+                비밀번호 *
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="비밀번호를 입력하세요"
+                />
+                <button
                   type="button"
-                  onClick={() => setStep(step - 1)}
-                  className="bg-gray-500 hover:bg-gray-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
                 >
-                  이전
-                </Button>
-              )}
-              
-              <Button
-                type="submit"
-                className={`ml-auto ${
-                  step === 3 
-                    ? 'bg-green-600 hover:bg-green-700' 
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Lock className="w-4 h-4 inline mr-2" />
+                비밀번호 확인 *
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="비밀번호를 다시 입력하세요"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Phone className="w-4 h-4 inline mr-2" />
+                전화번호 *
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="전화번호를 입력하세요"
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">건강 정보</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-2" />
+                  생년월일 *
+                </label>
+                <input
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.birthDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.birthDate && <p className="text-red-500 text-sm mt-1">{errors.birthDate}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  성별 *
+                </label>
+                <select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.gender ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">성별을 선택하세요</option>
+                  <option value="male">남성</option>
+                  <option value="female">여성</option>
+                </select>
+                {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Activity className="w-4 h-4 inline mr-2" />
+                  키 (cm) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.height ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="키를 입력하세요"
+                />
+                {errors.height && <p className="text-red-500 text-sm mt-1">{errors.height}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Activity className="w-4 h-4 inline mr-2" />
+                  몸무게 (kg) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.weight ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="몸무게를 입력하세요"
+                />
+                {errors.weight && <p className="text-red-500 text-sm mt-1">{errors.weight}</p>}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Heart className="w-4 h-4 inline mr-2" />
+                혈액형
+              </label>
+              <select
+                value={formData.bloodType}
+                onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">혈액형을 선택하세요</option>
+                <option value="A">A형</option>
+                <option value="B">B형</option>
+                <option value="AB">AB형</option>
+                <option value="O">O형</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AlertCircle className="w-4 h-4 inline mr-2" />
+                질병 이력
+              </label>
+              <textarea
+                value={formData.medicalHistory}
+                onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="질병 이력을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AlertCircle className="w-4 h-4 inline mr-2" />
+                복용 중인 약물
+              </label>
+              <textarea
+                value={formData.currentMedications}
+                onChange={(e) => setFormData({ ...formData, currentMedications: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="복용 중인 약물을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <AlertCircle className="w-4 h-4 inline mr-2" />
+                알레르기
+              </label>
+              <textarea
+                value={formData.allergies}
+                onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="알레르기를 입력하세요"
+              />
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">운동 정보</h2>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Activity className="w-4 h-4 inline mr-2" />
+                운동 경험 *
+              </label>
+              <select
+                value={formData.exerciseExperience}
+                onChange={(e) => setFormData({ ...formData, exerciseExperience: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.exerciseExperience ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                {step === 3 ? '가입 완료' : '다음'}
-              </Button>
+                <option value="">운동 경험을 선택하세요</option>
+                <option value="beginner">초보자</option>
+                <option value="intermediate">중급자</option>
+                <option value="advanced">고급자</option>
+                <option value="expert">전문가</option>
+              </select>
+              {errors.exerciseExperience && <p className="text-red-500 text-sm mt-1">{errors.exerciseExperience}</p>}
             </div>
-          </form>
-        </Card>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Activity className="w-4 h-4 inline mr-2" />
+                선호하는 수영 스타일 *
+              </label>
+              <select
+                value={formData.preferredSwimmingStyle}
+                onChange={(e) => setFormData({ ...formData, preferredSwimmingStyle: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.preferredSwimmingStyle ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">수영 스타일을 선택하세요</option>
+                <option value="freestyle">자유형</option>
+                <option value="backstroke">배영</option>
+                <option value="breaststroke">평영</option>
+                <option value="butterfly">접영</option>
+                <option value="mixed">혼영</option>
+              </select>
+              {errors.preferredSwimmingStyle && <p className="text-red-500 text-sm mt-1">{errors.preferredSwimmingStyle}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Target className="w-4 h-4 inline mr-2" />
+                운동 목표
+              </label>
+              <textarea
+                value={formData.fitnessGoals}
+                onChange={(e) => setFormData({ ...formData, fitnessGoals: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="운동 목표를 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Calendar className="w-4 h-4 inline mr-2" />
+                운동 가능 시간
+              </label>
+              <textarea
+                value={formData.availableTime}
+                onChange={(e) => setFormData({ ...formData, availableTime: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="운동 가능한 시간을 입력하세요"
+              />
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">약관 동의</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="agreeTerms"
+                  checked={formData.agreeTerms}
+                  onChange={(e) => setFormData({ ...formData, agreeTerms: e.target.checked })}
+                  className={`mt-1 mr-3 ${errors.agreeTerms ? 'border-red-500' : ''}`}
+                />
+                <label htmlFor="agreeTerms" className="text-sm text-gray-700">
+                  <span className="text-red-500">*</span> 이용약관에 동의합니다
+                </label>
+              </div>
+              {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
+
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="agreePrivacy"
+                  checked={formData.agreePrivacy}
+                  onChange={(e) => setFormData({ ...formData, agreePrivacy: e.target.checked })}
+                  className={`mt-1 mr-3 ${errors.agreePrivacy ? 'border-red-500' : ''}`}
+                />
+                <label htmlFor="agreePrivacy" className="text-sm text-gray-700">
+                  <span className="text-red-500">*</span> 개인정보처리방침에 동의합니다
+                </label>
+              </div>
+              {errors.agreePrivacy && <p className="text-red-500 text-sm">{errors.agreePrivacy}</p>}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
+                <div>
+                  <h4 className="font-medium text-blue-900">회원가입 완료 후</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    입력하신 정보를 바탕으로 맞춤형 수영 프로그램을 제공받을 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 진행 단계 표시 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">회원가입</h1>
+            <span className="text-sm text-gray-600">
+              {currentStep} / {totalSteps}
+            </span>
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            ></div>
+          </div>
+          
+          <div className="flex justify-between mt-2 text-sm text-gray-600">
+            <span>기본 정보</span>
+            <span>건강 정보</span>
+            <span>운동 정보</span>
+            <span>약관 동의</span>
+          </div>
+        </div>
+
+        {/* 폼 내용 */}
+        <div className="bg-white rounded-lg shadow p-8">
+          {renderStepContent()}
+        </div>
+
+        {/* 버튼 */}
+        <div className="flex justify-between mt-8">
+          <button
+            onClick={handlePrev}
+            disabled={currentStep === 1}
+            className={`px-6 py-3 border border-gray-300 rounded-md ${
+              currentStep === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            이전
+          </button>
+
+          {currentStep < totalSteps ? (
+            <button
+              onClick={handleNext}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              다음
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              회원가입 완료
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default SignupPage;
+}

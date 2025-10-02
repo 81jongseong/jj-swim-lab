@@ -9,10 +9,12 @@
  */
 
 import React, { useState } from 'react';
-import Button from './Button';
+import Button from './button';
 
 interface RefreshButtonProps {
-  onRefresh: () => Promise<void> | void;
+  onRefresh?: () => Promise<void> | void;
+  onClick?: () => Promise<void> | void;
+  isLoading?: boolean;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'outline' | 'primary' | 'secondary';
   className?: string;
@@ -20,22 +22,27 @@ interface RefreshButtonProps {
   tooltip?: string;
 }
 
-export function RefreshButton({
+const RefreshButton = ({
   onRefresh,
+  onClick,
+  isLoading = false,
   size = 'md',
   variant = 'outline',
   className = '',
   disabled = false,
   tooltip
-}: RefreshButtonProps) {
+}: RefreshButtonProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
-    if (isRefreshing || disabled) return;
+    if (isRefreshing || disabled || isLoading) return;
     
     setIsRefreshing(true);
     try {
-      await onRefresh();
+      const handler = onClick || onRefresh;
+      if (handler) {
+        await handler();
+      }
     } catch (error) {
       console.error('새로고침 실패:', error);
     } finally {
@@ -43,19 +50,21 @@ export function RefreshButton({
     }
   };
 
+  const isDisabled = disabled || isLoading || isRefreshing;
+
   return (
     <Button
       variant={variant}
       size={size}
       onClick={handleRefresh}
-      disabled={disabled || isRefreshing}
+      disabled={isDisabled}
       className={`transition-all duration-200 ${className}`}
       title={tooltip || '새로고침'}
       aria-label="데이터 새로고침"
     >
       <svg
         className={`w-4 h-4 transition-transform duration-200 ${
-          isRefreshing ? 'animate-spin' : ''
+          (isRefreshing || isLoading) ? 'animate-spin' : ''
         }`}
         fill="none"
         stroke="currentColor"
@@ -71,7 +80,7 @@ export function RefreshButton({
       </svg>
       {size !== 'sm' && (
         <span className="ml-2">
-          {isRefreshing ? '새로고침 중...' : '새로고침'}
+          {(isRefreshing || isLoading) ? '새로고침 중...' : '새로고침'}
         </span>
       )}
     </Button>

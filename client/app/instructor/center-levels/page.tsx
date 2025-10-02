@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth, type User } from '../../../hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle, LoadingSpinner } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, LoadingSpinner } from '../../../components/ui';
 import { getCenterLevels, type CenterLevel } from '../../../lib/api/center-level';
 import { GripVertical, Eye, Info } from 'lucide-react';
 import withAuth from '../../../components/withAuth';

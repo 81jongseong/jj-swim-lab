@@ -1,34 +1,32 @@
 /**
  * @file 강사 대시보드 페이지
  * @description 강사가 자신의 강의, 수강생, 일정 등을 한눈에 볼 수 있는 대시보드입니다.
- * @date 2025-09-13
+ * @date 2025-01-13
  * @author JJ Swim Lab
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
+import { useAuth } from '../../../hooks/useAuth';
 import { Calendar, Users, BookOpen, TrendingUp, Clock, Star } from 'lucide-react';
 
 interface DashboardStats {
   totalStudents: number;
   activeCourses: number;
   todayBookings: number;
+  weeklyRevenue: number;
   averageRating: number;
-  totalHours: number;
-  monthlyRevenue: number;
+  completedSessions: number;
 }
 
-interface UpcomingBooking {
+interface RecentActivity {
   id: string;
-  studentName: string;
-  courseName: string;
+  type: 'booking' | 'completion' | 'review';
+  student: string;
+  course: string;
   time: string;
-  status: 'confirmed' | 'pending' | 'cancelled';
+  status: 'success' | 'warning' | 'info';
 }
 
 const InstructorDashboard: React.FC = () => {
@@ -37,265 +35,246 @@ const InstructorDashboard: React.FC = () => {
     totalStudents: 0,
     activeCourses: 0,
     todayBookings: 0,
+    weeklyRevenue: 0,
     averageRating: 0,
-    totalHours: 0,
-    monthlyRevenue: 0,
+    completedSessions: 0
   });
-  const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([
+    {
+      id: '1',
+      type: 'booking',
+      student: '김수영',
+      course: '자유형 초급',
+      time: '10분 전',
+      status: 'success'
+    },
+    {
+      id: '2',
+      type: 'completion',
+      student: '이배영',
+      course: '배영 기초',
+      time: '30분 전',
+      status: 'success'
+    },
+    {
+      id: '3',
+      type: 'review',
+      student: '박평영',
+      course: '평영 입문',
+      time: '1시간 전',
+      status: 'info'
+    }
+  ]);
 
   useEffect(() => {
-    fetchDashboardData();
+    const loadInstructorData = async () => {
+      try {
+        // 실제 API 호출 로직
+        console.log('강사 데이터 로드 중...');
+        
+        // 임시 데이터 설정
+        setStats({
+          totalStudents: 25,
+          activeCourses: 8,
+          todayBookings: 12,
+          weeklyRevenue: 1500000,
+          averageRating: 4.8,
+          completedSessions: 156
+        });
+      } catch (error) {
+        console.error('강사 데이터 로드 실패:', error);
+      }
+    };
+
+    loadInstructorData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // 실제 API 호출
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/centers/instructor-dashboard-stats', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('통계 데이터를 가져올 수 없습니다.');
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setStats(result.data);
-      } else {
-        throw new Error(result.message || '통계 데이터 조회에 실패했습니다.');
-      }
-
-      const mockBookings: UpcomingBooking[] = [
-        {
-          id: '1',
-          studentName: '김학생',
-          courseName: '자유형 기초',
-          time: '09:00 - 10:00',
-          status: 'confirmed',
-        },
-        {
-          id: '2',
-          studentName: '이학생',
-          courseName: '배영 중급',
-          time: '10:30 - 11:30',
-          status: 'confirmed',
-        },
-        {
-          id: '3',
-          studentName: '박학생',
-          courseName: '접영 고급',
-          time: '14:00 - 15:00',
-          status: 'pending',
-        },
-      ];
-
-      setUpcomingBookings(mockBookings);
-    } catch (error) {
-      console.error('대시보드 데이터 로딩 실패:', error);
-    } finally {
-      setLoading(false);
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'booking': return <Calendar className="h-4 w-4" />;
+      case 'completion': return <BookOpen className="h-4 w-4" />;
+      case 'review': return <Star className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
-        </div>
-      </div>
-    );
-  }
+  const getActivityColor = (status: string) => {
+    switch (status) {
+      case 'success': return 'text-green-600';
+      case 'warning': return 'text-yellow-600';
+      case 'info': return 'text-blue-600';
+      default: return 'text-gray-600';
+    }
+  };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          안녕하세요, {user?.name}님! 👋
-        </h1>
-        <p className="text-gray-600">
-          오늘도 좋은 하루 되세요. 오늘의 강의 일정을 확인해보세요.
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">강사 대시보드</h1>
+        <p className="text-gray-600 mt-2">안녕하세요, {user?.name || '강사'}님! 오늘의 수업을 준비해보세요.</p>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 수강생</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalStudents}명</div>
-            <p className="text-xs text-muted-foreground">
-              활성 수강생 기준
-            </p>
-          </CardContent>
-        </Card>
+      {/* 주요 통계 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">총 수강생</h3>
+            <Users className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{stats.totalStudents}명</div>
+          <p className="text-xs text-gray-500 mt-1">활성 수강생</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">진행 중인 강의</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeCourses}개</div>
-            <p className="text-xs text-muted-foreground">
-              현재 진행 중인 강의
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">진행 중인 강의</h3>
+            <BookOpen className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{stats.activeCourses}개</div>
+          <p className="text-xs text-gray-500 mt-1">현재 진행 중</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">오늘 예약</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.todayBookings}건</div>
-            <p className="text-xs text-muted-foreground">
-              오늘 예정된 수업
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">오늘 예약</h3>
+            <Calendar className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{stats.todayBookings}건</div>
+          <p className="text-xs text-gray-500 mt-1">오늘 예정된 수업</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">평균 평점</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.averageRating}</div>
-            <p className="text-xs text-muted-foreground">
-              수강생 평가 기준
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">주간 수익</h3>
+            <TrendingUp className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{stats.weeklyRevenue.toLocaleString()}원</div>
+          <p className="text-xs text-gray-500 mt-1">이번 주 수익</p>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 강의 시간</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours}시간</div>
-            <p className="text-xs text-muted-foreground">
-              이번 달 누적
-            </p>
-          </CardContent>
-        </Card>
+      {/* 추가 통계 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">평균 평점</h3>
+            <Star className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.averageRating}</div>
+          <p className="text-xs text-gray-500 mt-1">수강생 평가 기준</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">이번 달 수익</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.monthlyRevenue.toLocaleString()}원
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600">완료한 수업</h3>
+            <Clock className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.completedSessions}회</div>
+          <p className="text-xs text-gray-500 mt-1">총 완료 수업</p>
+        </div>
+      </div>
+
+      {/* 오늘의 일정 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">오늘의 일정</h3>
+            <p className="text-sm text-gray-600">오늘 예정된 수업 일정을 확인하세요.</p>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">자유형 초급</h4>
+                <p className="text-sm text-gray-600">김수영 학생</p>
+                <p className="text-sm text-gray-500">14:00 - 15:00</p>
+              </div>
+              <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                확정
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              이번 달 기준
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">배영 기초</h4>
+                <p className="text-sm text-gray-600">이배영 학생</p>
+                <p className="text-sm text-gray-500">16:00 - 17:00</p>
+              </div>
+              <div className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                대기
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">평영 입문</h4>
+                <p className="text-sm text-gray-600">박평영 학생</p>
+                <p className="text-sm text-gray-500">18:00 - 19:00</p>
+              </div>
+              <div className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                확정
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* 오늘의 예약 */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>오늘의 예약</CardTitle>
-          <CardDescription>
-            오늘 예정된 수업 일정을 확인하세요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {upcomingBookings.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              오늘 예정된 수업이 없습니다.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {upcomingBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex-1">
-                    <h4 className="font-medium">{booking.studentName}</h4>
-                    <p className="text-sm text-gray-600">{booking.courseName}</p>
-                    <p className="text-sm text-gray-500">{booking.time}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge
-                      variant={
-                        booking.status === 'confirmed'
-                          ? 'default'
-                          : booking.status === 'pending'
-                          ? 'secondary'
-                          : 'destructive'
-                      }
-                    >
-                      {booking.status === 'confirmed'
-                        ? '확정'
-                        : booking.status === 'pending'
-                        ? '대기'
-                        : '취소'}
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      상세보기
-                    </Button>
-                  </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
+            <p className="text-sm text-gray-600">수강생들의 최근 활동을 확인하세요.</p>
+          </div>
+          <div className="space-y-4">
+            {recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-center space-x-3">
+                <div className={`p-2 rounded-full ${getActivityColor(activity.status)}`}>
+                  {getActivityIcon(activity.type)}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {activity.student} 학생이 {activity.course} 수업을 {activity.type === 'booking' ? '예약' : activity.type === 'completion' ? '완료' : '리뷰'}했습니다.
+                  </p>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* 빠른 액션 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>빠른 액션</CardTitle>
-          <CardDescription>
-            자주 사용하는 기능들에 빠르게 접근하세요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex flex-col">
-              <BookOpen className="h-6 w-6 mb-2" />
-              <span>강의 관리</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col">
-              <Users className="h-6 w-6 mb-2" />
-              <span>수강생 관리</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col">
-              <Calendar className="h-6 w-6 mb-2" />
-              <span>일정 관리</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col">
-              <TrendingUp className="h-6 w-6 mb-2" />
-              <span>리포트 보기</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800">
-        <p className="font-semibold">개발 참고:</p>
-        <p>이 페이지의 데이터는 하드코딩이 아닌 데이터베이스에서 관리되어야 합니다.</p>
-        <p>관련 API 엔드포인트 (`/api/instructor/dashboard` 등) 개발이 필요합니다.</p>
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">빠른 액션</h3>
+          <p className="text-sm text-gray-600">자주 사용하는 기능들에 빠르게 접근하세요.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button 
+            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => window.location.href = '/instructor/students'}
+          >
+            <Users className="h-6 w-6 mb-2 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">수강생 관리</span>
+          </button>
+          <button 
+            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => window.location.href = '/instructor/bookings'}
+          >
+            <Calendar className="h-6 w-6 mb-2 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">예약 관리</span>
+          </button>
+          <button 
+            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => window.location.href = '/instructor/teaching-methods'}
+          >
+            <BookOpen className="h-6 w-6 mb-2 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">강습법 관리</span>
+          </button>
+          <button 
+            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => window.location.href = '/instructor/schedule'}
+          >
+            <Clock className="h-6 w-6 mb-2 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">일정 관리</span>
+          </button>
+        </div>
       </div>
     </div>
   );

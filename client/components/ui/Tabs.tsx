@@ -1,9 +1,14 @@
-"use client"
+/**
+ * Tabs 컴포넌트
+ * 
+ * 연동되는 데이터: 없음
+ * 연동되는 파일: 모든 페이지의 탭 요소
+ */
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 const Tabs = TabsPrimitive.Root
 
@@ -53,3 +58,4 @@ const TabsContent = React.forwardRef<
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
 export { Tabs, TabsList, TabsTrigger, TabsContent }
+export default Tabs

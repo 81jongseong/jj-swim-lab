@@ -51,3 +51,10 @@ console.log('- 다음 주 조정:', plan.next_week_adjustment);
 console.log('- 사용된 영법들:', plan.sessions[0].stroke_plan.map(sp => sp.stroke));
 
 console.log('\n=== 테스트 완료 ===');
+
+
+
+
+
+
+

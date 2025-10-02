@@ -1,4 +1,4 @@
-import { buildPlan } from '../src/engine/swim-plan';
+import { buildPlan } from '../src/engine/swim-plan.js';
 const sample1 = {
     demographics: { age: 45, sex: 'M' },
     anthropometrics: { height_cm: 175, weight_kg: 85, bmi: 27.8 },

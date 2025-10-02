@@ -79,7 +79,7 @@
  * 7. 테스트 결과 검증 및 정리
  */
 
-import apiClient from '@/utils/api';
+import apiClient from './../utils/api';
 
 // fetch 모킹
 const mockFetch = jest.fn();

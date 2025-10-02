@@ -1,139 +1,127 @@
-/**
- * @file 센터 관리자 - 센터 강사 관리 페이지
- * @description 센터 관리자가 자신의 센터에 소속된 강사들을 관리하는 페이지입니다.
- * @date 2025-01-13
- * @author JJ Swim Lab
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
-import Input from "@/components/ui/Input";
-import { Users, Search, Plus, Edit, Eye, UserCheck, UserX, Star } from 'lucide-react';
+import { Users, Star, Calendar, Award, Phone, Mail, Edit, Trash2 } from 'lucide-react';
+import withAuth from '@/components/withAuth';
 
-interface CenterInstructor {
-  id: string;
+interface Instructor {
+  _id: string;
   name: string;
   email: string;
-  phone: string;
-  instructorLevel: 'junior' | 'senior' | 'master';
-  experience: string;
+  phone?: string;
+  experience: number;
+  rating: number;
   specialties: string[];
-  maxStudents: number;
-  currentStudents: number;
-  averageRating: number;
-  totalCourses: number;
-  joinDate: string;
-  status: 'active' | 'inactive' | 'suspended';
-  lastActivity: string;
+  certifications: string[];
+  status: 'active' | 'inactive' | 'pending';
+  joinedAt: Date;
+  totalStudents: number;
+  totalClasses: number;
 }
 
-const CenterInstructorsPage: React.FC = () => {
+function CenterInstructorsManagement() {
   const { user } = useAuth();
-  const [instructors, setInstructors] = useState<CenterInstructor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchCenterInstructors();
-  }, []);
+    if (user) {
+      loadInstructors();
+    }
+  }, [user]);
 
-  const fetchCenterInstructors = async () => {
+  const loadInstructors = async () => {
     try {
-      setLoading(true);
-      // 실제 API 호출로 교체 필요: /api/center-admin/instructors
-      const mockInstructors: CenterInstructor[] = [
+      setIsLoading(true);
+      // 임시 데이터
+      const tempInstructors: Instructor[] = [
         {
-          id: '1',
-          name: '박강사',
-          email: 'instructor1@example.com',
-          phone: '010-2345-6789',
-          instructorLevel: 'senior',
-          experience: '5년',
-          specialties: ['자유형', '배영', '접영'],
-          maxStudents: 20,
-          currentStudents: 15,
-          averageRating: 4.8,
-          totalCourses: 12,
-          joinDate: '2023-06-20',
-          status: 'active',
-          lastActivity: '2024-12-19'
-        },
-        {
-          id: '2',
+          _id: '1',
           name: '김강사',
-          email: 'instructor2@example.com',
-          phone: '010-3456-7890',
-          instructorLevel: 'junior',
-          experience: '2년',
-          specialties: ['평영', '자유형'],
-          maxStudents: 15,
-          currentStudents: 10,
-          averageRating: 4.5,
-          totalCourses: 8,
-          joinDate: '2024-03-15',
+          email: 'instructor1@example.com',
+          phone: '010-1234-5678',
+          experience: 5,
+          rating: 4.8,
+          specialties: ['자유형', '배영', '접영'],
+          certifications: ['수영지도자 1급', 'CPR 자격증'],
           status: 'active',
-          lastActivity: '2024-12-18'
+          joinedAt: new Date('2023-01-15'),
+          totalStudents: 45,
+          totalClasses: 120
         },
         {
-          id: '3',
-          name: '이강사',
-          email: 'instructor3@example.com',
-          phone: '010-4567-8901',
-          instructorLevel: 'master',
-          experience: '10년',
-          specialties: ['자유형', '배영', '접영', '평영'],
-          maxStudents: 25,
-          currentStudents: 22,
-          averageRating: 4.9,
-          totalCourses: 20,
-          joinDate: '2022-01-10',
+          _id: '2',
+          name: '이코치',
+          email: 'instructor2@example.com',
+          phone: '010-2345-6789',
+          experience: 8,
+          rating: 4.9,
+          specialties: ['평영', '접영', '종합'],
+          certifications: ['수영지도자 1급', '수상안전요원', 'CPR 자격증'],
           status: 'active',
-          lastActivity: '2024-12-19'
+          joinedAt: new Date('2022-06-10'),
+          totalStudents: 67,
+          totalClasses: 200
+        },
+        {
+          _id: '3',
+          name: '박트레이너',
+          email: 'instructor3@example.com',
+          phone: '010-3456-7890',
+          experience: 3,
+          rating: 4.5,
+          specialties: ['자유형', '초급자 지도'],
+          certifications: ['수영지도자 2급', 'CPR 자격증'],
+          status: 'pending',
+          joinedAt: new Date('2024-01-01'),
+          totalStudents: 12,
+          totalClasses: 30
         }
       ];
-
-      setInstructors(mockInstructors);
+      setInstructors(tempInstructors);
     } catch (error) {
-      console.error('센터 강사 목록 조회 실패:', error);
+      console.error('강사 목록 로드 실패:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const filteredInstructors = instructors.filter(instructor =>
-    instructor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getStatusLabel = (status: string) => {
+    const statuses: { [key: string]: string } = {
+      'active': '활성',
+      'inactive': '비활성',
+      'pending': '승인대기'
+    };
+    return statuses[status] || status;
+  };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const colors: { [key: string]: string } = {
+      'active': 'bg-green-100 text-green-800',
+      'inactive': 'bg-red-100 text-red-800',
+      'pending': 'bg-yellow-100 text-yellow-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'junior': return 'bg-blue-100 text-blue-800';
-      case 'senior': return 'bg-green-100 text-green-800';
-      case 'master': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${
+          i < Math.floor(rating) 
+            ? 'text-yellow-400 fill-current' 
+            : 'text-gray-300'
+        }`}
+      />
+    ));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -144,229 +132,155 @@ const CenterInstructorsPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           센터 강사 관리 👨‍🏫
         </h1>
-        <p className="text-gray-600">
-          {user?.name}님의 센터에 소속된 강사들을 관리하세요.
-        </p>
+        <p className="text-gray-600">센터 소속 강사들을 관리하고 평가하세요</p>
       </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 강사</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{instructors.length}명</div>
-            <p className="text-xs text-muted-foreground">
-              전체 강사 수
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">활성 강사</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {instructors.filter(i => i.status === 'active').length}명
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Users className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 강사</p>
+              <p className="text-2xl font-bold text-gray-900">{instructors.length}명</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              활성 상태 강사
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">평균 평점</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(instructors.reduce((acc, i) => acc + i.averageRating, 0) / instructors.length).toFixed(1)}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Star className="w-8 h-8 text-yellow-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">평균 평점</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {instructors.length > 0 
+                  ? (instructors.reduce((sum, i) => sum + i.rating, 0) / instructors.length).toFixed(1)
+                  : '0.0'
+                }
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              전체 강사 평점
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 수강생</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {instructors.reduce((acc, i) => acc + i.currentStudents, 0)}명
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Calendar className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 수업</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {instructors.reduce((sum, i) => sum + i.totalClasses, 0)}회
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              현재 수강 중인 학생
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Award className="w-8 h-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 학생</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {instructors.reduce((sum, i) => sum + i.totalStudents, 0)}명
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 검색 및 액션 */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>강사 검색 및 관리</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="강사 이름 또는 이메일로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+      {/* 강사 목록 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {instructors.map((instructor) => (
+          <div key={instructor._id} className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{instructor.name}</h3>
+                    <p className="text-sm text-gray-500">{instructor.experience}년 경력</p>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(instructor.status)}`}>
+                  {getStatusLabel(instructor.status)}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <Mail className="w-4 h-4 text-gray-400 mr-2" />
+                  <span className="text-sm text-gray-600">{instructor.email}</span>
+                </div>
+                {instructor.phone && (
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">{instructor.phone}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center">
+                  <div className="flex mr-2">
+                    {renderStars(instructor.rating)}
+                  </div>
+                  <span className="text-sm text-gray-600">({instructor.rating})</span>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">전문분야</p>
+                  <div className="flex flex-wrap gap-1">
+                    {instructor.specialties.map((specialty, index) => (
+                      <span
+                        key={index}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">자격증</p>
+                  <div className="space-y-1">
+                    {instructor.certifications.map((cert, index) => (
+                      <span
+                        key={index}
+                        className="block text-xs text-gray-600"
+                      >
+                        • {cert}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+
+                <div className="flex space-x-2 pt-3 border-t">
+                  <button className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <Edit className="w-4 h-4 mr-1" />
+                    수정
+                  </button>
+                  <button className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    삭제
+                  </button>
+                </div>
               </div>
             </div>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              새 강사 추가
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* 강사 목록 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>센터 강사 목록</CardTitle>
-          <CardDescription>
-            센터에 소속된 모든 강사들의 정보를 확인하고 관리할 수 있습니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    강사 정보
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    레벨/경력
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    전문 분야
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    수강생 현황
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    평점/강의
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredInstructors.map((instructor) => (
-                  <tr key={instructor.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {instructor.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {instructor.email}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {instructor.phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <Badge className={getLevelColor(instructor.instructorLevel)}>
-                          {instructor.instructorLevel === 'junior' ? '주니어' :
-                           instructor.instructorLevel === 'senior' ? '시니어' : '마스터'}
-                        </Badge>
-                        <span className="text-sm text-gray-600">
-                          경력 {instructor.experience}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {instructor.specialties.map((specialty, index) => (
-                          <Badge key={index} className="bg-blue-100 text-blue-800 text-xs">
-                            {specialty}
-                          </Badge>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {instructor.currentStudents}/{instructor.maxStudents}명
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{
-                              width: `${(instructor.currentStudents / instructor.maxStudents) * 100}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                          <span className="font-medium">{instructor.averageRating}</span>
-                        </div>
-                        <div className="text-gray-500">
-                          {instructor.totalCourses}개 강의
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusColor(instructor.status)}>
-                        {instructor.status === 'active' ? '활성' :
-                         instructor.status === 'inactive' ? '비활성' : '정지'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-1" />
-                          보기
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4 mr-1" />
-                          수정
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-800">
-        <p className="font-semibold">개발 참고:</p>
-        <p>이 페이지는 센터 관리자가 자신의 센터에 소속된 강사들만 조회할 수 있습니다.</p>
-        <p>강사 추가, 권한 수정, 수강생 할당 등의 기능이 구현되어야 합니다.</p>
+        ))}
       </div>
     </div>
   );
-};
+}
 
-export default CenterInstructorsPage;
+export default withAuth(CenterInstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});

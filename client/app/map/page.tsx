@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // 동적 import로 SSR 비활성화 (hydration 오류 방지)
-const OpenStreetMap = dynamic(() => import('@/components/OpenStreetMap'), {
+const OpenStreetMap = dynamic(() => import('../../components/OpenStreetMap'), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-gray-100 flex items-center justify-center">🗺️ 지도 로딩중...</div>
 });
 
-const MapControls = dynamic(() => import('@/components/OpenStreetMap').then(mod => ({ default: mod.MapControls })), {
+const MapControls = dynamic(() => import('../../components/OpenStreetMap').then(mod => ({ default: mod.MapControls })), {
   ssr: false
 });
 
-const AddressSearch = dynamic(() => import('@/components/OpenStreetMap').then(mod => ({ default: mod.AddressSearch })), {
+const AddressSearch = dynamic(() => import('../../components/OpenStreetMap').then(mod => ({ default: mod.AddressSearch })), {
   ssr: false
 });
 

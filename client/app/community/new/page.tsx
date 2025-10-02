@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import apiClient from '@/utils/api';
-import withAuth from '@/components/withAuth';
+import apiClient from '../../../utils/api';
+import withAuth from '../../../components/withAuth';
 
 function CommunityNewPage() {
   const [title, setTitle] = useState('');

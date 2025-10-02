@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import apiClient from '@/utils/api';
+import apiClient from '../../../utils/api';
 
-import withAuth from '@/components/withAuth';
+import withAuth from '../../../components/withAuth';
 
 function AdminNoticesPage() {
   const [notices, setNotices] = useState<any[]>([]);

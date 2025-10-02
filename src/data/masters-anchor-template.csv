@@ -1,0 +1,6 @@
+course,ageMin,ageMax,sex,stroke,distance,label,recordTimeSec,source
+LCM50,25,29,M,FR,100,World Aquatics WR,48.72,World Aquatics Masters PDF (as of 2025-09-01)
+LCM50,25,29,F,FR,100,World Aquatics WR,,World Aquatics Masters PDF (as of 2025-09-01)
+LCM50,30,34,M,FR,100,KOR NR,,KSF adult masters records (PDF)
+LCM50,30,34,F,FR,100,KOR NR,,KSF adult masters records (PDF)
+LCM50,35,39,M,FR,100,USMS NR,,USMS Pool Records

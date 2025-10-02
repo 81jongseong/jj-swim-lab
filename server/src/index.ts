@@ -135,6 +135,10 @@ import { connectDB } from './db';
 import { runSeedData } from './utils/seedData';
 
 // 라우트 임포트
+import center-levelsRoutes from './routes/center-levels';
+import exampleRoutes from './routes/example';
+import noticeRoutes from './routes/notice';
+import runPipelineRoutes from './routes/runPipeline';
 import authRoutes from './routes/auth';
 import dashboardRoutes from './routes/dashboard';
 import userRoutes from './routes/users';
@@ -150,6 +154,7 @@ import reportRoutes from './routes/report';
 import aiConfigRoutes from './routes/ai-config';
 import uploadRoutes from './routes/uploads';
 import teachingMethodsRoutes from './routes/teaching-methods';
+import updateLevelsRoutes from './routes/update-levels';
 // import communityRoutes from './routes/community'; // 임시 비활성화
 import shopRoutes from './routes/shop';
 import systemRoutes from './routes/system';
@@ -205,6 +210,8 @@ import aiPerformancePredictionRoutes from './routes/aiPerformancePrediction';
 import medicalExercisePrescriptionRoutes from './routes/medicalExercisePrescription';
 import healthExerciseAIRoutes from './routes/health-exercise-ai';
 import exercisePrescriptionRoutes from './routes/exercise-prescription';
+import healthInputRoutes from './routes/health-input';
+import swimEngineRoutes from './routes/swim-engine';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -253,6 +260,42 @@ console.log('🚀 index.ts 모듈 로딩 시작...');
 // 모델 등록 확인 (모든 모델 import 후)
 setTimeout(() => {
   console.log('🔍 모델 등록 상태 확인:');
+  console.log('   - AIConfig 모델:', mongoose.models.AIConfig ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Approval 모델:', mongoose.models.Approval ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Booking 모델:', mongoose.models.Booking ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CenterInfo 모델:', mongoose.models.CenterInfo ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CenterLevel 모델:', mongoose.models.CenterLevel ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ChecklistTemplate 모델:', mongoose.models.ChecklistTemplate ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Class 모델:', mongoose.models.Class ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ClassChecklist 모델:', mongoose.models.ClassChecklist ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CommunityComment 모델:', mongoose.models.CommunityComment ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CommunityPost 모델:', mongoose.models.CommunityPost ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CommunityReport 모델:', mongoose.models.CommunityReport ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Course 모델:', mongoose.models.Course ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - CourseAction 모델:', mongoose.models.CourseAction ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Evaluation 모델:', mongoose.models.Evaluation ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ExerciseData 모델:', mongoose.models.ExerciseData ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ExercisePrescription 모델:', mongoose.models.ExercisePrescription ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - HealthData 모델:', mongoose.models.HealthData ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - InstructorEvaluationCriteria 모델:', mongoose.models.InstructorEvaluationCriteria ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - InstructorEvaluationResult 모델:', mongoose.models.InstructorEvaluationResult ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - LessonPlanTemplate 모델:', mongoose.models.LessonPlanTemplate ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Membership 모델:', mongoose.models.Membership ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Notice 모델:', mongoose.models.Notice ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Payment 모델:', mongoose.models.Payment ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Progress 모델:', mongoose.models.Progress ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Quiz 모델:', mongoose.models.Quiz ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - QuizAttempt 모델:', mongoose.models.QuizAttempt ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Report 모델:', mongoose.models.Report ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Review 모델:', mongoose.models.Review ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ShopOrder 모델:', mongoose.models.ShopOrder ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - ShopProduct 모델:', mongoose.models.ShopProduct ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - SkillTemplate 모델:', mongoose.models.SkillTemplate ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - StudentHealth 모델:', mongoose.models.StudentHealth ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - StudentProgress 모델:', mongoose.models.StudentProgress ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - SwimmingCenter 모델:', mongoose.models.SwimmingCenter ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - TeachingMethod 모델:', mongoose.models.TeachingMethod ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - Video 모델:', mongoose.models.Video ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - Checklist 모델:', mongoose.models.Checklist ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - User 모델:', mongoose.models.User ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - TeachingMethod 모델:', mongoose.models.TeachingMethod ? '✅ 등록됨' : '❌ 미등록');
@@ -383,6 +426,9 @@ app.get('/api/health', cache({ ttl: 60 }), (req, res) => {
 });
 
 // API 라우트 등록
+app.use('/api/ai-evaluation-criteria', ai-evaluation-criteriaRoutes);
+app.use('/api/ai-exercise-recommendations', ai-exercise-recommendationsRoutes);
+app.use('/api/health-input', health-inputRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
@@ -398,6 +444,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/ai-config', aiConfigRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/teaching-methods', teachingMethodsRoutes);
+app.use('/api/update-levels', updateLevelsRoutes);
 // app.use('/api/community', communityRoutes); // 임시 비활성화
 app.use('/api/shop', shopRoutes);
 app.use('/api/system', systemRoutes);
@@ -454,6 +501,8 @@ app.use('/api/ai-performance-prediction', aiPerformancePredictionRoutes);
 app.use('/api/medical-exercise-prescription', medicalExercisePrescriptionRoutes);
 app.use('/api/health-exercise-ai', healthExerciseAIRoutes);
 app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
+app.use('/api/health', healthInputRoutes);
+app.use('/api/swim-engine', swimEngineRoutes);
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
@@ -542,4 +591,40 @@ process.on('exit', () => {
 });
 
 // 테스트를 위한 app 객체 export
+import './models/AIConfig';
+import './models/Approval';
+import './models/Booking';
+import './models/CenterInfo';
+import './models/CenterLevel';
+import './models/ChecklistTemplate';
+import './models/Class';
+import './models/ClassChecklist';
+import './models/CommunityComment';
+import './models/CommunityPost';
+import './models/CommunityReport';
+import './models/Course';
+import './models/CourseAction';
+import './models/Evaluation';
+import './models/ExerciseData';
+import './models/ExercisePrescription';
+import './models/HealthData';
+import './models/InstructorEvaluationCriteria';
+import './models/InstructorEvaluationResult';
+import './models/LessonPlanTemplate';
+import './models/Membership';
+import './models/Notice';
+import './models/Payment';
+import './models/Progress';
+import './models/Quiz';
+import './models/QuizAttempt';
+import './models/Report';
+import './models/Review';
+import './models/ShopOrder';
+import './models/ShopProduct';
+import './models/SkillTemplate';
+import './models/StudentHealth';
+import './models/StudentProgress';
+import './models/SwimmingCenter';
+import './models/TeachingMethod';
+import './models/Video';
 export { app };

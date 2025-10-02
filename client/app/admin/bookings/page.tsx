@@ -95,9 +95,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import withAuth from '@/components/withAuth';
-import apiClient from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
+import withAuth from '../../../components/withAuth';
+import apiClient from '../../../utils/api';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface Booking {
   id: string;

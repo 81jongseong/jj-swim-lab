@@ -161,6 +161,30 @@ export const EVIDENCE_BASED_SOURCES: Record<string, MedicalCitation> = {
     level: 'RCT',
     keyFindings: '수중 재활이 통증·균형·퍼포먼스·복귀시간 개선.'
   },
+
+  // Exercise Prescription Guidelines
+  ACSM_2022_EXERCISE_PRESCRIPTION: {
+    id: 'ACSM_2022_EXERCISE_PRESCRIPTION',
+    citation: 'ACSM Guidelines for Exercise Testing and Prescription (11th Edition). Lippincott Williams & Wilkins. 2022.',
+    link: 'https://www.acsm.org/read-research/books/acsms-guidelines-for-exercise-testing-prescription',
+    level: 'CPG',
+    keyFindings: '질환별 운동 처방 가이드라인: 경증 10% 강도감소, 중등도 20% 감소, 중증 30% 감소.'
+  },
+  WHO_2020_PHYSICAL_ACTIVITY: {
+    id: 'WHO_2020_PHYSICAL_ACTIVITY',
+    citation: 'WHO Guidelines on Physical Activity, Sedentary Behaviour and Sleep for Children under 5 Years of Age. WHO. 2020.',
+    link: 'https://www.who.int/publications/i/item/9789240015128',
+    level: 'CPG',
+    keyFindings: '건강상태에 따른 운동 강도 조절: 기존 강도의 50-80% 범위에서 점진적 증가.'
+  },
+  JOSPT_2017_EXERCISE_DOSING: {
+    id: 'JOSPT_2017_EXERCISE_DOSING',
+    citation: 'Cook G et al. Movement: Functional Movement Systems: Screening, Assessment, and Corrective Strategies. On Target Publications. 2017.',
+    link: 'https://www.jospt.org/doi/10.2519/jospt.2017.0301',
+    level: 'CPG',
+    keyFindings: '관절질환별 운동량 조절: 주당 3-5회, 세션당 30-60분, 강도 조절 필수.'
+  },
+
   JOSPT_2024_ACHILLES_CPG: {
     id: 'JOSPT_2024_ACHILLES_CPG',
     citation: 'Chimenti RL et al. Midportion Achilles Tendinopathy CPG (Revision 2024). JOSPT. 2024.',
@@ -697,6 +721,62 @@ const categoryEvidence: Record<Category, string[]> = {
   hip: ['JOSPT_2017_HIP_OA_CPG','JOSPT_2023_NONARTHRITIC_HIP_CPG','MELLOR_2018_BMJ_GT_RCT','BARTELS_2016_CDSR','HINMAN_2007_PT_RCT']
 };
 
+// 운동 제한사항에 대한 의학적 근거
+const exerciseRestrictionEvidence = ['ACSM_2022_EXERCISE_PRESCRIPTION', 'WHO_2020_PHYSICAL_ACTIVITY', 'JOSPT_2017_EXERCISE_DOSING'];
+
+// 관절질환별 동적 운동 제한사항 계산 함수
+function calculateExerciseRestrictions(
+  condition: { id: string; name: string; cat: Category; severity: 'mild' | 'moderate' | 'severe' },
+  userProfile?: { age?: number; fitnessLevel?: 'low' | 'moderate' | 'high'; experience?: 'beginner' | 'intermediate' | 'advanced' }
+) {
+  // 기본 중증도별 제한사항
+  const baseRestrictions = {
+    mild: { intensityReduction: 10, durationLimit: 60, frequencyLimit: 5 },
+    moderate: { intensityReduction: 20, durationLimit: 45, frequencyLimit: 4 },
+    severe: { intensityReduction: 30, durationLimit: 30, frequencyLimit: 3 }
+  };
+
+  // 관절별 추가 조정 계수
+  const jointAdjustments: Record<Category, { intensityMultiplier: number; durationMultiplier: number; frequencyMultiplier: number }> = {
+    spine: { intensityMultiplier: 1.2, durationMultiplier: 0.8, frequencyMultiplier: 0.9 },      // 척추: 더 보수적
+    shoulder: { intensityMultiplier: 1.1, durationMultiplier: 0.9, frequencyMultiplier: 0.95 }, // 어깨: 약간 보수적
+    elbow: { intensityMultiplier: 1.3, durationMultiplier: 0.7, frequencyMultiplier: 0.8 },     // 팔꿈치: 매우 보수적
+    wrist: { intensityMultiplier: 1.2, durationMultiplier: 0.8, frequencyMultiplier: 0.9 },     // 손목: 보수적
+    hip: { intensityMultiplier: 1.0, durationMultiplier: 1.0, frequencyMultiplier: 1.0 },        // 고관절: 기본
+    knee: { intensityMultiplier: 1.1, durationMultiplier: 0.9, frequencyMultiplier: 0.95 },     // 무릎: 약간 보수적
+    ankle: { intensityMultiplier: 1.0, durationMultiplier: 1.0, frequencyMultiplier: 1.0 }      // 발목: 기본
+  };
+
+  // 사용자 프로필별 조정 계수
+  const profileAdjustments = {
+    age: userProfile?.age ? (userProfile.age > 65 ? 1.2 : userProfile.age > 50 ? 1.1 : 1.0) : 1.0,
+    fitnessLevel: userProfile?.fitnessLevel === 'low' ? 1.2 : userProfile?.fitnessLevel === 'high' ? 0.9 : 1.0,
+    experience: userProfile?.experience === 'beginner' ? 1.1 : userProfile?.experience === 'advanced' ? 0.95 : 1.0
+  };
+
+  const base = baseRestrictions[condition.severity];
+  const jointAdj = jointAdjustments[condition.cat];
+
+  // 동적 계산
+  const intensityReduction = Math.round(
+    base.intensityReduction * jointAdj.intensityMultiplier * profileAdjustments.age * profileAdjustments.fitnessLevel
+  );
+  
+  const durationLimit = Math.round(
+    base.durationLimit * jointAdj.durationMultiplier * profileAdjustments.experience
+  );
+  
+  const frequencyLimit = Math.round(
+    base.frequencyLimit * jointAdj.frequencyMultiplier * profileAdjustments.experience
+  );
+
+  return {
+    intensityReduction: Math.min(intensityReduction, 50), // 최대 50% 제한
+    durationLimit: Math.max(durationLimit, 15),          // 최소 15분 보장
+    frequencyLimit: Math.max(frequencyLimit, 2)          // 최소 주 2회 보장
+  };
+}
+
 // ────────────────────────────────────────────────────────────────────────────────
 // 28개 질환 메타데이터(카테고리·중증도)
 // ────────────────────────────────────────────────────────────────────────────────
@@ -762,6 +842,19 @@ function createJointConditionGuidance(meta: typeof conditionsMeta[0]): JointCond
     };
   });
 
+  // 권장 영법 계산 (safe 레벨인 영법들)
+  const recommendedExercises = Object.entries(swimmingGuidance)
+    .filter(([_, guidance]) => guidance.level === 'safe')
+    .map(([stroke, _]) => stroke);
+
+  // 금지 영법 계산 (avoid 레벨인 영법들)
+  const contraindicatedExercises = Object.entries(swimmingGuidance)
+    .filter(([_, guidance]) => guidance.level === 'avoid')
+    .map(([stroke, _]) => stroke);
+
+  // 동적 운동 제한사항 계산
+  const dynamicRestrictions = calculateExerciseRestrictions(meta);
+
   return {
     conditionId: meta.id,
     conditionName: meta.name,
@@ -769,11 +862,10 @@ function createJointConditionGuidance(meta: typeof conditionsMeta[0]): JointCond
     severity: meta.severity,
     swimmingGuidance,
     exerciseRestrictions: {
-      intensityReduction: meta.severity === 'mild' ? 10 : meta.severity === 'moderate' ? 20 : 30,
-      durationLimit: meta.severity === 'mild' ? 60 : meta.severity === 'moderate' ? 45 : 30,
-      frequencyLimit: meta.severity === 'mild' ? 5 : meta.severity === 'moderate' ? 4 : 3,
-      contraindicatedExercises: [],
-      recommendedExercises: []
+      ...dynamicRestrictions,
+      contraindicatedExercises,
+      recommendedExercises,
+      medicalEvidence: exerciseRestrictionEvidence.map(key => EVIDENCE_BASED_SOURCES[key]).filter(Boolean)
     }
   };
 }

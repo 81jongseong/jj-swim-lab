@@ -10,7 +10,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Toast, ToastType } from './Toast';
+import { Toast, ToastType } from './toast';
 
 export interface ToastItem {
   id: string | number;

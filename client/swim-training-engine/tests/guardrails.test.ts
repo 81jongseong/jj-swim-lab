@@ -22,3 +22,10 @@ test('고혈압 위험 수치에서 의료 확인 필요', () => {
   const result = medicalClearanceNeeded(input);
   expect(result).toBe(true);
 });
+
+
+
+
+
+
+

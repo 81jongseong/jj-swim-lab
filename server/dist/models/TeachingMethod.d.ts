@@ -30,6 +30,7 @@ export interface ITeachingMethod extends Document {
     level: string;
     steps: string[];
     tips: string[];
+    checklist: string[];
     videoUrl?: string;
     imageUrl?: string;
     createdBy?: mongoose.Types.ObjectId;

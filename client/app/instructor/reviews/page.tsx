@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import apiClient from '@/utils/api';
+import apiClient from '../../../utils/api';
 
 export default function InstructorReviewsPage() {
   const [items, setItems] = useState<any[]>([]);

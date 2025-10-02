@@ -1,196 +1,143 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Button, Input, Card, Badge, Select } from '@/components/ui';
+import { Users, Search, Filter, Star, Award, Calendar, TrendingUp } from 'lucide-react';
+import withAuth from '../../../components/withAuth';
 
-interface Student {
+interface StudentLevel {
   _id: string;
-  name: string;
-  userId: string;
-  currentLevel: string;
-  enrolledAt: string;
+  studentId: string;
+  studentName: string;
+  currentLevel: 'beginner' | 'intermediate' | 'advanced';
+  targetLevel: 'beginner' | 'intermediate' | 'advanced';
+  progress: number; // 0-100
+  lastAssessment: Date;
+  instructorId: string;
+  instructorName: string;
+  totalClasses: number;
+  averageRating: number;
+  notes: string;
 }
 
-interface LevelChangeHistory {
-  fromLevel: string;
-  toLevel: string;
-  changedBy: {
-    name: string;
-    userId: string;
-    userType: string;
-  };
-  reason: string;
-  changedAt: string;
-}
-
-interface LevelStats {
-  [key: string]: number;
-}
-
-export default function StudentLevelsPage() {
+function StudentLevelsManagement() {
   const { user } = useAuth();
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [levelHistory, setLevelHistory] = useState<LevelChangeHistory[]>([]);
-  const [isLevelChangeModalOpen, setIsLevelChangeModalOpen] = useState(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [newLevel, setNewLevel] = useState('');
-  const [reason, setReason] = useState('');
-  const [levelStats, setLevelStats] = useState<LevelStats>({});
-
-  const isCenterAdmin = user?.userType === 'centerAdmin';
-  const isSuperAdmin = user?.userType === 'superAdmin';
-  const isInstructor = user?.userType === 'instructor';
+  const [students, setStudents] = useState<StudentLevel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState('');
 
   useEffect(() => {
-    if (isCenterAdmin || isSuperAdmin || isInstructor) {
-      fetchStudentLevels();
+    if (user) {
+      loadStudentLevels();
     }
   }, [user]);
 
-  const fetchStudentLevels = async () => {
+  const loadStudentLevels = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      let url = '';
-      if (isCenterAdmin) {
-        url = `http://localhost:5000/api/student-levels/center/${(user as any).centerId}/levels`;
-      } else if (isSuperAdmin) {
-        // 총관리자는 모든 센터 조회 가능
-        url = `http://localhost:5000/api/student-levels/center/${(user as any).centerId || 'all'}/levels`;
-      } else if (isInstructor) {
-        // 강사는 자신이 담당하는 학생만 조회
-        url = 'http://localhost:5000/api/users?userType=student';
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (isInstructor) {
-          // 강사는 자신이 담당하는 학생만 필터링
-          const myStudents = data.data.filter((student: any) => 
-            student.instructorInfo?.assignedInstructor === user._id
-          );
-          setStudents(myStudents);
-        } else {
-          setStudents(data.data.students || data.data);
-          setLevelStats(data.data.levelStats || {});
-        }
-      }
-    } catch (error) {
-      console.error('학생 레벨 정보 로드 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLevelChange = async () => {
-    if (!selectedStudent || !newLevel) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('인증 토큰이 없습니다.');
-        return;
-      }
-
-      const response = await fetch(`http://localhost:5000/api/student-levels/${selectedStudent._id}/level`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      setIsLoading(true);
+      // 임시 데이터
+      const tempStudents: StudentLevel[] = [
+        {
+          _id: '1',
+          studentId: 'student001',
+          studentName: '김수영',
+          currentLevel: 'beginner',
+          targetLevel: 'intermediate',
+          progress: 65,
+          lastAssessment: new Date('2024-01-15'),
+          instructorId: 'instructor001',
+          instructorName: '김강사',
+          totalClasses: 12,
+          averageRating: 4.2,
+          notes: '자유형 기초 완료, 배영 학습 중'
         },
-        body: JSON.stringify({
-          newLevel,
-          reason
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        alert('학생 레벨이 성공적으로 변경되었습니다.');
-        
-        // 모달 닫기 및 상태 초기화
-        setIsLevelChangeModalOpen(false);
-        setSelectedStudent(null);
-        setNewLevel('');
-        setReason('');
-        
-        // 목록 새로고침
-        fetchStudentLevels();
-      } else {
-        const errorData = await response.json();
-        alert('레벨 변경에 실패했습니다: ' + (errorData.message || '알 수 없는 오류'));
-      }
+        {
+          _id: '2',
+          studentId: 'student002',
+          studentName: '이영수',
+          currentLevel: 'intermediate',
+          targetLevel: 'advanced',
+          progress: 45,
+          lastAssessment: new Date('2024-01-10'),
+          instructorId: 'instructor002',
+          instructorName: '이코치',
+          totalClasses: 25,
+          averageRating: 4.5,
+          notes: '4가지 영법 모두 가능, 접영 개선 필요'
+        },
+        {
+          _id: '3',
+          studentId: 'student003',
+          studentName: '박물고',
+          currentLevel: 'advanced',
+          targetLevel: 'advanced',
+          progress: 85,
+          lastAssessment: new Date('2024-01-20'),
+          instructorId: 'instructor001',
+          instructorName: '김강사',
+          totalClasses: 40,
+          averageRating: 4.8,
+          notes: '고급 기술 완성, 경기 준비 단계'
+        }
+      ];
+      setStudents(tempStudents);
     } catch (error) {
-      console.error('레벨 변경 중 오류:', error);
-      alert('레벨 변경 중 오류가 발생했습니다.');
+      console.error('학생 레벨 데이터 로드 실패:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const fetchLevelHistory = async (studentId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.instructorName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterLevel === '' || student.currentLevel === filterLevel;
+    return matchesSearch && matchesFilter;
+  });
 
-      const response = await fetch(`http://localhost:5000/api/student-levels/${studentId}/level-history`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLevelHistory(data.data.levelHistory);
-        setIsHistoryModalOpen(true);
-      }
-    } catch (error) {
-      console.error('레벨 변경 이력 로드 실패:', error);
-    }
+  const getLevelLabel = (level: string) => {
+    const levels: { [key: string]: string } = {
+      'beginner': '초급',
+      'intermediate': '중급',
+      'advanced': '고급'
+    };
+    return levels[level] || level;
   };
 
   const getLevelColor = (level: string) => {
-    const colorMap: { [key: string]: string } = {
-      beginner: 'bg-blue-100 text-blue-800',
-      intermediate: 'bg-green-100 text-green-800',
-      advanced: 'bg-yellow-100 text-yellow-800',
-      expert: 'bg-red-100 text-red-800'
+    const colors: { [key: string]: string } = {
+      'beginner': 'bg-green-100 text-green-800',
+      'intermediate': 'bg-yellow-100 text-yellow-800',
+      'advanced': 'bg-red-100 text-red-800'
     };
-    return colorMap[level] || 'bg-gray-100 text-gray-800';
+    return colors[level] || 'bg-gray-100 text-gray-800';
   };
 
-  const getLevelDisplayName = (level: string) => {
-    const nameMap: { [key: string]: string } = {
-      beginner: '초급',
-      intermediate: '중급',
-      advanced: '상급',
-      expert: '전문가'
-    };
-    return nameMap[level] || level;
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return 'bg-green-500';
+    if (progress >= 60) return 'bg-yellow-500';
+    if (progress >= 40) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
-  if (loading) {
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${
+          i < Math.floor(rating) 
+            ? 'text-yellow-400 fill-current' 
+            : 'text-gray-300'
+        }`}
+      />
+    ));
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -200,85 +147,169 @@ export default function StudentLevelsPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">학생 레벨 관리</h1>
-          <p className="mt-2 text-gray-600">
-            학생들의 수영 레벨을 관리하고 변경 이력을 확인합니다.
-          </p>
+          <p className="text-gray-600 mt-2">학생들의 수영 레벨과 진도를 관리하세요</p>
         </div>
 
-        {/* 레벨별 통계 */}
-        {Object.keys(levelStats).length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">📊 레벨별 학생 현황</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(levelStats).map(([level, count]) => (
-                <Card key={level} className="text-center">
-                  <div className="p-4">
-                    <div className="text-2xl font-bold text-blue-600">{count}</div>
-                    <div className="text-sm text-gray-600">{getLevelDisplayName(level)}</div>
-                  </div>
-                </Card>
-              ))}
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Users className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">총 학생</p>
+                <p className="text-2xl font-bold text-gray-900">{students.length}명</p>
+              </div>
             </div>
           </div>
-        )}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">평균 진도</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {students.length > 0 
+                    ? Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)
+                    : 0
+                  }%
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Award className="w-8 h-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">평균 평점</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {students.length > 0 
+                    ? (students.reduce((sum, s) => sum + s.averageRating, 0) / students.length).toFixed(1)
+                    : '0.0'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <Calendar className="w-8 h-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">총 수업</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {students.reduce((sum, s) => sum + s.totalClasses, 0)}회
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 검색 및 필터 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="학생명 또는 강사명으로 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div>
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">모든 레벨</option>
+                <option value="beginner">초급</option>
+                <option value="intermediate">중급</option>
+                <option value="advanced">고급</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         {/* 학생 목록 */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">👥 학생 목록</h2>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-                            <table className="w-full min-w-[800px] lg:min-w-[1000px] xl:min-w-[1200px] divide-y divide-gray-200">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              학생 레벨 현황 ({filteredStudents.length}명)
+            </h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    학생 정보
+                    학생
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     현재 레벨
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    등록일
+                    목표 레벨
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    작업
+                    진도
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    강사
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    평점
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    수업 수
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => (
+                {filteredStudents.map((student) => (
                   <tr key={student._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-500">{student.userId}</div>
+                        <div className="text-sm font-medium text-gray-900">{student.studentName}</div>
+                        <div className="text-sm text-gray-500">{student.studentId}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getLevelColor(student.currentLevel)}>
-                        {getLevelDisplayName(student.currentLevel)}
-                      </Badge>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(student.currentLevel)}`}>
+                        {getLevelLabel(student.currentLevel)}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(student.enrolledAt).toLocaleDateString('ko-KR')}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(student.targetLevel)}`}>
+                        {getLevelLabel(student.targetLevel)}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <Button
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          setNewLevel(student.currentLevel);
-                          setIsLevelChangeModalOpen(true);
-                        }}
-                        size="sm"
-                        variant="outline"
-                      >
-                        🎯 레벨 변경
-                      </Button>
-                      <Button
-                        onClick={() => fetchLevelHistory(student._id)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        📋 이력 보기
-                      </Button>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className={`h-2 rounded-full ${getProgressColor(student.progress)}`}
+                            style={{ width: `${student.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-900">{student.progress}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.instructorName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex mr-1">
+                          {renderStars(student.averageRating)}
+                        </div>
+                        <span className="text-sm text-gray-600">({student.averageRating})</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.totalClasses}회
                     </td>
                   </tr>
                 ))}
@@ -287,159 +318,17 @@ export default function StudentLevelsPage() {
           </div>
         </div>
 
-        {students.length === 0 && (
+        {filteredStudents.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">
-              <p>등록된 학생이 없습니다.</p>
-            </div>
-          </div>
-        )}
-
-        {/* 레벨 변경 모달 */}
-        {isLevelChangeModalOpen && selectedStudent && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    학생 레벨 변경
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setIsLevelChangeModalOpen(false);
-                      setSelectedStudent(null);
-                      setNewLevel('');
-                      setReason('');
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      학생 이름
-                    </label>
-                    <div className="text-lg font-semibold text-gray-900">{selectedStudent.name}</div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="newLevel" className="block text-sm font-medium text-gray-700 mb-2">
-                      새로운 레벨 *
-                    </label>
-                    <select
-                      id="newLevel"
-                      value={newLevel}
-                      onChange={(e) => setNewLevel(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="beginner">초급</option>
-                      <option value="intermediate">중급</option>
-                      <option value="advanced">상급</option>
-                      <option value="expert">전문가</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
-                      변경 사유
-                    </label>
-                    <textarea
-                      id="reason"
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="레벨 변경 사유를 입력하세요"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-4">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setIsLevelChangeModalOpen(false);
-                        setSelectedStudent(null);
-                        setNewLevel('');
-                        setReason('');
-                      }}
-                      variant="outline"
-                    >
-                      취소
-                    </Button>
-                    <Button onClick={handleLevelChange}>
-                      레벨 변경
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 레벨 변경 이력 모달 */}
-        {isHistoryModalOpen && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    레벨 변경 이력
-                  </h3>
-                  <button
-                    onClick={() => setIsHistoryModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {levelHistory.length > 0 ? (
-                    levelHistory.map((record, index) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center space-x-3">
-                            <Badge className={getLevelColor(record.fromLevel)}>
-                              {getLevelDisplayName(record.fromLevel)}
-                            </Badge>
-                            <span className="text-gray-500">→</span>
-                            <Badge className={getLevelColor(record.toLevel)}>
-                              {getLevelDisplayName(record.toLevel)}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {new Date(record.changedAt).toLocaleDateString('ko-KR')}
-                          </div>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-600">
-                          <span className="font-medium">변경자:</span> {record.changedBy.name} ({record.changedBy.userType})
-                        </div>
-                        {record.reason && (
-                          <div className="mt-1 text-sm text-gray-600">
-                            <span className="font-medium">사유:</span> {record.reason}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      레벨 변경 이력이 없습니다.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">검색 결과가 없습니다.</p>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+export default withAuth(StudentLevelsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});

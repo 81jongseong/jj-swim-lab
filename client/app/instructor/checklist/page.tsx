@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Card, Badge, Button, Progress } from '@/components/ui';
+import { Card, Badge, Button, progress as Progress } from '../../../components/ui';
 import { 
   CheckCircle, 
   Clock, 

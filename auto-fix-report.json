@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-10-01T22:13:18.668Z",
+  "dryRun": false,
+  "fixes": [
+    {
+      "type": "model-import",
+      "file": "C:\\Users\\user\\jj-swim-lab\\server\\src\\index.ts",
+      "models": [
+        "AIConfig",
+        "Approval",
+        "Booking",
+        "CenterInfo",
+        "CenterLevel",
+        "ChecklistTemplate",
+        "Class",
+        "ClassChecklist",
+        "CommunityComment",
+        "CommunityPost",
+        "CommunityReport",
+        "Course",
+        "CourseAction",
+        "Evaluation",
+        "ExerciseData",
+        "ExercisePrescription",
+        "HealthData",
+        "InstructorEvaluationCriteria",
+        "InstructorEvaluationResult",
+        "LessonPlanTemplate",
+        "Membership",
+        "Notice",
+        "Payment",
+        "Progress",
+        "Quiz",
+        "QuizAttempt",
+        "Report",
+        "Review",
+        "ShopOrder",
+        "ShopProduct",
+        "SkillTemplate",
+        "StudentHealth",
+        "StudentProgress",
+        "SwimmingCenter",
+        "TeachingMethod",
+        "Video"
+      ]
+    },
+    {
+      "type": "route-registration",
+      "file": "C:\\Users\\user\\jj-swim-lab\\server\\src\\index.ts",
+      "imports": [
+        "center-levels",
+        "example",
+        "notice",
+        "runPipeline"
+      ],
+      "registrations": [
+        "ai-evaluation-criteria",
+        "ai-exercise-recommendations",
+        "health-input"
+      ]
+    }
+  ],
+  "backupDir": "C:\\Users\\user\\jj-swim-lab\\backups\\auto-fix-1759356798654"
+}

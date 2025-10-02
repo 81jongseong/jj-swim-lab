@@ -1,50 +1,114 @@
-/**
- * @file 학생 진도 관리 페이지
- * @description 학생이 진도 관리을 확인할 수 있는 페이지입니다.
- * @date 2025-09-14
- * @author JJ Swim Lab
- */
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { Search, Filter } from 'lucide-react';
+import { TrendingUp, Target, Calendar, Award, BarChart3 } from 'lucide-react';
+import withAuth from '@/components/withAuth';
 
-const Student진도관리Page: React.FC = () => {
+interface Progress {
+  _id: string;
+  courseId: string;
+  courseName: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  startDate: Date;
+  currentSkills: Array<{
+    skill: string;
+    level: number; // 1-5
+    lastUpdated: Date;
+  }>;
+  achievements: Array<{
+    name: string;
+    earnedAt: Date;
+    description: string;
+  }>;
+  totalClasses: number;
+  attendanceRate: number;
+  lastClassDate?: Date;
+}
+
+function StudentProgress() {
   const { user } = useAuth();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState<Progress[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      loadProgress();
+    }
+  }, [user]);
 
-  const fetchData = async () => {
+  const loadProgress = async () => {
     try {
-      setLoading(true);
-      // TODO: 실제 API 호출 구현
-      console.log('진도 관리 데이터 로딩 중...');
-      
+      setIsLoading(true);
       // 임시 데이터
-      setTimeout(() => {
-        setData([]);
-        setLoading(false);
-      }, 1000);
+      const tempProgress: Progress[] = [
+        {
+          _id: '1',
+          courseId: 'course001',
+          courseName: '초급 자유형 클래스',
+          level: 'beginner',
+          startDate: new Date('2024-01-01'),
+          currentSkills: [
+            { skill: '자유형 팔 동작', level: 3, lastUpdated: new Date('2024-01-20') },
+            { skill: '자유형 발차기', level: 2, lastUpdated: new Date('2024-01-18') },
+            { skill: '호흡법', level: 2, lastUpdated: new Date('2024-01-19') }
+          ],
+          achievements: [
+            {
+              name: '첫 수영 완주',
+              earnedAt: new Date('2024-01-15'),
+              description: '25m 자유형을 완주했습니다'
+            }
+          ],
+          totalClasses: 8,
+          attendanceRate: 87.5,
+          lastClassDate: new Date('2024-01-20')
+        }
+      ];
+      setProgress(tempProgress);
     } catch (error) {
-      console.error('데이터 로딩 실패:', error);
-      setLoading(false);
+      console.error('진도 로드 실패:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (loading) {
+  const getLevelLabel = (level: string) => {
+    const levels: { [key: string]: string } = {
+      'beginner': '초급',
+      'intermediate': '중급',
+      'advanced': '고급'
+    };
+    return levels[level] || level;
+  };
+
+  const getLevelColor = (level: string) => {
+    const colors: { [key: string]: string } = {
+      'beginner': 'bg-green-100 text-green-800',
+      'intermediate': 'bg-yellow-100 text-yellow-800',
+      'advanced': 'bg-red-100 text-red-800'
+    };
+    return colors[level] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getSkillLevelColor = (level: number) => {
+    if (level >= 4) return 'bg-green-500';
+    if (level >= 3) return 'bg-yellow-500';
+    if (level >= 2) return 'bg-orange-500';
+    return 'bg-red-500';
+  };
+
+  const getAttendanceColor = (rate: number) => {
+    if (rate >= 90) return 'text-green-600';
+    if (rate >= 80) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2">진도를 불러오는 중...</span>
       </div>
     );
   }
@@ -55,63 +119,175 @@ const Student진도관리Page: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           진도 관리
         </h1>
-        <p className="text-gray-600">
-          진도 관리을 확인하세요.
-        </p>
+        <p className="text-gray-600">나의 수영 학습 진도와 성취를 확인하세요</p>
       </div>
 
-      {/* 필터 및 검색 */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>필터 및 검색</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="검색..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+      {/* 전체 통계 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Target className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">수강 중인 강의</p>
+              <p className="text-2xl font-bold text-gray-900">{progress.length}개</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Calendar className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 수업 수</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {progress.reduce((sum, p) => sum + p.totalClasses, 0)}회
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <TrendingUp className="w-8 h-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">평균 출석률</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {progress.length > 0 
+                  ? Math.round(progress.reduce((sum, p) => sum + p.attendanceRate, 0) / progress.length)
+                  : 0
+                }%
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <Award className="w-8 h-8 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">총 성취</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {progress.reduce((sum, p) => sum + p.achievements.length, 0)}개
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 강의별 진도 */}
+      <div className="space-y-6">
+        {progress.map((course) => (
+          <div key={course._id} className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 mr-3">{course.courseName}</h3>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(course.level)}`}>
+                    {getLevelLabel(course.level)}
+                  </span>
+                </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  <span>시작일: {course.startDate.toLocaleDateString()}</span>
+                  <span className="mx-2">•</span>
+                  <span>총 수업: {course.totalClasses}회</span>
+                  <span className="mx-2">•</span>
+                  <span className={getAttendanceColor(course.attendanceRate)}>
+                    출석률: {course.attendanceRate}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 현재 기술 수준 */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">현재 기술 수준</h4>
+                <div className="space-y-3">
+                  {course.currentSkills.map((skill, index) => (
+                    <div key={index}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">{skill.skill}</span>
+                        <span className="text-sm text-gray-500">{skill.level}/5</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${getSkillLevelColor(skill.level)}`}
+                          style={{ width: `${(skill.level / 5) * 100}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        마지막 업데이트: {skill.lastUpdated.toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 성취 목록 */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">성취 목록</h4>
+                <div className="space-y-3">
+                  {course.achievements.map((achievement, index) => (
+                    <div key={index} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center mb-1">
+                        <Award className="w-4 h-4 text-yellow-600 mr-2" />
+                        <span className="font-medium text-gray-900">{achievement.name}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">{achievement.description}</p>
+                      <p className="text-xs text-gray-500">
+                        획득일: {achievement.earnedAt.toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                  {course.achievements.length === 0 && (
+                    <p className="text-gray-500 text-sm">아직 획득한 성취가 없습니다.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 최근 활동 */}
+            <div className="mt-6 pt-6 border-t">
+              <h4 className="text-lg font-medium text-gray-900 mb-3">최근 활동</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-3 bg-blue-50 rounded">
+                  <div className="text-sm font-medium text-gray-900">마지막 수업</div>
+                  <div className="text-sm text-gray-600">
+                    {course.lastClassDate 
+                      ? course.lastClassDate.toLocaleDateString()
+                      : '수업 기록 없음'
+                    }
+                  </div>
+                </div>
+                <div className="p-3 bg-green-50 rounded">
+                  <div className="text-sm font-medium text-gray-900">평균 기술 수준</div>
+                  <div className="text-sm text-gray-600">
+                    {course.currentSkills.length > 0 
+                      ? (course.currentSkills.reduce((sum, s) => sum + s.level, 0) / course.currentSkills.length).toFixed(1)
+                      : '0'
+                    }/5
+                  </div>
+                </div>
+                <div className="p-3 bg-purple-50 rounded">
+                  <div className="text-sm font-medium text-gray-900">학습 기간</div>
+                  <div className="text-sm text-gray-600">
+                    {Math.ceil((new Date().getTime() - course.startDate.getTime()) / (1000 * 60 * 60 * 24))}일
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* 데이터 목록 */}
-      <div className="space-y-4">
-        {data.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-gray-500">데이터가 없습니다.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          data.map((item, index) => (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold">항목 {index + 1}</h3>
-                    <p className="text-gray-600">설명...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+        ))}
       </div>
 
-      <div className="mt-8 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
-        <p className="font-semibold">개발 필요:</p>
-        <p>이 페이지는 자동 생성되었습니다. 실제 기능을 구현해주세요.</p>
-        <p>관련 API 엔드포인트 개발이 필요합니다.</p>
-      </div>
+      {progress.length === 0 && (
+        <div className="text-center py-12">
+          <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">진도 데이터가 없습니다.</p>
+        </div>
+      )}
     </div>
   );
-};
+}
 
-export default Student진도관리Page;
+export default withAuth(StudentProgress, { 
+  requireTypes: ['student'] 
+});

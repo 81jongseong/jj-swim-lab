@@ -54,7 +54,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import apiClient from '@/utils/api';
+import apiClient from '../../utils/api';
 
 export default function UploadsPage() {
   const [file, setFile] = useState<File | null>(null);

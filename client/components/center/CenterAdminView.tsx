@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import apiClient from '@/utils/api';
+import apiClient from './../utils/api';
 import CenterInfoEditor from './CenterInfoEditor';
 
 interface CenterAdminViewProps {

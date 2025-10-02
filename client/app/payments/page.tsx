@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import apiClient from "@/utils/api";
+import apiClient from '../../utils/api';
 
 interface ApiPayment {
   _id: string;

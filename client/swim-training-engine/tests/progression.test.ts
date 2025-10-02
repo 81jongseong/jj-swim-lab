@@ -22,3 +22,10 @@ test('높은 순응도와 증상 없음에서 진행 조정', () => {
   const result = buildPlan(input);
   expect(['progress_+5%', 'progress_+10%']).toContain(result.next_week_adjustment);
 });
+
+
+
+
+
+
+

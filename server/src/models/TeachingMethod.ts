@@ -7,6 +7,7 @@ export interface ITeachingMethod extends Document {
   level: string; // 자유로운 레벨 설정 (입문, 기초, 초급, 중급, 상급, 마스터 등)
   steps: string[];
   tips: string[];
+  checklist: string[]; // 체크리스트 필드 추가
   videoUrl?: string;
   imageUrl?: string;
   createdBy?: mongoose.Types.ObjectId;
@@ -51,6 +52,10 @@ const TeachingMethodSchema = new Schema<ITeachingMethod>({
     trim: true
   }],
   tips: [{
+    type: String,
+    trim: true
+  }],
+  checklist: [{
     type: String,
     trim: true
   }],

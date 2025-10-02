@@ -18,8 +18,8 @@
 import React, { useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
-import { SwimmingPoseModel } from './SwimmingPoseModel';
-import { ErrorBoundary } from './ErrorBoundary';
+import { SwimmingPoseModel } from './swimmingposemodel';
+import { ErrorBoundary } from './errorboundary';
 
 interface PoseData {
   joints: Array<{

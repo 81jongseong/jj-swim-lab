@@ -73,8 +73,8 @@
 
 import React from 'react';
 import Modal from './ui/Modal';
-import Badge from './ui/Badge';
-import Button from './ui/Button';
+import Badge from './ui/badge';
+import Button from './ui/button';
 
 interface TeachingMethod {
   _id: string;

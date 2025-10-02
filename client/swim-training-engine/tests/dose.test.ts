@@ -22,3 +22,10 @@ test('비만 환자는 주간 250분 이상 목표 설정', () => {
   const result = weeklyDoseMinutes(input);
   expect(result).toBeGreaterThanOrEqual(250);
 });
+
+
+
+
+
+
+

@@ -75,7 +75,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 interface ExerciseStats {
   totalSessions: number;

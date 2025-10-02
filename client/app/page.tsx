@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { motionPresets, staggerContainer } from '@/lib/motion';
-import HeroWave from '@/components/HeroWave';
-import WaterRippleBackground from '@/components/WaterRippleBackground';
-import LottiePlayer from '@/components/LottiePlayer';
+import { motionPresets, staggerContainer } from '../lib/motion';
+import HeroWave from 'components/HeroWave';
+import WaterRippleBackground from 'components/WaterRippleBackground';
+import LottiePlayer from 'components/LottiePlayer';
 
 export default function LandingPage() {
   return (

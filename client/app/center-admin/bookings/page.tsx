@@ -8,9 +8,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import { useAuth } from '../../../hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
+import Button from '../../../components/ui/button';
 import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
 
 const CenterAdmin예약관리Page: React.FC = () => {

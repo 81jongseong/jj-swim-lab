@@ -1,4 +1,4 @@
-const EVIDENCE_BASED_SOURCES = {
+export const EVIDENCE_BASED_SOURCES = {
     BARTELS_2016_COCHRANE: {
         id: 'BARTELS_2016_COCHRANE',
         citation: 'Bartels EM et al. Aquatic exercise for the treatment of knee and hip osteoarthritis',
@@ -24,7 +24,7 @@ const strokeTemplates = {
         sidestroke: { level: 'safe', reason: '척추에 부담이 적은 측영', allowedMovements: ['측영 팔 동작', '측영 다리 동작'], prohibitedMovements: [], modifications: [], alternatives: ['freestyle', 'backstroke'], medicalEvidence: [], detailedExplanation: '척추에 부담이 적은 측영 자세입니다.' }
     }
 };
-const allJointConditions = [
+export const allJointConditions = [
     {
         conditionId: 'lumbar_disc_herniation',
         conditionName: '허리 디스크',
@@ -47,5 +47,4 @@ const allJointConditions = [
         }
     }
 ];
-
-module.exports = { allJointConditions };
+//# sourceMappingURL=jj-swim-lab-joint-guidance.js.map

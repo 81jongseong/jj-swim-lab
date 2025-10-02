@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import apiClient from '@/utils/api';
+import apiClient from '../../../utils/api';
 
 export default function UploadDetailPage() {
   const params = useParams();

@@ -90,11 +90,11 @@
 "use client";
 
 import { useEffect, useState, Suspense, lazy } from "react";
-import apiClient from "@/utils/api";
+import apiClient from '../../utils/api';
 
 // 동적 임포트로 코드 스플리팅 적용
-const StatsCards = lazy(() => import('@/components/dashboard/StatsCards'));
-const RecentBookings = lazy(() => import('@/components/dashboard/RecentBookings'));
+const StatsCards = lazy(() => import('../../components/dashboard/StatsCards'));
+const RecentBookings = lazy(() => import('../../components/dashboard/RecentBookings'));
 
 interface MemberStats {
   totalBookings: number;

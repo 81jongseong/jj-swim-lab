@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import apiClient from '@/utils/api';
+import apiClient from '../../../utils/api';
 
 export default function QuizDetailPage({ params }: { params: { id: string } }) {
   const [quiz, setQuiz] = useState<any>(null);

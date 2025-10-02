@@ -9,10 +9,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import Button from '../../../components/ui/Button';
-import Card from '../../../components/ui/Card';
-import Input from '../../../components/ui/Input';
-import Badge from '../../../components/ui/Badge';
+import { Button } from '../../../components/ui';
+import { Card } from '../../../components/ui/card';
+import { Input } from '../../../components/ui';
+import { Badge } from '../../../components/ui';
 
 // 퀴즈 카테고리 상수
 const QUIZ_CATEGORIES = [

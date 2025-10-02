@@ -70,7 +70,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useErrorHandler, ErrorInfo, ErrorContext as ErrorContextFromHook } from '@/hooks/useErrorHandler';
-import ErrorToast from './ErrorToast';
+import ErrorToast from './errortoast';
 
 interface ErrorContextType {
   handleError: (error: Error | string, context?: ErrorContextFromHook) => void;

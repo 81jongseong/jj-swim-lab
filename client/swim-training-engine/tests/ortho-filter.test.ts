@@ -23,3 +23,10 @@ test('허리 디스크에서 나비영 제외', () => {
   const allStrokes = result.sessions.flatMap(s => s.stroke_plan.map(sp => sp.stroke));
   expect(allStrokes).not.toContain('butterfly');
 });
+
+
+
+
+
+
+

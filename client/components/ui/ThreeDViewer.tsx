@@ -18,7 +18,7 @@
 import React, { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from './errorboundary';
 
 interface ThreeDViewerProps {
   className?: string;

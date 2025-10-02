@@ -97,7 +97,7 @@ export default function LazyComponent({
 }
 
 // 자주 사용되는 컴포넌트들의 지연 로딩 래퍼
-export const LazyChart = () => import('./BarChart');
-export const LazyModal = () => import('./Modal');
-export const LazyTabs = () => import('./Tabs');
-export const LazySelect = () => import('./Select');
+export const LazyChart = () => import('./barchart');
+export const LazyModal = () => import('./modal');
+export const LazyTabs = () => import('./tabs');
+export const LazySelect = () => import('./select');

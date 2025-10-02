@@ -21,8 +21,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import { Users, Heart, AlertTriangle, CheckCircle, XCircle, Info, Eye } from 'lucide-react';
 
 interface MemberHealthInfo {
@@ -493,7 +491,11 @@ const InstructorStudentsPage: React.FC = () => {
     conditions.forEach(condition => {
       if (guidanceData[condition]) {
         Object.entries(guidanceData[condition]).forEach(([stroke, guidance]) => {
-          allGuidanceData.push({ stroke, ...guidance });
+          if (typeof guidance === 'object' && guidance !== null) {
+            allGuidanceData.push({ stroke, ...guidance });
+          } else {
+            allGuidanceData.push({ stroke, guidance });
+          }
         });
       }
     });
@@ -570,7 +572,7 @@ const InstructorStudentsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 회원 목록 */}
           <div className="lg:col-span-1">
-            <Card className="p-6">
+            <div className="p-6 bg-white rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">회원 목록</h3>
               <div className="space-y-3">
                 {members.map((member) => (
@@ -600,7 +602,7 @@ const InstructorStudentsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* 회원 상세 정보 */}
@@ -608,7 +610,7 @@ const InstructorStudentsPage: React.FC = () => {
             {selectedMember ? (
               <div className="space-y-6">
                 {/* 기본 정보 */}
-                <Card className="p-6">
+                <div className="p-6 bg-white rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -632,10 +634,10 @@ const InstructorStudentsPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                </Card>
+                </div>
 
                 {/* 건강정보 */}
-                <Card className="p-6">
+                <div className="p-6 bg-white rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Heart className="h-5 w-5 mr-2" />
                     건강정보
@@ -694,10 +696,10 @@ const InstructorStudentsPage: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </Card>
+                </div>
 
                 {/* 수영법별 구체적 동작 가이드라인 */}
-                <Card className="p-6">
+                <div className="p-6 bg-white rounded-lg shadow">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <AlertTriangle className="h-5 w-5 mr-2" />
                     수영법별 구체적 동작 가이드라인
@@ -836,16 +838,16 @@ const InstructorStudentsPage: React.FC = () => {
                       <li>• 정기적인 건강 상태 확인 및 업데이트</li>
                     </ul>
                   </div>
-                </Card>
+                </div>
               </div>
             ) : (
-              <Card className="p-12 text-center">
+              <div className="p-12 text-center bg-white rounded-lg shadow">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">회원을 선택하세요</h3>
                 <p className="text-gray-600">
                   왼쪽 목록에서 회원을 선택하면 건강정보와 수영 가이드라인을 확인할 수 있습니다.
                 </p>
-              </Card>
+              </div>
             )}
           </div>
         </div>

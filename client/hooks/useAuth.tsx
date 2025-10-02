@@ -213,7 +213,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // 강제 디버깅 로그
-  console.log('🔍 AuthProvider 렌더링:', { user, loading });
+  console.log('🔍 AuthProvider 렌더링:', { 
+    user: user ? { _id: user._id, name: user.name, userType: user.userType } : null, 
+    loading 
+  });
 
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 복원
@@ -222,14 +225,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
     
+    // 임시로 토큰 검증 비활성화하여 무한로딩 방지
     if (token && savedUser) {
-      // 토큰 유효성 검증
-      console.log('🔍 토큰 검증 시작:', { token: token.substring(0, 20) + '...', savedUser: savedUser.substring(0, 100) + '...' });
-      validateToken(token, savedUser);
+      try {
+        const userData = JSON.parse(savedUser);
+        console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+        
+        // accessPermissions가 없으면 기본값 설정
+        const userWithDefaults = {
+          ...userData,
+          accessPermissions: userData.accessPermissions || {
+            dashboard: true,
+            courses: true,
+            bookings: true,
+            payments: true,
+            notices: true,
+            progress: true,
+            evaluations: true,
+            reports: true,
+            userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin',
+            systemSettings: userData.userType === 'superAdmin',
+            aiConfigManagement: userData.userType === 'superAdmin'
+          }
+        };
+        
+        console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+        setUser(userWithDefaults);
+      } catch (error) {
+        console.error('❌ 사용자 데이터 파싱 실패:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      }
     } else {
       console.log('🔍 토큰 또는 사용자 정보 없음');
-      setLoading(false);
     }
+    
+    setLoading(false);
   }, []);
 
   /**

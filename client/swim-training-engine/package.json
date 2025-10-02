@@ -2,12 +2,12 @@
   "name": "jj-swim-training-engine",
   "version": "1.0.0",
   "description": "JJ Swim Lab - 수영 트레이닝 규칙 엔진",
-  "type": "commonjs",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node scripts/demo.ts",
-    "demo": "ts-node scripts/demo.ts",
+    "dev": "ts-node --esm scripts/demo.ts",
+    "demo": "ts-node --esm scripts/demo.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist",
@@ -47,3 +47,4 @@
     }
   }
 }
+

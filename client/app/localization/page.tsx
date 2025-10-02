@@ -1,10 +1,10 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import Select, { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import withAuth from '@/components/withAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import withAuth from '../../components/withAuth';
 
 interface LocalizationSettings {
   language: string;

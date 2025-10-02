@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '../../../../hooks/useAuth';
 
 /**
  * AI 설정 - 추천 시스템 관리 페이지

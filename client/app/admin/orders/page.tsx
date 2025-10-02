@@ -94,8 +94,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import apiClient from '@/utils/api';
-import withAuth from '@/components/withAuth';
+import apiClient from '../../../utils/api';
+import withAuth from '../../../components/withAuth';
 
 interface OrderItem {
   _id: string;

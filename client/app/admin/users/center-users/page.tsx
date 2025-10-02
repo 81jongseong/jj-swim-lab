@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import apiClient from '@/utils/api';
-import withAuth from '@/components/withAuth';
-import { useAuth } from '@/hooks/useAuth';
-import { Button, Input, Card, Badge } from '@/components/ui';
+import apiClient from '../../../../utils/api';
+import withAuth from '../../../../components/withAuth';
+import { useAuth } from '../../../../hooks/useAuth';
+import { Button, Input, Card, Badge } from '../../../../components/ui';
 
 interface User {
   _id: string;

@@ -9,10 +9,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import { Progress } from '../../components/ui/Progress';
+import { Button } from '../../components/ui';
+import { Card } from '../../components/ui/card';
+import { Badge } from '../../components/ui';
+import { Progress    } from '../../components/ui/progress';
 
 // 강습법 카테고리 상수
 const TEACHING_METHOD_CATEGORIES = [

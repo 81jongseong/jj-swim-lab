@@ -95,7 +95,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 import NotificationsBell from './NotificationsBell';
 
 // 사용자별 메뉴 구조 정의
@@ -109,9 +109,12 @@ const userMenuStructure = {
       { href: '/payments', label: '💰 결제 내역' },
     ],
     health: [
-      { href: '/health', label: '🏥 건강상태 관리' },
-      { href: '/health/exercise', label: '📊 운동 기록' },
-      { href: '/health/ai-training', label: '🤖 AI 훈련' },
+      { href: '/health', label: '🏥 건강관리 홈' },
+      { href: '/health/input', label: '📝 건강정보 입력' },
+      { href: '/health/program', label: '🏊‍♂️ 운동 프로그램' },
+      { href: '/health/history', label: '📋 프로그램 이력' },
+      { href: '/health/measurements', label: '📊 측정 데이터' },
+      { href: '/health/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
@@ -143,7 +146,7 @@ const userMenuStructure = {
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
       { href: '/instructor/schedule', label: '📅 일정 관리' },
-      { href: '/instructor/exercise-prescription', label: '🏃‍♂️ 운동 처방' },
+      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 수영 프로그램' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
     reports: [
@@ -154,6 +157,9 @@ const userMenuStructure = {
       { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
       { href: '/instructor/health/students', label: '👥 학생별 건강정보' },
       { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
+      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
+      { href: '/instructor/health/history', label: '📋 프로그램 이력 관리' },
+      { href: '/instructor/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     center: [
       { href: '/about', label: '🏊‍♂️ 소개' },
@@ -204,7 +210,10 @@ const userMenuStructure = {
       { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
       { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
       { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
+      { href: '/center-admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
+      { href: '/center-admin/health/history', label: '📋 프로그램 이력 관리' },
       { href: '/center-admin/algorithm-performance', label: '📈 알고리즘 성과' },
+      { href: '/center-admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
@@ -234,8 +243,8 @@ const userMenuStructure = {
     ],
     centers: [
       { href: '/admin/center-management', label: '🏢 센터 감독' },
-      { href: '/admin/centers/approval', label: '⏳ 센터 승인' },
-      { href: '/admin/centers/statistics', label: '📊 센터 통계' },
+      { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
+      { href: '/admin/centers', label: '📊 센터 통계' },
     ],
     users: [
       { href: '/admin/users', label: '👥 회원 관리' },
@@ -252,7 +261,6 @@ const userMenuStructure = {
     ],
     customerSupport: [
       { href: '/admin/reports', label: '🎧 고객지원 관리' },
-      { href: '/admin/approvals', label: '✅ 가입 승인', description: '강사등록/센터등록 승인' },
     ],
             ai: [
           { href: '/ai-analysis', label: '🤖 AI 분석' },
@@ -265,8 +273,7 @@ const userMenuStructure = {
           { href: '/admin/ai-exercise-database', label: '💪 AI 운동 데이터베이스' },
         ],
     health: [
-      { href: '/admin/health-config', label: '🏥 건강정보 시스템 설정' },
-      { href: '/admin/exercise-prescription', label: '🏃‍♂️ 운동 처방 가이드' },
+      { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/algorithm-analytics', label: '📈 알고리즘 분석' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황' },
       { href: '/admin/health/statistics', label: '📈 건강 통계 분석' },
@@ -387,25 +394,110 @@ const menuGrouping = {
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
-  // 모바일 메뉴가 열릴 때 현재 페이지 항목으로 스크롤
+  // 페이지 경로 변경 시 최상단으로 스크롤
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+
+  // 모바일 메뉴가 열릴 때 현재 페이지 항목으로 스크롤 및 포커스
   useEffect(() => {
     if (isMenuOpen) {
       setTimeout(() => {
-        const activeMenuItem = document.querySelector('[data-active="true"]');
-        if (activeMenuItem) {
-          activeMenuItem.scrollIntoView({ 
+        // 정확한 경로 매칭으로 첫 번째 활성 메뉴 항목만 찾기
+        const activeMenuItems = document.querySelectorAll('[data-active="true"]');
+        let targetMenuItem = null;
+        
+        // 정확한 경로 매칭 우선
+        for (let i = 0; i < activeMenuItems.length; i++) {
+          const item = activeMenuItems[i] as HTMLElement;
+          const href = item.getAttribute('href');
+          if (href && pathname === href) {
+            targetMenuItem = item;
+            break;
+          }
+        }
+        
+        // 정확한 매칭이 없으면 첫 번째 활성 항목 사용
+        if (!targetMenuItem && activeMenuItems.length > 0) {
+          targetMenuItem = activeMenuItems[0] as HTMLElement;
+        }
+        
+        if (targetMenuItem && typeof targetMenuItem.scrollIntoView === 'function') {
+          targetMenuItem.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center',
             inline: 'nearest'
           });
+          // 포커스는 제거하여 자동 포커싱 방지
+          // targetMenuItem.focus();
         }
+        // 첫 번째 메뉴 항목 자동 포커스도 제거
+        // else {
+        //   const firstMenuItem = document.querySelector('[role="menuitem"]');
+        //   if (firstMenuItem) {
+        //     (firstMenuItem as HTMLElement).focus();
+        //   }
+        // }
       }, 100);
     }
+  }, [isMenuOpen, pathname]);
+
+  // 외부 클릭 시 메뉴 닫기 및 ESC 키 처리
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMenuOpen) {
+        const target = event.target as Element;
+        const menuElement = document.querySelector('[data-menu="mobile-menu"]');
+        const menuButton = document.querySelector('[data-menu="menu-button"]');
+        
+        if (menuElement && menuButton && 
+            !menuElement.contains(target) && 
+            !menuButton.contains(target)) {
+          setIsMenuOpen(false);
+        }
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isMenuOpen && event.key === 'Escape') {
+        setIsMenuOpen(false);
+        // 메뉴 버튼에 포커스 복원
+        const menuButton = document.querySelector('[data-menu="menu-button"]') as HTMLElement;
+        if (menuButton) {
+          menuButton.focus();
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isMenuOpen]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null);
-  const pathname = usePathname();
+  // 메뉴 활성화 매칭 함수
+  const isMenuActive = (href: string, currentPath: string): boolean => {
+    // 정확한 매칭
+    if (currentPath === href) return true;
+    
+    // 하위 경로 매칭
+    if (currentPath.startsWith(href + '/')) return true;
+    
+    // 특수 케이스: 건강 관리 관련 페이지들
+    if (href === '/health' && currentPath.startsWith('/health')) return true;
+    
+    // 특수 케이스: 수영트레이닝 규칙엔진 관련 페이지들
+    if (href === '/admin/swim-training-engine' && 
+        currentPath.startsWith('/admin/swim-training-engine')) return true;
+    
+    return false;
+  };
   const { user, logout, hasPermission, hasUserType } = useAuth();
   const isLoggedIn = !!user;
   const userName = user?.name || '';
@@ -479,30 +571,30 @@ export default function Navigation() {
                   key={`${category}-${itemIndex}`}
                   href={item.href}
                   data-active={pathname === item.href}
-                  className={`block px-3 py-2 text-sm transition-colors rounded-md mx-2 ${
-                    pathname === item.href 
+                  className={`block px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isMenuActive(item.href, pathname)
                       ? 'bg-blue-500 text-white font-bold border-l-3 border-blue-700 shadow-sm' 
                       : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                   }`}
                   onClick={(e) => {
                     setIsMenuOpen(false);
-                    // 포커스된 메뉴가 화면에 보이도록 스크롤
-                    if (pathname === item.href) {
+                    // 페이지 이동 시 항상 상단으로 스크롤
+                    setTimeout(() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setTimeout(() => {
-                        const element = e.currentTarget;
-                        element.scrollIntoView({ 
-                          behavior: 'smooth', 
-                          block: 'center' 
-                        });
-                      }, 100);
-                    } else {
-                      // 페이지 상단으로 스크롤
+                      setIsMenuOpen(false);
+                      // 페이지 이동 시 항상 상단으로 스크롤
                       setTimeout(() => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }, 100);
                     }
                   }}
+                  role="menuitem"
+                  tabIndex={0}
                 >
                   {item.label}
                 </Link>
@@ -518,7 +610,7 @@ export default function Navigation() {
               className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
                 group.categories.some(cat => 
                   userMenuStructure[user?.userType || 'guest']?.[cat]?.some(item => 
-                    pathname === item.href || pathname.startsWith(item.href + '/')
+                    isMenuActive(item.href, pathname)
                   )
                 ) ? 'text-blue-600 font-semibold bg-blue-50' : ''
               }`}
@@ -544,7 +636,12 @@ export default function Navigation() {
                       key={`${category}-${itemIndex}`}
                       href={item.href}
                       className={`block px-4 py-2 text-sm transition-colors ${
-                        pathname === item.href 
+                        pathname === item.href || 
+                        (item.href === '/health' && pathname.startsWith('/health')) ||
+                        (item.href === '/health/input' && pathname === '/health/input') ||
+                        (item.href === '/health/program' && pathname === '/health/program') ||
+                        (item.href === '/health/history' && pathname === '/health/history') ||
+                        (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')
                           ? 'bg-blue-100 text-blue-700 font-semibold border-r-2 border-blue-600' 
                           : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                       }`}
@@ -630,8 +727,17 @@ export default function Navigation() {
             {/* Mobile Menu Button */}
             <div className="lg:hidden">
               <button
+                data-menu="menu-button"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setIsMenuOpen(!isMenuOpen);
+                  }
+                }}
+                className="p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label={isMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+                aria-expanded={isMenuOpen}
               >
                 {isMenuOpen ? (
                   <span className="text-2xl">✕</span>
@@ -645,7 +751,12 @@ export default function Navigation() {
 
         {/* Mobile Menu - 햄버거 버튼 아래 오른쪽 정렬 */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-16 right-4 z-50 bg-white border border-gray-200 rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]">
+          <div 
+            data-menu="mobile-menu"
+            className="lg:hidden absolute top-16 right-4 z-50 bg-white border border-gray-200 rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]"
+            role="menu"
+            aria-label="주 메뉴"
+          >
             <div className="px-4 pt-3 pb-3 space-y-1 max-h-[70vh] overflow-y-auto">
               {renderMenuGroups(true)}
               

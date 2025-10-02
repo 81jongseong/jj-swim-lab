@@ -47,9 +47,9 @@ import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 
 // UI 컴포넌트 임포트
-import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Card } from '../../../components/ui/card';
+import { Button } from '../../../components/ui';
+import { LoadingSpinner } from '../../../components/ui';
 
 // 아이콘 임포트
 import { 

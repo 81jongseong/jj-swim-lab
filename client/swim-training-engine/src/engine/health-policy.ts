@@ -30,3 +30,10 @@ export function hrSecondary(i:HealthInput): string|undefined {
 }
 
 export const BP_STOP_RULE = 'SBP≥250 or DBP≥115(즉시 중지)';
+
+
+
+
+
+
+

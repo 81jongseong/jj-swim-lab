@@ -6,10 +6,10 @@
 'use client';
 
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import PerformanceDashboard from '@/components/performance/PerformanceDashboard';
-import Card from '@/components/ui/Card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '../../../hooks/useAuth';
+import PerformanceDashboard from '../../../components/performance/PerformanceDashboard';
+import { Card     } from '../../../components/ui/card';
+import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Activity, Zap, Database, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const PerformancePage: React.FC = () => {

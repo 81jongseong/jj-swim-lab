@@ -1,0 +1,969 @@
+{
+  "timestamp": "2025-09-24T05:28:40.743Z",
+  "version": "1.0.0",
+  "collections": {
+    "users": [
+      {
+        "_id": "68c58a124eb2ae4d54db20a6",
+        "userId": "admin",
+        "name": "최고 관리자",
+        "email": "admin@jjswim.com",
+        "password": "$2a$12$Vw5XUb7Kiu6Ikj3UA7QWC.bSfQ88KG8jPeZ0zlIERegIKcFr.imA2",
+        "phone": "010-0000-0001",
+        "address": "",
+        "userType": "superAdmin",
+        "level": "beginner",
+        "studentInfo": {
+          "age": null,
+          "emergencyContact": "",
+          "medicalConditions": "",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "currentLevel": "beginner",
+          "levelChangeHistory": []
+        },
+        "instructorInfo": {
+          "experience": "",
+          "certifications": [],
+          "specialties": [],
+          "instructorLevel": "junior",
+          "assignedCenters": [],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": false,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [],
+          "adminLevel": "assistant"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "superAdmin"
+        },
+        "centerId": null,
+        "isActive": true,
+        "lastLoginAt": "2025-09-23T13:52:37.632Z",
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": []
+        },
+        "statusHistory": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.676Z",
+        "updatedAt": "2025-09-23T13:52:37.636Z"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20a7",
+        "userId": "center",
+        "name": "센터 관리자",
+        "email": "center@jjswim.com",
+        "password": "$2a$12$Vw5XUb7Kiu6Ikj3UA7QWC.bSfQ88KG8jPeZ0zlIERegIKcFr.imA2",
+        "phone": "010-0000-0002",
+        "address": "",
+        "userType": "centerAdmin",
+        "level": "beginner",
+        "studentInfo": {
+          "age": null,
+          "emergencyContact": "",
+          "medicalConditions": "",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "currentLevel": "beginner",
+          "levelChangeHistory": []
+        },
+        "instructorInfo": {
+          "experience": "",
+          "certifications": [],
+          "specialties": [],
+          "instructorLevel": "junior",
+          "assignedCenters": [],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": true,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [
+            "68c58a122bac3caedf19c146"
+          ],
+          "adminLevel": "manager"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "admin"
+        },
+        "centerId": "68c58a122bac3caedf19c146",
+        "isActive": true,
+        "lastLoginAt": "2025-09-19T14:25:02.311Z",
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": []
+        },
+        "statusHistory": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.676Z",
+        "updatedAt": "2025-09-19T14:25:02.312Z"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20a8",
+        "userId": "teacher",
+        "name": "김강사",
+        "email": "teacher@jjswim.com",
+        "password": "$2a$12$Vw5XUb7Kiu6Ikj3UA7QWC.bSfQ88KG8jPeZ0zlIERegIKcFr.imA2",
+        "phone": "010-0000-0003",
+        "address": "",
+        "userType": "instructor",
+        "level": "beginner",
+        "studentInfo": {
+          "age": null,
+          "emergencyContact": "",
+          "medicalConditions": "",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "currentLevel": "beginner",
+          "levelChangeHistory": []
+        },
+        "instructorInfo": {
+          "experience": "5년",
+          "certifications": [
+            "수영지도사 2급",
+            "생명구조원"
+          ],
+          "specialties": [
+            "자유형",
+            "배영"
+          ],
+          "instructorLevel": "senior",
+          "assignedCenters": [
+            "68c58a122bac3caedf19c146"
+          ],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": false,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [],
+          "adminLevel": "assistant"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "admin"
+        },
+        "centerId": "68c58a122bac3caedf19c146",
+        "isActive": true,
+        "lastLoginAt": "2025-09-19T04:17:23.670Z",
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": []
+        },
+        "statusHistory": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.676Z",
+        "updatedAt": "2025-09-19T11:44:47.098Z"
+      },
+      {
+        "_id": "68ccb2f8ac41740d5bc060ae",
+        "name": "이학생",
+        "email": "member@jjswim.com",
+        "password": "101010",
+        "phone": "",
+        "address": "",
+        "userType": "student",
+        "level": "beginner",
+        "studentInfo": {
+          "age": 20,
+          "emergencyContact": "010-1234-5678",
+          "medicalConditions": "없음",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "levelChangeHistory": [],
+          "currentLevel": "beginner"
+        },
+        "instructorInfo": {
+          "experience": "",
+          "certifications": [],
+          "specialties": [],
+          "instructorLevel": "junior",
+          "assignedCenters": [],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": false,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [],
+          "adminLevel": "assistant"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "admin"
+        },
+        "centerId": null,
+        "isActive": true,
+        "lastLoginAt": null,
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": [
+            "dashboard",
+            "courses",
+            "bookings",
+            "progress",
+            "evaluations"
+          ]
+        },
+        "statusHistory": [],
+        "createdAt": "2025-09-19T01:33:44.964Z",
+        "updatedAt": "2025-09-19T11:44:46.999Z",
+        "__v": 0
+      },
+      {
+        "_id": "68ccb3664c4fac097086fa9f",
+        "userId": "member",
+        "name": "이학생",
+        "email": "student@jjswim.com",
+        "password": "101010",
+        "phone": "",
+        "address": "",
+        "userType": "student",
+        "level": "beginner",
+        "studentInfo": {
+          "age": 20,
+          "emergencyContact": "010-1234-5678",
+          "medicalConditions": "없음",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "levelChangeHistory": [],
+          "currentLevel": "beginner"
+        },
+        "instructorInfo": {
+          "experience": "",
+          "certifications": [],
+          "specialties": [],
+          "instructorLevel": "junior",
+          "assignedCenters": [],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": false,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [],
+          "adminLevel": "assistant"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "admin"
+        },
+        "centerId": null,
+        "isActive": true,
+        "lastLoginAt": null,
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": [
+            "dashboard",
+            "courses",
+            "bookings",
+            "progress",
+            "evaluations"
+          ]
+        },
+        "statusHistory": [],
+        "createdAt": "2025-09-19T01:35:34.642Z",
+        "updatedAt": "2025-09-19T11:44:46.950Z",
+        "__v": 0
+      },
+      {
+        "_id": "68ccb3e44c4fac097086faa9",
+        "userId": "student2025",
+        "name": "김학생",
+        "email": "student2025@jjswim.com",
+        "password": "$2a$12$cUsc.FNjNIGEOaYCT/SDoOvLJg4XoAXLqcaZe046Q/J8JIuTNJ4QK",
+        "phone": "010-1234-5678",
+        "address": "서울시 강남구",
+        "userType": "student",
+        "level": "beginner",
+        "studentInfo": {
+          "age": null,
+          "emergencyContact": "",
+          "medicalConditions": "",
+          "swimmingLevel": "beginner",
+          "enrolledCourses": [],
+          "completedCourses": [],
+          "currentLevel": "beginner",
+          "levelChangeHistory": []
+        },
+        "instructorInfo": {
+          "experience": "",
+          "certifications": [],
+          "specialties": [],
+          "instructorLevel": "junior",
+          "assignedCenters": [],
+          "maxStudents": 20,
+          "currentStudents": 0
+        },
+        "centerAdminInfo": {
+          "permissions": {
+            "canManageUsers": false,
+            "canManageCourses": true,
+            "canManageBookings": true,
+            "canManagePayments": true,
+            "canManageNotices": true,
+            "canViewReports": true
+          },
+          "managedCenters": [],
+          "adminLevel": "assistant"
+        },
+        "superAdminInfo": {
+          "systemPermissions": {
+            "canManageAllUsers": true,
+            "canManageAllCenters": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true,
+            "canManageSkillTemplates": true
+          },
+          "adminLevel": "admin"
+        },
+        "centerId": null,
+        "isActive": true,
+        "lastLoginAt": "2025-09-19T04:17:23.957Z",
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": false,
+          "userManagement": false,
+          "systemSettings": false
+        },
+        "featureSequence": {
+          "currentStep": "dashboard",
+          "completedSteps": [],
+          "availableSteps": []
+        },
+        "statusHistory": [],
+        "createdAt": "2025-09-19T01:37:40.947Z",
+        "updatedAt": "2025-09-19T11:44:46.902Z",
+        "__v": 0
+      }
+    ],
+    "centers": [
+      {
+        "_id": "68c58a122bac3caedf19c146",
+        "name": "JJ Swim Lab",
+        "__v": 0,
+        "address": "서울시 강남구 테헤란로 123, JJ빌딩 3층",
+        "capacity": 200,
+        "courses": [],
+        "createdAt": "2025-09-13T15:13:22.414Z",
+        "email": "info@jjswim.com",
+        "facilities": [
+          "메인 수영장 (올림픽 규격 50m)",
+          "레슨 수영장 (교육용 25m)",
+          "어린이 수영장 (어린이 전용)",
+          "샤워실 (남녀 분리)",
+          "사우나 (남녀 분리)",
+          "락커룸 (개인 락커)",
+          "휴게실",
+          "카페테리아",
+          "프로샵",
+          "주차장 (지하 2층)",
+          "엘리베이터",
+          "에스컬레이터",
+          "휠체어 접근 가능",
+          "최신 정수 시스템",
+          "수온 자동 조절 시스템",
+          "수질 모니터링 시스템",
+          "안전 장비 (구명봉, 구명조끼)",
+          "응급처치 키트",
+          "수영 보조 도구",
+          "타이머 및 계시기",
+          "음향 시스템"
+        ],
+        "instructors": [],
+        "operatingHours": {},
+        "phone": "02-1234-5678",
+        "status": "active",
+        "students": [],
+        "updatedAt": "2025-09-13T22:53:56.022Z"
+      }
+    ],
+    "courses": [
+      {
+        "_id": "68c58a124eb2ae4d54db20ab",
+        "name": "자유형 기초반",
+        "description": "60세 이상 어르신을 위한 건강 증진 수영 프로그램입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 80000,
+        "maxStudents": 10,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "자유형 기초반 A",
+          "classType": "regular",
+          "startDate": "2025-09-13T15:13:22.725Z",
+          "endDate": "2025-10-13T15:13:22.725Z",
+          "maxCapacity": 10,
+          "currentEnrollment": 0
+        },
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68c58a124eb2ae4d54db20ac"
+          },
+          {
+            "day": "wednesday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68c58a124eb2ae4d54db20ad"
+          },
+          {
+            "day": "friday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68c58a124eb2ae4d54db20ae"
+          }
+        ],
+        "isActive": true,
+        "teachingMethods": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.729Z",
+        "updatedAt": "2025-09-19T14:26:00.524Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20af",
+        "name": "배영 중급반",
+        "description": "체중 감량과 체력 증진을 목표로 하는 수영 다이어트 프로그램입니다.",
+        "level": "intermediate",
+        "duration": 60,
+        "price": 90000,
+        "maxStudents": 8,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "배영 중급반 A",
+          "classType": "regular",
+          "startDate": "2025-09-13T15:13:22.725Z",
+          "endDate": "2025-10-13T15:13:22.725Z",
+          "maxCapacity": 8,
+          "currentEnrollment": 0
+        },
+        "schedule": [
+          {
+            "day": "tuesday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68c58a124eb2ae4d54db20b0"
+          },
+          {
+            "day": "thursday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68c58a124eb2ae4d54db20b1"
+          },
+          {
+            "day": "saturday",
+            "startTime": "10:00",
+            "endTime": "11:00",
+            "_id": "68c58a124eb2ae4d54db20b2"
+          }
+        ],
+        "isActive": true,
+        "teachingMethods": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.729Z",
+        "updatedAt": "2025-09-19T14:26:02.580Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20b3",
+        "name": "평영 고급반",
+        "description": "마스터즈 대회 출전을 위한 성인 경기 수영 프로그램입니다.",
+        "level": "advanced",
+        "duration": 75,
+        "price": 100000,
+        "maxStudents": 6,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "평영 고급반 A",
+          "classType": "intensive",
+          "startDate": "2025-09-13T15:13:22.725Z",
+          "endDate": "2025-10-13T15:13:22.725Z",
+          "maxCapacity": 6,
+          "currentEnrollment": 0
+        },
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "20:00",
+            "endTime": "21:15",
+            "_id": "68c58a124eb2ae4d54db20b4"
+          },
+          {
+            "day": "wednesday",
+            "startTime": "20:00",
+            "endTime": "21:15",
+            "_id": "68c58a124eb2ae4d54db20b5"
+          },
+          {
+            "day": "saturday",
+            "startTime": "14:00",
+            "endTime": "15:15",
+            "_id": "68c58a124eb2ae4d54db20b6"
+          }
+        ],
+        "isActive": true,
+        "teachingMethods": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.729Z",
+        "updatedAt": "2025-09-19T14:26:04.650Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f4faefe7678a8ed428c",
+        "name": "배영 중급반",
+        "description": "자유형이 가능한 분들을 위한 배영과 평영 전문 강습입니다.",
+        "level": "intermediate",
+        "duration": 60,
+        "price": 250000,
+        "maxStudents": 8,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "배영 중급반 B",
+          "classType": "regular",
+          "startDate": "2025-09-14T02:58:23.618Z",
+          "endDate": "2025-11-14T02:58:23.618Z",
+          "maxCapacity": 8,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:58:23.626Z",
+        "updatedAt": "2025-09-19T14:26:02.065Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f4faefe7678a8ed428b",
+        "name": "자유형 초급반",
+        "description": "성인을 위한 기초 수영 강습으로 자유형과 배영의 기본을 배웁니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 200000,
+        "maxStudents": 10,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "자유형 기초반 A",
+          "classType": "regular",
+          "startDate": "2025-09-14T02:58:23.618Z",
+          "endDate": "2025-11-14T02:58:23.618Z",
+          "maxCapacity": 10,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:58:23.626Z",
+        "updatedAt": "2025-09-19T14:26:00.004Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f4faefe7678a8ed428d",
+        "name": "접영 고급반",
+        "description": "4가지 영법을 연결한 개인혼영을 완성하는 최고급 과정입니다.",
+        "level": "advanced",
+        "duration": 90,
+        "price": 300000,
+        "maxStudents": 6,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "접영 고급반 C",
+          "classType": "intensive",
+          "startDate": "2025-09-14T02:58:23.618Z",
+          "endDate": "2025-11-14T02:58:23.618Z",
+          "maxCapacity": 6,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:58:23.626Z",
+        "updatedAt": "2025-09-19T14:26:04.133Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f740188777a43a97ec0",
+        "name": "배영 중급반",
+        "description": "바쁜 직장인을 위한 새벽 시간대 수영 강습입니다.",
+        "level": "intermediate",
+        "duration": 60,
+        "price": 250000,
+        "maxStudents": 8,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "배영 중급반 B",
+          "classType": "regular",
+          "startDate": "2025-09-14T02:59:00.489Z",
+          "endDate": "2025-11-14T02:59:00.489Z",
+          "maxCapacity": 8,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:59:00.496Z",
+        "updatedAt": "2025-09-19T14:26:01.550Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f740188777a43a97ebf",
+        "name": "자유형 초급반",
+        "description": "6-12세 어린이를 위한 물놀이 안전 교육과 기초 수영 강습입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 200000,
+        "maxStudents": 10,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "자유형 기초반 A",
+          "classType": "regular",
+          "startDate": "2025-09-14T02:59:00.489Z",
+          "endDate": "2025-11-14T02:59:00.489Z",
+          "maxCapacity": 10,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:59:00.496Z",
+        "updatedAt": "2025-09-19T14:25:59.490Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62f740188777a43a97ec1",
+        "name": "접영 고급반",
+        "description": "수영 경기 출전을 목표로 하는 선수 육성 프로그램입니다.",
+        "level": "advanced",
+        "duration": 90,
+        "price": 300000,
+        "maxStudents": 6,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "접영 고급반 C",
+          "classType": "intensive",
+          "startDate": "2025-09-14T02:59:00.489Z",
+          "endDate": "2025-11-14T02:59:00.489Z",
+          "maxCapacity": 6,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T02:59:00.496Z",
+        "updatedAt": "2025-09-19T14:26:03.619Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62fbf1b56f0553672951b",
+        "name": "접영 고급반",
+        "description": "접영을 완벽하게 마스터하고 싶은 고급자를 위한 전문 강습입니다.",
+        "level": "advanced",
+        "duration": 90,
+        "price": 300000,
+        "maxStudents": 6,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "접영 고급반 C",
+          "classType": "intensive",
+          "startDate": "2025-09-14T03:00:15.266Z",
+          "endDate": "2025-11-14T03:00:15.266Z",
+          "maxCapacity": 6,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T03:00:15.273Z",
+        "updatedAt": "2025-09-19T14:26:03.116Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62fbf1b56f05536729519",
+        "name": "자유형 초급반",
+        "description": "수영을 처음 시작하는 분들을 위한 자유형 기초 강습입니다. 물에 대한 두려움을 없애고 기본적인 자유형 동작을 익힙니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 200000,
+        "maxStudents": 10,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "자유형 기초반 A",
+          "classType": "regular",
+          "startDate": "2025-09-14T03:00:15.266Z",
+          "endDate": "2025-11-14T03:00:15.266Z",
+          "maxCapacity": 10,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T03:00:15.273Z",
+        "updatedAt": "2025-09-19T14:25:58.982Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c62fbf1b56f0553672951a",
+        "name": "배영 중급반",
+        "description": "자유형, 배영, 평영, 접영 등 4가지 영법을 모두 배우는 중급 과정입니다.",
+        "level": "intermediate",
+        "duration": 60,
+        "price": 250000,
+        "maxStudents": 8,
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "classInfo": {
+          "className": "배영 중급반 B",
+          "classType": "regular",
+          "startDate": "2025-09-14T03:00:15.266Z",
+          "endDate": "2025-11-14T03:00:15.266Z",
+          "maxCapacity": 8,
+          "currentEnrollment": 0
+        },
+        "isActive": true,
+        "teachingMethods": [],
+        "schedule": [],
+        "enrolledStudents": [],
+        "__v": 0,
+        "createdAt": "2025-09-14T03:00:15.273Z",
+        "updatedAt": "2025-09-19T14:26:01.038Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      }
+    ],
+    "bookings": [
+      {
+        "_id": "68c58a124eb2ae4d54db20bd",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "date": "2025-09-18T15:13:22.862Z",
+        "startTime": "19:00",
+        "endTime": "20:00",
+        "laneNumber": 2,
+        "purpose": "lesson",
+        "status": "confirmed",
+        "notes": "정기 수업 예약",
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "course": "68c58a124eb2ae4d54db20af",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.863Z",
+        "updatedAt": "2025-09-14T03:14:49.087Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20bc",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "date": "2025-09-15T15:13:22.862Z",
+        "startTime": "19:00",
+        "endTime": "20:00",
+        "laneNumber": 1,
+        "purpose": "lesson",
+        "status": "confirmed",
+        "notes": "정기 수업 예약",
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "course": "68c58a124eb2ae4d54db20ab",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.863Z",
+        "updatedAt": "2025-09-14T03:14:49.087Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      }
+    ],
+    "payments": [
+      {
+        "_id": "68c58a124eb2ae4d54db20ba",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "amount": 90000,
+        "currency": "KRW",
+        "paymentMethod": "transfer",
+        "status": "completed",
+        "purpose": "course",
+        "relatedCourse": "68c58a124eb2ae4d54db20af",
+        "transactionId": "TXN_1757776402818_002",
+        "notes": "배영 중급반 수강료",
+        "processedAt": "2025-09-10T15:13:22.818Z",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.819Z",
+        "updatedAt": "2025-09-14T03:14:49.215Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20b9",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "amount": 80000,
+        "currency": "KRW",
+        "paymentMethod": "card",
+        "status": "completed",
+        "purpose": "course",
+        "relatedCourse": "68c58a124eb2ae4d54db20ab",
+        "transactionId": "TXN_1757776402818_001",
+        "notes": "자유형 기초반 수강료",
+        "processedAt": "2025-09-06T15:13:22.818Z",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.819Z",
+        "updatedAt": "2025-09-14T03:14:49.215Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      }
+    ]
+  }
+}
