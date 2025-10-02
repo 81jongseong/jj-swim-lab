@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
 import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui';
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
 
 /**
@@ -41,6 +40,9 @@ interface Post {
   comments: number;
   createdAt: string;
   updatedAt: string;
+  isBlinded?: boolean; // 블라인드 처리 여부
+  reportCount?: number; // 신고 횟수
+  warnings?: number; // 경고 횟수
   // 번개모임 전용 필드 추가
   meetupDetails?: {
     location: string;
@@ -63,6 +65,23 @@ export default function CommunityPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [communityRules, setCommunityRules] = useState({
+    title: '커뮤니티 운영 규칙',
+    rules: [
+      '존중과 배려: 모든 회원을 존중하고 예의를 지켜주세요',
+      '욕설 및 비방 금지: 욕설, 비방, 차별적 표현은 엄격히 금지됩니다',
+      '광고 및 홍보 금지: 무분별한 광고나 영리 목적의 게시물은 삭제됩니다',
+      '개인정보 보호: 타인의 개인정보를 무단으로 공유하지 마세요',
+      '적절한 카테고리 사용: 게시글은 적절한 카테고리에 작성해주세요'
+    ],
+    penalties: [
+      '1차 위반: 경고 메시지 발송',
+      '2차 위반: 게시글 블라인드 처리',
+      '3차 위반: 7일 커뮤니티 이용 정지',
+      '4차 이상: 영구 이용 정지'
+    ]
+  });
   const [newPost, setNewPost] = useState({
     title: '',
     content: '',
@@ -230,6 +249,95 @@ export default function CommunityPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // 최고 관리자 기능
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('이 게시글을 완전히 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        alert('게시글이 삭제되었습니다.');
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleBlindPost = async (postId: string) => {
+    if (!confirm('이 게시글을 블라인드 처리하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert('게시글이 블라인드 처리되었습니다.');
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error('블라인드 오류:', error);
+      alert('블라인드 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleWarnAuthor = async (postId: string, authorId: string) => {
+    const reason = prompt('경고 사유를 입력하세요:');
+    if (!reason) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/warn`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ authorId, reason })
+      });
+
+      if (response.ok) {
+        alert('작성자에게 경고가 발송되었습니다.');
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error('경고 발송 오류:', error);
+      alert('경고 발송 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleSaveRules = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/community/rules', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(communityRules)
+      });
+
+      if (response.ok) {
+        alert('커뮤니티 규칙이 저장되었습니다.');
+        setShowRulesModal(false);
+      }
+    } catch (error) {
+      console.error('규칙 저장 오류:', error);
+      alert('규칙 저장 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -330,12 +438,22 @@ export default function CommunityPage() {
                 className="w-full"
               />
             </div>
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
-            >
-              ✍️ 글쓰기
-            </Button>
+            <div className="flex gap-2">
+              {user?.userType === 'superAdmin' && (
+                <Button
+                  onClick={() => setShowRulesModal(true)}
+                  className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  ⚙️ 운영 규칙
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700"
+              >
+                ✍️ 글쓰기
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -472,12 +590,46 @@ export default function CommunityPage() {
                     <div className="flex items-center space-x-4">
                       <span className="flex items-center gap-1">👤 {post.author.name}</span>
                       <span className="flex items-center gap-1">📅 {formatDate(post.createdAt)}</span>
+                      {post.isBlinded && (
+                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+                          🚫 블라인드
+                        </span>
+                      )}
+                      {post.warnings && post.warnings > 0 && (
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                          ⚠️ 경고 {post.warnings}회
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center space-x-4">
                       <span className="flex items-center gap-1">👍 {post.likes}</span>
                       <span className="flex items-center gap-1">💬 {post.comments}</span>
                     </div>
                   </div>
+
+                  {/* 최고 관리자 액션 버튼 */}
+                  {user?.userType === 'superAdmin' && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+                      <button
+                        onClick={() => handleBlindPost(post._id)}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium"
+                      >
+                        🚫 블라인드
+                      </button>
+                      <button
+                        onClick={() => handleWarnAuthor(post._id, post.author.userId)}
+                        className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium"
+                      >
+                        ⚠️ 경고
+                      </button>
+                      <button
+                        onClick={() => handleDeletePost(post._id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium"
+                      >
+                        🗑️ 삭제
+                      </button>
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
@@ -767,6 +919,115 @@ export default function CommunityPage() {
                     </Button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 커뮤니티 운영 규칙 모달 (최고 관리자 전용) */}
+        {showRulesModal && user?.userType === 'superAdmin' && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">⚙️ 커뮤니티 운영 규칙 설정</h2>
+                <button 
+                  onClick={() => setShowRulesModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* 규칙 제목 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    규칙 제목
+                  </label>
+                  <input
+                    type="text"
+                    value={communityRules.title}
+                    onChange={(e) => setCommunityRules({ ...communityRules, title: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* 커뮤니티 규칙 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    커뮤니티 규칙 (각 줄이 하나의 규칙)
+                  </label>
+                  <textarea
+                    value={communityRules.rules.join('\n')}
+                    onChange={(e) => setCommunityRules({ 
+                      ...communityRules, 
+                      rules: e.target.value.split('\n').filter(r => r.trim())
+                    })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={8}
+                    placeholder="각 줄에 하나의 규칙을 입력하세요"
+                  />
+                </div>
+
+                {/* 위반 시 제재 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    위반 시 제재 (각 줄이 하나의 단계)
+                  </label>
+                  <textarea
+                    value={communityRules.penalties.join('\n')}
+                    onChange={(e) => setCommunityRules({ 
+                      ...communityRules, 
+                      penalties: e.target.value.split('\n').filter(p => p.trim())
+                    })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={6}
+                    placeholder="각 줄에 하나의 제재 단계를 입력하세요"
+                  />
+                </div>
+
+                {/* 미리보기 */}
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">📋 미리보기</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="font-semibold text-gray-800 mb-2">{communityRules.title}</h5>
+                      <ul className="space-y-1">
+                        {communityRules.rules.map((rule, index) => (
+                          <li key={index} className="text-sm text-gray-700">
+                            {index + 1}. {rule}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-800 mb-2">위반 시 제재</h5>
+                      <ul className="space-y-1">
+                        {communityRules.penalties.map((penalty, index) => (
+                          <li key={index} className="text-sm text-gray-700">
+                            • {penalty}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
+                <button
+                  onClick={() => setShowRulesModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleSaveRules}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  저장하기
+                </button>
               </div>
             </div>
           </div>
