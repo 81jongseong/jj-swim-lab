@@ -13,6 +13,8 @@ interface Notice {
   status: 'draft' | 'published' | 'archived';
   priority: 'low' | 'medium' | 'high';
   targetAudience: string[];
+  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
+  targetRegions: string[];
   authorId: string;
   authorName: string;
   createdAt: Date;
@@ -25,7 +27,17 @@ function NoticesManagement() {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'general' as Notice['type'],
+    priority: 'medium' as Notice['priority'],
+    status: 'draft' as Notice['status'],
+    targetUserTypes: [] as string[],
+    targetRegions: [] as string[]
+  });
 
   useEffect(() => {
     if (user) {
@@ -46,6 +58,8 @@ function NoticesManagement() {
           status: 'published',
           priority: 'high',
           targetAudience: ['all'],
+          targetUserTypes: ['student', 'instructor'],
+          targetRegions: ['서울', '경기'],
           authorId: 'admin001',
           authorName: '관리자',
           createdAt: new Date('2024-01-20'),
@@ -60,6 +74,8 @@ function NoticesManagement() {
           status: 'published',
           priority: 'medium',
           targetAudience: ['instructors'],
+          targetUserTypes: ['instructor'],
+          targetRegions: [],
           authorId: 'admin001',
           authorName: '관리자',
           createdAt: new Date('2024-01-18'),
@@ -74,6 +90,8 @@ function NoticesManagement() {
           status: 'published',
           priority: 'medium',
           targetAudience: ['students'],
+          targetUserTypes: ['student'],
+          targetRegions: ['서울'],
           authorId: 'admin001',
           authorName: '관리자',
           createdAt: new Date('2024-01-15'),
@@ -143,6 +161,140 @@ function NoticesManagement() {
       'high': 'bg-red-100 text-red-800'
     };
     return colors[priority] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleCreate = () => {
+    setEditingNotice(null);
+    setFormData({
+      title: '',
+      content: '',
+      type: 'general',
+      priority: 'medium',
+      status: 'draft',
+      targetUserTypes: [],
+      targetRegions: []
+    });
+    setShowModal(true);
+  };
+
+  const handleEdit = (notice: Notice) => {
+    setEditingNotice(notice);
+    setFormData({
+      title: notice.title,
+      content: notice.content,
+      type: notice.type,
+      priority: notice.priority,
+      status: notice.status,
+      targetUserTypes: notice.targetUserTypes,
+      targetRegions: notice.targetRegions
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const payload = {
+        ...formData,
+        authorId: user?._id || user?.id,
+        authorName: user?.name || '관리자'
+      };
+
+      if (editingNotice) {
+        // 수정
+        const response = await fetch(`http://localhost:5000/api/notices/${editingNotice._id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          alert('공지사항이 수정되었습니다!');
+          loadNotices();
+          setShowModal(false);
+        }
+      } else {
+        // 생성
+        const response = await fetch('http://localhost:5000/api/notices', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          alert('공지사항이 생성되었습니다!');
+          loadNotices();
+          setShowModal(false);
+        }
+      }
+    } catch (error) {
+      console.error('저장 오류:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('이 공지사항을 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/notices/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        alert('공지사항이 삭제되었습니다!');
+        loadNotices();
+      }
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handlePublish = async (notice: Notice) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/notices/${notice._id}/publish`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert('공지사항이 발행되었습니다!');
+        loadNotices();
+      }
+    } catch (error) {
+      console.error('발행 오류:', error);
+      alert('발행 중 오류가 발생했습니다.');
+    }
+  };
+
+  const toggleUserType = (type: string) => {
+    setFormData(prev => ({
+      ...prev,
+      targetUserTypes: prev.targetUserTypes.includes(type)
+        ? prev.targetUserTypes.filter(t => t !== type)
+        : [...prev.targetUserTypes, type]
+    }));
+  };
+
+  const toggleRegion = (region: string) => {
+    setFormData(prev => ({
+      ...prev,
+      targetRegions: prev.targetRegions.includes(region)
+        ? prev.targetRegions.filter(r => r !== region)
+        : [...prev.targetRegions, region]
+    }));
   };
 
   if (isLoading) {
@@ -216,7 +368,7 @@ function NoticesManagement() {
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900">공지사항 목록</h3>
           <button 
-            onClick={() => setIsCreating(true)}
+            onClick={handleCreate}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -291,13 +443,27 @@ function NoticesManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900">
+                      {notice.status === 'draft' && (
+                        <button 
+                          onClick={() => handlePublish(notice)}
+                          className="text-purple-600 hover:text-purple-900"
+                          title="발행"
+                        >
+                          <Bell className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleEdit(notice)}
+                        className="text-green-600 hover:text-green-900"
+                        title="수정"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-900">
+                      <button 
+                        onClick={() => handleDelete(notice._id)}
+                        className="text-red-600 hover:text-red-900"
+                        title="삭제"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -308,6 +474,224 @@ function NoticesManagement() {
           </table>
         </div>
       </div>
+
+      {/* 공지사항 작성/수정 모달 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingNotice ? '공지사항 수정' : '새 공지사항 작성'}
+              </h2>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* 제목 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  제목 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="공지사항 제목을 입력하세요"
+                />
+              </div>
+
+              {/* 내용 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  내용 *
+                </label>
+                <textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={8}
+                  placeholder="공지사항 내용을 입력하세요"
+                />
+              </div>
+
+              {/* 유형, 우선순위, 상태 */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    유형
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as Notice['type'] })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="general">일반</option>
+                    <option value="important">중요</option>
+                    <option value="maintenance">점검</option>
+                    <option value="event">이벤트</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    우선순위
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as Notice['priority'] })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">낮음</option>
+                    <option value="medium">보통</option>
+                    <option value="high">높음</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    상태
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Notice['status'] })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="draft">임시저장</option>
+                    <option value="published">발행</option>
+                    <option value="archived">보관</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 대상 계정 유형 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  📢 받는 사람 (계정별) *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('student')}
+                      onChange={() => toggleUserType('student')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">👨‍🎓 학생 (회원)</span>
+                  </label>
+
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('instructor')}
+                      onChange={() => toggleUserType('instructor')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">👨‍🏫 강사</span>
+                  </label>
+
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('centerAdmin')}
+                      onChange={() => toggleUserType('centerAdmin')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">🏢 센터 관리자</span>
+                  </label>
+
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('superAdmin')}
+                      onChange={() => toggleUserType('superAdmin')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">⭐ 최고 관리자</span>
+                  </label>
+                </div>
+                {formData.targetUserTypes.length === 0 && (
+                  <p className="mt-2 text-sm text-red-600">최소 1개 이상의 계정 유형을 선택해주세요</p>
+                )}
+              </div>
+
+              {/* 대상 지역 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  🌍 받는 사람 (지역별) - 선택사항
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'].map((region) => (
+                    <label key={region} className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={formData.targetRegions.includes(region)}
+                        onChange={() => toggleRegion(region)}
+                        className="mr-2 w-4 h-4"
+                      />
+                      <span className="text-sm">{region}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  지역을 선택하지 않으면 모든 지역에 발송됩니다
+                </p>
+              </div>
+
+              {/* 발송 대상 요약 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">📋 발송 대상 요약</h4>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <p>
+                    <strong>계정 유형:</strong> {
+                      formData.targetUserTypes.length === 0 
+                        ? '선택 안됨' 
+                        : formData.targetUserTypes.map(t => {
+                          const labels: { [key: string]: string } = {
+                            'student': '학생',
+                            'instructor': '강사',
+                            'centerAdmin': '센터관리자',
+                            'superAdmin': '최고관리자'
+                          };
+                          return labels[t];
+                        }).join(', ')
+                    }
+                  </p>
+                  <p>
+                    <strong>지역:</strong> {
+                      formData.targetRegions.length === 0 
+                        ? '전체 지역' 
+                        : formData.targetRegions.join(', ')
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 버튼 */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!formData.title || !formData.content || formData.targetUserTypes.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {editingNotice ? '수정하기' : '작성하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
