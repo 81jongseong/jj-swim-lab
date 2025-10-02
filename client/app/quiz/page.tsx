@@ -63,6 +63,7 @@ export default function QuizPage() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [useRandomMode, setUseRandomMode] = useState(false); // 🎲 랜덤 모드 선택
 
   useEffect(() => {
     fetchQuizzes();
@@ -157,11 +158,11 @@ export default function QuizPage() {
   };
 
   const startQuiz = (quiz: Quiz) => {
-    // 🎲 랜덤 문제 처리: 보기 순서 섞기
-    const processedQuiz = {
+    // 🎲 랜덤 모드: 사용자가 선택한 경우에만 보기 순서 섞기
+    const processedQuiz = useRandomMode ? {
       ...quiz,
       questions: quiz.questions.map((q: any) => {
-        if (q.isRandomized && q.type === 'multiple-choice') {
+        if (q.type === 'multiple-choice' || q.type === 'ox') {
           // 보기 순서 섞기
           const shuffled = [...q.options].map((opt, idx) => ({ opt, idx }));
           for (let i = shuffled.length - 1; i > 0; i--) {
@@ -176,23 +177,12 @@ export default function QuizPage() {
             ...q,
             options: shuffled.map(item => item.opt),
             correctAnswer: newCorrectIndex,
-            _originalCorrectAnswer: q.correctAnswer // 원본 저장
+            _originalCorrectAnswer: q.correctAnswer
           };
-        } else if (q.isRandomized && q.type === 'ox') {
-          // OX 퀴즈: 랜덤하게 O/X 반전
-          const shouldFlip = Math.random() > 0.5;
-          if (shouldFlip) {
-            return {
-              ...q,
-              question: q.question.replace('올바른', '잘못된').replace('맞는', '틀린'),
-              correctAnswer: q.correctAnswer === 0 ? 1 : 0, // 정답 반전
-              _isFlipped: true
-            };
-          }
         }
         return q;
       })
-    };
+    } : quiz;
     
     setSelectedQuiz(processedQuiz);
     setCurrentQuestionIndex(0);
@@ -491,6 +481,26 @@ export default function QuizPage() {
           <p className="mt-2 text-gray-600">
             수영에 대한 지식을 테스트하고 실력을 향상시켜보세요.
           </p>
+          
+          {/* 랜덤 모드 선택 */}
+          <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useRandomMode}
+                onChange={(e) => setUseRandomMode(e.target.checked)}
+                className="w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-semibold text-purple-900 text-sm">
+                  🎲 랜덤 모드로 풀기
+                </div>
+                <p className="text-xs text-purple-700 mt-1">
+                  체크 시 보기 순서가 랜덤하게 섞입니다 (매번 다른 순서)
+                </p>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

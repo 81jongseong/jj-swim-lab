@@ -14,7 +14,6 @@ export interface IQuiz extends Document {
     correctAnswer: string | number | string[]; // 4지선다/OX: 정답 인덱스, 단답형: 정답 텍스트/배열
     explanation?: string;
     points: number;
-    isRandomized?: boolean; // 랜덤 버전 여부 (매번 답 변경)
   }>;
   timeLimit?: number; // 분 단위
   passingScore: number;
@@ -84,10 +83,6 @@ const QuizSchema = new Schema<IQuiz>({
       type: Number, 
       required: true, 
       default: 1 
-    },
-    isRandomized: {
-      type: Boolean,
-      default: false
     }
   }],
   timeLimit: { 
