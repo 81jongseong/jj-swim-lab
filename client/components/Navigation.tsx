@@ -274,7 +274,6 @@ const userMenuStructure = {
     ],
     info: [
       { href: '/about', label: '🏊‍♂️ 소개' },
-      { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 지도' },
