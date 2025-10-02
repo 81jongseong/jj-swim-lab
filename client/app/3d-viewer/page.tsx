@@ -1,110 +1,159 @@
+/**
+ * 🏊‍♂️ 3D 드릴/영법 갤러리 페이지
+ * 
+ * 📋 **의존성**:
+ * - ../../components/3d-viewer/DrillGrid.tsx
+ * - ../../components/3d-viewer/ThreeDPlayer.tsx
+ * - ../../stores/threeStore.ts
+ * 
+ * 🔄 **연동 데이터**:
+ * - ../../data/drills3d.ts (샘플 데이터)
+ * - 추후 DB API 연동 예정
+ * 
+ * 🎨 **레이아웃**:
+ * - 데스크톱: 좌측 카드 그리드 + 우측 스티키 3D 뷰어
+ * - 모바일: 카드 탭 시 하단 드로어에 3D 뷰어
+ * 
+ * ⚠️ **주의사항**:
+ * - 체험 공개된 드릴만 표시 (isPublicDemo: true)
+ * - 3D 모델은 나중에 추가 (현재는 플레이스홀더)
+ * - Three.js 통합 예정 (@react-three/fiber)
+ * 
+ * 📅 **수정 히스토리**:
+ * - 2025-01-22: 초기 구조 생성 (스켈레톤)
+ * - TODO: Three.js 통합
+ * - TODO: DB API 연동
+ */
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import DrillGrid from '../../components/3d-viewer/DrillGrid';
+import ThreeDPlayer from '../../components/3d-viewer/ThreeDPlayer';
+import { useThreeStore } from '../../stores/threeStore';
 
 export default function ThreeDViewerPage() {
-  const [showStats, setShowStats] = useState(false);
-  const [showEnvironment, setShowEnvironment] = useState(true);
-  const [viewerKey, setViewerKey] = useState(0);
+  const { selectedId, setSelected } = useThreeStore();
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
 
-  const handleReset = () => {
-    setViewerKey(prev => prev + 1);
-  };
+  // 모바일 감지
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const handleError = (error: Error) => {
-    console.error('3D 뷰어 오류 발생:', error);
-    alert('3D 뷰어에서 오류가 발생했습니다.');
+  // 모바일에서 드릴 선택 시 드로어 표시
+  useEffect(() => {
+    if (isMobile && selectedId) {
+      setShowMobileDrawer(true);
+    }
+  }, [isMobile, selectedId]);
+
+  // 드로어 닫기
+  const handleCloseDrawer = () => {
+    setShowMobileDrawer(false);
+    // 선택 해제는 하지 않음 (다시 열 수 있도록)
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">3D 뷰어 테스트</h1>
-        <p className="text-gray-600">
-          JJ Swim Lab의 3D 뷰어 기능을 테스트하고 설정할 수 있습니다.
-        </p>
-      </div>
-
-      {/* 컨트롤 패널 */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">뷰어 설정</h3>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1400px] mx-auto p-4">
+        {/* 헤더 */}
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            🏊‍♂️ 3D 드릴 · 영법 갤러리
+          </h1>
+          <p className="text-gray-600 text-sm md:text-base">
+            3D 애니메이션으로 정확한 수영 동작을 학습하세요
+          </p>
         </div>
-        <div className="flex flex-wrap gap-4 items-center">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showStats}
-              onChange={(e) => setShowStats(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <span className="text-sm text-gray-700">성능 통계 표시</span>
-          </label>
-          
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showEnvironment}
-              onChange={(e) => setShowEnvironment(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <span className="text-sm text-gray-700">환경 조명</span>
-          </label>
-          
-          <button 
-            onClick={handleReset}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+
+        {/* 레이아웃: 데스크톱 스플릿 / 모바일 풀 */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* 좌측: 카드 그리드 */}
+          <div>
+            <DrillGrid />
+          </div>
+
+          {/* 우측: 스티키 3D 뷰어 (데스크톱만) */}
+          <div className="hidden md:block">
+            <div className="sticky top-4">
+              <ThreeDPlayer />
+            </div>
+          </div>
+        </div>
+
+        {/* 모바일: 하단 드로어 */}
+        {isMobile && showMobileDrawer && selectedId && (
+          <div
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={handleCloseDrawer}
           >
-            뷰어 재시작
-          </button>
-        </div>
-      </div>
+            <div
+              className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 드로어 헤더 */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-lg font-semibold text-gray-900">3D 뷰어</div>
+                <button
+                  onClick={handleCloseDrawer}
+                  className="text-gray-500 hover:text-gray-700 p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-      {/* 3D 뷰어 */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">3D 뷰어</h3>
-        </div>
-        <div key={viewerKey} className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <div className="text-4xl mb-2">🎯</div>
-            <p>3D 뷰어 컴포넌트</p>
-            <p className="text-sm">(Three.js 기반)</p>
+              {/* 드로어 내용 */}
+              <ThreeDPlayer />
+            </div>
           </div>
-        </div>
-        
-        <div className="mt-4 text-sm text-gray-600">
-          <p>💡 <strong>사용법:</strong></p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            <li>마우스 왼쪽 버튼: 회전</li>
-            <li>마우스 오른쪽 버튼: 이동</li>
-            <li>마우스 휠: 확대/축소</li>
-          </ul>
-        </div>
-      </div>
+        )}
 
-      {/* 정보 패널 */}
-      <div className="bg-white rounded-lg shadow p-6 mt-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">기술 정보</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">3D 엔진</h4>
-            <ul className="space-y-1 text-gray-600">
-              <li>• Three.js - 3D 렌더링</li>
-              <li>• React Three Fiber - React 통합</li>
-              <li>• Drei - 유틸리티 컴포넌트</li>
+        {/* 안내 메시지 (하단) */}
+        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-sm text-blue-900">
+            <div className="font-semibold mb-2">🎯 3D 갤러리 사용법</div>
+            <ul className="list-disc list-inside space-y-1 text-blue-800">
+              <li>좌측(모바일: 상단) 카드에서 드릴을 선택하세요</li>
+              <li>우측(모바일: 하단 드로어)에서 3D 애니메이션을 확인하세요</li>
+              <li>재생 속도, 카메라 각도, 코칭 큐 등을 조절할 수 있습니다</li>
+              <li className="text-orange-700">⚠️ 현재 3D 모델 준비 중 - 플레이스홀더로 표시됩니다</li>
             </ul>
           </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">기능</h4>
-            <ul className="space-y-1 text-gray-600">
-              <li>• 실시간 3D 렌더링</li>
-              <li>• 카메라 컨트롤</li>
-              <li>• 에러 처리 및 복구</li>
-              <li>• 성능 모니터링</li>
-            </ul>
+        </div>
+
+        {/* 기술 정보 (개발자용) */}
+        <div className="mt-4 p-4 bg-gray-100 border border-gray-300 rounded-lg text-xs text-gray-600">
+          <div className="font-semibold text-gray-900 mb-2">🛠️ 구현 상태</div>
+          <div className="grid md:grid-cols-2 gap-2">
+            <div>
+              <div className="font-medium text-gray-800">✅ 완료:</div>
+              <ul className="list-disc list-inside mt-1">
+                <li>카드 그리드 UI</li>
+                <li>필터 & 검색</li>
+                <li>Zustand 상태 관리</li>
+                <li>반응형 레이아웃</li>
+                <li>재생 제어 UI</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800">⏳ 예정:</div>
+              <ul className="list-disc list-inside mt-1">
+                <li>Three.js 통합</li>
+                <li>3D 모델 로딩 (GLB/GLTF)</li>
+                <li>카메라 프리셋 동작</li>
+                <li>코칭 큐 오버레이</li>
+                <li>DB API 연동</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

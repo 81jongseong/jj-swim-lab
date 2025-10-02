@@ -16,6 +16,12 @@ interface SwimmingStyle {
   description: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   isActive: boolean;
+  isPublicDemo?: boolean; // 체험 모드 공개 여부
+  modelUrl?: string; // 3D 모델 파일 URL (GLB/GLTF)
+  poster?: string; // 썸네일 이미지
+  tags?: string[]; // 태그 (예: 캐치, 킥, 타이밍)
+  cues?: string[]; // 코칭 큐
+  cautions?: string[]; // 주의사항
   createdAt: string;
   updatedAt: string;
 }
@@ -241,13 +247,20 @@ export default function SwimmingStylesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      style.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {style.isActive ? '활성' : '비활성'}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        style.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {style.isActive ? '✅ 활성' : '❌ 비활성'}
+                      </span>
+                      {style.isPublicDemo && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          🌍 체험 공개
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button className="text-blue-600 hover:text-blue-900 mr-3">
