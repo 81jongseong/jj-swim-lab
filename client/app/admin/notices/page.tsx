@@ -152,22 +152,25 @@ function SuperAdminNoticesManagement() {
   useEffect(() => {
     let filtered = centers;
 
-    // 시/도 필터
-    if (selectedProvince) {
-      filtered = filtered.filter(center => 
-        center.city?.includes(selectedProvince) || center.region === selectedProvince
-      );
-    }
-
-    // 시/군/구 필터
-    if (selectedCity && selectedCity !== '전체') {
-      filtered = filtered.filter(center => 
-        center.district?.includes(selectedCity) || center.address?.includes(selectedCity)
-      );
+    // 선택된 지역들로 필터링
+    if (formData.targetRegions.length > 0) {
+      filtered = centers.filter(center => {
+        return formData.targetRegions.some(region => {
+          if (region.includes(' > ')) {
+            // "서울특별시 > 강남구" 형식
+            const [province, district] = region.split(' > ');
+            return (center.city?.includes(province) || center.region === province) &&
+                   (center.district?.includes(district) || center.address?.includes(district));
+          } else {
+            // "서울특별시" 형식 (시/도만)
+            return center.city?.includes(region) || center.region === region;
+          }
+        });
+      });
     }
 
     setFilteredCenters(filtered);
-  }, [selectedProvince, selectedCity, centers]);
+  }, [formData.targetRegions, centers]);
 
   // 시/도 변경 시 시/군/구 초기화
   const handleProvinceChange = (province: string) => {
@@ -690,11 +693,11 @@ function SuperAdminNoticesManagement() {
                   </div>
                   {!formData.sendToAll && (
                     <>
-                      {/* 계층적 지역 필터 */}
+                      {/* 계층적 지역 선택 */}
                       <div className="bg-gray-50 border rounded-lg p-4 mb-4">
-                        <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="flex gap-3 mb-3">
                           {/* 시/도 선택 */}
-                          <div>
+                          <div className="flex-1">
                             <label className="block text-xs font-medium text-gray-600 mb-2">
                               📍 시/도
                             </label>
@@ -703,7 +706,7 @@ function SuperAdminNoticesManagement() {
                               onChange={(e) => handleProvinceChange(e.target.value)}
                               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                             >
-                              <option value="">전체</option>
+                              <option value="">선택하세요</option>
                               {Object.keys(regions).map((province) => (
                                 <option key={province} value={province}>{province}</option>
                               ))}
@@ -711,7 +714,7 @@ function SuperAdminNoticesManagement() {
                           </div>
 
                           {/* 시/군/구 선택 */}
-                          <div>
+                          <div className="flex-1">
                             <label className="block text-xs font-medium text-gray-600 mb-2">
                               🏘️ 시/군/구
                             </label>
@@ -721,48 +724,84 @@ function SuperAdminNoticesManagement() {
                               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                               disabled={!selectedProvince}
                             >
-                              {selectedProvince ? (
-                                regions[selectedProvince as keyof typeof regions]?.map((city) => (
-                                  <option key={city} value={city}>{city}</option>
-                                ))
-                              ) : (
-                                <option value="">시/도를 먼저 선택하세요</option>
-                              )}
+                              <option value="">선택하세요</option>
+                              {selectedProvince && regions[selectedProvince as keyof typeof regions]?.map((city) => (
+                                <option key={city} value={city}>{city}</option>
+                              ))}
                             </select>
+                          </div>
+
+                          {/* 추가 버튼 */}
+                          <div className="flex items-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!selectedProvince) {
+                                  alert('시/도를 먼저 선택하세요');
+                                  return;
+                                }
+                                const regionKey = selectedCity && selectedCity !== '전체' && selectedCity !== '선택하세요'
+                                  ? `${selectedProvince} > ${selectedCity}`
+                                  : selectedProvince;
+                                
+                                if (!formData.targetRegions.includes(regionKey)) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    targetRegions: [...prev.targetRegions, regionKey],
+                                    sendToAll: false
+                                  }));
+                                }
+                                // 선택 초기화
+                                setSelectedProvince('');
+                                setSelectedCity('');
+                              }}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+                            >
+                              ➕ 추가
+                            </button>
                           </div>
                         </div>
 
-                        {/* 지역 체크박스 (시/도 단위) */}
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-2">
-                            🗺️ 특정 시/도 선택 (복수 선택 가능)
-                          </label>
-                          <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
-                            {Object.keys(regions).map((province) => (
-                              <label key={province} className="flex items-center text-xs cursor-pointer hover:bg-white p-1 rounded">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.targetRegions.includes(province)}
-                                  onChange={() => toggleRegion(province)}
-                                  className="mr-2 w-3 h-3"
-                                />
-                                <span>{province.replace('특별시', '').replace('광역시', '').replace('특별자치시', '').replace('특별자치도', '').replace('도', '')}</span>
-                              </label>
-                            ))}
+                        {/* 선택된 지역 목록 */}
+                        {formData.targetRegions.length > 0 && (
+                          <div className="mb-3">
+                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                              ✅ 선택된 지역 ({formData.targetRegions.length}개)
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {formData.targetRegions.map((region, index) => (
+                                <div
+                                  key={index}
+                                  className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                                >
+                                  <span>{region}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        targetRegions: prev.targetRegions.filter((_, i) => i !== index)
+                                      }));
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 font-bold"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* 필터링 결과 표시 */}
                         <div className="text-xs text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
-                          <strong>📍 현재 필터:</strong> {
+                          <strong>📍 센터 필터링:</strong> {
                             formData.targetRegions.length > 0 
-                              ? formData.targetRegions.join(', ')
-                              : selectedProvince 
-                                ? `${selectedProvince} ${selectedCity && selectedCity !== '전체' ? `> ${selectedCity}` : ''}` 
-                                : '전체'
+                              ? `선택된 ${formData.targetRegions.length}개 지역의 센터`
+                              : '전체 지역'
                           }
                           <span className="ml-2 font-bold text-blue-700">
-                            ({filteredCenters.length}개 센터)
+                            ({filteredCenters.length}개)
                           </span>
                         </div>
                       </div>
