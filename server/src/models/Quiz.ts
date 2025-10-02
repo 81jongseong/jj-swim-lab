@@ -9,9 +9,9 @@ export interface IQuiz extends Document {
   isPublicDemo?: boolean; // 체험 모드 공개 여부
   questions: Array<{
     question: string;
-    type: 'multiple-choice' | 'short-answer';
-    options?: string[]; // 4지선다용
-    correctAnswer: string | number | string[]; // 4지선다: 정답 인덱스, 단답형: 정답 텍스트/배열
+    type: 'multiple-choice' | 'short-answer' | 'ox';
+    options?: string[]; // 4지선다, OX용
+    correctAnswer: string | number | string[]; // 4지선다/OX: 정답 인덱스, 단답형: 정답 텍스트/배열
     explanation?: string;
     points: number;
   }>;
@@ -64,7 +64,7 @@ const QuizSchema = new Schema<IQuiz>({
     },
     type: { 
       type: String, 
-      enum: ['multiple-choice', 'short-answer'], 
+      enum: ['multiple-choice', 'short-answer', 'ox'], 
       required: true 
     },
     options: [{ 

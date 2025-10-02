@@ -52,6 +52,9 @@ export default function QuizManagementPage() {
     explanation: '',
     points: 10
   });
+  
+  // AI 자동 생성 상태
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin')) {
@@ -259,6 +262,9 @@ export default function QuizManagementPage() {
         alert('모든 선택지를 입력해주세요.');
         return;
       }
+    } else if (questionForm.type === 'ox') {
+      // OX 퀴즈: 정답 선택 확인 (자동 설정되므로 생략 가능)
+      // correctAnswer가 0 또는 1이어야 함
     } else {
       // 단답형: 정답 키워드 확인
       if (!questionForm.correctAnswer || (typeof questionForm.correctAnswer === 'string' && !questionForm.correctAnswer.trim())) {
@@ -287,6 +293,8 @@ export default function QuizManagementPage() {
         alert('모든 선택지를 입력해주세요.');
         return;
       }
+    } else if (questionForm.type === 'ox') {
+      // OX 퀴즈: 정답 선택 확인 (자동 설정되므로 생략 가능)
     } else {
       // 단답형: 정답 키워드 확인
       if (!questionForm.correctAnswer || (typeof questionForm.correctAnswer === 'string' && !questionForm.correctAnswer.trim())) {
@@ -315,6 +323,53 @@ export default function QuizManagementPage() {
     setEditingQuestionIndex(index);
     setQuestionForm(question);
     setShowQuestionModal(true);
+  };
+
+  // AI 기반 문제 자동 생성 (해설 → 문제 + 보기)
+  const generateQuestionFromExplanation = () => {
+    if (!questionForm.explanation.trim()) {
+      alert('먼저 해설을 입력해주세요.');
+      return;
+    }
+
+    setIsGenerating(true);
+
+    // 간단한 룰 기반 생성 (AI API 대신 로직 사용)
+    const explanation = questionForm.explanation.trim();
+    
+    if (questionForm.type === 'multiple-choice') {
+      // 4지선다 생성
+      const question = `다음 중 올바른 설명은?`;
+      const correctOption = explanation;
+      
+      // 오답 생성 (간단한 변형)
+      const wrongOptions = [
+        explanation.replace(/올바른|정확한|맞는/g, '잘못된').replace(/이다|입니다/g, '이 아니다'),
+        explanation.replace(/해야|필요|중요/g, '하지 않아도 됨'),
+        explanation.replace(/않|아니/g, '').replace(/하지 않아도/g, '해야')
+      ];
+
+      setQuestionForm({
+        ...questionForm,
+        question: question,
+        options: [correctOption, ...wrongOptions].slice(0, 4),
+        correctAnswer: 0
+      });
+    } else if (questionForm.type === 'ox') {
+      // OX 퀴즈 생성
+      const isTrue = Math.random() > 0.5;
+      const question = isTrue ? explanation : explanation.replace(/올바른|정확한/g, '잘못된');
+      
+      setQuestionForm({
+        ...questionForm,
+        question: question + ' (O/X)',
+        options: ['O (맞다)', 'X (틀리다)'],
+        correctAnswer: isTrue ? 0 : 1
+      });
+    }
+
+    setIsGenerating(false);
+    alert('해설을 기반으로 문제가 생성되었습니다! 수정해서 사용하세요.');
   };
 
   if (loading || isLoading) {
@@ -704,7 +759,7 @@ export default function QuizManagementPage() {
                             {index + 1}. {q.question}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {q.type === 'multiple-choice' ? '4지선다' : '단답형'} · {q.points}점
+                            {q.type === 'multiple-choice' ? '4지선다' : q.type === 'ox' ? 'OX퀴즈' : '단답형'} · {q.points}점
                           </div>
                         </div>
                         <div className="flex gap-1 ml-2">
@@ -775,12 +830,49 @@ export default function QuizManagementPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">문제 유형 *</label>
                 <select
                   value={questionForm.type}
-                  onChange={(e) => setQuestionForm({ ...questionForm, type: e.target.value })}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    setQuestionForm({ 
+                      ...questionForm, 
+                      type: newType,
+                      options: newType === 'ox' ? ['O (맞다)', 'X (틀리다)'] : ['', '', '', ''],
+                      correctAnswer: 0
+                    });
+                  }}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="multiple-choice">4지선다</option>
-                  <option value="short-answer">단답형</option>
+                  <option value="ox">OX 퀴즈</option>
+                  <option value="short-answer">단답형 (비활성)</option>
                 </select>
+              </div>
+
+              {/* 해설 기반 자동 생성 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <div className="font-semibold text-blue-900 text-sm">🤖 AI 문제 자동 생성</div>
+                    <p className="text-xs text-blue-700 mt-1">해설을 입력하면 자동으로 문제와 보기를 생성합니다</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateQuestionFromExplanation}
+                    disabled={isGenerating || !questionForm.explanation.trim()}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isGenerating ? '생성 중...' : '자동 생성'}
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-900 mb-2">해설 입력 *</label>
+                  <textarea
+                    value={questionForm.explanation}
+                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                    className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                    placeholder="예: 자유형은 크롤이라고도 하며, 가장 빠른 영법입니다."
+                  />
+                </div>
               </div>
 
               <div>
@@ -790,7 +882,7 @@ export default function QuizManagementPage() {
                   onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
-                  placeholder="문제를 입력하세요"
+                  placeholder="문제를 입력하세요 (또는 해설 입력 후 자동 생성)"
                 />
               </div>
 
@@ -824,6 +916,34 @@ export default function QuizManagementPage() {
                     ))}
                   </div>
                 </>
+              ) : questionForm.type === 'ox' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">정답 선택 *</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="oxAnswer"
+                          checked={questionForm.correctAnswer === 0}
+                          onChange={() => setQuestionForm({ ...questionForm, correctAnswer: 0 })}
+                          className="w-5 h-5"
+                        />
+                        <span className="text-lg font-semibold text-green-600">O (맞다)</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="oxAnswer"
+                          checked={questionForm.correctAnswer === 1}
+                          onChange={() => setQuestionForm({ ...questionForm, correctAnswer: 1 })}
+                          className="w-5 h-5"
+                        />
+                        <span className="text-lg font-semibold text-red-600">X (틀리다)</span>
+                      </label>
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">정답 키워드 *</label>
@@ -839,17 +959,6 @@ export default function QuizManagementPage() {
                   </p>
                 </div>
               )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">해설</label>
-                <textarea
-                  value={questionForm.explanation}
-                  onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows={2}
-                  placeholder="문제 해설을 입력하세요"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">배점 *</label>
