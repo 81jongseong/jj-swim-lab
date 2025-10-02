@@ -90,15 +90,14 @@ export default function SystemAnalyticsPage() {
       const usersResponse = await apiClient.get('/api/users');
       console.log('📊 Users API 응답:', usersResponse);
       
-      // API 응답 형식이 { users: [...] } 또는 { success: true, users: [...] } 둘 다 지원
+      // apiClient.get()은 이미 response.data를 반환함
+      // 따라서 usersResponse 자체가 { users: [...] } 형태
       console.log('🔍 usersResponse:', usersResponse);
-      console.log('🔍 usersResponse.data:', usersResponse?.data);
-      console.log('🔍 usersResponse.data.users:', usersResponse?.data?.users);
       
-      if (usersResponse && usersResponse.data) {
-        const users = usersResponse.data.users || usersResponse.data;
+      if (usersResponse) {
+        // usersResponse.users가 배열이면 직접 사용
+        const users = usersResponse.users || usersResponse;
         console.log('🔍 추출된 users:', users);
-        console.log('🔍 Array.isArray(users):', Array.isArray(users));
         
         if (Array.isArray(users)) {
           setUsers(users);
