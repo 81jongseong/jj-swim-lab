@@ -28,6 +28,9 @@ interface Center {
   _id: string;
   name: string;
   region: string;
+  city?: string;
+  district?: string;
+  address?: string;
 }
 
 function SuperAdminNoticesManagement() {
@@ -50,6 +53,8 @@ function SuperAdminNoticesManagement() {
     sendToAllRegions: false,
     sendToAllUserTypes: false
   });
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [filteredCenters, setFilteredCenters] = useState<Center[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -61,63 +66,27 @@ function SuperAdminNoticesManagement() {
   const loadNotices = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempNotices: Notice[] = [
-        {
-          _id: '1',
-          title: '수영장 정기 점검 안내',
-          content: '수영장 정기 점검으로 인해 1월 25일 오후 2시부터 6시까지 이용이 제한됩니다.',
-          type: 'maintenance',
-          status: 'published',
-          priority: 'high',
-          targetAudience: ['all'],
-          targetUserTypes: ['student', 'instructor'],
-          targetRegions: ['서울', '경기'],
-          targetCenters: [],
-          authorId: 'superadmin001',
-          authorName: '관리자',
-          createdAt: new Date('2024-01-20'),
-          publishedAt: new Date('2024-01-20'),
-          views: 156
-        },
-        {
-          _id: '2',
-          title: '신규 강사 모집',
-          content: 'JJ Swim Lab에서 함께할 열정적인 강사를 모집합니다. 자세한 내용은 문의 바랍니다.',
-          type: 'general',
-          status: 'published',
-          priority: 'medium',
-          targetAudience: ['instructors'],
-          targetUserTypes: ['instructor'],
-          targetRegions: [],
-          targetCenters: [],
-          authorId: 'superadmin001',
-          authorName: '관리자',
-          createdAt: new Date('2024-01-18'),
-          publishedAt: new Date('2024-01-18'),
-          views: 89
-        },
-        {
-          _id: '3',
-          title: '수영 대회 개최 안내',
-          content: '센터 내 수영 대회가 2월 15일에 개최됩니다. 참가 신청은 2월 1일까지입니다.',
-          type: 'event',
-          status: 'published',
-          priority: 'medium',
-          targetAudience: ['students'],
-          targetUserTypes: ['student'],
-          targetRegions: ['서울'],
-          targetCenters: ['center001'],
-          authorId: 'superadmin001',
-          authorName: '관리자',
-          createdAt: new Date('2024-01-15'),
-          publishedAt: new Date('2024-01-15'),
-          views: 234
+      const response = await fetch('http://localhost:5000/api/notices', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      ];
-      setNotices(tempNotices);
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const noticesList = (data.notices || data || []).map((notice: any) => ({
+          ...notice,
+          createdAt: new Date(notice.createdAt),
+          publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : undefined
+        }));
+        setNotices(noticesList);
+      } else {
+        console.error('공지사항 로드 실패:', response.status);
+        setNotices([]);
+      }
     } catch (error) {
       console.error('공지사항 로드 실패:', error);
+      setNotices([]);
     } finally {
       setIsLoading(false);
     }
@@ -133,24 +102,42 @@ function SuperAdminNoticesManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        setCenters(data.centers || data || []);
+        const centersList = data.centers || data || [];
+        setCenters(centersList);
+        setFilteredCenters(centersList);
       } else {
         // 임시 데이터
-        setCenters([
-          { _id: 'center001', name: '강남 수영장', region: '서울' },
-          { _id: 'center002', name: '판교 수영장', region: '경기' },
-          { _id: 'center003', name: '해운대 수영장', region: '부산' }
-        ]);
+        const tempCenters = [
+          { _id: 'center001', name: '강남 수영장', region: '서울', city: '서울특별시', district: '강남구', address: '서울특별시 강남구 테헤란로 123' },
+          { _id: 'center002', name: '판교 수영장', region: '경기', city: '경기도', district: '성남시 분당구', address: '경기도 성남시 분당구 판교역로 456' },
+          { _id: 'center003', name: '해운대 수영장', region: '부산', city: '부산광역시', district: '해운대구', address: '부산광역시 해운대구 해운대해변로 789' }
+        ];
+        setCenters(tempCenters);
+        setFilteredCenters(tempCenters);
       }
     } catch (error) {
       console.error('센터 로드 실패:', error);
-      setCenters([
-        { _id: 'center001', name: '강남 수영장', region: '서울' },
-        { _id: 'center002', name: '판교 수영장', region: '경기' },
-        { _id: 'center003', name: '해운대 수영장', region: '부산' }
-      ]);
+      const tempCenters = [
+        { _id: 'center001', name: '강남 수영장', region: '서울', city: '서울특별시', district: '강남구', address: '서울특별시 강남구 테헤란로 123' },
+        { _id: 'center002', name: '판교 수영장', region: '경기', city: '경기도', district: '성남시 분당구', address: '경기도 성남시 분당구 판교역로 456' },
+        { _id: 'center003', name: '해운대 수영장', region: '부산', city: '부산광역시', district: '해운대구', address: '부산광역시 해운대구 해운대해변로 789' }
+      ];
+      setCenters(tempCenters);
+      setFilteredCenters(tempCenters);
     }
   };
+
+  // 지역 선택 시 해당 지역의 센터 필터링
+  useEffect(() => {
+    if (selectedProvince) {
+      const filtered = centers.filter(center => 
+        center.region === selectedProvince || center.city?.includes(selectedProvince)
+      );
+      setFilteredCenters(filtered);
+    } else {
+      setFilteredCenters(centers);
+    }
+  }, [selectedProvince, centers]);
 
   const getTypeLabel = (type: string) => {
     const types: { [key: string]: string } = {
@@ -329,7 +316,7 @@ function SuperAdminNoticesManagement() {
 
       if (response.ok) {
         alert('공지사항이 발행되었습니다!');
-        loadNotices();
+    loadNotices();
       }
     } catch (error) {
       console.error('발행 오류:', error);
@@ -377,7 +364,7 @@ function SuperAdminNoticesManagement() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
+        <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           최고 관리자 공지사항 관리
         </h1>
@@ -444,8 +431,8 @@ function SuperAdminNoticesManagement() {
             <Plus className="w-4 h-4 mr-2" />
             새 공지사항 작성
           </button>
-        </div>
-        
+          </div>
+          
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -514,13 +501,13 @@ function SuperAdminNoticesManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {notice.status === 'draft' && (
-                        <button 
+                      <button 
                           onClick={() => handlePublish(notice)}
                           className="text-purple-600 hover:text-purple-900"
                           title="발행"
-                        >
+                      >
                           <Bell className="w-4 h-4" />
-                        </button>
+                      </button>
                       )}
                       <button 
                         onClick={() => handleEdit(notice)}
@@ -601,11 +588,11 @@ function SuperAdminNoticesManagement() {
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as Notice['type'] })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="general">일반</option>
+                  <option value="general">일반</option>
                     <option value="important">중요</option>
                     <option value="maintenance">점검</option>
-                    <option value="event">이벤트</option>
-                  </select>
+                  <option value="event">이벤트</option>
+                </select>
                 </div>
 
                 <div>
@@ -617,10 +604,10 @@ function SuperAdminNoticesManagement() {
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value as Notice['priority'] })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="low">낮음</option>
-                    <option value="medium">보통</option>
-                    <option value="high">높음</option>
-                  </select>
+                  <option value="low">낮음</option>
+                  <option value="medium">보통</option>
+                  <option value="high">높음</option>
+                </select>
                 </div>
 
                 <div>
@@ -664,25 +651,72 @@ function SuperAdminNoticesManagement() {
                     </label>
                   </div>
                   {!formData.sendToAllCenters && (
-                    <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto border rounded-lg p-3">
-                      {centers.map((center) => (
-                        <label key={center._id} className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.targetCenters.includes(center._id)}
-                            onChange={() => toggleCenter(center._id)}
-                            className="mr-2 w-4 h-4"
-                          />
-                          <div>
-                            <span className="text-sm font-medium">{center.name}</span>
-                            <span className="text-xs text-gray-500 ml-2">({center.region})</span>
-                          </div>
+                    <>
+                      {/* 지역 필터 */}
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-2">
+                          🔍 지역으로 센터 필터링
                         </label>
-                      ))}
-                    </div>
+                        <select
+                          value={selectedProvince}
+                          onChange={(e) => setSelectedProvince(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">전체 지역</option>
+                          <option value="서울">서울특별시</option>
+                          <option value="부산">부산광역시</option>
+                          <option value="대구">대구광역시</option>
+                          <option value="인천">인천광역시</option>
+                          <option value="광주">광주광역시</option>
+                          <option value="대전">대전광역시</option>
+                          <option value="울산">울산광역시</option>
+                          <option value="세종">세종특별자치시</option>
+                          <option value="경기">경기도</option>
+                          <option value="강원">강원특별자치도</option>
+                          <option value="충북">충청북도</option>
+                          <option value="충남">충청남도</option>
+                          <option value="전북">전북특별자치도</option>
+                          <option value="전남">전라남도</option>
+                          <option value="경북">경상북도</option>
+                          <option value="경남">경상남도</option>
+                          <option value="제주">제주특별자치도</option>
+                        </select>
+                      </div>
+                      
+                      {/* 센터 목록 */}
+                      <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
+                        {filteredCenters.length === 0 ? (
+                          <p className="text-sm text-gray-500 text-center py-4">
+                            {selectedProvince ? `${selectedProvince} 지역에 센터가 없습니다` : '센터가 없습니다'}
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-2">
+                            {filteredCenters.map((center) => (
+                              <label key={center._id} className="flex items-start p-3 hover:bg-gray-50 rounded cursor-pointer border">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.targetCenters.includes(center._id)}
+                                  onChange={() => toggleCenter(center._id)}
+                                  className="mr-3 w-4 h-4 mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{center.name}</div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {center.district || center.region}
+                                  </div>
+                                  {center.address && (
+                                    <div className="text-xs text-gray-400 mt-1">{center.address}</div>
+                                  )}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                   <p className="mt-2 text-xs text-gray-500">
-                    특정 센터의 회원, 강사, 센터관리자에게 발송
+                    💡 특정 센터의 회원, 강사, 센터관리자에게 발송
                   </p>
                 </div>
 
