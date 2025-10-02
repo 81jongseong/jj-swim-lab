@@ -298,32 +298,51 @@ export default function CommunityPage() {
     }
   };
 
-  const handleBlindPost = async (postId: string) => {
-    if (!confirm('이 게시글을 블라인드 처리하시겠습니까?\n\n일반 사용자에게는 보이지 않게 됩니다.')) return;
+  const handleBlindPost = async (postId: string, isCurrentlyBlinded: boolean = false) => {
+    if (isCurrentlyBlinded) {
+      // 블라인드 해제
+      if (!confirm('이 게시글의 블라인드를 해제하시겠습니까?\n\n일반 사용자에게 다시 보이게 됩니다.')) return;
 
-    // 일단 로컬에서 즉시 처리
-    setPosts(prevPosts => prevPosts.map(p => 
-      p._id === postId ? { ...p, isBlinded: true } : p
-    ));
-    alert('✅ 게시글이 블라인드 처리되었습니다.');
+      setPosts(prevPosts => prevPosts.map(p => 
+        p._id === postId ? { ...p, isBlinded: false } : p
+      ));
+      alert('✅ 블라인드가 해제되었습니다.');
 
-    // 백그라운드에서 API 호출
-    try {
-      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        console.log('✅ 서버에서도 블라인드 완료');
-      } else {
-        console.warn('⚠️ 서버 블라인드 실패 (로컬에서는 처리됨)');
+      // 백그라운드에서 API 호출
+      try {
+        await fetch(`http://localhost:5000/api/community/posts/${postId}/unblind`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('✅ 서버에서도 블라인드 해제 완료');
+      } catch (error) {
+        console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
       }
-    } catch (error) {
-      console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
+    } else {
+      // 블라인드 처리
+      if (!confirm('이 게시글을 블라인드 처리하시겠습니까?\n\n일반 사용자에게는 보이지 않게 됩니다.')) return;
+
+      setPosts(prevPosts => prevPosts.map(p => 
+        p._id === postId ? { ...p, isBlinded: true } : p
+      ));
+      alert('✅ 게시글이 블라인드 처리되었습니다.');
+
+      // 백그라운드에서 API 호출
+      try {
+        await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('✅ 서버에서도 블라인드 완료');
+      } catch (error) {
+        console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
+      }
     }
   };
 
@@ -748,10 +767,14 @@ export default function CommunityPage() {
                   {user?.userType === 'superAdmin' && (
                     <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
                       <button
-                        onClick={() => handleBlindPost(post._id)}
-                        className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium"
+                        onClick={() => handleBlindPost(post._id, post.isBlinded)}
+                        className={`px-3 py-1 text-white rounded-lg text-sm font-medium ${
+                          post.isBlinded 
+                            ? 'bg-green-500 hover:bg-green-600' 
+                            : 'bg-yellow-500 hover:bg-yellow-600'
+                        }`}
                       >
-                        🚫 블라인드
+                        {post.isBlinded ? '✅ 블라인드 해제' : '🚫 블라인드'}
                       </button>
                       <button
                         onClick={() => handleWarnAuthor(post._id, post.author.userId)}

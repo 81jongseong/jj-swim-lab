@@ -206,6 +206,49 @@ router.post('/posts/:id/blind', authMiddleware, async (req: Request, res: Respon
 });
 
 /**
+ * POST /api/community/posts/:id/unblind
+ * 게시글 블라인드 해제 (최고 관리자 전용)
+ */
+router.post('/posts/:id/unblind', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    
+    // 최고 관리자 권한 확인
+    if (user.userType !== 'superAdmin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: '블라인드 해제 권한이 없습니다.' 
+      });
+    }
+
+    const post = await CommunityPost.findByIdAndUpdate(
+      req.params.id,
+      { isBlinded: false },
+      { new: true }
+    );
+
+    if (!post) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '게시글을 찾을 수 없습니다.' 
+      });
+    }
+
+    res.json({
+      success: true,
+      post: post,
+      message: '게시글 블라인드가 해제되었습니다.'
+    });
+  } catch (error) {
+    console.error('블라인드 해제 오류:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '블라인드 해제 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+/**
  * POST /api/community/posts/:id/warn
  * 작성자 경고 (최고 관리자 전용)
  */
