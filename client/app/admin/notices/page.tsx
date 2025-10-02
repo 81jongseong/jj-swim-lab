@@ -49,13 +49,11 @@ function SuperAdminNoticesManagement() {
     targetUserTypes: [] as string[],
     targetRegions: [] as string[],
     targetCenters: [] as string[],
-    sendToAllCenters: false,
-    sendToAllRegions: false,
+    sendToAll: false, // 전국 전체 발송
     sendToAllUserTypes: false
   });
   const [selectedProvince, setSelectedProvince] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
   const [filteredCenters, setFilteredCenters] = useState<Center[]>([]);
 
   // 한국 행정구역 데이터
@@ -175,7 +173,17 @@ function SuperAdminNoticesManagement() {
   const handleProvinceChange = (province: string) => {
     setSelectedProvince(province);
     setSelectedCity('');
-    setSelectedDistrict('');
+  };
+
+  // 지역 선택 토글
+  const toggleRegion = (region: string) => {
+    setFormData(prev => ({
+      ...prev,
+      targetRegions: prev.targetRegions.includes(region)
+        ? prev.targetRegions.filter(r => r !== region)
+        : [...prev.targetRegions, region],
+      sendToAll: false
+    }));
   };
 
   const getTypeLabel = (type: string) => {
@@ -245,10 +253,11 @@ function SuperAdminNoticesManagement() {
       targetUserTypes: [],
       targetRegions: [],
       targetCenters: [],
-      sendToAllCenters: false,
-      sendToAllRegions: false,
+      sendToAll: false,
       sendToAllUserTypes: false
     });
+    setSelectedProvince('');
+    setSelectedCity('');
     setShowModal(true);
   };
 
@@ -263,8 +272,7 @@ function SuperAdminNoticesManagement() {
       targetUserTypes: notice.targetUserTypes,
       targetRegions: notice.targetRegions,
       targetCenters: notice.targetCenters,
-      sendToAllCenters: notice.targetCenters.length === 0,
-      sendToAllRegions: notice.targetRegions.length === 0,
+      sendToAll: notice.targetRegions.length === 0 && notice.targetCenters.length === 0,
       sendToAllUserTypes: notice.targetUserTypes.length === 4
     });
     setShowModal(true);
@@ -277,8 +285,8 @@ function SuperAdminNoticesManagement() {
         targetUserTypes: formData.sendToAllUserTypes 
           ? ['student', 'instructor', 'centerAdmin', 'superAdmin']
           : formData.targetUserTypes,
-        targetRegions: formData.sendToAllRegions ? [] : formData.targetRegions,
-        targetCenters: formData.sendToAllCenters ? [] : formData.targetCenters,
+        targetRegions: formData.sendToAll ? [] : formData.targetRegions,
+        targetCenters: formData.sendToAll ? [] : formData.targetCenters,
         authorId: user?._id || user?.id,
         authorName: user?.name || '최고 관리자'
       };
@@ -373,23 +381,13 @@ function SuperAdminNoticesManagement() {
     }));
   };
 
-  const toggleRegion = (region: string) => {
-    setFormData(prev => ({
-      ...prev,
-      targetRegions: prev.targetRegions.includes(region)
-        ? prev.targetRegions.filter(r => r !== region)
-        : [...prev.targetRegions, region],
-      sendToAllRegions: false
-    }));
-  };
-
   const toggleCenter = (centerId: string) => {
     setFormData(prev => ({
       ...prev,
       targetCenters: prev.targetCenters.includes(centerId)
         ? prev.targetCenters.filter(c => c !== centerId)
         : [...prev.targetCenters, centerId],
-      sendToAllCenters: false
+      sendToAll: false
     }));
   };
 
@@ -669,158 +667,150 @@ function SuperAdminNoticesManagement() {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">📤 발송 대상 설정</h3>
 
-                {/* 센터별 발송 */}
+                {/* Step 1: 지역 선택 (시/도/구 + 센터 통합) */}
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-medium text-gray-700">
-                      🏢 센터별 발송
+                    <label className="text-base font-semibold text-gray-800">
+                      1️⃣ 발송 지역 선택
                     </label>
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={formData.sendToAllCenters}
+                        checked={formData.sendToAll}
                         onChange={(e) => setFormData({ 
                           ...formData, 
-                          sendToAllCenters: e.target.checked,
-                          targetCenters: e.target.checked ? [] : formData.targetCenters
+                          sendToAll: e.target.checked,
+                          targetCenters: e.target.checked ? [] : formData.targetCenters,
+                          targetRegions: e.target.checked ? [] : formData.targetRegions
                         })}
-                        className="mr-2 w-4 h-4"
+                        className="mr-2 w-5 h-5"
                       />
-                      <span className="text-sm font-medium text-blue-600">전체 센터</span>
+                      <span className="text-sm font-bold text-blue-600">🇰🇷 전국 전체</span>
                     </label>
                   </div>
-                  {!formData.sendToAllCenters && (
+                  {!formData.sendToAll && (
                     <>
                       {/* 계층적 지역 필터 */}
-                      <div className="mb-3 space-y-3">
-                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                          🔍 지역으로 센터 필터링 (시/도 → 시/군/구)
-                        </label>
-                        
-                        {/* 시/도 선택 */}
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">1단계: 시/도</label>
-                          <select
-                            value={selectedProvince}
-                            onChange={(e) => handleProvinceChange(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">전체</option>
-                            {Object.keys(regions).map((province) => (
-                              <option key={province} value={province}>{province}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* 시/군/구 선택 */}
-                        {selectedProvince && (
+                      <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          {/* 시/도 선택 */}
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">
-                              2단계: 시/군/구 {selectedProvince && `(${selectedProvince})`}
+                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                              📍 시/도
+                            </label>
+                            <select
+                              value={selectedProvince}
+                              onChange={(e) => handleProvinceChange(e.target.value)}
+                              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">전체</option>
+                              {Object.keys(regions).map((province) => (
+                                <option key={province} value={province}>{province}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* 시/군/구 선택 */}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                              🏘️ 시/군/구
                             </label>
                             <select
                               value={selectedCity}
                               onChange={(e) => setSelectedCity(e.target.value)}
                               className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                              disabled={!selectedProvince}
                             >
-                              {regions[selectedProvince as keyof typeof regions]?.map((city) => (
-                                <option key={city} value={city}>{city}</option>
-                              ))}
+                              {selectedProvince ? (
+                                regions[selectedProvince as keyof typeof regions]?.map((city) => (
+                                  <option key={city} value={city}>{city}</option>
+                                ))
+                              ) : (
+                                <option value="">시/도를 먼저 선택하세요</option>
+                              )}
                             </select>
                           </div>
-                        )}
+                        </div>
+
+                        {/* 지역 체크박스 (시/도 단위) */}
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-600 mb-2">
+                            🗺️ 특정 시/도 선택 (복수 선택 가능)
+                          </label>
+                          <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                            {Object.keys(regions).map((province) => (
+                              <label key={province} className="flex items-center text-xs cursor-pointer hover:bg-white p-1 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.targetRegions.includes(province)}
+                                  onChange={() => toggleRegion(province)}
+                                  className="mr-2 w-3 h-3"
+                                />
+                                <span>{province.replace('특별시', '').replace('광역시', '').replace('특별자치시', '').replace('특별자치도', '').replace('도', '')}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
 
                         {/* 필터링 결과 표시 */}
-                        <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                          📍 필터: {selectedProvince || '전체'} {selectedCity && selectedCity !== '전체' ? `> ${selectedCity}` : ''} 
-                          <span className="ml-2 font-medium text-blue-700">
+                        <div className="text-xs text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
+                          <strong>📍 현재 필터:</strong> {
+                            formData.targetRegions.length > 0 
+                              ? formData.targetRegions.join(', ')
+                              : selectedProvince 
+                                ? `${selectedProvince} ${selectedCity && selectedCity !== '전체' ? `> ${selectedCity}` : ''}` 
+                                : '전체'
+                          }
+                          <span className="ml-2 font-bold text-blue-700">
                             ({filteredCenters.length}개 센터)
                           </span>
                         </div>
                       </div>
                       
                       {/* 센터 목록 */}
-                      <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
-                        {filteredCenters.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-4">
-                            {selectedProvince ? `${selectedProvince} 지역에 센터가 없습니다` : '센터가 없습니다'}
-                          </p>
-                        ) : (
-                          <div className="grid grid-cols-1 gap-2">
-                            {filteredCenters.map((center) => (
-                              <label key={center._id} className="flex items-start p-3 hover:bg-gray-50 rounded cursor-pointer border">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.targetCenters.includes(center._id)}
-                                  onChange={() => toggleCenter(center._id)}
-                                  className="mr-3 w-4 h-4 mt-1"
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">{center.name}</div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {center.district || center.region}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-2">
+                          🏢 특정 센터 선택 (선택사항)
+                        </label>
+                        <div className="border rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                          {filteredCenters.length === 0 ? (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              {selectedProvince ? `선택한 지역에 센터가 없습니다` : '지역을 선택하거나 센터를 검색하세요'}
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-2">
+                              {filteredCenters.map((center) => (
+                                <label key={center._id} className="flex items-start p-2 hover:bg-blue-50 rounded cursor-pointer border border-gray-200">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.targetCenters.includes(center._id)}
+                                    onChange={() => toggleCenter(center._id)}
+                                    className="mr-3 w-4 h-4 mt-1"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">{center.name}</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {center.district || center.region}
+                                    </div>
                                   </div>
-                                  {center.address && (
-                                    <div className="text-xs text-gray-400 mt-1">{center.address}</div>
-                                  )}
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        )}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                          💡 센터를 선택하지 않으면 위에서 선택한 지역 전체에 발송됩니다
+                        </p>
                       </div>
                     </>
                   )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    💡 특정 센터의 회원, 강사, 센터관리자에게 발송
-                  </p>
                 </div>
 
-                {/* 지역별 발송 */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-medium text-gray-700">
-                      🌍 지역별 발송
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.sendToAllRegions}
-                        onChange={(e) => setFormData({ 
-                          ...formData, 
-                          sendToAllRegions: e.target.checked,
-                          targetRegions: e.target.checked ? [] : formData.targetRegions
-                        })}
-                        className="mr-2 w-4 h-4"
-                      />
-                      <span className="text-sm font-medium text-blue-600">전체 지역</span>
-                    </label>
-                  </div>
-                  {!formData.sendToAllRegions && (
-                    <div className="grid grid-cols-3 gap-3">
-                      {['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'].map((region) => (
-                        <label key={region} className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                          <input
-                            type="checkbox"
-                            checked={formData.targetRegions.includes(region)}
-                            onChange={() => toggleRegion(region)}
-                            className="mr-2 w-4 h-4"
-                          />
-                          <span className="text-sm">{region}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    센터 선택과 함께 사용 시 AND 조건 (센터 O + 지역 O)
-                  </p>
-                </div>
-
-              {/* 대상 계정 유형 */}
+              {/* Step 2: 계정 선택 */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-gray-700">
-                    👥 계정별 발송 *
+                  <label className="text-base font-semibold text-gray-800">
+                    2️⃣ 발송 계정 유형 선택 *
                   </label>
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -833,11 +823,11 @@ function SuperAdminNoticesManagement() {
                       })}
                       className="mr-2 w-4 h-4"
                     />
-                    <span className="text-sm font-medium text-blue-600">전체 계정</span>
-                  </label>
-                </div>
-                {!formData.sendToAllUserTypes && (
-                <div className="grid grid-cols-2 gap-3">
+                      <span className="text-sm font-bold text-blue-600">👥 전체 계정</span>
+                    </label>
+                  </div>
+                  {!formData.sendToAllUserTypes && (
+                <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-lg border">
                   <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
@@ -886,52 +876,47 @@ function SuperAdminNoticesManagement() {
             </div>
 
               {/* 발송 대상 요약 */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-3">📋 발송 대상 요약</h4>
-                <div className="space-y-2 text-sm text-blue-800">
-                  <p>
-                    <strong>센터:</strong> {
-                      formData.sendToAllCenters 
-                        ? '전체 센터' 
-                        : formData.targetCenters.length === 0
-                          ? '선택 안됨'
-                          : formData.targetCenters.map(cId => {
-                              const center = centers.find(c => c._id === cId);
-                              return center?.name;
-                            }).join(', ')
-                    }
-                  </p>
-                  <p>
-                    <strong>지역:</strong> {
-                      formData.sendToAllRegions
-                        ? '전체 지역'
-                        : formData.targetRegions.length === 0 
-                          ? '전체 지역' 
-                          : formData.targetRegions.join(', ')
-                    }
-                  </p>
-                  <p>
-                    <strong>계정 유형:</strong> {
-                      formData.sendToAllUserTypes
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4">
+                <h4 className="font-bold text-blue-900 mb-3 flex items-center">
+                  <span className="text-lg">📋</span>
+                  <span className="ml-2">최종 발송 대상</span>
+                </h4>
+                <div className="space-y-3 text-sm">
+                  {/* 지역 */}
+                  <div className="bg-white p-3 rounded-lg">
+                    <p className="font-semibold text-gray-700 mb-1">🗺️ 지역</p>
+                    <p className="text-gray-900">
+                      {formData.sendToAll 
+                        ? '🇰🇷 전국 전체'
+                        : formData.targetCenters.length > 0
+                          ? `센터 ${formData.targetCenters.length}곳 (${formData.targetCenters.map(cId => centers.find(c => c._id === cId)?.name).join(', ')})`
+                          : formData.targetRegions.length > 0
+                            ? formData.targetRegions.join(', ')
+                            : '지역 선택 필요'
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* 계정 */}
+                  <div className="bg-white p-3 rounded-lg">
+                    <p className="font-semibold text-gray-700 mb-1">👥 계정 유형</p>
+                    <p className="text-gray-900">
+                      {formData.sendToAllUserTypes
                         ? '전체 계정'
                         : formData.targetUserTypes.length === 0 
-                          ? '선택 안됨' 
+                          ? '❌ 선택 필요' 
                           : formData.targetUserTypes.map(t => {
                             const labels: { [key: string]: string } = {
-                              'student': '회원',
-                              'instructor': '강사',
-                              'centerAdmin': '센터관리자',
-                              'superAdmin': '최고관리자'
+                              'student': '👨‍🎓회원',
+                              'instructor': '👨‍🏫강사',
+                              'centerAdmin': '🏢센터관리자',
+                              'superAdmin': '⭐최고관리자'
                             };
                             return labels[t];
                           }).join(', ')
-                    }
-                  </p>
-                </div>
-                <div className="mt-3 pt-3 border-t border-blue-200">
-                  <p className="text-xs text-blue-700">
-                    💡 <strong>발송 로직:</strong> (선택 센터 OR 전체 센터) AND (선택 지역 OR 전체 지역) AND 선택 계정 유형
-                  </p>
+                      }
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
