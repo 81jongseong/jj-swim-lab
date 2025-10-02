@@ -262,16 +262,6 @@ const userMenuStructure = {
     customerSupport: [
       { href: '/admin/reports', label: '🎧 고객지원 관리' },
     ],
-            ai: [
-          { href: '/ai-analysis', label: '🤖 AI 분석' },
-          { href: '/ai-evaluation', label: '📊 AI 평가' },
-          { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-          { href: '/ai-config', label: '⚙️ AI 설정' },
-          { href: '/admin/ai-config', label: '⚙️ AI 시스템 설정' },
-          { href: '/admin/ai-config/recommendations', label: '💡 운동량 추천 알고리즘' },
-          { href: '/admin/ai-evaluation-criteria', label: '🎯 AI 평가 기준 관리' },
-          { href: '/admin/ai-exercise-database', label: '💪 AI 운동 데이터베이스' },
-        ],
     health: [
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
@@ -345,7 +335,6 @@ const menuGrouping = {
   student: [
     { groupName: '🏠 기본 메뉴', categories: ['main'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
-    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
   ],
@@ -354,7 +343,6 @@ const menuGrouping = {
     { groupName: '📋 체크리스트 관리', categories: ['checklist'] },
     { groupName: '👥 수강생 관리', categories: ['students'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
-    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 센터 정보', categories: ['center'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
     { groupName: '💬 커뮤니티', categories: ['info'] },
@@ -365,7 +353,6 @@ const menuGrouping = {
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
-    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
@@ -377,7 +364,6 @@ const menuGrouping = {
     { groupName: '💰 매출 관리', categories: ['revenue'] },
     { groupName: '🎧 고객지원', categories: ['customerSupport'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
-    { groupName: '🤖 AI 시스템', categories: ['ai'] },
     { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
   ],
