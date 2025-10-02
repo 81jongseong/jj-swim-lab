@@ -609,8 +609,8 @@ export default function SwimTrainingEnginePage() {
               
             </div>
 
-            {/* 스크롤 가능한 콘텐츠 */}
-            <div className="pt-16 h-full overflow-y-auto pb-20">
+            {/* 스크롤 가능한 콘텐츠 - 훈련법 */}
+            <div className="pt-24 h-full overflow-y-auto pb-20">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 p-8">
                 {allMethods.map((method) => (
                   <div
@@ -826,8 +826,8 @@ export default function SwimTrainingEnginePage() {
               
             </div>
 
-            {/* 스크롤 가능한 콘텐츠 */}
-            <div className="pt-16 h-full overflow-y-auto pb-20">
+            {/* 스크롤 가능한 콘텐츠 - 드릴 */}
+            <div className="pt-24 h-full overflow-y-auto pb-20">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 p-8">
                 {allDrills.map((drill) => (
                   <div 
