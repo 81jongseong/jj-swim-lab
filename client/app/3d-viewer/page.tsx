@@ -28,14 +28,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import DrillGrid from '../../components/3d-viewer/DrillGrid';
 import ThreeDPlayer from '../../components/3d-viewer/ThreeDPlayer';
 import { useThreeStore } from '../../stores/threeStore';
 
 export default function ThreeDViewerPage() {
+  const { user } = useAuth();
   const { selectedId, setSelected } = useThreeStore();
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // 모바일 감지
   useEffect(() => {
@@ -64,14 +67,50 @@ export default function ThreeDViewerPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto p-4">
         {/* 헤더 */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            🏊‍♂️ 3D 드릴 · 영법 갤러리
-          </h1>
-          <p className="text-gray-600 text-sm md:text-base">
-            3D 애니메이션으로 정확한 수영 동작을 학습하세요
-          </p>
+        <div className="mb-6 flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              🏊‍♂️ 3D 드릴 · 영법 갤러리
+            </h1>
+            <p className="text-gray-600 text-sm md:text-base">
+              3D 애니메이션으로 정확한 수영 동작을 학습하세요
+            </p>
+          </div>
+          
+          {/* 관리자 모드 토글 */}
+          {user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin') && (
+            <button
+              onClick={() => setIsAdminMode(!isAdminMode)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isAdminMode 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {isAdminMode ? '✏️ 관리 모드' : '👁️ 보기 모드'}
+            </button>
+          )}
         </div>
+
+        {/* 관리자 모드: 영법 관리 UI */}
+        {isAdminMode && (
+          <div className="mb-6 p-4 bg-white rounded-lg shadow border-2 border-blue-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">영법 데이터 관리</h2>
+              <button
+                onClick={() => {
+                  window.location.href = '/admin/3d-viewer/swimming-styles';
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                전체 관리 페이지로 이동 →
+              </button>
+            </div>
+            <p className="text-sm text-gray-600">
+              관리자 전용: 영법 추가/수정/삭제는 별도 관리 페이지에서 가능합니다.
+            </p>
+          </div>
+        )}
 
         {/* 레이아웃: 데스크톱 스플릿 / 모바일 풀 */}
         <div className="grid md:grid-cols-2 gap-4">
