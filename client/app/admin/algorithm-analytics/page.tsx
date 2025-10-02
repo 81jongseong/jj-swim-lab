@@ -45,9 +45,9 @@ export default function AlgorithmAnalyticsPage() {
       return;
     }
     
-    // 최고관리자가 아니면 접근 차단 (하지만 실제로는 모든 관리자에게 허용)
-    // userType이 'admin', 'centerAdmin' 모두 허용
-    if (user.userType !== 'admin' && user.userType !== 'centerAdmin') {
+    // 관리자 권한 체크 (superAdmin, admin, centerAdmin 모두 허용)
+    const allowedTypes = ['superAdmin', 'admin', 'centerAdmin'];
+    if (!allowedTypes.includes(user.userType)) {
       alert('관리자 권한이 필요합니다');
       window.location.href = '/';
       return;

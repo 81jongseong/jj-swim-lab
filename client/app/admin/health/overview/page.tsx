@@ -85,8 +85,9 @@ export default function HealthOverviewPage() {
       return;
     }
     
-    // 관리자 권한 체크 (admin, centerAdmin 모두 허용)
-    if (user.userType !== 'admin' && user.userType !== 'centerAdmin') {
+    // 관리자 권한 체크 (superAdmin, admin, centerAdmin 모두 허용)
+    const allowedTypes = ['superAdmin', 'admin', 'centerAdmin'];
+    if (!allowedTypes.includes(user.userType)) {
       alert('관리자 권한이 필요합니다');
       window.location.href = '/';
       return;
