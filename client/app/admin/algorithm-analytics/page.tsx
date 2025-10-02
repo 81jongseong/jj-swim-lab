@@ -1,12 +1,13 @@
 /**
- * 📊 JJ Swim Lab - 프로그램 생성 통계 페이지
+ * 📊 JJ Swim Lab - 시스템 사용 통계 페이지
  * 
  * 📋 **페이지 목적**
- * - 수영 엔진에서 생성된 프로그램의 통계 분석
- * - 실제 LocalStorage 데이터 기반
+ * - 전체 시스템 사용 현황 및 통계 분석
+ * - 실제 DB 데이터 기반
  * 
  * 🗄️ **데이터 연동**
- * - getProgramStats() from programStorage.ts
+ * - GET /api/users - 전체 회원 통계
+ * - GET /api/user-activities - 페이지 방문/API 호출 통계
  * 
  * 📅 **생성일**: 2025-01-22
  */
@@ -15,29 +16,51 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { getProgramStats } from '../../../lib/swimlab/utils/programStorage';
+import apiClient from '../../../utils/api';
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
-  Clock,
-  Target,
-  AlertCircle,
+  Activity,
+  Heart,
   RefreshCw,
   Calendar,
-  Activity
+  MousePointer,
+  Database,
+  Clock,
+  FileText,
+  Zap
 } from 'lucide-react';
 
-export default function AlgorithmAnalyticsPage() {
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  userType: string;
+  healthProfile?: any;
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
+interface UserActivity {
+  _id: string;
+  userId: string;
+  action: string;
+  page: string;
+  createdAt: string;
+}
+
+export default function SystemAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
-  const [stats, setStats] = useState({ total: 0, athletes: 0, recentCount: 0, programs: [] as any[] });
-  
+  const [users, setUsers] = useState<User[]>([]);
+  const [activities, setActivities] = useState<UserActivity[]>([]);
+
   useEffect(() => {
     if (authLoading) return;
     
-    console.log('🔍 알고리즘 분석 - 사용자 확인:', { user, userType: user?.userType });
+    console.log('🔍 시스템 통계 - 사용자 확인:', { user, userType: user?.userType });
     
     if (!user) {
       alert('로그인이 필요합니다');
@@ -53,21 +76,39 @@ export default function AlgorithmAnalyticsPage() {
       return;
     }
     
-    // 클라이언트에서만 LocalStorage 데이터 로드
-    setStats(getProgramStats());
-    setLoading(false);
+    loadData();
   }, [user, authLoading]);
-  
-  // 시간 범위별 필터링
-  const filteredStats = useMemo(() => {
-    if (!stats.programs || stats.programs.length === 0) {
-      return {
-        ...stats,
-        recentCount: 0,
-        recentPrograms: []
-      };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // 회원 데이터 로드
+      const usersResponse = await apiClient.get('/api/users');
+      if (usersResponse.data.success) {
+        setUsers(usersResponse.data.users || []);
+      }
+      
+      // 사용자 활동 로드 (있으면)
+      try {
+        const activitiesResponse = await apiClient.get('/api/user-activities');
+        if (activitiesResponse.data.success) {
+          setActivities(activitiesResponse.data.activities || []);
+        }
+      } catch (err) {
+        console.log('사용자 활동 데이터 없음 (선택사항)');
+        setActivities([]);
+      }
+      
+    } catch (error) {
+      console.error('데이터 로드 오류:', error);
+    } finally {
+      setLoading(false);
     }
-    
+  };
+
+  // 통계 계산
+  const statistics = useMemo(() => {
     const now = new Date();
     let cutoffDate: Date;
     
@@ -87,17 +128,63 @@ export default function AlgorithmAnalyticsPage() {
       default:
         cutoffDate = new Date(0);
     }
+
+    // 총 회원 수
+    const totalUsers = users.length;
     
-    const recentPrograms = stats.programs.filter(p => 
-      new Date(p.createdAt) >= cutoffDate
+    // 기간 내 신규 가입자
+    const newUsers = users.filter(u => new Date(u.createdAt) >= cutoffDate).length;
+    
+    // 건강정보 입력 회원
+    const usersWithHealth = users.filter(u => u.healthProfile).length;
+    
+    // 기간 내 건강정보 입력
+    const newHealthProfiles = users.filter(u => 
+      u.healthProfile && new Date(u.createdAt) >= cutoffDate
+    ).length;
+    
+    // 계정 타입별 분포
+    const userTypeDistribution = users.reduce((acc, u) => {
+      acc[u.userType] = (acc[u.userType] || 0) + 1;
+      return acc;
+    }, {} as { [key: string]: number });
+    
+    // 기간 내 활동
+    const recentActivities = activities.filter(a => 
+      new Date(a.createdAt) >= cutoffDate
     );
     
+    // 페이지별 방문 통계
+    const pageVisits = recentActivities.reduce((acc, a) => {
+      if (a.action === 'page_view') {
+        acc[a.page] = (acc[a.page] || 0) + 1;
+      }
+      return acc;
+    }, {} as { [key: string]: number });
+    
+    // 상위 방문 페이지
+    const topPages = Object.entries(pageVisits)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([page, count]) => ({ page, count }));
+    
+    // 최근 로그인 회원 (7일 이내)
+    const recentLoginDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const activeUsers = users.filter(u => 
+      u.lastLoginAt && new Date(u.lastLoginAt) >= recentLoginDate
+    ).length;
+
     return {
-      ...stats,
-      recentCount: recentPrograms.length,
-      recentPrograms
+      totalUsers,
+      newUsers,
+      usersWithHealth,
+      newHealthProfiles,
+      activeUsers,
+      userTypeDistribution,
+      recentActivities: recentActivities.length,
+      topPages
     };
-  }, [stats, timeRange]);
+  }, [users, activities, timeRange]);
 
   if (authLoading || loading) {
     return (
@@ -120,14 +207,14 @@ export default function AlgorithmAnalyticsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
                 <BarChart3 className="h-8 w-8 text-blue-500" />
-                프로그램 생성 통계
+                시스템 사용 통계
               </h1>
               <p className="text-gray-600">
-                수영 엔진에서 생성된 프로그램의 통계와 분석 데이터입니다
+                전체 시스템의 사용 현황과 회원 활동을 실시간으로 분석합니다
               </p>
             </div>
             <button
-              onClick={() => setStats(getProgramStats())}
+              onClick={loadData}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
@@ -155,124 +242,224 @@ export default function AlgorithmAnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">총 생성 프로그램</div>
-              <Target className="h-5 w-5 text-blue-500" />
+              <div className="text-sm text-gray-600">총 회원 수</div>
+              <Users className="h-5 w-5 text-blue-500" />
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-            <div className="text-xs text-gray-500 mt-1">
-              선택 기간: {filteredStats.recentCount}개
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">참여 선수</div>
-              <Users className="h-5 w-5 text-green-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.athletes}명</div>
-            <div className="text-xs text-gray-500 mt-1">
-              고유 선수 수
+            <div className="text-3xl font-bold text-gray-900">{statistics.totalUsers}</div>
+            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              신규: {statistics.newUsers}명
             </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">최근 1주</div>
-              <Clock className="h-5 w-5 text-purple-500" />
+              <div className="text-sm text-gray-600">활성 회원</div>
+              <Activity className="h-5 w-5 text-green-500" />
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.recentCount}</div>
+            <div className="text-3xl font-bold text-gray-900">{statistics.activeUsers}</div>
             <div className="text-xs text-gray-500 mt-1">
-              지난 7일간 생성
+              최근 7일 로그인
             </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-gray-600">평균 프로그램 길이</div>
-              <Activity className="h-5 w-5 text-orange-500" />
+              <div className="text-sm text-gray-600">건강정보 입력</div>
+              <Heart className="h-5 w-5 text-red-500" />
             </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {stats.programs && stats.programs.length > 0 
-                ? (stats.programs.reduce((sum, p) => sum + (p.numDays || 0), 0) / stats.programs.length).toFixed(1)
-                : 0}일
+            <div className="text-3xl font-bold text-gray-900">{statistics.usersWithHealth}</div>
+            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              신규: {statistics.newHealthProfiles}명
             </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-gray-600">사용자 활동</div>
+              <MousePointer className="h-5 w-5 text-purple-500" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900">{statistics.recentActivities}</div>
             <div className="text-xs text-gray-500 mt-1">
-              주간 계획 평균
+              선택 기간 내
             </div>
           </div>
         </div>
 
-        {/* 생성 타입 분포 */}
+        {/* 계정 타입별 분포 */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
-          <h3 className="text-lg font-semibold mb-4">생성 타입 분포</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="text-center">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-500" />
+            계정 타입별 분포
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
-                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.type === 'weekly').length || 0}
+                {statistics.userTypeDistribution.superAdmin || 0}
               </div>
-              <div className="text-sm text-gray-600">주간 계획</div>
+              <div className="text-sm text-gray-600">최고관리자</div>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.type === 'race').length || 0}
+                {statistics.userTypeDistribution.admin || 0}
               </div>
-              <div className="text-sm text-gray-600">경기 준비</div>
+              <div className="text-sm text-gray-600">시스템관리자</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {filteredStats.recentPrograms && filteredStats.recentPrograms.filter(p => p.athleteIds && p.athleteIds.length > 1).length || 0}
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {statistics.userTypeDistribution.centerAdmin || 0}
               </div>
-              <div className="text-sm text-gray-600">팀 프로그램</div>
+              <div className="text-sm text-gray-600">센터관리자</div>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">
+                {statistics.userTypeDistribution.instructor || 0}
+              </div>
+              <div className="text-sm text-gray-600">강사</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {statistics.userTypeDistribution.member || 0}
+              </div>
+              <div className="text-sm text-gray-600">회원</div>
+            </div>
+            <div className="text-center p-4 bg-pink-50 rounded-lg">
+              <div className="text-2xl font-bold text-pink-600">
+                {statistics.userTypeDistribution.student || 0}
+              </div>
+              <div className="text-sm text-gray-600">학생</div>
             </div>
           </div>
         </div>
 
-        {/* 최근 생성 프로그램 */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">최근 생성 프로그램</h3>
-          {filteredStats.recentPrograms && filteredStats.recentPrograms.length > 0 ? (
-            <div className="space-y-3">
-              {filteredStats.recentPrograms.slice(0, 10).map((program) => (
-                <div key={program.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">
-                      {program.athleteIds && program.athleteIds.length > 0 
-                        ? `${program.athleteIds.join(', ')} - ${program.type === 'weekly' ? '주간 계획' : '경기 준비'}`
-                        : `프로그램 #${program.id.slice(0, 8)}`}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(program.createdAt).toLocaleString('ko-KR')}
-                    </div>
+        {/* 건강정보 등록률 */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Heart className="h-5 w-5 text-red-500" />
+            건강정보 등록 현황
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600">전체 등록률</span>
+                <span className="font-medium">
+                  {statistics.usersWithHealth} / {statistics.totalUsers} 
+                  ({statistics.totalUsers > 0 ? ((statistics.usersWithHealth / statistics.totalUsers) * 100).toFixed(1) : 0}%)
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all" 
+                  style={{ width: `${statistics.totalUsers > 0 ? (statistics.usersWithHealth / statistics.totalUsers) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-600 mb-1">건강정보 있음</div>
+                <div className="text-2xl font-bold text-green-600">{statistics.usersWithHealth}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-600 mb-1">미등록</div>
+                <div className="text-2xl font-bold text-gray-600">
+                  {statistics.totalUsers - statistics.usersWithHealth}
+                </div>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-600 mb-1">기간 내 신규</div>
+                <div className="text-2xl font-bold text-blue-600">{statistics.newHealthProfiles}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 상위 방문 페이지 */}
+        {statistics.topPages.length > 0 && (
+          <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <MousePointer className="h-5 w-5 text-purple-500" />
+              상위 방문 페이지 (선택 기간)
+            </h3>
+            <div className="space-y-2">
+              {statistics.topPages.map((page, index) => (
+                <div key={index} className="flex items-center justify-between py-3 border-b last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium text-gray-700 w-8">{index + 1}.</div>
+                    <div className="text-sm text-gray-900">{page.page || '(알 수 없음)'}</div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm text-gray-600">
-                      {program.numDays || 0}일
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {program.weeklyMeters || 0}m
-                    </div>
-                  </div>
+                  <div className="text-sm font-medium text-blue-600">{page.count}회</div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              선택한 기간에 생성된 프로그램이 없습니다
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* 데이터 수집 안내 */}
-        <div className="mt-8 bg-blue-50 p-6 rounded-lg border border-blue-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-900">
-              <div className="font-semibold mb-1">데이터 수집 방법</div>
-              <div className="text-blue-800">
-                • 프로그램 생성 데이터는 LocalStorage에 저장됩니다<br/>
-                • 수영 엔진의 "컨디션 설정" 탭에서 프로그램을 생성하면 자동으로 통계에 반영됩니다<br/>
-                • 실시간으로 업데이트되며 브라우저 캐시 삭제 시 초기화됩니다
+        {/* 활동 타임라인 (최근 활동만) */}
+        {statistics.recentActivities > 0 && (
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-500" />
+              활동 요약
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">{statistics.recentActivities}</div>
+                <div className="text-sm text-gray-600">총 활동</div>
               </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-900">
+                  {statistics.recentActivities > 0 
+                    ? (statistics.recentActivities / parseInt(timeRange.replace('d', '')) || 1).toFixed(1)
+                    : 0}
+                </div>
+                <div className="text-sm text-gray-600">일평균 활동</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 데이터가 없을 때 */}
+        {statistics.recentActivities === 0 && (
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+            <div className="text-center text-blue-900">
+              <Database className="h-12 w-12 mx-auto mb-3 text-blue-400" />
+              <div className="font-semibold mb-2">사용자 활동 데이터가 없습니다</div>
+              <div className="text-sm text-blue-800">
+                • 사용자 활동 추적 기능이 활성화되지 않았을 수 있습니다<br/>
+                • 회원 데이터와 건강정보 통계는 정상적으로 표시됩니다
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 시스템 상태 */}
+        <div className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border border-green-200">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Zap className="h-5 w-5 text-green-600" />
+            시스템 상태
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="bg-white p-4 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">✅</div>
+              <div className="text-sm text-gray-600 mt-1">데이터베이스</div>
+              <div className="text-xs text-gray-500">정상</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">📊</div>
+              <div className="text-sm text-gray-600 mt-1">통계 시스템</div>
+              <div className="text-xs text-gray-500">활성화</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">🏊</div>
+              <div className="text-sm text-gray-600 mt-1">수영 엔진</div>
+              <div className="text-xs text-gray-500">정상 작동</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">💾</div>
+              <div className="text-sm text-gray-600 mt-1">데이터 수집</div>
+              <div className="text-xs text-gray-500">실시간</div>
             </div>
           </div>
         </div>
