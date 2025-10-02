@@ -224,4 +224,4 @@ courseSchema.index({ createdAt: -1 }); // 최신 강습 검색 최적화
 courseSchema.index({ 'capacity.max': 1, 'capacity.current': 1 }); // 정원별 검색 최적화
 courseSchema.index({ 'price.amount': 1 }); // 가격별 검색 최적화
 
-export const Course = mongoose.model('Course', courseSchema); 
+export const Course = mongoose.models.Course || mongoose.model('Course', courseSchema); 

@@ -17,7 +17,7 @@ const shopOrderSchema = new mongoose.Schema({
 
 shopOrderSchema.index({ user: 1, createdAt: -1 });
 
-export const ShopOrder = mongoose.model('ShopOrder', shopOrderSchema);
+export const ShopOrder = mongoose.models.ShopOrder || mongoose.model('ShopOrder', shopOrderSchema);
 
 
 

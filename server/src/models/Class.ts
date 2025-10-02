@@ -86,4 +86,4 @@ const classSchema = new mongoose.Schema({
 // 강사별 반 조회를 위한 인덱스
 classSchema.index({ instructor: 1, isActive: 1 });
 
-export const Class = mongoose.model('Class', classSchema); 
+export const Class = mongoose.models.Class || mongoose.model('Class', classSchema); 

@@ -9,7 +9,7 @@ const communityCommentSchema = new mongoose.Schema({
 
 communityCommentSchema.index({ postId: 1, createdAt: -1 });
 
-export const CommunityComment = mongoose.model('CommunityComment', communityCommentSchema);
+export const CommunityComment = mongoose.models.CommunityComment || mongoose.model('CommunityComment', communityCommentSchema);
 
 
 

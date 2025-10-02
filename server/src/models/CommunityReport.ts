@@ -10,7 +10,7 @@ const communityReportSchema = new mongoose.Schema({
 
 communityReportSchema.index({ targetType: 1, targetId: 1, reporter: 1 }, { unique: true });
 
-export const CommunityReport = mongoose.model('CommunityReport', communityReportSchema);
+export const CommunityReport = mongoose.models.CommunityReport || mongoose.model('CommunityReport', communityReportSchema);
 
 
 

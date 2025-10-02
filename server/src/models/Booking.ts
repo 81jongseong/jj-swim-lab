@@ -165,4 +165,4 @@ bookingSchema.index({ status: 1, createdAt: -1 }); // 상태별 최신 예약 �
 bookingSchema.index({ 'payment.status': 1 }); // 결제 상태별 검색 최적화
 bookingSchema.index({ createdAt: -1 }); // 최신 예약 검색 최적화
 
-export const Booking = mongoose.model('Booking', bookingSchema); 
+export const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema); 

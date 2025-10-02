@@ -74,4 +74,4 @@ const skillTemplateSchema = new mongoose.Schema({
 // 카테고리별 스킬 조회를 위한 인덱스
 skillTemplateSchema.index({ category: 1, level: 1, isActive: 1 });
 
-export const SkillTemplate = mongoose.model('SkillTemplate', skillTemplateSchema); 
+export const SkillTemplate = mongoose.models.SkillTemplate || mongoose.model('SkillTemplate', skillTemplateSchema); 

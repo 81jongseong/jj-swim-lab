@@ -228,4 +228,4 @@ const swimmingCenterSchema = new mongoose.Schema({
 // 위치 기반 검색을 위한 인덱스
 swimmingCenterSchema.index({ location: '2dsphere' });
 
-export const SwimmingCenter = mongoose.model('SwimmingCenter', swimmingCenterSchema); 
+export const SwimmingCenter = mongoose.models.SwimmingCenter || mongoose.model('SwimmingCenter', swimmingCenterSchema); 

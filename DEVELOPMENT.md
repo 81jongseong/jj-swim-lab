@@ -2,7 +2,47 @@
 
 ## 📅 최근 업데이트 (2025-01-22)
 
-### 🐛 **서버 오류 수정 (2025-01-22)**
+### 🐛 **Mongoose 모델 중복 컴파일 오류 수정 (2025-01-22)**
+
+#### ❌ **오류:**
+```
+OverwriteModelError: Cannot overwrite `CommunityComment` model once compiled.
+
+Mongoose 모델이 여러 번 컴파일되어 충돌
+```
+
+#### ✅ **해결 방법:**
+```javascript
+// 잘못된 코드:
+export const CommunityComment = mongoose.model('CommunityComment', communityCommentSchema);
+
+// 수정된 코드:
+export const CommunityComment = mongoose.models.CommunityComment || mongoose.model('CommunityComment', communityCommentSchema);
+```
+
+**수정된 모델 (13개):**
+- ✅ CommunityComment.ts
+- ✅ Booking.ts
+- ✅ Course.ts
+- ✅ SwimmingCenter.ts
+- ✅ ShopProduct.ts
+- ✅ ShopOrder.ts
+- ✅ Payment.ts
+- ✅ CommunityReport.ts
+- ✅ CommunityPost.ts
+- ✅ SkillTemplate.ts
+- ✅ Class.ts
+- ✅ Evaluation.ts
+- ✅ Progress.ts
+
+**중요:**
+- Mongoose는 모델을 한 번만 컴파일해야 함
+- Hot reload 시 `mongoose.models` 체크 필수
+- 패턴: `mongoose.models.ModelName || mongoose.model(...)`
+
+---
+
+### 🐛 **JavaScript 변수명 하이픈 오류 수정 (2025-01-22)**
 
 #### ❌ **오류:**
 ```

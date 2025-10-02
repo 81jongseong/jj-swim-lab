@@ -127,4 +127,4 @@ progressSchema.index({ student: 1, course: 1, evaluationDate: -1 });
 progressSchema.index({ instructor: 1, type: 1 });
 progressSchema.index({ student: 1, type: 1 });
 
-export const Progress = mongoose.model('Progress', progressSchema); 
+export const Progress = mongoose.models.Progress || mongoose.model('Progress', progressSchema); 

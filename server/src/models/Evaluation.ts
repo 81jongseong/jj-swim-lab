@@ -170,4 +170,4 @@ evaluationSchema.index({ student: 1, course: 1, evaluationDate: -1 });
 evaluationSchema.index({ instructor: 1, course: 1, evaluationDate: -1 });
 evaluationSchema.index({ evaluationType: 1 });
 
-export const Evaluation = mongoose.model('Evaluation', evaluationSchema); 
+export const Evaluation = mongoose.models.Evaluation || mongoose.model('Evaluation', evaluationSchema); 

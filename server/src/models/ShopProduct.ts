@@ -14,7 +14,7 @@ const shopProductSchema = new mongoose.Schema({
 
 shopProductSchema.index({ name: 'text', description: 'text', category: 1 });
 
-export const ShopProduct = mongoose.model('ShopProduct', shopProductSchema);
+export const ShopProduct = mongoose.models.ShopProduct || mongoose.model('ShopProduct', shopProductSchema);
 
 
 

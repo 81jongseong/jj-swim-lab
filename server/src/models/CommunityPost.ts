@@ -12,7 +12,7 @@ const communityPostSchema = new mongoose.Schema({
 
 communityPostSchema.index({ title: 'text', content: 'text', tags: 1 });
 
-export const CommunityPost = mongoose.model('CommunityPost', communityPostSchema);
+export const CommunityPost = mongoose.models.CommunityPost || mongoose.model('CommunityPost', communityPostSchema);
 
 
 
