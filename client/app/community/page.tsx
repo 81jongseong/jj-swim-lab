@@ -547,12 +547,49 @@ export default function CommunityPage() {
             </div>
             <div className="flex gap-2">
               {user?.userType === 'superAdmin' && (
-                <button
-                  onClick={() => setShowRulesModal(true)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
-                >
-                  ⚙️ 운영 규칙
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowRulesModal(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  >
+                    ⚙️ 운영 규칙
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('샘플 게시글 10개를 생성하시겠습니까?')) return;
+                      
+                      const samples = [
+                        { title: '💡 자유형 호흡법 완전 정복 가이드', content: '자유형 호흡법을 마스터하는 단계별 가이드입니다.\n\n1️⃣ 기본 자세\n2️⃣ 호흡 타이밍\n3️⃣ 연습 방법', category: 'tip' },
+                        { title: '⭐ JJ Swim Lab 3개월 수강 후기', content: '3개월 수업 듣고 많이 늘었어요!\n\n✅ 실력 향상\n✅ 자세 개선', category: 'review' },
+                        { title: '❓ 접영 킥 동작이 어려워요', content: '접영 킥 연습 중인데 물살이 안 생겨요. 조언 부탁드립니다!', category: 'question' },
+                        { title: '🏆 2025 챔피언십 참가자 모집', content: '수영 대회 개최!\n\n📅 10월 15일\n📍 메인 센터', category: 'event' },
+                        { title: '⚡ 오늘 저녁 번개 모임 (잠실)', content: '저녁 7시 잠실 수영장 자유형 연습!', category: 'meetup', meetupDetails: { location: '잠실 수영장', date: new Date().toISOString().split('T')[0], time: '19:00-20:30', strokeType: '자유형', distance: '1000m', pace: '2분30초/100m', maxParticipants: 6, currentParticipants: 3, cost: 8000, level: '초중급' } },
+                        { title: '💬 수영 다이어트 후기', content: '2개월 수영으로 7kg 감량 성공!', category: 'general' },
+                        { title: '💡 배영 턴 동작 가이드', content: '배영 턴 마스터 방법!\n\n1. 깃발 카운트\n2. 회전\n3. 턴\n4. 킥', category: 'tip' },
+                        { title: '❓ 수영 장비 추천 부탁드려요', content: '수경, 수모, 킥보드 추천 부탁합니다. 예산 10만원', category: 'question' },
+                        { title: '⚡ 주말 한강 오픈워터 (뚝섬)', content: '한강 오픈워터 수영!', category: 'meetup', meetupDetails: { location: '뚝섬 한강공원', date: new Date(Date.now() + 3*24*60*60*1000).toISOString().split('T')[0], time: '10:00-12:00', strokeType: '자유형', distance: '2000m', pace: '자유', maxParticipants: 10, currentParticipants: 5, cost: 15000, level: '중급' } },
+                        { title: '💡 평영 발차기 팁', content: '평영 발차기 교정!\n\n1. 무릎 너비\n2. 발목 꺾기\n3. 차기\n4. 밀기', category: 'tip' }
+                      ];
+
+                      let count = 0;
+                      for (const post of samples) {
+                        try {
+                          const res = await fetch('http://localhost:5000/api/community/posts', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(post)
+                          });
+                          if (res.ok) count++;
+                        } catch (e) { console.error(e); }
+                      }
+                      alert(`✅ ${count}개 샘플 게시글 생성 완료!`);
+                      fetchPosts();
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    📦 샘플 데이터
+                  </button>
+                </>
               )}
               <button
                 onClick={() => {
