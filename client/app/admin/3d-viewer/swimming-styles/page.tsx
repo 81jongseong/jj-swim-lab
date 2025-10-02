@@ -76,10 +76,37 @@ export default function SwimmingStylesPage() {
   ];
 
   useEffect(() => {
-    // 실제로는 API에서 데이터를 가져와야 함
-    setStyles(defaultStyles);
-    setIsLoading(false);
-  }, []);
+    if (user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin')) {
+      loadStyles();
+    }
+  }, [user]);
+
+  const loadStyles = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://localhost:5000/api/swimming-styles', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStyles(data.data || []);
+        }
+      } else {
+        // API 실패 시 기본 데이터 사용
+        setStyles(defaultStyles);
+      }
+    } catch (error) {
+      console.error('영법 로드 오류:', error);
+      setStyles(defaultStyles);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (loading || isLoading) {
     return (
@@ -123,9 +150,39 @@ export default function SwimmingStylesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">3D 뷰어 - 수영 스타일 관리</h1>
-        <p className="text-gray-600">3D 모델을 활용한 수영 스타일 관리 시스템</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">3D 뷰어 - 수영 스타일 관리</h1>
+          <p className="text-gray-600">3D 모델을 활용한 수영 스타일 관리 시스템</p>
+        </div>
+        {styles.length === 0 && (
+          <button
+            onClick={async () => {
+              if (!confirm('기본 영법 데이터를 생성하시겠습니까?')) return;
+              
+              for (const style of defaultStyles) {
+                try {
+                  await fetch('http://localhost:5000/api/swimming-styles', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(style)
+                  });
+                } catch (err) {
+                  console.error('영법 생성 오류:', err);
+                }
+              }
+              
+              alert('기본 영법 데이터가 생성되었습니다!');
+              loadStyles();
+            }}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+          >
+            + 기본 데이터 생성
+          </button>
+        )}
       </div>
 
       {/* 통계 카드 */}
@@ -280,13 +337,26 @@ export default function SwimmingStylesPage() {
         </div>
       </div>
 
-      {/* 개발 노트 */}
-      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h3 className="text-sm font-medium text-yellow-800 mb-2">🚧 개발 상태</h3>
-        <p className="text-sm text-yellow-700">
-          이 페이지는 현재 개발 중입니다. 실제 3D 모델 연동과 데이터베이스 연동이 필요합니다.
-        </p>
+      {/* 3D 뷰어 통합 안내 */}
+      <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="text-sm font-medium text-blue-800 mb-2">🔗 3D 뷰어 통합</h3>
+        <ul className="text-sm text-blue-700 space-y-1">
+          <li>✅ <strong>체험 공개</strong> 체크박스를 활성화하면 <code>/3d-viewer</code> 페이지에 자동 표시됩니다</li>
+          <li>✅ 영법 데이터가 <strong>실시간 동기화</strong>됩니다</li>
+          <li>🔄 3D 모델 파일은 추후 업로드 기능으로 추가 예정</li>
+        </ul>
       </div>
+
+      {/* 안내 메시지 */}
+      {styles.length === 0 && (
+        <div className="mt-4 p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">
+          <div className="text-4xl mb-3">🏊‍♂️</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">영법 데이터가 없습니다</h3>
+          <p className="text-gray-600 mb-4">
+            "기본 데이터 생성" 버튼을 눌러 4개 기본 영법을 생성하세요
+          </p>
+        </div>
+      )}
     </div>
   );
 }
