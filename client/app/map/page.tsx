@@ -36,6 +36,25 @@ export default function MapPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [leafletReady, setLeafletReady] = useState(false);
+  
+  // 지역 선택
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [searchType, setSearchType] = useState<'address' | 'region' | 'center'>('region');
+
+  // 시/도 목록
+  const provinces = [
+    '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
+    '대전광역시', '울산광역시', '세종특별자치시', '경기도', '강원도',
+    '충청북도', '충청남도', '전라북도', '전라남도', '경상북도', '경상남도', '제주특별자치도'
+  ];
+
+  // 시/군/구 목록 (시/도별)
+  const citiesByProvince: Record<string, string[]> = {
+    '서울특별시': ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'],
+    '경기도': ['수원시', '성남시', '고양시', '용인시', '부천시', '안산시', '안양시', '남양주시', '화성시', '평택시', '의정부시', '시흥시', '파주시', '김포시', '광명시', '광주시', '군포시', '하남시', '오산시', '양주시', '이천시', '구리시', '안성시', '포천시', '의왕시', '양평군', '여주시', '동두천시', '과천시', '가평군', '연천군'],
+    '부산광역시': ['중구', '서구', '동구', '영도구', '부산진구', '동래구', '남구', '북구', '해운대구', '사하구', '금정구', '강서구', '연제구', '수영구', '사상구', '기장군'],
+  };
 
   // 샘플 수영 센터 데이터
   const swimmingCenters: SwimmingCenter[] = [
@@ -282,8 +301,10 @@ export default function MapPage() {
   }, [leafletReady]);
 
   // 주소 검색
-  const handleSearch = async () => {
-    if (!searchAddress.trim()) {
+  const handleSearch = async (addressToSearch?: string) => {
+    const targetAddress = addressToSearch || searchAddress;
+    
+    if (!targetAddress.trim()) {
       alert('주소를 입력하세요.');
       return;
     }
@@ -300,7 +321,7 @@ export default function MapPage() {
       url.searchParams.set('type', 'ROAD');
       url.searchParams.set('format', 'json');
       url.searchParams.set('key', key!);
-      url.searchParams.set('address', searchAddress);
+      url.searchParams.set('address', targetAddress);
 
       const response = await fetch(url.toString());
       const data = await response.json();
@@ -349,7 +370,7 @@ export default function MapPage() {
           .bindPopup(`
             <div style="padding: 10px;">
               <strong>검색 위치</strong><br/>
-              ${searchAddress}
+              ${targetAddress}
             </div>
           `)
           .openPopup();
@@ -360,7 +381,7 @@ export default function MapPage() {
         }, 5000);
       }
 
-      console.log(`✅ 주소 검색 성공: ${searchAddress} → (${lng}, ${lat})`);
+      console.log(`✅ 주소 검색 성공: ${targetAddress} → (${lng}, ${lat})`);
     } catch (error) {
       console.error('❌ 주소 검색 오류:', error);
       alert('주소 검색 중 오류가 발생했습니다.');
@@ -370,34 +391,156 @@ export default function MapPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="w-full px-2 sm:px-4 lg:px-6 py-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-4 pt-20">
         {/* 헤더 */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">🗺️ 수영 센터 찾기</h1>
           <p className="text-sm text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요 (VWorld 무료 지도)</p>
         </div>
 
-        {/* 주소 검색 */}
+        {/* 검색 패널 */}
         <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <h3 className="text-base font-semibold text-gray-900 mb-2">주소 검색</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={searchAddress}
-              onChange={(e) => setSearchAddress(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="예: 서울특별시 강남구 테헤란로"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <h3 className="text-base font-semibold text-gray-900 mb-3">센터 및 지역 검색</h3>
+          
+          {/* 검색 타입 선택 */}
+          <div className="flex gap-2 mb-4">
             <button
-              onClick={handleSearch}
-              disabled={searchLoading || !mapReady}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={() => setSearchType('center')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                searchType === 'center'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
-              {searchLoading ? '검색 중...' : '🔍 검색'}
+              🏊 센터명 검색
+            </button>
+            <button
+              onClick={() => setSearchType('region')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                searchType === 'region'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              📍 지역 선택
+            </button>
+            <button
+              onClick={() => setSearchType('address')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                searchType === 'address'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🔍 주소 검색
             </button>
           </div>
+
+          {/* 센터명 검색 */}
+          {searchType === 'center' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">센터 선택</label>
+              <select
+                onChange={(e) => {
+                  const center = swimmingCenters.find(c => c.id === e.target.value);
+                  if (center && mapInstanceRef.current) {
+                    setSelectedCenter(center);
+                    mapInstanceRef.current.flyTo([center.position.lat, center.position.lng], 15, { duration: 1.5 });
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">센터를 선택하세요</option>
+                {swimmingCenters.map(center => (
+                  <option key={center.id} value={center.id}>
+                    {center.name} - {center.address}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 지역 선택 */}
+          {searchType === 'region' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => {
+                    setSelectedProvince(e.target.value);
+                    setSelectedCity('');
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">시/도 선택</option>
+                  {provinces.map(province => (
+                    <option key={province} value={province}>{province}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">시/군/구</label>
+                <select
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  disabled={!selectedProvince}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">시/군/구 선택</option>
+                  {selectedProvince && citiesByProvince[selectedProvince]?.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <button
+                  onClick={() => {
+                    if (!selectedProvince) {
+                      alert('시/도를 선택하세요.');
+                      return;
+                    }
+                    const address = selectedCity 
+                      ? `${selectedProvince} ${selectedCity}` 
+                      : selectedProvince;
+                    setSearchAddress(address);
+                    handleSearch(address);
+                  }}
+                  disabled={!selectedProvince || searchLoading}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {searchLoading ? '검색 중...' : '📍 선택한 지역으로 이동'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 주소 직접 검색 */}
+          {searchType === 'address' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">주소 입력</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchAddress}
+                  onChange={(e) => setSearchAddress(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder="예: 서울특별시 강남구 테헤란로 123"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => handleSearch()}
+                  disabled={searchLoading || !mapReady}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {searchLoading ? '검색 중...' : '🔍 검색'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 지도 및 사이드바 */}
