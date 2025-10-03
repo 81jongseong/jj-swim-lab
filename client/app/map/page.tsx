@@ -35,6 +35,7 @@ export default function MapPage() {
   const [searchAddress, setSearchAddress] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [leafletReady, setLeafletReady] = useState(false);
 
   // 샘플 수영 센터 데이터
   const swimmingCenters: SwimmingCenter[] = [
@@ -105,6 +106,9 @@ export default function MapPage() {
           document.head.appendChild(link);
 
           console.log('✅ Leaflet 라이브러리 로딩 완료');
+          
+          // Leaflet 로딩 완료 상태 설정
+          setLeafletReady(true);
         }
       } catch (error) {
         console.error('❌ Leaflet 로딩 오류:', error);
@@ -116,7 +120,27 @@ export default function MapPage() {
 
   // 지도 초기화
   useEffect(() => {
-    if (!mapRef.current || !L) return;
+    console.log('🔍 지도 초기화 useEffect 실행:', { 
+      hasMapRef: !!mapRef.current, 
+      hasL: !!L,
+      leafletReady,
+      hasMapInstance: !!mapInstanceRef.current 
+    });
+
+    if (!mapRef.current) {
+      console.log('⚠️ mapRef.current 없음');
+      return;
+    }
+    
+    if (!L) {
+      console.log('⚠️ Leaflet 라이브러리 없음');
+      return;
+    }
+
+    if (!leafletReady) {
+      console.log('⚠️ Leaflet 준비 안됨');
+      return;
+    }
     
     // 이미 초기화되었으면 스킵
     if (mapInstanceRef.current) {
@@ -255,7 +279,7 @@ export default function MapPage() {
         mapInstanceRef.current = null;
       }
     };
-  }, [L]);
+  }, [leafletReady]);
 
   // 주소 검색
   const handleSearch = async () => {
