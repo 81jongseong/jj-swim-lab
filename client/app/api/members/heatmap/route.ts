@@ -52,7 +52,7 @@
  */
 
 import { NextResponse } from 'next/server';
-// import h3 from 'h3-js'; // 패키지 미설치로 인해 주석 처리
+import h3 from 'h3-js';
 
 // 회원 데이터 타입 정의
 type Member = { 
@@ -274,17 +274,19 @@ export async function GET(request: Request) {
 
     console.log(`📊 필터링된 회원 수: ${filteredMembers.length}`);
 
-    // H3 집계 (패키지 미설치로 목업 데이터 반환)
-    console.warn('⚠️ h3-js 패키지가 설치되지 않아 목업 데이터를 반환합니다.');
-    
-    // 목업 H3 셀 데이터
+    // 주소 → 좌표 → H3 헥사곤 집계
     const h3Counts = new Map<string, number>();
-    h3Counts.set('8928308291fffff', 12);
-    h3Counts.set('8928308293fffff', 8);
-    h3Counts.set('892830829bfffff', 15);
-    h3Counts.set('8928308299fffff', 6);
+    
+    for (const member of filteredMembers) {
+      const coords = await geocode(member.address);
+      if (!coords) continue;
+      
+      // H3 헥사곤 인덱스 생성
+      const h3Index = h3.latLngToCell(coords.lat, coords.lon, H3_RESOLUTION);
+      h3Counts.set(h3Index, (h3Counts.get(h3Index) || 0) + 1);
+    }
 
-    console.log(`🔢 H3 셀 수 (목업): ${h3Counts.size}`);
+    console.log(`🔢 H3 셀 수: ${h3Counts.size}`);
 
     // 프라이버시 보호 처리
     const privacyProtectedCells: H3Cell[] = Array.from(h3Counts, ([h3Index, count]) => ({

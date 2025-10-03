@@ -32,7 +32,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-// import h3 from 'h3-js'; // 패키지 미설치로 인해 주석 처리
+import h3 from 'h3-js';
 
 // 🔒 프라이버시 파라미터
 const K_ANONYMITY_THRESHOLD = 5; // k-익명 임계치

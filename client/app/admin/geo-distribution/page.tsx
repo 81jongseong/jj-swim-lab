@@ -112,6 +112,7 @@ export default function GeoDistributionPage() {
   const [metadata, setMetadata] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<any>(null);
+  const [librariesLoaded, setLibrariesLoaded] = useState(false);
   
   // 필터 상태
   const [filters, setFilters] = useState({
@@ -133,12 +134,21 @@ export default function GeoDistributionPage() {
   useEffect(() => {
     const loadLibraries = async () => {
       try {
-        // maplibre-gl 설치 필요 - 현재는 placeholder
-        console.warn('⚠️ maplibre-gl 패키지가 설치되지 않았습니다.');
-        console.log('💡 이 페이지는 VWorld 지도를 사용하려면 maplibre-gl, deck.gl, @deck.gl/mapbox, @deck.gl/geo-layers, h3-js 패키지가 필요합니다.');
-        console.log('📦 설치: npm install maplibre-gl deck.gl @deck.gl/mapbox @deck.gl/geo-layers h3-js');
+        maplibregl = (await import('maplibre-gl')).default;
+        const deckGl = await import('@deck.gl/mapbox');
+        const geoLayers = await import('@deck.gl/geo-layers');
+
+        MapboxLayer = deckGl.MapboxLayer;
+        H3HexagonLayer = geoLayers.H3HexagonLayer;
+
+        // CSS 로딩
+        await import('maplibre-gl/dist/maplibre-gl.css');
+
+        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        setLibrariesLoaded(true); // 로딩 완료 상태 업데이트
       } catch (error) {
         console.error('❌ 라이브러리 로딩 오류:', error);
+        setLibrariesLoaded(false);
       }
     };
 
@@ -306,8 +316,46 @@ export default function GeoDistributionPage() {
 
   // CSV 내보내기 함수
   const exportToCSV = async () => {
-    alert('⚠️ CSV 내보내기 기능을 사용하려면 h3-js 패키지가 필요합니다.\n\n설치: npm install h3-js');
-    console.warn('⚠️ h3-js 패키지가 설치되지 않아 CSV 내보내기를 사용할 수 없습니다.');
+    if (heatmapData.length === 0) {
+      alert('내보낼 데이터가 없습니다.');
+      return;
+    }
+
+    try {
+      const h3Module = await import('h3-js');
+
+      const headers = ['H3_Index', 'Approximate_Count', 'Latitude', 'Longitude'];
+      const rows = await Promise.all(heatmapData.map(async (cell) => {
+        // H3 인덱스를 좌표로 변환 (대략적)
+        try {
+          const [lat, lon] = h3Module.cellToLatLng(cell.h3);
+          return [cell.h3, cell.countApprox, lat.toFixed(6), lon.toFixed(6)];
+        } catch {
+          return [cell.h3, cell.countApprox, '', ''];
+        }
+      }));
+
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', `swimlab_heatmap_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('📊 CSV 내보내기 완료');
+    } catch (error) {
+      console.error('❌ CSV 내보내기 오류:', error);
+      alert('CSV 내보내기 중 오류가 발생했습니다.');
+    }
   };
 
   // 로딩 상태
@@ -334,30 +382,13 @@ export default function GeoDistributionPage() {
     );
   }
 
-  // maplibre-gl 패키지 미설치 안내
-  if (!maplibregl || !MapboxLayer || !H3HexagonLayer) {
+  // maplibre-gl 패키지 로딩 대기
+  if (!librariesLoaded || !maplibregl || !MapboxLayer || !H3HexagonLayer) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">📦 필수 패키지 설치 필요</h1>
-          <p className="text-gray-600 mb-4">
-            이 페이지를 사용하려면 다음 패키지들을 설치해야 합니다:
-          </p>
-          <div className="bg-gray-100 rounded-lg p-4 mb-4 font-mono text-sm">
-            npm install maplibre-gl deck.gl @deck.gl/mapbox @deck.gl/geo-layers h3-js
-          </div>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>• <strong>maplibre-gl</strong>: 오픈소스 지도 렌더러</p>
-            <p>• <strong>deck.gl</strong>: WebGL 데이터 시각화</p>
-            <p>• <strong>@deck.gl/mapbox</strong>: MapLibre 연동</p>
-            <p>• <strong>@deck.gl/geo-layers</strong>: H3 레이어</p>
-            <p>• <strong>h3-js</strong>: H3 헥사곤 그리드</p>
-          </div>
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              💡 현재는 <a href="/map" className="text-blue-600 underline">일반 지도 페이지 (/map)</a>를 사용할 수 있습니다.
-            </p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">지도 라이브러리 로딩 중...</p>
         </div>
       </div>
     );
