@@ -244,6 +244,25 @@ export async function GET(request: Request) {
     console.log('🗺️ 회원 분포도 API 호출 시작');
     console.log('🔍 h3-js 모듈 확인:', typeof h3, typeof h3.latLngToCell);
     
+    // 간단한 테스트 응답
+    return NextResponse.json({
+      success: true,
+      data: {
+        cells: [
+          { h3: '8928308291fffff', countApprox: 10 },
+          { h3: '8928308292fffff', countApprox: 15 }
+        ],
+        metadata: {
+          totalCells: 2,
+          h3Resolution: 8,
+          kAnonymityThreshold: 5,
+          laplaceEpsilon: 2,
+          filters: {},
+          privacyNotice: '테스트 데이터입니다.'
+        }
+      }
+    });
+    
     // 쿼리 파라미터 파싱
     const { searchParams } = new URL(request.url);
     const centerId = searchParams.get('centerId');
