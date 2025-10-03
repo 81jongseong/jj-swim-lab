@@ -1,23 +1,11 @@
 /**
- * 🗺️ JJ Swim Lab - 수영 센터 찾기 지도 (VWorld + MapLibre)
+ * 🗺️ JJ Swim Lab - 수영 센터 찾기 지도 (VWorld + Leaflet)
  * 
  * 📋 **페이지 목적**
  * - VWorld WMTS 타일 기반 국내 무료 지도
  * - 전국 JJ Swim Lab 센터 위치 표시
  * - 주소 검색 및 센터 정보 확인
  * - 모든 사용자 접근 가능
- * 
- * 🔄 **주요 기능**
- * - VWorld 배경 지도
- * - 센터 마커 표시
- * - 마커 클릭 시 상세 정보
- * - 주소 검색 (VWorld Geocoder)
- * - 지도 스타일 전환
- * 
- * 🗄️ **데이터 연동**
- * - VWorld WMTS 타일 서비스
- * - 센터 데이터베이스
- * - VWorld Geocoder API
  */
 
 'use client';
@@ -25,7 +13,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 // 동적 import로 SSR 문제 방지
-let maplibregl: any;
+let L: any;
 
 interface SwimmingCenter {
   id: string;
@@ -46,6 +34,7 @@ export default function MapPage() {
   const [selectedCenter, setSelectedCenter] = useState<SwimmingCenter | null>(null);
   const [searchAddress, setSearchAddress] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   // 샘플 수영 센터 데이터
   const swimmingCenters: SwimmingCenter[] = [
@@ -101,141 +90,122 @@ export default function MapPage() {
     }
   ];
 
-  // 라이브러리 동적 로딩
+  // Leaflet 라이브러리 로딩
   useEffect(() => {
-    const loadLibrary = async () => {
+    const loadLeaflet = async () => {
       try {
-        maplibregl = (await import('maplibre-gl')).default;
-        await import('maplibre-gl/dist/maplibre-gl.css');
-        console.log('✅ MapLibre GL JS 로딩 완료');
+        // Leaflet 동적 로딩
+        if (typeof window !== 'undefined') {
+          L = (await import('leaflet')).default;
+
+          // Leaflet CSS 로딩
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(link);
+
+          console.log('✅ Leaflet 라이브러리 로딩 완료');
+        }
       } catch (error) {
-        console.error('❌ MapLibre 로딩 오류:', error);
+        console.error('❌ Leaflet 로딩 오류:', error);
       }
     };
 
-    loadLibrary();
+    loadLeaflet();
   }, []);
 
   // 지도 초기화
   useEffect(() => {
-    if (!mapRef.current || !maplibregl) return;
+    if (!mapRef.current || !L || mapInstanceRef.current) return;
 
     const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY || 'demo_key';
 
-    // VWorld WMTS 스타일
-    const style: any = {
-      version: 8,
-      sources: {
-        vworld: {
-          type: 'raster',
-          tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`,
-          ],
-          tileSize: 256,
-          attribution: '© VWorld / NGII'
-        }
-      },
-      layers: [
-        {
-          id: 'vworld-base',
-          type: 'raster',
-          source: 'vworld'
-        }
-      ]
-    };
+    // 지도 생성
+    const map = L.map(mapRef.current).setView([37.5665, 126.9780], 11);
 
-    // 지도 인스턴스 생성
-    const map = new maplibregl.Map({
-      container: mapRef.current,
-      style,
-      center: [126.9780, 37.5665], // 서울 중심
-      zoom: 11,
-      attributionControl: true
-    });
+    // VWorld WMTS 타일 레이어 추가
+    L.tileLayer(
+      `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`,
+      {
+        attribution: '© VWorld / NGII',
+        maxZoom: 19,
+        tileSize: 256
+      }
+    ).addTo(map);
 
     mapInstanceRef.current = map;
+    setMapReady(true);
 
-    // 지도 로딩 완료
-    map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
+    console.log('🗺️ VWorld + Leaflet 지도 초기화 완료');
 
-      // 센터 마커 추가
-      swimmingCenters.forEach(center => {
-        // 커스텀 마커 엘리먼트
-        const el = document.createElement('div');
-        el.className = 'center-marker';
-        el.style.cssText = `
-          width: 40px;
-          height: 40px;
-          background-color: #3b82f6;
-          border: 3px solid white;
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
-          transition: transform 0.2s;
-        `;
-        el.innerHTML = '🏊';
-
-        el.addEventListener('mouseenter', () => {
-          el.style.transform = 'scale(1.2)';
-        });
-
-        el.addEventListener('mouseleave', () => {
-          el.style.transform = 'scale(1)';
-        });
-
-        el.addEventListener('click', () => {
-          setSelectedCenter(center);
-          map.flyTo({
-            center: [center.position.lng, center.position.lat],
-            zoom: 15,
-            duration: 1000
-          });
-        });
-
-        // 마커 생성
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([center.position.lng, center.position.lat])
-          .addTo(map);
-
-        // 팝업 추가
-        const popup = new maplibregl.Popup({ offset: 25 })
-          .setHTML(`
-            <div style="padding: 12px; min-width: 250px;">
-              <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">
-                ${center.name}
-              </h3>
-              <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
-                ${center.address}
-              </p>
-              <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
-                📞 ${center.phone}
-              </p>
-              <div style="margin: 0 0 6px 0;">
-                <span style="color: #f59e0b; font-weight: bold;">⭐ ${center.rating}</span>
-              </div>
-              <p style="margin: 0; font-size: 12px; color: #374151;">
-                ${center.description}
-              </p>
-            </div>
-          `);
-
-        marker.setPopup(popup);
-        markersRef.current.push(marker);
+    // 센터 마커 추가
+    swimmingCenters.forEach(center => {
+      // 커스텀 아이콘
+      const customIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+          <div style="
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+          ">
+            🏊
+          </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
       });
+
+      // 마커 생성
+      const marker = L.marker([center.position.lat, center.position.lng], {
+        icon: customIcon
+      }).addTo(map);
+
+      // 팝업 추가
+      marker.bindPopup(`
+        <div style="padding: 12px; min-width: 250px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">
+            ${center.name}
+          </h3>
+          <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
+            ${center.address}
+          </p>
+          <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
+            📞 ${center.phone}
+          </p>
+          <div style="margin: 0 0 6px 0;">
+            <span style="color: #f59e0b; font-weight: bold;">⭐ ${center.rating}</span>
+          </div>
+          <p style="margin: 0; font-size: 12px; color: #374151;">
+            ${center.description}
+          </p>
+        </div>
+      `);
+
+      // 마커 클릭 이벤트
+      marker.on('click', () => {
+        setSelectedCenter(center);
+      });
+
+      markersRef.current.push(marker);
     });
 
     // 정리 함수
     return () => {
       if (map) {
         map.remove();
+        mapInstanceRef.current = null;
       }
     };
-  }, [swimmingCenters]);
+  }, [L, swimmingCenters]);
 
   // 주소 검색
   const handleSearch = async () => {
@@ -247,7 +217,7 @@ export default function MapPage() {
     setSearchLoading(true);
     try {
       const key = process.env.NEXT_PUBLIC_VWORLD_KEY;
-      
+
       const url = new URL('https://api.vworld.kr/req/address');
       url.searchParams.set('service', 'address');
       url.searchParams.set('request', 'getCoord');
@@ -272,30 +242,47 @@ export default function MapPage() {
       const lat = Number(point.y);
 
       // 지도 이동
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.flyTo({
-          center: [lng, lat],
-          zoom: 15,
-          duration: 1500
+      if (mapInstanceRef.current && L) {
+        mapInstanceRef.current.flyTo([lat, lng], 15, {
+          duration: 1.5
         });
 
         // 검색 위치에 임시 마커 추가
-        const searchMarker = new maplibregl.Marker({ color: '#ef4444' })
-          .setLngLat([lng, lat])
-          .setPopup(
-            new maplibregl.Popup({ offset: 25 })
-              .setHTML(`
-                <div style="padding: 10px;">
-                  <strong>검색 위치</strong><br/>
-                  ${searchAddress}
-                </div>
-              `)
-          )
-          .addTo(mapInstanceRef.current);
+        const searchIcon = L.divIcon({
+          className: 'search-marker',
+          html: `
+            <div style="
+              width: 30px;
+              height: 30px;
+              background-color: #ef4444;
+              border: 2px solid white;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ">
+              📍
+            </div>
+          `,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+
+        const searchMarker = L.marker([lat, lng], { icon: searchIcon })
+          .addTo(mapInstanceRef.current)
+          .bindPopup(`
+            <div style="padding: 10px;">
+              <strong>검색 위치</strong><br/>
+              ${searchAddress}
+            </div>
+          `)
+          .openPopup();
 
         // 5초 후 제거
         setTimeout(() => {
-          searchMarker.remove();
+          mapInstanceRef.current?.removeLayer(searchMarker);
         }, 5000);
       }
 
@@ -314,7 +301,7 @@ export default function MapPage() {
         {/* 헤더 */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">🗺️ 수영 센터 찾기</h1>
-          <p className="text-sm text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요 (VWorld 지도)</p>
+          <p className="text-sm text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요 (VWorld 무료 지도)</p>
         </div>
 
         {/* 주소 검색 */}
@@ -331,7 +318,7 @@ export default function MapPage() {
             />
             <button
               onClick={handleSearch}
-              disabled={searchLoading}
+              disabled={searchLoading || !mapReady}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {searchLoading ? '검색 중...' : '🔍 검색'}
@@ -379,7 +366,7 @@ export default function MapPage() {
 
                   <div>
                     <p className="text-gray-600 text-sm mb-2">📞 {selectedCenter.phone}</p>
-                    <p className="text-gray-700">{selectedCenter.description}</p>
+                    <p className="text-gray-700 text-sm">{selectedCenter.description}</p>
                   </div>
 
                   <div>
@@ -396,8 +383,19 @@ export default function MapPage() {
                     </div>
                   </div>
 
-                  <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
-                    상세 정보 보기
+                  <button 
+                    onClick={() => {
+                      if (mapInstanceRef.current) {
+                        mapInstanceRef.current.flyTo(
+                          [selectedCenter.position.lat, selectedCenter.position.lng],
+                          15,
+                          { duration: 1.5 }
+                        );
+                      }
+                    }}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    지도에서 보기
                   </button>
                 </div>
               </div>
@@ -419,11 +417,11 @@ export default function MapPage() {
                     onClick={() => {
                       setSelectedCenter(center);
                       if (mapInstanceRef.current) {
-                        mapInstanceRef.current.flyTo({
-                          center: [center.position.lng, center.position.lat],
-                          zoom: 15,
-                          duration: 1000
-                        });
+                        mapInstanceRef.current.flyTo(
+                          [center.position.lat, center.position.lng],
+                          15,
+                          { duration: 1 }
+                        );
                       }
                     }}
                   >
