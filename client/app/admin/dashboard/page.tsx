@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { getDashboardStats, DashboardStats } from '../../../lib/api/dashboard';
+import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
 
 interface AdminStats extends DashboardStats {
   systemHealth: 'excellent' | 'good' | 'warning' | 'critical';
@@ -69,8 +70,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* VWorld 키 만료 배너 */}
+      <VWorldExpiryBanner />
+
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+          <VWorldKeyBadge />
+        </div>
         <p className="text-gray-600 mt-2">JJ Swim Lab 시스템 현황 및 성능 모니터링</p>
       </div>
 

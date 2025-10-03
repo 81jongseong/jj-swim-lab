@@ -41,6 +41,7 @@ import {
   resetCenterColors,
   cssToHex
 } from '../../../lib/utils/centerColors';
+import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
 
 // 동적 import로 SSR 문제 방지
 let maplibregl: any;
@@ -511,11 +512,17 @@ export default function GeoCentersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      {/* VWorld 키 만료 배너 */}
+      <VWorldExpiryBanner />
+
       {/* 헤더 */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🗺️ 센터별 회원 분포 지도 (최종판)
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-gray-900">
+            🗺️ 센터별 회원 분포 지도 (최종판)
+          </h1>
+          <VWorldKeyBadge />
+        </div>
         <p className="text-gray-600">
           지배/스택 모드 토글 + 센터 브랜드 컬러 프리셋 관리
         </p>

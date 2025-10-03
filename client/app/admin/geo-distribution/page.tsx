@@ -59,6 +59,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
 
 // 동적 import로 SSR 문제 방지
 let maplibregl: any;
@@ -374,11 +375,17 @@ export default function GeoDistributionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      {/* VWorld 키 만료 배너 */}
+      <VWorldExpiryBanner />
+
       {/* 헤더 */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🗺️ 회원 분포도 (VWorld + MapLibre + deck.gl)
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-gray-900">
+            🗺️ 회원 분포도 (VWorld + MapLibre + deck.gl)
+          </h1>
+          <VWorldKeyBadge />
+        </div>
         <p className="text-gray-600">
           국내 무료 지도 서비스 기반 회원 분포 시각화
         </p>
