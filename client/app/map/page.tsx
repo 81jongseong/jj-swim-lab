@@ -120,18 +120,61 @@ export default function MapPage() {
 
     const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY || 'demo_key';
 
+    console.log('🔑 VWorld 키 확인:', VWORLD_KEY);
+    console.log('📍 지도 초기화 시작...');
+
     // 지도 생성
     const map = L.map(mapRef.current).setView([37.5665, 126.9780], 11);
 
-    // VWorld WMTS 타일 레이어 추가
-    L.tileLayer(
-      `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`,
-      {
-        attribution: '© VWorld / NGII',
-        maxZoom: 19,
-        tileSize: 256
-      }
-    ).addTo(map);
+    // 타일 레이어 추가
+    // VWorld 키가 유효하면 VWorld, 아니면 OSM 사용
+    let tileLayer;
+    
+    if (VWORLD_KEY && VWORLD_KEY !== 'demo_key') {
+      console.log('🗺️ VWorld 타일 시도 중...');
+      
+      // VWorld Base Map (XYZ 타일 형식)
+      tileLayer = L.tileLayer(
+        `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`,
+        {
+          attribution: '© VWorld / NGII',
+          maxZoom: 18,
+          minZoom: 6
+        }
+      );
+
+      let tileErrorCount = 0;
+      tileLayer.on('tileerror', (error: any) => {
+        tileErrorCount++;
+        if (tileErrorCount === 1) {
+          console.error('❌ VWorld 타일 로딩 실패');
+          console.log('🔑 키:', VWORLD_KEY);
+          console.log('📍 타일 URL:', error.tile?.src);
+          console.log('⚠️ OSM 타일로 대체합니다...');
+          
+          // VWorld 레이어 제거하고 OSM으로 교체
+          map.removeLayer(tileLayer);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+          }).addTo(map);
+        }
+      });
+
+      tileLayer.on('tileload', () => {
+        if (tileErrorCount === 0) {
+          console.log('✅ VWorld 타일 로딩 성공');
+        }
+      });
+    } else {
+      console.log('🗺️ VWorld 키가 없어 OSM 타일 사용');
+      tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      });
+    }
+
+    tileLayer.addTo(map);
 
     mapInstanceRef.current = map;
     setMapReady(true);
