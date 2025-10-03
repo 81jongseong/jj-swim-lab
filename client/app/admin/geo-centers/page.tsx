@@ -48,7 +48,6 @@ let maplibregl: any;
 let MapboxLayer: any;
 let H3HexagonLayer: any;
 let ColumnLayer: any;
-let h3Module: any;
 
 // 타입 정의
 interface CenterData {
@@ -78,6 +77,7 @@ export default function GeoCentersPage() {
   const [metadata, setMetadata] = useState<any>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [librariesLoaded, setLibrariesLoaded] = useState(false);
+  const [h3Module, setH3Module] = useState<any>(null);
 
   // 렌더링 모드
   const [mode, setMode] = useState<RenderMode>('dominant');
@@ -106,11 +106,12 @@ export default function GeoCentersPage() {
         const deckGl = await import('@deck.gl/mapbox');
         const geoLayers = await import('@deck.gl/geo-layers');
         const coreLayers = await import('@deck.gl/layers');
-        h3Module = await import('h3-js');
+        const h3 = await import('h3-js');
 
         MapboxLayer = deckGl.MapboxLayer;
         H3HexagonLayer = geoLayers.H3HexagonLayer;
         ColumnLayer = coreLayers.ColumnLayer;
+        setH3Module(h3); // h3 모듈을 상태로 설정
 
         await import('maplibre-gl/dist/maplibre-gl.css');
 
@@ -514,7 +515,7 @@ export default function GeoCentersPage() {
   }
 
   // maplibre-gl 패키지 로딩 대기
-  if (!librariesLoaded || !maplibregl || !MapboxLayer || !H3HexagonLayer || !ColumnLayer) {
+  if (!librariesLoaded || !maplibregl || !MapboxLayer || !H3HexagonLayer || !ColumnLayer || !h3Module) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
