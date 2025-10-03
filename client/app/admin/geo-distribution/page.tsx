@@ -133,17 +133,10 @@ export default function GeoDistributionPage() {
   useEffect(() => {
     const loadLibraries = async () => {
       try {
-        maplibregl = (await import('maplibre-gl')).default;
-        const deckGl = await import('@deck.gl/mapbox');
-        const geoLayers = await import('@deck.gl/geo-layers');
-        
-        MapboxLayer = deckGl.MapboxLayer;
-        H3HexagonLayer = geoLayers.H3HexagonLayer;
-        
-        // CSS 로딩
-        await import('maplibre-gl/dist/maplibre-gl.css');
-        
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        // maplibre-gl 설치 필요 - 현재는 placeholder
+        console.warn('⚠️ maplibre-gl 패키지가 설치되지 않았습니다.');
+        console.log('💡 이 페이지는 VWorld 지도를 사용하려면 maplibre-gl, deck.gl, @deck.gl/mapbox, @deck.gl/geo-layers, h3-js 패키지가 필요합니다.');
+        console.log('📦 설치: npm install maplibre-gl deck.gl @deck.gl/mapbox @deck.gl/geo-layers h3-js');
       } catch (error) {
         console.error('❌ 라이브러리 로딩 오류:', error);
       }
@@ -368,6 +361,35 @@ export default function GeoDistributionPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한 없음</h1>
           <p className="text-gray-600">이 페이지는 최고 관리자만 접근할 수 있습니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // maplibre-gl 패키지 미설치 안내
+  if (!maplibregl || !MapboxLayer || !H3HexagonLayer) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-2xl bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">📦 필수 패키지 설치 필요</h1>
+          <p className="text-gray-600 mb-4">
+            이 페이지를 사용하려면 다음 패키지들을 설치해야 합니다:
+          </p>
+          <div className="bg-gray-100 rounded-lg p-4 mb-4 font-mono text-sm">
+            npm install maplibre-gl deck.gl @deck.gl/mapbox @deck.gl/geo-layers h3-js
+          </div>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>• <strong>maplibre-gl</strong>: 오픈소스 지도 렌더러</p>
+            <p>• <strong>deck.gl</strong>: WebGL 데이터 시각화</p>
+            <p>• <strong>@deck.gl/mapbox</strong>: MapLibre 연동</p>
+            <p>• <strong>@deck.gl/geo-layers</strong>: H3 레이어</p>
+            <p>• <strong>h3-js</strong>: H3 헥사곤 그리드</p>
+          </div>
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              💡 현재는 <a href="/map" className="text-blue-600 underline">일반 지도 페이지 (/map)</a>를 사용할 수 있습니다.
+            </p>
+          </div>
         </div>
       </div>
     );
