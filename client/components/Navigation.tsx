@@ -250,6 +250,7 @@ const userMenuStructure = {
       { href: '/admin/users', label: '👥 회원 관리' },
       { href: '/admin/instructor-management', label: '👨‍🏫 강사 관리' },
       { href: '/admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
+      { href: '/admin/geo-centers', label: '🎨 센터별 분포 지도' },
     ],
     levels: [
       { href: '/admin/lesson-plans', label: '📋 강습 계획 템플릿' },
