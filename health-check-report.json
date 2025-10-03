@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-10-02T14:38:20.639Z",
+  "timestamp": "2025-10-03T01:42:24.322Z",
   "stats": {
-    "totalChecks": 360,
-    "passed": 431,
-    "failed": 8,
+    "totalChecks": 362,
+    "passed": 433,
+    "failed": 9,
     "warnings": 6
   },
   "errors": [
@@ -26,6 +26,10 @@
     {
       "message": "example 라우트가 등록되지 않음",
       "solution": "server/src/index.ts에 \"app.use('/api/example', exampleRoutes);\" 추가"
+    },
+    {
+      "message": "geo-aggregate 라우트가 등록되지 않음",
+      "solution": "server/src/index.ts에 \"app.use('/api/geo-aggregate', geo-aggregateRoutes);\" 추가"
     },
     {
       "message": "notice 라우트가 import되지 않음",

@@ -311,14 +311,14 @@ export default function GeoDistributionPage() {
   }, [filters]);
 
   // CSV 내보내기 함수
-  const exportToCSV = async () => {
+  const exportToCSV = () => {
     if (heatmapData.length === 0) {
       alert('내보낼 데이터가 없습니다.');
       return;
     }
 
     const headers = ['H3_Index', 'Approximate_Count', 'Latitude', 'Longitude'];
-    const rows = await Promise.all(heatmapData.map(async (cell) => {
+    const rows = heatmapData.map(cell => {
       // H3 인덱스를 좌표로 변환 (대략적)
       try {
         const h3 = await import('h3-js');
@@ -327,7 +327,7 @@ export default function GeoDistributionPage() {
       } catch {
         return [cell.h3, cell.countApprox, '', ''];
       }
-    }));
+    });
 
     const csvContent = [headers, ...rows]
       .map(row => row.map(field => `"${field}"`).join(','))
@@ -377,10 +377,10 @@ export default function GeoDistributionPage() {
       {/* 헤더 */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🗺️ 회원 분포도 (VWorld + MapLibre + deck.gl)
+          🗺️ 회원 분포도 (프라이버시 안전 H3 집계)
         </h1>
         <p className="text-gray-600">
-          국내 무료 지도 서비스 기반 회원 분포 시각화
+          VWorld 지도 + deck.gl H3HexagonLayer 기반 회원 분포 시각화
         </p>
       </div>
 
