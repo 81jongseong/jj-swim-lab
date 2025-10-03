@@ -116,7 +116,13 @@ export default function MapPage() {
 
   // 지도 초기화
   useEffect(() => {
-    if (!mapRef.current || !L || mapInstanceRef.current) return;
+    if (!mapRef.current || !L) return;
+    
+    // 이미 초기화되었으면 스킵
+    if (mapInstanceRef.current) {
+      console.log('⚠️ 지도가 이미 초기화되어 있습니다');
+      return;
+    }
 
     const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY || 'demo_key';
 
@@ -244,11 +250,12 @@ export default function MapPage() {
     // 정리 함수
     return () => {
       if (map) {
+        console.log('🗑️ 지도 정리 중...');
         map.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [L, swimmingCenters]);
+  }, [L]);
 
   // 주소 검색
   const handleSearch = async () => {
