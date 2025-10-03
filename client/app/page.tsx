@@ -1,13 +1,60 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { motionPresets, staggerContainer } from '../lib/motion';
 import HeroWave from 'components/HeroWave';
 import WaterRippleBackground from 'components/WaterRippleBackground';
 import LottiePlayer from 'components/LottiePlayer';
+import { useAuth } from '../hooks/useAuth';
 
-export default function LandingPage() {
+export default function HomePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // 로그인 상태 확인 및 리다이렉트
+  useEffect(() => {
+    if (!loading && user) {
+      // 계정 유형별 대시보드로 리다이렉트
+      const dashboardRoutes = {
+        superAdmin: '/admin/dashboard',
+        centerAdmin: '/center-admin/dashboard', 
+        instructor: '/instructor/dashboard',
+        student: '/student/dashboard',
+      };
+
+      const targetRoute = dashboardRoutes[user.userType as keyof typeof dashboardRoutes];
+      
+      if (targetRoute) {
+        console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
+        router.push(targetRoute);
+      } else {
+        console.warn(`⚠️ 알 수 없는 사용자 유형: ${user.userType}`);
+        // 알 수 없는 유형은 랜딩 페이지 유지
+      }
+    }
+  }, [user, loading, router]);
+
+  // 로딩 중이거나 로그인 상태라면 로딩 화면 표시
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">
+            {loading ? '로딩 중...' : '대시보드로 이동 중...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 미로그인 사용자에게는 랜딩 페이지 표시
+  return <LandingPage />;
+}
+
+function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* 히어로 섹션 */}
