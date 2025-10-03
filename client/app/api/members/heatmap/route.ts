@@ -141,8 +141,8 @@ async function fetchMembers(): Promise<Member[]> {
  */
 async function geocode(addr: string): Promise<{lon: number, lat: number} | null> {
   try {
-    // VWorld API 키 (환경변수에서 가져옴)
-    const key = process.env.VWORLD_KEY_SERVER;
+    // VWorld API 키 (환경변수에서 가져옴 - 서버 전용)
+    const key = process.env.VWORLD_SERVER_KEY;
     
     if (!key || key === '여기에_서버용_브이월드_API_키') {
       console.warn('⚠️ VWorld API 키가 설정되지 않았습니다. 목업 좌표를 사용합니다.');
@@ -179,7 +179,7 @@ async function geocode(addr: string): Promise<{lon: number, lat: number} | null>
     url.searchParams.set('key', key);
     url.searchParams.set('address', addr);
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), { cache: 'no-store' });
     const data = await response.json();
     
     const point = data?.response?.result?.point;
@@ -188,6 +188,8 @@ async function geocode(addr: string): Promise<{lon: number, lat: number} | null>
       return null;
     }
 
+    console.log(`✅ Geocoding 성공: ${addr} → (${point.x}, ${point.y})`);
+    
     return {
       lon: Number(point.x),
       lat: Number(point.y)
