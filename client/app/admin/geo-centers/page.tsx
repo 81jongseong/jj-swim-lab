@@ -428,53 +428,8 @@ export default function GeoCentersPage() {
 
   // CSV 내보내기
   const exportToCSV = async () => {
-    if (cells.length === 0) {
-      alert('내보낼 데이터가 없습니다.');
-      return;
-    }
-
-    try {
-      const h3 = await import('h3-js');
-
-      const headers = ['H3_Index', 'Mode', 'Dominant_Center', 'Total_Count', 'Latitude', 'Longitude', 'Center_Details'];
-      const rows = cells.map(cell => {
-        const [lat, lon] = h3.h3ToGeo(cell.h3);
-        const centerDetails = cell.centers
-          .map(c => `${c.centerId}:${c.countApprox}`)
-          .join('|');
-
-        return [
-          cell.h3,
-          mode,
-          cell.dominantCenter,
-          cell.totalApprox,
-          lat.toFixed(6),
-          lon.toFixed(6),
-          centerDetails
-        ];
-      });
-
-      const csvContent = [headers, ...rows]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-
-      link.setAttribute('href', url);
-      link.setAttribute('download', `swimlab_centers_${mode}_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      console.log('📊 CSV 내보내기 완료');
-    } catch (error) {
-      console.error('❌ CSV 내보내기 오류:', error);
-      alert('CSV 내보내기 중 오류가 발생했습니다.');
-    }
+    alert('⚠️ CSV 내보내기 기능을 사용하려면 h3-js 패키지가 필요합니다.\n\n설치: npm install h3-js');
+    console.warn('⚠️ h3-js 패키지가 설치되지 않아 CSV 내보내기를 사용할 수 없습니다.');
   };
 
   // 로딩 상태

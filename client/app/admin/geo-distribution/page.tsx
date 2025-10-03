@@ -306,40 +306,8 @@ export default function GeoDistributionPage() {
 
   // CSV 내보내기 함수
   const exportToCSV = async () => {
-    if (heatmapData.length === 0) {
-      alert('내보낼 데이터가 없습니다.');
-      return;
-    }
-
-    const headers = ['H3_Index', 'Approximate_Count', 'Latitude', 'Longitude'];
-    const rows = await Promise.all(heatmapData.map(async (cell) => {
-      // H3 인덱스를 좌표로 변환 (대략적)
-      try {
-        const h3 = await import('h3-js');
-        const [lat, lon] = h3.h3ToGeo(cell.h3);
-        return [cell.h3, cell.countApprox, lat.toFixed(6), lon.toFixed(6)];
-      } catch {
-        return [cell.h3, cell.countApprox, '', ''];
-      }
-    }));
-
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `swimlab_heatmap_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log('📊 CSV 내보내기 완료');
+    alert('⚠️ CSV 내보내기 기능을 사용하려면 h3-js 패키지가 필요합니다.\n\n설치: npm install h3-js');
+    console.warn('⚠️ h3-js 패키지가 설치되지 않아 CSV 내보내기를 사용할 수 없습니다.');
   };
 
   // 로딩 상태
