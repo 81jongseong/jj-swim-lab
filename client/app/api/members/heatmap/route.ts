@@ -242,6 +242,7 @@ function enforceKAnonymity(cells: H3Cell[], k: number): H3Cell[] {
 export async function GET(request: Request) {
   try {
     console.log('🗺️ 회원 분포도 API 호출 시작');
+    console.log('🔍 h3-js 모듈 확인:', typeof h3, typeof h3.latLngToCell);
     
     // 쿼리 파라미터 파싱
     const { searchParams } = new URL(request.url);
@@ -278,12 +279,19 @@ export async function GET(request: Request) {
     const h3Counts = new Map<string, number>();
     
     for (const member of filteredMembers) {
-      const coords = await geocode(member.address);
-      if (!coords) continue;
-      
-      // H3 헥사곤 인덱스 생성
-      const h3Index = h3.latLngToCell(coords.lat, coords.lon, H3_RESOLUTION);
-      h3Counts.set(h3Index, (h3Counts.get(h3Index) || 0) + 1);
+      try {
+        const coords = await geocode(member.address);
+        if (!coords) continue;
+        
+        console.log(`📍 좌표 변환: ${member.address} → (${coords.lat}, ${coords.lon})`);
+        
+        // H3 헥사곤 인덱스 생성
+        const h3Index = h3.latLngToCell(coords.lat, coords.lon, H3_RESOLUTION);
+        console.log(`🔷 H3 인덱스 생성: ${h3Index}`);
+        h3Counts.set(h3Index, (h3Counts.get(h3Index) || 0) + 1);
+      } catch (error) {
+        console.error(`❌ 회원 처리 오류 (${member.address}):`, error);
+      }
     }
 
     console.log(`🔢 H3 셀 수: ${h3Counts.size}`);
