@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle,
   Eye,
+  Target,
   EyeOff
 } from 'lucide-react';
 

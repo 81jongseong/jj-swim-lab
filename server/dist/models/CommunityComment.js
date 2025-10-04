@@ -12,5 +12,5 @@ const communityCommentSchema = new mongoose_1.default.Schema({
     likes: { type: Number, default: 0 },
 }, { timestamps: true });
 communityCommentSchema.index({ postId: 1, createdAt: -1 });
-exports.CommunityComment = mongoose_1.default.model('CommunityComment', communityCommentSchema);
+exports.CommunityComment = mongoose_1.default.models.CommunityComment || mongoose_1.default.model('CommunityComment', communityCommentSchema);
 //# sourceMappingURL=CommunityComment.js.map

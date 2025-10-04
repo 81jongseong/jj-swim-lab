@@ -341,6 +341,19 @@ class ApiClient {
         const errorDetails = typeof data === 'object' ? JSON.stringify(data) : String(data);
         console.error(`❌ API 오류: ${response.status} - ${errorMessage}`);
         console.error(`📋 오류 상세:`, errorDetails);
+        
+        // 401 Unauthorized 오류 시 자동 로그아웃 처리
+        if (response.status === 401) {
+          console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+            window.location.href = '/auth/login';
+          }
+        }
+        
         return { 
           error: errorMessage,
           status: response.status,

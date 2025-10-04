@@ -19,5 +19,5 @@ const shopOrderSchema = new mongoose_1.default.Schema({
     notes: { type: String, default: '' },
 }, { timestamps: true });
 shopOrderSchema.index({ user: 1, createdAt: -1 });
-exports.ShopOrder = mongoose_1.default.model('ShopOrder', shopOrderSchema);
+exports.ShopOrder = mongoose_1.default.models.ShopOrder || mongoose_1.default.model('ShopOrder', shopOrderSchema);
 //# sourceMappingURL=ShopOrder.js.map

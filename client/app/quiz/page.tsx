@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../../components/ui';
-import { Card } from '../../components/ui/card';
+import { Button, Card } from '../../components/ui';
 
 /**
  * 🧠 퀴즈 페이지

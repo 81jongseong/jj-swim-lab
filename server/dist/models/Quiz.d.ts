@@ -28,10 +28,11 @@ export interface IQuiz extends Document {
     description: string;
     category: string;
     difficulty: 'beginner' | 'intermediate' | 'advanced';
-    type: 'multiple-choice' | 'short-answer';
+    type: 'multiple-choice' | 'short-answer' | 'practice' | 'test' | 'survey';
+    isPublicDemo?: boolean;
     questions: Array<{
         question: string;
-        type: 'multiple-choice' | 'short-answer';
+        type: 'multiple-choice' | 'short-answer' | 'ox';
         options?: string[];
         correctAnswer: string | number | string[];
         explanation?: string;

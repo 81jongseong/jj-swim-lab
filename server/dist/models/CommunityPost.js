@@ -15,5 +15,5 @@ const communityPostSchema = new mongoose_1.default.Schema({
     commentsCount: { type: Number, default: 0 },
 }, { timestamps: true });
 communityPostSchema.index({ title: 'text', content: 'text', tags: 1 });
-exports.CommunityPost = mongoose_1.default.model('CommunityPost', communityPostSchema);
+exports.CommunityPost = mongoose_1.default.models.CommunityPost || mongoose_1.default.model('CommunityPost', communityPostSchema);
 //# sourceMappingURL=CommunityPost.js.map

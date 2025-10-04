@@ -120,5 +120,5 @@ courseSchema.index({ 'students.studentId': 1 });
 courseSchema.index({ createdAt: -1 });
 courseSchema.index({ 'capacity.max': 1, 'capacity.current': 1 });
 courseSchema.index({ 'price.amount': 1 });
-exports.Course = mongoose_1.default.model('Course', courseSchema);
+exports.Course = mongoose_1.default.models.Course || mongoose_1.default.model('Course', courseSchema);
 //# sourceMappingURL=Course.js.map

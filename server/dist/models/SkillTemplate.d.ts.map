@@ -1,1 +1,1 @@
-{"version":3,"file":"SkillTemplate.d.ts","sourceRoot":"","sources":["../../src/models/SkillTemplate.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AA4EhC,eAAO,MAAM,aAAa;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;GAAuD,CAAC"}
+{"version":3,"file":"SkillTemplate.d.ts","sourceRoot":"","sources":["../../src/models/SkillTemplate.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AA4EhC,eAAO,MAAM,aAAa,2CAAwF,CAAC"}

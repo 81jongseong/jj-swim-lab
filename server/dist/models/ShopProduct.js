@@ -17,5 +17,5 @@ const shopProductSchema = new mongoose_1.default.Schema({
     createdBy: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 shopProductSchema.index({ name: 'text', description: 'text', category: 1 });
-exports.ShopProduct = mongoose_1.default.model('ShopProduct', shopProductSchema);
+exports.ShopProduct = mongoose_1.default.models.ShopProduct || mongoose_1.default.model('ShopProduct', shopProductSchema);
 //# sourceMappingURL=ShopProduct.js.map

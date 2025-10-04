@@ -66,5 +66,5 @@ const paymentSchema = new mongoose_1.default.Schema({
 });
 paymentSchema.index({ user: 1, createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
-exports.Payment = mongoose_1.default.model('Payment', paymentSchema);
+exports.Payment = mongoose_1.default.models.Payment || mongoose_1.default.model('Payment', paymentSchema);
 //# sourceMappingURL=Payment.js.map

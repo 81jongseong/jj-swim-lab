@@ -88,5 +88,5 @@ const classSchema = new mongoose_1.default.Schema({
     timestamps: true
 });
 classSchema.index({ instructor: 1, isActive: 1 });
-exports.Class = mongoose_1.default.model('Class', classSchema);
+exports.Class = mongoose_1.default.models.Class || mongoose_1.default.model('Class', classSchema);
 //# sourceMappingURL=Class.js.map

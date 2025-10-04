@@ -65,5 +65,5 @@ bookingSchema.index({ courseId: 1, date: 1 });
 bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ 'payment.status': 1 });
 bookingSchema.index({ createdAt: -1 });
-exports.Booking = mongoose_1.default.model('Booking', bookingSchema);
+exports.Booking = mongoose_1.default.models.Booking || mongoose_1.default.model('Booking', bookingSchema);
 //# sourceMappingURL=Booking.js.map

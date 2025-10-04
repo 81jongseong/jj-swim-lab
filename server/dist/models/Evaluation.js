@@ -165,5 +165,5 @@ evaluationSchema.methods.isWithinEvaluationPeriod = function () {
 evaluationSchema.index({ student: 1, course: 1, evaluationDate: -1 });
 evaluationSchema.index({ instructor: 1, course: 1, evaluationDate: -1 });
 evaluationSchema.index({ evaluationType: 1 });
-exports.Evaluation = mongoose_1.default.model('Evaluation', evaluationSchema);
+exports.Evaluation = mongoose_1.default.models.Evaluation || mongoose_1.default.model('Evaluation', evaluationSchema);
 //# sourceMappingURL=Evaluation.js.map

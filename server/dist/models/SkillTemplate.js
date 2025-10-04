@@ -76,5 +76,5 @@ const skillTemplateSchema = new mongoose_1.default.Schema({
     timestamps: true
 });
 skillTemplateSchema.index({ category: 1, level: 1, isActive: 1 });
-exports.SkillTemplate = mongoose_1.default.model('SkillTemplate', skillTemplateSchema);
+exports.SkillTemplate = mongoose_1.default.models.SkillTemplate || mongoose_1.default.model('SkillTemplate', skillTemplateSchema);
 //# sourceMappingURL=SkillTemplate.js.map

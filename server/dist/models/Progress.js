@@ -127,5 +127,5 @@ const progressSchema = new mongoose_1.default.Schema({
 progressSchema.index({ student: 1, course: 1, evaluationDate: -1 });
 progressSchema.index({ instructor: 1, type: 1 });
 progressSchema.index({ student: 1, type: 1 });
-exports.Progress = mongoose_1.default.model('Progress', progressSchema);
+exports.Progress = mongoose_1.default.models.Progress || mongoose_1.default.model('Progress', progressSchema);
 //# sourceMappingURL=Progress.js.map

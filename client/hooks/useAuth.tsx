@@ -326,12 +326,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
+        
+        // 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 페이지가 아닌 경우에만)
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+          console.log('🔄 로그인 페이지로 리다이렉트');
+          window.location.href = '/auth/login';
+        }
       }
     } catch (error) {
       console.error('❌ 토큰 검증 실패:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
+      
+      // 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 페이지가 아닌 경우에만)
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+        console.log('🔄 토큰 검증 실패로 인한 로그인 페이지 리다이렉트');
+        window.location.href = '/auth/login';
+      }
     } finally {
       setLoading(false);
     }

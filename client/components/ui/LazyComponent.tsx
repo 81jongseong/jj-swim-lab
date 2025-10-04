@@ -74,7 +74,7 @@
 
 'use client';
 
-import { Suspense, lazy, ComponentType } from 'react';
+import React, { Suspense, lazy, ComponentType } from 'react';
 
 interface LazyComponentProps {
   component: () => Promise<{ default: ComponentType<any> }>;

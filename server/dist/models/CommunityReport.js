@@ -13,5 +13,5 @@ const communityReportSchema = new mongoose_1.default.Schema({
     status: { type: String, enum: ['open', 'reviewed', 'dismissed'], default: 'open' },
 }, { timestamps: true });
 communityReportSchema.index({ targetType: 1, targetId: 1, reporter: 1 }, { unique: true });
-exports.CommunityReport = mongoose_1.default.model('CommunityReport', communityReportSchema);
+exports.CommunityReport = mongoose_1.default.models.CommunityReport || mongoose_1.default.model('CommunityReport', communityReportSchema);
 //# sourceMappingURL=CommunityReport.js.map

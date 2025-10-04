@@ -115,7 +115,7 @@ function SuperAdminNoticesManagement() {
 
   const loadCenters = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/swimming-centers', {
+      const response = await fetch('http://localhost:5000/api/centers', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

@@ -48,8 +48,12 @@ const QuizSchema = new mongoose_1.Schema({
     },
     type: {
         type: String,
-        enum: ['multiple-choice', 'short-answer'],
+        enum: ['multiple-choice', 'short-answer', 'practice', 'test', 'survey'],
         required: true
+    },
+    isPublicDemo: {
+        type: Boolean,
+        default: false
     },
     questions: [{
             question: {
@@ -59,7 +63,7 @@ const QuizSchema = new mongoose_1.Schema({
             },
             type: {
                 type: String,
-                enum: ['multiple-choice', 'short-answer'],
+                enum: ['multiple-choice', 'short-answer', 'ox'],
                 required: true
             },
             options: [{

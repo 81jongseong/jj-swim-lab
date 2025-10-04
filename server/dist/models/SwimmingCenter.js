@@ -226,5 +226,5 @@ const swimmingCenterSchema = new mongoose_1.default.Schema({
     timestamps: true
 });
 swimmingCenterSchema.index({ location: '2dsphere' });
-exports.SwimmingCenter = mongoose_1.default.model('SwimmingCenter', swimmingCenterSchema);
+exports.SwimmingCenter = mongoose_1.default.models.SwimmingCenter || mongoose_1.default.model('SwimmingCenter', swimmingCenterSchema);
 //# sourceMappingURL=SwimmingCenter.js.map

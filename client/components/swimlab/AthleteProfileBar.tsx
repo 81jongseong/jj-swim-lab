@@ -153,7 +153,7 @@ export default function AthleteProfileBar({
         {/* 안내 메시지 (선수 없을 때) */}
         {items.length === 0 && (
           <div className="text-sm text-gray-400 py-2">
-            위의 "➕ 불러오기" 버튼을 클릭하여 회원을 추가하세요
+            위의 &quot;➕ 불러오기&quot; 버튼을 클릭하여 회원을 추가하세요
           </div>
         )}
 

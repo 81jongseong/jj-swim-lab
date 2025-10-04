@@ -166,7 +166,7 @@ export default function AllConditionsDrawer({
         {/* 푸터 */}
         <div className="p-4 border-t bg-gray-50">
           <div className="text-xs text-gray-600">
-            💡 팁: 검색창에 영어 또는 한글로 입력하세요. 예: "shoulder", "어깨", "무릎"
+            💡 팁: 검색창에 영어 또는 한글로 입력하세요. 예: &quot;shoulder&quot;, &quot;어깨&quot;, &quot;무릎&quot;
           </div>
         </div>
       </div>

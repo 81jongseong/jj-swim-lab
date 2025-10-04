@@ -1,1 +1,1 @@
-{"version":3,"file":"CommunityPost.d.ts","sourceRoot":"","sources":["../../src/models/CommunityPost.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAchC,eAAO,MAAM,aAAa;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;GAAuD,CAAC"}
+{"version":3,"file":"CommunityPost.d.ts","sourceRoot":"","sources":["../../src/models/CommunityPost.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAchC,eAAO,MAAM,aAAa,2CAAwF,CAAC"}
