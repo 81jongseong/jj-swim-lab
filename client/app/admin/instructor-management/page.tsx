@@ -97,7 +97,9 @@ import {
   type OverviewData,
   type StudentManagement
 } from '../../../lib/api/instructorManagement';
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '../../../components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
 
 // 실제 API 타입을 사용하므로 인터페이스 제거
 
