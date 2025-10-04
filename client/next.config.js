@@ -144,8 +144,8 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value: process.env.NODE_ENV === 'production' 
-              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 https://unpkg.com https://*.tile.openstreetmap.org https://api.vworld.kr;"
-              : "default-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000 https://unpkg.com https://*.tile.openstreetmap.org https://api.vworld.kr;",
+              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 https://unpkg.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://api.vworld.kr; worker-src 'self' blob:;"
+              : "default-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 ws://localhost:5000 https://unpkg.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://api.vworld.kr; worker-src 'self' blob:;",
           },
         ],
       },

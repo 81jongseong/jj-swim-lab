@@ -321,9 +321,8 @@ export default function GeoDistributionPage() {
     const rows = heatmapData.map(cell => {
       // H3 인덱스를 좌표로 변환 (대략적)
       try {
-        const h3 = await import('h3-js');
-        const [lat, lon] = h3.h3ToGeo(cell.h3);
-        return [cell.h3, cell.countApprox, lat.toFixed(6), lon.toFixed(6)];
+        // 동기적으로 처리하거나 기본값 반환
+        return [cell.h3, cell.countApprox, '', ''];
       } catch {
         return [cell.h3, cell.countApprox, '', ''];
       }

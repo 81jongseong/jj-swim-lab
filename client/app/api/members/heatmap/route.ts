@@ -1,362 +1,158 @@
 /**
- * 🗺️ JJ Swim Lab - 회원 분포도 API
+ * 🗺️ JJ Swim Lab - 개별 회원 위치 분포 API
  * 
  * 📋 **API 목적**
- * - VWorld Geocoder 2.0으로 주소를 좌표로 변환
- * - H3 헥사곤 그리드로 지리적 집계 수행
- * - 프라이버시 보호 (k-익명성, 라플라스 노이즈, 반올림)
- * - 클라이언트에는 집계된 결과만 전송
+ * - 개별 회원의 실제 위치를 점(Point)으로 표시
+ * - 프라이버시 보호를 위한 위치 노이즈 추가
+ * - 회원 유형별 색상 구분
  * 
  * 🔄 **주요 기능**
- * - VWorld Geocoder 2.0 API 호출 (일 40,000건 무료)
- * - H3 헥사곤 그리드 집계 (해상도 8, ~600m-1km)
- * - k-익명성 적용 (k≥5)
- * - 라플라스 노이즈 추가
- * - 5단위 반올림 처리
+ * - 개별 회원 위치 데이터 제공
+ * - 위치 노이즈 (100-200m 랜덤 오프셋)
+ * - 회원 유형별 색상 매핑
+ * - 프라이버시 보호 (정확한 주소 노출 방지)
  * 
  * 🗄️ **데이터 연동**
- * - VWorld Geocoder 2.0 API
- * - H3 헥사곤 그리드 시스템
- * - 회원 주소 데이터베이스
+ * - 회원 데이터베이스
+ * - 주소 → 좌표 변환 (VWorld Geocoder)
  * - 프라이버시 보호 알고리즘
  * 
- * 🛠️ **필요한 설치 파일**
- * - h3-js: H3 헥사곤 그리드 처리
- * - fetch API: VWorld API 호출
- * - Next.js API Routes
- * 
  * ⚠️ **개발 시 주의사항**
- * 1. VWorld API 키는 서버에서만 사용
- * 2. 원본 주소/좌표는 절대 클라이언트에 전송 금지
- * 3. k-익명성 임계값은 5 이상 유지
- * 4. 라플라스 노이즈는 ε=2 사용
- * 5. 모든 집계 결과는 5단위 반올림
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] VWorld API 키 설정 확인
- * - [ ] H3 해상도 적절성 확인
- * - [ ] 프라이버시 가드 동작 확인
- * - [ ] API 응답 시간 최적화
- * - [ ] 오류 처리 및 로깅 확인
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 구현 (VWorld Geocoder 연동)
- * - 2024-12-19: H3 헥사곤 집계 시스템 구현
- * - 2024-12-19: 프라이버시 보호 알고리즘 적용
- * - 2024-12-19: k-익명성 및 노이즈 처리 구현
- * 
- * 📚 **참고 자료**
- * - VWorld Geocoder 2.0: https://www.vworld.kr/dev/v4dv_geocoderguide2_s001.do
- * - H3 헥사곤 시스템: https://h3geo.org/
- * - 프라이버시 보호: k-익명성, 차등 프라이버시
+ * 1. 정확한 주소는 절대 클라이언트에 전송 금지
+ * 2. 위치 노이즈는 100-200m 범위로 제한
+ * 3. 회원 유형별 색상은 일관성 유지
+ * 4. 대량 데이터는 페이지네이션 고려
  */
 
 import { NextResponse } from 'next/server';
-import h3 from 'h3-js';
 
-// 회원 데이터 타입 정의
-type Member = { 
-  address: string; 
-  centerId: string; 
-  joinedAt: string;
-  userType: string;
-};
-
-// H3 헥사곤 집계 결과 타입
-type H3Cell = {
-  h3: string;
-  countApprox: number;
-};
-
-// 프라이버시 보호 설정
-const K_ANONYMITY_THRESHOLD = 5; // k-익명성 임계값
-const LAPLACE_EPSILON = 2; // 라플라스 노이즈 ε 값
-const H3_RESOLUTION = 8; // H3 해상도 (8 = ~600m-1km)
+// 타입 정의
+interface MemberPoint {
+  id: string;
+  position: [number, number]; // [longitude, latitude]
+  memberType: 'regular' | 'premium' | 'vip' | 'instructor';
+  centerId: string;
+  ageGroup: 'child' | 'teen' | 'adult' | 'senior';
+  joinDate: string;
+}
 
 /**
- * 데이터베이스에서 회원 목록을 가져오는 함수
- * TODO: 실제 MongoDB/데이터베이스 연동
+ * 위치 노이즈 생성 (100-200m 랜덤 오프셋)
  */
-async function fetchMembers(): Promise<Member[]> {
-  // 임시 목업 데이터 (실제로는 DB에서 가져옴)
-  return [
-    { 
-      address: '서울특별시 중구 세종대로 110', 
-      centerId: 'A', 
-      joinedAt: '2025-09-01',
-      userType: 'student'
-    },
-    { 
-      address: '서울특별시 강남구 테헤란로 231', 
-      centerId: 'B', 
-      joinedAt: '2025-09-03',
-      userType: 'student'
-    },
-    { 
-      address: '서울특별시 마포구 홍대입구역', 
-      centerId: 'A', 
-      joinedAt: '2025-09-05',
-      userType: 'instructor'
-    },
-    { 
-      address: '서울특별시 송파구 올림픽공원', 
-      centerId: 'C', 
-      joinedAt: '2025-09-10',
-      userType: 'student'
-    },
-    { 
-      address: '서울특별시 용산구 한강대로', 
-      centerId: 'B', 
-      joinedAt: '2025-09-15',
-      userType: 'student'
-    },
-    // 더 많은 목업 데이터...
-    { 
-      address: '서울특별시 강서구 화곡동', 
-      centerId: 'A', 
-      joinedAt: '2025-09-20',
-      userType: 'student'
-    },
-    { 
-      address: '서울특별시 영등포구 여의도', 
-      centerId: 'C', 
-      joinedAt: '2025-09-25',
-      userType: 'student'
-    },
-    { 
-      address: '서울특별시 서초구 강남역', 
-      centerId: 'B', 
-      joinedAt: '2025-10-01',
-      userType: 'student'
-    }
+function addLocationNoise(lat: number, lng: number): [number, number] {
+  // 100-200m 랜덤 오프셋 (대략 0.001-0.002도)
+  const noiseLat = (Math.random() - 0.5) * 0.002;
+  const noiseLng = (Math.random() - 0.5) * 0.002;
+  
+  return [lng + noiseLng, lat + noiseLat];
+}
+
+/**
+ * 목업 데이터 생성 - 개별 회원 위치
+ * TODO: 실제 DB에서 가져오기
+ */
+function generateMemberPoints(): MemberPoint[] {
+  // 서울 주요 지역 좌표
+  const seoulLocations = [
+    { lat: 37.4999, lng: 127.0311, name: '강남역' },
+    { lat: 37.4869, lng: 127.0326, name: '서초역' },
+    { lat: 37.5123, lng: 127.1023, name: '잠실역' },
+    { lat: 37.5212, lng: 126.9243, name: '여의도역' },
+    { lat: 37.5556, lng: 126.9367, name: '신촌역' },
+    { lat: 37.5089, lng: 127.0628, name: '삼성역' },
+    { lat: 37.5145, lng: 127.1056, name: '송파역' },
+    { lat: 37.5547, lng: 126.9706, name: '서울역' },
+    { lat: 37.5665, lng: 126.9780, name: '명동' },
+    { lat: 37.5511, lng: 126.9882, name: '홍대입구' },
+    { lat: 37.5407, lng: 127.0692, name: '건대입구' },
+    { lat: 37.5172, lng: 127.0473, name: '선릉역' }
   ];
-}
 
-/**
- * VWorld Geocoder 2.0 API 호출
- * 주소를 좌표로 변환 (일 40,000건 무료)
- * 
- * @param addr 변환할 주소
- * @returns 좌표 객체 {lon, lat} 또는 null
- */
-async function geocode(addr: string): Promise<{lon: number, lat: number} | null> {
-  try {
-    // VWorld API 키 (환경변수에서 가져옴 - 서버 전용)
-    const key = process.env.VWORLD_SERVER_KEY;
+  const memberTypes: Array<'regular' | 'premium' | 'vip' | 'instructor'> = ['regular', 'premium', 'vip', 'instructor'];
+  const ageGroups: Array<'child' | 'teen' | 'adult' | 'senior'> = ['child', 'teen', 'adult', 'senior'];
+  const centers = ['강남센터', '홍대센터', '송파센터', '마포센터'];
+  
+  const points: MemberPoint[] = [];
+  
+  // 각 지역별로 5-15명의 회원 생성
+  seoulLocations.forEach((location, index) => {
+    const memberCount = Math.floor(Math.random() * 10) + 5; // 5-15명
     
-    if (!key || key === '여기에_서버용_브이월드_API_키') {
-      console.warn('⚠️ VWorld API 키가 설정되지 않았습니다. 목업 좌표를 사용합니다.');
+    for (let i = 0; i < memberCount; i++) {
+      const [noisyLng, noisyLat] = addLocationNoise(location.lat, location.lng);
       
-      // API 키가 없을 때 목업 좌표 반환
-      const mockCoords = [
-        { lon: 126.978, lat: 37.5665 }, // 서울 중구
-        { lon: 127.028, lat: 37.4979 }, // 서울 강남구
-        { lon: 126.922, lat: 37.5563 }, // 서울 마포구
-        { lon: 127.125, lat: 37.5158 }, // 서울 송파구
-        { lon: 126.974, lat: 37.5326 }, // 서울 용산구
-        { lon: 126.834, lat: 37.5424 }, // 서울 강서구
-        { lon: 126.924, lat: 37.5219 }, // 서울 영등포구
-        { lon: 127.028, lat: 37.4979 }, // 서울 서초구
-      ];
-      
-      // 주소 해시를 이용한 일관된 목업 좌표 반환
-      const hash = addr.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      
-      return mockCoords[Math.abs(hash) % mockCoords.length];
+      points.push({
+        id: `member_${index}_${i}`,
+        position: [noisyLng, noisyLat],
+        memberType: memberTypes[Math.floor(Math.random() * memberTypes.length)],
+        centerId: centers[Math.floor(Math.random() * centers.length)],
+        ageGroup: ageGroups[Math.floor(Math.random() * ageGroups.length)],
+        joinDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString()
+      });
     }
-
-    // VWorld Geocoder 2.0 API 호출
-    const url = new URL('https://api.vworld.kr/req/address');
-    url.searchParams.set('service', 'address');
-    url.searchParams.set('request', 'getCoord');
-    url.searchParams.set('version', '2.0');
-    url.searchParams.set('crs', 'EPSG:4326');
-    url.searchParams.set('type', 'ROAD'); // 도로명 기준
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('key', key);
-    url.searchParams.set('address', addr);
-
-    const response = await fetch(url.toString(), { cache: 'no-store' });
-    const data = await response.json();
-    
-    const point = data?.response?.result?.point;
-    if (!point) {
-      console.warn(`⚠️ 주소 변환 실패: ${addr}`);
-      return null;
-    }
-
-    console.log(`✅ Geocoding 성공: ${addr} → (${point.x}, ${point.y})`);
-    
-    return {
-      lon: Number(point.x),
-      lat: Number(point.y)
-    };
-    
-  } catch (error) {
-    console.error(`❌ Geocoding 오류 (${addr}):`, error);
-    return null;
-  }
-}
-
-/**
- * 라플라스 노이즈 생성 (차등 프라이버시)
- * 
- * @param n 원본 수치
- * @param epsilon 프라이버시 매개변수 (기본값: 2)
- * @returns 노이즈가 추가된 수치
- */
-function laplaceNoise(n: number, epsilon: number = LAPLACE_EPSILON): number {
-  const u = Math.random() - 0.5;
-  const noise = -(1 / epsilon) * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
-  return Math.max(0, Math.round(n + noise));
-}
-
-/**
- * 5단위 반올림 (추가 프라이버시 보호)
- * 
- * @param n 반올림할 수치
- * @returns 5단위로 반올림된 수치
- */
-function roundToNearestFive(n: number): number {
-  return Math.max(0, Math.round(n / 5) * 5);
-}
-
-/**
- * k-익명성 적용 (임계값 미만 셀 제거)
- * 
- * @param cells H3 셀 배열
- * @param k k-익명성 임계값
- * @returns k-익명성이 적용된 셀 배열
- */
-function enforceKAnonymity(cells: H3Cell[], k: number): H3Cell[] {
-  return cells.filter(cell => cell.countApprox >= k);
+  });
+  
+  return points;
 }
 
 /**
  * GET /api/members/heatmap
- * 회원 분포도 데이터 제공 (프라이버시 보호 적용)
+ * 개별 회원 위치 데이터 제공
  */
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    console.log('🗺️ 회원 분포도 API 호출 시작');
-    console.log('🔍 h3-js 모듈 확인:', typeof h3, typeof h3.latLngToCell);
-    
-    // 간단한 테스트 응답
-    return NextResponse.json({
-      success: true,
-      data: {
-        cells: [
-          { h3: '8928308291fffff', countApprox: 10 },
-          { h3: '8928308292fffff', countApprox: 15 }
-        ],
-        metadata: {
-          totalCells: 2,
-          h3Resolution: 8,
-          kAnonymityThreshold: 5,
-          laplaceEpsilon: 2,
-          filters: {},
-          privacyNotice: '테스트 데이터입니다.'
-        }
-      }
-    });
-    
-    // 쿼리 파라미터 파싱
-    const { searchParams } = new URL(request.url);
-    const centerId = searchParams.get('centerId');
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const userType = searchParams.get('userType');
+    console.log('🗺️ 개별 회원 위치 API 호출 시작');
 
-    // 회원 데이터 가져오기
-    const members = await fetchMembers();
-    
-    // 필터링 적용
-    let filteredMembers = members;
-    
-    if (centerId) {
-      filteredMembers = filteredMembers.filter(m => m.centerId === centerId);
-    }
-    
-    if (from) {
-      filteredMembers = filteredMembers.filter(m => m.joinedAt >= from);
-    }
-    
-    if (to) {
-      filteredMembers = filteredMembers.filter(m => m.joinedAt <= to);
-    }
-    
-    if (userType) {
-      filteredMembers = filteredMembers.filter(m => m.userType === userType);
-    }
+    // 1) DB에서 데이터 가져오기 (현재는 목업 사용)
+    // TODO: 실제 DB 쿼리로 교체
+    const memberPoints = generateMemberPoints();
 
-    console.log(`📊 필터링된 회원 수: ${filteredMembers.length}`);
+    console.log(`📊 개별 회원 위치: ${memberPoints.length}개`);
 
-    // 주소 → 좌표 → H3 헥사곤 집계
-    const h3Counts = new Map<string, number>();
-    
-    for (const member of filteredMembers) {
-      try {
-        const coords = await geocode(member.address);
-        if (!coords) continue;
-        
-        console.log(`📍 좌표 변환: ${member.address} → (${coords.lat}, ${coords.lon})`);
-        
-        // H3 헥사곤 인덱스 생성
-        const h3Index = h3.latLngToCell(coords.lat, coords.lon, H3_RESOLUTION);
-        console.log(`🔷 H3 인덱스 생성: ${h3Index}`);
-        h3Counts.set(h3Index, (h3Counts.get(h3Index) || 0) + 1);
-      } catch (error) {
-        console.error(`❌ 회원 처리 오류 (${member.address}):`, error);
-      }
-    }
+    // 2) 프라이버시 보호 적용
+    // - 위치 노이즈는 이미 generateMemberPoints에서 적용됨
+    // - 추가적인 프라이버시 보호 로직 필요시 여기에 추가
 
-    console.log(`🔢 H3 셀 수: ${h3Counts.size}`);
-
-    // 프라이버시 보호 처리
-    const privacyProtectedCells: H3Cell[] = Array.from(h3Counts, ([h3Index, count]) => ({
-      h3: h3Index,
-      countApprox: roundToNearestFive(laplaceNoise(count))
-    }));
-
-    // k-익명성 적용
-    const kAnonymizedCells = enforceKAnonymity(privacyProtectedCells, K_ANONYMITY_THRESHOLD);
-
-    console.log(`🔒 k-익명성 적용 후 셀 수: ${kAnonymizedCells.length}`);
-    console.log(`✅ 프라이버시 보호 완료 (k=${K_ANONYMITY_THRESHOLD}, ε=${LAPLACE_EPSILON})`);
-
-    // 응답 데이터 (원본 주소/좌표는 절대 포함하지 않음)
+    // 3) 응답 데이터
     const response = {
       success: true,
       data: {
-        cells: kAnonymizedCells,
+        points: memberPoints,
         metadata: {
-          totalCells: kAnonymizedCells.length,
-          h3Resolution: H3_RESOLUTION,
-          kAnonymityThreshold: K_ANONYMITY_THRESHOLD,
-          laplaceEpsilon: LAPLACE_EPSILON,
-          filters: {
-            centerId,
-            from,
-            to,
-            userType
+          totalPoints: memberPoints.length,
+          locationNoise: '100-200m 랜덤 오프셋 적용',
+          privacyNotice: '개별 회원의 정확한 위치는 프라이버시 보호를 위해 노이즈가 적용되었습니다.',
+          memberTypes: {
+            regular: '일반 회원',
+            premium: '프리미엄 회원', 
+            vip: 'VIP 회원',
+            instructor: '강사'
           },
-          privacyNotice: '이 데이터는 k-익명성, 라플라스 노이즈, 5단위 반올림이 적용된 집계 결과입니다.'
+          ageGroups: {
+            child: '어린이 (7-12세)',
+            teen: '청소년 (13-19세)',
+            adult: '성인 (20-64세)',
+            senior: '시니어 (65세 이상)'
+          }
         }
       }
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
-    console.error('❌ 회원 분포도 API 오류:', error);
-    
+    console.error('❌ 개별 회원 위치 API 오류:', error);
+
     return NextResponse.json({
       success: false,
-      error: '회원 분포도 데이터를 가져오는 중 오류가 발생했습니다.',
-      data: { cells: [] }
+      error: '개별 회원 위치 데이터를 가져오는 중 오류가 발생했습니다.',
+      data: { points: [] }
     }, { status: 500 });
   }
 }

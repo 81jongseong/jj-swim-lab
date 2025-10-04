@@ -48,6 +48,7 @@ let maplibregl: any;
 let MapboxLayer: any;
 let H3HexagonLayer: any;
 let ColumnLayer: any;
+let DeckGL: any;
 
 // 타입 정의
 interface CenterData {
@@ -68,6 +69,7 @@ export default function GeoCentersPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<any>(null);
 
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -104,13 +106,15 @@ export default function GeoCentersPage() {
       try {
         maplibregl = (await import('maplibre-gl')).default;
         const deckGl = await import('@deck.gl/mapbox');
+        const deckGlCore = await import('@deck.gl/core');
         const geoLayers = await import('@deck.gl/geo-layers');
         const coreLayers = await import('@deck.gl/layers');
         const h3 = await import('h3-js');
 
-        MapboxLayer = deckGl.MapboxLayer;
+        MapboxLayer = deckGl.MapboxOverlay;
         H3HexagonLayer = geoLayers.H3HexagonLayer;
         ColumnLayer = coreLayers.ColumnLayer;
+        DeckGL = deckGlCore.Deck;
         setH3Module(h3); // h3 모듈을 상태로 설정
 
         await import('maplibre-gl/dist/maplibre-gl.css');
@@ -247,23 +251,22 @@ export default function GeoCentersPage() {
 
     const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY || 'demo_key';
 
+    // OpenStreetMap으로 임시 변경 (VWorld API 키 문제)
     const style: any = {
       version: 8,
       sources: {
-        vworld: {
+        osm: {
           type: 'raster',
-          tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`,
-          ],
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
           tileSize: 256,
-          attribution: '© VWorld / NGII'
+          attribution: '© OpenStreetMap contributors'
         }
       },
       layers: [
         {
-          id: 'vworld-base',
+          id: 'osm-base',
           type: 'raster',
-          source: 'vworld'
+          source: 'osm'
         }
       ]
     };
@@ -271,8 +274,8 @@ export default function GeoCentersPage() {
     const map = new maplibregl.Map({
       container: mapRef.current,
       style,
-      center: [127.0, 37.5],
-      zoom: 10,
+      center: [127.0276, 37.4979], // 서울 강남구 중심
+      zoom: 12,
       attributionControl: true,
       logoPosition: 'bottom-left'
     });
@@ -288,120 +291,38 @@ export default function GeoCentersPage() {
 
     // 지배 모드 레이어
     const buildDominantLayer = () => {
-      return new MapboxLayer({
+      return new H3HexagonLayer({
         id: 'h3-dominant',
-        type: H3HexagonLayer,
         data: filteredCells,
         pickable: true,
         getHexagon: (d: Cell) => d.h3,
         getFillColor: (d: Cell) => colorRgbaOf(d.dominantCenter, 0.72),
-        getElevation: (d: Cell) => Math.sqrt(d.totalApprox) * 100,
+        getElevation: (d: Cell) => 0, // 2D로 변경
         extruded: false,
-        opacity: 0.9,
-        coverage: 0.95,
-        onHover: ({ x, y, object }: { x: number; y: number; object?: Cell }) => {
-          if (!tooltipRef.current) return;
-
-          if (!object) {
-            tooltipRef.current.style.display = 'none';
-            return;
-          }
-
-          const top3 = [...object.centers]
-            .sort((a, b) => b.countApprox - a.countApprox)
-            .slice(0, 3);
-
-          const total = object.totalApprox;
-
-          let html = `<div class="font-bold text-base mb-2">🎯 ${object.dominantCenter}</div>`;
-          html += `<div class="text-gray-600 mb-2">총 회원: <strong>${total}명</strong> (약)</div>`;
-          html += `<div class="space-y-1">`;
-
-          top3.forEach(center => {
-            const percentage = ((center.countApprox / total) * 100).toFixed(1);
-            const css = colorCssOf(center.centerId);
-
-            html += `
-              <div class="flex items-center gap-2">
-                <span class="inline-block w-3 h-3 rounded" style="background: ${css}"></span>
-                <span class="flex-1">${center.centerId}: ${center.countApprox}명 (${percentage}%)</span>
-              </div>
-            `;
-          });
-
-          html += `</div>`;
-
-          tooltipRef.current.innerHTML = html;
-          tooltipRef.current.style.left = `${x + 15}px`;
-          tooltipRef.current.style.top = `${y + 15}px`;
-          tooltipRef.current.style.display = 'block';
-        }
+        opacity: 1.0,
+        coverage: 1.0,
+        wireframe: false
       });
     };
 
     // 스택 모드 레이어
     const buildStackLayer = () => {
-      return new MapboxLayer({
+      return new ColumnLayer({
         id: 'h3-stack',
-        type: ColumnLayer,
         data: stackData,
         pickable: true,
         getPosition: (d: any) => d.position,
         getFillColor: (d: any) => colorRgbaOf(d.centerId, 0.9),
-        getElevation: (d: any) => Math.sqrt(d.count) * 120,
+        getElevation: (d: any) => 0, // 2D로 변경
         elevationScale: 1,
         radius: 80,
-        extruded: true,
-        onHover: ({ x, y, object }: { x: number; y: number; object?: any }) => {
-          if (!tooltipRef.current) return;
-
-          if (!object) {
-            tooltipRef.current.style.display = 'none';
-            return;
-          }
-
-          const css = colorCssOf(object.centerId);
-
-          tooltipRef.current.innerHTML = `
-            <div class="flex items-center gap-2">
-              <span class="inline-block w-4 h-4 rounded" style="background: ${css}"></span>
-              <span class="font-semibold">${object.label}</span>
-            </div>
-          `;
-          tooltipRef.current.style.left = `${x + 15}px`;
-          tooltipRef.current.style.top = `${y + 15}px`;
-          tooltipRef.current.style.display = 'block';
-        }
+        extruded: false,
+        wireframe: false
       });
     };
 
-    // 레이어 마운트
-    const mountLayer = () => {
-      try {
-        // 기존 레이어 제거
-        const existingDominant = (map as any).getLayer?.('h3-dominant');
-        const existingStack = (map as any).getLayer?.('h3-stack');
-
-        if (existingDominant) {
-          (map as any).removeLayer('h3-dominant');
-        }
-        if (existingStack) {
-          (map as any).removeLayer('h3-stack');
-        }
-
-        // 새 레이어 추가
-        const layer = mode === 'dominant' ? buildDominantLayer() : buildStackLayer();
-        map.addLayer(layer);
-
-        console.log(`✅ ${mode === 'dominant' ? '지배' : '스택'} 모드 레이어 마운트`);
-      } catch (error) {
-        console.error('❌ 레이어 마운트 오류:', error);
-      }
-    };
-
     map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
-      mountLayer();
+      console.log('🗺️ OpenStreetMap 지도 로딩 완료');
     });
 
     // 정리 함수
@@ -410,7 +331,118 @@ export default function GeoCentersPage() {
         map.remove();
       }
     };
-  }, [mode, filteredCells, stackData, topN, colorVersion]);
+  }, [librariesLoaded]);
+
+  // H3 헥사곤 레이어 렌더링 및 Deck.gl 연동
+  useEffect(() => {
+    console.log('🔍 H3 레이어 useEffect 실행:', { 
+      hasMap: !!mapRef.current, 
+      hasDeckGL: !!DeckGL, 
+      hasH3HexagonLayer: !!H3HexagonLayer, 
+      hasColumnLayer: !!ColumnLayer,
+      cellsLength: cells.length, 
+      librariesLoaded 
+    });
+
+    if (!mapRef.current || !DeckGL || !H3HexagonLayer || !ColumnLayer || !librariesLoaded || cells.length === 0) {
+      console.log('⏳ H3 레이어 대기 중 - 라이브러리 로딩 또는 데이터 대기');
+      return;
+    }
+
+    const map = mapRef.current;
+
+    // 기존 Deck.gl 인스턴스가 있으면 제거
+    if (layerRef.current) {
+      layerRef.current.setProps({ layers: [] });
+      layerRef.current.finalize();
+      layerRef.current = null;
+    }
+
+    // 현재 모드에 따른 레이어 생성
+    const currentLayer = mode === 'dominant' ? 
+      new H3HexagonLayer({
+        id: 'h3-dominant',
+        data: filteredCells,
+        pickable: true,
+        getHexagon: (d: Cell) => d.h3,
+        getFillColor: (d: Cell) => colorRgbaOf(d.dominantCenter, 0.72),
+        getElevation: (d: Cell) => 0,
+        extruded: false,
+        opacity: 1.0,
+        coverage: 1.0,
+        wireframe: false
+      }) :
+      new ColumnLayer({
+        id: 'h3-stack',
+        data: stackData,
+        pickable: true,
+        getPosition: (d: any) => d.position,
+        getFillColor: (d: any) => colorRgbaOf(d.centerId, 0.9),
+        getElevation: (d: any) => 0,
+        elevationScale: 1,
+        radius: 80,
+        extruded: false,
+        wireframe: false
+      });
+
+    // Deck.gl 인스턴스 생성
+    console.log('🔧 Deck.gl 인스턴스 생성 시작...');
+    
+    const deckInstance = new DeckGL({
+      canvas: 'deck-canvas',
+      width: '100%',
+      height: '100%',
+      initialViewState: {
+        longitude: 127.0276,
+        latitude: 37.4979,
+        zoom: 12,
+        pitch: 0,
+        bearing: 0
+      },
+      controller: false,
+      layers: [currentLayer],
+      parameters: {
+        depthTest: false
+      },
+      onError: (error: any) => {
+        console.error('🚨 Deck.gl 오류:', error);
+      },
+      onAfterRender: () => {
+        console.log('🎨 Deck.gl 렌더링 완료');
+      }
+    });
+    
+    console.log('✅ Deck.gl 인스턴스 생성 완료:', deckInstance);
+
+    // MapLibre와 Deck.gl 연동
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.on('move', () => {
+        const { lng, lat } = mapInstanceRef.current.getCenter();
+        const zoom = mapInstanceRef.current.getZoom();
+        deckInstance.setProps({
+          viewState: {
+            longitude: lng,
+            latitude: lat,
+            zoom: zoom,
+            pitch: 0,
+            bearing: 0
+          }
+        });
+      });
+    }
+
+    layerRef.current = deckInstance;
+
+    // 렌더링 강제 실행
+    setTimeout(() => {
+      console.log('🔄 Deck.gl 강제 렌더링 실행');
+      deckInstance.setProps({
+        layers: [currentLayer]
+      });
+    }, 1000);
+
+    console.log(`✅ ${mode === 'dominant' ? '지배' : '스택'} 모드 H3 레이어 업데이트 완료`);
+  }, [mode, filteredCells, stackData, topN, colorVersion, librariesLoaded]);
 
   // 센터 필터 토글
   const toggleCenter = (centerId: string, checked: boolean) => {
@@ -685,11 +717,16 @@ export default function GeoCentersPage() {
       </div>
 
       {/* 지도 컨테이너 */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden relative">
         <div
           ref={mapRef}
           className="relative w-full h-[650px]"
           style={{ minHeight: '650px' }}
+        />
+        <canvas 
+          id="deck-canvas"
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          style={{ zIndex: 1, backgroundColor: 'rgba(255, 0, 0, 0.1)' }}
         />
       </div>
 

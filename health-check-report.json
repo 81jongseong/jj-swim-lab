@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-10-03T07:59:32.793Z",
+  "timestamp": "2025-10-03T22:09:33.412Z",
   "stats": {
-    "totalChecks": 363,
+    "totalChecks": 364,
     "passed": 434,
     "failed": 9,
-    "warnings": 6
+    "warnings": 7
   },
   "errors": [
     {
@@ -48,6 +48,10 @@
     {
       "message": "JWT_SECRET이 너무 짧습니다 (32자 이상 권장)",
       "solution": "더 긴 랜덤 문자열로 변경하세요"
+    },
+    {
+      "message": "클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음",
+      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
     },
     {
       "message": "클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음",

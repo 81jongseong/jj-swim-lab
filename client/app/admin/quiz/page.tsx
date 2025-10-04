@@ -699,7 +699,7 @@ export default function QuizManagementPage() {
 
                 {formData.questions.length === 0 ? (
                   <div className="text-center py-6 text-gray-500 text-sm">
-                    추가된 문제가 없습니다. "문제 추가" 버튼을 눌러 문제를 추가하세요.
+                    추가된 문제가 없습니다. &quot;문제 추가&quot; 버튼을 눌러 문제를 추가하세요.
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
