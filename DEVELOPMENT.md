@@ -129,6 +129,33 @@
 - Next.js 개발 서버 정상 시작
 - InstructorManagementPage 정상 작동
 
+### 🔄 **UI 컴포넌트 undefined 오류 지속 발생 (2025-01-22)**
+
+#### 발생한 오류:
+1. **런타임 UI 컴포넌트 undefined 오류 지속**
+   - 624번째 줄 `CardTitle` 컴포넌트에서 오류 발생
+   - Fast Refresh 후에도 동일한 오류 지속
+   - Next.js 캐시 문제로 인한 컴포넌트 인식 실패
+   - 컴포넌트 export/import 구조는 정상 확인됨
+
+2. **해결 방법:**
+   - 포트 3000 사용 중인 프로세스 종료 (PID 23440)
+   - `.next` 캐시 디렉토리 완전 삭제
+   - `node_modules/.cache` 캐시 삭제
+   - `.turbo` 캐시 삭제
+   - `.swc` 캐시 삭제
+   - 개발 서버 재시작
+
+#### 수정된 작업:
+- 포트 충돌 해결 (PID 23440 프로세스 종료)
+- Next.js 캐시 완전 삭제 (`.next`, `node_modules/.cache`, `.turbo`, `.swc`)
+- 개발 서버 재시작
+
+#### 결과:
+- UI 컴포넌트 undefined 오류 해결
+- Next.js 개발 서버 정상 시작
+- InstructorManagementPage 정상 작동
+
 ---
 
 ### 🗂️ 메뉴 구조 대폭 정리 (2025-01-22)
