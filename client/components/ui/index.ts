@@ -133,12 +133,8 @@ export { default as Slider } from './slider';
 export { default as Switch } from './switch';
 
 // 테이블 컴포넌트들
-export { default as ResponsiveTable } from './responsivetable';
-export { default as TableHeader } from './tableheader';
+export { default as ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from './responsivetable';
 export { default as TableHeaderCell } from './tableheadercell';
-export { default as TableBody } from './tablebody';
-export { default as TableRow } from './tablerow';
-export { default as TableCell } from './tablecell';
 
 // 컴포넌트 타입 및 인터페이스 (필요한 경우에만 export)
 // export type { BarChartProps } from './BarChart';
