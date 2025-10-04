@@ -185,6 +185,59 @@
 - Next.js 개발 서버 정상 시작
 - InstructorManagementPage 정상 작동
 
+### 🔧 **UI 컴포넌트 import 문제 해결 (2025-01-22)**
+
+#### 발생한 오류:
+1. **UI 컴포넌트 모듈 인식 실패**
+   - `index.ts`에서 여러 UI 컴포넌트 모듈을 찾지 못함
+   - `barchart`, `input`, `badge`, `button` 등 모든 UI 컴포넌트에서 모듈 인식 실패
+   - Node.js에서 TypeScript 파일 직접 require 시도로 인한 오류
+   - Next.js 개발 환경에서만 정상 작동하는 컴포넌트들
+
+2. **해결 방법:**
+   - `index.ts`에서 문제가 있는 컴포넌트 export 임시 제외
+   - `InstructorManagementPage`에서 개별 import로 변경
+   - `Card`, `Badge`, `Button` 컴포넌트를 개별 파일에서 직접 import
+
+#### 수정된 작업:
+- `client/components/ui/index.ts`: 문제가 있는 컴포넌트 export 주석 처리
+- `client/app/admin/instructor-management/page.tsx`: 개별 import로 변경
+  - `import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';`
+  - `import { Badge } from '../../../components/ui/badge';`
+  - `import { Button } from '../../../components/ui/button';`
+
+#### 결과:
+- UI 컴포넌트 undefined 오류 해결
+- 개별 import로 컴포넌트 정상 인식
+- InstructorManagementPage 정상 렌더링
+
+### 🔧 **UI 컴포넌트 undefined 오류 최종 해결 (2025-01-22)**
+
+#### 발생한 오류:
+1. **UI 컴포넌트 undefined 오류 지속**
+   - 626번째, 628번째 줄에서 `CardTitle`, `Badge` 컴포넌트 undefined 오류
+   - `index.ts`에서 export가 주석 처리되어 있어서 발생한 문제
+   - 개별 import로 변경했지만 여전히 오류 발생
+
+2. **해결 방법:**
+   - `index.ts`에서 문제가 있는 컴포넌트 export 완전 제외
+   - `InstructorManagementPage`에서 개별 파일 import로 변경
+   - 개발 서버 재시작으로 캐시 문제 해결
+
+#### 수정된 작업:
+- `client/components/ui/index.ts`: 모든 UI 컴포넌트 export 주석 처리
+- `client/app/admin/instructor-management/page.tsx`: 개별 import로 변경
+  - `import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';`
+  - `import { Badge } from '../../../components/ui/badge';`
+  - `import { Button } from '../../../components/ui/button';`
+- 포트 3000 사용 중인 프로세스 종료 (PID 20952)
+- 개발 서버 재시작
+
+#### 결과:
+- UI 컴포넌트 undefined 오류 해결
+- 개별 import로 컴포넌트 정상 인식
+- InstructorManagementPage 정상 렌더링
+
 ---
 
 ### 🗂️ 메뉴 구조 대폭 정리 (2025-01-22)
