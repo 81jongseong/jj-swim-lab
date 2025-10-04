@@ -77,6 +77,32 @@
 - 개발 서버 및 백엔드 서버 정상 실행
 - InstructorManagementPage 정상 작동
 
+### 🔧 **middleware-manifest.json 오류 해결 (2025-01-22)**
+
+#### 발생한 오류:
+1. **Next.js middleware-manifest.json 오류**
+   - `Cannot find module 'C:\Users\user\jj-swim-lab\client\.next\server\middleware-manifest.json'`
+   - Next.js 개발 서버에서 필수 매니페스트 파일 누락
+   - 캐시 손상으로 인한 빌드 파일 불일치
+
+2. **해결 방법:**
+   - 포트 3000, 5000 사용 중인 프로세스 종료 (PID 3320, 4792)
+   - `.next` 캐시 디렉토리 완전 삭제
+   - `node_modules/.cache` 캐시 삭제
+   - `.turbo` 캐시 삭제
+   - 개발 서버 및 백엔드 서버 재시작
+
+#### 수정된 작업:
+- 포트 충돌 해결 (PID 3320, 4792 프로세스 종료)
+- Next.js 캐시 완전 삭제 (`.next`, `node_modules/.cache`, `.turbo`)
+- 개발 환경 재시작
+
+#### 결과:
+- middleware-manifest.json 오류 해결
+- Next.js 개발 서버 정상 시작
+- 백엔드 서버 정상 실행
+- InstructorManagementPage 정상 작동
+
 ---
 
 ### 🗂️ 메뉴 구조 대폭 정리 (2025-01-22)
