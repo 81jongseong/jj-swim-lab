@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '@/components/ui/card';
 import Button from '@/components/ui/button';
 import Badge from '@/components/ui/badge';
-import { progress as Progress } from '@/components/ui/progress';
+import { Progress } from '@/components/ui/progress';
 import { RefreshCw, Server, Users, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface SystemStatus {
