@@ -570,6 +570,130 @@ export default function AdminCoursesPage() {
                 </div>
 
                 <form onSubmit={(e) => { e.preventDefault(); handleAddCourse(); }} className="space-y-6">
+                  {/* 지역 필터 섹션 */}
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-blue-900 mb-3">지역 선택</h4>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* 시/도 선택 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value && !selectedRegions.includes(value)) {
+                              setSelectedRegions([...selectedRegions, value]);
+                            }
+                          }}
+                          value=""
+                        >
+                          <option value="">시/도 선택</option>
+                          {Object.keys(regionData).map(sido => (
+                            <option key={sido} value={sido}>
+                              {sido}
+                            </option>
+                          ))}
+                        </select>
+                        {selectedRegions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {selectedRegions.map(region => (
+                              <span
+                                key={region}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+                              >
+                                {region}
+                                <button
+                                  onClick={() => setSelectedRegions(selectedRegions.filter(r => r !== region))}
+                                  className="ml-1 text-blue-600 hover:text-blue-800"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 시/군/구 선택 */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">시/군/구</label>
+                          {selectedRegions.length > 0 && (
+                            <button
+                              onClick={() => {
+                                const allDistricts = selectedRegions.flatMap(sido => regionData[sido] || []);
+                                setSelectedDistricts(allDistricts);
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              모두 선택
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                          {selectedRegions.length > 0 ? (
+                            selectedRegions.flatMap(sido => regionData[sido] || []).map(district => (
+                              <button
+                                key={district}
+                                onClick={() => handleDistrictToggle(district)}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  selectedDistricts.includes(district)
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                {district}
+                                {selectedDistricts.includes(district) && (
+                                  <span className="ml-1 text-xs">✓</span>
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-gray-500 text-sm py-2 text-center w-full">
+                              먼저 시/도를 선택해주세요
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 센터 표시 */}
+                    {selectedDistricts.length > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-700">해당 센터</label>
+                          <button
+                            onClick={() => {
+                              const allCenters = selectedDistricts.flatMap(district => centerData[district] || []);
+                              setSelectedCenters(allCenters);
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            모두 선택
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                          {selectedDistricts.flatMap(district => centerData[district] || []).map(center => (
+                            <button
+                              key={center}
+                              onClick={() => handleCenterToggle(center)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedCenters.includes(center)
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {center}
+                              {selectedCenters.includes(center) && (
+                                <span className="ml-1 text-xs">✓</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
