@@ -12,7 +12,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 
 const SystemPage: React.FC = () => {
-  const { user, hasUserType } = useAuth();
+  const { user, hasUserType, loading } = useAuth();
   
   // 상태 관리
   const [systemStatus, setSystemStatus] = useState<any>(null);
@@ -190,6 +190,18 @@ const SystemPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-2">시스템 데이터 로딩 중...</span>
+      </div>
+    );
+  }
+
+  // 로딩 중일 때
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
       </div>
     );
   }
