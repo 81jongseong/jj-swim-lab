@@ -737,7 +737,7 @@ export default function InstructorManagementPage() {
                 {/* 2단계: 시군구 선택 (버튼 나열) */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">시군구</label>
+                    <label className="block text-sm font-medium text-gray-700">시/군/구</label>
                     {selectedRegions.length > 0 && (
                       <button
                         onClick={() => {
@@ -749,14 +749,14 @@ export default function InstructorManagementPage() {
                         모두 선택
                       </button>
                     )}
-                  </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
+                              </div>
+                  <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
                     {selectedRegions.length > 0 ? (
                       selectedRegions.flatMap(sido => regionData[sido] || []).map(district => (
-                  <button
+                        <button
                           key={district}
                           onClick={() => handleDistrictToggle(district)}
-                          className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                             selectedDistricts.includes(district)
                               ? 'bg-green-600 text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -764,14 +764,14 @@ export default function InstructorManagementPage() {
                         >
                           {district}
                           {selectedDistricts.includes(district) && (
-                            <span className="ml-2 text-xs">✓</span>
+                            <span className="ml-1 text-xs">✓</span>
                           )}
-                  </button>
+                        </button>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-sm py-4 text-center">
+                      <div className="text-gray-500 text-sm py-4 text-center w-full">
                         먼저 시/도를 선택해주세요
-                              </div>
+                      </div>
                     )}
                               </div>
                             </div>
@@ -791,23 +791,25 @@ export default function InstructorManagementPage() {
                     >
                       모두 선택
                     </button>
-                  </div>
-                  <select
-                    multiple
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onChange={(e) => {
-                      const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-                      setSelectedCenters(selectedOptions);
-                    }}
-                    value={selectedCenters}
-                  >
+                              </div>
+                  <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
                     {selectedDistricts.flatMap(district => centerData[district] || []).map(center => (
-                      <option key={center} value={center}>
+                      <button
+                        key={center}
+                        onClick={() => handleCenterToggle(center)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          selectedCenters.includes(center)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         {center}
-                      </option>
+                        {selectedCenters.includes(center) && (
+                          <span className="ml-1 text-xs">✓</span>
+                        )}
+                      </button>
                     ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">Ctrl+클릭으로 다중 선택</p>
+                              </div>
                               </div>
               )}
                           </div>
