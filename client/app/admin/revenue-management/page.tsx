@@ -1,19 +1,20 @@
 /**
- * 💰 JJ Swim Lab - 총 매출 관리 페이지
+ * 💰 JJ Swim Lab - 센터별 매출 관리 페이지
  * 
  * 📋 **페이지 목적**
- * - 최고 관리자가 모든 수익원을 통합 관리하는 종합 매출 대시보드
- * - 센터 사용비, 상점 수익, 광고비, 교육비 등 다양한 수익원 분석
- * - 수익 구조 분석 및 트렌드 파악
+ * - 각 센터의 실제 운영 수익과 비용을 관리하는 센터별 매출 대시보드
+ * - 회원 등록비, 강습비 등 센터 수익원과 인건비, 임대료, 제세공과금 등 비용 분석
+ * - 센터별 수익성 분석 및 운영 효율성 평가
  * - 센터별, 지역별, 기간별 매출 현황 관리
  * 
  * 🔄 **주요 기능**
- * - 전체 매출 개요 (총 매출, 순이익, 성장률 등)
- * - 수익원별 분석 (센터 사용비, 상점, 광고, 교육 등)
- * - 센터별 매출 현황 및 기여도 분석
+ * - 전체 센터 매출 개요 (총 매출, 순이익, 성장률 등)
+ * - 수익원별 분석 (회원 등록비, 강습비, 개인레슨, 기타 서비스 등)
+ * - 비용 구조 분석 (인건비, 임대료, 제세공과금, 유지보수비 등)
+ * - 센터별 매출 현황 및 수익성 분석
  * - 지역별 매출 분포 및 성과 분석
  * - 기간별 매출 트렌드 및 예측
- * - 수익 구조 최적화 인사이트
+ * - 센터 운영 효율성 인사이트
  * - 매출 목표 대비 실적 분석
  * 
  * 🗄️ **데이터 연동**
@@ -94,13 +95,11 @@ interface RevenueData {
     averageRevenuePerCenter: number;
   };
   revenueSources: {
-    centerFees: { amount: number; percentage: number; growth: number };
-    shopSales: { amount: number; percentage: number; growth: number };
-    advertising: { amount: number; percentage: number; growth: number };
-    education: { amount: number; percentage: number; growth: number };
-    consulting: { amount: number; percentage: number; growth: number };
-    licensing: { amount: number; percentage: number; growth: number };
-    other: { amount: number; percentage: number; growth: number };
+    membershipFees: { amount: number; percentage: number; growth: number };
+    lessonFees: { amount: number; percentage: number; growth: number };
+    privateLessons: { amount: number; percentage: number; growth: number };
+    equipmentRental: { amount: number; percentage: number; growth: number };
+    otherServices: { amount: number; percentage: number; growth: number };
   };
   centerPerformance: {
     centerId: string;
@@ -122,10 +121,11 @@ interface RevenueData {
     month: string;
     revenue: number;
     profit: number;
-    centerFees: number;
-    shopSales: number;
-    advertising: number;
-    education: number;
+    membershipFees: number;
+    lessonFees: number;
+    privateLessons: number;
+    equipmentRental: number;
+    otherServices: number;
   }[];
   costAnalysis: {
     category: string;
@@ -174,13 +174,11 @@ export default function RevenueManagementPage() {
           averageRevenuePerCenter: 88028169 // 약 8,800만원
         },
         revenueSources: {
-          centerFees: { amount: 7500000000, percentage: 60.0, growth: 8.5 },
-          shopSales: { amount: 2500000000, percentage: 20.0, growth: 15.2 },
-          advertising: { amount: 1250000000, percentage: 10.0, growth: 22.1 },
-          education: { amount: 1000000000, percentage: 8.0, growth: 18.7 },
-          consulting: { amount: 150000000, percentage: 1.2, growth: 5.3 },
-          licensing: { amount: 100000000, percentage: 0.8, growth: 12.4 },
-          other: { amount: 0, percentage: 0, growth: 0 }
+          membershipFees: { amount: 6000000000, percentage: 50.0, growth: 12.5 },
+          lessonFees: { amount: 3600000000, percentage: 30.0, growth: 18.2 },
+          privateLessons: { amount: 1800000000, percentage: 15.0, growth: 25.8 },
+          equipmentRental: { amount: 480000000, percentage: 4.0, growth: 8.7 },
+          otherServices: { amount: 120000000, percentage: 1.0, growth: 15.3 }
         },
         centerPerformance: [
           { centerId: '1', centerName: '강남센터', region: '서울특별시', revenue: 180000000, profit: 54000000, growth: 15.2, contribution: 1.44 },
@@ -197,25 +195,27 @@ export default function RevenueManagementPage() {
           { region: '인천광역시', totalRevenue: 900000000, centerCount: 9, averageRevenue: 100000000, growth: 6.5 }
         ],
         monthlyTrends: [
-          { month: '2024-01', revenue: 950000000, profit: 285000000, centerFees: 570000000, shopSales: 190000000, advertising: 95000000, education: 76000000 },
-          { month: '2024-02', revenue: 980000000, profit: 294000000, centerFees: 588000000, shopSales: 196000000, advertising: 98000000, education: 78400000 },
-          { month: '2024-03', revenue: 1050000000, profit: 315000000, centerFees: 630000000, shopSales: 210000000, advertising: 105000000, education: 84000000 },
-          { month: '2024-04', revenue: 1100000000, profit: 330000000, centerFees: 660000000, shopSales: 220000000, advertising: 110000000, education: 88000000 },
-          { month: '2024-05', revenue: 1150000000, profit: 345000000, centerFees: 690000000, shopSales: 230000000, advertising: 115000000, education: 92000000 },
-          { month: '2024-06', revenue: 1200000000, profit: 360000000, centerFees: 720000000, shopSales: 240000000, advertising: 120000000, education: 96000000 }
+          { month: '2024-01', revenue: 950000000, profit: 285000000, membershipFees: 475000000, lessonFees: 285000000, privateLessons: 142500000, equipmentRental: 38000000, otherServices: 9500000 },
+          { month: '2024-02', revenue: 980000000, profit: 294000000, membershipFees: 490000000, lessonFees: 294000000, privateLessons: 147000000, equipmentRental: 39200000, otherServices: 9800000 },
+          { month: '2024-03', revenue: 1050000000, profit: 315000000, membershipFees: 525000000, lessonFees: 315000000, privateLessons: 157500000, equipmentRental: 42000000, otherServices: 10500000 },
+          { month: '2024-04', revenue: 1100000000, profit: 330000000, membershipFees: 550000000, lessonFees: 330000000, privateLessons: 165000000, equipmentRental: 44000000, otherServices: 11000000 },
+          { month: '2024-05', revenue: 1150000000, profit: 345000000, membershipFees: 575000000, lessonFees: 345000000, privateLessons: 172500000, equipmentRental: 46000000, otherServices: 11500000 },
+          { month: '2024-06', revenue: 1200000000, profit: 360000000, membershipFees: 600000000, lessonFees: 360000000, privateLessons: 180000000, equipmentRental: 48000000, otherServices: 12000000 }
         ],
         costAnalysis: [
           { category: '인건비', amount: 5000000000, percentage: 40.0, trend: 5.2 },
           { category: '임대료', amount: 2500000000, percentage: 20.0, trend: 3.1 },
-          { category: '마케팅', amount: 1250000000, percentage: 10.0, trend: 8.7 },
-          { category: '운영비', amount: 1000000000, percentage: 8.0, trend: 2.3 },
-          { category: '기타', amount: 2750000000, percentage: 22.0, trend: 4.5 }
+          { category: '제세공과금', amount: 1500000000, percentage: 12.0, trend: 2.8 },
+          { category: '유지보수비', amount: 1000000000, percentage: 8.0, trend: 2.3 },
+          { category: '마케팅비', amount: 750000000, percentage: 6.0, trend: 8.7 },
+          { category: '보험료', amount: 500000000, percentage: 4.0, trend: 1.5 },
+          { category: '기타', amount: 1250000000, percentage: 10.0, trend: 4.5 }
         ],
         insights: {
           topPerformingCenter: '강남센터',
-          fastestGrowingSource: '광고비',
+          fastestGrowingSource: '개인레슨',
           underperformingRegion: '인천광역시',
-          recommendation: '광고비 수익이 빠르게 성장하고 있습니다. 광고 인프라 확대를 고려해보세요.'
+          recommendation: '개인레슨 수익이 빠르게 성장하고 있습니다. 개인레슨 프로그램 확대를 고려해보세요.'
         }
       };
       
@@ -272,8 +272,8 @@ export default function RevenueManagementPage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">💰 총 매출 관리</h1>
-          <p className="text-gray-600">전체 수익원을 통합 관리하는 종합 매출 대시보드</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">💰 센터별 매출 관리</h1>
+          <p className="text-gray-600">각 센터의 실제 운영 수익과 비용을 관리하는 센터별 매출 대시보드</p>
         </div>
 
         {/* 필터 옵션 */}
@@ -393,13 +393,11 @@ export default function RevenueManagementPage() {
                       <div className="flex items-center space-x-3">
                         <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
                         <span className="text-sm text-gray-600">
-                          {source === 'centerFees' && '센터 사용비'}
-                          {source === 'shopSales' && '상점 수익'}
-                          {source === 'advertising' && '광고비'}
-                          {source === 'education' && '교육비'}
-                          {source === 'consulting' && '컨설팅'}
-                          {source === 'licensing' && '라이선싱'}
-                          {source === 'other' && '기타'}
+                          {source === 'membershipFees' && '회원 등록비'}
+                          {source === 'lessonFees' && '강습비'}
+                          {source === 'privateLessons' && '개인레슨'}
+                          {source === 'equipmentRental' && '장비 대여'}
+                          {source === 'otherServices' && '기타 서비스'}
                         </span>
                       </div>
                       <div className="text-right">
@@ -469,10 +467,11 @@ export default function RevenueManagementPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">월</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">총 매출</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">순이익</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">센터 사용비</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상점 수익</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">광고비</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">교육비</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">회원 등록비</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">강습비</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">개인레슨</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">장비 대여</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">기타 서비스</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -481,10 +480,11 @@ export default function RevenueManagementPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{trend.month}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.revenue / 100000000).toFixed(1)}억원</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.profit / 100000000).toFixed(1)}억원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.centerFees / 100000000).toFixed(1)}억원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.shopSales / 100000000).toFixed(1)}억원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.advertising / 100000000).toFixed(1)}억원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.education / 100000000).toFixed(1)}억원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.membershipFees / 100000000).toFixed(1)}억원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.lessonFees / 100000000).toFixed(1)}억원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.privateLessons / 100000000).toFixed(1)}억원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.equipmentRental / 100000000).toFixed(1)}억원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(trend.otherServices / 100000000).toFixed(1)}억원</td>
                       </tr>
                     ))}
                   </tbody>
