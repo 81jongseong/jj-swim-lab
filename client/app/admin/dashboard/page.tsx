@@ -42,8 +42,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchDashboardStats();
     
-    // 30초마다 자동 새로고침
-    const interval = setInterval(fetchDashboardStats, 30000);
+    // 60초마다 자동 새로고침 (API 호출 빈도 감소)
+    const interval = setInterval(fetchDashboardStats, 60000);
     
     return () => clearInterval(interval);
   }, []);

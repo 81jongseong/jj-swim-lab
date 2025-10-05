@@ -29,11 +29,19 @@ export interface DashboardStats {
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const token = localStorage.getItem('token');
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/api/dashboard/stats`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -63,7 +71,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
  */
 export const refreshDashboardStats = async (
   setStats: (stats: DashboardStats) => void,
-  interval: number = 30000 // 30초마다 새로고침
+  interval: number = 60000 // 60초마다 새로고침
 ) => {
   const fetchStats = async () => {
     const stats = await getDashboardStats();
