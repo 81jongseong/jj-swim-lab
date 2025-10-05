@@ -1,6 +1,66 @@
 # 🛠️ JJ Swim Lab 개발 문서
 
-## 📅 최근 업데이트 (2025-01-22)
+## 📅 최근 업데이트 (2025-01-13)
+
+### 🚨 **시스템 사용 통계 페이지 튕김 현상 해결 (2025-01-13)**
+
+#### 발생한 오류:
+1. **페이지 튕김 현상 (리다이렉트)**
+   - "시스템 사용 통계" 메뉴 클릭 시 로그인 페이지로 튕김
+   - URL 직접 접속은 정상 작동
+   - 메뉴바를 통한 접근만 문제 발생
+
+2. **원인 분석:**
+   - **Export 방식 불일치**: 시스템 페이지만 `const SystemPage: React.FC = () => {}` + `export default SystemPage` 방식 사용
+   - **다른 페이지와 차이**: 다른 페이지들은 `export default function PageName() {}` 방식 사용
+   - **네비게이션 링크 오류**: "시스템 사용 통계" 메뉴가 `/admin/algorithm-analytics`로 잘못 연결
+   - **Next.js App Router 호환성**: Export 방식 불일치로 인한 렌더링 문제
+
+#### 해결 방법:
+1. **Export 방식 통일**
+   ```typescript
+   // Before (문제)
+   const SystemPage: React.FC = () => {
+     // ...
+   };
+   export default SystemPage;
+   
+   // After (해결)
+   export default function SystemPage() {
+     // ...
+   }
+   ```
+
+2. **네비게이션 링크 수정**
+   ```typescript
+   // Before (문제)
+   { href: '/admin/algorithm-analytics', label: '📈 시스템 사용 통계' }
+   
+   // After (해결)
+   { href: '/admin/system', label: '📈 시스템 사용 통계' }
+   ```
+
+3. **페이지 구조 개선**
+   - 4개 탭으로 구성 (개요, 사용자 활동, 성능 모니터링, 보안 현황)
+   - 권한 확인 로직 추가 (최고관리자만 접근)
+   - 목 데이터로 안정적인 렌더링 보장
+
+#### 수정된 파일들:
+- `client/app/admin/system/page.tsx` (완전 재작성)
+- `client/components/Navigation.tsx` (링크 수정)
+
+#### 결과:
+- 메뉴바에서 "시스템 사용 통계" 클릭 시 정상 작동
+- URL 직접 접속과 동일하게 동작
+- 튕김 현상 완전 해결
+- 4개 탭으로 체계적인 시스템 모니터링 가능
+
+#### 교훈:
+- **일관성의 중요성**: 모든 페이지에서 동일한 export 패턴 사용 필요
+- **네비게이션 검증**: 메뉴 링크가 실제 페이지 경로와 일치하는지 확인 필요
+- **Next.js App Router**: Export 방식이 렌더링에 직접적인 영향 미침
+
+## 📅 이전 업데이트 (2025-01-22)
 
 ### 🚨 **TypeScript 컴파일 오류 발생 (2025-01-22)**
 
@@ -4680,6 +4740,742 @@ Route (app)                              Size     First Load JS
 
 
 ## 🔍 자동 헬스 체크 (2025. 10. 5. 오후 11:16:38)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 1:40:56)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 1:46:37)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 1:50:41)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 1:55:27)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 1:55:33)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:01:15)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:24:15)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:24:21)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:42:29)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:42:51)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 2:53:10)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 3:02:30)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 3:02:57)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 3:09:42)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 3:14:09)
+
+- 총 검사: 364개
+- 통과: 434개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 6. 오전 3:14:27)
 
 - 총 검사: 364개
 - 통과: 434개

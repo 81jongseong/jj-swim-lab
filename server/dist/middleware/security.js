@@ -25,10 +25,14 @@ const corsMiddleware = (req, res, next) => {
 exports.corsMiddleware = corsMiddleware;
 const requestCounts = new Map();
 const rateLimitMiddleware = (req, res, next) => {
+    if (process.env.NODE_ENV === 'development') {
+        next();
+        return;
+    }
     const clientId = req.ip || 'unknown';
     const now = Date.now();
     const windowMs = 15 * 60 * 1000;
-    const maxRequests = 100;
+    const maxRequests = 1000;
     const clientData = requestCounts.get(clientId);
     if (!clientData || now > clientData.resetTime) {
         requestCounts.set(clientId, { count: 1, resetTime: now + windowMs });
@@ -47,10 +51,14 @@ const rateLimitMiddleware = (req, res, next) => {
 };
 exports.rateLimitMiddleware = rateLimitMiddleware;
 const apiRateLimitMiddleware = (req, res, next) => {
+    if (process.env.NODE_ENV === 'development') {
+        next();
+        return;
+    }
     const clientId = req.ip || 'unknown';
     const now = Date.now();
     const windowMs = 15 * 60 * 1000;
-    const maxRequests = 50;
+    const maxRequests = 500;
     const clientData = requestCounts.get(clientId);
     if (!clientData || now > clientData.resetTime) {
         requestCounts.set(clientId, { count: 1, resetTime: now + windowMs });

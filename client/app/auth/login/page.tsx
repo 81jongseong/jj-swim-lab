@@ -114,7 +114,30 @@ export default function LoginPage() {
     try {
       // useAuth 훅의 login 함수 사용
       await login(form.userId, form.password);
-      // 성공 시 대시보드로 이동 (useAuth에서 처리됨)
+      
+      // 로그인 성공 후 사용자 타입에 따라 적절한 페이지로 이동
+      console.log('로그인 성공');
+      
+      // 사용자 정보를 가져와서 리다이렉트
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userData.userType) {
+        switch (userData.userType) {
+          case 'superAdmin':
+            window.location.href = '/admin/dashboard';
+            break;
+          case 'centerAdmin':
+            window.location.href = '/center-admin/dashboard';
+            break;
+          case 'instructor':
+            window.location.href = '/instructor/dashboard';
+            break;
+          case 'student':
+            window.location.href = '/dashboard';
+            break;
+          default:
+            window.location.href = '/dashboard';
+        }
+      }
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');

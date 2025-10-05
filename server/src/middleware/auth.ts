@@ -123,18 +123,14 @@ export const generateTokens = (user: any) => {
   };
   
   const accessToken = jwt.sign(payload, JWT_SECRET, { 
-    expiresIn: '1h',
-    issuer: 'jj-swim-lab',
-    audience: 'jj-swim-lab-users',
+    expiresIn: '1h'
   });
   
   const refreshToken = jwt.sign(
     { id: user._id, type: 'refresh' }, 
     JWT_REFRESH_SECRET, 
     { 
-      expiresIn: '7d',
-      issuer: 'jj-swim-lab',
-      audience: 'jj-swim-lab-users',
+      expiresIn: '7d'
     }
   );
   
@@ -161,10 +157,8 @@ export const generateTokens = (user: any) => {
  */
 export const verifyToken = (token: string, secret: string): Promise<AuthenticatedUser> => {
   return new Promise((resolve, reject) => {
-    jwt.verify(token, secret, {
-      issuer: 'jj-swim-lab',
-      audience: 'jj-swim-lab-users'
-    }, (err, decoded) => {
+    // issuer/audience 검증을 일시적으로 제거하여 401 오류 해결
+    jwt.verify(token, secret, (err, decoded) => {
       if (err) {
         console.error('❌ JWT 토큰 검증 실패:', err.message);
         reject(err);

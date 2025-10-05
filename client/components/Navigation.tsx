@@ -268,7 +268,7 @@ const userMenuStructure = {
     health: [
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
-      { href: '/admin/algorithm-analytics', label: '📈 시스템 사용 통계' },
+      { href: '/admin/system', label: '📈 시스템 사용 통계' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },

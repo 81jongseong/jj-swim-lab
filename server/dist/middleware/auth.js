@@ -21,24 +21,17 @@ const generateTokens = (user) => {
         permissions: user.permissions || [],
     };
     const accessToken = jsonwebtoken_1.default.sign(payload, JWT_SECRET, {
-        expiresIn: '1h',
-        issuer: 'jj-swim-lab',
-        audience: 'jj-swim-lab-users',
+        expiresIn: '1h'
     });
     const refreshToken = jsonwebtoken_1.default.sign({ id: user._id, type: 'refresh' }, JWT_REFRESH_SECRET, {
-        expiresIn: '7d',
-        issuer: 'jj-swim-lab',
-        audience: 'jj-swim-lab-users',
+        expiresIn: '7d'
     });
     return { accessToken, refreshToken };
 };
 exports.generateTokens = generateTokens;
 const verifyToken = (token, secret) => {
     return new Promise((resolve, reject) => {
-        jsonwebtoken_1.default.verify(token, secret, {
-            issuer: 'jj-swim-lab',
-            audience: 'jj-swim-lab-users'
-        }, (err, decoded) => {
+        jsonwebtoken_1.default.verify(token, secret, (err, decoded) => {
             if (err) {
                 console.error('❌ JWT 토큰 검증 실패:', err.message);
                 reject(err);

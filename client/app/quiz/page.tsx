@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Button, Card } from '../../components/ui';
 
 /**
  * 🧠 퀴즈 페이지
@@ -74,10 +73,18 @@ export default function QuizPage() {
       
       // 실제 API에서 공개된 퀴즈만 가져오기
       try {
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json'
+        };
+        
+        // 토큰이 있으면 Authorization 헤더 추가
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         const response = await fetch('http://localhost:5000/api/quiz?isPublicDemo=true', {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers
         });
         
         if (response.ok) {
@@ -96,6 +103,8 @@ export default function QuizPage() {
             })));
             return;
           }
+        } else if (response.status === 401) {
+          console.warn('인증 실패, 임시 데이터 사용');
         }
       } catch (apiError) {
         console.warn('API 호출 실패, 임시 데이터 사용:', apiError);
@@ -318,7 +327,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="text-center">
+          <div className="bg-white rounded-lg shadow-md text-center">
             <div className="p-8">
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 완료!</h1>
@@ -379,21 +388,21 @@ export default function QuizPage() {
               </div>
 
               <div className="flex justify-center space-x-4">
-                <Button
+                <button
                   onClick={resetQuiz}
-                  variant="outline"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   다른 퀴즈 풀기
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={() => window.location.href = '/dashboard'}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   대시보드로
-                </Button>
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -426,7 +435,7 @@ export default function QuizPage() {
             </div>
           </div>
 
-          <Card>
+          <div className="bg-white rounded-lg shadow-md">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 {currentQuestion.question}
@@ -451,22 +460,22 @@ export default function QuizPage() {
               </div>
 
               <div className="flex justify-between">
-                <Button
+                <button
                   onClick={resetQuiz}
-                  variant="outline"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   퀴즈 종료
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={nextQuestion}
                   disabled={answers[currentQuestionIndex] === -1}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentQuestionIndex === selectedQuiz.questions.length - 1 ? '완료' : '다음'}
-                </Button>
+                </button>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -504,7 +513,7 @@ export default function QuizPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quizzes.map((quiz) => (
-            <Card key={quiz._id} className="hover:shadow-lg transition-shadow duration-200">
+            <div key={quiz._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">{quiz.title}</h3>
@@ -527,14 +536,14 @@ export default function QuizPage() {
                   </div>
                 </div>
 
-                <Button
+                <button
                   onClick={() => startQuiz(quiz)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   퀴즈 시작
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 

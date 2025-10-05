@@ -121,7 +121,7 @@ export { Button } from './button';
 // 고급 UI 컴포넌트들
 // export { default as LazyComponent } from './lazycomponent';
 // export { default as OptimizedImage } from './optimizedimage';
-// export { Progress } from './progress';
+export { Progress } from './progress';
 // export { Checkbox } from './checkbox';
 // export { Alert, AlertTitle, AlertDescription } from './alert';
 // export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';

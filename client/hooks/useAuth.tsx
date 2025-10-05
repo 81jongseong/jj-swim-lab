@@ -394,25 +394,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('user', JSON.stringify(userWithDefaults));
       
       setUser(userWithDefaults);
-      // 성공 후 사용자 타입에 따라 적절한 페이지로 이동
-      if (typeof window !== 'undefined') {
-        switch (userWithDefaults.userType) {
-          case 'superAdmin':
-            window.location.href = '/admin/dashboard';
-            break;
-          case 'centerAdmin':
-            window.location.href = '/center-admin/dashboard';
-            break;
-          case 'instructor':
-            window.location.href = '/instructor/dashboard';
-            break;
-          case 'student':
-            window.location.href = '/dashboard';
-            break;
-          default:
-            window.location.href = '/dashboard';
-        }
-      }
+      // 로그인 성공 - 자동 리다이렉트 제거 (페이지에서 처리)
     } catch (error) {
       console.error('로그인 오류:', error);
       throw error;
@@ -433,10 +415,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 사용자 상태 초기화
     setUser(null);
     
-    // 로그아웃 후 홈페이지로 리다이렉트
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
+    // 로그아웃 완료 - 자동 리다이렉트 제거 (페이지에서 처리)
   };
 
   const register = async (userData: any) => {
