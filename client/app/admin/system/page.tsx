@@ -12,7 +12,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 
 const SystemPage: React.FC = () => {
-  const { user, hasUserType, loading } = useAuth();
+  const { user, hasUserType, loading: authLoading } = useAuth();
   
   // 상태 관리
   const [systemStatus, setSystemStatus] = useState<any>(null);
@@ -25,18 +25,20 @@ const SystemPage: React.FC = () => {
 
   // 데이터 로드
   useEffect(() => {
-    // 디버깅: 현재 사용자 정보 출력
-    console.log('🔍 System Page - Current User:', user);
-    console.log('🔍 System Page - User Type:', user?.userType);
-    console.log('🔍 System Page - Has SuperAdmin:', hasUserType('superAdmin'));
-    console.log('🔍 System Page - Token:', localStorage.getItem('token') ? 'Present' : 'Missing');
-    
-    loadSystemData();
-    
-    // 30초마다 자동 새로고침
-    const interval = setInterval(loadSystemData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    // 인증이 완료되고 superAdmin 권한이 있을 때만 데이터 로드
+    if (user && hasUserType('superAdmin')) {
+      console.log('🔍 System Page - Current User:', user);
+      console.log('🔍 System Page - User Type:', user?.userType);
+      console.log('🔍 System Page - Has SuperAdmin:', hasUserType('superAdmin'));
+      console.log('🔍 System Page - Token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+      
+      loadSystemData();
+      
+      // 30초마다 자동 새로고침
+      const interval = setInterval(loadSystemData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, hasUserType]);
 
   const loadSystemData = async () => {
     try {
@@ -194,13 +196,13 @@ const SystemPage: React.FC = () => {
     );
   }
 
-  // 로딩 중일 때
-  if (loading) {
+  // 인증 로딩 중일 때
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+          <p className="text-gray-600">인증 확인 중...</p>
         </div>
       </div>
     );
