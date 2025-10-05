@@ -11,6 +11,42 @@ const router = Router();
 const activityService = UserActivityService.getInstance();
 
 /**
+ * 기본 사용자 활동 목록 조회
+ * GET /api/user-activities
+ */
+router.get('/', requireRole(['superAdmin', 'centerAdmin']), async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    console.log('🔍 사용자 활동 목록 조회 요청:', { page, limit });
+    
+    // 기본 활동 목록 반환 (실제로는 데이터베이스에서 조회)
+    const activities = [];
+    
+    res.json({
+      success: true,
+      message: '사용자 활동 목록 조회 성공',
+      data: {
+        activities,
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      }
+    });
+  } catch (error) {
+    console.error('사용자 활동 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
  * 사용자 활동 통계 조회
  * GET /api/user-activities/stats/:userId?days=30
  */

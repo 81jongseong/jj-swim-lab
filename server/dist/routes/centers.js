@@ -12,6 +12,29 @@ const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
 const Payment_1 = require("../models/Payment");
 const router = express_1.default.Router();
+router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'centerAdmin', 'instructor']), async (req, res) => {
+    try {
+        console.log('🔍 센터 목록 조회 요청:', req.user?.userType);
+        const centers = await SwimmingCenter_1.SwimmingCenter.find({ isActive: true })
+            .select('name location contactInfo facilities createdAt')
+            .sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            message: '센터 목록 조회 성공',
+            data: {
+                centers,
+                total: centers.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('센터 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 목록 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
 router.get('/dashboard-stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
     try {
         const centerAdmin = await User_1.User.findById(req.user._id);

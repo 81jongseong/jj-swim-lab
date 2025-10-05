@@ -8,6 +8,34 @@ const userActivityService_1 = __importDefault(require("../services/userActivityS
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
 const activityService = userActivityService_1.default.getInstance();
+router.get('/', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        console.log('🔍 사용자 활동 목록 조회 요청:', { page, limit });
+        const activities = [];
+        res.json({
+            success: true,
+            message: '사용자 활동 목록 조회 성공',
+            data: {
+                activities,
+                pagination: {
+                    page,
+                    limit,
+                    total: 0,
+                    totalPages: 0
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('사용자 활동 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
 router.get('/stats/:userId', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
     try {
         const { userId } = req.params;

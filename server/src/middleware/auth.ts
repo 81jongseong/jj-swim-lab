@@ -212,7 +212,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     console.log('🔍 JWT 토큰 검증 시작:', {
       tokenLength: token.length,
       tokenStart: token.substring(0, 20) + '...',
-      secretLength: JWT_SECRET.length
+      secretLength: JWT_SECRET.length,
+      endpoint: req.originalUrl
     });
     
     const decoded = await verifyToken(token, JWT_SECRET);

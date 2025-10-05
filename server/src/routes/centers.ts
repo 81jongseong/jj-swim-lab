@@ -79,6 +79,37 @@ interface AuthRequest extends Request {
 
 const router: Router = express.Router();
 
+// ===== 기본 센터 목록 조회 =====
+
+/**
+ * 모든 센터 목록 조회
+ * GET /api/centers
+ */
+router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
+  try {
+    console.log('🔍 센터 목록 조회 요청:', req.user?.userType);
+    
+    const centers = await SwimmingCenter.find({ isActive: true })
+      .select('name location contactInfo facilities createdAt')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      message: '센터 목록 조회 성공',
+      data: {
+        centers,
+        total: centers.length
+      }
+    });
+  } catch (error) {
+    console.error('센터 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 목록 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 // ===== 센터 관리자 전용 기능 =====
 
 // 0. 센터 관리자 대시보드 통계 (센터 관리자만)
