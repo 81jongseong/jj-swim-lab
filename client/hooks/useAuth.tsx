@@ -225,43 +225,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
     
-    // 임시로 토큰 검증 비활성화하여 무한로딩 방지
     if (token && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
-        
-        // accessPermissions가 없으면 기본값 설정
-        const userWithDefaults = {
-          ...userData,
-          accessPermissions: userData.accessPermissions || {
-            dashboard: true,
-            courses: true,
-            bookings: true,
-            payments: true,
-            notices: true,
-            progress: true,
-            evaluations: true,
-            reports: true,
-            userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin',
-            systemSettings: userData.userType === 'superAdmin',
-            aiConfigManagement: userData.userType === 'superAdmin'
-          }
-        };
-        
-        console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
-        setUser(userWithDefaults);
-      } catch (error) {
-        console.error('❌ 사용자 데이터 파싱 실패:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-      }
+      // 토큰 검증 활성화
+      validateToken(token, savedUser);
     } else {
       console.log('🔍 토큰 또는 사용자 정보 없음');
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, []);
 
   /**
@@ -327,11 +297,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem('user');
         setUser(null);
         
-        // 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 페이지가 아닌 경우에만)
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-          console.log('🔄 로그인 페이지로 리다이렉트');
-          window.location.href = '/auth/login';
-        }
+        // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
+        console.log('🔄 인증 상태만 업데이트 (리다이렉트 없음)');
       }
     } catch (error) {
       console.error('❌ 토큰 검증 실패:', error);
@@ -339,11 +306,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem('user');
       setUser(null);
       
-      // 로그인 페이지로 리다이렉트 (현재 페이지가 로그인 페이지가 아닌 경우에만)
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-        console.log('🔄 토큰 검증 실패로 인한 로그인 페이지 리다이렉트');
-        window.location.href = '/auth/login';
-      }
+      // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
+      console.log('🔄 토큰 검증 실패 - 인증 상태만 업데이트 (리다이렉트 없음)');
     } finally {
       setLoading(false);
     }
