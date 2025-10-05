@@ -22,6 +22,46 @@ export default function InstructorManagementPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month'); // 'month', 'week', 'day'
   const [searchMode, setSearchMode] = useState('center'); // 'center', 'address'
+  const [showDeactivationModal, setShowDeactivationModal] = useState(false);
+  const [deactivationReason, setDeactivationReason] = useState('');
+  const [deactivationDetails, setDeactivationDetails] = useState('');
+
+  // 강사 비활성화 처리 함수
+  const handleDeactivateInstructor = async () => {
+    if (!selectedInstructor || !deactivationReason) {
+      alert('비활성화 사유를 선택해주세요.');
+      return;
+    }
+
+    try {
+      // 실제 API 호출 (임시로 콘솔 로그)
+      console.log('강사 비활성화:', {
+        instructorId: selectedInstructor.id,
+        instructorName: selectedInstructor.name,
+        reason: deactivationReason,
+        details: deactivationDetails,
+        deactivatedBy: user?.name || '관리자',
+        deactivatedAt: new Date().toISOString()
+      });
+
+      // 성공 메시지
+      alert(`${selectedInstructor.name} 강사가 비활성화되었습니다.`);
+      
+      // 모달 닫기 및 상태 초기화
+      setShowDeactivationModal(false);
+      setShowInstructorDetail(false);
+      setDeactivationReason('');
+      setDeactivationDetails('');
+      setSelectedInstructor(null);
+
+      // 강사 목록 새로고침 (실제로는 API 호출)
+      // loadInstructors();
+      
+    } catch (error) {
+      console.error('강사 비활성화 오류:', error);
+      alert('강사 비활성화 중 오류가 발생했습니다.');
+    }
+  };
 
   // 샘플 강사 데이터 (확장됨)
   const sampleInstructors = [
@@ -1642,7 +1682,105 @@ export default function InstructorManagementPage() {
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     정보 수정
               </button>
+              {selectedInstructor?.status === 'active' && (
+                <button
+                  onClick={() => setShowDeactivationModal(true)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  강사 비활성화
+                </button>
+              )}
             </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 강사 비활성화 모달 */}
+      {showDeactivationModal && selectedInstructor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">강사 비활성화</h3>
+              <button
+                onClick={() => {
+                  setShowDeactivationModal(false);
+                  setDeactivationReason('');
+                  setDeactivationDetails('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  <span className="font-medium text-gray-900">{selectedInstructor.name}</span> 강사를 비활성화하시겠습니까?
+                </p>
+                <p className="text-xs text-red-600">
+                  ⚠️ 비활성화된 강사는 수업을 진행할 수 없으며, 기존 학생들은 다른 강사에게 재배정됩니다.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    비활성화 사유 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={deactivationReason}
+                    onChange={(e) => setDeactivationReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">사유를 선택해주세요</option>
+                    <option value="contract_violation">계약 위반</option>
+                    <option value="professional_misconduct">직업윤리 위반</option>
+                    <option value="safety_violation">안전 규정 위반</option>
+                    <option value="license_expired">자격증 만료</option>
+                    <option value="performance_issues">성과 부진</option>
+                    <option value="disciplinary_action">징계 조치</option>
+                    <option value="criminal_record">범죄 전과</option>
+                    <option value="health_issues">건강상 문제</option>
+                    <option value="personal_reasons">개인적 사유</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    상세 내용
+                  </label>
+                  <textarea
+                    value={deactivationDetails}
+                    onChange={(e) => setDeactivationDetails(e.target.value)}
+                    placeholder="비활성화 사유에 대한 상세 내용을 입력해주세요..."
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeactivationModal(false);
+                    setDeactivationReason('');
+                    setDeactivationDetails('');
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeactivateInstructor}
+                  disabled={!deactivationReason}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  비활성화
+                </button>
+              </div>
             </div>
           </div>
         </div>
