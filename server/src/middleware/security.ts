@@ -110,10 +110,16 @@ export const corsMiddleware = (req: Request, res: Response, next: NextFunction) 
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  // 개발 환경에서는 rate limiting 완화
+  if (process.env.NODE_ENV === 'development') {
+    next();
+    return;
+  }
+  
   const clientId = req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15분
-  const maxRequests = 100;
+  const maxRequests = 1000; // 개발 환경에서 더 관대하게 설정
   
   const clientData = requestCounts.get(clientId);
   
@@ -136,10 +142,16 @@ export const rateLimitMiddleware = (req: Request, res: Response, next: NextFunct
 
 // API Rate Limiting (더 엄격한 버전)
 export const apiRateLimitMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  // 개발 환경에서는 rate limiting 완화
+  if (process.env.NODE_ENV === 'development') {
+    next();
+    return;
+  }
+  
   const clientId = req.ip || 'unknown';
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15분
-  const maxRequests = 50;
+  const maxRequests = 500; // 개발 환경에서 더 관대하게 설정
   
   const clientData = requestCounts.get(clientId);
   
