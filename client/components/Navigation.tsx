@@ -244,6 +244,7 @@ const userMenuStructure = {
     centers: [
       { href: '/admin/center-management', label: '🏢 센터 감독' },
       { href: '/admin/center-statistics', label: '📊 센터 통계' },
+      { href: '/admin/revenue-management', label: '💰 센터별 매출 관리' },
       { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
     ],
     users: [
@@ -258,7 +259,6 @@ const userMenuStructure = {
     ],
     revenue: [
       { href: '/admin/payments', label: '💰 전체 결제 관리' },
-      { href: '/admin/revenue-management', label: '💰 센터별 매출 관리' },
       { href: '/admin/total-revenue-management', label: '💎 총 매출 관리' },
     ],
     customerSupport: [

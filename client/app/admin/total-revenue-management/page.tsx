@@ -2,18 +2,17 @@
  * 💎 JJ Swim Lab - 총 매출 관리 페이지
  * 
  * 📋 **페이지 목적**
- * - 최고 관리자가 모든 수익원을 통합 관리하는 종합 매출 대시보드
- * - 프랜차이즈 수수료, 라이선싱, 컨설팅, 교육, 광고 등 다양한 수익원 분석
- * - 수익 구조 분석 및 트렌드 파악
- * - 센터별, 지역별, 기간별 매출 현황 관리
+ * - 최고 관리자의 수익만을 관리하는 전용 대시보드
+ * - 프랜차이즈 수수료, 라이선싱, 컨설팅, 교육, 광고 등 최고 관리자 수익원 분석
+ * - 최고 관리자 수익 구조 분석 및 트렌드 파악
+ * - 센터별 기여도 및 수익원별 성과 분석
  * 
  * 🔄 **주요 기능**
  * - 최고 관리자 수익 개요 (총 수익, 순이익, 성장률 등)
  * - 수익원별 분석 (프랜차이즈 수수료, 라이선싱, 컨설팅, 교육 등)
  * - 센터별 기여도 분석 (어떤 센터가 최고 관리자 수익에 가장 많이 기여하는지)
- * - 지역별 수익 분포 및 성과 분석
  * - 기간별 수익 트렌드 및 예측
- * - 수익 구조 최적화 인사이트
+ * - 최고 관리자 수익 구조 최적화 인사이트
  * - 신규 수익원 개발 전략
  * 
  * 🗄️ **데이터 연동**
@@ -284,7 +283,7 @@ export default function SuperAdminRevenuePage() {
         {/* 헤더 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">💎 총 매출 관리</h1>
-          <p className="text-gray-600">최고 관리자가 모든 수익원을 통합 관리하는 종합 매출 대시보드</p>
+          <p className="text-gray-600">최고 관리자의 수익만을 관리하는 전용 대시보드</p>
         </div>
 
         {/* 필터 옵션 */}
@@ -441,28 +440,28 @@ export default function SuperAdminRevenuePage() {
               </div>
             </div>
 
-            {/* 지역별 분석 */}
+            {/* 센터별 기여도 분석 */}
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🗺️ 지역별 수익 현황</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🏆 센터별 기여도 분석</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">센터명</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">지역</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">센터 수</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">총 수익</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">센터당 평균</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">기여 수익</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">기여도</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">성장률</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {revenueData.regionalAnalysis.map((region, index) => (
+                    {revenueData.centerContributions.map((center, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{region.region}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{region.centerCount}개</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(region.totalRevenue / 100000000).toFixed(1)}억원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(region.averageContribution / 10000).toFixed(0)}만원</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">+{region.growth}%</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{center.centerName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{center.region}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{(center.totalContribution / 10000).toFixed(0)}만원</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{center.contribution}%</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">+{center.growth || 8.5}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -539,8 +538,8 @@ export default function SuperAdminRevenuePage() {
                     <p className="text-sm text-blue-600">{revenueData.insights.fastestGrowingSource}</p>
                   </div>
                   <div className="p-3 bg-yellow-50 rounded-lg">
-                    <p className="text-sm font-medium text-yellow-800">⚠️ 개선 필요 지역</p>
-                    <p className="text-sm text-yellow-600">{revenueData.insights.underperformingRegion}</p>
+                    <p className="text-sm font-medium text-yellow-800">⚠️ 개선 필요 센터</p>
+                    <p className="text-sm text-yellow-600">인천센터 (성장률 낮음)</p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg">
                     <p className="text-sm font-medium text-green-800">💡 추천사항</p>
