@@ -31,14 +31,12 @@ const SystemPage: React.FC = () => {
     console.log('🔍 System Page - Has SuperAdmin:', hasUserType('superAdmin'));
     console.log('🔍 System Page - Token:', localStorage.getItem('token') ? 'Present' : 'Missing');
     
-    if (user && hasUserType('superAdmin')) {
-      loadSystemData();
-      
-      // 30초마다 자동 새로고침
-      const interval = setInterval(loadSystemData, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user, hasUserType]);
+    loadSystemData();
+    
+    // 30초마다 자동 새로고침
+    const interval = setInterval(loadSystemData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadSystemData = async () => {
     try {
