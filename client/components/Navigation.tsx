@@ -243,8 +243,9 @@ const userMenuStructure = {
     ],
     centers: [
       { href: '/admin/center-management', label: '🏢 센터 감독' },
+      { href: '/admin/center-statistics', label: '📊 센터 통계' },
       { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
-      { href: '/admin/centers', label: '📊 센터 통계' },
+      { href: '/admin/centers', label: '📋 센터 목록' },
     ],
     users: [
       { href: '/admin/users', label: '👥 회원 관리' },
