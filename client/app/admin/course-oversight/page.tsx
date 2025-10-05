@@ -116,7 +116,7 @@ const CourseOversightPage: React.FC = () => {
     '제주특별자치도': ['제주시', '서귀포시']
   };
 
-  const centerData = {
+  const centerLocationData = {
     '강남구': ['강남센터', '역삼센터', '논현센터', '삼성센터'],
     '강동구': ['강동센터', '천호센터', '성내센터'],
     '강북구': ['강북센터', '수유센터'],
@@ -398,7 +398,7 @@ const CourseOversightPage: React.FC = () => {
               {selectedDistricts.length > 0 && (
                 <button
                   onClick={() => {
-                    const allCenters = selectedDistricts.flatMap(district => centerData[district] || []);
+                    const allCenters = selectedDistricts.flatMap(district => centerLocationData[district] || []);
                     setSelectedCenters(allCenters);
                   }}
                   className="text-xs text-blue-600 hover:text-blue-800"
@@ -409,7 +409,7 @@ const CourseOversightPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
               {selectedDistricts.length > 0 ? (
-                selectedDistricts.flatMap(district => centerData[district] || []).map(center => (
+                selectedDistricts.flatMap(district => centerLocationData[district] || []).map(center => (
                   <button
                     key={center}
                     onClick={() => handleCenterToggle(center)}
