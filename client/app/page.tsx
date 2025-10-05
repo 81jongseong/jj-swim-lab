@@ -1,6 +1,24 @@
+/**
+ * @file 홈 페이지 (게스트 랜딩 페이지)
+ * @description JJ Swim Lab 메인 홈페이지 - 게스트 사용자를 위한 랜딩 페이지
+ * @date 2025-01-13
+ * @author JJ Swim Lab
+ * 
+ * @연동되는 데이터:
+ * - useAuth 훅 (사용자 인증 상태)
+ * - 사용자 유형별 대시보드 라우팅
+ * 
+ * @연동되는 파일:
+ * - hooks/useAuth.tsx (인증 상태 관리)
+ * - components/HeroWave.tsx (히어로 섹션)
+ * - components/WaterRippleBackground.tsx (배경 애니메이션)
+ * - components/LottiePlayer.tsx (Lottie 애니메이션)
+ * - lib/motion.ts (애니메이션 프리셋)
+ */
+
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { motionPresets, staggerContainer } from '../lib/motion';
@@ -12,64 +30,197 @@ import { useAuth } from '../hooks/useAuth';
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [showLanding, setShowLanding] = useState(false);
 
   // 로그인 상태 확인 및 리다이렉트
   useEffect(() => {
-    if (!loading && user) {
-      // 계정 유형별 대시보드로 리다이렉트
-      const dashboardRoutes = {
-        superAdmin: '/admin/dashboard',
-        centerAdmin: '/center-admin/dashboard', 
-        instructor: '/instructor/dashboard',
-        student: '/student/dashboard',
-      };
+    if (!loading) {
+      if (user) {
+        // 계정 유형별 대시보드로 리다이렉트
+        const dashboardRoutes = {
+          superAdmin: '/admin/dashboard',
+          centerAdmin: '/center-admin/dashboard', 
+          instructor: '/instructor/dashboard',
+          student: '/student/dashboard',
+        };
 
-      const targetRoute = dashboardRoutes[user.userType as keyof typeof dashboardRoutes];
-      
-      if (targetRoute) {
-        console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
-        router.push(targetRoute);
+        const targetRoute = dashboardRoutes[user.userType as keyof typeof dashboardRoutes];
+        
+        if (targetRoute) {
+          console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
+          router.push(targetRoute);
+        } else {
+          console.warn(`⚠️ 알 수 없는 사용자 유형: ${user.userType}`);
+          // 알 수 없는 유형은 랜딩 페이지 유지
+          setShowLanding(true);
+        }
       } else {
-        console.warn(`⚠️ 알 수 없는 사용자 유형: ${user.userType}`);
-        // 알 수 없는 유형은 랜딩 페이지 유지
+        // 미로그인 사용자에게는 랜딩 페이지 표시
+        setShowLanding(true);
       }
     }
   }, [user, loading, router]);
 
-  // 로딩 중이거나 로그인 상태라면 로딩 화면 표시
-  if (loading || user) {
+  // 로딩 중이면 로딩 화면 표시
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {loading ? '로딩 중...' : '대시보드로 이동 중...'}
-          </p>
+          <p className="mt-4 text-gray-600">로딩 중...</p>
         </div>
       </div>
     );
   }
 
-  // 미로그인 사용자에게는 랜딩 페이지 표시
-  return <LandingPage />;
+  // 랜딩 페이지 표시
+  if (showLanding) {
+    return <LandingPage />;
+  }
+
+  // 기본 로딩 화면
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">페이지를 준비 중입니다...</p>
+      </div>
+    </div>
+  );
 }
 
 function LandingPage() {
+  const [isEditing, setIsEditing] = useState(false);
+  const [landingContent, setLandingContent] = useState({
+    title: "JJ Swim Lab",
+    subtitle: "AI 기반 수영 교육 플랫폼",
+    description: "개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요",
+    ctaPrimary: {
+      text: "수강생 시작하기",
+      href: "/auth/signup?type=student"
+    },
+    ctaSecondary: {
+      text: "강사 등록하기",
+      href: "/auth/signup?type=instructor"
+    }
+  });
+
+  // 편집 모드 토글
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
+  // 내용 저장
+  const saveContent = () => {
+    // 실제로는 API 호출로 저장
+    console.log('랜딩 페이지 내용 저장:', landingContent);
+    setIsEditing(false);
+    alert('랜딩 페이지 내용이 저장되었습니다.');
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* 편집 모드 버튼 (개발용) */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={toggleEditMode}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
+        >
+          {isEditing ? '편집 완료' : '랜딩 페이지 편집'}
+        </button>
+      </div>
+
+      {/* 편집 모달 */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">랜딩 페이지 편집</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                <input
+                  type="text"
+                  value={landingContent.title}
+                  onChange={(e) => setLandingContent(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">부제목</label>
+                <input
+                  type="text"
+                  value={landingContent.subtitle}
+                  onChange={(e) => setLandingContent(prev => ({ ...prev, subtitle: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
+                <textarea
+                  value={landingContent.description}
+                  onChange={(e) => setLandingContent(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">주요 버튼 텍스트</label>
+                  <input
+                    type="text"
+                    value={landingContent.ctaPrimary.text}
+                    onChange={(e) => setLandingContent(prev => ({ 
+                      ...prev, 
+                      ctaPrimary: { ...prev.ctaPrimary, text: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">보조 버튼 텍스트</label>
+                  <input
+                    type="text"
+                    value={landingContent.ctaSecondary.text}
+                    onChange={(e) => setLandingContent(prev => ({ 
+                      ...prev, 
+                      ctaSecondary: { ...prev.ctaSecondary, text: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={saveContent}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 히어로 섹션 */}
       <HeroWave
-        title="JJ Swim Lab"
-        subtitle="AI 기반 수영 교육 플랫폼"
-        description="개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요"
-        ctaPrimary={{
-          text: "수강생 시작하기",
-          href: "/auth/signup?type=student"
-        }}
-        ctaSecondary={{
-          text: "강사 등록하기",
-          href: "/auth/signup?type=instructor"
-        }}
+        title={landingContent.title}
+        subtitle={landingContent.subtitle}
+        description={landingContent.description}
+        ctaPrimary={landingContent.ctaPrimary}
+        ctaSecondary={landingContent.ctaSecondary}
       />
 
       {/* 기능 소개 섹션 */}

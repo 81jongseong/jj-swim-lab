@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { updateAllLevels } from '../../../utils/updateLevels';
-import ExcelUploader from '../../../components/ExcelUploader';
-import YouTubeVideoManager from '../../../components/YouTubeVideoManager';
+
+// 지연 로딩 컴포넌트
+const ExcelUploader = lazy(() => import('../../../components/ExcelUploader'));
+const YouTubeVideoManager = lazy(() => import('../../../components/YouTubeVideoManager'));
 
 // 강습법 카테고리 상수
 const TEACHING_METHOD_CATEGORIES = [
@@ -65,7 +67,7 @@ export default function TeachingMethodsPage() {
   const [editingLevelMethod, setEditingLevelMethod] = useState<TeachingMethod | null>(null);
   const [newLevel, setNewLevel] = useState<string>('');
   const [centerLevels, setCenterLevels] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [steps, setSteps] = useState<string[]>([]);
   const [tips, setTips] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -162,7 +164,12 @@ export default function TeachingMethodsPage() {
 
   // 컴포넌트 마운트 시 데이터 가져오기
   useEffect(() => {
-    fetchTeachingMethods();
+    // 지연 로딩 (100ms 후)
+    const timer = setTimeout(() => {
+      fetchTeachingMethods();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // 필터링 및 검색 효과

@@ -102,7 +102,7 @@ import NotificationsBell from './NotificationsBell';
 const userMenuStructure = {
   student: {
     main: [
-      { href: '/', label: '🏠 홈' },
+      { href: '/landing', label: '🏠 홈' },
       { href: '/dashboard', label: '📊 대시보드' },
       { href: '/courses', label: '📚 내 강의' },
       { href: '/bookings', label: '📅 예약 관리' },
@@ -138,7 +138,7 @@ const userMenuStructure = {
   },
   instructor: {
     main: [
-      { href: '/', label: '🏠 홈' },
+      { href: '/landing', label: '🏠 홈' },
       { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
       { href: '/instructor/courses', label: '📚 내 강의 관리' },
       { href: '/instructor/bookings', label: '📅 예약 관리' },
@@ -187,7 +187,7 @@ const userMenuStructure = {
   },
   centerAdmin: {
     dashboard: [
-      { href: '/', label: '🏠 홈' },
+      { href: '/landing', label: '🏠 홈' },
       { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center-admin/users', label: '👥 센터 회원 관리' },
       { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
@@ -236,10 +236,10 @@ const userMenuStructure = {
   },
   superAdmin: {
     dashboard: [
-      { href: '/', label: '🏠 홈' },
+      { href: '/landing', label: '🏠 홈' },
       { href: '/admin/dashboard', label: '📊 최고관리자 대시보드' },
       { href: '/admin/course-oversight', label: '👁️ 강습 과정 감독' },
-      { href: '/admin/system', label: '⚙️ 시스템 설정' },
+      { href: '/admin/system-settings', label: '⚙️ 시스템 설정' },
     ],
     centers: [
       { href: '/admin/center-management', label: '🏢 센터 감독' },

@@ -12,7 +12,7 @@ import { useAuth } from '../../../hooks/useAuth';
 
 export default function InstructorManagementPage() {
   const { user, hasUserType } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // 초기 로딩 비활성화
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedInstructor, setSelectedInstructor] = useState(null);
   const [showInstructorDetail, setShowInstructorDetail] = useState(false);
@@ -63,199 +63,90 @@ export default function InstructorManagementPage() {
     }
   };
 
-  // 샘플 강사 데이터 (확장됨)
-  const sampleInstructors = [
-    {
-      id: 1,
-      name: '김수영',
-      email: 'kim.swim@email.com',
-      phone: '010-1234-5678',
-      address: '서울시 마포구 홍대입구로 123, 101동 1201호',
-      center: '홍대센터',
-      region: '서울시',
-      district: '마포구',
-      status: 'active',
-      experience: '5년',
-      rating: 4.8,
-      students: 45,
-      specialties: ['자유형', '배영', '접영'],
-      certifications: [
+  // 샘플 강사 데이터 (최적화됨 - 지연 로딩)
+  const [sampleInstructors, setSampleInstructors] = useState([]);
+
+  // 강사 데이터 지연 로딩 (최적화됨)
+  useEffect(() => {
+    const loadInstructorData = () => {
+      const instructors = [
         {
-          name: '수영지도사 2급',
-          issuer: '대한수영연맹',
-          issueDate: '2020-03-15',
-          expiryDate: '2025-03-15',
-          status: 'valid'
+          id: 1,
+          name: '김수영',
+          email: 'kim.swim@email.com',
+          phone: '010-1234-5678',
+          address: '서울시 마포구 홍대입구로 123, 101동 1201호',
+          center: '홍대센터',
+          region: '서울시',
+          district: '마포구',
+          status: 'active',
+          experience: '5년',
+          rating: 4.8,
+          students: 45,
+          specialties: ['자유형', '배영', '접영'],
+          certifications: [
+            {
+              name: '수영지도사 2급',
+              issuer: '대한수영연맹',
+              issueDate: '2020-03-15',
+              expiryDate: '2025-03-15',
+              status: 'valid'
+            }
+          ],
+          emergencyContact: {
+            name: '김영희',
+            relationship: '어머니',
+            phone: '010-9876-5432'
+          },
+          salary: {
+            base: 3000000,
+            bonus: 500000,
+            total: 3500000
+          }
         },
         {
-          name: '생존수영지도사',
-          issuer: '대한생존수영협회',
-          issueDate: '2019-08-20',
-          expiryDate: '2024-08-20',
-          status: 'expired'
-        },
-        {
-          name: '심폐소생술 자격증',
-          issuer: '대한적십자사',
-          issueDate: '2023-01-10',
-          expiryDate: '2025-01-10',
-          status: 'valid'
+          id: 2,
+          name: '이영수',
+          email: 'lee.swim@email.com',
+          phone: '010-2345-6789',
+          address: '서울시 강남구 테헤란로 456, 201동 1502호',
+          center: '강남센터',
+          region: '서울시',
+          district: '강남구',
+          status: 'active',
+          experience: '3년',
+          rating: 4.6,
+          students: 32,
+          specialties: ['평영', '접영'],
+          certifications: [
+            {
+              name: '수영지도사 3급',
+              issuer: '대한수영연맹',
+              issueDate: '2021-06-20',
+              expiryDate: '2026-06-20',
+              status: 'valid'
+            }
+          ],
+          emergencyContact: {
+            name: '이철수',
+            relationship: '아버지',
+            phone: '010-8765-4321'
+          },
+          salary: {
+            base: 2500000,
+            bonus: 300000,
+            total: 2800000
+          }
         }
-      ],
-      emergencyContact: {
-        name: '김민수',
-        relationship: '부',
-        phone: '010-9876-5432'
-      },
-      joinDate: '2019-03-15',
-      salary: 3500000
-    },
-    {
-      id: 2,
-      name: '이영수',
-      email: 'lee.swim@email.com',
-      phone: '010-2345-6789',
-      address: '서울시 강남구 테헤란로 456, 202동 1502호',
-      center: '강남센터',
-      region: '서울시',
-      district: '강남구',
-      status: 'active',
-      experience: '3년',
-      rating: 4.6,
-      students: 32,
-      specialties: ['평영', '자유형'],
-      certifications: [
-        {
-          name: '수영지도사 3급',
-          issuer: '대한수영연맹',
-          issueDate: '2021-06-20',
-          expiryDate: '2026-06-20',
-          status: 'valid'
-        },
-        {
-          name: '심폐소생술 자격증',
-          issuer: '대한적십자사',
-          issueDate: '2022-05-15',
-          expiryDate: '2024-05-15',
-          status: 'expiring'
-        }
-      ],
-      emergencyContact: {
-        name: '이순자',
-        relationship: '모',
-        phone: '010-8765-4321'
-      },
-      joinDate: '2021-06-20',
-      salary: 2800000
-    },
-    {
-      id: 3,
-      name: '박수영',
-      email: 'park.swim@email.com',
-      phone: '010-3456-7890',
-      address: '서울시 송파구 올림픽로 789, 303동 2003호',
-      center: '송파센터',
-      region: '서울시',
-      district: '송파구',
-      status: 'active',
-      experience: '7년',
-      rating: 4.9,
-      students: 58,
-      specialties: ['접영', '배영', '평영'],
-      certifications: [
-        {
-          name: '수영지도사 1급',
-          issuer: '대한수영연맹',
-          issueDate: '2018-09-10',
-          expiryDate: '2026-09-10',
-          status: 'valid'
-        },
-        {
-          name: '수상안전지도사',
-          issuer: '대한수상안전협회',
-          issueDate: '2020-07-15',
-          expiryDate: '2025-07-15',
-          status: 'valid'
-        }
-      ],
-      emergencyContact: {
-        name: '박영희',
-        relationship: '배우자',
-        phone: '010-7654-3210'
-      },
-      joinDate: '2017-09-10',
-      salary: 4200000
-    },
-    {
-      id: 4,
-      name: '최수영',
-      email: 'choi.swim@email.com',
-      phone: '010-4567-8901',
-      address: '경기도 수원시 영통구 광교로 101, 404동 3004호',
-      center: '수원센터',
-      region: '경기도',
-      district: '수원시',
-      status: 'active',
-      experience: '4년',
-      rating: 4.7,
-      students: 38,
-      specialties: ['자유형', '배영'],
-      certifications: [
-        {
-          name: '수영지도사 2급',
-          issuer: '대한수영연맹',
-          issueDate: '2020-12-05',
-          expiryDate: '2025-12-05',
-          status: 'valid'
-        },
-        {
-          name: '심폐소생술 자격증',
-          issuer: '대한적십자사',
-          issueDate: '2022-08-10',
-          expiryDate: '2024-08-10',
-          status: 'expiring'
-        }
-      ],
-      emergencyContact: {
-        name: '최동호',
-        relationship: '부',
-        phone: '010-6543-2109'
-      },
-      joinDate: '2020-12-05',
-      salary: 3200000
-    },
-    {
-      id: 5,
-      name: '정수영',
-      email: 'jung.swim@email.com',
-      phone: '010-5678-9012',
-      address: '경기도 성남시 분당구 판교로 202, 505동 4005호',
-      center: '성남센터',
-      region: '경기도',
-      district: '성남시',
-      status: 'active',
-      experience: '6년',
-      rating: 4.5,
-      students: 42,
-      specialties: ['평영', '접영'],
-      certifications: [
-        {
-          name: '수영지도사 2급',
-          issuer: '대한수영연맹',
-          issueDate: '2019-04-12',
-          expiryDate: '2024-04-12',
-          status: 'expired'
-        }
-      ],
-      emergencyContact: {
-        name: '정미영',
-        relationship: '모',
-        phone: '010-5432-1098'
-      },
-      joinDate: '2018-04-12',
-      salary: 3800000
-    }
-  ];
+      ];
+      
+      setSampleInstructors(instructors);
+    };
+
+    // 지연 로딩 (100ms 후)
+    const timer = setTimeout(loadInstructorData, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 필터링된 강사 목록
   const filteredInstructors = sampleInstructors.filter(instructor => {
@@ -1383,8 +1274,8 @@ export default function InstructorManagementPage() {
                   </tbody>
                 </table>
                     </div>
-                </div>
-              </div>
+                      </div>
+                    </div>
             )}
 
             {activeTab === 'evaluation' && (
@@ -1396,41 +1287,41 @@ export default function InstructorManagementPage() {
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">📝</span>
+                      </div>
                     </div>
-                  </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">이번 달 평가</p>
                     <p className="text-2xl font-bold text-gray-900">12건</p>
-                </div>
                       </div>
                     </div>
+                  </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">✅</span>
+                </div>
                       </div>
-                    </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">완료된 평가</p>
                     <p className="text-2xl font-bold text-gray-900">8건</p>
-                      </div>
                     </div>
                       </div>
+                    </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">⏳</span>
+                      </div>
                     </div>
-                  </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">대기 중</p>
                     <p className="text-2xl font-bold text-gray-900">4건</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                              </div>
-                              </div>
-                            </div>
 
             {/* 평가 목록 */}
             <div className="bg-white rounded-lg shadow p-6">
@@ -1474,9 +1365,9 @@ export default function InstructorManagementPage() {
                     ))}
                   </tbody>
                 </table>
-                              </div>
-                            </div>
-                          </div>
+                    </div>
+                  </div>
+                </div>
             )}
 
         {activeTab === 'approval' && (
@@ -1488,42 +1379,42 @@ export default function InstructorManagementPage() {
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">⏳</span>
-                                </div>
-                                </div>
+                      </div>
+                    </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">승인 대기</p>
                     <p className="text-2xl font-bold text-gray-900">{pendingInstructors.length}명</p>
-                              </div>
-                                </div>
-                                </div>
+                      </div>
+                    </div>
+                      </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">✅</span>
-                              </div>
-                                </div>
+                    </div>
+                      </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">이번 달 승인</p>
                     <p className="text-2xl font-bold text-gray-900">3명</p>
-                                </div>
-                              </div>
-                            </div>
+                    </div>
+                  </div>
+                </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
                       <span className="text-white text-sm font-medium">❌</span>
-                                </div>
-                                </div>
+                              </div>
+                              </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">이번 달 거부</p>
                     <p className="text-2xl font-bold text-gray-900">1명</p>
-                                </div>
-                                </div>
+                            </div>
                               </div>
                             </div>
-                            
+                          </div>
+                        
             {/* 승인 대기 목록 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">승인 대기 목록</h3>
@@ -1533,15 +1424,15 @@ export default function InstructorManagementPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-4 mb-4">
-                                <div>
+                              <div>
                             <h4 className="text-lg font-medium text-gray-900">{instructor.name}</h4>
                             <p className="text-sm text-gray-500">{instructor.email}</p>
-                                  </div>
+                                </div>
                           <div className="text-sm text-gray-500">
                             <p>연락처: {instructor.phone}</p>
                             <p>경력: {instructor.experience}</p>
-                                  </div>
                                 </div>
+                              </div>
                               
                         <div className="mb-4">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">자격증</h5>
@@ -1549,21 +1440,21 @@ export default function InstructorManagementPage() {
                             {instructor.certifications.map((cert, index) => (
                               <div key={index} className="text-sm text-gray-600">
                                 • {cert.name} ({cert.issuer}) - {cert.issueDate}
-                                  </div>
+                                </div>
                             ))}
+                                </div>
                               </div>
-                            </div>
-                            
+                              
                         <div className="mb-4">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">경력</h5>
                           <p className="text-sm text-gray-600">{instructor.career}</p>
-                </div>
-                
+                            </div>
+                            
                         <div className="text-sm text-gray-500">
                           신청일: {instructor.submittedDate}
-                    </div>
-                  </div>
-                  
+                              </div>
+                            </div>
+                            
                       <div className="flex space-x-2 ml-4">
                         <button className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">
                           승인
@@ -1571,13 +1462,13 @@ export default function InstructorManagementPage() {
                         <button className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700">
                           거부
                         </button>
-                        </div>
-                      </div>
-                    </div>
+                                  </div>
+                                  </div>
+                                </div>
                 ))}
-                  </div>
-                    </div>
-                    </div>
+                                  </div>
+                                </div>
+                              </div>
         )}
 
         {/* 강사 상세보기 모달 */}
@@ -1592,7 +1483,7 @@ export default function InstructorManagementPage() {
                 >
                   ✕
                 </button>
-                    </div>
+                            </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -1601,11 +1492,11 @@ export default function InstructorManagementPage() {
                               <div>
                         <label className="text-sm font-medium text-gray-500">이름</label>
                         <p className="text-lg font-semibold text-gray-900">{selectedInstructor.name}</p>
-                    </div>
+                          </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">경력</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.experience}</p>
-                    </div>
+                </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">전문 분야</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.specialties.join(', ')}</p>
@@ -1619,23 +1510,23 @@ export default function InstructorManagementPage() {
                               <div>
                         <label className="text-sm font-medium text-gray-500">이메일</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.email}</p>
-                    </div>
+                        </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">전화번호</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.phone}</p>
-                  </div>
+                      </div>
                               <div>
                         <label className="text-sm font-medium text-gray-500">거주지 주소</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.address}</p>
-                </div>
+                    </div>
                               <div>
                         <label className="text-sm font-medium text-gray-500">급여</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.salary.toLocaleString()}원</p>
-              </div>
-          </div>
-        </div>
-      </div>
-
+                  </div>
+                    </div>
+                    </div>
+                    </div>
+                    
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="text-md font-semibold text-gray-900 mb-4">자격증 보유 현황</h4>
                   <div className="space-y-3">
@@ -1648,30 +1539,30 @@ export default function InstructorManagementPage() {
                             <p className="text-xs text-gray-500">
                               발급일: {cert.issueDate} • 만료일: {cert.expiryDate}
                             </p>
-            </div>
+                    </div>
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                             유효
                     </span>
-                  </div>
-                </div>
+                    </div>
+                        </div>
                     ))}
-              </div>
-            </div>
-            
+                    </div>
+                  </div>
+                  
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="text-md font-semibold text-gray-900 mb-4">성과 정보</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">{selectedInstructor.students}</div>
                       <div className="text-sm text-gray-600">담당 학생 수</div>
-            </div>
+                    </div>
                     <div className="text-center p-4 bg-yellow-50 rounded-lg">
                       <div className="text-2xl font-bold text-yellow-600">{selectedInstructor.rating}</div>
                       <div className="text-sm text-gray-600">평균 평점</div>
           </div>
         </div>
-            </div>
-            
+      </div>
+
                 <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end space-x-3">
               <button
                     onClick={() => setShowInstructorDetail(false)}
@@ -1683,12 +1574,12 @@ export default function InstructorManagementPage() {
                     정보 수정
               </button>
               {selectedInstructor?.status === 'active' && (
-                <button
+              <button
                   onClick={() => setShowDeactivationModal(true)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
+              >
                   강사 비활성화
-                </button>
+              </button>
               )}
             </div>
             </div>
@@ -1723,13 +1614,13 @@ export default function InstructorManagementPage() {
                   ⚠️ 비활성화된 강사는 수업을 진행할 수 없으며, 기존 학생들은 다른 강사에게 재배정됩니다.
                 </p>
               </div>
-
+              
               <div className="space-y-4">
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     비활성화 사유 <span className="text-red-500">*</span>
                   </label>
-                  <select
+                <select
                     value={deactivationReason}
                     onChange={(e) => setDeactivationReason(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1745,25 +1636,25 @@ export default function InstructorManagementPage() {
                     <option value="health_issues">건강상 문제</option>
                     <option value="personal_reasons">개인적 사유</option>
                     <option value="other">기타</option>
-                  </select>
-                </div>
-
-                <div>
+                </select>
+              </div>
+              
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     상세 내용
                   </label>
-                  <textarea
+                <textarea
                     value={deactivationDetails}
                     onChange={(e) => setDeactivationDetails(e.target.value)}
                     placeholder="비활성화 사유에 대한 상세 내용을 입력해주세요..."
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
+                />
               </div>
-
+            </div>
+            
               <div className="mt-6 flex justify-end space-x-3">
-                <button
+              <button
                   onClick={() => {
                     setShowDeactivationModal(false);
                     setDeactivationReason('');
@@ -1772,14 +1663,14 @@ export default function InstructorManagementPage() {
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   취소
-                </button>
-                <button
+              </button>
+              <button
                   onClick={handleDeactivateInstructor}
                   disabled={!deactivationReason}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
+              >
                   비활성화
-                </button>
+              </button>
               </div>
             </div>
           </div>

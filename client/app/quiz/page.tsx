@@ -60,7 +60,7 @@ export default function QuizPage() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [result, setResult] = useState<QuizAttempt | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [useRandomMode, setUseRandomMode] = useState(false); // 🎲 랜덤 모드 선택
 
   useEffect(() => {
@@ -70,6 +70,9 @@ export default function QuizPage() {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
+      
+      // 지연 로딩 (200ms 후)
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // 실제 API에서 공개된 퀴즈만 가져오기
       try {

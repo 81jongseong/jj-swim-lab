@@ -32,10 +32,12 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
-// 동적 import로 SSR 문제 방지
+// 동적 import로 SSR 문제 방지 및 성능 최적화
 let maplibregl: any;
 let MapboxOverlay: any;
 let ScatterplotLayer: any;
+
+// 지연 로딩을 위한 상태 (컴포넌트 내부로 이동)
 
 // 타입 정의
 interface Spot {
@@ -236,7 +238,8 @@ export default function GeoDistributionPage() {
   // 상태 관리
   const [spots, setSpots] = useState<Spot[]>([]);
   const [metadata, setMetadata] = useState<any>(null);
-  const [loadingData, setLoadingData] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false); // 지도 로딩 상태
+  const [loadingData, setLoadingData] = useState(false); // 초기 로딩 비활성화
   const [hoveredSpot, setHoveredSpot] = useState<any>(null);
   const [librariesLoaded, setLibrariesLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(12);
