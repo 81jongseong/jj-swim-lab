@@ -12,7 +12,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 
 const SystemPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasUserType } = useAuth();
   
   // 상태 관리
   const [systemStatus, setSystemStatus] = useState<any>(null);
@@ -28,14 +28,17 @@ const SystemPage: React.FC = () => {
     // 디버깅: 현재 사용자 정보 출력
     console.log('🔍 System Page - Current User:', user);
     console.log('🔍 System Page - User Type:', user?.userType);
+    console.log('🔍 System Page - Has SuperAdmin:', hasUserType('superAdmin'));
     console.log('🔍 System Page - Token:', localStorage.getItem('token') ? 'Present' : 'Missing');
     
-    loadSystemData();
-    
-    // 30초마다 자동 새로고침
-    const interval = setInterval(loadSystemData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (user && hasUserType('superAdmin')) {
+      loadSystemData();
+      
+      // 30초마다 자동 새로고침
+      const interval = setInterval(loadSystemData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, hasUserType]);
 
   const loadSystemData = async () => {
     try {
@@ -189,6 +192,29 @@ const SystemPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-2">시스템 데이터 로딩 중...</span>
+      </div>
+    );
+  }
+
+  // 권한 확인
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">로그인 필요</h1>
+          <p className="text-gray-600">시스템 설정 페이지에 접근하려면 로그인이 필요합니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasUserType('superAdmin')) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한 없음</h1>
+          <p className="text-gray-600">이 페이지는 최고 관리자만 접근할 수 있습니다.</p>
+        </div>
       </div>
     );
   }
@@ -808,7 +834,4 @@ const SystemPage: React.FC = () => {
   );
 };
 
-export default withAuth(SystemPage, { 
-  requireTypes: ['superAdmin'], 
-  requirePermission: 'systemSettings' 
-});
+export default SystemPage;
