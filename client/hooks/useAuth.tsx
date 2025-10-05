@@ -226,8 +226,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
     
     if (token && savedUser) {
-      // 토큰 검증 활성화
-      validateToken(token, savedUser);
+      // 토큰 검증을 한 번만 실행하도록 수정
+      const userData = JSON.parse(savedUser);
+      console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+      
+      // accessPermissions가 없으면 기본값 설정
+      const userWithDefaults = {
+        ...userData,
+        accessPermissions: userData.accessPermissions || {
+          dashboard: true,
+          courses: true,
+          bookings: true,
+          payments: true,
+          notices: true,
+          progress: true,
+          evaluations: true,
+          reports: true,
+          userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin',
+          systemSettings: userData.userType === 'superAdmin',
+          aiConfigManagement: userData.userType === 'superAdmin'
+        }
+      };
+      
+      console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+      setUser(userWithDefaults);
+      setLoading(false);
     } else {
       console.log('🔍 토큰 또는 사용자 정보 없음');
       setLoading(false);
@@ -235,7 +258,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   /**
-   * 🔐 JWT 토큰 검증 함수
+   * 🔐 JWT 토큰 검증 함수 (수동 호출용)
    * 
    * 📋 **기능**
    * - 서버에 토큰 유효성 검증 요청
@@ -250,6 +273,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
    * 
    * 📅 **수정 히스토리**
    * - 2025-01-13: 토큰 검증 함수 주석 추가
+   * - 2025-01-13: 자동 토큰 검증 비활성화로 수동 호출용으로 변경
    */
   const validateToken = async (token: string, savedUser: string) => {
     try {
@@ -290,6 +314,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
         setUser(userWithDefaults);
+        return true;
       } else {
         // 토큰이 유효하지 않은 경우 정리
         console.log('❌ 토큰이 만료되었습니다. 로그인이 필요합니다.');
@@ -299,6 +324,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
         console.log('🔄 인증 상태만 업데이트 (리다이렉트 없음)');
+        return false;
       }
     } catch (error) {
       console.error('❌ 토큰 검증 실패:', error);
@@ -308,8 +334,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
       console.log('🔄 토큰 검증 실패 - 인증 상태만 업데이트 (리다이렉트 없음)');
-    } finally {
-      setLoading(false);
+      return false;
     }
   };
 
