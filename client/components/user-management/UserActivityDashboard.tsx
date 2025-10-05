@@ -89,8 +89,8 @@ const UserActivityDashboard: React.FC = () => {
 
       // 병렬로 모든 데이터 요청
       const [trendsRes, topActionsRes] = await Promise.all([
-        fetch(`/api/user-activities/trends/overview?days=${dateRange}`, { headers }),
-        fetch('/api/user-activities/top-actions/overview?limit=10', { headers })
+        fetch(`/api/user-activities/trends/overview?days=${dateRange}`, { headers }).catch(() => ({ ok: false })),
+        fetch('/api/user-activities/top-actions/overview?limit=10', { headers }).catch(() => ({ ok: false }))
       ]);
 
       if (trendsRes.ok) {
@@ -106,8 +106,8 @@ const UserActivityDashboard: React.FC = () => {
       // 특정 사용자 선택 시 해당 사용자 데이터 로드
       if (selectedUser) {
         const [statsRes, activitiesRes] = await Promise.all([
-          fetch(`/api/user-activities/stats/${selectedUser}?days=${dateRange}`, { headers }),
-          fetch(`/api/user-activities/${selectedUser}?page=1&limit=50`, { headers })
+          fetch(`/api/user-activities/stats/${selectedUser}?days=${dateRange}`, { headers }).catch(() => ({ ok: false })),
+          fetch(`/api/user-activities/${selectedUser}?page=1&limit=50`, { headers }).catch(() => ({ ok: false }))
         ]);
 
         if (statsRes.ok) {
@@ -139,7 +139,7 @@ const UserActivityDashboard: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      });
+      }).catch(() => ({ ok: false }));
 
       if (response.ok) {
         const data = await response.json();

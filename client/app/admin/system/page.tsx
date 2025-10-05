@@ -25,6 +25,11 @@ const SystemPage: React.FC = () => {
 
   // 데이터 로드
   useEffect(() => {
+    // 디버깅: 현재 사용자 정보 출력
+    console.log('🔍 System Page - Current User:', user);
+    console.log('🔍 System Page - User Type:', user?.userType);
+    console.log('🔍 System Page - Token:', localStorage.getItem('token') ? 'Present' : 'Missing');
+    
     loadSystemData();
     
     // 30초마다 자동 새로고침
@@ -42,6 +47,9 @@ const SystemPage: React.FC = () => {
         return;
       }
 
+      console.log('🔍 API Request - Token:', token.substring(0, 20) + '...');
+      console.log('🔍 API Request - User:', user);
+
       // 시스템 상태 조회
       const statusResponse = await fetch('http://localhost:5000/api/system/status', {
         headers: {
@@ -50,11 +58,16 @@ const SystemPage: React.FC = () => {
         }
       });
 
+      console.log('🔍 API Response - Status:', statusResponse.status);
+
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         if (statusData.success) {
           setSystemStatus(statusData.data);
         }
+      } else {
+        const errorData = await statusResponse.text();
+        console.error('🔍 API Error Response:', errorData);
       }
 
       // 시스템 설정 조회

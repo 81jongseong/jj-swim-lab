@@ -191,7 +191,10 @@ export default function CenterManagement() {
           pagination: { total: number };
         };
         message?: string;
-      }>(`/api/center-management?${params}`);
+      }>(`/api/center-management?${params}`).catch(error => {
+        console.warn('센터 목록 API 호출 실패:', error);
+        return { success: false, data: { centers: [], pagination: { total: 0 } } };
+      });
       
       if ((response as any).success) {
         let filteredCenters = (response as any).data.centers;
