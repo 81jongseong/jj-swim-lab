@@ -1,11 +1,11 @@
 /**
- * 💎 JJ Swim Lab - 최고 관리자 수익 관리 페이지
+ * 💎 JJ Swim Lab - 총 매출 관리 페이지
  * 
  * 📋 **페이지 목적**
- * - 최고 관리자가 직접 받는 수익을 관리하는 전용 페이지
- * - 센터별 수익과는 별개로 최고 관리자 수익원 분석
- * - 프랜차이즈 수수료, 라이선싱, 컨설팅, 교육 등 수익 관리
- * - 최고 관리자 수익 구조 최적화 및 성장 전략 수립
+ * - 최고 관리자가 모든 수익원을 통합 관리하는 종합 매출 대시보드
+ * - 프랜차이즈 수수료, 라이선싱, 컨설팅, 교육, 광고 등 다양한 수익원 분석
+ * - 수익 구조 분석 및 트렌드 파악
+ * - 센터별, 지역별, 기간별 매출 현황 관리
  * 
  * 🔄 **주요 기능**
  * - 최고 관리자 수익 개요 (총 수익, 순이익, 성장률 등)
@@ -283,8 +283,8 @@ export default function SuperAdminRevenuePage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">💎 최고 관리자 수익 관리</h1>
-          <p className="text-gray-600">최고 관리자 직접 수익원을 관리하는 전용 대시보드</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">💎 총 매출 관리</h1>
+          <p className="text-gray-600">최고 관리자가 모든 수익원을 통합 관리하는 종합 매출 대시보드</p>
         </div>
 
         {/* 필터 옵션 */}
