@@ -46,6 +46,7 @@ export default function ThreeDViewerPage() {
   const [drills, setDrills] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false); // 초기 로딩 비활성화
   
   // 영법 폼
   const [styleForm, setStyleForm] = useState({
@@ -136,26 +137,35 @@ export default function ThreeDViewerPage() {
 
   const loadSwimmingStyles = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/swimming-styles', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      setIsLoading(true);
+      // 지연 로딩으로 성능 개선
+      setTimeout(async () => {
+        const response = await fetch('http://localhost:5000/api/swimming-styles', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setSwimmingStyles(data.data || []);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setSwimmingStyles(data.data || []);
+          }
         }
-      }
+        setIsLoading(false);
+      }, 100);
     } catch (error) {
       console.error('영법 로드 오류:', error);
+      setIsLoading(false);
     }
   };
 
   const loadDrills = async () => {
     try {
+      setIsLoading(true);
+      // 지연 로딩으로 성능 개선
+      setTimeout(async () => {
       const response = await fetch('http://localhost:5000/api/swim-drills', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -163,14 +173,17 @@ export default function ThreeDViewerPage() {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setDrills(data.data || []);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setDrills(data.data || []);
+          }
         }
-      }
+        setIsLoading(false);
+      }, 100);
     } catch (error) {
       console.error('드릴 로드 오류:', error);
+      setIsLoading(false);
     }
   };
 

@@ -54,7 +54,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* 편집 모드 버튼 (개발용) */}
+      {/* 편집 모드 버튼 (개발용) - 햄버거 메뉴와 겹치지 않도록 위치 조정 */}
       <div className="fixed top-4 right-4 z-50">
         <button
           onClick={toggleEditMode}
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
       {/* 편집 모달 */}
       {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">랜딩 페이지 편집</h3>
             

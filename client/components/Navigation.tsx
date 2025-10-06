@@ -470,7 +470,7 @@ export default function Navigation() {
     
     return false;
   };
-  const { user, logout, hasPermission, hasUserType } = useAuth();
+  const { user, logout, hasPermission, hasUserType, loading } = useAuth();
   const isLoggedIn = !!user;
   const userName = user?.name || '';
 
@@ -661,7 +661,7 @@ export default function Navigation() {
 
           {/* User Menu and Actions */}
           <div className="flex items-center space-x-4">
-            {isLoggedIn ? (
+            {!loading && isLoggedIn ? (
               <>
                 <div className="hidden md:flex items-center space-x-4 flex-nowrap">
                   <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg flex-shrink-0">
@@ -732,7 +732,7 @@ export default function Navigation() {
             <div className="px-4 pt-3 pb-3 space-y-1 max-h-[70vh] overflow-y-auto">
               {renderMenuGroups(true)}
               
-              {isLoggedIn ? (
+              {!loading && isLoggedIn ? (
                 <div className="px-4 py-2 border-t border-gray-200">
                   <div className="text-sm text-gray-700 mb-2">
                     {userName}님 환영합니다
@@ -750,7 +750,7 @@ export default function Navigation() {
                     로그아웃
                   </button>
                 </div>
-              ) : (user?.userType || 'guest') === 'guest' ? (
+              ) : !loading ? (
                 <div className="px-3 py-2 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg mx-2 mb-2">
                   <div className="text-center text-sm text-gray-600 mb-3 py-2">
                     🎯 더 많은 기능을 체험해보세요!

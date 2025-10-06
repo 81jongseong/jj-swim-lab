@@ -10,12 +10,14 @@
 import { useState, useEffect } from 'react';
 import { getDashboardStats, DashboardStats } from '../../../lib/api/dashboard';
 import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
+import { useRouter } from 'next/navigation';
 
 interface AdminStats extends DashboardStats {
   systemHealth: 'excellent' | 'good' | 'warning' | 'critical';
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeCourses: 0,
@@ -25,6 +27,27 @@ export default function AdminDashboard() {
     instructorStats: [],
     courseStats: [],
     systemHealth: 'good'
+  });
+
+  // 승인 대기 항목들
+  const [pendingApprovals, setPendingApprovals] = useState({
+    centerRegistrations: 2,
+    instructorRegistrations: 1,
+    total: 3
+  });
+
+  // 고객지원 관리 요약
+  const [customerSupport, setCustomerSupport] = useState({
+    pendingTickets: 5,
+    resolvedToday: 12,
+    avgResponseTime: '2.3시간'
+  });
+
+  // 공지사항 관리 요약
+  const [notices, setNotices] = useState({
+    totalNotices: 8,
+    activeNotices: 6,
+    draftNotices: 2
   });
 
   const fetchDashboardStats = async () => {
@@ -112,6 +135,40 @@ export default function AdminDashboard() {
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">{stats.activeBookings}</div>
               <div className="text-sm text-gray-500">활성 예약</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 승인 대기 항목 카드 */}
+      <div className="mb-8">
+        <div className="border-l-4 border-l-red-500 bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">⚠️ 승인 대기 항목</h2>
+            <div className="px-3 py-1 rounded-full text-white bg-red-500">
+              {pendingApprovals.total}건 대기
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-red-50 rounded-lg p-4 cursor-pointer hover:bg-red-100 transition-colors"
+                 onClick={() => router.push('/admin/approvals')}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-bold text-red-600">{pendingApprovals.centerRegistrations}</div>
+                  <div className="text-sm text-gray-600">센터 등록</div>
+                </div>
+                <span className="text-2xl">🏢</span>
+              </div>
+            </div>
+            <div className="bg-orange-50 rounded-lg p-4 cursor-pointer hover:bg-orange-100 transition-colors"
+                 onClick={() => router.push('/admin/instructor-management')}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-bold text-orange-600">{pendingApprovals.instructorRegistrations}</div>
+                  <div className="text-sm text-gray-600">강사 등록</div>
+                </div>
+                <span className="text-2xl">👨‍🏫</span>
+              </div>
             </div>
           </div>
         </div>
@@ -227,6 +284,58 @@ export default function AdminDashboard() {
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 고객지원 및 공지사항 관리 */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">📞 고객지원 & 공지사항 관리</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 고객지원 관리 카드 */}
+          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300"
+               onClick={() => router.push('/admin/reports')}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">🎧 고객지원 관리</h3>
+              <span className="text-2xl">📞</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">대기 중인 문의</span>
+                <span className="text-lg font-bold text-red-600">{customerSupport.pendingTickets}건</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">오늘 해결</span>
+                <span className="text-lg font-bold text-green-600">{customerSupport.resolvedToday}건</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">평균 응답시간</span>
+                <span className="text-lg font-bold text-blue-600">{customerSupport.avgResponseTime}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 공지사항 관리 카드 */}
+          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-green-300"
+               onClick={() => router.push('/admin/notices')}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">📢 공지사항 관리</h3>
+              <span className="text-2xl">📝</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">전체 공지사항</span>
+                <span className="text-lg font-bold text-gray-700">{notices.totalNotices}건</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">활성 공지</span>
+                <span className="text-lg font-bold text-green-600">{notices.activeNotices}건</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">임시저장</span>
+                <span className="text-lg font-bold text-orange-600">{notices.draftNotices}건</span>
               </div>
             </div>
           </div>

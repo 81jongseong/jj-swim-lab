@@ -596,6 +596,7 @@ export default function InstructorManagementPage() {
               </div>
             )}
 
+
         {activeTab === 'schedule' && (
               <div className="space-y-6">
             {/* 지역 필터 - 혼합 구조 */}
