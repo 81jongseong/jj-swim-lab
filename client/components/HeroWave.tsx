@@ -222,7 +222,7 @@ const HeroWave: React.FC<HeroWaveProps> = ({
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/20 to-primary/40" style={{ zIndex: 2 }} />
       
       {/* 콘텐츠 */}
-      <div className="relative z-10 container mx-auto px-6 text-center text-white">
+      <div className="relative z-10 container mx-auto px-6 pt-20 md:pt-0 text-center text-white">
         <motion.div
           variants={heroAnimation}
           initial="initial"
@@ -258,33 +258,6 @@ const HeroWave: React.FC<HeroWaveProps> = ({
             </motion.p>
           )}
           
-          {/* CTA 버튼들 */}
-          <motion.div
-            variants={motionPresets.slideUp}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-          >
-            {ctaPrimary && (
-              <motion.a
-                href={ctaPrimary.href}
-                className="btn-primary px-8 py-4 text-lg font-semibold rounded-2xl shadow-ocean hover:shadow-deep transition-all duration-300 transform hover:-translate-y-1"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {ctaPrimary.text}
-              </motion.a>
-            )}
-            
-            {ctaSecondary && (
-              <motion.a
-                href={ctaSecondary.href}
-                className="btn-secondary px-8 py-4 text-lg font-semibold rounded-2xl border-2 border-white/30 hover:border-white/50 transition-all duration-300 transform hover:-translate-y-1"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {ctaSecondary.text}
-              </motion.a>
-            )}
-          </motion.div>
         </motion.div>
       </div>
       

@@ -129,7 +129,7 @@ export default function TopNavigation() {
     { name: '슈퍼 관리자 대시보드', href: '/admin/dashboard', icon: '🏠', category: 'dashboard' },
     { name: '사용자 관리', href: '/admin/users', icon: '👤', category: 'users' },
     { name: '센터별 사용자', href: '/admin/users/center-users', icon: '🏢', category: 'users' },
-    { name: '센터 감독', href: '/admin/center-management', icon: '🏢', category: 'centers' },
+    { name: '센터 관리', href: '/admin/center-management', icon: '🏢', category: 'centers' },
     { name: '🏊‍♂️ 학생 수영 레벨 관리', href: '/admin/center-levels', icon: '🎯', category: 'centers' },
     { name: '강습 과정 감독', href: '/admin/course-oversight', icon: '👁️', category: 'courses' },
     { name: '강습법 관리', href: '/admin/teaching-methods', icon: '📖', category: 'courses' },

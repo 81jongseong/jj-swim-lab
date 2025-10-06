@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 /**
  * 🧠 퀴즈 페이지
@@ -348,14 +350,22 @@ export default function QuizPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-800">{result.correctAnswers}</div>
-                  <div className="text-sm text-blue-600">정답</div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-800">{result.totalQuestions}</div>
-                  <div className="text-sm text-gray-600">총 문제</div>
-                </div>
+                <StatCard
+                  title="정답"
+                  value={result.correctAnswers.toString()}
+                  icon="✅"
+                  color="green"
+                  subtitle="맞힌 문제 수"
+                  change={{ value: Math.round((result.correctAnswers / result.totalQuestions) * 100), type: 'increase' }}
+                />
+                <StatCard
+                  title="총 문제"
+                  value={result.totalQuestions.toString()}
+                  icon="📝"
+                  color="blue"
+                  subtitle="전체 문제 수"
+                  change={{ value: 0, type: 'increase' }}
+                />
               </div>
 
               <div className="mb-8">
@@ -391,18 +401,20 @@ export default function QuizPage() {
               </div>
 
               <div className="flex justify-center space-x-4">
-                <button
+                <Button
                   onClick={resetQuiz}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  variant="outline"
+                  size="md"
                 >
                   다른 퀴즈 풀기
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => window.location.href = '/dashboard'}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  variant="primary"
+                  size="md"
                 >
                   대시보드로
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -463,19 +475,21 @@ export default function QuizPage() {
               </div>
 
               <div className="flex justify-between">
-                <button
+                <Button
                   onClick={resetQuiz}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  variant="outline"
+                  size="md"
                 >
                   퀴즈 종료
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={nextQuestion}
                   disabled={answers[currentQuestionIndex] === -1}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="primary"
+                  size="md"
                 >
                   {currentQuestionIndex === selectedQuiz.questions.length - 1 ? '완료' : '다음'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -539,12 +553,14 @@ export default function QuizPage() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={() => startQuiz(quiz)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
                 >
                   퀴즈 시작
-                </button>
+                </Button>
               </div>
             </div>
           ))}

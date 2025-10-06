@@ -202,6 +202,18 @@ const swimmingCenterSchema = new mongoose_1.default.Schema({
         type: Number,
         required: true,
     },
+    province: {
+        type: String,
+    },
+    city: {
+        type: String,
+    },
+    gu: {
+        type: String,
+    },
+    dong: {
+        type: String,
+    },
     isActive: {
         type: Boolean,
         default: true,

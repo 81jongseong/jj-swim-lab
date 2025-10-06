@@ -11,6 +11,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 // 동적 import로 SSR 문제 방지
 let L: any;
@@ -107,6 +109,20 @@ export default function MapPage() {
     '서울특별시': ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'],
     '경기도': ['수원시', '성남시', '고양시', '용인시', '부천시', '안산시', '안양시', '남양주시', '화성시', '평택시', '의정부시', '시흥시', '파주시', '김포시', '광명시', '광주시', '군포시', '하남시', '오산시', '양주시', '이천시', '구리시', '안성시', '포천시', '의왕시', '양평군', '여주시', '동두천시', '과천시', '가평군', '연천군'],
     '부산광역시': ['중구', '서구', '동구', '영도구', '부산진구', '동래구', '남구', '북구', '해운대구', '사하구', '금정구', '강서구', '연제구', '수영구', '사상구', '기장군'],
+    '대구광역시': ['중구', '동구', '서구', '남구', '북구', '수성구', '달서구', '달성군'],
+    '인천광역시': ['중구', '동구', '미추홀구', '연수구', '남동구', '부평구', '계양구', '서구', '강화군', '옹진군'],
+    '광주광역시': ['동구', '서구', '남구', '북구', '광산구'],
+    '대전광역시': ['동구', '중구', '서구', '유성구', '대덕구'],
+    '울산광역시': ['중구', '남구', '동구', '북구', '울주군'],
+    '세종특별자치시': ['세종시'],
+    '강원도': ['춘천시', '원주시', '강릉시', '동해시', '태백시', '속초시', '삼척시', '홍천군', '횡성군', '영월군', '평창군', '정선군', '철원군', '화천군', '양구군', '인제군', '고성군', '양양군'],
+    '충청북도': ['청주시', '충주시', '제천시', '보은군', '옥천군', '영동군', '증평군', '진천군', '괴산군', '음성군', '단양군'],
+    '충청남도': ['천안시', '공주시', '보령시', '아산시', '서산시', '논산시', '계룡시', '당진시', '금산군', '부여군', '서천군', '청양군', '홍성군', '예산군', '태안군'],
+    '전라북도': ['전주시', '군산시', '익산시', '정읍시', '남원시', '김제시', '완주군', '진안군', '무주군', '장수군', '임실군', '순창군', '고창군', '부안군'],
+    '전라남도': ['목포시', '여수시', '순천시', '나주시', '광양시', '담양군', '곡성군', '구례군', '고흥군', '보성군', '화순군', '장흥군', '강진군', '해남군', '영암군', '무안군', '함평군', '영광군', '장성군', '완도군', '진도군', '신안군'],
+    '경상북도': ['포항시', '경주시', '김천시', '안동시', '구미시', '영주시', '영천시', '상주시', '문경시', '경산시', '군위군', '의성군', '청송군', '영양군', '영덕군', '청도군', '고령군', '성주군', '칠곡군', '예천군', '봉화군', '울진군', '울릉군'],
+    '경상남도': ['창원시', '진주시', '통영시', '사천시', '김해시', '밀양시', '거제시', '양산시', '의령군', '함안군', '창녕군', '고성군', '남해군', '하동군', '산청군', '함양군', '거창군', '합천군'],
+    '제주특별자치도': ['제주시', '서귀포시']
   };
 
   // 샘플 수영 센터 데이터
@@ -809,38 +825,208 @@ export default function MapPage() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">검색 방식</label>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={() => setSearchType('center')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  searchType === 'center'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={searchType === 'center' ? 'primary' : 'outline'}
+                size="md"
+                className="flex-1"
               >
                 🏊 센터명 검색
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setSearchType('region')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  searchType === 'region'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={searchType === 'region' ? 'primary' : 'outline'}
+                size="md"
+                className="flex-1"
               >
                 📍 지역 선택
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setSearchType('address')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  searchType === 'address'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                variant={searchType === 'address' ? 'primary' : 'outline'}
+                size="md"
+                className="flex-1"
               >
                 🔍 주소 검색
-              </button>
+              </Button>
             </div>
           </div>
+
+          {/* 센터명 검색 */}
+          {searchType === 'center' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">센터명 입력</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="예: JJ Swim Lab 강남점"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  onClick={() => alert('센터 검색 기능은 준비 중입니다.')}
+                  variant="primary"
+                  size="md"
+                >
+                  🔍 검색
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 지역 선택 */}
+          {searchType === 'region' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">지역 선택</label>
+              {/* 1단계: 시/도 선택 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-600 mb-2">시/도 선택:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {[
+                    { id: '전국', name: '🌏 전국' },
+                    { id: '서울특별시', name: '🏙️ 서울시' },
+                    { id: '경기도', name: '🌳 경기도' },
+                    { id: '인천광역시', name: '🌊 인천시' },
+                    { id: '부산광역시', name: '🌊 부산시' },
+                    { id: '대구광역시', name: '🏔️ 대구시' },
+                    { id: '광주광역시', name: '🌅 광주시' },
+                    { id: '대전광역시', name: '🔬 대전시' },
+                    { id: '울산광역시', name: '🏭 울산시' },
+                    { id: '세종특별자치시', name: '🏛️ 세종시' },
+                    { id: '강원도', name: '⛰️ 강원도' },
+                    { id: '충청북도', name: '🌲 충청북도' },
+                    { id: '충청남도', name: '🌾 충청남도' },
+                    { id: '전라북도', name: '🌾 전라북도' },
+                    { id: '전라남도', name: '🌊 전라남도' },
+                    { id: '경상북도', name: '🏔️ 경상북도' },
+                    { id: '경상남도', name: '🌊 경상남도' },
+                    { id: '제주특별자치도', name: '🏝️ 제주도' }
+                  ].map((sido) => (
+                    <Button
+                      key={sido.id}
+                      onClick={() => {
+                        if (sido.id === '전국') {
+                          setSelectedRegions(new Set(['전국']));
+                          setSelectedSido('');
+                          setShowDistrictSelection(false);
+                        } else {
+                          setSelectedSido(sido.id);
+                          setShowDistrictSelection(true);
+                          setSelectedRegions(new Set());
+                        }
+                      }}
+                      variant={selectedSido === sido.id || (sido.id === '전국' && selectedRegions.has('전국')) ? 'primary' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                    >
+                      {sido.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2단계: 구/군 선택 */}
+              {showDistrictSelection && selectedSido && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-700">{selectedSido} 구/군 선택:</h4>
+                    <Button
+                      onClick={() => {
+                        setShowDistrictSelection(false);
+                        setSelectedSido('');
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      ✕ 닫기
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    {citiesByProvince[selectedSido]?.map((city) => (
+                      <Button
+                        key={city}
+                        onClick={() => {
+                          const newRegions = new Set(selectedRegions);
+                          if (newRegions.has(city)) {
+                            newRegions.delete(city);
+                          } else {
+                            newRegions.add(city);
+                          }
+                          setSelectedRegions(newRegions);
+                        }}
+                        variant={selectedRegions.has(city) ? 'primary' : 'outline'}
+                        size="sm"
+                        className="text-xs"
+                      >
+                        {city}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 선택된 지역 표시 */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  선택된 지역 ({selectedRegions.size}개):
+                </h4>
+                {selectedRegions.size === 0 ? (
+                  <div className="text-gray-500 text-sm">
+                    지역을 선택해주세요
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(selectedRegions).map((region) => (
+                      <span
+                        key={region}
+                        className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                      >
+                        {region}
+                        <button
+                          onClick={() => {
+                            const newRegions = new Set(selectedRegions);
+                            newRegions.delete(region);
+                            setSelectedRegions(newRegions);
+                            if (newRegions.size === 0) {
+                              setSelectedSido('');
+                              setShowDistrictSelection(false);
+                            }
+                          }}
+                          className="ml-2 text-blue-600 hover:text-blue-800"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 주소 검색 */}
+          {searchType === 'address' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">주소 입력</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchAddress}
+                  onChange={(e) => setSearchAddress(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder="예: 서울특별시 강남구 테헤란로 123"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button
+                  onClick={() => handleSearch()}
+                  disabled={searchLoading || !mapReady}
+                  variant="primary"
+                  size="md"
+                >
+                  {searchLoading ? '검색 중...' : '🔍 검색'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* 선택된 옵션들 표시 박스 */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
@@ -1298,147 +1484,6 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* 지역 선택 - 회원 분포도 시스템 사용 안내 */}
-          {/* 지역 선택 */}
-          {searchType === 'region' && (
-            <div className="text-sm w-full">
-              <label className="block font-medium mb-3">지역 선택:</label>
-              {/* 1단계: 시/도 선택 */}
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-600 mb-2">시/도 선택:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {[
-                    { id: '전국', name: '🌏 전국' },
-                    { id: '서울시', name: '🏙️ 서울시' },
-                    { id: '경기도', name: '🌳 경기도' },
-                    { id: '인천시', name: '🌊 인천시' },
-                    { id: '부산시', name: '🌊 부산시' },
-                    { id: '대구시', name: '🏔️ 대구시' },
-                    { id: '광주시', name: '🌅 광주시' },
-                    { id: '대전시', name: '🔬 대전시' },
-                    { id: '울산시', name: '🏭 울산시' },
-                    { id: '세종시', name: '🏛️ 세종시' },
-                    { id: '강원도', name: '⛰️ 강원도' },
-                    { id: '충청북도', name: '🌲 충청북도' },
-                    { id: '충청남도', name: '🌾 충청남도' },
-                    { id: '전라북도', name: '🌾 전라북도' },
-                    { id: '전라남도', name: '🌊 전라남도' },
-                    { id: '경상북도', name: '🏔️ 경상북도' },
-                    { id: '경상남도', name: '🌊 경상남도' },
-                    { id: '제주도', name: '🏝️ 제주도' }
-                  ].map((sido) => (
-                    <button
-                      key={sido.id}
-                      onClick={() => {
-                        if (sido.id === '전국') {
-                          setSelectedRegions(new Set(['전국']));
-                          setSelectedSido('');
-                          setShowDistrictSelection(false);
-                        } else {
-                          setSelectedSido(sido.id);
-                          setShowDistrictSelection(true);
-                          setSelectedRegions(new Set());
-                        }
-                      }}
-                      className={`px-3 py-2 text-xs rounded border transition-colors ${
-                        selectedSido === sido.id || (sido.id === '전국' && selectedRegions.has('전국'))
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {sido.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2단계: 구/군 선택 */}
-              {showDistrictSelection && selectedSido && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-700">{selectedSido} 구/군 선택:</h4>
-                    <button
-                      onClick={() => {
-                        setShowDistrictSelection(false);
-                        setSelectedSido('');
-                      }}
-                      className="text-gray-500 hover:text-gray-700 text-sm"
-                    >
-                      ✕ 닫기
-                    </button>
-                  </div>
-                  <DistrictSelector
-                    sido={selectedSido}
-                    selectedRegions={selectedRegions}
-                    setSelectedRegions={setSelectedRegions}
-                    setSelectedSido={setSelectedSido}
-                    setShowDistrictSelection={setShowDistrictSelection}
-                  />
-                </div>
-              )}
-
-              {/* 선택된 지역 표시 */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  선택된 지역 ({selectedRegions.size}개):
-                </h4>
-                {selectedRegions.size === 0 ? (
-                  <div className="text-gray-500 text-sm">
-                    지역을 선택해주세요 (지역 선택 후 센터 필터가 활성화됩니다)
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(selectedRegions).map((region) => (
-                      <span
-                        key={region}
-                        className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                      >
-                        {region}
-                        <button
-                          onClick={() => {
-                            const newRegions = new Set(selectedRegions);
-                            newRegions.delete(region);
-                            setSelectedRegions(newRegions);
-                            if (newRegions.size === 0) {
-                              setSelectedSido('');
-                              setShowDistrictSelection(false);
-                            }
-                          }}
-                          className="ml-2 text-blue-600 hover:text-blue-800"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* 주소 직접 검색 */}
-          {searchType === 'address' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">주소 입력</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchAddress}
-                  onChange={(e) => setSearchAddress(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="예: 서울특별시 강남구 테헤란로 123"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={() => handleSearch()}
-                  disabled={searchLoading || !mapReady}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {searchLoading ? '검색 중...' : '🔍 검색'}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 지도 및 사이드바 */}

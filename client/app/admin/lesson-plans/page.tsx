@@ -9,6 +9,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
+import TemplateCard from '@/components/TemplateCard';
 
 interface CurriculumStage {
   stageNumber: number;
@@ -279,6 +282,45 @@ export default function LessonPlansPage() {
         </p>
       </div>
 
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <StatCard
+          title="전체 템플릿"
+          value={`${templates.length}개`}
+          icon="📋"
+          color="blue"
+          subtitle="등록된 템플릿"
+          onClick={() => setFilters({ search: '', category: 'all', level: 'all' })}
+        />
+        
+        <StatCard
+          title="자유형 템플릿"
+          value={`${templates.filter(t => t.category === 'freestyle').length}개`}
+          icon="🏊‍♂️"
+          color="green"
+          subtitle="자유형 커리큘럼"
+          onClick={() => setFilters(prev => ({ ...prev, category: prev.category === 'freestyle' ? 'all' : 'freestyle' }))}
+        />
+        
+        <StatCard
+          title="초급 템플릿"
+          value={`${templates.filter(t => t.level === 'beginner').length}개`}
+          icon="🥉"
+          color="yellow"
+          subtitle="초급 과정"
+          onClick={() => setFilters(prev => ({ ...prev, level: prev.level === 'beginner' ? 'all' : 'beginner' }))}
+        />
+        
+        <StatCard
+          title="공개 템플릿"
+          value={`${templates.filter(t => t.isPublic).length}개`}
+          icon="🌐"
+          color="purple"
+          subtitle="센터에서 사용 가능"
+          onClick={() => setFilters(prev => ({ ...prev, category: 'all', level: 'all', search: '' }))}
+        />
+      </div>
+
       {/* 필터 및 검색 */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -323,7 +365,7 @@ export default function LessonPlansPage() {
             </select>
           </div>
           <div className="flex items-end">
-            <button
+            <Button
               onClick={() => {
                 setEditingTemplate(null);
                 setNewTemplate({
@@ -351,10 +393,12 @@ export default function LessonPlansPage() {
                 });
                 setShowCreateModal(true);
               }}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              variant="primary"
+              size="md"
+              fullWidth
             >
               ✨ 새 커리큘럼 템플릿 생성
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -362,92 +406,29 @@ export default function LessonPlansPage() {
       {/* 템플릿 목록 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates.map((template) => (
-          <div key={template._id} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200">
-            <div className="p-6">
-              {/* 템플릿 헤더 */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getCategoryIcon(template.category)}</span>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{template.templateName}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelBadge(template.level).color}`}>
-                        {getLevelBadge(template.level).icon} {template.level}
-                      </span>
-                      <span className="text-sm text-gray-500">📅 {template.totalDuration}주</span>
-                      <span className="text-sm text-gray-500">📚 {template.totalSessions}회</span>
-                    </div>
-                  </div>
-                </div>
-                {(template.rating || 0) > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-400">⭐</span>
-                    <span className="text-sm font-medium">{(template.rating || 0).toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* 템플릿 설명 */}
-              <p className="text-gray-600 text-sm mb-4">{template.description}</p>
-
-              {/* 단계 정보 */}
-              <div className="space-y-2 mb-4">
-                <h4 className="font-semibold text-gray-900 text-sm">📋 커리큘럼 단계</h4>
-                {template.stages.map((stage, index) => (
-                  <div key={index} className="bg-gray-50 rounded p-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">{stage.stageName}</span>
-                      <span className="text-xs text-gray-500">{stage.duration}주 ({stage.sessions}회)</span>
-                    </div>
-                  </div>
-                ))}
-                {template.specialStages.length > 0 && (
-                  <div className="bg-yellow-50 rounded p-2">
-                    <span className="text-sm font-medium text-yellow-700">
-                      ⭐ 특별 과정: {template.specialStages.length}개
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* 템플릿 정보 */}
-              <div className="space-y-1 mb-4 text-sm text-gray-500">
-                <div className="flex justify-between">
-                  <span>사용 횟수:</span>
-                  <span className="font-medium">{template.usageCount || 0}회</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>공개 여부:</span>
-                  <span className="font-medium">{template.isPublic ? '🌍 공개' : '🔒 비공개'}</span>
-                </div>
-              </div>
-
-              {/* 액션 버튼 */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setEditingTemplate(template);
-                    setNewTemplate(template);
-                    setShowCreateModal(true);
-                  }}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  ✏️ 수정
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`"${template.templateName}" 템플릿을 삭제하시겠습니까?`)) {
-                      // TODO: 삭제 API 호출
-                    }
-                  }}
-                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </div>
+          <TemplateCard
+            key={template._id}
+            template={template}
+            onEdit={() => {
+              setEditingTemplate(template);
+              setNewTemplate(template);
+              setShowCreateModal(true);
+            }}
+            onDelete={() => {
+              if (confirm(`"${template.templateName}" 템플릿을 삭제하시겠습니까?`)) {
+                // TODO: 삭제 API 호출
+              }
+            }}
+            onView={() => {
+              setEditingTemplate(template);
+              setNewTemplate(template);
+              setShowCreateModal(true);
+            }}
+            getCategoryIcon={getCategoryIcon}
+            getLevelBadge={getLevelBadge}
+          />
         ))}
+
 
         {templates.length === 0 && !isLoading && (
           <div className="col-span-full text-center py-12">

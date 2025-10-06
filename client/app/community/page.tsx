@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 // UI 컴포넌트를 HTML 요소로 교체하여 Element type is invalid 오류 방지
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
 
@@ -539,6 +541,42 @@ export default function CommunityPage() {
           </p>
         </div>
 
+        {/* 커뮤니티 통계 카드 */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <StatCard
+            title="전체 게시글"
+            value={posts.length.toString()}
+            icon="📝"
+            color="blue"
+            subtitle="작성된 게시글 수"
+            change={{ value: 12.5, type: 'increase' }}
+          />
+          <StatCard
+            title="오늘의 활동"
+            value="47개"
+            icon="🔥"
+            color="orange"
+            subtitle="새 게시글 & 댓글"
+            change={{ value: 8.3, type: 'increase' }}
+          />
+          <StatCard
+            title="인기 카테고리"
+            value="팁 & 노하우"
+            icon="💡"
+            color="green"
+            subtitle="가장 활발한 카테고리"
+            change={{ value: 15.2, type: 'increase' }}
+          />
+          <StatCard
+            title="번개 모임"
+            value="3개"
+            icon="⚡"
+            color="purple"
+            subtitle="진행 중인 모임"
+            change={{ value: 5.7, type: 'increase' }}
+          />
+        </div>
+
         {/* 검색 및 글쓰기 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -554,13 +592,15 @@ export default function CommunityPage() {
             <div className="flex gap-2">
               {user?.userType === 'superAdmin' && (
                 <>
-                  <button
+                  <Button
                     onClick={() => setShowRulesModal(true)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                    variant="primary"
+                    size="md"
+                    className="bg-purple-600 hover:bg-purple-700"
                   >
                     ⚙️ 운영 규칙
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={async () => {
                       if (!confirm('샘플 게시글 10개를 생성하시겠습니까?')) return;
                       
@@ -591,21 +631,24 @@ export default function CommunityPage() {
                       alert(`✅ ${count}개 샘플 게시글 생성 완료!`);
                       fetchPosts();
                     }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                    variant="primary"
+                    size="md"
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     📦 샘플 데이터
-                  </button>
+                  </Button>
                 </>
               )}
-              <button
+              <Button
                 onClick={() => {
                   console.log('글쓰기 버튼 클릭, user:', user);
                   setIsFormOpen(true);
                 }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                variant="primary"
+                size="md"
               >
                 ✍️ 글쓰기
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -614,20 +657,22 @@ export default function CommunityPage() {
         <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
           <div className="grid grid-cols-3 lg:grid-cols-7 gap-2">
             {categories.map(category => (
-              <button
+              <Button
                 key={category.value}
                 onClick={() => setSelectedCategory(category.value)}
+                variant={selectedCategory === category.value ? 'primary' : 'outline'}
+                size="lg"
                 className={`flex flex-col items-center gap-2 px-3 py-4 rounded-lg font-medium transition-all duration-200 ${
                   selectedCategory === category.value
-                    ? 'bg-blue-600 text-white shadow-lg transform scale-105'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                    ? 'shadow-lg transform scale-105'
+                    : 'hover:bg-gray-200 hover:text-gray-900'
                 }`}
               >
                 <span className="text-2xl">{category.icon}</span>
                 <span className="text-sm font-medium text-center">
                   {category.label}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

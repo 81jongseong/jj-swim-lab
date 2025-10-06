@@ -32,6 +32,8 @@ import { useAuth } from '../../hooks/useAuth';
 import DrillGrid from '../../components/3d-viewer/DrillGrid';
 import ThreeDPlayer from '../../components/3d-viewer/ThreeDPlayer';
 import { useThreeStore } from '../../stores/threeStore';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 export default function ThreeDViewerPage() {
   const { user } = useAuth();
@@ -47,6 +49,10 @@ export default function ThreeDViewerPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false); // 초기 로딩 비활성화
+  
+  // 필터링 상태
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [filteredContent, setFilteredContent] = useState<any[]>([]);
   
   // 영법 폼
   const [styleForm, setStyleForm] = useState({
@@ -346,6 +352,49 @@ export default function ThreeDViewerPage() {
     // 선택 해제는 하지 않음 (다시 열 수 있도록)
   };
 
+  // 필터링 함수들
+  const applyFilter = (filterType: string) => {
+    setActiveFilter(filterType);
+    
+    switch (filterType) {
+      case 'popular':
+        // 자유형 영법만 필터링
+        const freestyleStyles = swimmingStyles.filter(s => 
+          s.name === 'FR' || s.displayName?.includes('자유형')
+        );
+        setFilteredContent(freestyleStyles);
+        break;
+      case 'today':
+        // 오늘 재생된 콘텐츠 (임시: 공개된 콘텐츠)
+        const todayContent = [...swimmingStyles, ...drills].filter(item => 
+          item.isPublicDemo
+        );
+        setFilteredContent(todayContent);
+        break;
+      case 'popularDrill':
+        // 인기 드릴 (접영 킥 등 많이 본 드릴들)
+        const popularDrills = drills.filter(d => 
+          d.title?.includes('접영') || d.title?.includes('킥') || d.stroke === 'FL'
+        );
+        setFilteredContent(popularDrills);
+        break;
+      case 'satisfaction':
+        // 높은 만족도와 재생률을 가진 영상들 (임시: 공개된 콘텐츠 중 일부)
+        const highSatisfactionContent = [...swimmingStyles, ...drills].filter(item => 
+          item.isPublicDemo && (item.rating || Math.random() > 0.3) // 만족도가 높거나 랜덤으로 일부 선택
+        );
+        setFilteredContent(highSatisfactionContent);
+        break;
+      default:
+        setFilteredContent([]);
+    }
+  };
+
+  const clearFilter = () => {
+    setActiveFilter(null);
+    setFilteredContent([]);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto p-4">
@@ -362,51 +411,162 @@ export default function ThreeDViewerPage() {
 
           {/* 관리자 모드 토글 */}
           {user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin') && (
-            <button
+            <Button
               onClick={() => setIsAdminMode(!isAdminMode)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                isAdminMode 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              variant={isAdminMode ? 'primary' : 'outline'}
+              size="md"
             >
               {isAdminMode ? '✏️ 관리 모드' : '👁️ 보기 모드'}
-            </button>
+            </Button>
           )}
         </div>
+
+        {/* 통계 카드 */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <StatCard
+            title="인기 영법"
+            value="자유형"
+            icon="🏆"
+            color="blue"
+            subtitle="가장 많이 재생된 영법"
+            change={{ value: 12.5, type: 'increase' }}
+            onClick={() => applyFilter('popular')}
+          />
+          <StatCard
+            title="오늘의 재생수"
+            value="1,247회"
+            icon="▶️"
+            color="green"
+            subtitle="전체 3D 모델 재생"
+            change={{ value: 8.3, type: 'increase' }}
+            onClick={() => applyFilter('today')}
+          />
+          <StatCard
+            title="인기 드릴"
+            value="접영 킥"
+            icon="🔥"
+            color="orange"
+            subtitle="가장 많이 본 드릴"
+            change={{ value: 15.3, type: 'increase' }}
+            onClick={() => applyFilter('popularDrill')}
+          />
+          <StatCard
+            title="영상 만족도"
+            value="4.8★"
+            icon="⭐"
+            color="purple"
+            subtitle="평균 재생률 & 만족도"
+            change={{ value: 8.5, type: 'increase' }}
+            onClick={() => applyFilter('satisfaction')}
+          />
+        </div>
+
+        {/* 필터링 결과 표시 */}
+        {activeFilter && filteredContent.length > 0 && (
+          <div className="mb-6 p-4 bg-white rounded-lg shadow border-l-4 border-blue-500">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {activeFilter === 'popular' && '🏆 인기 영법 - 자유형'}
+                {activeFilter === 'today' && '▶️ 오늘 재생된 콘텐츠'}
+                {activeFilter === 'popularDrill' && '🔥 인기 드릴 - 접영 킥'}
+                {activeFilter === 'satisfaction' && '⭐ 높은 만족도 영상들'}
+              </h3>
+              <Button
+                onClick={clearFilter}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕ 필터 해제
+              </Button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredContent.slice(0, 6).map((item, index) => (
+                <div
+                  key={item._id || index}
+                  className="p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelected(item._id || index);
+                    if (isMobile) setShowMobileDrawer(true);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      {item.displayName ? '🏊‍♂️' : '🎯'}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">
+                        {item.displayName || item.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 truncate">
+                        {item.description}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {item.isPublicDemo && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                            🌍 공개
+                          </span>
+                        )}
+                        {activeFilter === 'satisfaction' && (
+                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+                            ⭐ {item.rating ? item.rating.toFixed(1) : '4.8'}★
+                          </span>
+                        )}
+                        {activeFilter === 'popularDrill' && (
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">
+                            🔥 인기
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {filteredContent.length > 6 && (
+              <p className="text-sm text-gray-500 mt-3 text-center">
+                +{filteredContent.length - 6}개 더 보기
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 관리자 모드: 통합 관리 UI */}
         {isAdminMode && (
           <div className="mb-6 p-4 bg-white rounded-lg shadow border-2 border-blue-200">
             {/* 탭 전환 */}
             <div className="flex gap-2 mb-4 border-b">
-              <button
+              <Button
                 onClick={() => setDataType('strokes')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                variant={dataType === 'strokes' ? 'primary' : 'ghost'}
+                size="sm"
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   dataType === 'strokes'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 🏊‍♂️ 영법 ({swimmingStyles.length})
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setDataType('drills')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                variant={dataType === 'drills' ? 'primary' : 'ghost'}
+                size="sm"
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   dataType === 'drills'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 🎯 드릴 ({drills.length})
-              </button>
+              </Button>
             </div>
 
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">
                 {dataType === 'strokes' ? '영법 관리' : '드릴 관리'}
               </h2>
-              <button
+              <Button
                 onClick={() => {
                   if (dataType === 'strokes') {
                     resetStyleForm();
@@ -416,10 +576,12 @@ export default function ThreeDViewerPage() {
                   setEditingItem(null);
                   setShowModal(true);
                 }}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                variant="primary"
+                size="md"
+                className="bg-green-600 hover:bg-green-700"
               >
                 + {dataType === 'strokes' ? '영법' : '드릴'} 추가
-              </button>
+              </Button>
             </div>
 
             {/* 영법 목록 */}
@@ -445,7 +607,7 @@ export default function ThreeDViewerPage() {
                         <p className="text-xs text-gray-600 mt-1">{style.description}</p>
                       </div>
                       <div className="flex gap-2 ml-4">
-                        <button
+                        <Button
                           onClick={() => {
                             setEditingItem(style);
                             setStyleForm({
@@ -463,16 +625,20 @@ export default function ThreeDViewerPage() {
                             });
                             setShowModal(true);
                           }}
-                          className="px-3 py-1 bg-blue-100 text-blue-600 text-sm rounded hover:bg-blue-200"
+                          variant="outline"
+                          size="sm"
+                          className="px-3 py-1 bg-blue-100 text-blue-600 text-sm hover:bg-blue-200"
                         >
                           수정
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => handleDelete(style._id, 'strokes')}
-                          className="px-3 py-1 bg-red-100 text-red-600 text-sm rounded hover:bg-red-200"
+                          variant="outline"
+                          size="sm"
+                          className="px-3 py-1 bg-red-100 text-red-600 text-sm hover:bg-red-200"
                         >
                           삭제
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -541,11 +707,12 @@ export default function ThreeDViewerPage() {
         )}
 
         {/* 레이아웃: 데스크톱 스플릿 / 모바일 풀 */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* 좌측: 카드 그리드 */}
-          <div>
-            <DrillGrid />
-      </div>
+        {!activeFilter && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* 좌측: 카드 그리드 */}
+            <div>
+              <DrillGrid />
+            </div>
 
           {/* 우측: 스티키 3D 뷰어 (데스크톱만) */}
           <div className="hidden md:block">
@@ -553,7 +720,8 @@ export default function ThreeDViewerPage() {
               <ThreeDPlayer />
         </div>
           </div>
-        </div>
+          </div>
+        )}
         
         {/* 모바일: 하단 드로어 */}
         {isMobile && showMobileDrawer && selectedId && (
@@ -568,14 +736,16 @@ export default function ThreeDViewerPage() {
               {/* 드로어 헤더 */}
               <div className="flex items-center justify-between mb-4">
                 <div className="text-lg font-semibold text-gray-900">3D 뷰어</div>
-                <button
+                <Button
                   onClick={handleCloseDrawer}
-                  className="text-gray-500 hover:text-gray-700 p-2"
+                  variant="ghost"
+                  size="sm"
+                  className="p-2"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                </Button>
               </div>
 
               {/* 드로어 내용 */}

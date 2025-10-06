@@ -9,6 +9,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import SimpleBarChart from '@/components/SimpleBarChart';
 import { 
   Eye, 
   CheckCircle, 
@@ -247,62 +249,62 @@ const CourseOversightPage: React.FC = () => {
 
       {/* 주요 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">총 강습 과정</h3>
-            <BarChart3 className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalCourses}개</div>
-          <p className="text-xs text-gray-500 mt-1">전체 센터 합계</p>
-        </div>
+        <StatCard
+          title="총 강습 과정"
+          value={`${stats.totalCourses}개`}
+          icon="📚"
+          color="blue"
+          subtitle="전체 센터 합계"
+          href="/admin/courses"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">활성 과정</h3>
-            <CheckCircle className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.activeCourses}개</div>
-          <p className="text-xs text-gray-500 mt-1">현재 운영 중</p>
-        </div>
+        <StatCard
+          title="활성 과정"
+          value={`${stats.activeCourses}개`}
+          icon="✅"
+          color="green"
+          subtitle="현재 운영 중"
+          href="/admin/courses"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">총 수익</h3>
-            <DollarSign className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalRevenue.toLocaleString()}원</div>
-          <p className="text-xs text-gray-500 mt-1">월간 총 수익</p>
-        </div>
+        <StatCard
+          title="총 수익"
+          value={`${stats.totalRevenue.toLocaleString()}원`}
+          icon="💰"
+          color="purple"
+          subtitle="월간 총 수익"
+          href="/admin/revenue-management"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">평균 평점</h3>
-            <TrendingUp className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.averageRating}</div>
-          <p className="text-xs text-gray-500 mt-1">전체 평균</p>
-        </div>
+        <StatCard
+          title="평균 평점"
+          value={stats.averageRating}
+          icon="⭐"
+          color="yellow"
+          subtitle="전체 평균"
+          href="/admin/courses"
+        />
       </div>
 
       {/* 추가 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">비활성 과정</h3>
-            <XCircle className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">{stats.inactiveCourses}개</div>
-          <p className="text-xs text-gray-500 mt-1">운영 중단</p>
-        </div>
+        <StatCard
+          title="비활성 과정"
+          value={`${stats.inactiveCourses}개`}
+          icon="❌"
+          color="red"
+          subtitle="운영 중단"
+          href="/admin/courses"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">총 수강생</h3>
-            <Users className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">{stats.totalStudents}명</div>
-          <p className="text-xs text-gray-500 mt-1">전체 수강생</p>
-        </div>
+        <StatCard
+          title="총 수강생"
+          value={`${stats.totalStudents}명`}
+          icon="👥"
+          color="orange"
+          subtitle="전체 수강생"
+          href="/admin/users"
+        />
       </div>
 
       {/* 지역 필터 */}
@@ -598,44 +600,6 @@ const CourseOversightPage: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* 빠른 액션 */}
-      <div className="bg-white rounded-lg shadow p-6 mt-8">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">빠른 액션</h3>
-          <p className="text-sm text-gray-600">자주 사용하는 기능들에 빠르게 접근하세요.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            onClick={() => window.location.href = '/admin/teaching-methods'}
-          >
-            <BarChart3 className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">강습법 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            onClick={() => window.location.href = '/admin/center-levels'}
-          >
-            <Settings className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">센터 레벨 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            onClick={() => window.location.href = '/admin/revenue'}
-          >
-            <DollarSign className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">수익 분석</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            onClick={() => window.location.href = '/admin/reports'}
-          >
-            <Download className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">리포트 생성</span>
-          </button>
         </div>
       </div>
     </div>

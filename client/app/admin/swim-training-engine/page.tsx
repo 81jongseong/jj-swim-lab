@@ -25,6 +25,8 @@ import apiClient from '../../../utils/api';
 import { GLOSSARY, parseWorkoutLine, explainToken } from '../../../lib';
 import CSSConverter from '../../../components/CSSConverter';
 import { allJointConditions } from '../../../swim-training-engine/src/data/jj-swim-lab-joint-guidance';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 // SwimLab Data Pack v4 통합
 import { CONDITIONS as SWIMLAB_CONDITIONS } from '../../../src/swimlab/data/conditions_full';
 import { STROKE_SAFETY as SWIMLAB_STROKE_SAFETY } from '../../../src/swimlab/data/strokeSafety';
@@ -343,33 +345,39 @@ export default function SwimTrainingEnginePage() {
       <div className="flex-1 min-h-0">
         {activeTab === 'overview' && (
           <div className="space-y-6 h-full overflow-y-auto">
+            {/* 엔진 통계 카드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="생성된 프로그램"
+                value={`${engineStats.totalPrograms}개`}
+                icon="💾"
+                color="blue"
+                subtitle="총 생성 건수"
+              />
+              <StatCard
+                title="평균 생성 시간"
+                value={`${engineStats.averageGenerationTime}초`}
+                icon="⚡"
+                color="green"
+                subtitle="처리 속도"
+              />
+              <StatCard
+                title="성공률"
+                value={`${engineStats.successRate}%`}
+                icon="✅"
+                color="purple"
+                subtitle="정확도"
+              />
+              <StatCard
+                title="안전성 등급"
+                value={engineStats.safetyScore}
+                icon="🛡️"
+                color="orange"
+                subtitle="AAA 등급"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Database className="h-8 w-8 text-blue-500" />
-                  <h3 className="text-lg font-semibold">엔진 통계</h3>
-                </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>생성된 프로그램: {engineStats.totalPrograms}개</p>
-                  <p>평균 생성 시간: {engineStats.averageGenerationTime}초</p>
-                  <p>성공률: {engineStats.successRate}%</p>
-                  <p>안전성 등급: {engineStats.safetyScore}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Cpu className="h-8 w-8 text-green-500" />
-                  <h3 className="text-lg font-semibold">성능 지표</h3>
-                </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>처리 속도: {engineStats.averageGenerationTime}초</p>
-                  <p>정확도: {engineStats.successRate}%</p>
-                  <p>안전성: AAA 등급</p>
-                  <p>의학적 근거: 100%</p>
-                </div>
-              </div>
-
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
                   <Shield className="h-8 w-8 text-purple-500" />
@@ -581,7 +589,7 @@ export default function SwimTrainingEnginePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">훈련법 관리</h3>
                 <div className="flex items-center gap-3">
-                  <button
+                  <Button
                     onClick={() => {
                       const newMethod = {
                         id: `custom_method_${Date.now()}`,
@@ -601,10 +609,11 @@ export default function SwimTrainingEnginePage() {
                       setAllMethods(getMergedMethods(TRAINING_METHODS));
                       alert('✅ 훈련법이 추가되었습니다!\n→ 즉시 프로그램 생성에 반영됩니다.');
                     }}
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    variant="primary"
+                    size="sm"
                   >
-                    + 훈련법 추가
-                  </button>
+                    ➕ 훈련법 추가
+                  </Button>
                   <div className="text-sm text-gray-600">
                     총 {allMethods.length}개의 훈련법 (기본 {TRAINING_METHODS.length} + 커스텀 {allMethods.length - TRAINING_METHODS.length})
                   </div>

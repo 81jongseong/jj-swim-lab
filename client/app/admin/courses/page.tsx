@@ -58,6 +58,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Button from '@/components/Button';
 
 interface Course {
   id: number;
@@ -347,24 +348,28 @@ export default function AdminCoursesPage() {
         {/* 상단 액션 버튼들 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex flex-wrap gap-4">
-            <button
+            <Button
               onClick={() => setShowAddModal(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              variant="primary"
+              size="md"
             >
               ✨ 새 강습 과정 추가
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setShowLaneSettings(true)}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              variant="success"
+              size="md"
             >
               ⚙️ 레인 설정
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setShowCalendar(!showCalendar)}
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+              variant="primary"
+              size="md"
+              className="bg-purple-600 hover:bg-purple-700"
             >
               📅 일정 보기
-            </button>
+            </Button>
           </div>
         </div>
 

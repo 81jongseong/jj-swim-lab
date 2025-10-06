@@ -4,24 +4,27 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 interface Notice {
   _id: string;
   title: string;
   content: string;
-  type: 'general' | 'important' | 'maintenance' | 'event';
-  status: 'draft' | 'published' | 'archived';
-  priority: 'low' | 'medium' | 'high';
-  targetAudience: string[];
+  category: 'general' | 'course' | 'facility' | 'maintenance' | 'emergency' | 'membership' | 'quiz' | 'system';
+  isPublished: boolean;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
-  targetRegions: string[];
-  targetCenters: string[]; // 특정 센터 선택
-  authorId: string;
-  authorName: string;
+  targetCenters: string[];
+  author: { name: string; userId: string };
   createdAt: Date;
   publishedAt?: Date;
-  views: number;
-  attachments?: string[];
+  viewCount: number;
+  tags: string[];
+  isPinned: boolean;
+  allowComments: boolean;
+  expiresAt?: Date;
+  attachments?: { filename: string; url: string; size: number; type: string; }[];
 }
 
 interface Center {
@@ -40,16 +43,21 @@ function SuperAdminNoticesManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('2025-10');
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    type: 'general' as Notice['type'],
+    category: 'general' as Notice['category'],
     priority: 'medium' as Notice['priority'],
-    status: 'draft' as Notice['status'],
+    isPublished: false,
     targetUserTypes: [] as string[],
-    targetRegions: [] as string[],
     targetCenters: [] as string[],
-    sendToAll: false, // 전국 전체 발송
+    tags: [] as string[],
+    isPinned: false,
+    allowComments: true,
     sendToAllUserTypes: false
   });
   const [selectedProvince, setSelectedProvince] = useState<string>('');
@@ -87,7 +95,7 @@ function SuperAdminNoticesManagement() {
   const loadNotices = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/notices', {
+      const response = await fetch('http://localhost:5000/api/notices/admin/all', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -95,11 +103,13 @@ function SuperAdminNoticesManagement() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 공지사항 데이터:', data);
         const noticesList = (data.notices || data || []).map((notice: any) => ({
           ...notice,
           createdAt: new Date(notice.createdAt),
           publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : undefined
         }));
+        console.log('📋 변환된 공지사항:', noticesList.length, '개');
         setNotices(noticesList);
       } else {
         console.error('공지사항 로드 실패:', response.status);
@@ -150,10 +160,15 @@ function SuperAdminNoticesManagement() {
 
   // 지역 선택 시 해당 지역의 센터 필터링
   useEffect(() => {
+    if (!centers || centers.length === 0) {
+      setFilteredCenters([]);
+      return;
+    }
+
     let filtered = centers;
 
     // 선택된 지역들로 필터링
-    if (formData.targetRegions.length > 0) {
+    if (formData.targetRegions && formData.targetRegions.length > 0) {
       filtered = centers.filter(center => {
         return formData.targetRegions.some(region => {
           if (region.includes(' > ')) {
@@ -189,49 +204,48 @@ function SuperAdminNoticesManagement() {
     }));
   };
 
-  const getTypeLabel = (type: string) => {
-    const types: { [key: string]: string } = {
+  const getCategoryLabel = (category: string) => {
+    const categories: { [key: string]: string } = {
       'general': '일반',
-      'important': '중요',
+      'course': '강습',
+      'facility': '시설',
       'maintenance': '점검',
-      'event': '이벤트'
+      'emergency': '긴급',
+      'membership': '회원',
+      'quiz': '퀴즈',
+      'system': '시스템'
     };
-    return types[type] || type;
+    return categories[category] || category;
   };
 
-  const getTypeColor = (type: string) => {
+  const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
       'general': 'bg-blue-100 text-blue-800',
-      'important': 'bg-red-100 text-red-800',
+      'course': 'bg-purple-100 text-purple-800',
+      'facility': 'bg-cyan-100 text-cyan-800',
       'maintenance': 'bg-yellow-100 text-yellow-800',
-      'event': 'bg-green-100 text-green-800'
+      'emergency': 'bg-red-100 text-red-800',
+      'membership': 'bg-green-100 text-green-800',
+      'quiz': 'bg-pink-100 text-pink-800',
+      'system': 'bg-indigo-100 text-indigo-800'
     };
-    return colors[type] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusLabel = (status: string) => {
-    const statuses: { [key: string]: string } = {
-      'draft': '임시저장',
-      'published': '발행',
-      'archived': '보관'
-    };
-    return statuses[status] || status;
+  const getStatusLabel = (isPublished: boolean) => {
+    return isPublished ? '발행됨' : '초안';
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      'draft': 'bg-gray-100 text-gray-800',
-      'published': 'bg-green-100 text-green-800',
-      'archived': 'bg-yellow-100 text-yellow-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+  const getStatusColor = (isPublished: boolean) => {
+    return isPublished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
   const getPriorityLabel = (priority: string) => {
     const priorities: { [key: string]: string } = {
       'low': '낮음',
       'medium': '보통',
-      'high': '높음'
+      'high': '높음',
+      'urgent': '긴급'
     };
     return priorities[priority] || priority;
   };
@@ -269,13 +283,14 @@ function SuperAdminNoticesManagement() {
     setFormData({
       title: notice.title,
       content: notice.content,
-      type: notice.type,
+      category: notice.category,
       priority: notice.priority,
-      status: notice.status,
+      isPublished: notice.isPublished,
       targetUserTypes: notice.targetUserTypes,
-      targetRegions: notice.targetRegions,
       targetCenters: notice.targetCenters,
-      sendToAll: notice.targetRegions.length === 0 && notice.targetCenters.length === 0,
+      tags: notice.tags || [],
+      isPinned: notice.isPinned || false,
+      allowComments: notice.allowComments || true,
       sendToAllUserTypes: notice.targetUserTypes.length === 4
     });
     setShowModal(true);
@@ -411,67 +426,167 @@ function SuperAdminNoticesManagement() {
         <p className="text-gray-600">전체 시스템의 공지사항을 센터별, 지역별, 계정별로 발송하세요</p>
       </div>
 
+      {/* 월별 선택 */}
+      <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">📅 월별 조회:</label>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-600">
+            {notices.filter(notice => {
+              const noticeDate = new Date(notice.createdAt);
+              const [year, month] = selectedMonth.split('-');
+              return noticeDate.getFullYear() === parseInt(year) &&
+                     noticeDate.getMonth() + 1 === parseInt(month);
+            }).length}개의 공지사항
+          </span>
+        </div>
+      </div>
+
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Bell className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 공지사항</p>
-              <p className="text-2xl font-bold text-gray-900">{notices.length}개</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Eye className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">발행된 공지</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.filter(notice => notice.status === 'published').length}개
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">이번 달 공지</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.filter(notice => 
-                  notice.createdAt.getMonth() === new Date().getMonth() &&
-                  notice.createdAt.getFullYear() === new Date().getFullYear()
-                ).length}개
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <User className="w-8 h-8 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 조회수</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.reduce((sum, notice) => sum + notice.views, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="총 공지사항"
+          value={`${notices.length}개`}
+          icon="📢"
+          color="blue"
+          subtitle={statusFilter === 'all' && typeFilter === 'all' ? '전체 보기' : '클릭하여 전체 보기'}
+          onClick={() => {
+            setStatusFilter('all');
+            setTypeFilter('all');
+          }}
+        />
+        <StatCard
+          title="발행된 공지"
+          value={`${notices.filter(notice => notice.isPublished).length}개`}
+          icon="✅"
+          color="green"
+          subtitle={statusFilter === 'published' ? '필터 적용 중' : '클릭하여 필터링'}
+          onClick={() => setStatusFilter(statusFilter === 'published' ? 'all' : 'published')}
+        />
+        <StatCard
+          title="이번 달 공지"
+          value={`${notices.filter(notice => {
+            const noticeDate = new Date(notice.createdAt);
+            return noticeDate.getMonth() === new Date().getMonth() &&
+                   noticeDate.getFullYear() === new Date().getFullYear();
+          }).length}개`}
+          icon="📅"
+          color="purple"
+          subtitle="10월 작성 통계"
+        />
+        <StatCard
+          title="초안"
+          value={`${notices.filter(notice => !notice.isPublished).length}개`}
+          icon="📝"
+          color="orange"
+          subtitle={statusFilter === 'draft' ? '필터 적용 중' : '클릭하여 필터링'}
+          onClick={() => setStatusFilter(statusFilter === 'draft' ? 'all' : 'draft')}
+        />
         </div>
 
       {/* 공지사항 목록 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">공지사항 목록</h3>
-              <button 
-            onClick={handleCreate}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-              >
-            <Plus className="w-4 h-4 mr-2" />
-                새 공지사항 작성
-              </button>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">공지사항 목록</h3>
+            <Button
+              onClick={handleCreate}
+              variant="primary"
+              size="md"
+            >
+              ➕ 새 공지사항 작성
+            </Button>
           </div>
+
+          {/* 필터 옵션 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">전체</option>
+                <option value="published">✅ 발행됨</option>
+                <option value="draft">📝 초안</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">유형</label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">전체</option>
+                <option value="general">일반</option>
+                <option value="course">강습</option>
+                <option value="facility">시설</option>
+                <option value="maintenance">점검</option>
+                <option value="emergency">긴급</option>
+                <option value="membership">회원</option>
+                <option value="quiz">퀴즈</option>
+                <option value="system">시스템</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">전체</option>
+                <option value="urgent">🔴 긴급</option>
+                <option value="high">🟠 높음</option>
+                <option value="medium">🟡 보통</option>
+                <option value="low">🟢 낮음</option>
+              </select>
+            </div>
+          </div>
+
+          {(statusFilter !== 'all' || typeFilter !== 'all' || priorityFilter !== 'all') && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-blue-600 font-medium">
+                  필터 적용 중:
+                </span>
+                {statusFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    상태: {statusFilter === 'published' ? '발행됨' : '초안'}
+                  </span>
+                )}
+                {typeFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    유형: {getCategoryLabel(typeFilter)}
+                  </span>
+                )}
+                {priorityFilter !== 'all' && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    우선순위: {getPriorityLabel(priorityFilter)}
+                  </span>
+                )}
+              </div>
+              <Button
+                onClick={() => {
+                  setStatusFilter('all');
+                  setTypeFilter('all');
+                  setPriorityFilter('all');
+                }}
+                variant="ghost"
+                size="sm"
+              >
+                필터 초기화
+              </Button>
+            </div>
+          )}
+        </div>
           
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -504,7 +619,29 @@ function SuperAdminNoticesManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {notices.map((notice) => (
+              {notices
+                .filter(notice => {
+                  // 상태 필터
+                  if (statusFilter === 'published' && !notice.isPublished) return false;
+                  if (statusFilter === 'draft' && notice.isPublished) return false;
+                  
+                  // 유형 필터
+                  if (typeFilter !== 'all' && notice.category !== typeFilter) return false;
+                  
+                  // 우선순위 필터
+                  if (priorityFilter !== 'all' && notice.priority !== priorityFilter) return false;
+                  
+                  // 월별 필터
+                  const noticeDate = new Date(notice.createdAt);
+                  const [year, month] = selectedMonth.split('-');
+                  if (noticeDate.getFullYear() !== parseInt(year) || 
+                      noticeDate.getMonth() + 1 !== parseInt(month)) {
+                    return false;
+                  }
+                  
+                  return true;
+                })
+                .map((notice) => (
                 <tr key={notice._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -515,13 +652,13 @@ function SuperAdminNoticesManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(notice.type)}`}>
-                      {getTypeLabel(notice.type)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(notice.category)}`}>
+                      {getCategoryLabel(notice.category)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(notice.status)}`}>
-                      {getStatusLabel(notice.status)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(notice.isPublished)}`}>
+                      {getStatusLabel(notice.isPublished)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -530,39 +667,39 @@ function SuperAdminNoticesManagement() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {notice.authorName}
+                    {notice.author?.name || '관리자'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {notice.views}
+                    {notice.viewCount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {notice.createdAt.toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      {notice.status === 'draft' && (
-                      <button 
+                      {!notice.isPublished && (
+                        <Button
                           onClick={() => handlePublish(notice)}
-                          className="text-purple-600 hover:text-purple-900"
-                          title="발행"
-                      >
-                          <Bell className="w-4 h-4" />
-                      </button>
+                          variant="success"
+                          size="sm"
+                        >
+                          📢 발행
+                        </Button>
                       )}
-                      <button 
+                      <Button
                         onClick={() => handleEdit(notice)}
-                        className="text-green-600 hover:text-green-900"
-                        title="수정"
+                        variant="warning"
+                        size="sm"
                       >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
+                        ✏️ 수정
+                      </Button>
+                      <Button
                         onClick={() => handleDelete(notice._id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="삭제"
+                        variant="danger"
+                        size="sm"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        🗑️ 삭제
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -733,8 +870,7 @@ function SuperAdminNoticesManagement() {
 
                           {/* 추가 버튼 */}
                           <div className="flex items-end">
-                            <button
-                              type="button"
+                            <Button
                               onClick={() => {
                                 if (!selectedProvince) {
                                   alert('시/도를 먼저 선택하세요');
@@ -755,10 +891,11 @@ function SuperAdminNoticesManagement() {
                                 setSelectedProvince('');
                                 setSelectedCity('');
                               }}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+                              variant="primary"
+                              size="sm"
                             >
                               ➕ 추가
-                            </button>
+                            </Button>
                           </div>
                         </div>
 
@@ -962,23 +1099,25 @@ function SuperAdminNoticesManagement() {
 
             {/* 버튼 */}
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                variant="secondary"
+                size="md"
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={
                   !formData.title || 
                   !formData.content || 
                   (!formData.sendToAllUserTypes && formData.targetUserTypes.length === 0)
                 }
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                variant="primary"
+                size="md"
               >
                 {editingNotice ? '수정하기' : '작성하기'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

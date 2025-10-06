@@ -17,6 +17,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
+import Button from '@/components/Button';
+import StatCard from '@/components/StatCard';
 
 interface CenterRegistration {
   _id: string;
@@ -544,31 +546,41 @@ export default function ApprovalsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">🏢 센터 승인 관리</h1>
           <p className="text-gray-600">센터 등록 요청을 승인하고 관리합니다.</p>
         </div>
-        <button
+        <Button
           onClick={fetchApprovals}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          variant="primary"
+          size="md"
         >
           새로고침
-        </button>
+        </Button>
       </div>
 
       {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-600 mb-2">센터 승인 대기</div>
-          <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
-          <p className="text-xs text-gray-500">센터 등록 대기 중</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-600 mb-2">센터 승인 완료</div>
-          <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
-          <p className="text-xs text-gray-500">승인된 센터</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-600 mb-2">센터 승인 거부</div>
-          <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
-          <p className="text-xs text-gray-500">거부된 센터 등록</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="센터 승인 대기"
+          value={pendingCount}
+          icon="⏳"
+          color="yellow"
+          subtitle="센터 등록 대기 중"
+        />
+        
+        <StatCard
+          title="센터 승인 완료"
+          value={approvedCount}
+          icon="✅"
+          color="green"
+          subtitle="승인된 센터"
+          href="/admin/center-management"
+        />
+        
+        <StatCard
+          title="센터 승인 거부"
+          value={rejectedCount}
+          icon="❌"
+          color="red"
+          subtitle="거부된 센터 등록"
+        />
       </div>
 
       {/* 필터 */}
@@ -693,30 +705,36 @@ export default function ApprovalsPage() {
                 <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
                   <div className="flex gap-2">
                     {approval.type === 'center_registration' && (
-                      <button
+                      <Button
                         onClick={() => {
                           setSelectedCenter(approval.centerRegistration!);
                           setShowCenterModal(true);
                         }}
-                        className="flex-1 px-3 py-2 text-xs font-medium bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors"
+                        variant="primary"
+                        size="sm"
+                        fullWidth
                       >
                         📋 상세보기
-                      </button>
+                      </Button>
                     )}
                     {approval.status === 'pending' && (
                       <>
-                        <button
+                        <Button
                           onClick={() => handleApproval(approval.id, 'approve')}
-                          className="flex-1 px-3 py-2 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                          variant="success"
+                          size="sm"
+                          fullWidth
                         >
                           ✅ 승인
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => handleApproval(approval.id, 'reject')}
-                          className="flex-1 px-3 py-2 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                          variant="danger"
+                          size="sm"
+                          fullWidth
                         >
                           ❌ 거부
-                        </button>
+                        </Button>
                       </>
                     )}
                     {approval.status !== 'pending' && approval.type !== 'center_registration' && (
@@ -911,32 +929,35 @@ export default function ApprovalsPage() {
               )}
 
               <div className="mt-6 flex justify-end space-x-3">
-                <button
+                <Button
                   onClick={() => setShowCenterModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  variant="secondary"
+                  size="md"
                 >
                   닫기
-                </button>
+                </Button>
                 {selectedCenter.status === 'pending' && (
                   <>
-                    <button
+                    <Button
                       onClick={() => {
                         handleApproval(selectedCenter._id, 'approve');
                         setShowCenterModal(false);
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      variant="success"
+                      size="md"
                     >
                       승인
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         handleApproval(selectedCenter._id, 'reject');
                         setShowCenterModal(false);
                       }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      variant="danger"
+                      size="md"
                     >
                       거부
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>

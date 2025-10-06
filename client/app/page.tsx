@@ -101,7 +101,7 @@ function LandingPage() {
     },
     ctaSecondary: {
       text: "강사 등록하기",
-      href: "/auth/signup?type=instructor"
+      href: "/auth/signup-instructor"
     }
   });
 
@@ -120,15 +120,6 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* 편집 모드 버튼 (개발용) - 햄버거 메뉴와 겹치지 않도록 위치 조정 */}
-      <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={toggleEditMode}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          {isEditing ? '편집 완료' : '랜딩 페이지 편집'}
-        </button>
-      </div>
 
       {/* 편집 모달 */}
       {isEditing && (
@@ -215,12 +206,10 @@ function LandingPage() {
       )}
 
       {/* 히어로 섹션 */}
-      <HeroWave
+      <HeroWave 
         title={landingContent.title}
         subtitle={landingContent.subtitle}
         description={landingContent.description}
-        ctaPrimary={landingContent.ctaPrimary}
-        ctaSecondary={landingContent.ctaSecondary}
       />
 
       {/* 기능 소개 섹션 */}
@@ -428,47 +417,23 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* CTA 섹션 */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
-        <div className="container mx-auto px-6 text-center">
-          <motion.h2
-            variants={motionPresets.slideUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold mb-6"
-          >
-            지금 바로 JJ Swim Lab과 함께하세요!
-          </motion.h2>
-          <motion.p
-            variants={motionPresets.slideUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="text-xl mb-8 max-w-3xl mx-auto"
-          >
-            AI 기반의 혁신적인 수영 교육을 경험하고, 당신의 잠재력을 최대한 발휘하세요.
-          </motion.p>
-          <motion.div
-            variants={motionPresets.slideUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            <a
-              href="/auth/signup"
-              className="bg-white text-blue-600 hover:bg-gray-100 text-lg font-semibold px-8 py-4 rounded-full shadow-lg transition-all duration-300"
-            >
-              무료로 시작하기
-            </a>
-          </motion.div>
-        </div>
-      </section>
 
       {/* 워터 리플 배경 */}
       <WaterRippleBackground>
         <div></div>
       </WaterRippleBackground>
+
+      {/* 편집 모드 버튼 (개발용) - 페이지 최하단 */}
+      <div className="w-full py-4 bg-gray-100 border-t border-gray-200">
+        <div className="container mx-auto px-6 flex justify-center">
+          <button
+            onClick={toggleEditMode}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            {isEditing ? '✅ 편집 완료' : '✏️ 랜딩 페이지 편집'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

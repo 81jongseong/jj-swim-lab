@@ -10,6 +10,8 @@
 import { useState, useEffect } from 'react';
 import { getDashboardStats, DashboardStats } from '../../../lib/api/dashboard';
 import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
+import StatCard from '@/components/StatCard';
+import SimpleBarChart from '@/components/SimpleBarChart';
 import { useRouter } from 'next/navigation';
 
 interface AdminStats extends DashboardStats {
@@ -176,116 +178,68 @@ export default function AdminDashboard() {
 
       {/* 통계 카드들 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300"
-             onClick={() => {
-               console.log('전체 사용자 카드 클릭됨');
-               window.location.href = '/admin/users';
-             }}>
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="text-2xl">👥</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">전체 사용자</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="전체 사용자"
+          value={stats.totalUsers.toLocaleString()}
+          icon="👥"
+          color="blue"
+          subtitle="등록된 사용자 수"
+          href="/admin/users"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-green-300"
-             onClick={() => {
-               console.log('강습 과정 카드 클릭됨');
-               window.location.href = '/admin/courses';
-             }}>
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <img 
-                src="/icons/manifest-icon-192.maskable.png" 
-                alt="수영" 
-                className="w-8 h-8 object-cover"
-              />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">강습 과정</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeCourses}</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="강습 과정"
+          value={stats.activeCourses}
+          icon="📚"
+          color="green"
+          subtitle="진행 중인 과정"
+          href="/admin/courses"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-purple-300"
-             onClick={() => {
-               console.log('총 매출 카드 클릭됨');
-               window.location.href = '/admin/revenue';
-             }}>
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <span className="text-2xl">💰</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 매출</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalRevenue.toLocaleString()}원</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="총 매출"
+          value={`${stats.totalRevenue.toLocaleString()}원`}
+          icon="💰"
+          color="purple"
+          subtitle="전체 매출액"
+          href="/admin/revenue-management"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-orange-300"
-             onClick={() => {
-               console.log('승인 대기 카드 클릭됨');
-               window.location.href = '/admin/approvals';
-             }}>
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <span className="text-2xl">⏳</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">승인 대기</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingApprovals}</p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="승인 대기"
+          value={stats.pendingApprovals}
+          icon="⏳"
+          color="orange"
+          subtitle="처리 대기 중"
+          href="/admin/approvals"
+        />
       </div>
 
       {/* 성능 모니터링 섹션 */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 성능 모니터링</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300">
             <h3 className="text-lg font-semibold mb-4">📊 성능 모니터링 (임시 비활성화)</h3>
             <p className="text-gray-600">PerformanceMonitor 컴포넌트를 임시로 비활성화했습니다.</p>
           </div>
           
           {/* 시스템 리소스 모니터링 */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-purple-300">
             <h3 className="text-lg font-semibold mb-4">🖥️ 시스템 리소스</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>CPU 사용률</span>
-                  <span className="font-mono">23%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-600 h-2 rounded-full" style={{ width: '23%' }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>메모리 사용률</span>
-                  <span className="font-mono">67%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-yellow-600 h-2 rounded-full" style={{ width: '67%' }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>디스크 사용률</span>
-                  <span className="font-mono">45%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-                </div>
-              </div>
-            </div>
+            <SimpleBarChart
+              data={[
+                { name: 'CPU 사용률', value: 23 },
+                { name: '메모리 사용률', value: 67 },
+                { name: '디스크 사용률', value: 45 }
+              ]}
+              xKey="name"
+              yKey="value"
+              color="#3B82F6"
+              horizontal={true}
+              showValues={true}
+              className="mt-2"
+            />
           </div>
         </div>
       </div>

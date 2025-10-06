@@ -9,6 +9,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
+import InstructorScheduleCard from '@/components/InstructorScheduleCard';
 
 export default function InstructorManagementPage() {
   const { user, hasUserType } = useAuth();
@@ -25,6 +28,15 @@ export default function InstructorManagementPage() {
   const [showDeactivationModal, setShowDeactivationModal] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState('');
   const [deactivationDetails, setDeactivationDetails] = useState('');
+  const [vacationFilter, setVacationFilter] = useState<'all' | 'current' | 'scheduled' | 'pending'>('all');
+  const [vacationPeriod, setVacationPeriod] = useState<'week' | 'month' | 'quarter' | 'custom'>('month');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [evaluationFilter, setEvaluationFilter] = useState<'all' | 'monthly' | 'completed' | 'pending'>('all');
+  const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM 형식
+  const [showEvaluationDetail, setShowEvaluationDetail] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<any>(null);
 
   // 강사 비활성화 처리 함수
   const handleDeactivateInstructor = async () => {
@@ -83,6 +95,7 @@ export default function InstructorManagementPage() {
           experience: '5년',
           rating: 4.8,
           students: 45,
+          evaluationCount: 4,
           specialties: ['자유형', '배영', '접영'],
           certifications: [
             {
@@ -117,6 +130,7 @@ export default function InstructorManagementPage() {
           experience: '3년',
           rating: 4.6,
           students: 32,
+          evaluationCount: 16,
           specialties: ['평영', '접영'],
           certifications: [
             {
@@ -245,37 +259,67 @@ export default function InstructorManagementPage() {
     '옹진군': ['옹진센터', '북도센터', '연평센터']
   };
 
-  // 휴가 신청 데이터
+  // 휴가 신청 데이터 (2025년 10월 기준)
   const vacationRequests = [
     {
       id: 1,
       instructorName: '김수영',
       center: '홍대센터',
-      startDate: '2024-01-15',
-      endDate: '2024-01-20',
+      startDate: '2025-10-01',
+      endDate: '2025-10-05',
       reason: '개인 사정',
-      status: 'pending',
-      submittedDate: '2024-01-10'
+      status: 'approved',
+      submittedDate: '2025-09-25'
     },
     {
       id: 2,
       instructorName: '이영수',
       center: '강남센터',
-      startDate: '2024-01-25',
-      endDate: '2024-01-27',
+      startDate: '2025-10-15',
+      endDate: '2025-10-17',
       reason: '가족 행사',
       status: 'approved',
-      submittedDate: '2024-01-20'
+      submittedDate: '2025-10-01'
     },
     {
       id: 3,
       instructorName: '박수영',
       center: '송파센터',
-      startDate: '2024-02-01',
-      endDate: '2024-02-05',
-      reason: '여행',
-      status: 'rejected',
-      submittedDate: '2024-01-25'
+      startDate: '2025-10-20',
+      endDate: '2025-10-22',
+      reason: '병가',
+      status: 'pending',
+      submittedDate: '2025-10-05'
+    },
+    {
+      id: 4,
+      instructorName: '최해영',
+      center: '수원센터',
+      startDate: '2025-11-01',
+      endDate: '2025-11-07',
+      reason: '연차',
+      status: 'approved',
+      submittedDate: '2025-10-10'
+    },
+    {
+      id: 5,
+      instructorName: '정민수',
+      center: '성남센터',
+      startDate: '2025-10-25',
+      endDate: '2025-10-28',
+      reason: '경조사',
+      status: 'pending',
+      submittedDate: '2025-10-18'
+    },
+    {
+      id: 6,
+      instructorName: '한지우',
+      center: '강남센터',
+      startDate: '2025-09-28',
+      endDate: '2025-10-02',
+      reason: '개인 휴가',
+      status: 'approved',
+      submittedDate: '2025-09-20'
     }
   ];
 
@@ -319,8 +363,18 @@ export default function InstructorManagementPage() {
         }
       ],
       career: '전 수영 국가대표',
-      submittedDate: '2024-01-05'
+      submittedDate: '2024-01-05',
+      approvalStatus: 'pending',
+      approvalDate: null
     }
+  ];
+
+  // 승인/거부된 강사 데이터 (월별)
+  const approvedInstructors = [
+    { id: 201, name: '강승인1', email: 'approved1@email.com', approvalDate: '2025-10-01', status: 'approved', center: '강남센터' },
+    { id: 202, name: '강승인2', email: 'approved2@email.com', approvalDate: '2025-10-05', status: 'approved', center: '서초센터' },
+    { id: 203, name: '강승인3', email: 'approved3@email.com', approvalDate: '2025-10-10', status: 'approved', center: '송파센터' },
+    { id: 204, name: '이거부1', email: 'rejected1@email.com', approvalDate: '2025-10-03', status: 'rejected', center: '홍대센터', rejectReason: '자격 미달' }
   ];
 
   // 지역 선택 핸들러
@@ -455,70 +509,40 @@ export default function InstructorManagementPage() {
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">👥</span>
+            <StatCard
+              title="전체 강사"
+              value={`${sampleInstructors.length}명`}
+              icon="👥"
+              color="blue"
+              subtitle="등록된 강사"
+              onClick={() => setActiveTab('instructors')}
+            />
+            <StatCard
+              title="활성 강사"
+              value={`${sampleInstructors.filter(i => i.status === 'active').length}명`}
+              icon="✅"
+              color="green"
+              subtitle="현재 활동 중"
+              onClick={() => setActiveTab('instructors')}
+            />
+            <StatCard
+              title="평균 평점"
+              value={(sampleInstructors.reduce((sum, i) => sum + i.rating, 0) / sampleInstructors.length).toFixed(1)}
+              icon="⭐"
+              color="yellow"
+              subtitle="강사 평균 점수"
+              onClick={() => setActiveTab('evaluation')}
+            />
+            <StatCard
+              title="총 학생 수"
+              value={`${sampleInstructors.reduce((sum, i) => sum + i.students, 0)}명`}
+              icon="🎓"
+              color="purple"
+              subtitle="전체 수강생"
+              href="/admin/users"
+            />
                         </div>
-                      </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">전체 강사</dt>
-                    <dd className="text-lg font-medium text-gray-900">{sampleInstructors.length}명</dd>
-                  </dl>
-                        </div>
-                        </div>
-                        </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">✅</span>
-                      </div>
-                    </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">활성 강사</dt>
-                    <dd className="text-lg font-medium text-gray-900">{sampleInstructors.filter(i => i.status === 'active').length}명</dd>
-                  </dl>
-                        </div>
-                      </div>
-                        </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">⭐</span>
-                        </div>
-                        </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">평균 평점</dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {(sampleInstructors.reduce((sum, i) => sum + i.rating, 0) / sampleInstructors.length).toFixed(1)}
-                    </dd>
-                  </dl>
-                      </div>
-                    </div>
-                        </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">🎓</span>
-                      </div>
-                        </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">총 학생 수</dt>
-                    <dd className="text-lg font-medium text-gray-900">{sampleInstructors.reduce((sum, i) => sum + i.students, 0)}명</dd>
-                  </dl>
-                        </div>
-                        </div>
-                        </div>
-                      </div>
-            )}
+        )}
 
             {activeTab === 'instructors' && (
           <div className="bg-white rounded-lg shadow">
@@ -527,12 +551,12 @@ export default function InstructorManagementPage() {
                 강사 관리 
                 <span className="text-sm text-gray-500 ml-2">
                   ({filteredInstructors.length}명)
-                              </span>
+                          </span>
               </h3>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              <Button variant="primary" size="md">
                 + 새 강사 등록
-                  </button>
-                            </div>
+              </Button>
+                        </div>
             <div className="p-6">
               <div className="space-y-4">
                 {filteredInstructors.length > 0 ? (
@@ -546,8 +570,8 @@ export default function InstructorManagementPage() {
                             instructor.status === 'active' ? 'text-green-600' : 'text-gray-600'
                           }`}>
                                 {instructor.name.charAt(0)}
-                              </span>
-                          </div>
+                          </span>
+                        </div>
                             <div>
                           <h4 className="text-lg font-semibold text-gray-900">{instructor.name}</h4>
                           <p className="text-sm text-gray-500">
@@ -557,16 +581,16 @@ export default function InstructorManagementPage() {
                             {instructor.region} {instructor.district} • {instructor.center}
                           </p>
                         </div>
-                    </div>
+                      </div>
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <p className="text-sm text-gray-500">담당 학생</p>
                           <p className="text-lg font-semibold text-gray-900">{instructor.students}명</p>
-                  </div>
+                    </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-500">평점</p>
                           <p className="text-lg font-semibold text-yellow-600">{instructor.rating}</p>
-                      </div>
+                        </div>
                             <div className="flex space-x-2">
                           <button 
                               onClick={() => {
@@ -580,9 +604,9 @@ export default function InstructorManagementPage() {
                           <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                             수정
                           </button>
-                            </div>
-                              </div>
-                          </div>
+                      </div>
+                        </div>
+                        </div>
                   ))
                 ) : (
                   <div className="text-center py-8">
@@ -591,8 +615,8 @@ export default function InstructorManagementPage() {
                     <p className="text-sm text-gray-400 mt-1">다른 필터를 선택해보세요.</p>
                         </div>
                 )}
+                      </div>
                     </div>
-                  </div>
               </div>
             )}
 
@@ -601,30 +625,28 @@ export default function InstructorManagementPage() {
               <div className="space-y-6">
             {/* 지역 필터 - 혼합 구조 */}
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">지역 필터</h3>
                 <div className="flex items-center space-x-4">
                   <label className="text-sm font-medium text-gray-700">검색 기준:</label>
                   <div className="flex space-x-2">
-                    <button
+                    <Button
                       onClick={() => setSearchMode('center')}
-                      className={`px-3 py-1 text-sm rounded-md ${
-                        searchMode === 'center' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                      }`}
+                      variant={searchMode === 'center' ? 'primary' : 'ghost'}
+                      size="sm"
                     >
                       센터 기준
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => setSearchMode('address')}
-                      className={`px-3 py-1 text-sm rounded-md ${
-                        searchMode === 'address' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                      }`}
+                      variant={searchMode === 'address' ? 'primary' : 'ghost'}
+                      size="sm"
                     >
                       주소지 기준
-                  </button>
-                </div>
-                    </div>
-                  </div>
+                    </Button>
+                        </div>
+                      </div>
+                        </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 1단계: 시/도 선택 */}
                 <div>
@@ -660,11 +682,11 @@ export default function InstructorManagementPage() {
                   >
                             ×
                   </button>
-                              </span>
+                          </span>
                       ))}
-                            </div>
+                        </div>
                   )}
-                              </div>
+                        </div>
 
                 {/* 2단계: 시군구 선택 (버튼 나열) */}
                 <div>
@@ -681,7 +703,7 @@ export default function InstructorManagementPage() {
                         모두 선택
                       </button>
                     )}
-                              </div>
+                        </div>
                   <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
                     {selectedRegions.length > 0 ? (
                       selectedRegions.flatMap(sido => regionData[sido] || []).map(district => (
@@ -705,7 +727,7 @@ export default function InstructorManagementPage() {
                         먼저 시/도를 선택해주세요
                       </div>
                     )}
-                              </div>
+                            </div>
                             </div>
                           </div>
                           
@@ -723,7 +745,7 @@ export default function InstructorManagementPage() {
                     >
                       모두 선택
                     </button>
-                              </div>
+                        </div>
                   <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-md p-2">
                     {selectedDistricts.flatMap(district => centerData[district] || []).map(center => (
                       <button
@@ -740,28 +762,29 @@ export default function InstructorManagementPage() {
                           <span className="ml-1 text-xs">✓</span>
                         )}
                       </button>
-                    ))}
-                              </div>
+                      ))}
+                    </div>
                               </div>
               )}
-                          </div>
-                          
+                  </div>
+
             {/* 현재 선택된 필터 */}
             {(selectedRegions.length > 0 || selectedDistricts.length > 0 || selectedCenters.length > 0) && (
               <div className="bg-blue-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium text-blue-900">현재 선택된 필터</h4>
-                  <button
+                  <Button
                     onClick={() => {
                       setSelectedRegions([]);
                       setSelectedDistricts([]);
                       setSelectedCenters([]);
                     }}
-                    className="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full hover:bg-red-200 transition-colors"
+                    variant="danger"
+                    size="sm"
                   >
                     모든 필터 초기화
-                  </button>
-                              </div>
+                  </Button>
+                      </div>
                             <div className="space-y-2">
                   {selectedRegions.length > 0 && (
                               <div>
@@ -770,9 +793,9 @@ export default function InstructorManagementPage() {
                         {selectedRegions.map(region => (
                           <span key={region} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                             {region}
-                          </span>
+                              </span>
                         ))}
-                              </div>
+                            </div>
                               </div>
                   )}
                   {selectedDistricts.length > 0 && (
@@ -782,10 +805,10 @@ export default function InstructorManagementPage() {
                         {selectedDistricts.map(district => (
                           <span key={district} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                             {district}
-                          </span>
+                              </span>
                         ))}
-                              </div>
-                              </div>
+                          </div>
+                        </div>
                   )}
                   {selectedCenters.length > 0 && (
                               <div>
@@ -796,11 +819,11 @@ export default function InstructorManagementPage() {
                             {center}
                           </span>
                         ))}
+                  </div>
+                </div>
+                )}
                             </div>
-                          </div>
-                  )}
-                            </div>
-                        </div>
+              </div>
             )}
 
             {/* 달력 및 날짜 선택 */}
@@ -808,32 +831,29 @@ export default function InstructorManagementPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">스케줄 달력</h3>
                 <div className="flex items-center space-x-2">
-                      <button
+                      <Button
                     onClick={() => setViewMode('month')}
-                    className={`px-3 py-1 text-sm rounded-md ${
-                      viewMode === 'month' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                    }`}
+                    variant={viewMode === 'month' ? 'primary' : 'ghost'}
+                    size="sm"
                   >
                     월간
-                      </button>
-                        <button
+                      </Button>
+                        <Button
                     onClick={() => setViewMode('week')}
-                    className={`px-3 py-1 text-sm rounded-md ${
-                      viewMode === 'week' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                    }`}
+                    variant={viewMode === 'week' ? 'primary' : 'ghost'}
+                    size="sm"
                   >
                     주간
-                        </button>
-                      <button
+                        </Button>
+                      <Button
                     onClick={() => setViewMode('day')}
-                    className={`px-3 py-1 text-sm rounded-md ${
-                      viewMode === 'day' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
-                    }`}
+                    variant={viewMode === 'day' ? 'primary' : 'ghost'}
+                    size="sm"
                   >
                     일간
-                      </button>
-                  </div>
-              </div>
+                      </Button>
+                </div>
+                    </div>
 
               {/* 달력 헤더 */}
               <div className="flex items-center justify-between mb-4">
@@ -879,31 +899,31 @@ export default function InstructorManagementPage() {
                   className="p-2 hover:bg-gray-100 rounded-md"
                 >
                   →
-                </button>
+                  </button>
                 </div>
-                
+
               {/* 달력 범례 */}
               <div className="flex items-center justify-center space-x-4 mb-4 text-xs">
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-red-50 border border-red-200 rounded"></div>
                   <span>휴가 신청</span>
-                        </div>
+                            </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-blue-100 rounded"></div>
                   <span>오늘</span>
-                                </div>
+                              </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-blue-600 rounded"></div>
                   <span>선택된 날짜</span>
-                              </div>
                             </div>
+                          </div>
 
               {/* 달력 그리드 */}
               <div className="grid grid-cols-7 gap-1 mb-4">
                 {['일', '월', '화', '수', '목', '금', '토'].map(day => (
                   <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
                     {day}
-                            </div>
+                        </div>
                 ))}
                 {(() => {
                   const year = selectedDate.getFullYear();
@@ -948,8 +968,8 @@ export default function InstructorManagementPage() {
                     );
                   });
                 })()}
-                          </div>
-                          </div>
+                              </div>
+                              </div>
                             
             {/* 선택된 날짜의 수업 */}
             <div className="bg-white rounded-lg shadow p-6">
@@ -964,37 +984,30 @@ export default function InstructorManagementPage() {
                 </h3>
                 <div className="text-sm text-gray-500">
                   총 {filteredInstructors.length}명의 강사
+                            </div>
                           </div>
-                        </div>
-
+                          
               {filteredInstructors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredInstructors.map(instructor => (
-                    <div key={instructor.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{instructor.name}</h4>
-                        <span className="text-sm text-gray-500">{instructor.center}</span>
-                          </div>
-                      <div className="space-y-1 text-sm text-gray-600">
-                        <p>오전 10:00 - 11:00 (초급반)</p>
-                        <p>오후 2:00 - 3:00 (중급반)</p>
-                        <p>오후 4:00 - 5:00 (고급반)</p>
-                          </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-gray-500">평점: {instructor.rating}/5.0</span>
-                        <span className="text-xs text-gray-500">학생: {instructor.students}명</span>
-                        </div>
-                      </div>
+                    <InstructorScheduleCard
+                      key={instructor.id}
+                      instructor={instructor}
+                      onClick={() => {
+                        setSelectedInstructor(instructor);
+                        setShowInstructorDetail(true);
+                      }}
+                    />
                   ))}
-                                </div>
+                              </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <p>선택된 지역에 해당하는 강사가 없습니다.</p>
                   <p className="text-sm mt-1">다른 지역을 선택해보세요.</p>
                               </div>
               )}
-                            </div>
-                            
+                          </div>
+                          
             {/* 주간 스케줄 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">주간 스케줄</h3>
@@ -1024,70 +1037,159 @@ export default function InstructorManagementPage() {
                               <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">10:00-11:00</div>
                               <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">14:00-15:00</div>
                               <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">16:00-17:00</div>
-                                </div>
+                              </div>
                           </td>
                         ))}
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                              </div>
-                            </div>
-                            
-            {/* 휴가 현황 */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">휴가 현황</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">🚫</span>
                             </div>
                           </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-red-800">현재 휴가</p>
-                        <p className="text-2xl font-bold text-red-900">
-                          {vacationRequests.filter(req => req.status === 'approved').length}명
-                        </p>
-                </div>
-                      </div>
-                    </div>
-                  <div className="bg-yellow-50 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">⏰</span>
-                      </div>
-                    </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-yellow-800">예정 휴가</p>
-                        <p className="text-2xl font-bold text-yellow-900">
-                          {vacationRequests.filter(req => req.status === 'pending').length}명
-                        </p>
-                      </div>
-                    </div>
-                      </div>
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">📋</span>
-                    </div>
-                  </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-blue-800">신청 대기</p>
-                        <p className="text-2xl font-bold text-blue-900">
-                          {vacationRequests.filter(req => req.status === 'pending').length}명
-                        </p>
-                </div>
-              </div>
-                  </div>
+                          
+            {/* 휴가 현황 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">휴가 현황</h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">기간:</span>
+                            <Button
+                      onClick={() => setVacationPeriod('week')}
+                      variant={vacationPeriod === 'week' ? 'primary' : 'ghost'}
+                              size="sm"
+                            >
+                      1주일
+                            </Button>
+                            <Button
+                      onClick={() => setVacationPeriod('month')}
+                      variant={vacationPeriod === 'month' ? 'primary' : 'ghost'}
+                              size="sm"
+                    >
+                      1개월
+                    </Button>
+                    <Button
+                      onClick={() => setVacationPeriod('quarter')}
+                      variant={vacationPeriod === 'quarter' ? 'primary' : 'ghost'}
+                      size="sm"
+                    >
+                      3개월
+                    </Button>
+                    <Button
+                      onClick={() => setVacationPeriod('custom')}
+                      variant={vacationPeriod === 'custom' ? 'primary' : 'ghost'}
+                      size="sm"
+                    >
+                      직접 입력
+                            </Button>
+                            </div>
                 </div>
 
+                {/* 직접 입력 날짜 범위 */}
+                {vacationPeriod === 'custom' && (
+                  <div className="flex items-center space-x-3 bg-blue-50 p-3 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-700 font-medium">시작일:</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                  </div>
+                    <span className="text-gray-500">~</span>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-700 font-medium">종료일:</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    {customStartDate && customEndDate && (
+                      <span className="text-xs text-blue-600 font-medium">
+                        {Math.ceil((new Date(customEndDate).getTime() - new Date(customStartDate).getTime()) / (1000 * 60 * 60 * 24))}일
+                      </span>
+                )}
+              </div>
+            )}
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <StatCard
+                    title="현재 휴가"
+                    value={`${vacationRequests.filter(req => {
+                      if (req.status !== 'approved') return false;
+                      const today = new Date();
+                      const start = new Date(req.startDate);
+                      const end = new Date(req.endDate);
+                      return start <= today && end >= today;
+                    }).length}명`}
+                    icon="🚫"
+                    color="red"
+                    subtitle="휴가 중인 강사"
+                    onClick={() => setVacationFilter(vacationFilter === 'current' ? 'all' : 'current')}
+                  />
+                  
+                  <StatCard
+                    title="예정 휴가"
+                    value={`${vacationRequests.filter(req => {
+                      if (req.status !== 'approved') return false;
+                      const today = new Date();
+                      const start = new Date(req.startDate);
+                      let periodEnd = new Date();
+                      
+                      if (vacationPeriod === 'week') {
+                        periodEnd.setDate(today.getDate() + 7);
+                      } else if (vacationPeriod === 'month') {
+                        periodEnd.setMonth(today.getMonth() + 1);
+                      } else if (vacationPeriod === 'quarter') {
+                        periodEnd.setMonth(today.getMonth() + 3);
+                      } else if (vacationPeriod === 'custom' && customEndDate) {
+                        periodEnd = new Date(customEndDate);
+                      }
+                      
+                      return start > today && start <= periodEnd;
+                    }).length}명`}
+                    icon="⏰"
+                    color="yellow"
+                    subtitle={vacationPeriod === 'custom' && customStartDate && customEndDate 
+                      ? `${customStartDate} ~ ${customEndDate}` 
+                      : `${vacationPeriod === 'week' ? '1주일' : vacationPeriod === 'month' ? '1개월' : '3개월'} 내 예정`}
+                    onClick={() => setVacationFilter(vacationFilter === 'scheduled' ? 'all' : 'scheduled')}
+                  />
+                  
+                  <StatCard
+                    title="신청 대기"
+                    value={`${vacationRequests.filter(req => req.status === 'pending').length}명`}
+                    icon="📋"
+                    color="blue"
+                    subtitle="승인 대기 중"
+                    onClick={() => setVacationFilter(vacationFilter === 'pending' ? 'all' : 'pending')}
+                      />
+                    </div>
+
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 mb-3">휴가 신청 현황</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-md font-medium text-gray-900">휴가 신청 현황</h4>
+                    {vacationFilter !== 'all' && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                          {vacationFilter === 'current' && '현재 휴가 중'}
+                          {vacationFilter === 'scheduled' && '예정 휴가'}
+                          {vacationFilter === 'pending' && '신청 대기'}
+                        </span>
+                        <Button
+                          onClick={() => setVacationFilter('all')}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          전체 보기
+                        </Button>
+                  </div>
+                    )}
+                </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -1105,9 +1207,37 @@ export default function InstructorManagementPage() {
                         {vacationRequests
                           .filter(request => {
                             // 선택된 센터의 강사만 표시
-                            if (selectedCenters.length > 0) {
-                              return selectedCenters.includes(request.center);
+                            if (selectedCenters.length > 0 && !selectedCenters.includes(request.center)) {
+                              return false;
                             }
+                            
+                            const today = new Date();
+                            const start = new Date(request.startDate);
+                            const end = new Date(request.endDate);
+                            
+                            // 휴가 상태 필터 적용 (우선 순위)
+                            if (vacationFilter === 'current') {
+                              return request.status === 'approved' && start <= today && end >= today;
+                            } else if (vacationFilter === 'pending') {
+                              return request.status === 'pending';
+                            } else if (vacationFilter === 'scheduled') {
+                              // 예정 휴가만 기간 필터 적용
+                              let periodEnd = new Date();
+                              
+                              if (vacationPeriod === 'week') {
+                                periodEnd.setDate(today.getDate() + 7);
+                              } else if (vacationPeriod === 'month') {
+                                periodEnd.setMonth(today.getMonth() + 1);
+                              } else if (vacationPeriod === 'quarter') {
+                                periodEnd.setMonth(today.getMonth() + 3);
+                              } else if (vacationPeriod === 'custom' && customEndDate) {
+                                periodEnd = new Date(customEndDate);
+                              }
+                              
+                              return request.status === 'approved' && start > today && start <= periodEnd;
+                            }
+                            
+                            // 'all' 필터일 때는 기간 필터 적용 안 함
                             return true;
                           })
                           .map(request => (
@@ -1142,7 +1272,7 @@ export default function InstructorManagementPage() {
                                 <div className="flex space-x-2">
                                   <button className="text-green-600 hover:text-green-900">승인</button>
                                   <button className="text-red-600 hover:text-red-900">거부</button>
-                              </div>
+                        </div>
                               )}
                             </td>
                           </tr>
@@ -1159,67 +1289,43 @@ export default function InstructorManagementPage() {
         {activeTab === 'performance' && (
               <div className="space-y-6">
             {/* 성과 요약 */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">👥</span>
-                              </div>
-                                </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">총 강사 수</p>
-                    <p className="text-2xl font-bold text-gray-900">{filteredInstructors.length}명</p>
-                                </div>
-                                </div>
-                                </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">⭐</span>
-                              </div>
-                            </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">평균 평점</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {(filteredInstructors.reduce((sum, instructor) => sum + instructor.rating, 0) / filteredInstructors.length).toFixed(1)}
-                    </p>
-                                </div>
-                                </div>
-                                </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">🎓</span>
-                              </div>
-                            </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">총 학생 수</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {filteredInstructors.reduce((sum, instructor) => sum + instructor.students, 0)}명
-                    </p>
-                                </div>
-                                </div>
-                                </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">💰</span>
-                              </div>
-                            </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">평균 급여</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {Math.round(filteredInstructors.reduce((sum, instructor) => sum + instructor.salary, 0) / filteredInstructors.length / 10000)}만원
-                    </p>
-                            </div>
-                          </div>
-                  </div>
-                </div>
-                
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="총 강사 수"
+                value={`${filteredInstructors.length}명`}
+                icon="👥"
+                color="blue"
+                subtitle="등록된 강사"
+                onClick={() => setActiveTab('instructors')}
+              />
+              
+              <StatCard
+                title="평균 평점"
+                value={(filteredInstructors.reduce((sum, instructor) => sum + instructor.rating, 0) / filteredInstructors.length).toFixed(1)}
+                icon="⭐"
+                color="green"
+                subtitle="강사 평균 점수"
+                onClick={() => setActiveTab('evaluation')}
+              />
+              
+              <StatCard
+                title="총 학생 수"
+                value={`${filteredInstructors.reduce((sum, instructor) => sum + instructor.students, 0)}명`}
+                icon="🎓"
+                color="purple"
+                subtitle="전체 수강생"
+                href="/admin/users"
+              />
+              
+              <StatCard
+                title="평균 급여"
+                value={`${Math.round(filteredInstructors.reduce((sum, instructor) => sum + instructor.salary, 0) / filteredInstructors.length / 10000)}만원`}
+                icon="💰"
+                color="yellow"
+                subtitle="강사 평균"
+              />
+                        </div>
+                              
             {/* 강사별 성과 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">강사별 성과</h3>
@@ -1274,153 +1380,249 @@ export default function InstructorManagementPage() {
                     ))}
                   </tbody>
                 </table>
-                    </div>
-                      </div>
-                    </div>
+                                </div>
+                              </div>
+                            </div>
             )}
 
             {activeTab === 'evaluation' && (
               <div className="space-y-6">
+            {/* 월 선택 */}
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center space-x-3">
+                <label className="text-sm font-medium text-gray-700">조회 월:</label>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-500">
+                  {new Date(selectedMonth + '-01').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+                </span>
+                                </div>
+                                </div>
+            
             {/* 평가 현황 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">📝</span>
-                      </div>
-                    </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">이번 달 평가</p>
-                    <p className="text-2xl font-bold text-gray-900">12건</p>
-                      </div>
-                    </div>
-                  </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">✅</span>
-                </div>
-                      </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">완료된 평가</p>
-                    <p className="text-2xl font-bold text-gray-900">8건</p>
-                    </div>
-                      </div>
-                    </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">⏳</span>
-                      </div>
-                    </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">대기 중</p>
-                    <p className="text-2xl font-bold text-gray-900">4건</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
+              <StatCard
+                title={`${selectedMonth.slice(5)}월 평가`}
+                value={`${filteredInstructors.reduce((sum, i) => sum + (i.evaluationCount || 0), 0)}건`}
+                icon="📝"
+                color="blue"
+                subtitle="전체 평가 건수"
+                onClick={() => setEvaluationFilter(evaluationFilter === 'monthly' ? 'all' : 'monthly')}
+              />
+              
+              <StatCard
+                title={`${selectedMonth.slice(5)}월 완료`}
+                value={`${filteredInstructors.reduce((sum, i) => sum + Math.ceil((i.evaluationCount || 0) * 0.75), 0)}건`}
+                icon="✅"
+                color="green"
+                subtitle="평가 완료"
+                onClick={() => setEvaluationFilter(evaluationFilter === 'completed' ? 'all' : 'completed')}
+              />
+              
+              <StatCard
+                title={`${selectedMonth.slice(5)}월 대기`}
+                value={`${filteredInstructors.reduce((sum, i) => {
+                  const total = i.evaluationCount || 0;
+                  const completed = Math.ceil(total * 0.75);
+                  return sum + (total - completed);
+                }, 0)}건`}
+                icon="⏳"
+                color="yellow"
+                subtitle="평가 대기"
+                onClick={() => setEvaluationFilter(evaluationFilter === 'pending' ? 'all' : 'pending')}
+              />
+                            </div>
+                            
             {/* 평가 목록 */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">평가 목록</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">평가 목록</h3>
+                {evaluationFilter !== 'all' && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      {evaluationFilter === 'monthly' && '이번 달 평가'}
+                      {evaluationFilter === 'completed' && '완료된 평가'}
+                      {evaluationFilter === 'pending' && '대기 중'}
+                    </span>
+                              <Button
+                      onClick={() => setEvaluationFilter('all')}
+                      variant="ghost"
+                                size="sm"
+                              >
+                      전체 보기
+                              </Button>
+                  </div>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">강사명</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가자</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가 항목</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">점수</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가일</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">센터</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가 건수</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평균 평점</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">완료</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대기</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredInstructors.slice(0, 5).map(instructor => (
-                      <tr key={instructor.id}>
+                    {filteredInstructors
+                      .filter(instructor => {
+                        const totalEvals = instructor.evaluationCount || 0;
+                        const completedEvals = Math.ceil(totalEvals * 0.75); // 75% 완료
+                        const pendingEvals = totalEvals - completedEvals;
+                        
+                        if (evaluationFilter === 'completed') return completedEvals > 0;
+                        if (evaluationFilter === 'pending') return pendingEvals > 0;
+                        return totalEvals > 0;
+                      })
+                      .map((instructor) => {
+                        const totalEvals = instructor.evaluationCount || 0;
+                        const completedEvals = Math.ceil(totalEvals * 0.75); // 75% 완료
+                        const pendingEvals = totalEvals - completedEvals;
+                        
+                        return (
+                      <tr key={instructor.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {instructor.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          학생 {Math.floor(Math.random() * 20) + 1}명
+                          {instructor.center}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className="font-bold text-blue-600">{totalEvals}건</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          수업 품질, 친절도, 전문성
+                          <span className="font-bold text-green-600">{instructor.rating}</span>/5.0
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {instructor.rating}/5.0
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            완료
+                            {completedEvals}건
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          2024-01-15
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                            {pendingEvals}건
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => {
+                              setSelectedEvaluation({
+                                instructor: instructor,
+                                evaluations: Array.from({ length: totalEvals }, (_, i) => ({
+                                  id: i + 1,
+                                  evaluator: `학생${i + 1}`,
+                                  category: ['수업 품질', '친절도', '전문성'][i % 3],
+                                  score: (Math.random() * 2 + 3).toFixed(1),
+                                  comment: ['매우 만족합니다', '좋은 강사님입니다', '수영 실력이 많이 늘었어요', '설명이 명확해요', '친절하십니다'][i % 5],
+                                  date: `2025-10-${String((i % 30) + 1).padStart(2, '0')}`,
+                                  status: i >= completedEvals ? 'pending' : 'completed'
+                                }))
+                              });
+                              setShowEvaluationDetail(true);
+                            }}
+                          >
+                            📋 상세보기
+                              </Button>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
-                    </div>
-                  </div>
                 </div>
+                </div>
+              </div>
             )}
 
         {activeTab === 'approval' && (
               <div className="space-y-6">
+            {/* 월 선택 */}
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center space-x-3">
+                <label className="text-sm font-medium text-gray-700">조회 월:</label>
+                    <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-500">
+                  {new Date(selectedMonth + '-01').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+                                </span>
+                              </div>
+                                </div>
+            
             {/* 승인 현황 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">⏳</span>
-                      </div>
-                    </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">승인 대기</p>
-                    <p className="text-2xl font-bold text-gray-900">{pendingInstructors.length}명</p>
-                      </div>
-                    </div>
-                      </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">✅</span>
-                    </div>
-                      </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">이번 달 승인</p>
-                    <p className="text-2xl font-bold text-gray-900">3명</p>
-                    </div>
-                  </div>
-                </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">❌</span>
-                              </div>
-                              </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-500">이번 달 거부</p>
-                    <p className="text-2xl font-bold text-gray-900">1명</p>
+              <StatCard
+                title="승인 대기"
+                value={`${pendingInstructors.length}명`}
+                icon="⏳"
+                color="yellow"
+                subtitle="대기 중인 강사"
+                onClick={() => setApprovalFilter(approvalFilter === 'pending' ? 'all' : 'pending')}
+              />
+              
+              <StatCard
+                title={`${selectedMonth.slice(5)}월 승인`}
+                value={`${approvedInstructors.filter(i => i.status === 'approved' && i.approvalDate.startsWith(selectedMonth)).length}명`}
+                icon="✅"
+                color="green"
+                subtitle="승인 완료"
+                onClick={() => setApprovalFilter(approvalFilter === 'approved' ? 'all' : 'approved')}
+              />
+              
+              <StatCard
+                title={`${selectedMonth.slice(5)}월 거부`}
+                value={`${approvedInstructors.filter(i => i.status === 'rejected' && i.approvalDate.startsWith(selectedMonth)).length}명`}
+                icon="❌"
+                color="red"
+                subtitle="승인 거부"
+                onClick={() => setApprovalFilter(approvalFilter === 'rejected' ? 'all' : 'rejected')}
+              />
                             </div>
-                              </div>
-                            </div>
-                          </div>
-                        
+                            
             {/* 승인 대기 목록 */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">승인 대기 목록</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">강사 승인 목록</h3>
+                {approvalFilter !== 'all' && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      {approvalFilter === 'pending' && '승인 대기'}
+                      {approvalFilter === 'approved' && '승인 완료'}
+                      {approvalFilter === 'rejected' && '승인 거부'}
+                    </span>
+                              <Button
+                      onClick={() => setApprovalFilter('all')}
+                      variant="ghost"
+                                size="sm"
+                    >
+                      전체 보기
+                              </Button>
+                            </div>
+                )}
+                          </div>
                           <div className="space-y-4">
-                {pendingInstructors.map(instructor => (
+                {/* 1. 승인 대기 강사 표시 (우선 표시) */}
+                {(approvalFilter === 'pending' || approvalFilter === 'all') && (
+                  <>
+                    {pendingInstructors.length > 0 && approvalFilter === 'all' && (
+                      <div className="bg-yellow-50 px-4 py-2 rounded-lg border-l-4 border-yellow-500">
+                        <p className="text-sm font-semibold text-yellow-800">⏳ 승인 대기 ({pendingInstructors.length}명)</p>
+                      </div>
+                    )}
+                    {pendingInstructors.map(instructor => (
                   <div key={instructor.id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -1428,12 +1630,12 @@ export default function InstructorManagementPage() {
                               <div>
                             <h4 className="text-lg font-medium text-gray-900">{instructor.name}</h4>
                             <p className="text-sm text-gray-500">{instructor.email}</p>
-                                </div>
+                </div>
                           <div className="text-sm text-gray-500">
                             <p>연락처: {instructor.phone}</p>
                             <p>경력: {instructor.experience}</p>
-                                </div>
-                              </div>
+                      </div>
+                    </div>
                               
                         <div className="mb-4">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">자격증</h5>
@@ -1441,21 +1643,21 @@ export default function InstructorManagementPage() {
                             {instructor.certifications.map((cert, index) => (
                               <div key={index} className="text-sm text-gray-600">
                                 • {cert.name} ({cert.issuer}) - {cert.issueDate}
-                                </div>
+                      </div>
                             ))}
-                                </div>
-                              </div>
+                    </div>
+                      </div>
                               
                         <div className="mb-4">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">경력</h5>
                           <p className="text-sm text-gray-600">{instructor.career}</p>
-                            </div>
+                    </div>
                             
                         <div className="text-sm text-gray-500">
                           신청일: {instructor.submittedDate}
-                              </div>
-                            </div>
-                            
+                  </div>
+                </div>
+                
                       <div className="flex space-x-2 ml-4">
                         <button className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700">
                           승인
@@ -1463,10 +1665,95 @@ export default function InstructorManagementPage() {
                         <button className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700">
                           거부
                         </button>
-                                  </div>
-                                  </div>
-                                </div>
-                ))}
+                      </div>
+                    </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+                
+                {/* 2. 승인 완료 강사 표시 */}
+                {(approvalFilter === 'approved' || approvalFilter === 'all') && (
+                  <>
+                    {approvedInstructors.filter(i => i.status === 'approved' && i.approvalDate.startsWith(selectedMonth)).length > 0 && approvalFilter === 'all' && (
+                      <div className="bg-green-50 px-4 py-2 rounded-lg border-l-4 border-green-500 mt-6">
+                        <p className="text-sm font-semibold text-green-800">
+                          ✅ 승인 완료 ({approvedInstructors.filter(i => i.status === 'approved' && i.approvalDate.startsWith(selectedMonth)).length}명)
+                        </p>
+                      </div>
+                    )}
+                    {approvedInstructors
+                      .filter(i => i.status === 'approved' && i.approvalDate.startsWith(selectedMonth))
+                      .map(instructor => (
+                  <div key={instructor.id} className="border border-green-200 bg-green-50 rounded-lg p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-900">{instructor.name}</h4>
+                            <p className="text-sm text-gray-500">{instructor.email}</p>
+                    </div>
+                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            ✅ 승인 완료
+                          </span>
+                      </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">센터:</span> {instructor.center}
+                    </div>
+                          <div>
+                            <span className="font-medium">승인일:</span> {instructor.approvalDate}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                  </div>
+                    ))}
+                  </>
+                )}
+                
+                {/* 3. 승인 거부 강사 표시 */}
+                {(approvalFilter === 'rejected' || approvalFilter === 'all') && (
+                  <>
+                    {approvedInstructors.filter(i => i.status === 'rejected' && i.approvalDate.startsWith(selectedMonth)).length > 0 && approvalFilter === 'all' && (
+                      <div className="bg-red-50 px-4 py-2 rounded-lg border-l-4 border-red-500 mt-6">
+                        <p className="text-sm font-semibold text-red-800">
+                          ❌ 승인 거부 ({approvedInstructors.filter(i => i.status === 'rejected' && i.approvalDate.startsWith(selectedMonth)).length}명)
+                        </p>
+                      </div>
+                    )}
+                    {approvedInstructors
+                      .filter(i => i.status === 'rejected' && i.approvalDate.startsWith(selectedMonth))
+                      .map(instructor => (
+                  <div key={instructor.id} className="border border-red-200 bg-red-50 rounded-lg p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-900">{instructor.name}</h4>
+                            <p className="text-sm text-gray-500">{instructor.email}</p>
+                    </div>
+                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                            ❌ 승인 거부
+                          </span>
+                  </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">센터:</span> {instructor.center}
+                </div>
+                          <div>
+                            <span className="font-medium">거부일:</span> {instructor.approvalDate}
+                      </div>
+                          <div className="col-span-2">
+                            <span className="font-medium">거부 사유:</span> {instructor.rejectReason || '미기재'}
+                    </div>
+                      </div>
+                    </div>
+                      </div>
+                  </div>
+                    ))}
+                  </>
+                )}
                                   </div>
                                 </div>
                               </div>
@@ -1484,7 +1771,7 @@ export default function InstructorManagementPage() {
                 >
                   ✕
                 </button>
-                            </div>
+                              </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -1493,41 +1780,41 @@ export default function InstructorManagementPage() {
                               <div>
                         <label className="text-sm font-medium text-gray-500">이름</label>
                         <p className="text-lg font-semibold text-gray-900">{selectedInstructor.name}</p>
-                          </div>
+                              </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">경력</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.experience}</p>
-                </div>
+                            </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">전문 분야</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.specialties.join(', ')}</p>
-                        </div>
-                    </div>
-                  </div>
-                  
+                              </div>
+                            </div>
+                          </div>
+                        
                           <div className="space-y-4">
                     <h4 className="text-md font-semibold text-gray-900">연락처 정보</h4>
                             <div className="space-y-3">
                               <div>
                         <label className="text-sm font-medium text-gray-500">이메일</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.email}</p>
-                        </div>
+                                </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">전화번호</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.phone}</p>
-                      </div>
+                                </div>
                               <div>
                         <label className="text-sm font-medium text-gray-500">거주지 주소</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.address}</p>
-                    </div>
+                                </div>
                               <div>
                         <label className="text-sm font-medium text-gray-500">급여</label>
                         <p className="text-sm text-gray-900">{selectedInstructor.salary.toLocaleString()}원</p>
-                  </div>
-                    </div>
-                    </div>
-                    </div>
-                    
+                                </div>
+                                </div>
+                              </div>
+                            </div>
+                            
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="text-md font-semibold text-gray-900 mb-4">자격증 보유 현황</h4>
                   <div className="space-y-3">
@@ -1540,30 +1827,30 @@ export default function InstructorManagementPage() {
                             <p className="text-xs text-gray-500">
                               발급일: {cert.issueDate} • 만료일: {cert.expiryDate}
                             </p>
-                    </div>
+                                </div>
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                             유효
                     </span>
-                    </div>
-                        </div>
+                                </div>
+                                </div>
                     ))}
-                    </div>
-                  </div>
-                  
+                              </div>
+                            </div>
+                            
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="text-md font-semibold text-gray-900 mb-4">성과 정보</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">{selectedInstructor.students}</div>
                       <div className="text-sm text-gray-600">담당 학생 수</div>
-                    </div>
+                                  </div>
                     <div className="text-center p-4 bg-yellow-50 rounded-lg">
                       <div className="text-2xl font-bold text-yellow-600">{selectedInstructor.rating}</div>
                       <div className="text-sm text-gray-600">평균 평점</div>
-          </div>
-        </div>
-      </div>
-
+                                </div>
+                              </div>
+                            </div>
+                            
                 <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end space-x-3">
               <button
                     onClick={() => setShowInstructorDetail(false)}
@@ -1582,7 +1869,107 @@ export default function InstructorManagementPage() {
                   강사 비활성화
               </button>
               )}
+                            </div>
+                          </div>
+                </div>
+                    </div>
+      )}
+
+      {/* 평가 상세 모달 */}
+      {showEvaluationDetail && selectedEvaluation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowEvaluationDetail(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">{selectedEvaluation.instructor.name} 강사 평가 상세</h3>
+                <p className="text-sm text-gray-600 mt-1">총 {selectedEvaluation.evaluations.length}건의 평가</p>
+                        </div>
+              <button
+                onClick={() => setShowEvaluationDetail(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+                    </div>
+                    
+            <div className="p-6">
+              {/* 평가 요약 */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">평균 평점</p>
+                  <p className="text-3xl font-bold text-blue-600">{selectedEvaluation.instructor.rating}</p>
+                  <p className="text-xs text-gray-500 mt-1">/ 5.0</p>
+                    </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">완료된 평가</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {selectedEvaluation.evaluations.filter((e: any) => e.status === 'completed').length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">건</p>
+                    </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">대기 중</p>
+                  <p className="text-3xl font-bold text-yellow-600">
+                    {selectedEvaluation.evaluations.filter((e: any) => e.status === 'pending').length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">건</p>
+                    </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">총 학생 수</p>
+                  <p className="text-3xl font-bold text-purple-600">{selectedEvaluation.instructor.students}</p>
+                  <p className="text-xs text-gray-500 mt-1">명</p>
+                    </div>
+                  </div>
+                  
+              {/* 평가 목록 */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">평가 내역</h4>
+                {selectedEvaluation.evaluations.map((evaluation: any) => (
+                  <div key={evaluation.id} className={`border rounded-lg p-4 ${
+                    evaluation.status === 'completed' ? 'bg-white border-gray-200' : 'bg-yellow-50 border-yellow-200'
+                  }`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="text-sm font-semibold text-gray-700">{evaluation.evaluator}</span>
+                          <span className="text-xs text-gray-500">{evaluation.date}</span>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            evaluation.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {evaluation.status === 'completed' ? '완료' : '대기'}
+                          </span>
+                    </div>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div className="text-sm">
+                            <span className="text-gray-600">평가 항목:</span> 
+                            <span className="ml-1 font-medium">{evaluation.category}</span>
+                  </div>
+                          <div className="text-sm">
+                            <span className="text-gray-600">점수:</span> 
+                            <span className="ml-1 font-bold text-blue-600">{evaluation.score} / 5.0</span>
+                </div>
+              </div>
+                        <div className="bg-gray-50 p-3 rounded text-sm text-gray-700">
+                          <p className="font-medium text-xs text-gray-500 mb-1">평가 의견:</p>
+                          {evaluation.comment}
+          </div>
+        </div>
+      </div>
             </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <Button
+                  onClick={() => setShowEvaluationDetail(false)}
+                  variant="secondary"
+                  size="md"
+                >
+                  닫기
+                </Button>
+              </div>
             </div>
           </div>
         </div>

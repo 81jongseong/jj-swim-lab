@@ -90,7 +90,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instr
     console.log('🔍 센터 목록 조회 요청:', req.user?.userType);
     
     const centers = await SwimmingCenter.find({ isActive: true })
-      .select('name location contactInfo facilities createdAt')
+      .select('name location contactInfo facilities province city gu dong createdAt')
       .sort({ createdAt: -1 });
     
     res.json({

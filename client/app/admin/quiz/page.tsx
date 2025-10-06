@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 interface Quiz {
   id: string;
@@ -22,8 +24,10 @@ interface Quiz {
 export default function QuizManagementPage() {
   const { user, loading } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'demo'>('all');
   
   // 생성/수정 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -58,6 +62,19 @@ export default function QuizManagementPage() {
       loadQuizzes();
     }
   }, [user]);
+
+  // 필터링 로직
+  useEffect(() => {
+    let filtered = quizzes;
+    
+    if (filterStatus === 'active') {
+      filtered = quizzes.filter(q => q.isActive);
+    } else if (filterStatus === 'demo') {
+      filtered = quizzes.filter(q => q.isPublicDemo);
+    }
+    
+    setFilteredQuizzes(filtered);
+  }, [quizzes, filterStatus]);
 
   const loadQuizzes = async () => {
     try {
@@ -349,48 +366,96 @@ export default function QuizManagementPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 관리</h1>
           <p className="text-gray-600">퀴즈를 생성하고 관리합니다</p>
         </div>
-        <button
+        <Button
           onClick={() => {
             resetForm();
             setShowCreateModal(true);
           }}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          variant="primary"
+          size="lg"
         >
-          + 새 퀴즈 생성
-        </button>
+          ➕ 새 퀴즈 생성
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-600">총 퀴즈</div>
-          <div className="text-2xl font-bold text-gray-900">{quizzes.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-600">활성 퀴즈</div>
-          <div className="text-2xl font-bold text-gray-900">{quizzes.filter(q => q.isActive).length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-600">체험 공개</div>
-          <div className="text-2xl font-bold text-blue-600">{quizzes.filter(q => q.isPublicDemo).length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-600">총 문제</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {quizzes.reduce((sum, q) => sum + (typeof q.questions === 'number' ? q.questions : 0), 0)}
-          </div>
-        </div>
+        <StatCard
+          title="총 퀴즈"
+          value={quizzes.length}
+          icon="🧠"
+          color="blue"
+          subtitle={filterStatus === 'all' ? '전체 보기' : '클릭하여 전체 보기'}
+          onClick={() => setFilterStatus('all')}
+        />
+        <StatCard
+          title="활성 퀴즈"
+          value={quizzes.filter(q => q.isActive).length}
+          icon="✅"
+          color="green"
+          subtitle={filterStatus === 'active' ? '필터 적용 중' : '클릭하여 필터링'}
+          onClick={() => setFilterStatus(filterStatus === 'active' ? 'all' : 'active')}
+        />
+        <StatCard
+          title="체험 공개"
+          value={quizzes.filter(q => q.isPublicDemo).length}
+          icon="🌍"
+          color="purple"
+          subtitle={filterStatus === 'demo' ? '필터 적용 중' : '클릭하여 필터링'}
+          onClick={() => setFilterStatus(filterStatus === 'demo' ? 'all' : 'demo')}
+        />
+        <StatCard
+          title="총 문제"
+          value={quizzes.reduce((sum, q) => sum + (q.questionsCount || 0), 0)}
+          icon="📝"
+          color="orange"
+          subtitle="전체 문제 수"
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
+        {filterStatus !== 'all' && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 font-medium">
+                {filterStatus === 'active' ? '✅ 활성 퀴즈만 표시 중' : '🌍 체험 공개 퀴즈만 표시 중'}
+              </span>
+              <span className="text-sm text-blue-600">
+                ({filteredQuizzes.length}개)
+              </span>
+            </div>
+            <Button
+              onClick={() => setFilterStatus('all')}
+              variant="ghost"
+              size="sm"
+            >
+              필터 초기화
+            </Button>
+          </div>
+        )}
+        
         {quizzes.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🧠</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">퀴즈가 없습니다</h3>
             <p className="text-gray-600">API에서 퀴즈를 불러오는 중이거나 생성된 퀴즈가 없습니다.</p>
           </div>
+        ) : filteredQuizzes.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">🔍</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">필터링된 퀴즈가 없습니다</h3>
+            <p className="text-gray-600">선택한 조건에 맞는 퀴즈가 없습니다.</p>
+            <Button
+              onClick={() => setFilterStatus('all')}
+              variant="primary"
+              size="md"
+              className="mt-4"
+            >
+              전체 퀴즈 보기
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizzes.map((quiz) => (
+            {filteredQuizzes.map((quiz) => (
               <div 
                 key={quiz.id} 
                 onClick={() => setSelectedQuiz(quiz)}
@@ -433,18 +498,22 @@ export default function QuizManagementPage() {
                 
                 {/* 수정/삭제 버튼 */}
                 <div className="flex gap-2 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
-                  <button
+                  <Button
                     onClick={() => startEdit(quiz)}
-                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                    variant="primary"
+                    size="sm"
+                    fullWidth
                   >
                     ✏️ 수정
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleDelete(quiz.id)}
-                    className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm font-medium"
+                    variant="danger"
+                    size="sm"
+                    fullWidth
                   >
                     🗑️ 삭제
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -531,33 +600,36 @@ export default function QuizManagementPage() {
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-between gap-2">
-              <button
+              <Button
                 onClick={() => {
                   if (confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) {
                     setSelectedQuiz(null);
                     handleDelete(selectedQuiz.id);
                   }
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                variant="danger"
+                size="md"
               >
                 🗑️ 삭제
-              </button>
+              </Button>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => {
                     setSelectedQuiz(null);
                     startEdit(selectedQuiz);
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  variant="primary"
+                  size="md"
                 >
                   ✏️ 수정
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setSelectedQuiz(null)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  variant="secondary"
+                  size="md"
                 >
                   닫기
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -685,16 +757,16 @@ export default function QuizManagementPage() {
               <div className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-semibold text-gray-900">문제 목록 ({formData.questions.length}개)</h3>
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => {
                       resetQuestionForm();
                       setShowQuestionModal(true);
                     }}
-                    className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                    variant="success"
+                    size="sm"
                   >
-                    + 문제 추가
-                  </button>
+                    ➕ 문제 추가
+                  </Button>
                 </div>
 
                 {formData.questions.length === 0 ? (
@@ -737,21 +809,23 @@ export default function QuizManagementPage() {
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
-              <button
+              <Button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                variant="secondary"
+                size="md"
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={editingQuiz ? handleUpdate : handleCreate}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                variant="primary"
+                size="md"
               >
                 {editingQuiz ? '수정하기' : '생성하기'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -907,21 +981,23 @@ export default function QuizManagementPage() {
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
-              <button
+              <Button
                 onClick={() => {
                   setShowQuestionModal(false);
                   resetQuestionForm();
                 }}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                variant="secondary"
+                size="md"
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={editingQuestionIndex >= 0 ? handleUpdateQuestion : handleAddQuestion}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                variant="primary"
+                size="md"
               >
                 {editingQuestionIndex >= 0 ? '수정하기' : '추가하기'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

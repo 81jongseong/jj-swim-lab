@@ -25,10 +25,13 @@ import {
   getProgramStats,
   type SavedProgram 
 } from '@/lib/swimlab/utils/programStorage';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 export default function ProgramListView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'weekly' | 'race'>('all');
+  const [showRecentOnly, setShowRecentOnly] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<SavedProgram | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProgram, setEditedProgram] = useState<SavedProgram | null>(null);
@@ -38,6 +41,13 @@ export default function ProgramListView() {
   
   const stats = getProgramStats();
 
+  // 최근 1달 프로그램 계산
+  const recentMonthCount = useMemo(() => {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return programs.filter(p => new Date(p.createdAt) >= oneMonthAgo).length;
+  }, [programs]);
+
   // 필터링된 프로그램 목록
   const filteredPrograms = useMemo(() => {
     let result = programs;
@@ -45,6 +55,13 @@ export default function ProgramListView() {
     // 타입 필터
     if (filterType !== 'all') {
       result = result.filter(p => p.programType === filterType);
+    }
+    
+    // 최근 1달 필터
+    if (showRecentOnly) {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      result = result.filter(p => new Date(p.createdAt) >= oneMonthAgo);
     }
     
     // 검색 필터
@@ -57,7 +74,7 @@ export default function ProgramListView() {
     }
     
     return result;
-  }, [programs, filterType, searchQuery]);
+  }, [programs, filterType, showRecentOnly, searchQuery]);
 
   const handleDelete = (id: string) => {
     if (!confirm('이 프로그램을 삭제하시겠습니까?')) return;
@@ -76,36 +93,49 @@ export default function ProgramListView() {
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-gray-900">생성된 프로그램 목록</h3>
-          <button
+          <Button
             onClick={refresh}
-            className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+            variant="ghost"
+            size="sm"
           >
             🔄 새로고침
-          </button>
+          </Button>
         </div>
         
         {/* 통계 */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <div className="text-xs text-blue-600 mb-1">전체 프로그램</div>
-            <div className="text-2xl font-bold text-blue-700">{stats.total}</div>
-          </div>
-          <div className="bg-green-50 p-3 rounded-lg">
-            <div className="text-xs text-green-600 mb-1">주간 계획</div>
-            <div className="text-2xl font-bold text-green-700">{stats.weekly}</div>
-          </div>
-          <div className="bg-purple-50 p-3 rounded-lg">
-            <div className="text-xs text-purple-600 mb-1">레이스 플랜</div>
-            <div className="text-2xl font-bold text-purple-700">{stats.race}</div>
-          </div>
-          <div className="bg-orange-50 p-3 rounded-lg">
-            <div className="text-xs text-orange-600 mb-1">선수 수</div>
-            <div className="text-2xl font-bold text-orange-700">{stats.athletes}</div>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-xs text-gray-600 mb-1">최근 1주</div>
-            <div className="text-2xl font-bold text-gray-700">{stats.recentCount}</div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatCard
+            title="전체 프로그램"
+            value={`${stats.total}개`}
+            icon="📋"
+            color="blue"
+            subtitle={filterType === 'all' ? '전체 보기' : '클릭하여 전체 보기'}
+            onClick={() => setFilterType('all')}
+          />
+          <StatCard
+            title="주간 계획"
+            value={`${stats.weekly}개`}
+            icon="📅"
+            color="green"
+            subtitle={filterType === 'weekly' ? '필터 적용 중' : '클릭하여 필터링'}
+            onClick={() => setFilterType(filterType === 'weekly' ? 'all' : 'weekly')}
+          />
+          <StatCard
+            title="레이스 플랜"
+            value={`${stats.race}개`}
+            icon="🏁"
+            color="purple"
+            subtitle={filterType === 'race' ? '필터 적용 중' : '클릭하여 필터링'}
+            onClick={() => setFilterType(filterType === 'race' ? 'all' : 'race')}
+          />
+          <StatCard
+            title="최근 1달"
+            value={`${recentMonthCount}개`}
+            icon="🆕"
+            color="orange"
+            subtitle={showRecentOnly ? '필터 적용 중' : '클릭하여 필터링'}
+            onClick={() => setShowRecentOnly(!showRecentOnly)}
+          />
         </div>
       </div>
 
@@ -381,33 +411,36 @@ export default function ProgramListView() {
 
             {/* 푸터 - 액션 버튼 */}
             <div className="p-6 border-t bg-gray-50 flex items-center justify-between">
-              <button
+              <Button
                 onClick={() => {
                   setEditedProgram({ ...selectedProgram });
                   setIsEditing(true);
                 }}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                variant="primary"
+                size="md"
               >
                 ✏️ 수정
-              </button>
+              </Button>
               
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => {
                     // ICS 재다운로드
                     alert('ICS 파일을 다시 다운로드합니다!');
                   }}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  variant="success"
+                  size="md"
                 >
                   📥 다운로드
-                </button>
+                </Button>
                 
-                <button
+                <Button
                   onClick={() => handleDelete(selectedProgram.id)}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  variant="danger"
+                  size="md"
                 >
                   🗑️ 삭제
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -628,13 +661,14 @@ export default function ProgramListView() {
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex gap-2 justify-end">
-              <button
+              <Button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                variant="secondary"
+                size="md"
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   // 수정 내용 저장
                   saveProgram(editedProgram);
@@ -645,10 +679,11 @@ export default function ProgramListView() {
                   setIsEditing(false);
                   alert('✅ 프로그램이 수정되었습니다!');
                 }}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium"
+                variant="primary"
+                size="md"
               >
                 💾 저장
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { updateAllLevels } from '../../../utils/updateLevels';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
+import TeachingMethodCard from '@/components/TeachingMethodCard';
 
 // 지연 로딩 컴포넌트
 const ExcelUploader = lazy(() => import('../../../components/ExcelUploader'));
@@ -70,6 +72,40 @@ export default function TeachingMethodsPage() {
   const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [steps, setSteps] = useState<string[]>([]);
   const [tips, setTips] = useState<string[]>([]);
+  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
+  const [showLevelOptions, setShowLevelOptions] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showAddLevelModal, setShowAddLevelModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newLevelName, setNewLevelName] = useState('');
+  const [newLevelKoreanName, setNewLevelKoreanName] = useState('');
+  
+  // 실제 데이터에서 카테고리와 레벨 추출
+  const actualCategories = React.useMemo(() => {
+    const categories = new Set(methods.map(m => m.category).filter(Boolean));
+    return Array.from(categories).sort();
+  }, [methods]);
+
+  const actualLevels = React.useMemo(() => {
+    const levels = new Set(methods.map(m => m.level).filter(Boolean));
+    return Array.from(levels).sort();
+  }, [methods]);
+
+  // 레벨 한국어 매핑
+  const levelKoreanMap: { [key: string]: string } = {
+    'beginner': '초급',
+    'intermediate': '중급',
+    'advanced': '고급',
+    'expert': '전문가',
+    'master': '마스터',
+    'elite': '엘리트'
+  };
+
+  const getLevelDisplayName = (level: string) => {
+    return levelKoreanMap[level] || level;
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -150,6 +186,11 @@ export default function TeachingMethodsPage() {
       );
     }
 
+    // 카테고리 필터링
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(method => method.category === selectedCategory);
+    }
+    
     // 레벨 필터링
     if (selectedLevel !== 'all') {
       filtered = filtered.filter(method => method.level === selectedLevel);
@@ -175,7 +216,7 @@ export default function TeachingMethodsPage() {
   // 필터링 및 검색 효과
   useEffect(() => {
     filterMethods();
-  }, [methods, searchTerm, selectedLevel]);
+  }, [methods, searchTerm, selectedLevel, selectedCategory]);
 
   // 권한 확인
   if (!isCenterAdmin && !isSuperAdmin) {
@@ -226,54 +267,141 @@ export default function TeachingMethodsPage() {
 
         {/* 통계 섹션 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 shadow-md">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-500 rounded-full">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">전체 강습법</p>
-                  <p className="text-2xl font-semibold text-gray-900">{methods.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6 shadow-md">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-500 rounded-full">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">카테고리</p>
-                  <p className="text-2xl font-semibold text-gray-900">{TEACHING_METHOD_CATEGORIES.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-6 shadow-md">
-            <div className="p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-purple-500 rounded-full">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">레벨</p>
-                  <p className="text-2xl font-semibold text-gray-900">{TEACHING_METHOD_LEVELS.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="전체 강습법"
+            value={methods.length}
+            icon="📊"
+            color="blue"
+            subtitle="등록된 강습법"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+              setSelectedLevel('all');
+              setShowCategoryOptions(false);
+              setShowLevelOptions(false);
+            }}
+          />
+          
+          <StatCard
+            title="카테고리"
+            value={selectedCategory === 'all' ? actualCategories.length : `${methods.filter(m => m.category === selectedCategory).length}개`}
+            icon="🏷️"
+            color="green"
+            subtitle={selectedCategory === 'all' ? '강습법 분류' : `선택: ${selectedCategory}`}
+            onClick={() => {
+              setShowCategoryOptions(!showCategoryOptions);
+              setShowLevelOptions(false);
+            }}
+          />
+          
+          <StatCard
+            title="레벨"
+            value={selectedLevel === 'all' ? actualLevels.length : `${methods.filter(m => m.level === selectedLevel).length}개`}
+            icon="⚡"
+            color="purple"
+            subtitle={selectedLevel === 'all' ? '난이도 단계' : `선택: ${getLevelDisplayName(selectedLevel)}`}
+            onClick={() => {
+              setShowLevelOptions(!showLevelOptions);
+              setShowCategoryOptions(false);
+            }}
+          />
         </div>
+
+        {/* 카테고리 옵션 박스 */}
+        {showCategoryOptions && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6 animate-fadeInUp">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">카테고리 선택</h3>
+              {!isCenterAdmin && (
+                <Button
+                  onClick={() => {
+                    setShowAddCategoryModal(true);
+                    setShowCategoryOptions(false);
+                  }}
+                  variant="success"
+                  size="sm"
+                >
+                  ➕ 카테고리 추가
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <Button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setShowCategoryOptions(false);
+                }}
+                variant={selectedCategory === 'all' ? 'primary' : 'outline'}
+                size="md"
+                fullWidth
+              >
+                🎯 전체
+              </Button>
+              {actualCategories.map(category => (
+                <Button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setShowCategoryOptions(false);
+                  }}
+                  variant={selectedCategory === category ? 'primary' : 'outline'}
+                  size="md"
+                  fullWidth
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 레벨 옵션 박스 */}
+        {showLevelOptions && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6 animate-fadeInUp">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">레벨 선택</h3>
+              {!isCenterAdmin && (
+                <Button
+                  onClick={() => {
+                    setShowAddLevelModal(true);
+                    setShowLevelOptions(false);
+                  }}
+                  variant="success"
+                  size="sm"
+                >
+                  ➕ 레벨 추가
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <Button
+                onClick={() => {
+                  setSelectedLevel('all');
+                  setShowLevelOptions(false);
+                }}
+                variant={selectedLevel === 'all' ? 'primary' : 'outline'}
+                size="md"
+                fullWidth
+              >
+                🎯 전체
+              </Button>
+              {actualLevels.map(level => (
+                <Button
+                  key={level}
+                  onClick={() => {
+                    setSelectedLevel(level);
+                    setShowLevelOptions(false);
+                  }}
+                  variant={selectedLevel === level ? 'primary' : 'outline'}
+                  size="md"
+                  fullWidth
+                >
+                  {getLevelDisplayName(level)}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 검색 및 필터 영역 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -325,27 +453,6 @@ export default function TeachingMethodsPage() {
                 >
                   📊 엑셀 업로드
                 </button>
-                <button
-                  onClick={async () => {
-                    if (confirm('모든 강습법의 레벨을 한국어로 변경하시겠습니까?\n(beginner → 초급, intermediate → 중급, advanced/expert → 상급)')) {
-                      try {
-                        const result = await updateAllLevels();
-                        if (result.success) {
-                          alert(`레벨 변경 완료!\n${result.updatedCount}개의 강습법이 업데이트되었습니다.`);
-                          fetchTeachingMethods(); // 목록 새로고침
-                        } else {
-                          alert(`레벨 변경 실패: ${result.error}`);
-                        }
-                      } catch (error) {
-                        console.error('레벨 변경 오류:', error);
-                        alert('레벨 변경 중 오류가 발생했습니다.');
-                      }
-                    }
-                  }}
-                  className="px-6 py-2 border border-orange-500 text-orange-700 hover:bg-orange-50 shadow-md rounded-md"
-                >
-                  🔄 레벨 한국어 변경
-                </button>
               </>
             )}
             <button
@@ -363,87 +470,52 @@ export default function TeachingMethodsPage() {
         {/* 강습법 목록 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMethods.map((method) => (
-            <div key={method._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{method.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{method.description}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {method.category}
-                      </span>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                        {method.level}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedMethod(method);
-                      setIsDetailModalOpen(true);
-                    }}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-                  >
-                    상세보기
-                  </button>
-                  {!isCenterAdmin && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setEditingMethod(method);
-                          setFormData({
-                            name: method.name,
-                            description: method.description,
-                            category: method.category,
-                            level: method.level,
-                            steps: method.steps || [],
-                            tips: method.tips || [],
-                            checklist: method.checklist || []
-                          });
-                          setIsFormOpen(true);
-                        }}
-                        className="px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (confirm('정말로 이 강습법을 삭제하시겠습니까?')) {
-                            try {
-                              const token = localStorage.getItem('token');
-                              const response = await fetch(`/api/teaching-methods/${method._id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                  'Authorization': `Bearer ${token}`,
-                                  'Content-Type': 'application/json',
-                                },
-                              });
+            <TeachingMethodCard
+              key={method._id}
+              method={method}
+              onView={() => {
+                setSelectedMethod(method);
+                setIsDetailModalOpen(true);
+              }}
+              onEdit={!isCenterAdmin ? () => {
+                setEditingMethod(method);
+                setFormData({
+                  name: method.name,
+                  description: method.description,
+                  category: method.category,
+                  level: method.level,
+                  steps: method.steps || [],
+                  tips: method.tips || [],
+                  checklist: method.checklist || []
+                });
+                setIsFormOpen(true);
+              } : undefined}
+              onDelete={!isCenterAdmin ? async () => {
+                if (confirm('정말로 이 강습법을 삭제하시겠습니까?')) {
+                  try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/teaching-methods/${method._id}`, {
+                      method: 'DELETE',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                    });
 
-                              if (response.ok) {
-                                alert('강습법이 삭제되었습니다.');
-                                fetchTeachingMethods(); // 목록 새로고침
-                              } else {
-                                alert('삭제에 실패했습니다.');
-                              }
-                            } catch (error) {
-                              console.error('삭제 오류:', error);
-                              alert('삭제 중 오류가 발생했습니다.');
-                            }
-                          }
-                        }}
-                        className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
-                      >
-                        삭제
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+                    if (response.ok) {
+                      alert('강습법이 삭제되었습니다.');
+                      fetchTeachingMethods();
+                    } else {
+                      alert('삭제에 실패했습니다.');
+                    }
+                  } catch (error) {
+                    console.error('삭제 오류:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                  }
+                }
+              } : undefined}
+              showActions={true}
+            />
           ))}
         </div>
 
@@ -844,6 +916,139 @@ export default function TeachingMethodsPage() {
           </div>
         </div>
       )}
+
+      {/* 카테고리 추가 모달 */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAddCategoryModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">새 카테고리 추가</h3>
+              <button onClick={() => setShowAddCategoryModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 이름</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="예: 잠수, 스타트, 킥 등"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="bg-blue-50 p-3 rounded-md">
+                <p className="text-sm text-blue-800">
+                  💡 카테고리는 강습법 추가 시 선택할 수 있습니다.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowAddCategoryModal(false);
+                    setNewCategoryName('');
+                  }}
+                  variant="secondary"
+                  size="md"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (newCategoryName.trim()) {
+                      alert(`"${newCategoryName}" 카테고리가 추가되었습니다.\n강습법 추가 시 이 카테고리를 사용할 수 있습니다.`);
+                      setShowAddCategoryModal(false);
+                      setNewCategoryName('');
+                    } else {
+                      alert('카테고리 이름을 입력해주세요.');
+                    }
+                  }}
+                  variant="primary"
+                  size="md"
+                >
+                  추가
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 레벨 추가 모달 */}
+      {showAddLevelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAddLevelModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">새 레벨 추가</h3>
+              <button onClick={() => setShowAddLevelModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">레벨 영문명</label>
+                <input
+                  type="text"
+                  value={newLevelName}
+                  onChange={(e) => setNewLevelName(e.target.value)}
+                  placeholder="예: beginner, intermediate 등"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">레벨 한국어명</label>
+                <input
+                  type="text"
+                  value={newLevelKoreanName}
+                  onChange={(e) => setNewLevelKoreanName(e.target.value)}
+                  placeholder="예: 초급, 중급 등"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="bg-blue-50 p-3 rounded-md">
+                <p className="text-sm text-blue-800">
+                  💡 레벨은 강습법 추가 시 선택할 수 있습니다.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowAddLevelModal(false);
+                    setNewLevelName('');
+                    setNewLevelKoreanName('');
+                  }}
+                  variant="secondary"
+                  size="md"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (newLevelName.trim() && newLevelKoreanName.trim()) {
+                      alert(`"${newLevelName} (${newLevelKoreanName})" 레벨이 추가되었습니다.\n강습법 추가 시 이 레벨을 사용할 수 있습니다.`);
+                      setShowAddLevelModal(false);
+                      setNewLevelName('');
+                      setNewLevelKoreanName('');
+                    } else {
+                      alert('레벨 영문명과 한국어명을 모두 입력해주세요.');
+                    }
+                  }}
+                  variant="primary"
+                  size="md"
+                >
+                  추가
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

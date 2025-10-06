@@ -98,6 +98,9 @@ import { useState, useEffect } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
 import { useAuth } from '../../../hooks/useAuth';
+import RegionNavigation from '@/components/RegionNavigation';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 interface User {
   _id: string;
@@ -167,15 +170,35 @@ function AdminUsersPage() {
 
   // 기존 구조로 복원 - 탭 제거
 
+  // 지역 필터 상태
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+
   // 필터링 상태
   const [filters, setFilters] = useState({
     userType: '',
     level: '',
     search: '',
-    status: 'all',
-    region: 'all',
-    district: 'all',
+    status: 'all'
   });
+
+  // 지역 데이터 (다른 페이지들과 동일)
+  // 센터 데이터만 정의 (시/도, 시/군/구는 컴포넌트 내장)
+  const centerData = {
+    '서울시': {
+      '강남구': ['강남센터', '논현센터', '역삼센터'],
+      '서초구': ['서초센터', '방배센터', '반포센터'],
+      '송파구': ['송파센터', '잠실센터', '문정센터'],
+      '강동구': ['강동센터', '천호센터', '길동센터']
+    },
+    '경기도': {
+      '수원시': ['수원센터', '영통센터', '팔달센터'],
+      '성남시': ['성남센터', '분당센터', '수정센터'],
+      '용인시': ['용인센터', '기흥센터', '수지센터'],
+      '부천시': ['부천센터', '원미센터', '소사센터']
+    }
+  };
 
   // 페이지네이션
   const [pagination, setPagination] = useState({
@@ -198,8 +221,7 @@ function AdminUsersPage() {
         ...(filters.userType && { userType: filters.userType }),
         ...(filters.level && { level: filters.level }),
         ...(filters.search && { search: filters.search }),
-        ...(filters.status !== 'all' && { status: filters.status }),
-        ...(filters.region !== 'all' && { region: filters.region }),
+        ...(filters.status !== 'all' && { status: filters.status })
       });
 
       const res = await apiClient.get<{
@@ -214,22 +236,7 @@ function AdminUsersPage() {
           currentUser && user._id !== currentUser._id
         );
         
-        // 🌍 클라이언트 측 지역 필터링 (센터 정보 기반)
-        if (filters.region !== 'all') {
-          filteredUsers = filteredUsers.filter((user: User) => 
-            user.centerInfo?.address?.city?.includes(filters.region) || 
-            user.centerInfo?.address?.province?.includes(filters.region) ||
-            user.centerInfo?.address?.address1?.includes(filters.region)
-          );
-        }
-        
-        // 🏘️ 구/군 필터링
-        if (filters.district !== 'all') {
-          filteredUsers = filteredUsers.filter((user: User) => 
-            user.centerInfo?.address?.province?.includes(filters.district) ||
-            user.centerInfo?.address?.address1?.includes(filters.district)
-          );
-        }
+        // 🌍 지역 필터링 (RegionNavigation으로 대체됨)
         // 🏢 임시로 센터 정보 추가 (서버에서 센터 정보가 없을 경우)
         const usersWithCenter = filteredUsers.map((user: User) => {
           if (!user.centerInfo && user.userType !== 'superAdmin') {
@@ -440,42 +447,6 @@ function AdminUsersPage() {
     return '-';
   };
 
-  // 지역별 구/군 데이터
-  const getDistrictOptions = () => {
-    const selectedRegion = filters.region;
-    
-    const regionDistricts: { [key: string]: string[] } = {
-      '서울': ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'],
-      '부산': ['강서구', '금정구', '남구', '동구', '동래구', '부산진구', '북구', '사상구', '사하구', '서구', '수영구', '연제구', '영도구', '중구', '해운대구', '기장군'],
-      '대구': ['남구', '달서구', '달성군', '동구', '북구', '서구', '수성구', '중구'],
-      '인천': ['강화군', '계양구', '남동구', '동구', '미추홀구', '부평구', '서구', '연수구', '옹진군', '중구'],
-      '광주': ['광산구', '남구', '동구', '북구', '서구'],
-      '대전': ['대덕구', '동구', '서구', '유성구', '중구'],
-      '울산': ['남구', '동구', '북구', '울주군', '중구'],
-      '세종': ['세종시'],
-      '경기': ['가평군', '고양시', '과천시', '광명시', '광주시', '구리시', '군포시', '김포시', '남양주시', '동두천시', '부천시', '성남시', '수원시', '시흥시', '안산시', '안성시', '안양시', '양주시', '양평군', '여주시', '연천군', '오산시', '용인시', '의왕시', '의정부시', '이천시', '파주시', '평택시', '포천시', '하남시', '화성시'],
-      '강원': ['강릉시', '고성군', '동해시', '삼척시', '속초시', '양구군', '양양군', '영월군', '원주시', '인제군', '정선군', '철원군', '춘천시', '태백시', '평창군', '홍천군', '화천군', '횡성군'],
-      '충북': ['괴산군', '단양군', '보은군', '영동군', '옥천군', '음성군', '제천시', '증평군', '진천군', '청주시', '충주시'],
-      '충남': ['계룡시', '공주시', '금산군', '논산시', '당진시', '보령시', '부여군', '서산시', '서천군', '아산시', '연기군', '예산군', '천안시', '청양군', '태안군', '홍성군'],
-      '전북': ['고창군', '군산시', '김제시', '남원시', '무주군', '부안군', '순창군', '완주군', '익산시', '임실군', '장수군', '전주시', '정읍시', '진안군'],
-      '전남': ['강진군', '고흥군', '곡성군', '광양시', '구례군', '나주시', '담양군', '목포시', '무안군', '보성군', '순천시', '신안군', '여수시', '영광군', '영암군', '완도군', '장성군', '장흥군', '진도군', '함평군', '해남군', '화순군'],
-      '경북': ['경산시', '경주시', '고령군', '구미시', '군위군', '김천시', '문경시', '봉화군', '상주시', '성주군', '안동시', '영덕군', '영양군', '영주시', '영천시', '예천군', '울릉군', '울진군', '의성군', '청도군', '청송군', '칠곡군', '포항시'],
-      '경남': ['거제시', '거창군', '고성군', '김해시', '남해군', '마산시', '밀양시', '사천시', '산청군', '양산시', '의령군', '진주시', '창녕군', '창원시', '통영시', '하동군', '함안군', '함양군', '합천군'],
-      '제주': ['서귀포시', '제주시']
-    };
-    
-    if (selectedRegion === 'all' || !regionDistricts[selectedRegion]) {
-      return [{ value: 'all', label: '모든 구/군' }];
-    }
-    
-    return [
-      { value: 'all', label: '모든 구/군' },
-      ...regionDistricts[selectedRegion].map(district => ({
-        value: district,
-        label: district
-      }))
-    ];
-  };
 
   // 사용자 유형별 레벨 옵션 생성
   const getLevelOptions = () => {
@@ -534,9 +505,6 @@ function AdminUsersPage() {
     if (key === 'userType') {
       // 사용자 유형이 변경되면 레벨 필터 초기화
       setFilters(prev => ({ ...prev, [key]: value, level: '' }));
-    } else if (key === 'region') {
-      // 지역이 변경되면 구/군 필터 초기화
-      setFilters(prev => ({ ...prev, [key]: value, district: 'all' }));
     } else {
       setFilters(prev => ({ ...prev, [key]: value }));
     }
@@ -556,12 +524,13 @@ function AdminUsersPage() {
             <h1 className="text-4xl font-bold text-gray-900">사용자 관리</h1>
             <p className="text-xl text-gray-600">전체 사용자 목록 및 권한 관리</p>
           </div>
-          <button
+          <Button
             onClick={handleAddUser}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-semibold"
+            variant="primary"
+            size="lg"
           >
             + 새 사용자 추가
-          </button>
+          </Button>
         </div>
 
         {/* Page Title */}
@@ -569,6 +538,19 @@ function AdminUsersPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">👥 회원 관리</h3>
           <p className="text-gray-600">학생 회원들의 정보를 관리합니다.</p>
         </div>
+
+        {/* 지역 필터 */}
+        <RegionNavigation
+          selectedRegions={selectedRegions}
+          setSelectedRegions={setSelectedRegions}
+          selectedDistricts={selectedDistricts}
+          setSelectedDistricts={setSelectedDistricts}
+          selectedCenters={selectedCenters}
+          setSelectedCenters={setSelectedCenters}
+          centerData={centerData}
+          comparisonMode={false}
+          layout="dropdown"
+        />
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -602,49 +584,6 @@ function AdminUsersPage() {
               </select>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
-              <select
-                value={filters.region}
-                onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">모든 시/도</option>
-                <option value="서울">🏙️ 서울특별시</option>
-                <option value="부산">🌊 부산광역시</option>
-                <option value="대구">🏔️ 대구광역시</option>
-                <option value="인천">✈️ 인천광역시</option>
-                <option value="광주">🌸 광주광역시</option>
-                <option value="대전">🚄 대전광역시</option>
-                <option value="울산">🏭 울산광역시</option>
-                <option value="세종">🏛️ 세종특별자치시</option>
-                <option value="경기">🏘️ 경기도</option>
-                <option value="강원">⛰️ 강원특별자치도</option>
-                <option value="충북">🌲 충청북도</option>
-                <option value="충남">🌾 충청남도</option>
-                <option value="전북">🌿 전북특별자치도</option>
-                <option value="전남">🌊 전라남도</option>
-                <option value="경북">🍎 경상북도</option>
-                <option value="경남">🏖️ 경상남도</option>
-                <option value="제주">🏝️ 제주특별자치도</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">구/군</label>
-              <select
-                value={filters.district}
-                onChange={(e) => handleFilterChange('district', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={filters.region === 'all'}
-              >
-                {getDistrictOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
@@ -871,18 +810,22 @@ function AdminUsersPage() {
                 </div>
               </div>
               <div className="flex space-x-4 mt-6">
-                <button
+                <Button
                   onClick={handleSaveUser}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  variant="primary"
+                  size="md"
+                  fullWidth
                 >
                   추가
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                  variant="secondary"
+                  size="md"
+                  fullWidth
                 >
                   취소
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1091,18 +1034,22 @@ function AdminUsersPage() {
               {/* 모달 하단 버튼 (고정) */}
               <div className="flex-shrink-0 p-6 pt-4 border-t bg-gray-50 rounded-b-xl">
                 <div className="flex space-x-4">
-                  <button
+                  <Button
                     onClick={handleUpdateUser}
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg shadow-lg"
+                    variant="primary"
+                    size="lg"
+                    fullWidth
                   >
                     💾 저장
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setShowEditModal(false)}
-                    className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors font-bold text-lg shadow-lg"
+                    variant="secondary"
+                    size="lg"
+                    fullWidth
                   >
                     ❌ 닫기
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

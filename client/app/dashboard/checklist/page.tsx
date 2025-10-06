@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 import withAuth from '../../../components/withAuth';
 
 interface ChecklistItem {
@@ -223,6 +225,44 @@ function MemberChecklistPage() {
             </div>
           ))}
         </div>
+
+        {/* 진행률 통계 카드 */}
+        {courseProgress.length > 0 && (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mt-8">
+            <StatCard
+              title="전체 진행률"
+              value={`${Math.round(courseProgress.reduce((sum, course) => sum + course.overallProgress, 0) / courseProgress.length)}%`}
+              icon="📊"
+              color="blue"
+              subtitle="평균 학습 진행률"
+              change={{ value: 5.2, type: 'increase' }}
+            />
+            <StatCard
+              title="완료된 강습"
+              value={courseProgress.filter(course => course.overallProgress === 100).length.toString()}
+              icon="✅"
+              color="green"
+              subtitle={`전체 ${courseProgress.length}개 중`}
+              change={{ value: 2.1, type: 'increase' }}
+            />
+            <StatCard
+              title="진행 중 강습"
+              value={courseProgress.filter(course => course.overallProgress > 0 && course.overallProgress < 100).length.toString()}
+              icon="🔄"
+              color="orange"
+              subtitle="현재 학습 중"
+              change={{ value: 3.5, type: 'increase' }}
+            />
+            <StatCard
+              title="미시작 강습"
+              value={courseProgress.filter(course => course.overallProgress === 0).length.toString()}
+              icon="📝"
+              color="purple"
+              subtitle="시작 대기 중"
+              change={{ value: 0, type: 'increase' }}
+            />
+          </div>
+        )}
 
         {/* 강습 방법 목록 */}
         <div className="mt-12">

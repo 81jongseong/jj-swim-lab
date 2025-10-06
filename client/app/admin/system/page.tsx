@@ -9,6 +9,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 export default function SystemPage() {
   const { user, hasUserType } = useAuth();
@@ -138,13 +140,14 @@ export default function SystemPage() {
             <p className="text-gray-600 mt-2">JJ Swim Lab 시스템 현황 및 사용자 활동 모니터링</p>
           </div>
           <div className="flex items-center space-x-4">
-            <button
+            <Button
               onClick={refreshData}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              variant="primary"
+              size="md"
             >
               {loading ? '새로고침 중...' : '새로고침'}
-            </button>
+            </Button>
             <div className="text-sm text-gray-500">
               마지막 업데이트: {lastUpdated.toLocaleString()}
             </div>
@@ -162,9 +165,11 @@ export default function SystemPage() {
               { id: 'performance', label: '성능 모니터링', icon: '⚡' },
               { id: 'security', label: '보안 현황', icon: '🔒' }
             ].map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
+                variant={activeTab === tab.id ? 'primary' : 'ghost'}
+                size="sm"
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
@@ -172,7 +177,7 @@ export default function SystemPage() {
                 }`}
               >
                 {tab.icon} {tab.label}
-              </button>
+              </Button>
             ))}
           </nav>
         </div>
@@ -183,53 +188,41 @@ export default function SystemPage() {
         <div className="space-y-8">
           {/* 주요 지표 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <span className="text-2xl">👥</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">전체 사용자</p>
-                  <p className="text-2xl font-bold text-gray-900">{systemStats.totalUsers.toLocaleString()}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="전체 사용자"
+              value={systemStats.totalUsers.toLocaleString()}
+              icon="👥"
+              color="blue"
+              subtitle="등록된 총 사용자 수"
+              change={{ value: 5.2, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <span className="text-2xl">🏊</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">활성 센터</p>
-                  <p className="text-2xl font-bold text-gray-900">{systemStats.activeCenters}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="활성 센터"
+              value={systemStats.activeCenters.toString()}
+              icon="🏊"
+              color="green"
+              subtitle={`전체 ${systemStats.totalCenters}개 중`}
+              change={{ value: 2.1, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <span className="text-2xl">💰</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">월 매출</p>
-                  <p className="text-2xl font-bold text-gray-900">₩{systemStats.monthlyRevenue.toLocaleString()}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="월 매출"
+              value={`₩${systemStats.monthlyRevenue.toLocaleString()}`}
+              icon="💰"
+              color="purple"
+              subtitle="이번 달 총 매출"
+              change={{ value: 8.7, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <span className="text-2xl">⚡</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">시스템 가동률</p>
-                  <p className="text-2xl font-bold text-gray-900">{systemStats.systemUptime}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="시스템 가동률"
+              value={systemStats.systemUptime}
+              icon="⚡"
+              color="orange"
+              subtitle="평균 응답시간 120ms"
+              change={{ value: 0.2, type: 'increase' }}
+            />
           </div>
 
           {/* 사용자 유형별 분포 */}
@@ -270,43 +263,32 @@ export default function SystemPage() {
         <div className="space-y-8">
           {/* 사용자 활동 통계 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">로그인 통계</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">오늘</span>
-                  <span className="font-bold">{userActivity.todayLogins}명</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">이번 주</span>
-                  <span className="font-bold">{userActivity.weeklyLogins}명</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">이번 달</span>
-                  <span className="font-bold">{userActivity.monthlyLogins}명</span>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="오늘 로그인"
+              value={userActivity.todayLogins.toString()}
+              icon="🔐"
+              color="blue"
+              subtitle={`이번 주: ${userActivity.weeklyLogins}명`}
+              change={{ value: 12.5, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">디바이스 유형</h3>
-              <div className="space-y-3">
-                {userActivity.deviceTypes.map((device, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span className="text-gray-600">{device.type}</span>
-                    <span className="font-bold">{device.count}명 ({device.percentage}%)</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <StatCard
+              title="활성 사용자"
+              value={systemStats.activeUsers.toString()}
+              icon="👥"
+              color="green"
+              subtitle="현재 온라인"
+              change={{ value: 3.2, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">활성 사용자</h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{systemStats.activeUsers}</div>
-                <div className="text-sm text-gray-600">현재 온라인</div>
-              </div>
-            </div>
+            <StatCard
+              title="이번 달 로그인"
+              value={userActivity.monthlyLogins.toString()}
+              icon="📊"
+              color="purple"
+              subtitle="월간 총 로그인"
+              change={{ value: 18.7, type: 'increase' }}
+            />
           </div>
 
           {/* 인기 페이지 */}
@@ -340,52 +322,41 @@ export default function SystemPage() {
         <div className="space-y-8">
           {/* 시스템 리소스 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">CPU 사용률</h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{performanceData.cpuUsage}%</div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${performanceData.cpuUsage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="CPU 사용률"
+              value={`${performanceData.cpuUsage}%`}
+              icon="💻"
+              color="blue"
+              subtitle="프로세서 사용량"
+              change={{ value: -2.1, type: 'decrease' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">메모리 사용률</h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{performanceData.memoryUsage}%</div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full" 
-                    style={{ width: `${performanceData.memoryUsage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="메모리 사용률"
+              value={`${performanceData.memoryUsage}%`}
+              icon="🧠"
+              color="green"
+              subtitle="RAM 사용량"
+              change={{ value: 1.5, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">디스크 사용률</h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">{performanceData.diskUsage}%</div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-yellow-600 h-2 rounded-full" 
-                    style={{ width: `${performanceData.diskUsage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="디스크 사용률"
+              value={`${performanceData.diskUsage}%`}
+              icon="💾"
+              color="yellow"
+              subtitle="저장공간 사용량"
+              change={{ value: 0.8, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">네트워크 지연</h3>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{performanceData.networkLatency}ms</div>
-                <div className="text-sm text-gray-600">평균 응답 시간</div>
-              </div>
-            </div>
+            <StatCard
+              title="네트워크 지연"
+              value={`${performanceData.networkLatency}ms`}
+              icon="🌐"
+              color="purple"
+              subtitle="평균 응답 시간"
+              change={{ value: -5.2, type: 'decrease' }}
+            />
           </div>
 
           {/* API 응답 시간 */}
@@ -441,53 +412,41 @@ export default function SystemPage() {
         <div className="space-y-8">
           {/* 보안 상태 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <span className="text-2xl">🚫</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">실패한 로그인</p>
-                  <p className="text-2xl font-bold text-gray-900">{securityData.failedLogins}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="실패한 로그인"
+              value={securityData.failedLogins.toString()}
+              icon="🚫"
+              color="red"
+              subtitle="24시간 내 시도"
+              change={{ value: -15.3, type: 'decrease' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <span className="text-2xl">🔒</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">차단된 IP</p>
-                  <p className="text-2xl font-bold text-gray-900">{securityData.blockedIPs}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="차단된 IP"
+              value={securityData.blockedIPs.toString()}
+              icon="🔒"
+              color="orange"
+              subtitle="자동 차단된 IP"
+              change={{ value: 2.1, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <span className="text-2xl">🛡️</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">방화벽 상태</p>
-                  <p className="text-2xl font-bold text-gray-900">{securityData.firewallStatus}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="방화벽 상태"
+              value={securityData.firewallStatus}
+              icon="🛡️"
+              color="green"
+              subtitle="보안 시스템 활성"
+              change={{ value: 0, type: 'increase' }}
+            />
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <span className="text-2xl">🔐</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">SSL 만료일</p>
-                  <p className="text-sm font-bold text-gray-900">{securityData.sslExpiry}</p>
-                </div>
-              </div>
-            </div>
+            <StatCard
+              title="SSL 만료일"
+              value={securityData.sslExpiry}
+              icon="🔐"
+              color="blue"
+              subtitle="인증서 만료일"
+              change={{ value: 0, type: 'increase' }}
+            />
           </div>
 
           {/* 보안 활동 로그 */}

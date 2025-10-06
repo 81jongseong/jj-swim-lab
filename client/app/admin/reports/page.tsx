@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 interface ReportItem {
   _id: string;
@@ -131,8 +133,47 @@ function AdminReportsPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-single-line">🎧 고객지원 관리</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎧 고객지원 관리</h1>
           <p className="text-gray-600">고객의 버그 신고, 기능 요청, 불만사항, 제안사항을 체계적으로 관리하세요</p>
+        </div>
+
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="전체 요청"
+            value={list.length}
+            icon="📋"
+            color="blue"
+            subtitle="총 접수 건수"
+            onClick={() => {
+              setFilterStatus('all');
+              setFilterType('all');
+            }}
+          />
+          <StatCard
+            title="미해결"
+            value={list.filter(r => r.status === 'open' || r.status === 'in_progress').length}
+            icon="🔴"
+            color="red"
+            subtitle="처리 필요"
+            onClick={() => setFilterStatus(filterStatus === 'open' ? 'all' : 'open')}
+          />
+          <StatCard
+            title="처리 중"
+            value={list.filter(r => r.status === 'in_progress').length}
+            icon="🟡"
+            color="orange"
+            subtitle="진행 중"
+            onClick={() => setFilterStatus(filterStatus === 'in_progress' ? 'all' : 'in_progress')}
+          />
+          <StatCard
+            title="해결 완료"
+            value={list.filter(r => r.status === 'resolved' || r.status === 'closed').length}
+            icon="✅"
+            color="green"
+            subtitle="처리 완료"
+            onClick={() => setFilterStatus(filterStatus === 'resolved' ? 'all' : 'resolved')}
+          />
         </div>
 
         <div className="bg-white rounded-lg shadow">
@@ -229,14 +270,16 @@ function AdminReportsPage() {
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={() => setSelectedReport(selectedReport?._id === report._id ? null : report)}
-                        className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                        variant="primary"
+                        size="sm"
+                        fullWidth
                       >
                         {selectedReport?._id === report._id ? '📝 상세정보 닫기' : '📝 상세정보 보기'}
-                      </button>
+                      </Button>
                       
-                      <button
+                      <Button
                         onClick={async () => {
                           const newStatus = prompt(
                             `현재 상태: ${getStatusText(report.status)}\n\n새로운 상태를 선택하세요:\n1. draft (초안)\n2. submitted (제출됨)\n3. reviewed (검토됨)\n4. approved (승인됨)`
@@ -254,12 +297,14 @@ function AdminReportsPage() {
                             else load();
                           }
                         }}
-                        className="flex-1 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                        variant="warning"
+                        size="sm"
+                        fullWidth
                       >
                         🔄 상태 변경
-                      </button>
+                      </Button>
                       
-                      <button
+                      <Button
                         onClick={async () => {
                           const assignee = prompt('담당자 이메일을 입력하세요 (비워두면 담당자 해제):');
                           const res = await apiClient.updateReport(report._id, { 
@@ -268,22 +313,26 @@ function AdminReportsPage() {
                           if (res.error) alert(res.error);
                           else load();
                         }}
-                        className="flex-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
                       >
                         👤 담당자 지정
-                      </button>
+                      </Button>
                       
-                      <button
+                      <Button
                         onClick={async () => {
                           if (!confirm('정말로 이 리포트를 삭제하시겠습니까?')) return;
                           const res = await apiClient.deleteReport(report._id);
                           if (res.error) alert(res.error);
                           else load();
                         }}
-                        className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                        variant="danger"
+                        size="sm"
+                        fullWidth
                       >
                         🗑️ 삭제
-                      </button>
+                      </Button>
                     </div>
 
                     {selectedReport?._id === report._id && (

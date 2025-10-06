@@ -201,6 +201,19 @@ const swimmingCenterSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // 지역 정보 (검색 및 필터링용)
+  province: {
+    type: String,
+  },
+  city: {
+    type: String,
+  },
+  gu: {
+    type: String,
+  },
+  dong: {
+    type: String,
+  },
   isActive: {
     type: Boolean,
     default: true,

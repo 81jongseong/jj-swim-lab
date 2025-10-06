@@ -54,15 +54,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* 편집 모드 버튼 (개발용) - 햄버거 메뉴와 겹치지 않도록 위치 조정 */}
-      <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={toggleEditMode}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          {isEditing ? '편집 완료' : '랜딩 페이지 편집'}
-        </button>
-      </div>
 
       {/* 편집 모달 */}
       {isEditing && (
@@ -266,50 +257,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA 섹션 */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-6 text-center">
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            <motion.h2
-              variants={motionPresets.slideUp}
-              className="text-3xl md:text-4xl font-bold text-foreground mb-6"
-            >
-              지금 시작하세요!
-            </motion.h2>
-            <motion.p
-              variants={motionPresets.slideUp}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              AI 기반 수영 교육의 새로운 경험을 만나보세요.
-            </motion.p>
-            <motion.div
-              variants={motionPresets.slideUp}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <a
-                href="/auth/signup?type=student"
-                className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                수강생으로 시작하기
-              </a>
-              <a
-                href="/auth/signup?type=instructor"
-                className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-primary border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
-              >
-                강사로 등록하기
-              </a>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* 배경 애니메이션 */}
       <WaterRippleBackground />
+
+      {/* 편집 모드 버튼 (개발용) - 페이지 최하단 */}
+      <div className="w-full py-4 bg-gray-100 border-t border-gray-200">
+        <div className="container mx-auto px-6 flex justify-center">
+          <button
+            onClick={toggleEditMode}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            {isEditing ? '✅ 편집 완료' : '✏️ 랜딩 페이지 편집'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

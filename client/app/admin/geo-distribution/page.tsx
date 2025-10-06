@@ -31,6 +31,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import RegionNavigation from '@/components/RegionNavigation';
 
 // 동적 import로 SSR 문제 방지 및 성능 최적화
 let maplibregl: any;

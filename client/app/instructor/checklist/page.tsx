@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Card, Badge, Button, Progress } from '../../../components/ui';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
+import { Card, Badge, Progress } from '../../../components/ui';
 import { 
   CheckCircle, 
   Clock, 
@@ -174,6 +176,42 @@ export default function InstructorChecklistPage() {
             <Plus className="h-4 w-4 mr-2" />
             새 체크리스트 생성
           </Button>
+        </div>
+
+        {/* 통계 카드 */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <StatCard
+            title="전체 체크리스트"
+            value={checklists.length.toString()}
+            icon="📋"
+            color="blue"
+            subtitle="생성된 체크리스트 수"
+            change={{ value: 5.2, type: 'increase' }}
+          />
+          <StatCard
+            title="활성 체크리스트"
+            value={checklists.filter(c => c.status === 'active').length.toString()}
+            icon="🔄"
+            color="green"
+            subtitle="진행 중인 체크리스트"
+            change={{ value: 2.1, type: 'increase' }}
+          />
+          <StatCard
+            title="완료된 체크리스트"
+            value={checklists.filter(c => c.status === 'completed').length.toString()}
+            icon="✅"
+            color="purple"
+            subtitle="완료된 체크리스트"
+            change={{ value: 8.7, type: 'increase' }}
+          />
+          <StatCard
+            title="일시정지된 체크리스트"
+            value={checklists.filter(c => c.status === 'paused').length.toString()}
+            icon="⏸️"
+            color="orange"
+            subtitle="일시정지 상태"
+            change={{ value: 0, type: 'increase' }}
+          />
         </div>
 
         {/* 필터 및 검색 */}

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -302,9 +304,11 @@ export default function ShopPage() {
                 최고의 수영 용품들을 만나보세요.
               </p>
             </div>
-            <button
+            <Button
               onClick={() => setShowCart(true)}
-              className="relative bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              variant="primary"
+              size="md"
+              className="relative"
             >
               🛒 장바구니
               {getTotalItems() > 0 && (
@@ -312,9 +316,83 @@ export default function ShopPage() {
                   {getTotalItems()}
                 </span>
               )}
-            </button>
+            </Button>
           </div>
         </div>
+
+        {/* 상점 통계 카드 */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <StatCard
+            title="오늘의 매출"
+            value="₩2,450,000"
+            icon="💰"
+            color="green"
+            subtitle="일일 매출액"
+            change={{ value: 18.5, type: 'increase' }}
+          />
+          <StatCard
+            title="결제 전환율"
+            value="67%"
+            icon="📊"
+            color="blue"
+            subtitle="장바구니→결제율"
+            change={{ value: 5.2, type: 'increase' }}
+          />
+          <StatCard
+            title="인기 브랜드"
+            value="아레나"
+            icon="🏆"
+            color="purple"
+            subtitle="최고 판매 브랜드"
+            change={{ value: 22.3, type: 'increase' }}
+          />
+          <StatCard
+            title="재고 부족"
+            value="3개"
+            icon="⚠️"
+            color="orange"
+            subtitle="품절 위험 상품"
+            change={{ value: -15.7, type: 'decrease' }}
+          />
+        </div>
+
+        {/* 관리자 전용 상세 통계 */}
+        {user?.userType === 'superAdmin' && (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <StatCard
+              title="브랜드별 매출"
+              value="스피도 35%"
+              icon="🏷️"
+              color="blue"
+              subtitle="브랜드 점유율"
+              change={{ value: 8.5, type: 'increase' }}
+            />
+            <StatCard
+              title="고객 재구매율"
+              value="78%"
+              icon="🔄"
+              color="green"
+              subtitle="재구매 고객 비율"
+              change={{ value: 12.3, type: 'increase' }}
+            />
+            <StatCard
+              title="평균 주문액"
+              value="₩85,000"
+              icon="💳"
+              color="purple"
+              subtitle="주문당 평균 금액"
+              change={{ value: 5.7, type: 'increase' }}
+            />
+            <StatCard
+              title="이탈률"
+              value="23%"
+              icon="📉"
+              color="orange"
+              subtitle="장바구니 이탈률"
+              change={{ value: -3.2, type: 'decrease' }}
+            />
+          </div>
+        )}
 
         {/* 필터 및 검색 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -410,13 +488,15 @@ export default function ShopPage() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={() => addToCart(product)}
                   disabled={product.stock === 0}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
                 >
                   {product.stock === 0 ? '품절' : '장바구니 추가'}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -437,14 +517,16 @@ export default function ShopPage() {
               <div className="mt-3">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-medium text-gray-900">🛒 장바구니</h3>
-                  <button
+                  <Button
                     onClick={() => setShowCart(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-gray-600 p-1"
                   >
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  </button>
+                  </Button>
                 </div>
 
                 {cart.length === 0 ? (
@@ -467,28 +549,34 @@ export default function ShopPage() {
                           <p className="text-gray-600">{formatPrice(item.price)}원</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <button
+                          <Button
                             onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
-                            className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
+                            variant="outline"
+                            size="sm"
+                            className="w-8 h-8 rounded-full p-0"
                           >
                             -
-                          </button>
+                          </Button>
                           <span className="w-8 text-center">{item.quantity}</span>
-                          <button
+                          <Button
                             onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
-                            className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
+                            variant="outline"
+                            size="sm"
+                            className="w-8 h-8 rounded-full p-0"
                           >
                             +
-                          </button>
+                          </Button>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900">{formatPrice(item.price * item.quantity)}원</p>
-                          <button
+                          <Button
                             onClick={() => removeFromCart(item.productId)}
+                            variant="ghost"
+                            size="sm"
                             className="text-red-500 hover:text-red-700 text-sm"
                           >
                             삭제
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -501,20 +589,23 @@ export default function ShopPage() {
                     </div>
 
                     <div className="flex justify-end space-x-4">
-                      <button
+                      <Button
                         onClick={() => setShowCart(false)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        variant="outline"
+                        size="md"
                       >
                         계속 쇼핑
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => {
                           alert('주문 기능은 준비 중입니다.');
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        variant="primary"
+                        size="md"
+                        className="bg-green-600 hover:bg-green-700"
                       >
                         주문하기
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

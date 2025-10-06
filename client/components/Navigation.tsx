@@ -132,7 +132,7 @@ const userMenuStructure = {
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/profile', label: '👤 프로필' },
     ]
   },
@@ -181,7 +181,7 @@ const userMenuStructure = {
     info: [
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/profile', label: '👤 프로필' },
     ]
   },
@@ -220,7 +220,7 @@ const userMenuStructure = {
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     ai: [
       { href: '/ai-analysis', label: '🤖 AI 분석' },
@@ -235,50 +235,45 @@ const userMenuStructure = {
     ]
   },
   superAdmin: {
-    dashboard: [
+    core: [
       { href: '/landing', label: '🏠 홈' },
       { href: '/admin/dashboard', label: '📊 최고관리자 대시보드' },
-      { href: '/admin/course-oversight', label: '👁️ 강습 과정 감독' },
       { href: '/admin/system-settings', label: '⚙️ 시스템 설정' },
+      { href: '/admin/system', label: '📈 시스템 사용 통계' },
     ],
-    centers: [
-      { href: '/admin/center-management', label: '🏢 센터 감독' },
+    business: [
+      { href: '/admin/center-management', label: '🏢 센터 관리' },
       { href: '/admin/center-statistics', label: '📊 센터 통계' },
-      { href: '/admin/revenue-management', label: '💰 센터별 매출 관리' },
       { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
-    ],
-    users: [
       { href: '/admin/users', label: '👥 회원 관리' },
       { href: '/admin/instructor-management', label: '👨‍🏫 강사 관리' },
       { href: '/admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
     ],
-    levels: [
+    revenue: [
+      { href: '/admin/total-revenue-management', label: '💎 총 매출 관리' },
+      { href: '/admin/revenue-management', label: '💰 센터별 매출 관리' },
+    ],
+    content: [
       { href: '/admin/lesson-plans', label: '📋 강습 계획 템플릿' },
       { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
+      { href: '/admin/course-oversight', label: '👁️ 강습 과정 감독' },
       { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
-    ],
-    revenue: [
-      { href: '/admin/payments', label: '💰 전체 결제 관리' },
-      { href: '/admin/total-revenue-management', label: '💎 총 매출 관리' },
-    ],
-    customerSupport: [
-      { href: '/admin/reports', label: '🎧 고객지원 관리' },
-      { href: '/admin/notices', label: '📢 공지사항 관리' },
-    ],
-    health: [
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
-      { href: '/admin/system', label: '📈 시스템 사용 통계' },
     ],
-    experience: [
-      { href: '/quiz', label: '🧠 퀴즈' },
+    operations: [
+      { href: '/admin/notices', label: '📢 공지사항 관리' },
+      { href: '/admin/reports', label: '🎧 고객지원 관리' },
+    ],
+    tools: [
       { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어 · 영법 관리' },
+      { href: '/quiz', label: '🧠 퀴즈 체험' },
     ],
-    info: [
+    community: [
       { href: '/about', label: '🏊‍♂️ 소개' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ]
   },
   guest: {
@@ -303,14 +298,14 @@ const userMenuStructure = {
     community: [
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     shop: [
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     map: [
-      { href: '/map', label: '🗺️ 지도' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     auth: [
       { href: '/auth/login', label: '🔑 로그인' },
@@ -346,15 +341,13 @@ const menuGrouping = {
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
   superAdmin: [
-    { groupName: '📊 최고 관리', categories: ['dashboard'] },
-    { groupName: '🏢 센터 감독', categories: ['centers'] },
-    { groupName: '👥 사용자 관리', categories: ['users'] },
-    { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '🎯 핵심 관리', categories: ['core'] },
+    { groupName: '🏢 비즈니스 관리', categories: ['business'] },
     { groupName: '💰 매출 관리', categories: ['revenue'] },
-    { groupName: '🎧 고객지원', categories: ['customerSupport'] },
-    { groupName: '🏥 건강정보 관리', categories: ['health'] },
-    { groupName: '🛠️ 도구 & 체험', categories: ['tools', 'experience'] },
-    { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
+    { groupName: '📚 콘텐츠 관리', categories: ['content'] },
+    { groupName: '🎧 운영 지원', categories: ['operations'] },
+    { groupName: '🛠️ 도구 & 체험', categories: ['tools'] },
+    { groupName: '🌐 커뮤니티', categories: ['community'] },
   ],
   guest: [
     { groupName: '🏠 JJ Swim Lab', categories: ['main'] },

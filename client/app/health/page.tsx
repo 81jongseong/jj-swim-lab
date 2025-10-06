@@ -15,6 +15,8 @@ import {
   Edit
 } from 'lucide-react';
 import Link from 'next/link';
+import StatCard from '@/components/StatCard';
+import Button from '@/components/Button';
 
 export default function HealthPage() {
   const [healthSummary, setHealthSummary] = useState({
@@ -98,45 +100,41 @@ export default function HealthPage() {
 
       {/* 건강 상태 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium">건강 위험도</h3>
-            <AlertTriangle className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="text-2xl font-bold">
-            <span className={`px-2 py-1 rounded text-sm ${getRiskColor(healthSummary.riskLevel)}`}>
-              {getRiskText(healthSummary.riskLevel)}
-            </span>
-          </div>
-          <p className="text-xs text-gray-500">현재 건강 상태</p>
-        </div>
+        <StatCard
+          title="건강 위험도"
+          value={getRiskText(healthSummary.riskLevel)}
+          icon="⚠️"
+          color={healthSummary.riskLevel === 'high' ? 'red' : healthSummary.riskLevel === 'moderate' ? 'orange' : 'green'}
+          subtitle="현재 건강 상태"
+          change={{ value: healthSummary.riskLevel === 'low' ? 10 : healthSummary.riskLevel === 'moderate' ? 5 : -5, type: healthSummary.riskLevel === 'high' ? 'decrease' : 'increase' }}
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium">주간 목표</h3>
-            <Target className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="text-2xl font-bold">{healthSummary.currentProgram.weeklyMinutes}분</div>
-          <p className="text-xs text-gray-500">주간 총 운동 시간</p>
-        </div>
+        <StatCard
+          title="주간 목표"
+          value={`${healthSummary.currentProgram.weeklyMinutes}분`}
+          icon="🎯"
+          color="blue"
+          subtitle="주간 총 운동 시간"
+          change={{ value: 5.2, type: 'increase' }}
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium">운동 빈도</h3>
-            <Calendar className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="text-2xl font-bold">{healthSummary.currentProgram.sessionsPerWeek}회</div>
-          <p className="text-xs text-gray-500">주간 운동 횟수</p>
-        </div>
+        <StatCard
+          title="운동 빈도"
+          value={`${healthSummary.currentProgram.sessionsPerWeek}회`}
+          icon="📅"
+          color="green"
+          subtitle="주간 운동 횟수"
+          change={{ value: 2.1, type: 'increase' }}
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium">다음 운동</h3>
-            <Clock className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="text-2xl font-bold">{healthSummary.currentProgram.nextSession}</div>
-          <p className="text-xs text-gray-500">다음 운동 예정일</p>
-        </div>
+        <StatCard
+          title="다음 운동"
+          value={healthSummary.currentProgram.nextSession}
+          icon="⏰"
+          color="purple"
+          subtitle="다음 운동 예정일"
+          change={{ value: 0, type: 'increase' }}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
