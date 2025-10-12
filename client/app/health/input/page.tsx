@@ -298,6 +298,26 @@ export default function HealthInputPage() {
       }
       
       current[keys[keys.length - 1]] = value;
+      
+      // 콜레스테롤 입력 시 자동으로 dyslipidemia 판단
+      if (field.includes('Cholesterol')) {
+        const tc = field === 'vitals.totalCholesterol' ? value : newData.vitals?.totalCholesterol;
+        const ldl = field === 'vitals.ldlCholesterol' ? value : newData.vitals?.ldlCholesterol;
+        
+        // NCEP ATP III 기준: TC ≥240 or LDL ≥160
+        const hasDyslipidemia = (tc && tc >= 240) || (ldl && ldl >= 160);
+        if (!newData.conditions) newData.conditions = {} as any;
+        newData.conditions.dyslipidemia = hasDyslipidemia || false;
+      }
+      
+      // 혈당 입력 시 자동으로 diabetes 판단
+      if (field === 'vitals.bloodSugar') {
+        // ADA 기준: 공복혈당 ≥126 mg/dL
+        const hasDiabetes = value && value >= 126;
+        if (!newData.conditions) newData.conditions = {} as any;
+        newData.conditions.diabetes = hasDiabetes || false;
+      }
+      
       return newData;
     });
   };
@@ -635,14 +655,34 @@ export default function HealthInputPage() {
               </div>
             </div>
 
+            {/* 자동 진단 결과 */}
+            {(healthData.conditions?.diabetes || healthData.conditions?.dyslipidemia) && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="text-sm text-red-800">
+                  <p className="font-semibold mb-2">⚠️ 자동 진단 결과</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {healthData.conditions.diabetes && (
+                      <li><strong>당뇨병 의심</strong> (공복혈당 ≥126 mg/dL)</li>
+                    )}
+                    {healthData.conditions.dyslipidemia && (
+                      <li><strong>고지혈증 의심</strong> (총 콜레스테롤 ≥240 or LDL ≥160 mg/dL)</li>
+                    )}
+                    <li className="text-red-900 font-semibold mt-2">→ 운동 전 의사 상담 필수</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
               <div className="text-sm text-yellow-800">
-                <p className="font-semibold mb-2">⚠️ 건강검진 주의사항</p>
-                <ul className="list-disc list-inside space-y-1">
+                <p className="font-semibold mb-2">💡 건강검진 참고사항</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>혈압 180/110 이상: 의사 상담 필수</li>
-                  <li>공복 혈당 126 이상: 당뇨 진단, 운동 전 의사 상담</li>
-                  <li>총 콜레스테롤 240 이상: 심혈관 위험도 증가</li>
+                  <li>공복 혈당 126 이상: 당뇨 진단 기준</li>
+                  <li>총 콜레스테롤 240 이상 or LDL 160 이상: 고지혈증 진단 기준</li>
+                  <li>HDL은 높을수록 좋습니다 (남성 40+, 여성 50+)</li>
                 </ul>
               </div>
             </div>
