@@ -521,10 +521,14 @@ export default function HealthInputPage() {
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const todayIdx = new Date().getDay();
       
+      // 건강 상태에 따른 운동 시간 조절 (baseIntensity 반영)
+      const baseSessionDuration = healthData.swim_profile.sessionDuration || 60;
+      const adjustedSessionDuration = Math.round(baseSessionDuration * (baseIntensity / 100));
+      
       const engineInput: EngineInput = {
         startDate: new Date().toISOString().split('T')[0],
         days: [dayNames[todayIdx]] as any, // 오늘 요일만
-        weeklyMinutes: healthData.swim_profile.sessionDuration || 60,
+        weeklyMinutes: adjustedSessionDuration,
         weeklyMeters: 0, // 엔진이 자동 계산
         poolLen: (healthData.swim_profile.poolLength || 25) as any,
         strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
