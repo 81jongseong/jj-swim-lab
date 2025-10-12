@@ -28,6 +28,10 @@ import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Button from '@/components/Button';
 import apiClient from '@/utils/api';
+import CSSInputSection from './member-variables/CSSInputSection';
+import PhysiologicalMetricsSection from './member-variables/PhysiologicalMetricsSection';
+import StrokesSelectionSection from './member-variables/StrokesSelectionSection';
+import TrainingScheduleSection from './member-variables/TrainingScheduleSection';
 
 const FeasibilityChecker = dynamic(
   () => import('@/components/swimlab/FeasibilityChecker'),
@@ -322,351 +326,37 @@ export default function BulkMemberVariablesModal({
           </div>
 
           {/* CSS 입력 */}
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h4 className="font-semibold text-gray-900">📊 CSS (Critical Swim Speed)</h4>
-                {cssInfo?.lastUpdated && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    마지막 측정: {new Date(cssInfo.lastUpdated).toLocaleDateString()} 
-                    {cssInfo.updatedByRole && (
-                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        cssInfo.updatedByRole === 'instructor' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {cssInfo.updatedByRole === 'instructor' ? '👨‍🏫 강사 측정' : '👤 본인 입력'}
-                      </span>
-                    )}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  const defaultCSS = { freestyle: 90, backstroke: 100, breaststroke: 110, butterfly: 95 };
-                  updateCurrentMember({ css: defaultCSS });
-                }}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                기본값 설정
-              </button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {strokes.map(stroke => (
-                <div key={stroke.id}>
-                  <label className="block text-xs text-gray-600 mb-1">
-                    {stroke.icon} {stroke.label}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={currentMember.css[stroke.id] || ''}
-                      onChange={(e) => {
-                        updateCurrentMember({
-                          css: { ...currentMember.css, [stroke.id]: parseInt(e.target.value) || 0 }
-                        });
-                      }}
-                      className="w-full px-3 py-2 border rounded-lg text-sm pr-12"
-                      placeholder="0"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                      초/100m
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <CSSInputSection
+            css={currentMember.css}
+            cssInfo={cssInfo}
+            strokes={strokes}
+            onUpdate={(css) => updateCurrentMember({ css })}
+          />
 
-          {/* 주 영법 */}
-          <div className="border rounded-lg p-4 bg-blue-50">
-            <h4 className="font-semibold text-gray-900 mb-3">🏊 주 영법 (Main Strokes)</h4>
-            <p className="text-xs text-gray-600 mb-3">프로그램의 메인으로 사용할 영법 (최소 1개 이상 선택)</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {strokes.map(stroke => {
-                const isExcluded = currentMember.excludedStrokes.includes(stroke.id);
-                return (
-                  <button
-                    key={stroke.id}
-                    onClick={() => {
-                      if (isExcluded) {
-                        alert('제외 영법으로 설정된 영법은 주 영법으로 선택할 수 없습니다.');
-                        return;
-                      }
-                      const current = currentMember.mainStrokes;
-                      const isSelected = current.includes(stroke.id);
-                      updateCurrentMember({
-                        mainStrokes: isSelected
-                          ? current.filter(s => s !== stroke.id)
-                          : [...current, stroke.id]
-                      });
-                    }}
-                    disabled={isExcluded}
-                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
-                      isExcluded 
-                        ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : currentMember.mainStrokes.includes(stroke.id)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="text-xl mb-1">{stroke.icon}</div>
-                    <div className="text-xs">{stroke.label}</div>
-                    {isExcluded && <div className="text-xs text-red-600 mt-1">제외됨</div>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 제외 영법 */}
-          <div className="border rounded-lg p-4 bg-red-50">
-            <h4 className="font-semibold text-gray-900 mb-3">🚫 회피 영법</h4>
-            <p className="text-xs text-gray-600 mb-3">부상이나 선호도로 인해 피하고 싶은 영법 (프로그램에서 제외)</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {strokes.map(stroke => {
-                const isMainStroke = currentMember.mainStrokes.includes(stroke.id);
-                return (
-                  <button
-                    key={stroke.id}
-                    onClick={() => {
-                      if (isMainStroke) {
-                        alert('주 영법으로 설정된 영법은 제외 영법으로 선택할 수 없습니다.');
-                        return;
-                      }
-                      const current = currentMember.excludedStrokes;
-                      const isSelected = current.includes(stroke.id);
-                      updateCurrentMember({
-                        excludedStrokes: isSelected
-                          ? current.filter(s => s !== stroke.id)
-                          : [...current, stroke.id]
-                      });
-                    }}
-                    disabled={isMainStroke}
-                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
-                      isMainStroke
-                        ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : currentMember.excludedStrokes.includes(stroke.id)
-                        ? 'border-red-500 bg-red-100 text-red-700 font-semibold'
-                        : 'border-gray-200 hover:border-red-300'
-                    }`}
-                  >
-                    <div className="text-xl mb-1">{stroke.icon}</div>
-                    <div className="text-xs">{stroke.label}</div>
-                    {isMainStroke && <div className="text-xs text-blue-600 mt-1">주 영법</div>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* 주 영법 / 제외 영법 */}
+          <StrokesSelectionSection
+            mainStrokes={currentMember.mainStrokes}
+            excludedStrokes={currentMember.excludedStrokes}
+            strokes={strokes}
+            onUpdate={(data) => updateCurrentMember(data)}
+          />
 
           {/* 🧬 생리학적 지표 (선택사항) */}
-          <div className="border rounded-lg p-4 bg-gradient-to-r from-purple-50 to-indigo-50">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h4 className="font-semibold text-gray-900">🧬 생리학적 지표</h4>
-                <p className="text-xs text-gray-600 mt-1">
-                  개선 한계 판단 및 맞춤형 강도 조절을 위한 과학적 지표 (선택사항)
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  // 기본값 설정 (성인 평균)
-                  updateCurrentMember({ 
-                    vo2max: 40,
-                    maxHeartRate: 180,
-                    restingHeartRate: 70
-                  });
-                }}
-                className="text-xs text-purple-600 hover:text-purple-800"
-              >
-                기본값 설정
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* VO2max */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  VO2max (ml/kg/min)
-                </label>
-                <input
-                  type="number"
-                  value={currentMember.vo2max || ''}
-                  onChange={(e) => updateCurrentMember({ 
-                    vo2max: e.target.value ? parseFloat(e.target.value) : undefined 
-                  })}
-                  placeholder="예: 45"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  일반인: 30-40, 운동선수: 50+
-                </p>
-              </div>
-              
-              {/* 최고심박수 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  최고심박수 (bpm)
-                </label>
-                <input
-                  type="number"
-                  value={currentMember.maxHeartRate || ''}
-                  onChange={(e) => updateCurrentMember({ 
-                    maxHeartRate: e.target.value ? parseInt(e.target.value) : undefined 
-                  })}
-                  placeholder="예: 180"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  공식: 220 - 나이
-                </p>
-              </div>
-              
-              {/* 안정심박수 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  안정심박수 (bpm)
-                </label>
-                <input
-                  type="number"
-                  value={currentMember.restingHeartRate || ''}
-                  onChange={(e) => updateCurrentMember({ 
-                    restingHeartRate: e.target.value ? parseInt(e.target.value) : undefined 
-                  })}
-                  placeholder="예: 70"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  아침에 측정한 심박수
-                </p>
-              </div>
-            </div>
-            
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-700 mb-2">
-                💡 <strong>생리학적 지표를 모르는 경우:</strong>
-              </p>
-              <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                <li><strong>비워두셔도 됩니다:</strong> 레벨, CSS, 완료율만으로도 프로그램 생성 가능</li>
-                <li><strong>입력하면 더 정확:</strong> 개인별 맞춤형 강도 조절 가능</li>
-                <li><strong>스마트워치 연동 예정:</strong> Apple Watch, Garmin에서 자동 수집</li>
-              </ul>
-            </div>
-          </div>
+          <PhysiologicalMetricsSection
+            vo2max={currentMember.vo2max}
+            maxHeartRate={currentMember.maxHeartRate}
+            restingHeartRate={currentMember.restingHeartRate}
+            onUpdate={(metrics) => updateCurrentMember(metrics)}
+          />
 
-          {/* 운동 요일 */}
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-900">📅 운동 요일</h4>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => updateCurrentMember({ trainingDays: [1, 2, 3, 4, 5] })}
-                  className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  평일
-                </button>
-                <button
-                  onClick={() => updateCurrentMember({ trainingDays: [1, 3, 5] })}
-                  className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  월수금
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-2">
-              {days.map((day, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    const current = currentMember.trainingDays;
-                    const isSelected = current.includes(idx);
-                    updateCurrentMember({
-                      trainingDays: isSelected
-                        ? current.filter(d => d !== idx)
-                        : [...current, idx].sort((a, b) => a - b)
-                    });
-                  }}
-                  className={`px-3 py-2 border-2 rounded-lg font-semibold transition-all ${
-                    currentMember.trainingDays.includes(idx)
-                      ? 'border-blue-500 bg-blue-500 text-white'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              선택된 요일: {currentMember.trainingDays.length}일/주
-            </p>
-          </div>
-
-          {/* 세션 시간 */}
-          <div className="border rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">⏱️ 세션 시간</h4>
-            <div className="flex gap-2">
-              {[30, 50, 60].map(n => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => updateCurrentMember({ sessionDuration: n })}
-                  className={`px-4 py-2 border rounded-lg transition ${
-                    currentMember.sessionDuration === n
-                      ? 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white border-gray-300 hover:border-blue-300'
-                  }`}
-                >
-                  {n}분
-                </button>
-              ))}
-              <input
-                type="number"
-                min="20"
-                max="180"
-                value={currentMember.sessionDuration}
-                onChange={(e) => updateCurrentMember({ sessionDuration: parseInt(e.target.value) || 60 })}
-                placeholder="직접 입력"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              💡 1회 운동 시간 (운동 요일은 위에서 선택)
-            </p>
-          </div>
-
-          {/* 풀 길이 선택 */}
-          <div className="border rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">🏊‍♂️ 풀 길이</h4>
-            <div className="flex gap-2">
-              {[25, 50].map(length => (
-                <button
-                  key={length}
-                  onClick={() => updateCurrentMember({ poolLength: length })}
-                  className={`px-4 py-3 border-2 rounded-lg transition-all ${
-                    currentMember.poolLength === length
-                      ? 'border-cyan-500 bg-cyan-100 text-cyan-700 font-semibold'
-                      : 'border-gray-200 hover:border-cyan-300'
-                  }`}
-                >
-                  {length}m
-                </button>
-              ))}
-              <input
-                type="number"
-                min="20"
-                max="100"
-                step="5"
-                value={currentMember.poolLength}
-                onChange={(e) => updateCurrentMember({ poolLength: parseInt(e.target.value) || 25 })}
-                placeholder="직접 입력"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              💡 25m 단수영장, 50m 장수영장, 또는 직접 입력
-            </p>
-          </div>
+          {/* 운동 요일 / 세션 시간 / 풀 길이 */}
+          <TrainingScheduleSection
+            trainingDays={currentMember.trainingDays}
+            sessionDuration={currentMember.sessionDuration}
+            poolLength={currentMember.poolLength}
+            availablePoolLengths={availablePoolLengths}
+            onUpdate={(data) => updateCurrentMember(data)}
+          />
 
           {/* 프로그램 타입 */}
           <div className="border rounded-lg p-4">
