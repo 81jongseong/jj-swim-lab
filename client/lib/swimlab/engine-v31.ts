@@ -1986,7 +1986,8 @@ function finalizePlan(
   // 🎯 시간 기반 조절 로직 제거 - 항상 계획된 거리대로 수행
   // (사용자 요청: 운동 강도를 낮춰서 시간이 늘어지면 쿨다운 거리를 줄이는 로직 제거)
 
-  // 실제 운동 시간 계산 (각 세트의 페이스 기반)
+  // 사용자가 설정한 목표 시간 사용 (실제 계산된 시간 대신)
+  // 실제 운동 시간 계산 (각 세트의 페이스 기반) - 참고용
   let actualDuration = 0;
   sets.forEach(s => {
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
@@ -2002,7 +2003,10 @@ function finalizePlan(
     }
   });
 
-  return { sets, total, totalDuration: Math.round(actualDuration), notes: [mod.explanation] };
+  // 사용자가 설정한 목표 시간을 우선 사용 (targetMinutes가 있으면)
+  const finalDuration = targetMinutes || Math.round(actualDuration);
+
+  return { sets, total, totalDuration: finalDuration, notes: [mod.explanation] };
 }
 
 // ---------- 헬퍼 함수 ----------

@@ -970,24 +970,26 @@ export default function HealthInputPage() {
                 </div>
 
                 {/* 콜레스테롤 */}
-                {healthData.vitals.totalCholesterol && healthData.vitals.totalCholesterol > 0 && (
-                  <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">총 콜레스테롤</p>
-                        <p className="text-2xl font-bold text-gray-900">{healthData.vitals.totalCholesterol} mg/dL</p>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        healthData.vitals.totalCholesterol >= 240 ? 'bg-red-100 text-red-700' :
-                        healthData.vitals.totalCholesterol >= 200 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {healthData.vitals.totalCholesterol >= 240 ? '고지혈증' :
-                         healthData.vitals.totalCholesterol >= 200 ? '경계선' : '정상'}
-                      </div>
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">총 콜레스테롤</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {healthData.vitals.totalCholesterol === 0 ? '미입력' : `${healthData.vitals.totalCholesterol} mg/dL`}
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      healthData.vitals.totalCholesterol === 0 ? 'bg-gray-100 text-gray-700' :
+                      healthData.vitals.totalCholesterol >= 240 ? 'bg-red-100 text-red-700' :
+                      healthData.vitals.totalCholesterol >= 200 ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {healthData.vitals.totalCholesterol === 0 ? '미입력' :
+                       healthData.vitals.totalCholesterol >= 240 ? '고지혈증' :
+                       healthData.vitals.totalCholesterol >= 200 ? '경계선' : '정상'}
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* 질환 개수 */}
                 <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
