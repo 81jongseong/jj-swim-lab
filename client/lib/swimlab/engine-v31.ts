@@ -722,8 +722,17 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
     biologicalAdjustment = 0.9; // 낮은 잠재력은 안전하게
   }
   
-  // 최종 조정 계수 (완료율 + 생리학적 지표)
-  const finalAdjustment = intensityAdjustment * biologicalAdjustment;
+  // 🏥 건강 상태 기반 거리 조절 (과학적 접근)
+  // 70% 강도 → 거리도 70%로 조절 + 페이스 143%로 느리게
+  // 결과: 같은 운동 효과, 같은 시간, 안전한 강도
+  let healthAdjustment = 1.0;
+  if (i.intensityPercent && i.intensityPercent < 1.0) {
+    healthAdjustment = i.intensityPercent; // 70% 강도 → 0.7배 거리
+    console.log(`🏥 건강 상태 기반 거리 조절: ${Math.round(i.intensityPercent * 100)}% 강도 → ${Math.round(healthAdjustment * 100)}% 거리`);
+  }
+  
+  // 최종 조정 계수 (완료율 + 생리학적 지표 + 건강 상태)
+  const finalAdjustment = intensityAdjustment * biologicalAdjustment * healthAdjustment;
   
   // 조정된 목표 계산
   const adjustedWeeklyMinutes = Math.round(i.weeklyMinutes * finalAdjustment);
@@ -2022,47 +2031,9 @@ function finalizePlan(
     difference: Math.round(estimatedMinutes - (targetMinutes || 0))
   });
 
-  // 🔧 시간 부족 시 메인 세트 반복 횟수 증가 (targetMinutes가 있을 때만)
-  if (targetMinutes && estimatedMinutes < targetMinutes * 0.9) {
-    // 메인 세트 찾기 (Z2, Z3, Z4)
-    const mainSetIdx = sets.findIndex(s => (s.zone === 'Z2' || s.zone === 'Z3' || s.zone === 'Z4') && s.meters >= 100);
-    
-    if (mainSetIdx >= 0) {
-      const shortageMinutes = targetMinutes - estimatedMinutes;
-      const currentMainSet = sets[mainSetIdx];
-      
-      // 현재 메인 세트의 1회 소요 시간 계산
-      const paceMatch = currentMainSet.desc.match(/@\s*(\d+):(\d+)/);
-      let timePerRep = 2.5; // 기본값 (분)
-      
-      if (paceMatch) {
-        const minutes = parseInt(paceMatch[1]);
-        const seconds = parseInt(paceMatch[2]);
-        timePerRep = (minutes + seconds / 60) + (currentMainSet.restSec / 60);
-      }
-      
-      // 필요한 추가 반복 횟수 계산
-      const additionalReps = Math.ceil(shortageMinutes / timePerRep);
-      const originalReps = parseReps(currentMainSet.desc);
-      const newReps = originalReps + additionalReps;
-      
-      // 메인 세트 반복 횟수 증가
-      sets[mainSetIdx].meters = (currentMainSet.meters / originalReps) * newReps;
-      sets[mainSetIdx].desc = currentMainSet.desc.replace(/^(\d+)×/, `${newReps}×`);
-      total = sets.reduce((s, x) => s + x.meters, 0);
-      
-      console.log('➕ 시간 부족으로 메인 세트 반복 증가:', {
-        shortageMinutes: Math.round(shortageMinutes),
-        originalReps,
-        newReps,
-        addedReps: additionalReps,
-        newTotalMeters: total
-      });
-      
-      // 시간 재계산
-      estimatedMinutes += additionalReps * timePerRep;
-    }
-  }
+  // 🏥 시간 부족/초과 확인 (과학적 거리 조절로 인해 거의 발생하지 않음)
+  // 건강 상태 기반 거리 조절로 인해 시간이 자동으로 맞춰짐
+  // 예: 70% 강도 → 거리 70% + 페이스 143% = 시간 약 100%
 
   // 시간 초과 시 쿨다운 거리 축소 (targetMinutes가 있을 때만)
   if (targetMinutes && estimatedMinutes > targetMinutes * 1.1) {

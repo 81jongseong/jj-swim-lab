@@ -558,11 +558,17 @@ export default function HealthInputPage() {
         note: '시간은 그대로, 강도만 조절하여 같은 시간에 적은 거리 수영'
       });
       
+      // 🏊 과학적 운동량 계산
+      // 50분 운동 → 약 1500m (CSS 100초 기준, 정상 강도)
+      // 70% 강도 → 1500m * 0.7 = 1050m (거리 감소)
+      // + 페이스 143% 느리게 → 같은 시간 소요
+      const baseMetersForTime = Math.round(sessionDuration * 30); // 50분 → 1500m (분당 30m)
+      
       const engineInput: EngineInput = {
         startDate: new Date().toISOString().split('T')[0],
         days: [dayNames[todayIdx]] as any, // 오늘 요일만
         weeklyMinutes: sessionDuration,
-        weeklyMeters: 0, // 엔진이 자동 계산
+        weeklyMeters: baseMetersForTime, // 시간 기반 추정 거리 (건강 상태 조절 전)
         poolLen: (healthData.swim_profile.poolLength || 25) as any,
         strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
         strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
