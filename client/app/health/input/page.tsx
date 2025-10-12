@@ -432,7 +432,10 @@ export default function HealthInputPage() {
     
     // 복합 질환 요약 추가
     const conditions = [];
-    if (bmi >= 25) conditions.push(`비만 ${bmi >= 30 ? '(고도)' : '(경도)'}`);
+    if (bmi >= 30) conditions.push('고도비만');
+    else if (bmi >= 25) conditions.push('경도비만');
+    else if (bmi >= 23) conditions.push('과체중');
+    
     if (hasHighBP) conditions.push(`고혈압 ${hasSevereHypertension ? '2기' : '1기'}`);
     if (hasDiabetes) conditions.push('당뇨');
     if (hasDyslipidemia) conditions.push('고지혈증');
@@ -936,7 +939,7 @@ export default function HealthInputPage() {
                 </div>
 
                 {/* 혈당 */}
-                {healthData.vitals.bloodSugar && healthData.vitals.bloodSugar > 0 && (
+                {healthData.vitals.bloodSugar && healthData.vitals.bloodSugar > 0 && healthData.vitals.bloodSugar !== 0 && (
                   <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div>
