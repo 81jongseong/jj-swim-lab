@@ -521,9 +521,10 @@ export default function HealthInputPage() {
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const todayIdx = new Date().getDay();
       
-      // 건강 상태에 따른 운동 시간 조절 (baseIntensity 반영)
+      // 건강 상태 분석 및 운동 시간 조절
+      const healthAnalysis = analyzeHealth();
       const baseSessionDuration = healthData.swim_profile.sessionDuration || 60;
-      const adjustedSessionDuration = Math.round(baseSessionDuration * (baseIntensity / 100));
+      const adjustedSessionDuration = Math.round(baseSessionDuration * (healthAnalysis.baseIntensity / 100));
       
       const engineInput: EngineInput = {
         startDate: new Date().toISOString().split('T')[0],
@@ -928,7 +929,10 @@ export default function HealthInputPage() {
                     <div>
                       <p className="text-sm text-gray-600">혈압</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {healthData.vitals.rest_bp.sbp}/{healthData.vitals.rest_bp.dbp}
+                        {healthData.vitals.rest_bp.sbp === 0 && healthData.vitals.rest_bp.dbp === 0 
+                          ? '미입력' 
+                          : `${healthData.vitals.rest_bp.sbp}/${healthData.vitals.rest_bp.dbp}`
+                        }
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
@@ -936,7 +940,8 @@ export default function HealthInputPage() {
                       healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80 ? 'bg-orange-100 text-orange-700' :
                       'bg-green-100 text-green-700'
                     }`}>
-                      {healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90 ? '고혈압 2기' :
+                      {healthData.vitals.rest_bp.sbp === 0 && healthData.vitals.rest_bp.dbp === 0 ? '미입력' :
+                       healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90 ? '고혈압 2기' :
                        healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80 ? '고혈압 1기' : '정상'}
                     </div>
                   </div>
