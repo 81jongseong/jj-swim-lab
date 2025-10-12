@@ -1983,12 +1983,13 @@ function finalizePlan(
     }
   }
 
-  // 🎯 시간 기반 조절 로직 제거 - 항상 계획된 거리대로 수행
-  // (사용자 요청: 운동 강도를 낮춰서 시간이 늘어지면 쿨다운 거리를 줄이는 로직 제거)
+  // 🎯 시간 기반 조절 로직: 시간 초과 시 쿨다운 거리 축소
+  // 엔진이 conditionIds/dayCondition 기반으로 페이스를 느리게 조절 → 시간 초과 가능
+  // 예: 100m 109초 → 70% 강도 → 139초 페이스로 느려져서 같은 거리에 시간이 더 걸림
+  // 해결: 목표 시간 초과 시 쿨다운 거리를 줄여서 전체 시간을 맞춤
 
-  // 사용자가 설정한 목표 시간 사용 (실제 계산된 시간 대신)
-  // 실제 운동 시간 계산 (각 세트의 페이스 기반) - 참고용
-  let actualDuration = 0;
+  // 예상 소요 시간 계산 (각 세트의 페이스 기반)
+  let estimatedMinutes = 0;
   sets.forEach(s => {
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
     if (paceMatch) {
@@ -1996,21 +1997,58 @@ function finalizePlan(
       const seconds = parseInt(paceMatch[2]);
       const pace100m = minutes * 60 + seconds; // 초/100m
       const estimatedTime = (s.meters / 100) * pace100m / 60; // 분
-      actualDuration += estimatedTime + (s.restSec / 60); // 휴식 포함
+      estimatedMinutes += estimatedTime + (s.restSec / 60); // 휴식 포함
     } else {
       // 페이스 정보 없으면 기본 90초/100m 가정
-      actualDuration += (s.meters / 100) * 1.5 + (s.restSec / 60);
+      estimatedMinutes += (s.meters / 100) * 1.5 + (s.restSec / 60);
     }
   });
 
-  // 사용자가 설정한 목표 시간을 우선 사용 (targetMinutes가 있으면)
-  const finalDuration = targetMinutes || Math.round(actualDuration);
-
-  console.log('⏰ finalizePlan 시간 처리:', {
+  console.log('⏱️ 시간 기반 조절:', {
     targetMinutes,
-    actualDuration: Math.round(actualDuration),
+    estimatedMinutes: Math.round(estimatedMinutes),
+    difference: Math.round(estimatedMinutes - (targetMinutes || 0))
+  });
+
+  // 시간 초과 시 쿨다운 거리 축소 (targetMinutes가 있을 때만)
+  if (targetMinutes && estimatedMinutes > targetMinutes * 1.1) {
+    const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운') || s.zone === 'Z1');
+    if (cooldownIdx >= 0 && sets[cooldownIdx].meters > poolLen * 2) {
+      const excessMinutes = estimatedMinutes - targetMinutes;
+      const metersToReduce = Math.min(
+        Math.round(excessMinutes / 1.5 * 100 / poolLen) * poolLen, // 90초/100m 기준
+        sets[cooldownIdx].meters - poolLen // 최소 1개 풀은 남김
+      );
+      
+      sets[cooldownIdx].meters -= metersToReduce;
+      total -= metersToReduce;
+      
+      // 세트 설명도 업데이트
+      sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, (match) => {
+        const n = parseInt(match);
+        const newReps = Math.max(1, Math.round(sets[cooldownIdx].meters / poolLen / (sets[cooldownIdx].meters / (n * poolLen))));
+        return `${newReps}×`;
+      });
+      
+      console.log('⚠️ 시간 초과로 쿨다운 거리 축소:', {
+        excessMinutes: Math.round(excessMinutes),
+        metersToReduce,
+        newCooldownMeters: sets[cooldownIdx].meters
+      });
+      
+      // 시간 재계산
+      estimatedMinutes -= (metersToReduce / 100) * 1.5;
+    }
+  }
+
+  // 최종 시간: targetMinutes가 있으면 그것 사용, 없으면 계산된 시간 사용
+  const finalDuration = targetMinutes || Math.round(estimatedMinutes);
+
+  console.log('⏰ finalizePlan 최종 결과:', {
+    totalMeters: total,
+    estimatedMinutes: Math.round(estimatedMinutes),
     finalDuration,
-    hasTargetMinutes: !!targetMinutes
+    setsCount: sets.length
   });
 
   return { sets, total, totalDuration: finalDuration, notes: [mod.explanation] };

@@ -521,21 +521,30 @@ export default function HealthInputPage() {
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const todayIdx = new Date().getDay();
       
-      // 건강 상태 분석 및 운동 시간 조절
+      // 건강 상태 분석 - 시간은 그대로, 강도만 조절
       const healthAnalysis = analyzeHealth();
-      const baseSessionDuration = healthData.swim_profile.sessionDuration || 50; // 기본값을 50분으로 변경
-      const adjustedSessionDuration = Math.round(baseSessionDuration * (healthAnalysis.baseIntensity / 100));
+      const sessionDuration = healthData.swim_profile.sessionDuration || 50; // 운동 시간은 그대로 유지
       
-      console.log('⏰ 운동 시간 설정:', {
-        baseSessionDuration,
+      // 건강 상태에 따른 dayCondition 매핑 (강도 기반)
+      let dayCondition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired' = 'good';
+      if (healthAnalysis.baseIntensity >= 90) dayCondition = 'very_good';
+      else if (healthAnalysis.baseIntensity >= 80) dayCondition = 'good';
+      else if (healthAnalysis.baseIntensity >= 70) dayCondition = 'normal';
+      else if (healthAnalysis.baseIntensity >= 60) dayCondition = 'tired';
+      else dayCondition = 'very_tired';
+
+      console.log('⏰ 운동 설정:', {
+        sessionDuration,
         baseIntensity: healthAnalysis.baseIntensity,
-        adjustedSessionDuration
+        dayCondition,
+        conditionIds: healthData.orthopedics as any,
+        note: '시간은 그대로, 강도만 조절하여 같은 시간에 적은 거리 수영'
       });
       
       const engineInput: EngineInput = {
         startDate: new Date().toISOString().split('T')[0],
         days: [dayNames[todayIdx]] as any, // 오늘 요일만
-        weeklyMinutes: adjustedSessionDuration,
+        weeklyMinutes: sessionDuration,
         weeklyMeters: 0, // 엔진이 자동 계산
         poolLen: (healthData.swim_profile.poolLength || 25) as any,
         strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
