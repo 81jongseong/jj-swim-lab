@@ -54,6 +54,7 @@ import QuickActionButtons from '../../../components/swimlab/QuickActionButtons';
 import { convertHealthToConditions } from '../../../lib/swimlab/utils/healthToCondition';
 import { getProgramStats } from '../../../lib/swimlab/utils/programStorage';
 import { saveCustomCondition, deleteCustomCondition, getMergedConditions, createSimpleCondition } from '../../../lib/swimlab/utils/customConditions';
+import AllConditionsDrawer from '../../../components/swimlab/AllConditionsDrawer';
 import { 
   Zap, 
   Activity, 
@@ -2550,111 +2551,11 @@ export default function SwimTrainingEnginePage() {
 
       {/* 질환/특수상황 모두보기 모달 */}
       {showAllConditionsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-xl font-bold text-gray-800">
-                📋 질환/특수상황 전체 목록
-              </h3>
-              <button
-                onClick={() => setShowAllConditionsModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* 카테고리 필터 */}
-            <div className="p-4 border-b bg-gray-50">
-              <div className="flex flex-wrap gap-2">
-                {['all', 'shoulder', 'elbow', 'wrist', 'hip', 'knee', 'ankle', 'spine', 'special'].map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                    }`}
-                  >
-                    {category === 'all' ? '전체' :
-                     category === 'shoulder' ? '어깨' :
-                     category === 'elbow' ? '팔꿈치' :
-                     category === 'wrist' ? '손목' :
-                     category === 'hip' ? '고관절' :
-                     category === 'knee' ? '무릎' :
-                     category === 'ankle' ? '발목' :
-                     category === 'spine' ? '척추' : '특수상황'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 질환 목록 */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-2">
-                {allConditions
-                  .filter(c => selectedCategory === 'all' || c.category === selectedCategory)
-                  .map(condition => {
-                    const isSelected = conditionIds.includes(condition.id);
-                    return (
-                      <div
-                        key={condition.id}
-                        onClick={() => {
-                          if (isSelected) {
-                            setConditionIds(prev => prev.filter(id => id !== condition.id));
-                          } else {
-                            setConditionIds(prev => [...prev, condition.id]);
-                          }
-                        }}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <span className={`text-2xl ${isSelected ? 'scale-110' : ''}`}>
-                                {isSelected ? '✅' : '⬜'}
-                              </span>
-                              <div>
-                                <h4 className="font-semibold text-gray-800">{condition.label}</h4>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {condition.category === 'shoulder' ? '어깨' :
-                                   condition.category === 'elbow' ? '팔꿈치' :
-                                   condition.category === 'wrist' ? '손목' :
-                                   condition.category === 'hip' ? '고관절' :
-                                   condition.category === 'knee' ? '무릎' :
-                                   condition.category === 'ankle' ? '발목' :
-                                   condition.category === 'spine' ? '척추' : '특수상황'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* 푸터 */}
-            <div className="p-6 border-t bg-gray-50 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                현재 선택: <span className="font-bold text-blue-600">{conditionIds.length}개</span>
-              </div>
-              <button
-                onClick={() => setShowAllConditionsModal(false)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                선택 완료
-              </button>
-            </div>
-          </div>
-        </div>
+        <AllConditionsDrawer
+          value={conditionIds}
+          onChange={(ids) => setConditionIds(ids)}
+          onClose={() => setShowAllConditionsModal(false)}
+        />
       )}
 
       {/* 다중 회원 변수 설정 모달 */}

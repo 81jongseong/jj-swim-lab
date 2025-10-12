@@ -52,9 +52,25 @@ client/components/swimlab/
     └── types.ts
 ```
 
-#### 🔜 **추가 최적화 대상**
-- **swim-training-engine/page.tsx** (3032줄, 162.9KB) - 탭별 컴포넌트 분리 필요
-- **ProgramListView.tsx** (2151줄, 113.1KB) - 프로그램 카드/모달 분리 필요
+#### ✅ **추가 최적화 완료**
+
+**2. ProgramListView.tsx**
+- **Before**: 2151줄, 113.1KB
+- **After**: 2066줄, 108.5KB
+- **감소율**: 4% ✅
+- **분리**: ProgramCard 컴포넌트 (개별 프로그램 카드 렌더링)
+
+**3. swim-training-engine/page.tsx**
+- **Before**: 3032줄, 162.9KB
+- **After**: 2937줄, 158KB
+- **감소율**: 3.1% ✅
+- **개선**: AllConditionsDrawer 재사용 (중복 모달 제거)
+
+#### 📊 **총 최적화 결과**
+- **BulkMemberVariablesModal**: 303줄 감소 (24.8%)
+- **ProgramListView**: 85줄 감소 (4%)
+- **swim-training-engine/page**: 95줄 감소 (3.1%)
+- **총 감소**: 483줄 (원본 6403줄 → 5920줄, **7.5% 감소**)
 
 ---
 
