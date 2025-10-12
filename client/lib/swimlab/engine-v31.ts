@@ -1948,37 +1948,39 @@ function finalizePlan(
     setsDetail: sets.map(s => ({ desc: s.desc, meters: s.meters, stroke: s.stroke }))
   });
 
-  // 거리 보정 (±8% 허용) - 보정 없애기
-  const minT = Math.round(targetM * 0.92 / poolLen) * poolLen;
-  const maxT = Math.round(targetM * 1.08 / poolLen) * poolLen;
+  // 거리 보정 (±8% 허용) - targetM이 0이면 보정하지 않음
+  if (targetM > 0) {
+    const minT = Math.round(targetM * 0.92 / poolLen) * poolLen;
+    const maxT = Math.round(targetM * 1.08 / poolLen) * poolLen;
 
-  // 부족하면 기존 세트를 늘림 (filler 추가 안함)
-  if (total < minT) {
-    // 가장 큰 메인 세트를 찾아서 1회 추가
-    const mainSetIdx = sets.findIndex(s => s.zone === 'Z3' || s.zone === 'Z2');
-    if (mainSetIdx >= 0) {
-      const originalReps = parseReps(sets[mainSetIdx].desc);
-      const repDist = sets[mainSetIdx].meters / originalReps;
-      const addReps = Math.ceil((minT - total) / repDist);
-      
-      sets[mainSetIdx].meters += addReps * repDist;
-      sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/^(\d+)×/, `${originalReps + addReps}×`);
-      total = sets.reduce((s, x) => s + x.meters, 0);
+    // 부족하면 기존 세트를 늘림 (filler 추가 안함)
+    if (total < minT) {
+      // 가장 큰 메인 세트를 찾아서 1회 추가
+      const mainSetIdx = sets.findIndex(s => s.zone === 'Z3' || s.zone === 'Z2');
+      if (mainSetIdx >= 0) {
+        const originalReps = parseReps(sets[mainSetIdx].desc);
+        const repDist = sets[mainSetIdx].meters / originalReps;
+        const addReps = Math.ceil((minT - total) / repDist);
+        
+        sets[mainSetIdx].meters += addReps * repDist;
+        sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/^(\d+)×/, `${originalReps + addReps}×`);
+        total = sets.reduce((s, x) => s + x.meters, 0);
+      }
     }
-  }
 
-  // 초과하면 세트 축소 (최대 5회까지만)
-  let shrinkCount = 0;
-  while (total > maxT && shrinkCount < 5) {
-    const idx = sets.findIndex(s => s.meters >= 2 * poolLen);
-    if (idx < 0) break;
-    sets[idx].meters -= poolLen;
-    sets[idx].desc = sets[idx].desc.replace(/^(\d+)×/, (match) => {
-      const n = parseInt(match);
-      return `${Math.max(1, n - 1)}×`;
-    });
-    total -= poolLen;
-    shrinkCount++;
+    // 초과하면 세트 축소 (최대 5회까지만)
+    let shrinkCount = 0;
+    while (total > maxT && shrinkCount < 5) {
+      const idx = sets.findIndex(s => s.meters >= 2 * poolLen);
+      if (idx < 0) break;
+      sets[idx].meters -= poolLen;
+      sets[idx].desc = sets[idx].desc.replace(/^(\d+)×/, (match) => {
+        const n = parseInt(match);
+        return `${Math.max(1, n - 1)}×`;
+      });
+      total -= poolLen;
+      shrinkCount++;
+    }
   }
 
   // 🎯 시간 기반 조절 로직 제거 - 항상 계획된 거리대로 수행
