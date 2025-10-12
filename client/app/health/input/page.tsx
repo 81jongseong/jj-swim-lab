@@ -131,8 +131,18 @@ export default function HealthInputPage() {
 
   // 단계 정의 (2단계만)
   const steps = [
-    { id: 1, title: '기본+건강', description: '신체정보, 건강검진, 질환/상황' },
-    { id: 2, title: '수영+목표', description: '급수, CSS, 영법, 목표' }
+    { 
+      id: 1, 
+      title: '기본+건강 정보', 
+      icon: '🏥',
+      description: '나이, 성별, 신체정보, 건강검진, 질환/상황' 
+    },
+    { 
+      id: 2, 
+      title: '수영+운동 목표', 
+      icon: '🏊',
+      description: '수영 급수, CSS, 영법, 주간 일정, 운동 목표' 
+    }
   ];
 
   // 입력 핸들러
@@ -491,23 +501,27 @@ export default function HealthInputPage() {
             </div>
 
             {/* 운동 목표 */}
-            <div>
+            <div className="border rounded-lg p-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Target className="h-5 w-5 mr-2" />
                 운동 목표
               </h3>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={healthData.goals?.primary || ''}
-                onChange={(e) => handleInputChange('goals.primary', e.target.value)}
-              >
-                <option value="">목표를 선택하세요</option>
-                <option value="weight_loss">체중 감량</option>
-                <option value="fitness">체력 증진</option>
-                <option value="rehabilitation">재활</option>
-                <option value="performance">경기력 향상</option>
-                <option value="maintenance">체력 유지</option>
-              </select>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['체력 향상', '체중 감량', '기술 연마', '실력 향상', '재활', '스트레스 해소', '장거리 수영', '오픈워터', '생존수영', '인명구조원'].map((goal) => (
+                  <button
+                    key={goal}
+                    type="button"
+                    onClick={() => handleInputChange('goals.primary', goal)}
+                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                      healthData.goals?.primary === goal
+                        ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    {goal}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 선호/회피 영법 - 재사용 컴포넌트 */}
@@ -584,41 +598,52 @@ export default function HealthInputPage() {
         <p className="text-gray-600">나의 건강 상태를 입력하여 맞춤형 수영 프로그램을 받아보세요.</p>
       </div>
 
-      {/* 진행 단계 */}
+      {/* 진행 단계 - 업그레이드된 UI */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-center mb-6">
           {steps.map((step, index) => (
-            <div 
-              key={step.id} 
-              className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setCurrentStep(step.id)}
-            >
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                currentStep >= step.id 
-                  ? 'bg-blue-600 border-blue-600 text-white' 
-                  : 'border-gray-300 text-gray-500'
-              }`}>
-                {currentStep > step.id ? (
-                  isStepValid(step.id) ? (
-                    <CheckCircle className="h-4 w-4" />
+            <div key={step.id} className="flex items-center">
+              <div 
+                className="flex flex-col items-center cursor-pointer hover:scale-105 transition-all"
+                onClick={() => setCurrentStep(step.id)}
+              >
+                {/* 아이콘 + 번호 */}
+                <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl border-3 transition-all shadow-md ${
+                  currentStep >= step.id 
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200' 
+                    : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300'
+                }`}>
+                  {currentStep > step.id && isStepValid(step.id) ? (
+                    <CheckCircle className="h-8 w-8" />
                   ) : (
-                    <span>{step.id}</span>
-                  )
-                ) : (
-                  <span>{step.id}</span>
-                )}
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl">{step.icon}</span>
+                      <span className="text-xs font-semibold">{step.id}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 제목 */}
+                <div className={`mt-3 text-center max-w-[120px] transition-all ${
+                  currentStep === step.id ? 'scale-110' : ''
+                }`}>
+                  <p className={`text-sm font-bold ${
+                    currentStep >= step.id ? 'text-blue-600' : 'text-gray-600'
+                  }`}>
+                    {step.title}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
               </div>
+              
+              {/* 연결선 */}
               {index < steps.length - 1 && (
-                <div className={`w-24 h-0.5 ${currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'}`} />
+                <div className={`w-24 h-1 rounded-full mx-4 mb-8 transition-all ${
+                  currentStep > step.id ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gray-300'
+                }`} />
               )}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between">
-          {steps.map((step) => (
-            <div key={step.id} className="text-center">
-              <p className="text-sm font-medium text-gray-900">{step.title}</p>
-              <p className="text-xs text-gray-500">{step.description}</p>
             </div>
           ))}
         </div>
