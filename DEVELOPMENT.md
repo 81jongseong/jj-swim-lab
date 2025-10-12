@@ -2,6 +2,62 @@
 
 ## 📅 최근 업데이트 (2025-10-12)
 
+### ♻️ **코드 최적화: BulkMemberVariablesModal 컴포넌트 분리 (2025-10-12)**
+
+#### 📊 **최적화 결과**
+- **Before**: 1220줄, 58.5KB
+- **After**: 917줄, 44.4KB  
+- **감소율**: 24.8% ✅
+
+#### 🔧 **분리된 컴포넌트**
+1. **CSSInputSection.tsx** (109줄)
+   - CSS 입력 UI
+   - 4가지 영법별 CSS 설정
+   - 마지막 측정 정보 표시
+
+2. **PhysiologicalMetricsSection.tsx** (139줄)
+   - VO2max, 최고심박수, 안정심박수 입력
+   - 기본값 설정 기능
+   - 도움말 표시
+
+3. **StrokesSelectionSection.tsx** (129줄)
+   - 주 영법 선택
+   - 제외 영법 선택
+   - 상호 배타적 관계 처리
+
+4. **TrainingScheduleSection.tsx** (159줄)
+   - 운동 요일 선택
+   - 세션 시간 설정
+   - 풀 길이 선택
+
+5. **types.ts** (55줄)
+   - 공통 타입 정의
+   - MemberVariable, Stroke 인터페이스
+
+#### 💡 **효과**
+- 코드 가독성 향상
+- 유지보수성 개선
+- 재사용 가능한 컴포넌트 생성
+- 책임 분리 (Single Responsibility Principle)
+
+#### 📁 **파일 구조**
+```
+client/components/swimlab/
+├── BulkMemberVariablesModal.tsx (메인 컴포넌트, 917줄)
+└── member-variables/
+    ├── CSSInputSection.tsx
+    ├── PhysiologicalMetricsSection.tsx
+    ├── StrokesSelectionSection.tsx
+    ├── TrainingScheduleSection.tsx
+    └── types.ts
+```
+
+#### 🔜 **추가 최적화 대상**
+- **swim-training-engine/page.tsx** (3032줄, 162.9KB) - 탭별 컴포넌트 분리 필요
+- **ProgramListView.tsx** (2151줄, 113.1KB) - 프로그램 카드/모달 분리 필요
+
+---
+
 ### 🔍 **회원 프로필 자동 로드 디버깅 (2025-10-12)**
 
 #### 🐛 **증상**
