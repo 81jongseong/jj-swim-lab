@@ -51,6 +51,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [methodDrillSearch, setMethodDrillSearch] = useState('');
+  const [methodDrillFilter, setMethodDrillFilter] = useState<'all' | 'method' | 'drill'>('all');
   const [completionSessionIdx, setCompletionSessionIdx] = useState<number | null>(null);
   const [showDayConditionModal, setShowDayConditionModal] = useState(false);
   const [dayConditionSessionIdx, setDayConditionSessionIdx] = useState<number | null>(null);
@@ -1544,6 +1546,46 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       🏋️ 훈련법/드릴 교체 (선택사항)
                     </label>
+                    
+                    {/* 검색 및 필터 */}
+                    <div className="flex gap-2 mb-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          placeholder="🔍 훈련법/드릴 검색..."
+                          value={methodDrillSearch}
+                          onChange={(e) => setMethodDrillSearch(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setMethodDrillFilter('all')}
+                          className={`px-3 py-2 text-xs rounded-lg font-medium ${
+                            methodDrillFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          전체
+                        </button>
+                        <button
+                          onClick={() => setMethodDrillFilter('method')}
+                          className={`px-3 py-2 text-xs rounded-lg font-medium ${
+                            methodDrillFilter === 'method' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          훈련법
+                        </button>
+                        <button
+                          onClick={() => setMethodDrillFilter('drill')}
+                          className={`px-3 py-2 text-xs rounded-lg font-medium ${
+                            methodDrillFilter === 'drill' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          드릴
+                        </button>
+                      </div>
+                    </div>
+                    
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-2"
                       onChange={(e) => {
@@ -1598,9 +1640,23 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       <option value="">-- 훈련법/드릴 선택 (DB에서 로드: {trainingMethods.length + drills.length}개) --</option>
                       
                       {/* 훈련법 목록 (카테고리별 그룹화) */}
-                      {trainingMethods.length > 0 && (() => {
+                      {trainingMethods.length > 0 && methodDrillFilter !== 'drill' && (() => {
+                        // 검색 필터링
+                        const filteredMethods = trainingMethods.filter(method => {
+                          if (!methodDrillSearch) return true;
+                          const searchLower = methodDrillSearch.toLowerCase();
+                          return (
+                            (method.name || '').toLowerCase().includes(searchLower) ||
+                            (method.title || '').toLowerCase().includes(searchLower) ||
+                            (method.description || '').toLowerCase().includes(searchLower) ||
+                            (method.howToDo || '').toLowerCase().includes(searchLower)
+                          );
+                        });
+                        
+                        if (filteredMethods.length === 0) return null;
+                        
                         // 카테고리별로 그룹화
-                        const grouped = trainingMethods.reduce((acc: any, method) => {
+                        const grouped = filteredMethods.reduce((acc: any, method) => {
                           const cat = method.category || '기타';
                           if (!acc[cat]) acc[cat] = [];
                           acc[cat].push(method);
@@ -1643,9 +1699,22 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       })()}
                       
                       {/* 드릴 목록 (영법별 그룹화) */}
-                      {drills.length > 0 && (() => {
+                      {drills.length > 0 && methodDrillFilter !== 'method' && (() => {
+                        // 검색 필터링
+                        const filteredDrills = drills.filter(drill => {
+                          if (!methodDrillSearch) return true;
+                          const searchLower = methodDrillSearch.toLowerCase();
+                          return (
+                            (drill.name || '').toLowerCase().includes(searchLower) ||
+                            (drill.description || '').toLowerCase().includes(searchLower) ||
+                            (drill.category || '').toLowerCase().includes(searchLower)
+                          );
+                        });
+                        
+                        if (filteredDrills.length === 0) return null;
+                        
                         // 영법/카테고리별로 그룹화
-                        const grouped = drills.reduce((acc: any, drill) => {
+                        const grouped = filteredDrills.reduce((acc: any, drill) => {
                           const cat = drill.category || (drill.targetStroke?.[0] || '기타');
                           if (!acc[cat]) acc[cat] = [];
                           acc[cat].push(drill);
