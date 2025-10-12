@@ -16,6 +16,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import RegionNavigation from '@/components/RegionNavigation';
 import ComparisonChart from '@/components/ComparisonChart';
+import TrendLineChart from '@/components/TrendLineChart';
+import type { TrendLineData, TrendMetric } from '@/components/TrendLineChart';
 
 export default function RevenueManagementPage() {
   const { user, hasUserType } = useAuth();
@@ -27,6 +29,8 @@ export default function RevenueManagementPage() {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<'revenue' | 'cost'>('revenue');
+  const [selectedMetric, setSelectedMetric] = useState<string>('registration');
 
   // centerData: 전국 시/도별 센터 데이터
   const centerDataByRegion: { [region: string]: { [district: string]: string[] } } = {
@@ -160,6 +164,62 @@ export default function RevenueManagementPage() {
   useEffect(() => {
     refreshData();
   }, []);
+
+  // 선택된 센터들의 추세 데이터 생성
+  const generateTrendData = (): TrendLineData[] => {
+    if (selectedCenters.length === 0) return [];
+
+    const periods = selectedPeriod === 'week' ? ['1주', '2주', '3주', '4주'] :
+                    selectedPeriod === 'month' ? ['1월', '2월', '3월', '4월', '5월', '6월'] :
+                    selectedPeriod === 'quarter' ? ['1분기', '2분기', '3분기', '4분기'] :
+                    selectedPeriod === 'half' ? ['상반기', '하반기'] :
+                    ['2024년'];
+
+    return selectedCenters
+      .map(centerName => {
+        const center = centersData[centerName];
+        if (!center) return null;
+
+        const baseValue = selectedCategory === 'revenue'
+          ? (selectedMetric === 'registration' ? center.revenue.registration :
+             selectedMetric === 'lessons' ? center.revenue.lessons :
+             selectedMetric === 'shop' ? center.revenue.shop :
+             center.revenue.total)
+          : (selectedMetric === 'labor' ? center.costs.labor :
+             selectedMetric === 'utilities' ? center.costs.utilities :
+             selectedMetric === 'rent' ? center.costs.rent :
+             selectedMetric === 'other' ? center.costs.other :
+             center.costs.total);
+
+        // 추세 데이터 생성 (성장 추세 시뮬레이션)
+        const growthRate = center.profitMargin / 100; // 성장률 적용
+        const data = periods.map((period, idx) => {
+          const variation = 1 + (growthRate * idx / periods.length);
+          const randomFactor = 0.9 + Math.random() * 0.2; // 90%~110% 변동
+          return {
+            date: period,
+            value: Math.round(baseValue * variation * randomFactor)
+          };
+        });
+
+        // 센터별 색상 지정
+        const colors: { [key: string]: string } = {
+          '강남센터': '#3b82f6',
+          '서초센터': '#10b981',
+          '분당센터': '#8b5cf6',
+          '송파센터': '#f59e0b',
+          '부산센터': '#ef4444',
+          '홍대센터': '#ec4899'
+        };
+
+        return {
+          name: centerName,
+          color: colors[centerName] || '#6b7280',
+          data
+        };
+      })
+      .filter(Boolean) as TrendLineData[];
+  };
 
   if (!user || !hasUserType('superAdmin')) {
     return (
@@ -427,7 +487,96 @@ export default function RevenueManagementPage() {
                 }
               ]}
             />
-        </div>
+
+            {/* 추세 그래프 섹션 */}
+            <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <span className="text-2xl">📈</span>
+                <span>기간별 추세 분석</span>
+              </h3>
+
+              {/* 카테고리 및 지표 선택 */}
+              <div className="flex gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('revenue');
+                        setSelectedMetric('registration');
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedCategory === 'revenue'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      💰 수익 항목
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('cost');
+                        setSelectedMetric('labor');
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedCategory === 'cost'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      💸 비용 항목
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {selectedCategory === 'revenue' ? '수익 지표' : '비용 지표'}
+                  </label>
+                  <select
+                    value={selectedMetric}
+                    onChange={(e) => setSelectedMetric(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {selectedCategory === 'revenue' ? (
+                      <>
+                        <option value="registration">📝 등록비</option>
+                        <option value="lessons">🏊 강습비</option>
+                        <option value="shop">🛒 매점판매</option>
+                        <option value="total">💰 총 수익</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="labor">👥 인건비</option>
+                        <option value="utilities">⚡ 공과금</option>
+                        <option value="rent">🏠 임대료</option>
+                        <option value="other">📦 기타비용</option>
+                        <option value="total">💸 총 비용</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* 추세 그래프 */}
+              <TrendLineChart
+                data={generateTrendData()}
+                metric={{
+                  label: selectedCategory === 'revenue' 
+                    ? (selectedMetric === 'registration' ? '등록비' :
+                       selectedMetric === 'lessons' ? '강습비' :
+                       selectedMetric === 'shop' ? '매점판매' : '총 수익')
+                    : (selectedMetric === 'labor' ? '인건비' :
+                       selectedMetric === 'utilities' ? '공과금' :
+                       selectedMetric === 'rent' ? '임대료' :
+                       selectedMetric === 'other' ? '기타비용' : '총 비용'),
+                  unit: '원',
+                  decimals: 0
+                }}
+                height="400px"
+              />
+            </div>
+          </div>
         )}
 
         {selectedCenters.length === 0 && comparisonMode && (
