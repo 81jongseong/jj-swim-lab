@@ -169,11 +169,16 @@ export default function RevenueManagementPage() {
   const generateTrendData = (): TrendLineData[] => {
     if (selectedCenters.length === 0) return [];
 
-    const periods = selectedPeriod === 'week' ? ['1주', '2주', '3주', '4주'] :
-                    selectedPeriod === 'month' ? ['1월', '2월', '3월', '4월', '5월', '6월'] :
-                    selectedPeriod === 'quarter' ? ['1분기', '2분기', '3분기', '4분기'] :
-                    selectedPeriod === 'half' ? ['상반기', '하반기'] :
-                    ['2024년'];
+    // 기간별 라벨 생성
+    const periods = selectedPeriod === 'week' 
+      ? ['1주차', '2주차', '3주차', '4주차']
+      : selectedPeriod === 'month' 
+      ? ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+      : selectedPeriod === 'quarter' 
+      ? ['1분기', '2분기', '3분기', '4분기']
+      : selectedPeriod === 'half' 
+      ? ['상반기', '하반기']
+      : ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
     return selectedCenters
       .map(centerName => {
@@ -191,14 +196,18 @@ export default function RevenueManagementPage() {
              selectedMetric === 'other' ? center.costs.other :
              center.costs.total);
 
+        // 값이 유효한지 확인
+        if (!baseValue || baseValue === 0) return null;
+
         // 추세 데이터 생성 (성장 추세 시뮬레이션)
-        const growthRate = center.profitMargin / 100; // 성장률 적용
+        const growthRate = (center.profitMargin || 10) / 1000; // 작은 성장률 적용
         const data = periods.map((period, idx) => {
-          const variation = 1 + (growthRate * idx / periods.length);
-          const randomFactor = 0.9 + Math.random() * 0.2; // 90%~110% 변동
+          const variation = 1 + (growthRate * idx);
+          const randomFactor = 0.95 + (Math.sin(idx) * 0.1); // 95%~105% 변동
+          const value = Math.round(baseValue * variation * randomFactor);
           return {
             date: period,
-            value: Math.round(baseValue * variation * randomFactor)
+            value: value > 0 ? value : baseValue // 음수 방지
           };
         });
 
