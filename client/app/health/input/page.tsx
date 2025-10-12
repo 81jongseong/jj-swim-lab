@@ -71,8 +71,10 @@ interface HealthInput {
     };
     mainStrokes?: string[];
     excludedStrokes?: string[];
+    trainingDays?: number[]; // 요일 선택 (0:일 ~ 6:토)
     daysPerWeek?: number;
     sessionDuration?: number;
+    poolLength?: number;
     vo2max?: number;
     maxHeartRate?: number;
     restingHeartRate?: number;
@@ -117,8 +119,10 @@ export default function HealthInputPage() {
       css: { freestyle: 0, backstroke: 0, breaststroke: 0, butterfly: 0 },
       mainStrokes: [],
       excludedStrokes: [],
+      trainingDays: [],
       daysPerWeek: 0,
-      sessionDuration: 0,
+      sessionDuration: 60,
+      poolLength: 25,
       vo2max: 0,
       maxHeartRate: 0,
       restingHeartRate: 0
@@ -249,77 +253,150 @@ export default function HealthInputPage() {
     });
   };
 
-  // 건강 분석 로직
+  // 건강 분석 로직 (상세 버전)
   const analyzeHealth = () => {
     const bmi = healthData.anthropometrics.weight_kg / Math.pow(healthData.anthropometrics.height_cm / 100, 2);
     const hasHighBP = healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80;
+    const hasSevereHypertension = healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90;
     const hasDiabetes = healthData.vitals.bloodSugar && healthData.vitals.bloodSugar >= 126;
     const hasDyslipidemia = (healthData.vitals.totalCholesterol && healthData.vitals.totalCholesterol >= 240) || 
                             (healthData.vitals.ldlCholesterol && healthData.vitals.ldlCholesterol >= 160);
     
     const recommendations = [];
+    let baseIntensity = 100; // 기본 강도 100%
     
-    // 비만 관련 권장사항
+    // 비만 관련 권장사항 (WHO/ACSM 기반)
     if (bmi >= 30) {
+      baseIntensity = Math.min(baseIntensity, 70); // 고도비만: 70% 강도
       recommendations.push({ 
         icon: '⚠️', 
         type: 'warning',
         title: '고도비만 (BMI ≥30)', 
-        content: '주당 250분 이상, 주 5-6일 권장 (체중 감량 목표)'
+        intensity: '정상 대비 70% 강도',
+        duration: '주당 250-300분 (주 5-6일)',
+        avoid: ['고강도 인터벌', '점프 동작', '무릎에 부담가는 킥'],
+        recommend: ['Zone 2 강도 유지', '긴 거리 천천히', '배영/평영 중심', '풀부이 사용'],
+        detail: 'WHO 가이드라인: 비만인 경우 일반인보다 더 긴 시간(250분+)의 유산소 운동이 필요합니다. 관절 보호를 위해 저강도로 시작하세요.'
       });
     } else if (bmi >= 25) {
+      baseIntensity = Math.min(baseIntensity, 80); // 경도비만: 80% 강도
       recommendations.push({ 
         icon: '💡', 
         type: 'info',
         title: '경도비만 (BMI 25-29.9)', 
-        content: '주당 150-250분, 유산소 중심 운동 권장'
+        intensity: '정상 대비 80% 강도',
+        duration: '주당 150-250분 (주 3-5일)',
+        avoid: ['과도한 스프린트', '무리한 인터벌'],
+        recommend: ['Zone 2-3 강도', '유산소 중심', '점진적 강도 증가'],
+        detail: '체중 감량을 위해서는 일반 권장량(150분)보다 더 많은 운동 시간이 필요합니다. 꾸준히 하는 것이 중요합니다.'
       });
     }
     
-    // 고혈압 관련
-    if (hasHighBP) {
+    // 고혈압 관련 (ACSM 기반)
+    if (hasSevereHypertension) {
+      baseIntensity = Math.min(baseIntensity, 60); // 고혈압 2기: 60% 강도
+      recommendations.push({ 
+        icon: '❤️', 
+        type: 'danger',
+        title: '고혈압 2기 (≥140/90 mmHg)', 
+        intensity: '정상 대비 60% 강도 (의사 상담 필수)',
+        duration: '주당 150분 이상 (주 5일 이상)',
+        avoid: ['고강도 인터벌', '숨참기', '발살바 동작', '무산소 운동'],
+        recommend: ['Zone 1-2만 사용', '느린 페이스', '충분한 호흡', '혈압 모니터링'],
+        detail: 'ACSM 권고: 고혈압 환자는 중강도(40-60% HRR) 이하로만 운동해야 합니다. 운동 중 혈압이 180/110 이상 상승하면 즉시 중단하세요.'
+      });
+    } else if (hasHighBP) {
+      baseIntensity = Math.min(baseIntensity, 75); // 고혈압 1기: 75% 강도
       recommendations.push({ 
         icon: '❤️', 
         type: 'warning',
-        title: '고혈압 주의', 
-        content: 'Zone 2 강도 유지, 고강도 인터벌은 피하세요. 의사 상담 권장'
+        title: '고혈압 1기 (≥130/80 mmHg)', 
+        intensity: '정상 대비 75% 강도',
+        duration: '주당 150-200분 (주 4-5일)',
+        avoid: ['고강도 스프린트', '과도한 킥 세트', '숨참기'],
+        recommend: ['Zone 2 중심', '편안한 페이스', '일정한 호흡 패턴'],
+        detail: '고혈압 초기 단계입니다. 규칙적인 유산소 운동으로 혈압을 낮출 수 있습니다. Zone 2 강도(대화 가능한 수준)를 유지하세요.'
       });
     }
     
-    // 당뇨 관련
+    // 당뇨 관련 (ADA 기반)
     if (hasDiabetes) {
+      baseIntensity = Math.min(baseIntensity, 65); // 당뇨: 65% 강도
       recommendations.push({ 
         icon: '🩺', 
         type: 'danger',
-        title: '당뇨 의심 (공복혈당 ≥126)', 
-        content: '운동 전 반드시 의사 상담 필요. 저혈당 예방 준비 필수'
+        title: '당뇨 의심 (공복혈당 ≥126 mg/dL)', 
+        intensity: '정상 대비 65% 강도 (의사 상담 필수)',
+        duration: '주당 150분 이상 (주 3일 이상, 연속 이틀 공백 금지)',
+        avoid: ['공복 운동', '과도한 유산소', '저혈당 위험 상황'],
+        recommend: ['혈당 측정 후 운동', '당분 준비', '중강도 유산소', '근력운동 병행'],
+        detail: 'ADA 권고: 당뇨 환자는 운동 전후 혈당을 체크해야 합니다. 혈당 100 미만이면 당분 섭취 후 운동하세요. 연속 2일 이상 쉬지 마세요.'
       });
     }
     
     // 고지혈증 관련
     if (hasDyslipidemia) {
+      baseIntensity = Math.min(baseIntensity, 80); // 고지혈증: 80% 강도
       recommendations.push({ 
         icon: '💊', 
         type: 'warning',
-        title: '고지혈증 의심', 
-        content: '유산소 운동 중심, 주 150분 이상 권장'
+        title: '고지혈증 의심 (TC ≥240 or LDL ≥160)', 
+        intensity: '정상 대비 80% 강도',
+        duration: '주당 150-200분 (주 4-5일)',
+        avoid: ['과도한 무산소 운동', '불규칙한 운동'],
+        recommend: ['중강도 유산소 중심', 'Zone 2-3 강도', '꾸준한 운동 습관'],
+        detail: 'ACSM 권고: 고지혈증 개선을 위해서는 규칙적인 유산소 운동이 필수입니다. LDL 콜레스테롤을 낮추고 HDL을 높이는 효과가 있습니다.'
       });
     }
     
     // 관절 질환 관련
-    const hasJointIssues = healthData.orthopedics.some(id => 
-      ['knee-pain', 'back-pain', 'shoulder-pain', 'ankle-pain'].includes(id)
-    );
-    if (hasJointIssues) {
+    const hasKneePain = healthData.orthopedics.includes('knee-pain');
+    const hasBackPain = healthData.orthopedics.includes('back-pain');
+    const hasShoulderPain = healthData.orthopedics.includes('shoulder-pain');
+    
+    if (hasKneePain) {
+      baseIntensity = Math.min(baseIntensity, 75);
       recommendations.push({ 
-        icon: '🦴', 
-        type: 'info',
-        title: '관절 보호 필요', 
-        content: '저충격 영법 권장 (배영, 평영). 접영은 피하세요'
+        icon: '🦵', 
+        type: 'warning',
+        title: '무릎 통증', 
+        intensity: '정상 대비 75% 강도',
+        duration: '통증 없는 범위 내에서',
+        avoid: ['강한 킥 세트', '접영', '턴 시 무릎 굽히기', '브레스트 킥'],
+        recommend: ['풀부이 사용', '배영 중심', '부드러운 플러터 킥', '스트레칭 필수'],
+        detail: '무릎에 부담이 가는 브레스트 킥과 접영은 피하세요. 풀부이를 사용하거나 배영 위주로 운동하세요.'
       });
     }
     
-    return { bmi, recommendations };
+    if (hasBackPain) {
+      baseIntensity = Math.min(baseIntensity, 75);
+      recommendations.push({ 
+        icon: '🦴', 
+        type: 'warning',
+        title: '허리/등 통증', 
+        intensity: '정상 대비 75% 강도',
+        duration: '통증 없는 범위 내에서',
+        avoid: ['접영', '과도한 아치 동작', '무리한 회전', '급격한 방향 전환'],
+        recommend: ['배영 중심', '코어 강화', '바른 자세 유지', '워밍업 충분히'],
+        detail: '허리에 무리가 가는 접영과 과도한 회전 동작은 피하세요. 배영으로 코어를 강화하는 것이 도움됩니다.'
+      });
+    }
+    
+    if (hasShoulderPain) {
+      baseIntensity = Math.min(baseIntensity, 75);
+      recommendations.push({ 
+        icon: '💪', 
+        type: 'warning',
+        title: '어깨 통증', 
+        intensity: '정상 대비 75% 강도',
+        duration: '통증 없는 범위 내에서',
+        avoid: ['접영', '과도한 풀 동작', '무리한 스트로크', '높은 엘보우'],
+        recommend: ['평영 중심', '짧은 스트로크', '어깨 스트레칭', '로테이터 커프 강화'],
+        detail: '어깨에 부담이 큰 접영과 자유형의 과도한 풀은 피하세요. 평영으로 부담을 줄이고 어깨 근력을 강화하세요.'
+      });
+    }
+    
+    return { bmi, recommendations, baseIntensity };
   };
 
   // 유효성 검사
@@ -392,7 +469,7 @@ export default function HealthInputPage() {
       // const response = await apiClient.post('/api/programs/daily-trial', programParams);
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!\n\n프로그램 페이지로 이동합니다.');
-      router.push('/swimlab/programs');
+      router.push('/dashboard'); // 게스트는 대시보드로
     } catch (error) {
       console.error('프로그램 생성 오류:', error);
       alert('프로그램 생성 중 오류가 발생했습니다.');
@@ -670,12 +747,16 @@ export default function HealthInputPage() {
 
             {/* 주간 훈련 일정 - 재사용 컴포넌트 */}
             <TrainingScheduleSection
-              trainingDays={[]}
-              sessionDuration={healthData.swim_profile?.sessionDuration || 0}
-              poolLength={25}
+              trainingDays={healthData.swim_profile?.trainingDays || []}
+              sessionDuration={healthData.swim_profile?.sessionDuration || 60}
+              poolLength={healthData.swim_profile?.poolLength || 25}
               onUpdate={(data) => {
+                if (data.trainingDays !== undefined) {
+                  handleInputChange('swim_profile.trainingDays', data.trainingDays);
+                  handleInputChange('swim_profile.daysPerWeek', data.trainingDays.length);
+                }
                 if (data.sessionDuration !== undefined) handleInputChange('swim_profile.sessionDuration', data.sessionDuration);
-                if (data.trainingDays !== undefined) handleInputChange('swim_profile.daysPerWeek', data.trainingDays.length);
+                if (data.poolLength !== undefined) handleInputChange('swim_profile.poolLength', data.poolLength);
               }}
             />
 
@@ -702,7 +783,7 @@ export default function HealthInputPage() {
         );
 
       case 3:
-        const { bmi, recommendations } = analyzeHealth();
+        const { bmi, recommendations, baseIntensity } = analyzeHealth();
         
         return (
           <div className="space-y-8">
@@ -787,41 +868,110 @@ export default function HealthInputPage() {
               </div>
             </div>
 
-            {/* 맞춤 운동 강도 권장 */}
+            {/* 전체 운동 강도 요약 */}
+            <div className="bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-300 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <span className="text-3xl mr-3">⚡</span>
+                  권장 운동 강도
+                </h3>
+                <div className="text-right">
+                  <p className="text-4xl font-black text-purple-600">{baseIntensity}%</p>
+                  <p className="text-sm text-gray-600">정상 대비</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700">
+                {baseIntensity === 100 ? (
+                  <>✅ 건강 상태가 양호합니다. 일반적인 운동 강도로 진행하세요.</>
+                ) : baseIntensity >= 80 ? (
+                  <>💡 약간의 주의가 필요합니다. 정상보다 약간 낮은 강도로 시작하세요.</>
+                ) : baseIntensity >= 70 ? (
+                  <>⚠️ 주의가 필요합니다. 정상보다 낮은 강도로 운동하고 점진적으로 증가하세요.</>
+                ) : (
+                  <>🚨 많은 주의가 필요합니다. 의사 상담 후 매우 낮은 강도로 시작하세요.</>
+                )}
+              </p>
+            </div>
+
+            {/* 맞춤 운동 강도 권장 (상세) */}
             {recommendations.length > 0 && (
               <div>
                 <h3 className="text-2xl font-bold mb-6 flex items-center">
                   <span className="text-3xl mr-3">🎯</span>
-                  맞춤 운동 강도 권장
+                  상세 건강 브리핑
                 </h3>
                 
-                <div className="space-y-4">
-                  {recommendations.map((rec, idx) => (
+                <div className="space-y-6">
+                  {recommendations.map((rec: any, idx) => (
                     <div 
                       key={idx}
-                      className={`border-l-4 rounded-lg p-5 ${
-                        rec.type === 'danger' ? 'border-red-500 bg-red-50' :
-                        rec.type === 'warning' ? 'border-orange-500 bg-orange-50' :
-                        'border-blue-500 bg-blue-50'
+                      className={`border-2 rounded-xl p-6 ${
+                        rec.type === 'danger' ? 'border-red-400 bg-red-50' :
+                        rec.type === 'warning' ? 'border-orange-400 bg-orange-50' :
+                        'border-blue-400 bg-blue-50'
                       }`}
                     >
-                      <div className="flex items-start space-x-3">
-                        <span className="text-3xl">{rec.icon}</span>
+                      <div className="flex items-start space-x-4">
+                        <span className="text-4xl">{rec.icon}</span>
                         <div className="flex-1">
-                          <h4 className={`font-bold text-lg mb-2 ${
+                          {/* 제목 */}
+                          <h4 className={`font-bold text-xl mb-3 ${
                             rec.type === 'danger' ? 'text-red-800' :
                             rec.type === 'warning' ? 'text-orange-800' :
                             'text-blue-800'
                           }`}>
                             {rec.title}
                           </h4>
-                          <p className={`text-sm ${
-                            rec.type === 'danger' ? 'text-red-700' :
-                            rec.type === 'warning' ? 'text-orange-700' :
-                            'text-blue-700'
+
+                          {/* 운동 강도 */}
+                          <div className="bg-white/70 rounded-lg p-4 mb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs font-semibold text-gray-600 mb-1">💪 권장 강도</p>
+                                <p className="text-lg font-bold text-purple-600">{rec.intensity}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-gray-600 mb-1">⏱️ 권장 운동량</p>
+                                <p className="text-lg font-bold text-blue-600">{rec.duration}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 피해야 할 것 */}
+                          <div className="mb-4">
+                            <p className="text-sm font-bold text-red-700 mb-2">❌ 피해야 할 동작/훈련</p>
+                            <ul className="space-y-1">
+                              {rec.avoid.map((item: string, i: number) => (
+                                <li key={i} className="text-sm text-red-600 flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* 권장사항 */}
+                          <div className="mb-4">
+                            <p className="text-sm font-bold text-green-700 mb-2">✅ 권장 동작/훈련</p>
+                            <ul className="space-y-1">
+                              {rec.recommend.map((item: string, i: number) => (
+                                <li key={i} className="text-sm text-green-600 flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* 상세 설명 */}
+                          <div className={`bg-white/50 rounded-lg p-3 text-sm ${
+                            rec.type === 'danger' ? 'text-red-800' :
+                            rec.type === 'warning' ? 'text-orange-800' :
+                            'text-blue-800'
                           }`}>
-                            {rec.content}
-                          </p>
+                            <p className="font-semibold mb-1">📚 전문가 조언</p>
+                            <p>{rec.detail}</p>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -53,15 +53,24 @@ export default function TrainingScheduleSection({
           <div className="flex gap-2">
             <button
               onClick={() => onUpdate({ trainingDays: [1, 2, 3, 4, 5] })}
-              className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+              className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition"
+              title="월화수목금"
             >
               평일
             </button>
             <button
               onClick={() => onUpdate({ trainingDays: [1, 3, 5] })}
-              className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+              className="text-xs px-2 py-1 bg-blue-100 rounded hover:bg-blue-200 transition"
+              title="월요일, 수요일, 금요일"
             >
               월수금
+            </button>
+            <button
+              onClick={() => onUpdate({ trainingDays: [2, 4] })}
+              className="text-xs px-2 py-1 bg-green-100 rounded hover:bg-green-200 transition"
+              title="화요일, 목요일"
+            >
+              화목
             </button>
           </div>
         </div>
