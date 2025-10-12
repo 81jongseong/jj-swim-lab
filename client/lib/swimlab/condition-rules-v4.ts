@@ -334,28 +334,56 @@ export function applyKneePain(): ConditionRuleResult {
  * 
  * 핵심: 당일 컨디션은 운동량(거리/세트)을 바꾸지 않음!
  * 단지 페이스와 휴식만 조정 (같은 거리를 더 느리게/더 쉬면서)
+ * 
+ * @param condition - 컨디션 상태 (또는 'health_adjusted'로 건강 상태 반영)
+ * @param hasPain - 통증 여부
+ * @param intensityPercent - 건강 상태 기반 강도 (70% = 0.7, 없으면 condition 기반 조정)
  */
-export function applyDayCondition(condition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired', hasPain: boolean): ConditionRuleResult {
+export function applyDayCondition(
+  condition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired' | 'health_adjusted', 
+  hasPain: boolean,
+  intensityPercent?: number
+): ConditionRuleResult {
   let cssPct = 0;
   let restAdd = { Z1: 0, Z2: 0, Z3: 0, Z4: 0, Z5: 0 };
   let explanation = '';
   
+  // 🏥 건강 상태 기반 과학적 조정 (intensityPercent가 있을 때)
+  if (intensityPercent !== undefined && intensityPercent < 1.0) {
+    // 과학적 페이스 조정: 70% 강도 → 페이스를 1/0.7 = 1.43배로 (43% 느리게)
+    // CSS 퍼센트로 변환: (1/intensityPercent - 1) * 100
+    cssPct = (1 / intensityPercent - 1); // 0.7 → 0.43 (43% 느리게)
+    
+    // 휴식도 비례적으로 증가 (강도 낮을수록 더 많은 회복 필요)
+    const restMultiplier = (1 / intensityPercent - 1); // 0.7 → 0.43
+    restAdd = {
+      Z1: Math.round(10 * restMultiplier), // 기본 10초 * 0.43 = 4초
+      Z2: Math.round(15 * restMultiplier), // 기본 15초 * 0.43 = 6초
+      Z3: Math.round(20 * restMultiplier), // 기본 20초 * 0.43 = 9초
+      Z4: Math.round(30 * restMultiplier), // 기본 30초 * 0.43 = 13초
+      Z5: Math.round(40 * restMultiplier)  // 기본 40초 * 0.43 = 17초
+    };
+    
+    const intensityPctDisplay = Math.round(intensityPercent * 100);
+    const paceIncreaseDisplay = Math.round(cssPct * 100);
+    explanation = `🏥 건강 상태 조정: ${intensityPctDisplay}% 강도 → 페이스 +${paceIncreaseDisplay}%, 휴식 증가. 과학적 운동 처방 (ACSM/WHO 기준)`;
+  }
   // 컨디션에 따른 페이스/휴식 조정 (거리는 그대로!)
-  if (condition === 'very_good') {
+  else if (condition === 'very_good') {
     // 매우 좋을 때: 조금 더 빠르게
-    cssPct = -0.02; // CSS -2% (페이스 2초 빠르게)
+    cssPct = -0.02; // CSS -2% (페이스 2% 빠르게)
     restAdd = { Z1: 0, Z2: 0, Z3: 0, Z4: 0, Z5: 0 };
-    explanation = '💪 컨디션 매우 좋음: 페이스 -2초 (같은 거리를 더 빠르게). 체력이 좋을 때 페이스 향상';
+    explanation = '💪 컨디션 매우 좋음: 페이스 -2% (같은 거리를 더 빠르게). 체력이 좋을 때 페이스 향상';
   } else if (condition === 'tired') {
     // 피곤할 때: 페이스 느리게, 휴식 길게
-    cssPct = 0.03; // CSS +3% (페이스 3초 느리게)
+    cssPct = 0.05; // CSS +5% (페이스 5% 느리게)
     restAdd = { Z1: 0, Z2: 5, Z3: 5, Z4: 10, Z5: 15 };
-    explanation = '😓 컨디션 피곤함: 페이스 +3초, 휴식 +5-10초 (같은 거리를 천천히). 무리하지 않고 완수';
+    explanation = '😓 컨디션 피곤함: 페이스 +5%, 휴식 +5-15초 (같은 거리를 천천히). 무리하지 않고 완수';
   } else if (condition === 'very_tired') {
     // 매우 피곤할 때: 페이스 많이 느리게, 휴식 많이 길게
-    cssPct = 0.06; // CSS +6% (페이스 6초 느리게)
+    cssPct = 0.10; // CSS +10% (페이스 10% 느리게)
     restAdd = { Z1: 5, Z2: 10, Z3: 10, Z4: 15, Z5: 20 };
-    explanation = '😴 컨디션 매우 피곤함: 페이스 +6초, 휴식 +10-15초 (같은 거리를 매우 천천히). 회복 우선';
+    explanation = '😴 컨디션 매우 피곤함: 페이스 +10%, 휴식 +5-20초 (같은 거리를 매우 천천히). 회복 우선';
   } else {
     explanation = '😊 컨디션 보통/좋음: 표준 페이스 및 휴식';
   }
@@ -366,8 +394,8 @@ export function applyDayCondition(condition: 'very_good' | 'good' | 'normal' | '
     restAdd.Z3 += 5;
     restAdd.Z4 += 10;
     restAdd.Z5 += 10;
-    cssPct += 0.02; // 페이스 +2초 추가
-    explanation += ' | 🤕 통증 있음: 페이스 +2초, 휴식 +5-10초 추가';
+    cssPct += 0.03; // 페이스 +3% 추가
+    explanation += ' | 🤕 통증 있음: 페이스 +3%, 휴식 +5-10초 추가';
   }
   
   return {
@@ -407,8 +435,14 @@ function createEmptyRule(): ConditionRuleResult {
 
 /**
  * 여러 컨디션 병합 (28가지 관절질환 + 특수 컨디션)
+ * @param intensityPercent - 건강 상태 기반 강도 (70% = 0.7)
  */
-export function aggregateConditionRules(conditionIds: string[], dayCondition: string, hasPain: boolean): ConditionRuleResult {
+export function aggregateConditionRules(
+  conditionIds: string[], 
+  dayCondition: string, 
+  hasPain: boolean,
+  intensityPercent?: number
+): ConditionRuleResult {
   const rules: ConditionRuleResult[] = [];
   
   // 🏥 28가지 관절질환 자동 적용
@@ -429,8 +463,8 @@ export function aggregateConditionRules(conditionIds: string[], dayCondition: st
     rules.push(applyAsthma());
   }
   
-  // 📅 당일 컨디션 규칙
-  rules.push(applyDayCondition(dayCondition as any, hasPain));
+  // 📅 당일 컨디션 규칙 (건강 상태 강도 반영)
+  rules.push(applyDayCondition(dayCondition as any, hasPain, intensityPercent));
   
   // 병합 로직
   const aggregated: ConditionRuleResult = {

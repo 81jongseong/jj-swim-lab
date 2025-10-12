@@ -563,7 +563,8 @@ export default function HealthInputPage() {
         weekHistory: [], // 첫 프로그램이므로 이력 없음
         vo2max: healthData.swim_profile.vo2max,
         maxHeartRate: healthData.swim_profile.maxHeartRate,
-        restingHeartRate: healthData.swim_profile.restingHeartRate
+        restingHeartRate: healthData.swim_profile.restingHeartRate,
+        intensityPercent: healthAnalysis.baseIntensity / 100 // 과학적 강도 조절: 70% → 0.7
       };
       
       console.log('🏊 엔진 입력:', engineInput);

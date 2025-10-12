@@ -512,6 +512,8 @@ export type Input = {
   vo2max?: number; // VO2max (ml/kg/min)
   maxHeartRate?: number; // 최고심박수 (bpm)
   restingHeartRate?: number; // 안정심박수 (bpm)
+  // 🏥 건강 상태 기반 강도 조절 (과학적 페이스 조정용)
+  intensityPercent?: number; // 건강 상태 기반 강도 (70% = 0.7)
 };
 
 export type SetItem = {
@@ -1007,11 +1009,12 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       level: i.level // 회원 레벨 전달
     });
 
-    // v4 규칙 사용 (28가지 관절질환 + 카테고리별 차등)
+    // v4 규칙 사용 (28가지 관절질환 + 카테고리별 차등 + 건강 상태 기반 과학적 강도 조절)
     const mod = aggregateConditionRules(
       i.conditionIds,
       i.dayCondition,
-      i.hasPain || false
+      i.hasPain || false,
+      i.intensityPercent // 건강 상태 기반 강도 (70% = 0.7)
     );
 
     const adjusted = applyToSets(base.sets, mod, i.css100, i.poolLen);
