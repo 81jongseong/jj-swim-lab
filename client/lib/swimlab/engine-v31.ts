@@ -1513,11 +1513,20 @@ function buildDayPlan(opts: {
     const comboN = Math.max(1, n50 - pullN - kickN); // 최소 1개는 콤비네이션
     
     // 🏊 40개 드릴 중 목적성 있는 자동 선택 (목표 + 테마 + 레벨 기반)
+    // ⚠️ 주의: 드릴은 선택된 영법(s1) 기반으로 작동
+    // 자유형이면 자유형 드릴, 배영이면 배영 드릴 사용
     const drillForPull = selectDrill('pull', opts.theme, opts.goal, memberLevel);
     const drillForKick = selectDrill('kick', opts.theme, opts.goal, memberLevel);
     
     // 실제 CSS 값 가져오기 (목표별 최적 거리 자동 선택)
     const cssForStroke = getEffectiveCSS(opts.css100, s1, memberLevel, opts.goal);
+    
+    console.log('🏊 드릴 섹션 영법:', {
+      selectedStroke: s1,
+      pullDrill: drillForPull.name,
+      kickDrill: drillForKick.name,
+      note: '드릴은 선택된 영법 기반 (회피 영법 적용됨)'
+    });
     const pullPace50 = (cssForStroke * 1.09) / 2; // 50m 페이스: CSS의 1.09배 (Z2, +9% 느림, 물감각 집중)
     const kickPace50 = (cssForStroke * 1.5) / 2; // 발차기는 CSS의 1.5배 느림 (근육 효율 차이)
     
