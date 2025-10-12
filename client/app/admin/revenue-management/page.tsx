@@ -28,19 +28,9 @@ export default function RevenueManagementPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [comparisonMode, setComparisonMode] = useState(false);
 
-  const regionData: { [key: string]: string[] } = {
-    '서울특별시': ['강남구', '서초구', '송파구', '강동구', '마포구', '용산구'],
-    '경기도': ['수원시', '성남시', '용인시', '부천시', '화성시', '고양시', '분당구'],
-    '인천광역시': ['연수구', '남동구', '계양구', '부평구'],
-    '부산광역시': ['해운대구', '사하구', '금정구', '북구'],
-    '대구광역시': ['수성구', '달서구', '달성군'],
-    '광주광역시': ['서구', '남구', '북구'],
-    '대전광역시': ['유성구', '서구', '중구'],
-    '울산광역시': ['남구', '동구', '북구']
-  };
-
+  // centerData: 전국 시/도별 센터 데이터
   const centerDataByRegion: { [region: string]: { [district: string]: string[] } } = {
-    '서울특별시': {
+    '서울시': {
       '강남구': ['강남센터', '역삼센터'],
       '서초구': ['서초센터', '방배센터'],
       '송파구': ['송파센터', '잠실센터'],
@@ -54,47 +44,71 @@ export default function RevenueManagementPage() {
       '용인시': ['용인센터'],
       '부천시': ['부천센터'],
       '화성시': ['동탄센터'],
-      '고양시': ['일산센터'],
-      '분당구': ['분당센터']
+      '고양시': ['일산센터']
     },
-    '부산광역시': {
+    '부산시': {
       '해운대구': ['해운대센터'],
       '사하구': ['사하센터'],
       '금정구': ['금정센터'],
       '북구': ['부산북센터']
+    },
+    '대구시': {
+      '수성구': ['수성센터'],
+      '달서구': ['달서센터']
+    },
+    '인천시': {
+      '연수구': ['연수센터'],
+      '남동구': ['남동센터']
+    },
+    '광주시': {
+      '서구': ['광주서구센터'],
+      '남구': ['광주남구센터']
+    },
+    '대전시': {
+      '유성구': ['유성센터'],
+      '서구': ['대전서구센터']
+    },
+    '울산시': {
+      '남구': ['울산남구센터']
     }
   };
 
   const [centersData, setCentersData] = useState<{ [centerName: string]: any }>({
     '강남센터': { 
-      id: 'center-1', name: '강남센터', region: '서울특별시', district: '강남구', 
+      id: 'center-1', name: '강남센터', region: '서울시', district: '강남구', 
       revenue: { registration: 15000000, lessons: 45000000, shop: 8000000, total: 68000000 },
       costs: { labor: 25000000, utilities: 5000000, rent: 12000000, other: 3000000, total: 45000000 },
       netProfit: 23000000, profitMargin: 33.8
     },
     '서초센터': { 
-      id: 'center-2', name: '서초센터', region: '서울특별시', district: '서초구',
+      id: 'center-2', name: '서초센터', region: '서울시', district: '서초구',
       revenue: { registration: 12000000, lessons: 38000000, shop: 6000000, total: 56000000 },
       costs: { labor: 22000000, utilities: 4500000, rent: 10000000, other: 2500000, total: 39000000 },
       netProfit: 17000000, profitMargin: 30.4
     },
     '분당센터': { 
-      id: 'center-3', name: '분당센터', region: '경기도', district: '분당구',
+      id: 'center-3', name: '분당센터', region: '경기도', district: '성남시',
       revenue: { registration: 10000000, lessons: 30000000, shop: 5000000, total: 45000000 },
       costs: { labor: 18000000, utilities: 4000000, rent: 9000000, other: 2000000, total: 33000000 },
       netProfit: 12000000, profitMargin: 26.7
     },
     '송파센터': { 
-      id: 'center-4', name: '송파센터', region: '서울특별시', district: '송파구',
+      id: 'center-4', name: '송파센터', region: '서울시', district: '송파구',
       revenue: { registration: 13000000, lessons: 40000000, shop: 7000000, total: 60000000 },
       costs: { labor: 23000000, utilities: 4800000, rent: 11000000, other: 2700000, total: 41500000 },
       netProfit: 18500000, profitMargin: 30.8
     },
     '부산센터': { 
-      id: 'center-5', name: '부산센터', region: '부산광역시', district: '해운대구',
+      id: 'center-5', name: '부산센터', region: '부산시', district: '해운대구',
       revenue: { registration: 9000000, lessons: 27000000, shop: 4500000, total: 40500000 },
       costs: { labor: 16000000, utilities: 3500000, rent: 8000000, other: 1800000, total: 29300000 },
       netProfit: 11200000, profitMargin: 27.7
+    },
+    '홍대센터': { 
+      id: 'center-6', name: '홍대센터', region: '서울시', district: '마포구',
+      revenue: { registration: 11000000, lessons: 33000000, shop: 5500000, total: 49500000 },
+      costs: { labor: 19000000, utilities: 4200000, rent: 9500000, other: 2100000, total: 34800000 },
+      netProfit: 14700000, profitMargin: 29.7
     }
   });
 
@@ -181,27 +195,6 @@ export default function RevenueManagementPage() {
         </div>
       </div>
 
-      <div className="mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">기간 필터</h3>
-          <div className="flex gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">기간</label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="week">이번 주</option>
-                <option value="month">이번 달</option>
-                <option value="quarter">이번 분기</option>
-                <option value="year">올해</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
@@ -275,40 +268,12 @@ export default function RevenueManagementPage() {
                  key === 'lessonFees' ? '강습비' :
                  key === 'privateLessons' ? '개인레슨' :
                  key === 'equipmentRental' ? '장비 대여' : '기타 서비스'}
-              </div>
+          </div>
               <div className="text-xs text-gray-500">{value.percentage}%</div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">센터별 기여도 분석</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2">센터명</th>
-                <th className="text-left py-2">매출</th>
-                <th className="text-left py-2">순이익</th>
-                <th className="text-left py-2">성장률</th>
-                <th className="text-left py-2">수익률</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revenueData.centerContributions.map((center, index) => (
-                <tr key={index} className="border-b">
-                  <td className="py-2 font-medium">{center.name}</td>
-                  <td className="py-2">₩{center.revenue.toLocaleString()}</td>
-                  <td className="py-2">₩{center.profit.toLocaleString()}</td>
-                  <td className="py-2 text-green-600">{center.growth}%</td>
-                  <td className="py-2">{((center.profit / center.revenue) * 100).toFixed(1)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </div>
+          </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">비용 구조 분석</h3>
@@ -328,22 +293,40 @@ export default function RevenueManagementPage() {
             </div>
           ))}
         </div>
-      </div>
+        </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">🏢 센터별 비교 분석</h3>
+          <div className="flex items-center gap-4">
+            {comparisonMode && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">비교 기간:</label>
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="week">일주</option>
+                  <option value="month">월</option>
+                  <option value="quarter">분기</option>
+                  <option value="half">반기</option>
+                  <option value="year">년</option>
+                </select>
+              </div>
+            )}
           <button
-            onClick={() => setComparisonMode(!comparisonMode)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              comparisonMode 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              onClick={() => setComparisonMode(!comparisonMode)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              comparisonMode
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
+              {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
           </button>
         </div>
+      </div>
 
         <RegionNavigation
           selectedRegions={selectedRegions}
@@ -352,7 +335,6 @@ export default function RevenueManagementPage() {
           setSelectedDistricts={setSelectedDistricts}
           selectedCenters={selectedCenters}
           setSelectedCenters={setSelectedCenters}
-          regionData={regionData}
           centerData={centerDataByRegion}
           comparisonMode={comparisonMode}
           centerDataMap={centersData}
@@ -445,13 +427,13 @@ export default function RevenueManagementPage() {
                 }
               ]}
             />
-          </div>
+        </div>
         )}
 
         {selectedCenters.length === 0 && comparisonMode && (
           <div className="mt-8 text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <p className="text-gray-500 text-lg">👆 위에서 센터를 선택하면 비교 차트가 표시됩니다</p>
-          </div>
+                      </div>
         )}
       </div>
     </div>
