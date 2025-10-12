@@ -33,6 +33,7 @@ import CompletionInputModal, { type CompletionData } from '@/components/swimlab/
 import DayConditionInputModal, { type DayConditionData } from '@/components/swimlab/DayConditionInputModal';
 import ConditionDetailModal from '@/components/swimlab/ConditionDetailModal';
 import MemberStatistics from '@/components/swimlab/MemberStatistics';
+import ProgramCard from '@/components/swimlab/program-list/ProgramCard';
 
 interface ProgramListViewProps {
   selectedAthleteId?: string;
@@ -611,100 +612,11 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
           </div>
         ) : (
           filteredPrograms.map((program) => (
-            <div
+            <ProgramCard
               key={program.id}
+              program={program}
               onClick={() => setSelectedProgram(program)}
-              className="bg-white rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer p-5"
-            >
-              {/* 헤더 */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">
-                    {program.programScope === 'group' ? '📚' : '🏊‍♂️'}
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-gray-900">
-                        {program.groupClassName || program.athleteName}
-                      </h4>
-                      {program.athleteLevel && (
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          program.athleteLevel === 'beginner' ? 'bg-green-100 text-green-700' :
-                          program.athleteLevel.includes('intermediate') ? 'bg-blue-100 text-blue-700' :
-                          program.athleteLevel.includes('advanced') ? 'bg-purple-100 text-purple-700' :
-                          'bg-orange-100 text-orange-700'
-                        }`}>
-                          {program.athleteLevel === 'beginner' && '초급'}
-                          {program.athleteLevel.includes('intermediate') && '중급'}
-                          {program.athleteLevel.includes('advanced') && '상급'}
-                          {(program.athleteLevel === 'master' || program.athleteLevel === 'expert') && '마스터'}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      {new Date(program.createdAt).toLocaleDateString('ko-KR')}
-                      {program.programScope === 'group' && (
-                        <span className="ml-2 text-purple-600">단체반</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  program.programType === 'weekly'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-purple-100 text-purple-700'
-                }`}>
-                  {program.programType === 'weekly' ? '주간' : '레이스'}
-                </span>
-              </div>
-
-              {/* 요약 정보 */}
-              <div className="space-y-2 text-sm">
-                {/* 목표 표시 */}
-                {program.params?.goal && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      program.params.goal === '기술 연마' ? 'bg-blue-100 text-blue-700' :
-                      program.params.goal === '체력 향상' ? 'bg-green-100 text-green-700' :
-                      program.params.goal === '실력 향상' ? 'bg-purple-100 text-purple-700' :
-                      program.params.goal === '체중 감량' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      🎯 {program.params.goal}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>📅</span>
-                  <span>{program.params?.startDate || '날짜 미정'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>📏</span>
-                  <span>{program.content?.totalMeters?.toLocaleString() || '0'}m / {program.params?.daysPerWeek || 3}일</span>
-                </div>
-                {program.params?.stroke && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>🏊</span>
-                  <span>
-                    {program.params.stroke === 'FR' ? '자유형' :
-                     program.params.stroke === 'BK' ? '배영' :
-                     program.params.stroke === 'BR' ? '평영' : '접영'}
-                  </span>
-                </div>
-                )}
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>⚕️</span>
-                  <span>{program.params?.conditionIds?.length || 0}개 컨디션</span>
-                </div>
-              </div>
-
-              {/* 푸터 */}
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <p className="text-xs text-gray-500 text-center">
-                  클릭하여 상세보기 →
-                </p>
-              </div>
-            </div>
+            />
           ))
         )}
       </div>
