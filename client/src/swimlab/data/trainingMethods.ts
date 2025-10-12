@@ -27,7 +27,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D28','D29','D01'],
     evidence: [
       {label:'CSS 개요/활용', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC10875687/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 4,
+      optimalReps: 5,
+      maxReps: 8,
+      minDistancePerRep: 100,
+      maxDistancePerRep: 200,
+      totalVolumeRange: [400, 1200],
+      rationale: '어센딩은 4-6회로 페이스 조절 감각 학습 (후반 가속 패턴)'
+    }
   },
   {
     id: '02',
@@ -43,7 +52,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D37','D36','D16'],
     evidence: [
       {label:'반복 스프린트 회복비', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC10356687/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 4,              // 최소 4회 (페이스 감각 학습)
+      optimalReps: 5,          // 최적 4-6회
+      maxReps: 8,              // 최대 8회 (과부하 방지)
+      minDistancePerRep: 50,   // 세트당 최소 50m
+      maxDistancePerRep: 100,  // 세트당 최대 100m
+      totalVolumeRange: [200, 600], // 총 200-600m
+      rationale: '디센딩은 최소 4회 반복해야 페이스 감각이 학습되며, 8회 이상은 피로로 기술이 붕괴됨 (Toubekis 2005)'
+    }
   },
   {
     id: '03',
@@ -59,7 +77,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D28','D29','D01'],
     evidence: [
       {label:'임계속도·페이스 근거', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC8107465/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 2,
+      optimalReps: 3,
+      maxReps: 5,
+      minDistancePerRep: 200,
+      maxDistancePerRep: 500,
+      totalVolumeRange: [600, 1500],
+      rationale: '네거티브 스플릿은 2-4회로 후반 가속 패턴 학습 (분배 능력)'
+    }
   },
   {
     id: '04',
@@ -75,7 +102,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D10','D11','D29'],
     evidence: [
       {label:'스트로크 효율·리듬', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC9909090/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 3,
+      optimalReps: 4,
+      maxReps: 6,
+      minDistancePerRep: 100,
+      maxDistancePerRep: 200,
+      totalVolumeRange: [400, 1000],
+      rationale: '빌드업은 3-5회로 가속 패턴 강화 (신경근 동원)'
+    }
   },
   {
     id: '05',
@@ -91,7 +127,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D29','D28','D01'],
     evidence: [
       {label:'CSS·MLSS 근거', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC8107465/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 3,              // 최소 3회 (템포 안정화)
+      optimalReps: 5,          // 최적 4-6회
+      maxReps: 8,              // 최대 8회
+      minDistancePerRep: 200,  // 세트당 최소 200m
+      maxDistancePerRep: 500,  // 세트당 최대 500m
+      totalVolumeRange: [800, 2400], // 총 800-2400m
+      rationale: '템포 홀드는 3-6회 반복으로 MLSS 근처 유지 시간 확보가 핵심 (Wakayoshi 1993)'
+    }
   },
   {
     id: '06',
@@ -107,7 +152,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D29','D28','D35'],
     evidence: [
       {label:'MLSS/LT와 성능', url:'https://www.nature.com/articles/s41598-023-36983-8'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 4,              // 최소 4회 (역치 자극)
+      optimalReps: 6,          // 최적 6-8회
+      maxReps: 12,             // 최대 12회
+      minDistancePerRep: 100,  // 세트당 최소 100m
+      maxDistancePerRep: 400,  // 세트당 최대 400m
+      totalVolumeRange: [600, 2400], // 총 600-2400m
+      rationale: '역치 인터벌은 4-8회로 MLSS 근처에서 충분한 시간 유지가 필요 (젖산 적응)'
+    }
   },
   {
     id: '07',
@@ -123,7 +177,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D29','D17','D37'],
     evidence: [
       {label:'USRPT 리뷰', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC6789176/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 15,
+      optimalReps: 20,
+      maxReps: 30,
+      minDistancePerRep: 25,
+      maxDistancePerRep: 50,
+      totalVolumeRange: [400, 1000],
+      rationale: 'USRPT는 15-25회 반복으로 레이스 페이스 정밀 적응 (실패 허용)'
+    }
   },
   {
     id: '08',
@@ -139,7 +202,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D16','D37','D38'],
     evidence: [
       {label:'반복 스프린트·회복비', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC10356687/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 8,              // 최소 8회 (신경근 적응)
+      optimalReps: 10,         // 최적 10-12회
+      maxReps: 16,             // 최대 16회
+      minDistancePerRep: 25,   // 세트당 최소 25m
+      maxDistancePerRep: 50,   // 세트당 최대 50m
+      totalVolumeRange: [200, 600], // 총 200-600m
+      rationale: '스프린트는 8-12회 반복으로 신경근 동원 패턴 강화 (Toubekis 2005, PCr 회복 고려)'
+    }
   },
   {
     id: '09',
@@ -155,7 +227,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D13','D14','D15'],
     evidence: [
       {label:'스트림라인·킥의 중요', url:'https://www.usaswimming.org/news/2021/10/05/five-freestyle-tips-to-start-your-season'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 6,
+      optimalReps: 8,
+      maxReps: 12,
+      minDistancePerRep: 25,
+      maxDistancePerRep: 50,
+      totalVolumeRange: [300, 600],
+      rationale: '킥 훈련은 6-10회로 하체 근지구력 강화'
+    }
   },
   {
     id: '10',
@@ -171,7 +252,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D35','D36','D05'],
     evidence: [
       {label:'스트로크 효율 메타', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC9909090/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 4,
+      optimalReps: 5,
+      maxReps: 8,
+      minDistancePerRep: 200,
+      maxDistancePerRep: 400,
+      totalVolumeRange: [800, 2000],
+      rationale: '풀 부이는 4-6회로 상지 지구력 강화 (하체 회복)'
+    }
   },
   {
     id: '11',
@@ -187,7 +277,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D36','D05','D20'],
     evidence: [
       {label:'팔 스트로크 효율', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC6926714/'}
-    ]
+    ],
+    scientificMeta: { minReps: 8, optimalReps: 12, maxReps: 16, minDistancePerRep: 50, maxDistancePerRep: 100, totalVolumeRange: [400, 1000], rationale: '패들은 8-12회로 캐치 힘 강화' }
   },
   {
     id: '12',
@@ -203,7 +294,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D37','D16','D11'],
     evidence: [
       {label:'프리 기술/리듬', url:'https://swimswam.com/freestyle-stroke-technique/'}
-    ]
+    ],
+    scientificMeta: { minReps: 6, optimalReps: 8, maxReps: 12, minDistancePerRep: 50, maxDistancePerRep: 100, totalVolumeRange: [300, 800], rationale: '핀 보조는 6-10회로 고속 템포 학습' }
   },
   {
     id: '13',
@@ -219,7 +311,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D05','D06','D07'],
     evidence: [
       {label:'USMS Sculling 자료', url:'https://www.usms.org/fitness-and-training/articles-and-videos/articles/sculling-drills?Oldid=324'}
-    ]
+    ],
+    scientificMeta: { minReps: 6, optimalReps: 8, maxReps: 12, minDistancePerRep: 25, maxDistancePerRep: 50, totalVolumeRange: [200, 500], rationale: '스컬링은 6-10회로 물감각 향상 (저강도)' }
   },
   {
     id: '14',
@@ -235,7 +328,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D01','D29','D28'],
     evidence: [
       {label:'반복 고강도 반응', url:'https://www.sciencedirect.com/science/article/pii/S1728869X21000150'}
-    ]
+    ],
+    scientificMeta: { minReps: 6, optimalReps: 8, maxReps: 12, minDistancePerRep: 50, maxDistancePerRep: 100, totalVolumeRange: [400, 1000], rationale: '하이-로우는 6-10회로 회복 능력 강화' }
   },
   {
     id: '15',
@@ -251,7 +345,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D28','D29','D01'],
     evidence: [
       {label:'지속·페이스 훈련', url:'https://onlinelibrary.wiley.com/doi/10.1002/ejsc.12179'}
-    ]
+    ],
+    scientificMeta: { minReps: 3, optimalReps: 4, maxReps: 6, minDistancePerRep: 200, maxDistancePerRep: 400, totalVolumeRange: [600, 1600], rationale: '브로큰은 3-5회로 집중력 유지' }
   },
   {
     id: '16',
@@ -267,7 +362,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D10','D11','D29'],
     evidence: [
       {label:'리듬·템포 훈련', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC10616301/'}
-    ]
+    ],
+    scientificMeta: { minReps: 1, optimalReps: 2, maxReps: 3, minDistancePerRep: 700, maxDistancePerRep: 1000, totalVolumeRange: [800, 2000], rationale: '사다리는 1-2세트로 변화 적응' }
   },
   {
     id: '17',
@@ -283,7 +379,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D10','D11','D29'],
     evidence: [
       {label:'템포·리듬 유지', url:'https://www.journalofexpertise.org/articles/volume6_issue2/JoE_6_2_Williams_etal.pdf'}
-    ]
+    ],
+    scientificMeta: { minReps: 1, optimalReps: 2, maxReps: 3, minDistancePerRep: 450, maxDistancePerRep: 750, totalVolumeRange: [450, 1500], rationale: '피라미드는 1-2세트로 변화 적응' }
   },
   {
     id: '18',
@@ -299,7 +396,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D28','D01','D29'],
     evidence: [
       {label:'SPL·효율 관계', url:'https://ojs.ub.uni-konstanz.de/cpa/article/view/3872/3590'}
-    ]
+    ],
+    scientificMeta: { minReps: 8, optimalReps: 10, maxReps: 15, minDistancePerRep: 25, maxDistancePerRep: 50, totalVolumeRange: [250, 600], rationale: 'SPL 훈련은 8-12회로 효율 패턴 강화' }
   },
   {
     id: '19',
@@ -315,7 +413,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D19','D17','D18'],
     evidence: [
       {label:'Hypoxic blackout 공동 성명', url:'https://www.redcross.org/content/dam/redcross/training-services/scientific-advisory-council/2022%20Hypoxic%20Blackout%20-%20Joint%20Statement%20-%20Red%20Cross%20Y%20USA%20Swimming%2010-31-2022.pdf'}
-    ]
+    ],
+    scientificMeta: { minReps: 6, optimalReps: 8, maxReps: 10, minDistancePerRep: 50, maxDistancePerRep: 100, totalVolumeRange: [300, 800], rationale: '저호흡은 6-10회로 CO2 내성 (안전 우선)' }
   },
   {
     id: '20',
@@ -331,7 +430,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D27','D26','D16'],
     evidence: [
       {label:'언더워터 돌핀 킥', url:'https://swimswam.com/underwater-dolphin-kick-book/'}
-    ]
+    ],
+    scientificMeta: { minReps: 10, optimalReps: 15, maxReps: 20, minDistancePerRep: 25, maxDistancePerRep: 25, totalVolumeRange: [250, 500], rationale: '턴 훈련은 10-15회로 패턴 학습' }
   },
   {
     id: '21',
@@ -347,7 +447,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D26','D27','D21'],
     evidence: [
       {label:'브레이크아웃 팁', url:'https://www.usaswimming.org/news/2021/10/05/five-freestyle-tips-to-start-your-season'}
-    ]
+    ],
+    scientificMeta: { minReps: 8, optimalReps: 10, maxReps: 15, minDistancePerRep: 15, maxDistancePerRep: 25, totalVolumeRange: [150, 300], rationale: '스타트는 8-12회로 반응 속도 학습' }
   },
   {
     id: '22',
@@ -363,7 +464,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D30','D32','D33'],
     evidence: [
       {label:'드래프팅 저항 감소', url:'https://www.jssm.org/jssm-07-60.xml-Fulltext'}
-    ]
+    ],
+    scientificMeta: { minReps: 4, optimalReps: 6, maxReps: 10, minDistancePerRep: 200, maxDistancePerRep: 400, totalVolumeRange: [800, 2400], rationale: 'OW는 4-8회로 사이팅 패턴 학습' }
   },
   {
     id: '23',
@@ -379,7 +481,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D29','D28','D01'],
     evidence: [
       {label:'템포·리듬 훈련', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC10616301/'}
-    ]
+    ],
+    scientificMeta: { minReps: 6, optimalReps: 8, maxReps: 12, minDistancePerRep: 100, maxDistancePerRep: 200, totalVolumeRange: [600, 1600], rationale: '템포 트레이너는 6-10회로 리듬 일관성 강화' }
   },
   {
     id: '24',
@@ -395,7 +498,8 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D10','D22','D12'],
     evidence: [
       {label:'기술·효율 리뷰', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC9909090/'}
-    ]
+    ],
+    scientificMeta: { minReps: 3, optimalReps: 4, maxReps: 6, minDistancePerRep: 200, maxDistancePerRep: 400, totalVolumeRange: [600, 1600], rationale: 'IM은 3-5회로 전신 밸런스 강화' }
   },
   {
     id: '25',
@@ -411,7 +515,16 @@ export const TRAINING_METHODS: TrainingMethod[] = [
     recommendedDrills: ['D35','D01','D28'],
     evidence: [
       {label:'지속운동·임계속도', url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC8107465/'}
-    ]
+    ],
+    scientificMeta: {
+      minReps: 1,              // 최소 1회 (연속 가능)
+      optimalReps: 3,          // 최적 3-5회 (브로큰 LSD)
+      maxReps: 6,              // 최대 6회
+      minDistancePerRep: 400,  // 세트당 최소 400m
+      maxDistancePerRep: 1000, // 세트당 최대 1000m
+      totalVolumeRange: [1200, 3000], // 총 1200-3000m
+      rationale: 'LSD는 연속 또는 3-5회 브로큰으로 장시간 Z1-Z2 유지가 핵심 (미토콘드리아 적응)'
+    }
   }
 ];
 

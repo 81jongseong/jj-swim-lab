@@ -1658,9 +1658,31 @@ function buildDayPlan(opts: {
       const dayIndex = opts.dayIndex || 0;
       const distance = distances[dayIndex % distances.length];
       
-      const nF = Math.max(2, Math.round(freeM / distance));
       const selectedMethodFree = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, 'freestyle', distance);
       const methodData = TRAINING_METHODS.find(m => m.id === selectedMethodFree.id);
+      
+      // 🔬 과학적 반복 횟수 계산: 훈련법의 메타데이터 기반
+      let nF: number;
+      if (methodData?.scientificMeta) {
+        const meta = methodData.scientificMeta;
+        const calculatedReps = Math.round(freeM / distance);
+        
+        // 훈련법별 최소/최적/최대 반복 횟수 적용
+        nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedReps));
+        
+        console.log(`🔬 ${methodData.title} 반복 횟수:`, {
+          calculatedReps,
+          minReps: meta.minReps,
+          optimalReps: meta.optimalReps,
+          maxReps: meta.maxReps,
+          finalReps: nF,
+          rationale: meta.rationale
+        });
+      } else {
+        // 메타데이터 없으면 기본값 (4-12회)
+        const calculatedReps = Math.round(freeM / distance);
+        nF = Math.max(4, Math.min(12, calculatedReps));
+      }
       
       sets.push({
         stroke: 'freestyle',
@@ -1710,9 +1732,28 @@ function buildDayPlan(opts: {
       const dayIndex = opts.dayIndex || 0;
       const distance = distances[dayIndex % distances.length];
       
-      const nF = Math.max(2, Math.round(freeM / distance));
       const selectedMethodFreeEnd = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, 'freestyle', distance);
       const methodDataEnd = TRAINING_METHODS.find(m => m.id === selectedMethodFreeEnd.id);
+      
+      // 🔬 과학적 반복 횟수 계산: 훈련법의 메타데이터 기반
+      let nF: number;
+      if (methodDataEnd?.scientificMeta) {
+        const meta = methodDataEnd.scientificMeta;
+        const calculatedRepsEnd = Math.round(freeM / distance);
+        nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedRepsEnd));
+        
+        console.log(`🔬 ${methodDataEnd.title} 반복 횟수:`, {
+          calculatedReps: calculatedRepsEnd,
+          minReps: meta.minReps,
+          optimalReps: meta.optimalReps,
+          maxReps: meta.maxReps,
+          finalReps: nF,
+          rationale: meta.rationale
+        });
+      } else {
+        const calculatedRepsEnd = Math.round(freeM / distance);
+        nF = Math.max(3, Math.min(8, calculatedRepsEnd));
+      }
       
       sets.push({
         stroke: 'freestyle',
@@ -1762,9 +1803,28 @@ function buildDayPlan(opts: {
       const dayIndex = opts.dayIndex || 0;
       const distance = distances[dayIndex % distances.length];
       
-      const nF = Math.max(2, Math.round(freeM / distance));
       const selectedMethodFreeHi = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, 'freestyle', distance);
       const methodDataHi = TRAINING_METHODS.find(m => m.id === selectedMethodFreeHi.id);
+      
+      // 🔬 과학적 반복 횟수 계산: 훈련법의 메타데이터 기반
+      let nF: number;
+      if (methodDataHi?.scientificMeta) {
+        const meta = methodDataHi.scientificMeta;
+        const calculatedRepsHi = Math.round(freeM / distance);
+        nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedRepsHi));
+        
+        console.log(`🔬 ${methodDataHi.title} 반복 횟수:`, {
+          calculatedReps: calculatedRepsHi,
+          minReps: meta.minReps,
+          optimalReps: meta.optimalReps,
+          maxReps: meta.maxReps,
+          finalReps: nF,
+          rationale: meta.rationale
+        });
+      } else {
+        const calculatedRepsHi = Math.round(freeM / distance);
+        nF = Math.max(6, Math.min(16, calculatedRepsHi));
+      }
       
       sets.push({
         stroke: 'freestyle',

@@ -31,7 +31,7 @@ export interface Drill {
   evidence: { label: string; url: string }[];
 }
 
-// ========== 훈련법 (ChatGPT 세세한 구조 v2) ==========
+// ========== 훈련법 (ChatGPT 세세한 구조 v2 + 과학적 메타데이터) ==========
 export interface TrainingMethod {
   id: string;
   title: string;
@@ -45,6 +45,17 @@ export interface TrainingMethod {
   category: 'Endurance'|'Speed'|'Technique'|'RaceStrategy'|'OpenWater';
   recommendedDrills: string[]; // e.g., ['D01','D29']
   evidence: { label: string; url: string }[];
+  
+  // 🔬 과학적 메타데이터 (프로그램 생성 시 사용)
+  scientificMeta?: {
+    minReps: number;           // 최소 반복 횟수 (효과를 위한 최소값)
+    optimalReps: number;       // 최적 반복 횟수 (가장 효과적인 범위)
+    maxReps: number;           // 최대 반복 횟수 (과부하 방지)
+    minDistancePerRep: number; // 세트당 최소 거리 (m)
+    maxDistancePerRep: number; // 세트당 최대 거리 (m)
+    totalVolumeRange: [number, number]; // 총 운동량 범위 [최소, 최대] (m)
+    rationale: string;         // 과학적 근거 설명
+  };
 }
 
 // ========== 질환 (ChatGPT 세세한 구조) ==========
