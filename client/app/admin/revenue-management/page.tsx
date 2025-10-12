@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 💰 JJ Swim Lab - 센터별 매출 관리 페이지
  * 
  * 📋 **페이지 목적**
@@ -86,16 +86,88 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import RegionNavigation from '@/components/RegionNavigation';
+import ComparisonChart from '@/components/ComparisonChart';
 
 export default function RevenueManagementPage() {
   const { user, hasUserType } = useAuth();
   
   // 상태 관리
   const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [selectedCenter, setSelectedCenter] = useState('all');
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [comparisonMode, setComparisonMode] = useState(false);
+
+  // 지역 데이터
+  const regionData: { [key: string]: string[] } = {
+    '서울특별시': ['강남구', '서초구', '송파구', '강동구', '마포구', '용산구'],
+    '경기도': ['수원시', '성남시', '용인시', '부천시', '화성시', '고양시', '분당구'],
+    '인천광역시': ['연수구', '남동구', '계양구', '부평구'],
+    '부산광역시': ['해운대구', '사하구', '금정구', '북구'],
+    '대구광역시': ['수성구', '달서구', '달성군'],
+    '광주광역시': ['서구', '남구', '북구'],
+    '대전광역시': ['유성구', '서구', '중구'],
+    '울산광역시': ['남구', '동구', '북구']
+  };
+
+  // 센터 데이터 (지역별)
+  const centerDataByRegion: { [region: string]: { [district: string]: string[] } } = {
+    '서울특별시': {
+      '강남구': ['강남센터', '역삼센터'],
+      '서초구': ['서초센터', '방배센터'],
+      '송파구': ['송파센터', '잠실센터'],
+      '강동구': ['강동센터'],
+      '마포구': ['홍대센터', '마포센터'],
+      '용산구': ['용산센터']
+    },
+    '경기도': {
+      '수원시': ['수원센터'],
+      '성남시': ['분당센터', '판교센터'],
+      '용인시': ['용인센터'],
+      '부천시': ['부천센터'],
+      '화성시': ['동탄센터'],
+      '고양시': ['일산센터'],
+      '분당구': ['분당센터']
+    },
+    '부산광역시': {
+      '해운대구': ['해운대센터'],
+      '사하구': ['사하센터'],
+      '금정구': ['금정센터'],
+      '북구': ['부산북센터']
+    }
+  };
+
+  // 센터별 상세 데이터
+  const [centersData, setCentersData] = useState<{ [centerName: string]: any }>({
+    '강남센터': { id: 'center-1', name: '강남센터', region: '서울특별시', district: '강남구', 
+      revenue: { registration: 15000000, lessons: 45000000, shop: 8000000, total: 68000000 },
+      costs: { labor: 25000000, utilities: 5000000, rent: 12000000, other: 3000000, total: 45000000 },
+      netProfit: 23000000, profitMargin: 33.8
+    },
+    '서초센터': { id: 'center-2', name: '서초센터', region: '서울특별시', district: '서초구',
+      revenue: { registration: 12000000, lessons: 38000000, shop: 6000000, total: 56000000 },
+      costs: { labor: 22000000, utilities: 4500000, rent: 10000000, other: 2500000, total: 39000000 },
+      netProfit: 17000000, profitMargin: 30.4
+    },
+    '분당센터': { id: 'center-3', name: '분당센터', region: '경기도', district: '분당구',
+      revenue: { registration: 10000000, lessons: 30000000, shop: 5000000, total: 45000000 },
+      costs: { labor: 18000000, utilities: 4000000, rent: 9000000, other: 2000000, total: 33000000 },
+      netProfit: 12000000, profitMargin: 26.7
+    },
+    '송파센터': { id: 'center-4', name: '송파센터', region: '서울특별시', district: '송파구',
+      revenue: { registration: 13000000, lessons: 40000000, shop: 7000000, total: 60000000 },
+      costs: { labor: 23000000, utilities: 4800000, rent: 11000000, other: 2700000, total: 41500000 },
+      netProfit: 18500000, profitMargin: 30.8
+    },
+    '부산센터': { id: 'center-5', name: '부산센터', region: '부산광역시', district: '해운대구',
+      revenue: { registration: 9000000, lessons: 27000000, shop: 4500000, total: 40500000 },
+      costs: { labor: 16000000, utilities: 3500000, rent: 8000000, other: 1800000, total: 29300000 },
+      netProfit: 11200000, profitMargin: 27.7
+    }
+  });
 
   // 매출 데이터
   const [revenueData, setRevenueData] = useState({
@@ -349,7 +421,7 @@ export default function RevenueManagementPage() {
       </div>
 
       {/* 비용 구조 분석 */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">비용 구조 분석</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(revenueData.costAnalysis).map(([key, value]) => (
@@ -367,6 +439,137 @@ export default function RevenueManagementPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 센터별 비교 분석 */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">🏢 센터별 비교 분석</h3>
+          <button
+            onClick={() => setComparisonMode(!comparisonMode)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              comparisonMode 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
+          </button>
+        </div>
+
+        {/* 지역 필터 */}
+        <RegionNavigation
+          selectedRegions={selectedRegions}
+          setSelectedRegions={setSelectedRegions}
+          selectedDistricts={selectedDistricts}
+          setSelectedDistricts={setSelectedDistricts}
+          selectedCenters={selectedCenters}
+          setSelectedCenters={setSelectedCenters}
+          regionData={regionData}
+          centerData={centerDataByRegion}
+          comparisonMode={comparisonMode}
+          centerDataMap={centersData}
+        />
+
+        {/* 선택된 센터들의 비교 차트 */}
+        {selectedCenters.length > 0 && comparisonMode && (
+          <div className="mt-8 space-y-6">
+            {/* 수익 비교 차트 */}
+            <ComparisonChart
+              centers={selectedCenters.map(name => centersData[name]).filter(Boolean)}
+              title="💰 센터별 수익 비교"
+              items={[
+                { 
+                  key: 'registration', 
+                  label: '등록비', 
+                  icon: '📝', 
+                  color: 'text-blue-600',
+                  bgColor: 'from-blue-400 via-blue-500 to-blue-600',
+                  getValue: (center) => center.revenue.registration 
+                },
+                { 
+                  key: 'lessons', 
+                  label: '강습비', 
+                  icon: '🏊', 
+                  color: 'text-green-600',
+                  bgColor: 'from-green-400 via-green-500 to-green-600',
+                  getValue: (center) => center.revenue.lessons 
+                },
+                { 
+                  key: 'shop', 
+                  label: '매점판매', 
+                  icon: '🛒', 
+                  color: 'text-purple-600',
+                  bgColor: 'from-purple-400 via-purple-500 to-purple-600',
+                  getValue: (center) => center.revenue.shop 
+                }
+              ]}
+            />
+
+            {/* 비용 비교 차트 */}
+            <ComparisonChart
+              centers={selectedCenters.map(name => centersData[name]).filter(Boolean)}
+              title="💸 센터별 비용 비교"
+              hasRevenue={false}
+              items={[
+                { 
+                  key: 'labor', 
+                  label: '인건비', 
+                  icon: '👥', 
+                  color: 'text-orange-600',
+                  bgColor: 'from-orange-400 via-orange-500 to-orange-600',
+                  getValue: (center) => center.costs.labor 
+                },
+                { 
+                  key: 'utilities', 
+                  label: '공과금', 
+                  icon: '⚡', 
+                  color: 'text-yellow-600',
+                  bgColor: 'from-yellow-400 via-yellow-500 to-yellow-600',
+                  getValue: (center) => center.costs.utilities 
+                },
+                { 
+                  key: 'rent', 
+                  label: '임대료', 
+                  icon: '🏠', 
+                  color: 'text-red-600',
+                  bgColor: 'from-red-400 via-red-500 to-red-600',
+                  getValue: (center) => center.costs.rent 
+                },
+                { 
+                  key: 'other', 
+                  label: '기타비용', 
+                  icon: '📦', 
+                  color: 'text-gray-600',
+                  bgColor: 'from-gray-400 via-gray-500 to-gray-600',
+                  getValue: (center) => center.costs.other 
+                }
+              ]}
+            />
+
+            {/* 수익성 비교 차트 */}
+            <ComparisonChart
+              centers={selectedCenters.map(name => centersData[name]).filter(Boolean)}
+              title="📊 센터별 수익성 비교"
+              items={[
+                { 
+                  key: 'netProfit', 
+                  label: '순이익', 
+                  icon: '💎', 
+                  color: 'text-emerald-600',
+                  bgColor: 'from-emerald-400 via-emerald-500 to-emerald-600',
+                  getValue: (center) => center.netProfit 
+                }
+              ]}
+            />
+          </div>
+        )}
+
+        {selectedCenters.length === 0 && comparisonMode && (
+          <div className="mt-8 text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <p className="text-gray-500 text-lg">👆 위에서 센터를 선택하면 비교 차트가 표시됩니다</p>
+          </div>
+        )}
       </div>
     </div>
   );
