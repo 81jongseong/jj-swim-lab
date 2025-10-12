@@ -60,6 +60,14 @@ interface HealthInput {
     checklist?: string[];
     instructorNotes?: string;
     overallLevel?: string;
+    css?: {
+      freestyle: number;
+      backstroke: number;
+      breaststroke: number;
+      butterfly: number;
+    };
+    mainStrokes?: string[];
+    excludedStrokes?: string[];
   };
   availableDays: number[];
   goals?: {
@@ -115,6 +123,14 @@ export default function HealthInputPage() {
     swim_profile: { 
       level: 'beginner_1',
       grade: '',
+      css: {
+        freestyle: 0,
+        backstroke: 0,
+        breaststroke: 0,
+        butterfly: 0
+      },
+      mainStrokes: [],
+      excludedStrokes: []
     },
     availableDays: [],
     goals: {
@@ -241,10 +257,9 @@ export default function HealthInputPage() {
   const steps = [
     { id: 1, title: '기본 정보', description: '나이, 성별, 신체 정보' },
     { id: 2, title: '건강검진', description: '혈압, 혈당, 콜레스테롤 등' },
-    { id: 3, title: '관절질환', description: '관절 질환 및 통증 정보' },
-    { id: 4, title: '특수 상황', description: '임신, 수술후 재활 등' },
-    { id: 5, title: '수영실력', description: '수영 실력 및 경험' },
-    { id: 6, title: '운동목표', description: '운동 목표 및 선호도' }
+    { id: 3, title: '질환/상황', description: '관절 질환, 특수 상황 통합' },
+    { id: 4, title: '수영 정보', description: '실력, CSS, 선호/회피 영법' },
+    { id: 5, title: '운동목표', description: '운동 목표 및 선호도' }
   ];
 
   const jointConditions = allJointConditions.map(condition => ({
@@ -1037,6 +1052,131 @@ export default function HealthInputPage() {
                   </div>
                 </div>
               )}
+
+              {/* CSS 입력 (Critical Swim Speed) */}
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-800 mb-3">🏊 CSS (Critical Swim Speed)</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  100m 기준 최대 속도 (초). 모르면 비워두세요.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(['freestyle', 'backstroke', 'breaststroke', 'butterfly'] as const).map((stroke) => (
+                    <div key={stroke}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {stroke === 'freestyle' ? '자유형' :
+                         stroke === 'backstroke' ? '배영' :
+                         stroke === 'breaststroke' ? '평영' : '접영'}
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={healthData.swim_profile?.css?.[stroke] || ''}
+                        onChange={(e) => handleInputChange(`swim_profile.css.${stroke}`, parseInt(e.target.value) || 0)}
+                        placeholder="초"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 CSS는 수영 능력을 측정하는 지표입니다. T400과 T200 측정으로 계산됩니다.
+                </p>
+              </div>
+
+              {/* 선호 영법 선택 */}
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-800 mb-3">❤️ 선호하는 영법</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  좋아하거나 잘하는 영법을 선택하세요. (복수 선택 가능)
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { id: 'freestyle', label: '🏊 자유형', icon: '🏊' },
+                    { id: 'backstroke', label: '🤸 배영', icon: '🤸' },
+                    { id: 'breaststroke', label: '🐸 평영', icon: '🐸' },
+                    { id: 'butterfly', label: '🦋 접영', icon: '🦋' }
+                  ].map((stroke) => (
+                    <button
+                      key={stroke.id}
+                      type="button"
+                      onClick={() => {
+                        const current = healthData.swim_profile?.mainStrokes || [];
+                        const excluded = healthData.swim_profile?.excludedStrokes || [];
+                        
+                        // 회피 영법에서 제거
+                        if (excluded.includes(stroke.id)) {
+                          handleInputChange('swim_profile.excludedStrokes', excluded.filter(s => s !== stroke.id));
+                        }
+                        
+                        // 선호 영법 토글
+                        const updated = current.includes(stroke.id)
+                          ? current.filter(s => s !== stroke.id)
+                          : [...current, stroke.id];
+                        handleInputChange('swim_profile.mainStrokes', updated);
+                      }}
+                      className={`p-3 border-2 rounded-lg transition-all ${
+                        healthData.swim_profile?.mainStrokes?.includes(stroke.id)
+                          ? 'border-blue-500 bg-blue-50 text-blue-800 shadow-md'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{stroke.icon}</div>
+                      <div className="text-sm font-medium">
+                        {stroke.id === 'freestyle' ? '자유형' :
+                         stroke.id === 'backstroke' ? '배영' :
+                         stroke.id === 'breaststroke' ? '평영' : '접영'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 회피 영법 선택 */}
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-800 mb-3">🚫 피하고 싶은 영법</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  불편하거나 못하는 영법을 선택하세요. (선택사항)
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { id: 'freestyle', label: '자유형', icon: '🏊' },
+                    { id: 'backstroke', label: '배영', icon: '🤸' },
+                    { id: 'breaststroke', label: '평영', icon: '🐸' },
+                    { id: 'butterfly', label: '접영', icon: '🦋' }
+                  ].map((stroke) => (
+                    <button
+                      key={stroke.id}
+                      type="button"
+                      onClick={() => {
+                        const current = healthData.swim_profile?.excludedStrokes || [];
+                        const preferred = healthData.swim_profile?.mainStrokes || [];
+                        
+                        // 선호 영법에서 제거
+                        if (preferred.includes(stroke.id)) {
+                          handleInputChange('swim_profile.mainStrokes', preferred.filter(s => s !== stroke.id));
+                        }
+                        
+                        // 회피 영법 토글
+                        const updated = current.includes(stroke.id)
+                          ? current.filter(s => s !== stroke.id)
+                          : [...current, stroke.id];
+                        handleInputChange('swim_profile.excludedStrokes', updated);
+                      }}
+                      className={`p-3 border-2 rounded-lg transition-all ${
+                        healthData.swim_profile?.excludedStrokes?.includes(stroke.id)
+                          ? 'border-red-500 bg-red-50 text-red-800 shadow-md'
+                          : 'border-gray-300 bg-white text-gray-700 hover:border-red-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{stroke.icon}</div>
+                      <div className="text-sm font-medium">{stroke.label}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  ⚠️ 선호 영법과 회피 영법은 중복 선택할 수 없습니다.
+                </p>
+              </div>
+
               <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
