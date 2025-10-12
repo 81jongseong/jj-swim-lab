@@ -95,6 +95,7 @@ import apiClient from '../../utils/api';
 // 동적 임포트로 코드 스플리팅 적용
 const StatsCards = lazy(() => import('../../components/dashboard/StatsCards'));
 const RecentBookings = lazy(() => import('../../components/dashboard/RecentBookings'));
+const HealthDashboard = lazy(() => import('../../components/HealthDashboard'));
 
 interface MemberStats {
   totalBookings: number;
@@ -103,10 +104,50 @@ interface MemberStats {
   nextLesson: string | null;
 }
 
+// 건강 관련 데이터 인터페이스
+interface HealthData {
+  riskLevel: 'low' | 'medium' | 'high';
+  riskChange: number;
+  weeklyGoal: number;
+  weeklyTotal: number;
+  weeklyChange: number;
+  exerciseFrequency: number;
+  frequencyChange: number;
+  nextWorkout: string;
+  nextWorkoutChange: number;
+}
+
+interface ExerciseRecord {
+  date: string;
+  duration: number;
+  satisfaction: number;
+  pain: number;
+}
+
+interface HealthGoal {
+  name: string;
+  current: number;
+  target: number;
+  progress: number;
+  unit: string;
+}
+
+interface WeeklyProgram {
+  day: string;
+  duration: number;
+  strokes: string;
+}
+
 export default function MemberDashboard() {
   const [stats, setStats] = useState<MemberStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  
+  // 건강 관련 상태
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [exerciseRecords, setExerciseRecords] = useState<ExerciseRecord[]>([]);
+  const [healthGoals, setHealthGoals] = useState<HealthGoal[]>([]);
+  const [weeklyProgram, setWeeklyProgram] = useState<WeeklyProgram[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -131,6 +172,37 @@ export default function MemberDashboard() {
             totalPayments: d.totalPayments || 0,
             nextLesson: d.nextClass || null,
           });
+          // 건강 데이터 로드 (샘플 데이터)
+          setHealthData({
+            riskLevel: 'medium',
+            riskChange: 5,
+            weeklyGoal: 150,
+            weeklyTotal: 120,
+            weeklyChange: 5.2,
+            exerciseFrequency: 5,
+            frequencyChange: 2.1,
+            nextWorkout: 'Mon',
+            nextWorkoutChange: 0
+          });
+          
+          setExerciseRecords([
+            { date: '2024-01-15', duration: 30, satisfaction: 8, pain: 2 },
+            { date: '2024-01-12', duration: 25, satisfaction: 7, pain: 3 }
+          ]);
+          
+          setHealthGoals([
+            { name: '체중 감량', current: 68, target: 65, progress: 60, unit: 'kg' },
+            { name: '심박수 개선', current: 75, target: 70, progress: 100, unit: 'bpm' }
+          ]);
+          
+          setWeeklyProgram([
+            { day: 'Mon', duration: 30, strokes: '배영 + 자유형' },
+            { day: 'Tue', duration: 30, strokes: '배영 + 자유형' },
+            { day: 'Wed', duration: 30, strokes: '배영 + 자유형' },
+            { day: 'Thu', duration: 30, strokes: '배영 + 자유형' },
+            { day: 'Fri', duration: 30, strokes: '배영 + 자유형' }
+          ]);
+          
           // 샘플 데이터로 최근 예약 설정
           setRecentBookings([
             {
@@ -214,6 +286,27 @@ export default function MemberDashboard() {
         }>
           <StatsCards stats={stats} />
         </Suspense>
+
+        {/* 건강 대시보드 - 코드 스플리팅 적용 */}
+        {healthData && (
+          <Suspense fallback={
+            <div className="bg-white rounded-lg shadow p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          }>
+            <HealthDashboard 
+              healthData={healthData}
+              exerciseRecords={exerciseRecords}
+              healthGoals={healthGoals}
+              weeklyProgram={weeklyProgram}
+            />
+          </Suspense>
+        )}
 
         {/* 최근 예약 - 코드 스플리팅 적용 */}
         <Suspense fallback={
