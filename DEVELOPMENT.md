@@ -31,8 +31,15 @@
    - ✅ 레이스 플랜 UI 있음 (700-950줄)
 
 #### ✅ **해결 방법**
-1. **서버 API 수정** (server/src/routes/users.ts:1103-1228)
-   - `PUT /api/users/:userId/swimming-profile` 엔드포인트 확장
+1. **서버 API 수정** (server/src/routes/users.ts)
+   
+   **A. CSS API (1006-1096줄)**
+   - `PUT /api/users/:userId/swimming-profile/css`
+   - ❌ 기존: 강사가 수정 시 `pendingChanges`에 저장 (승인 대기)
+   - ✅ 수정: 강사가 수정 시 즉시 `swimmingProfile.css`에 저장
+   
+   **B. 프로필 API (1103-1228줄)**
+   - `PUT /api/users/:userId/swimming-profile`
    - 추가된 필드:
      - `poolLength` (풀 길이)
      - `weeklyDistance` (주간 목표 거리)
@@ -41,9 +48,10 @@
    - 강사 권한: 승인 없이 즉시 적용 (프로그램 생성을 위해 필요)
    - 본인 권한: 즉시 적용
 
-2. **디버그 로그 확장** (BulkMemberVariablesModal.tsx:138)
-   - '전체 swimmingProfile' 출력 추가
-   - 서버에서 받은 데이터 전체 확인 가능
+2. **디버그 로그 확장** (BulkMemberVariablesModal.tsx)
+   - **로드 시** (138줄): '전체 swimmingProfile' 출력 추가
+   - **저장 시** (1093-1144줄): CSS 저장 전/후, 프로필 저장 전/후 로그 출력
+   - 어떤 데이터가 저장되는지, 응답이 어떻게 오는지 확인 가능
 
 #### 🎯 **테스트 방법**
 1. 서버 재시작 필요 (`cd server; npm start`)

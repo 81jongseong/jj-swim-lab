@@ -1090,14 +1090,26 @@ export default function BulkMemberVariablesModal({
                       
                       for (const memberVar of finalMemberVariables) {
                         try {
-                          // CSS 저장 (강사가 입력하면 승인 대기 상태로)
+                          console.log(`💾 ${memberVar.memberName} CSS 저장 시작:`, memberVar.css);
+                          
+                          // CSS 저장 (강사가 즉시 적용)
                           const cssResponse = await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile/css`, {
                             css: memberVar.css,
                             updatedByRole: 'instructor',
                             reason: '강사가 CSS를 측정/수정했습니다.'
                           });
                           
-                        // 나머지 프로필 저장 (강사가 입력하면 승인 대기 상태로)
+                          console.log(`✅ ${memberVar.memberName} CSS 저장 완료:`, cssResponse.data);
+                          
+                        console.log(`💾 ${memberVar.memberName} 프로필 저장 시작:`, {
+                          vo2max: memberVar.vo2max,
+                          maxHeartRate: memberVar.maxHeartRate,
+                          restingHeartRate: memberVar.restingHeartRate,
+                          poolLength: memberVar.poolLength,
+                          lastRacePlan: memberVar.programType === 'race' ? '있음' : '없음'
+                        });
+                          
+                        // 나머지 프로필 저장 (강사가 즉시 적용)
                         const profileResponse = await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile`, {
                           mainStrokes: memberVar.mainStrokes,
                           excludedStrokes: memberVar.excludedStrokes,
@@ -1126,14 +1138,11 @@ export default function BulkMemberVariablesModal({
                           reason: '강사가 회원 프로필을 설정/수정했습니다.'
                         });
                         
-                        // 승인 대기인지 확인
-                        const needsApproval = cssResponse.data?.needsApproval || profileResponse.data?.needsApproval;
+                        console.log(`✅ ${memberVar.memberName} 프로필 저장 완료:`, profileResponse.data);
                         
                         savedCount++;
+                        console.log(`✅ ${memberVar.memberName} 총 ${savedCount}명 저장 완료`);
                         
-                        if (needsApproval) {
-                          console.log(`${memberVar.memberName}: 승인 대기 상태로 저장됨`);
-                        }
                       } catch (error: any) {
                         console.error(`${memberVar.memberName} 프로필 저장 실패:`, error);
                         // 403, 404 오류는 무시하고 계속 진행

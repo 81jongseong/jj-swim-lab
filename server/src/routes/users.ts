@@ -1070,24 +1070,23 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
       });
     }
     
-    // 강사가 수정하는 경우 → 승인 대기 상태로 저장
-    if (!((user.studentInfo as any).swimmingProfile.pendingChanges)) {
-      (user.studentInfo as any).swimmingProfile.pendingChanges = {};
-    }
-    
-    (user.studentInfo as any).swimmingProfile.pendingChanges.css = css;
-    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedBy = currentUser._id;
-    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedAt = new Date();
-    (user.studentInfo as any).swimmingProfile.pendingChanges.reason = reason || '강사가 CSS를 재측정했습니다.';
+    // 강사가 수정하는 경우 → 즉시 적용 (프로그램 생성을 위해 필요)
+    (user.studentInfo as any).swimmingProfile.css = {
+      ...(css || {}),
+      lastUpdated: new Date(),
+      updatedBy: currentUser._id,
+      updatedByRole: updatedByRole || 'instructor'
+    };
     
     await user.save();
     
     return res.json({
       success: true,
-      message: 'CSS 변경 제안이 전송되었습니다. 회원의 승인을 기다리고 있습니다.',
+      message: 'CSS가 성공적으로 업데이트되었습니다.',
       data: {
-        pendingChanges: (user.studentInfo as any).swimmingProfile.pendingChanges,
-        needsApproval: true
+        css: (user.studentInfo as any).swimmingProfile.css,
+        updatedBy: currentUser.name,
+        updatedByRole: updatedByRole || 'instructor'
       }
     });
   } catch (err) {
