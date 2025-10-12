@@ -353,6 +353,7 @@ export default function HealthInputPage() {
     const hasKneePain = healthData.orthopedics.includes('knee-pain');
     const hasBackPain = healthData.orthopedics.includes('back-pain');
     const hasShoulderPain = healthData.orthopedics.includes('shoulder-pain');
+    const hasShoulderImpingement = healthData.orthopedics.includes('shoulder-impingement');
     
     if (hasKneePain) {
       baseIntensity = Math.min(baseIntensity, 75);
@@ -396,7 +397,32 @@ export default function HealthInputPage() {
       });
     }
     
-    return { bmi, recommendations, baseIntensity };
+    if (hasShoulderImpingement) {
+      baseIntensity = Math.min(baseIntensity, 70);
+      recommendations.push({ 
+        icon: '🩹', 
+        type: 'danger',
+        title: '어깨 충돌 증후군', 
+        intensity: '정상 대비 70% 강도',
+        duration: '통증 없는 범위 내에서 (주 3-4일)',
+        avoid: ['접영 (절대 금지)', '자유형 하이엘보우', '과도한 회전', '무리한 풀링', '빠른 팔 회전'],
+        recommend: ['평영만 사용', '낮은 팔 각도', '작은 스트로크', '어깨 재활 운동', '충분한 휴식'],
+        detail: '어깨 충돌 증후군은 팔을 머리 위로 올릴 때 통증이 발생합니다. 접영과 자유형의 높은 팔 동작은 절대 피하세요. 평영으로 천천히 재활하고, 통증이 지속되면 반드시 정형외과 상담이 필요합니다.'
+      });
+    }
+    
+    // 복합 질환 요약 추가
+    const conditions = [];
+    if (bmi >= 25) conditions.push(`비만 ${bmi >= 30 ? '(고도)' : '(경도)'}`);
+    if (hasHighBP) conditions.push(`고혈압 ${hasSevereHypertension ? '2기' : '1기'}`);
+    if (hasDiabetes) conditions.push('당뇨');
+    if (hasDyslipidemia) conditions.push('고지혈증');
+    if (hasKneePain) conditions.push('무릎통증');
+    if (hasBackPain) conditions.push('허리통증');
+    if (hasShoulderPain) conditions.push('어깨통증');
+    if (hasShoulderImpingement) conditions.push('어깨충돌');
+    
+    return { bmi, recommendations, baseIntensity, conditions };
   };
 
   // 유효성 검사
@@ -446,30 +472,31 @@ export default function HealthInputPage() {
       console.log('건강정보 저장:', healthData);
       
       // 2. 하루짜리 프로그램 생성
-      const programParams = {
-        athleteId: 'guest', // 게스트 사용자
+      const programData = {
+        date: new Date().toISOString().split('T')[0],
+        athleteId: 'guest',
         athleteName: '체험 회원',
-        programType: 'daily', // 하루짜리 체험
-        params: {
-          startDate: new Date().toISOString().split('T')[0],
-          daysPerWeek: 1, // 하루만
-          sessionDuration: healthData.swim_profile.sessionDuration || 60,
-          pool: 25,
-          mainStrokes: healthData.swim_profile.mainStrokes || ['freestyle'],
-          excludedStrokes: healthData.swim_profile.excludedStrokes || [],
-          cssPer100: healthData.swim_profile.css || {},
-          conditionIds: healthData.orthopedics,
-          goal: healthData.goals?.primary || '체력 향상'
-        }
+        programType: 'daily',
+        goal: healthData.goals?.primary || '체력 향상',
+        duration: healthData.swim_profile.sessionDuration || 60,
+        level: healthData.swim_profile.level,
+        mainStrokes: healthData.swim_profile.mainStrokes,
+        excludedStrokes: healthData.swim_profile.excludedStrokes,
+        css: healthData.swim_profile.css,
+        conditions: healthData.orthopedics,
+        intensity: analyzeHealth().baseIntensity
       };
       
-      console.log('🏊 하루짜리 체험 프로그램 생성:', programParams);
+      // 로컬 스토리지에 저장 (임시)
+      localStorage.setItem('guest-daily-program', JSON.stringify(programData));
+      
+      console.log('🏊 하루짜리 체험 프로그램 생성:', programData);
       
       // TODO: 실제 API 호출
-      // const response = await apiClient.post('/api/programs/daily-trial', programParams);
+      // const response = await apiClient.post('/api/programs/daily-trial', programData);
       
-      alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!\n\n프로그램 페이지로 이동합니다.');
-      router.push('/dashboard'); // 게스트는 대시보드로
+      alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
+      router.push('/guest/programs');
     } catch (error) {
       console.error('프로그램 생성 오류:', error);
       alert('프로그램 생성 중 오류가 발생했습니다.');
@@ -783,7 +810,7 @@ export default function HealthInputPage() {
         );
 
       case 3:
-        const { bmi, recommendations, baseIntensity } = analyzeHealth();
+        const { bmi, recommendations, baseIntensity, conditions } = analyzeHealth();
         
         return (
           <div className="space-y-8">
@@ -873,14 +900,33 @@ export default function HealthInputPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold text-gray-900 flex items-center">
                   <span className="text-3xl mr-3">⚡</span>
-                  권장 운동 강도
+                  최종 권장 운동 강도
                 </h3>
                 <div className="text-right">
-                  <p className="text-4xl font-black text-purple-600">{baseIntensity}%</p>
+                  <p className="text-5xl font-black text-purple-600">{baseIntensity}%</p>
                   <p className="text-sm text-gray-600">정상 대비</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-700">
+              
+              {/* 복합 질환 표시 */}
+              {conditions.length > 0 && (
+                <div className="mb-4 p-4 bg-white/70 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">🏥 고려된 건강 상태:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {conditions.map((condition, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                        {condition}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-3">
+                    ℹ️ 복합 질환이 있는 경우, 가장 낮은 강도를 적용합니다. 
+                    {conditions.length >= 2 && `(${conditions.join(', ')} 중 가장 낮은 ${baseIntensity}% 적용)`}
+                  </p>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-700 font-medium">
                 {baseIntensity === 100 ? (
                   <>✅ 건강 상태가 양호합니다. 일반적인 운동 강도로 진행하세요.</>
                 ) : baseIntensity >= 80 ? (
