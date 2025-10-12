@@ -145,28 +145,7 @@ export default function HealthInputPage() {
     }
   });
 
-  // 특수 상황 상태
-  const [specialConditions, setSpecialConditions] = useState({
-    pregnancy: {
-      isPregnant: false,
-      trimester: '1'
-    },
-    injury: {
-      hasInjury: false,
-      injuryType: '',
-      injuryLocation: ''
-    },
-    medication: {
-      takingMedication: false,
-      medicationType: ''
-    },
-    postSurgery: {
-      hasSurgery: false,
-      surgeryType: '',
-      surgeryDate: '',
-      recoveryStage: ''
-    }
-  });
+  // 특수 상황은 AllConditionsDrawer에서 관절질환(orthopedics)과 함께 선택됨
 
   // 운동 강도 가이드 생성
   const generateIntensityGuide = (): any => {
@@ -253,23 +232,8 @@ export default function HealthInputPage() {
       }));
       setCurrentStep(1); // 기본정보부터 시작
     } else if (specialCondition) {
-      // 특수상황 기반 프로그램 생성 - 기본정보부터 시작
-      if (specialCondition === 'pregnancy') {
-        setSpecialConditions(prev => ({
-          ...prev,
-          pregnancy: { isPregnant: true, trimester: 'first' }
-        }));
-      } else if (specialCondition.startsWith('post_surgery_')) {
-        setSpecialConditions(prev => ({
-          ...prev,
-          postSurgery: { 
-            hasSurgery: true, 
-            surgeryType: specialCondition.replace('post_surgery_', ''),
-            surgeryDate: '',
-            recoveryStage: 'acute'
-          }
-        }));
-      }
+      // 특수상황도 AllConditionsDrawer에서 처리 (orthopedics 배열에 포함)
+      // 예: 'pregnancy', 'post-surgery' 등이 이미 CONDITIONS 데이터에 있음
       setCurrentStep(1); // 기본정보부터 시작
     }
   }, [searchParams]);
@@ -380,12 +344,10 @@ export default function HealthInputPage() {
                  healthData.vitals?.rest_bp?.sbp && healthData.vitals?.rest_bp?.sbp > 0 && 
                  healthData.vitals?.rest_bp?.dbp && healthData.vitals?.rest_bp?.dbp > 0);
       case 3:
-        return true; // 관절질환은 선택사항
+        return true; // 질환/특수상황은 선택사항 (AllConditionsDrawer로 통합)
       case 4:
-        return true; // 특수상황은 선택사항
-      case 5:
         return !!(healthData.swim_profile?.level && healthData.swim_profile?.level !== 'beginner_1'); // 수영실력은 필수
-      case 6:
+      case 5:
         return !!(healthData.goals && healthData.goals.primary && healthData.goals.primary !== ''); // 운동목표는 필수
       default:
         return false;
@@ -671,208 +633,6 @@ export default function HealthInputPage() {
         );
 
       case 4:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">특수 상황 선택</h3>
-              <p className="text-sm text-gray-600 mb-6">
-                현재 특수한 상황이 있다면 선택해주세요. (복수 선택 가능)
-              </p>
-              
-              {/* 임신 여부 */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="pregnancy"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={specialConditions.pregnancy.isPregnant}
-                    onChange={(e) => setSpecialConditions(prev => ({
-                      ...prev,
-                      pregnancy: { ...prev.pregnancy, isPregnant: e.target.checked }
-                    }))}
-                  />
-                  <label htmlFor="pregnancy" className="text-sm font-medium text-gray-700">임신 중입니다</label>
-                </div>
-                
-                {specialConditions.pregnancy.isPregnant && (
-                  <div className="ml-6 p-3 bg-pink-50 border border-pink-200 rounded-lg">
-                    <label htmlFor="trimester" className="block text-sm font-medium text-gray-700 mb-1">임신 주수</label>
-                    <select 
-                      id="trimester"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      value={specialConditions.pregnancy.trimester} 
-                      onChange={(e) => setSpecialConditions(prev => ({
-                        ...prev,
-                        pregnancy: { ...prev.pregnancy, trimester: e.target.value }
-                      }))}
-                    >
-                      <option value="">임신 주수를 선택하세요</option>
-                      <option value="first">1기 (1-12주)</option>
-                      <option value="second">2기 (13-28주)</option>
-                      <option value="third">3기 (29-40주)</option>
-                    </select>
-                    <p className="text-xs text-pink-700 mt-2">
-                      🤰 임신 중에는 안전한 수영 프로그램이 필요합니다.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* 수술 후 재활 */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="post_surgery"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={specialConditions.postSurgery.hasSurgery}
-                    onChange={(e) => setSpecialConditions(prev => ({
-                      ...prev,
-                      postSurgery: { ...prev.postSurgery, hasSurgery: e.target.checked }
-                    }))}
-                  />
-                  <label htmlFor="post_surgery" className="text-sm font-medium text-gray-700">수술 후 재활 중입니다</label>
-                </div>
-                
-                {specialConditions.postSurgery.hasSurgery && (
-                  <div className="ml-6 p-3 bg-orange-50 border border-orange-200 rounded-lg space-y-4">
-                    <div>
-                      <label htmlFor="surgery_type" className="block text-sm font-medium text-gray-700 mb-1">수술 종류</label>
-                      <select 
-                        id="surgery_type"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={specialConditions.postSurgery.surgeryType} 
-                        onChange={(e) => setSpecialConditions(prev => ({
-                          ...prev,
-                          postSurgery: { ...prev.postSurgery, surgeryType: e.target.value }
-                        }))}
-                      >
-                        <option value="">수술 종류를 선택하세요</option>
-                        <option value="joint">관절 수술</option>
-                        <option value="gynecological">부인과 수술</option>
-                        <option value="cardiac">심장 수술</option>
-                        <option value="spinal">척추 수술</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="recovery_stage" className="block text-sm font-medium text-gray-700 mb-1">회복 단계</label>
-                      <select 
-                        id="recovery_stage"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={specialConditions.postSurgery.recoveryStage} 
-                        onChange={(e) => setSpecialConditions(prev => ({
-                          ...prev,
-                          postSurgery: { ...prev.postSurgery, recoveryStage: e.target.value }
-                        }))}
-                      >
-                        <option value="">회복 단계를 선택하세요</option>
-                        <option value="acute">급성기 (0-6주)</option>
-                        <option value="subacute">아급성기 (6-12주)</option>
-                        <option value="chronic">만성기 (12주 이상)</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-orange-700">
-                      🏥 수술 후 재활 중에는 의료진과 상담 후 안전한 운동 프로그램이 필요합니다.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* 추가 특수 상황들 */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-800">기타 특수 상황</h4>
-                
-                {/* 심장질환 */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="heart_disease"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={healthData.conditions?.heartDisease || false}
-                    onChange={(e) => handleInputChange('conditions.heartDisease', e.target.checked)}
-                  />
-                  <label htmlFor="heart_disease" className="text-sm font-medium text-gray-700">심장질환</label>
-                </div>
-                {healthData.conditions?.heartDisease && (
-                  <div className="ml-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-xs text-red-700">
-                      ❤️ 심장질환이 있는 경우 운동 전 의료진 상담이 필수입니다.
-                    </p>
-                  </div>
-                )}
-
-                {/* 호흡기질환 */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="respiratory_disease"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={healthData.conditions?.respiratoryDisease || false}
-                    onChange={(e) => handleInputChange('conditions.respiratoryDisease', e.target.checked)}
-                  />
-                  <label htmlFor="respiratory_disease" className="text-sm font-medium text-gray-700">호흡기질환</label>
-                </div>
-                {healthData.conditions?.respiratoryDisease && (
-                  <div className="ml-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-700">
-                      💨 호흡기질환이 있는 경우 수영이 도움이 될 수 있으나, 운동 강도를 조절해야 합니다.
-                    </p>
-                  </div>
-                )}
-
-                {/* 정신건강 이슈 */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="mental_health"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={healthData.conditions?.mentalHealth || false}
-                    onChange={(e) => handleInputChange('conditions.mentalHealth', e.target.checked)}
-                  />
-                  <label htmlFor="mental_health" className="text-sm font-medium text-gray-700">정신건강 이슈</label>
-                </div>
-                {healthData.conditions?.mentalHealth && (
-                  <div className="ml-6 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-xs text-green-700">
-                      🧠 정신건강 이슈가 있는 경우 수영은 우울감 완화와 스트레스 해소에 도움이 됩니다.
-                    </p>
-                  </div>
-                )}
-
-                {/* 65세 이상 노인 */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="elderly"
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    checked={healthData.demographics?.age && healthData.demographics.age >= 65}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleInputChange('demographics.age', 65);
-                      } else {
-                        // 체크 해제 시 나이를 기본값으로 초기화
-                        handleInputChange('demographics.age', 0);
-                      }
-                    }}
-                  />
-                  <label htmlFor="elderly" className="text-sm font-medium text-gray-700">65세 이상 노인</label>
-                </div>
-                {healthData.demographics?.age && healthData.demographics.age >= 65 && (
-                  <div className="ml-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-xs text-gray-700">
-                      👴 노인의 경우 낙상 예방과 근력 유지가 중요합니다. 안전한 수영 프로그램이 필요합니다.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-        );
-
-      case 5:
         return (
           <div className="space-y-6">
             <div>
@@ -1466,7 +1226,7 @@ export default function HealthInputPage() {
           </div>
         );
 
-      case 6:
+      case 5:
         const availableGoals = [
           '체중 감량',
           '심혈관 건강 개선',
@@ -1521,10 +1281,9 @@ export default function HealthInputPage() {
 
   const handleSubmit = async () => {
     try {
-      // 건강정보와 특수 상황 정보를 결합
+      // 건강정보 (질환/특수상황은 orthopedics에 포함)
       const completeHealthData = {
-        ...healthData,
-        specialConditions
+        ...healthData
       };
 
       // API 호출하여 건강정보 저장 및 운동 프로그램 생성
