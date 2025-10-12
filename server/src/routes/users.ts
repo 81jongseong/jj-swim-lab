@@ -1071,6 +1071,8 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
     }
     
     // 강사가 수정하는 경우 → 즉시 적용 (프로그램 생성을 위해 필요)
+    console.log(`💾 CSS 저장 시작: ${user.name}`, css);
+    
     (user.studentInfo as any).swimmingProfile.css = {
       ...(css || {}),
       lastUpdated: new Date(),
@@ -1079,6 +1081,8 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
     };
     
     await user.save();
+    
+    console.log(`✅ CSS 저장 완료: ${user.name}`, (user.studentInfo as any).swimmingProfile.css);
     
     return res.json({
       success: true,
@@ -1191,6 +1195,11 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
     }
     
     // 강사가 수정하는 경우 → 즉시 적용 (프로그램 생성을 위해 필요)
+    console.log(`💾 프로필 저장 시작: ${user.name}`, {
+      mainStrokes, trainingDays, sessionDuration, poolLength, currentGoal,
+      vo2max, maxHeartRate, restingHeartRate, lastRacePlan: lastRacePlan ? '있음' : '없음'
+    });
+    
     if (mainStrokes) (user.studentInfo as any).swimmingProfile.mainStrokes = mainStrokes;
     if (preferredStrokes) (user.studentInfo as any).swimmingProfile.preferredStrokes = preferredStrokes;
     if (excludedStrokes) (user.studentInfo as any).swimmingProfile.excludedStrokes = excludedStrokes;
@@ -1214,6 +1223,14 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
     (user.studentInfo as any).swimmingProfile.modificationReason = reason || '강사가 프로필을 설정/수정했습니다.';
     
     await user.save();
+    
+    console.log(`✅ 프로필 저장 완료: ${user.name}`, {
+      trainingDays: (user.studentInfo as any).swimmingProfile.trainingDays,
+      sessionDuration: (user.studentInfo as any).swimmingProfile.sessionDuration,
+      poolLength: (user.studentInfo as any).swimmingProfile.poolLength,
+      currentGoal: (user.studentInfo as any).swimmingProfile.currentGoal,
+      vo2max: (user.studentInfo as any).swimmingProfile.vo2max
+    });
     
     return res.json({
       success: true,
