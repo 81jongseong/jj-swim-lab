@@ -523,8 +523,14 @@ export default function HealthInputPage() {
       
       // 건강 상태 분석 및 운동 시간 조절
       const healthAnalysis = analyzeHealth();
-      const baseSessionDuration = healthData.swim_profile.sessionDuration || 60;
+      const baseSessionDuration = healthData.swim_profile.sessionDuration || 50; // 기본값을 50분으로 변경
       const adjustedSessionDuration = Math.round(baseSessionDuration * (healthAnalysis.baseIntensity / 100));
+      
+      console.log('⏰ 운동 시간 설정:', {
+        baseSessionDuration,
+        baseIntensity: healthAnalysis.baseIntensity,
+        adjustedSessionDuration
+      });
       
       const engineInput: EngineInput = {
         startDate: new Date().toISOString().split('T')[0],

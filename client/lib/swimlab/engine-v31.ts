@@ -2006,6 +2006,13 @@ function finalizePlan(
   // 사용자가 설정한 목표 시간을 우선 사용 (targetMinutes가 있으면)
   const finalDuration = targetMinutes || Math.round(actualDuration);
 
+  console.log('⏰ finalizePlan 시간 처리:', {
+    targetMinutes,
+    actualDuration: Math.round(actualDuration),
+    finalDuration,
+    hasTargetMinutes: !!targetMinutes
+  });
+
   return { sets, total, totalDuration: finalDuration, notes: [mod.explanation] };
 }
 
