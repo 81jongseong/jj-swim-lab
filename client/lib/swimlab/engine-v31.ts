@@ -1670,24 +1670,27 @@ function buildDayPlan(opts: {
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992', 'CSS_MLSS_WAKAYOSHI_1993', 'CV_INTERVALS_TOUBEKIS_2011']
       });
 
-      const nB = Math.max(1, Math.round(backM / 100));
-      const strokeBack = pickStroke('back'); // 회피 영법 고려
-      const selectedMethodBack = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBack, 100);
-      sets.push({
-        stroke: strokeBack,
-        zone: selectedMethodBack.zone,
-        restSec: restOf(selectedMethodBack.zone),
-        rpe: rpeOf(selectedMethodBack.zone),
-        equipment: [],
-        subtype: undefined,
-        meters: nB * 100,
-        desc: `[배영] ${nB}×100m ${selectedMethodBack.name} @ ${selectedMethodBack.pace}, r${restOf(selectedMethodBack.zone)}″`,
-        whyPace: selectedMethodBack.whyPace,
-        whyRest: selectedMethodBack.whyRest,
-        whySet: `${selectedMethodBack.name}: ${methodData?.pros || selectedMethodBack.purpose}`,
-        methodId: selectedMethodBack.id, // 이력 추적용
-        evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992', 'CSS_MLSS_WAKAYOSHI_1993', 'CV_INTERVALS_TOUBEKIS_2011']
-      });
+      // 배영 세트는 backM > 0 일 때만 생성 (회피 영법 고려)
+      if (backM > 0 && hasBackstroke) {
+        const nB = Math.max(1, Math.round(backM / 100));
+        const strokeBack = pickStroke('back'); // 회피 영법 고려
+        const selectedMethodBack = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBack, 100);
+        sets.push({
+          stroke: strokeBack,
+          zone: selectedMethodBack.zone,
+          restSec: restOf(selectedMethodBack.zone),
+          rpe: rpeOf(selectedMethodBack.zone),
+          equipment: [],
+          subtype: undefined,
+          meters: nB * 100,
+          desc: `[${getStrokeName(strokeBack)}] ${nB}×100m ${selectedMethodBack.name} @ ${selectedMethodBack.pace}, r${restOf(selectedMethodBack.zone)}″`,
+          whyPace: selectedMethodBack.whyPace,
+          whyRest: selectedMethodBack.whyRest,
+          whySet: `${selectedMethodBack.name}: ${methodData?.pros || selectedMethodBack.purpose}`,
+          methodId: selectedMethodBack.id, // 이력 추적용
+          evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992', 'CSS_MLSS_WAKAYOSHI_1993', 'CV_INTERVALS_TOUBEKIS_2011']
+        });
+      }
     }
     else if (opts.theme === 'endurance') {
       // 지구력: LSD, 풀 집중, 하이-로우 등
@@ -1719,24 +1722,27 @@ function buildDayPlan(opts: {
         evidenceKeys: ['CSS_MLSS_WAKAYOSHI_1993']
       });
 
-      const nB = Math.max(1, Math.round(backM / 200));
-      const strokeBackEnd = pickStroke('back'); // 회피 영법 고려
-      const selectedMethodBackEnd = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBackEnd, 200);
-      sets.push({
-        stroke: strokeBackEnd,
-        zone: selectedMethodBackEnd.zone,
-        restSec: restOf(selectedMethodBackEnd.zone),
-        rpe: rpeOf(selectedMethodBackEnd.zone),
-        equipment: [],
-        subtype: undefined,
-        meters: nB * 200,
-        desc: `[배영] ${nB}×200m ${selectedMethodBackEnd.name} @ ${selectedMethodBackEnd.pace}, r${restOf(selectedMethodBackEnd.zone)}″`,
-        whyPace: selectedMethodBackEnd.whyPace,
-        whyRest: selectedMethodBackEnd.whyRest,
-        whySet: `${selectedMethodBackEnd.name}: ${methodDataEnd?.pros || selectedMethodBackEnd.purpose}`,
-        methodId: selectedMethodBackEnd.id, // 이력 추적용
-        evidenceKeys: ['CSS_MLSS_WAKAYOSHI_1993']
-      });
+      // 배영 세트는 backM > 0이고 배영이 사용 가능할 때만 생성
+      if (backM > 0 && hasBackstroke) {
+        const nB = Math.max(1, Math.round(backM / 200));
+        const strokeBackEnd = pickStroke('back'); // 회피 영법 고려
+        const selectedMethodBackEnd = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBackEnd, 200);
+        sets.push({
+          stroke: strokeBackEnd,
+          zone: selectedMethodBackEnd.zone,
+          restSec: restOf(selectedMethodBackEnd.zone),
+          rpe: rpeOf(selectedMethodBackEnd.zone),
+          equipment: [],
+          subtype: undefined,
+          meters: nB * 200,
+          desc: `[${getStrokeName(strokeBackEnd)}] ${nB}×200m ${selectedMethodBackEnd.name} @ ${selectedMethodBackEnd.pace}, r${restOf(selectedMethodBackEnd.zone)}″`,
+          whyPace: selectedMethodBackEnd.whyPace,
+          whyRest: selectedMethodBackEnd.whyRest,
+          whySet: `${selectedMethodBackEnd.name}: ${methodDataEnd?.pros || selectedMethodBackEnd.purpose}`,
+          methodId: selectedMethodBackEnd.id, // 이력 추적용
+          evidenceKeys: ['CSS_MLSS_WAKAYOSHI_1993']
+        });
+      }
     }
     else {
       // tempo_hi: 스프린트, 디센딩, 레이스 페이스 등
@@ -1768,22 +1774,25 @@ function buildDayPlan(opts: {
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992', 'CSS_MLSS_WAKAYOSHI_1993', 'CV_INTERVALS_TOUBEKIS_2011']
       });
 
-      const nB = Math.max(2, Math.round(backM / 50));
-      const strokeBackHi = pickStroke('back'); // 회피 영법 고려
-      sets.push({
-        stroke: strokeBackHi,
-        zone: 'Z4',
-        restSec: restOf('Z4'),
-        rpe: rpeOf('Z4'),
-        equipment: ['패들'],
-        subtype: undefined,
-        meters: nB * 50,
-        desc: `[배영] ${nB}×50m 스피드 (패들) @ CSS−8″, r${restOf('Z4')}″`,
-        whyPace: '역치 초과의 고강도(VO₂↑) → 세트 품질 유지를 위해 거리를 짧게',
-        whyRest: `Z4 기본 r${restOf('Z4')}″. 고강도는 PCr 재합성·젖산 제거 시간 확보 필요`,
-        whySet: '품질 높은 스프린트-유사 자극, 신경근 동원력 향상',
-        evidenceKeys: ['CV_INTERVALS_TOUBEKIS_2011', 'SPRINT_REST_TOUBEKIS_2005', 'PCR_RECOVERY_BAKER_2010']
-      });
+      // 배영 세트는 backM > 0이고 배영이 사용 가능할 때만 생성
+      if (backM > 0 && hasBackstroke) {
+        const nB = Math.max(2, Math.round(backM / 50));
+        const strokeBackHi = pickStroke('back'); // 회피 영법 고려
+        sets.push({
+          stroke: strokeBackHi,
+          zone: 'Z4',
+          restSec: restOf('Z4'),
+          rpe: rpeOf('Z4'),
+          equipment: ['패들'],
+          subtype: undefined,
+          meters: nB * 50,
+          desc: `[${getStrokeName(strokeBackHi)}] ${nB}×50m 스피드 (패들) @ CSS−8″, r${restOf('Z4')}″`,
+          whyPace: '역치 초과의 고강도(VO₂↑) → 세트 품질 유지를 위해 거리를 짧게',
+          whyRest: `Z4 기본 r${restOf('Z4')}″. 고강도는 PCr 재합성·젖산 제거 시간 확보 필요`,
+          whySet: '품질 높은 스프린트-유사 자극, 신경근 동원력 향상',
+          evidenceKeys: ['CV_INTERVALS_TOUBEKIS_2011', 'SPRINT_REST_TOUBEKIS_2005', 'PCR_RECOVERY_BAKER_2010']
+        });
+      }
     }
   }
 
