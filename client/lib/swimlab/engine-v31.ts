@@ -780,6 +780,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
   const getWeeklyThemes = (goal: string, days: number): DayPlan['theme'][] => {
     if (goal === '기술 연마') {
       // 기술 연마: 70% 기술, 30% 지구력
+      if (days === 1) return ['tech_tempo']; // 1일: 순수 기술
       if (days === 2) return ['tech_tempo', 'tech_tempo'];
       if (days === 3) return ['tech_tempo', 'tech_tempo', 'endurance'];
       if (days === 4) return ['tech_tempo', 'tech_tempo', 'endurance', 'tech_tempo'];
@@ -787,6 +788,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['tech_tempo', 'tech_tempo', 'endurance', 'tech_tempo', 'endurance', 'tempo_hi'];
     } else if (goal === '체력 향상') {
       // 체력 향상: 70% 지구력, 30% 기술
+      if (days === 1) return ['endurance']; // 1일: 순수 지구력
       if (days === 2) return ['endurance', 'endurance'];
       if (days === 3) return ['endurance', 'endurance', 'tech_tempo'];
       if (days === 4) return ['endurance', 'endurance', 'tech_tempo', 'endurance'];
@@ -794,6 +796,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['endurance', 'endurance', 'tech_tempo', 'endurance', 'tech_tempo', 'tempo_hi'];
     } else if (goal === '실력 향상') {
       // 실력 향상: 50% 기술, 30% 지구력, 20% 고강도
+      if (days === 1) return ['tech_tempo']; // 1일: 기술 중심
       if (days === 2) return ['tech_tempo', 'endurance'];
       if (days === 3) return ['tech_tempo', 'endurance', 'tempo_hi'];
       if (days === 4) return ['tech_tempo', 'tech_tempo', 'endurance', 'tempo_hi'];
@@ -801,6 +804,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['tech_tempo', 'tech_tempo', 'endurance', 'tempo_hi', 'tech_tempo', 'endurance'];
     } else if (goal === '체중 감량') {
       // 체중 감량: 80% 지구력, 20% 기술
+      if (days === 1) return ['endurance']; // 1일: 순수 지구력 (칼로리 소모)
       if (days === 2) return ['endurance', 'endurance'];
       if (days === 3) return ['endurance', 'endurance', 'tech_tempo'];
       if (days === 4) return ['endurance', 'endurance', 'tech_tempo', 'endurance'];
@@ -808,6 +812,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['endurance', 'endurance', 'tech_tempo', 'endurance', 'endurance', 'tech_tempo'];
     } else if (goal === '재활') {
       // 재활: 80% 기술, 20% 지구력
+      if (days === 1) return ['tech_tempo']; // 1일: 순수 기술 (저부하)
       if (days === 2) return ['tech_tempo', 'tech_tempo'];
       if (days === 3) return ['tech_tempo', 'tech_tempo', 'endurance'];
       if (days === 4) return ['tech_tempo', 'tech_tempo', 'endurance', 'tech_tempo'];
@@ -815,6 +820,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['tech_tempo', 'tech_tempo', 'endurance', 'tech_tempo', 'tech_tempo', 'endurance'];
     } else if (goal === '장거리 수영') {
       // 장거리 수영: 90% 지구력, 10% 기술 (페이스 유지 능력 극대화)
+      if (days === 1) return ['endurance']; // 1일: 순수 지구력
       if (days === 2) return ['endurance', 'endurance'];
       if (days === 3) return ['endurance', 'endurance', 'endurance'];
       if (days === 4) return ['endurance', 'endurance', 'endurance', 'tech_tempo'];
@@ -822,6 +828,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['endurance', 'endurance', 'endurance', 'endurance', 'tech_tempo', 'endurance'];
     } else if (goal === '오픈워터') {
       // 오픈워터: 70% 지구력, 20% 기술, 10% 오픈워터 특화
+      if (days === 1) return ['endurance']; // 1일: 지구력 (OW 기초)
       if (days === 2) return ['endurance', 'tech_tempo'];
       if (days === 3) return ['endurance', 'endurance', 'tech_tempo'];
       if (days === 4) return ['endurance', 'endurance', 'tech_tempo', 'endurance'];
@@ -829,6 +836,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['endurance', 'endurance', 'tech_tempo', 'endurance', 'tech_tempo', 'endurance'];
     } else if (goal === '생존수영') {
       // 생존수영: 100% 기술 (안전·기능 중심, 거리/기록 무관)
+      if (days === 1) return ['tech_tempo']; // 1일: 생존 기술
       if (days === 2) return ['tech_tempo', 'tech_tempo'];
       if (days === 3) return ['tech_tempo', 'tech_tempo', 'tech_tempo'];
       if (days === 4) return ['tech_tempo', 'tech_tempo', 'tech_tempo', 'tech_tempo'];
@@ -836,6 +844,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['tech_tempo', 'tech_tempo', 'tech_tempo', 'tech_tempo', 'tech_tempo', 'tech_tempo'];
     } else if (goal === '인명구조원') {
       // 인명구조원: 50% 지구력, 30% 고강도, 20% 기술 (과제특이성)
+      if (days === 1) return ['endurance']; // 1일: 구조 지구력
       if (days === 2) return ['endurance', 'tempo_hi'];
       if (days === 3) return ['endurance', 'tempo_hi', 'tech_tempo'];
       if (days === 4) return ['endurance', 'tempo_hi', 'endurance', 'tech_tempo'];
@@ -843,6 +852,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       if (days >= 6) return ['endurance', 'tempo_hi', 'endurance', 'tempo_hi', 'tech_tempo', 'endurance'];
     } else {
       // 스트레스 해소: 60% 기술, 40% 지구력
+      if (days === 1) return ['tech_tempo']; // 1일: 기술 (편안한 수영)
       if (days === 2) return ['tech_tempo', 'endurance'];
       if (days === 3) return ['tech_tempo', 'tech_tempo', 'endurance'];
       if (days === 4) return ['tech_tempo', 'tech_tempo', 'endurance', 'endurance'];
