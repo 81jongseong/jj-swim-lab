@@ -22,7 +22,6 @@ import type { TrendLineData, TrendMetric } from '@/components/TrendLineChart';
 export default function RevenueManagementPage() {
   const { user, hasUserType } = useAuth();
   
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
@@ -31,6 +30,11 @@ export default function RevenueManagementPage() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'revenue' | 'cost'>('revenue');
   const [selectedMetric, setSelectedMetric] = useState<string>('registration');
+  
+  // 기간 설정
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState('2024-12-31');
+  const [periodUnit, setPeriodUnit] = useState<'week' | 'month' | 'quarter' | 'half' | 'year'>('month');
 
   // centerData: 전국 시/도별 센터 데이터
   const centerDataByRegion: { [region: string]: { [district: string]: string[] } } = {
@@ -169,16 +173,53 @@ export default function RevenueManagementPage() {
   const generateTrendData = (): TrendLineData[] => {
     if (selectedCenters.length === 0) return [];
 
-    // 기간별 라벨 생성
-    const periods = selectedPeriod === 'week' 
-      ? ['1주차', '2주차', '3주차', '4주차']
-      : selectedPeriod === 'month' 
-      ? ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
-      : selectedPeriod === 'quarter' 
-      ? ['1분기', '2분기', '3분기', '4분기']
-      : selectedPeriod === 'half' 
-      ? ['상반기', '하반기']
-      : ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    // 시작/종료 날짜 기반 기간 계산
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // 주기별 라벨 생성
+    const periods: string[] = [];
+    const current = new Date(start);
+    
+    if (periodUnit === 'week') {
+      while (current <= end) {
+        const weekNum = Math.ceil((current.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+        periods.push(`${weekNum}주차`);
+        current.setDate(current.getDate() + 7);
+      }
+    } else if (periodUnit === 'month') {
+      while (current <= end) {
+        periods.push(`${current.getFullYear()}.${String(current.getMonth() + 1).padStart(2, '0')}`);
+        current.setMonth(current.getMonth() + 1);
+      }
+    } else if (periodUnit === 'quarter') {
+      while (current <= end) {
+        const quarter = Math.floor(current.getMonth() / 3) + 1;
+        periods.push(`${current.getFullYear()}.Q${quarter}`);
+        current.setMonth(current.getMonth() + 3);
+      }
+    } else if (periodUnit === 'half') {
+      while (current <= end) {
+        const half = current.getMonth() < 6 ? '상반기' : '하반기';
+        periods.push(`${current.getFullYear()}.${half}`);
+        current.setMonth(current.getMonth() + 6);
+      }
+    } else { // year
+      while (current <= end) {
+        periods.push(`${current.getFullYear()}년`);
+        current.setFullYear(current.getFullYear() + 1);
+      }
+    }
+    
+    // 최소 2개 이상의 데이터 포인트 보장
+    if (periods.length < 2) {
+      if (periodUnit === 'month') {
+        periods.push('1월', '2월', '3월', '4월', '5월', '6월');
+      } else {
+        periods.push('기간1', '기간2');
+      }
+    }
 
     return selectedCenters
       .map(centerName => {
@@ -367,35 +408,17 @@ export default function RevenueManagementPage() {
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">🏢 센터별 비교 분석</h3>
-          <div className="flex items-center gap-4">
-            {comparisonMode && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">비교 기간:</label>
-                <select
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="week">일주</option>
-                  <option value="month">월</option>
-                  <option value="quarter">분기</option>
-                  <option value="half">반기</option>
-                  <option value="year">년</option>
-                </select>
-              </div>
-            )}
           <button
-              onClick={() => setComparisonMode(!comparisonMode)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              comparisonMode
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+            onClick={() => setComparisonMode(!comparisonMode)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              comparisonMode 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-              {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
+            {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
           </button>
         </div>
-      </div>
 
         <RegionNavigation
           selectedRegions={selectedRegions}
@@ -503,6 +526,45 @@ export default function RevenueManagementPage() {
                 <span className="text-2xl">📈</span>
                 <span>기간별 추세 분석</span>
               </h3>
+
+              {/* 기간 설정 */}
+              <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <label className="block text-sm font-medium text-blue-900 mb-3">📅 분석 기간 설정</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">시작일</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">종료일</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">표시 주기</label>
+                    <select
+                      value={periodUnit}
+                      onChange={(e) => setPeriodUnit(e.target.value as any)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="week">주 단위</option>
+                      <option value="month">월 단위</option>
+                      <option value="quarter">분기 단위</option>
+                      <option value="half">반기 단위</option>
+                      <option value="year">년 단위</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
               {/* 카테고리 및 지표 선택 */}
               <div className="flex gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
