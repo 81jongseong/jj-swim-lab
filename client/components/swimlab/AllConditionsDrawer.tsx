@@ -59,7 +59,8 @@ export default function AllConditionsDrawer({
 }){
   const [q, setQ] = useState('');
   const [category, setCategory] = useState<string>(''); // 대분류 선택
-  const set = useMemo(() => new Set(value), [value]);
+  const [tempValue, setTempValue] = useState<string[]>(value); // 임시 선택 상태
+  const set = useMemo(() => new Set(tempValue), [tempValue]);
   
   // 대분류 카테고리 추출
   const categories = useMemo(() => {
@@ -107,13 +108,23 @@ export default function AllConditionsDrawer({
     const id = normalizeConditionId(conditionId);
     const next = new Set(set);
     next.has(id) ? next.delete(id) : next.add(id);
-    onChange(Array.from(next));
+    setTempValue(Array.from(next)); // 임시 상태만 업데이트
+  };
+
+  const handleSave = () => {
+    onChange(tempValue); // 최종 저장
+    onClose();
+  };
+
+  const handleCancel = () => {
+    setTempValue(value); // 원래 값으로 복원
+    onClose();
   };
 
   // 통계
   const acuteCount = list.filter(c => c.group === 'ACUTE').length;
   const chronicCount = list.filter(c => c.group === 'CHRONIC').length;
-  const selectedCount = value.length;
+  const selectedCount = tempValue.length;
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
@@ -125,12 +136,20 @@ export default function AllConditionsDrawer({
         <div className="p-4 border-b sticky top-0 bg-white rounded-t-2xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold">전체 컨디션 목록</h3>
-            <button 
-              onClick={onClose}
-              className="px-3 py-1 border rounded hover:bg-gray-50 text-sm"
-            >
-              ✕ 닫기
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleCancel}
+                className="px-4 py-1 border-2 border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition"
+              >
+                취소
+              </button>
+              <button 
+                onClick={handleSave}
+                className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition"
+              >
+                저장
+              </button>
+            </div>
           </div>
           
           {/* 검색 바 */}

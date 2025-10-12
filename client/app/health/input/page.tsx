@@ -36,6 +36,7 @@ import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSecti
 import PhysiologicalMetricsSection from '@/components/swimlab/member-variables/PhysiologicalMetricsSection';
 import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
 import TrainingScheduleSection from '@/components/swimlab/member-variables/TrainingScheduleSection';
+import { generateWeeklyPlan, type Input as EngineInput } from '@/lib/swimlab/engine-v31';
 
 // 타입 정의
 interface HealthInput {
@@ -349,11 +350,17 @@ export default function HealthInputPage() {
       });
     }
     
-    // 관절 질환 관련
-    const hasKneePain = healthData.orthopedics.includes('knee-pain');
-    const hasBackPain = healthData.orthopedics.includes('back-pain');
-    const hasShoulderPain = healthData.orthopedics.includes('shoulder-pain');
-    const hasShoulderImpingement = healthData.orthopedics.includes('shoulder-impingement');
+    // 관절 질환 관련 (실제 condition ID 사용)
+    const hasKneePain = healthData.orthopedics.some(id => 
+      ['patellofemoral_pain', 'patellar_tendinopathy', 'it_band_syndrome', 'meniscus_irritation', 'post_surgery_knee'].includes(id)
+    );
+    const hasBackPain = healthData.orthopedics.some(id => 
+      ['lumbar_extension_intolerance', 'lumbar_flexion_intolerance', 'disc_herniation', 'spinal_stenosis', 'lumbar_spinal_stenosis'].includes(id)
+    );
+    const hasShoulderPain = healthData.orthopedics.some(id => 
+      ['shoulder_bursitis', 'shoulder_tendinitis', 'shoulder_instability', 'shoulder_arthritis', 'rotator_cuff_irritation'].includes(id)
+    );
+    const hasShoulderImpingement = healthData.orthopedics.includes('shoulder_impingement');
     
     if (hasKneePain) {
       baseIntensity = Math.min(baseIntensity, 75);
@@ -464,14 +471,70 @@ export default function HealthInputPage() {
     }
   };
 
-  // 하루짜리 체험 프로그램 생성
+  // 하루짜리 체험 프로그램 생성 (실제 엔진 사용)
   const handleGenerateDailyProgram = async () => {
     setIsSaving(true);
     try {
       // 1. 건강정보 저장
-      console.log('건강정보 저장:', healthData);
+      console.log('🏥 건강정보:', healthData);
       
-      // 2. 하루짜리 프로그램 생성
+      // 2. CSS 설정 (입력값 또는 레벨 기반 추정)
+      const strokeCSS: Record<string, number> = {};
+      const hasCSS = healthData.swim_profile.css && 
+                     Object.values(healthData.swim_profile.css).some(v => v > 0);
+      
+      if (hasCSS) {
+        // 사용자 입력 CSS 사용
+        Object.entries(healthData.swim_profile.css!).forEach(([stroke, css]) => {
+          if (css > 0) strokeCSS[stroke] = css;
+        });
+      } else {
+        // 레벨 기반 CSS 추정
+        const level = healthData.swim_profile.level;
+        const estimatedCSS = {
+          beginner_1: { freestyle: 150, backstroke: 165, breaststroke: 180, butterfly: 165 },
+          beginner_2: { freestyle: 130, backstroke: 143, breaststroke: 156, butterfly: 143 },
+          intermediate_1: { freestyle: 110, backstroke: 121, breaststroke: 132, butterfly: 121 },
+          intermediate_2: { freestyle: 100, backstroke: 110, breaststroke: 120, butterfly: 110 },
+          advanced_1: { freestyle: 85, backstroke: 93, breaststroke: 102, butterfly: 93 },
+          advanced_2: { freestyle: 80, backstroke: 88, breaststroke: 96, butterfly: 88 }
+        };
+        Object.assign(strokeCSS, estimatedCSS[level] || estimatedCSS.beginner_1);
+      }
+      
+      // 3. 엔진 입력 데이터 구성
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const todayIdx = new Date().getDay();
+      
+      const engineInput: EngineInput = {
+        startDate: new Date().toISOString().split('T')[0],
+        days: [dayNames[todayIdx]] as any, // 오늘 요일만
+        weeklyMinutes: healthData.swim_profile.sessionDuration || 60,
+        weeklyMeters: 0, // 엔진이 자동 계산
+        poolLen: (healthData.swim_profile.poolLength || 25) as any,
+        strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
+        strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
+        css100: strokeCSS,
+        conditionIds: healthData.orthopedics as any,
+        dayCondition: 'normal' as any,
+        hasPain: healthData.orthopedics.length > 0,
+        goal: healthData.goals?.primary || '체력 향상',
+        level: healthData.swim_profile.level,
+        weekHistory: [], // 첫 프로그램이므로 이력 없음
+        vo2max: healthData.swim_profile.vo2max,
+        maxHeartRate: healthData.swim_profile.maxHeartRate,
+        restingHeartRate: healthData.swim_profile.restingHeartRate
+      };
+      
+      console.log('🏊 엔진 입력:', engineInput);
+      
+      // 4. 실제 엔진으로 프로그램 생성 (주간 플랜이지만 1일만 사용)
+      const weeklyPlan = generateWeeklyPlan(engineInput);
+      const generatedProgram = weeklyPlan.days[0]; // 첫날만 사용 (하루짜리)
+      
+      console.log('✅ 생성된 프로그램:', generatedProgram);
+      
+      // 5. 프로그램 데이터 저장
       const programData = {
         date: new Date().toISOString().split('T')[0],
         athleteId: 'guest',
@@ -480,26 +543,19 @@ export default function HealthInputPage() {
         goal: healthData.goals?.primary || '체력 향상',
         duration: healthData.swim_profile.sessionDuration || 60,
         level: healthData.swim_profile.level,
-        mainStrokes: healthData.swim_profile.mainStrokes,
-        excludedStrokes: healthData.swim_profile.excludedStrokes,
-        css: healthData.swim_profile.css,
-        conditions: healthData.orthopedics,
-        intensity: analyzeHealth().baseIntensity
+        intensity: analyzeHealth().baseIntensity,
+        engineOutput: generatedProgram, // 실제 생성된 프로그램
+        healthData: healthData
       };
       
-      // 로컬 스토리지에 저장 (임시)
+      // 로컬 스토리지에 저장
       localStorage.setItem('guest-daily-program', JSON.stringify(programData));
-      
-      console.log('🏊 하루짜리 체험 프로그램 생성:', programData);
-      
-      // TODO: 실제 API 호출
-      // const response = await apiClient.post('/api/programs/daily-trial', programData);
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');
     } catch (error) {
-      console.error('프로그램 생성 오류:', error);
-      alert('프로그램 생성 중 오류가 발생했습니다.');
+      console.error('❌ 프로그램 생성 오류:', error);
+      alert(`프로그램 생성 중 오류가 발생했습니다.\n\n${error}`);
     } finally {
       setIsSaving(false);
     }
