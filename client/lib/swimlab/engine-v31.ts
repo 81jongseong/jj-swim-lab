@@ -1028,7 +1028,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       themeDesc,
       sets: finalized.sets,
       totalMeters: finalized.total,
-      totalDuration: perDay.minutes,
+      totalDuration: finalized.totalDuration,
       notes: finalized.notes
     });
   });
@@ -1986,7 +1986,23 @@ function finalizePlan(
   // 🎯 시간 기반 조절 로직 제거 - 항상 계획된 거리대로 수행
   // (사용자 요청: 운동 강도를 낮춰서 시간이 늘어지면 쿨다운 거리를 줄이는 로직 제거)
 
-  return { sets, total, notes: [mod.explanation] };
+  // 실제 운동 시간 계산 (각 세트의 페이스 기반)
+  let actualDuration = 0;
+  sets.forEach(s => {
+    const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
+    if (paceMatch) {
+      const minutes = parseInt(paceMatch[1]);
+      const seconds = parseInt(paceMatch[2]);
+      const pace100m = minutes * 60 + seconds; // 초/100m
+      const estimatedTime = (s.meters / 100) * pace100m / 60; // 분
+      actualDuration += estimatedTime + (s.restSec / 60); // 휴식 포함
+    } else {
+      // 페이스 정보 없으면 기본 90초/100m 가정
+      actualDuration += (s.meters / 100) * 1.5 + (s.restSec / 60);
+    }
+  });
+
+  return { sets, total, totalDuration: Math.round(actualDuration), notes: [mod.explanation] };
 }
 
 // ---------- 헬퍼 함수 ----------

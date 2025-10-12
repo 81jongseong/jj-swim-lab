@@ -948,24 +948,26 @@ export default function HealthInputPage() {
                 </div>
 
                 {/* 혈당 */}
-                {healthData.vitals.bloodSugar && healthData.vitals.bloodSugar > 0 && healthData.vitals.bloodSugar !== 0 && (
-                  <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">공복 혈당</p>
-                        <p className="text-2xl font-bold text-gray-900">{healthData.vitals.bloodSugar} mg/dL</p>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        healthData.vitals.bloodSugar >= 126 ? 'bg-red-100 text-red-700' :
-                        healthData.vitals.bloodSugar >= 100 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {healthData.vitals.bloodSugar >= 126 ? '당뇨 의심' :
-                         healthData.vitals.bloodSugar >= 100 ? '전단계' : '정상'}
-                      </div>
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">공복 혈당</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {healthData.vitals.bloodSugar === 0 ? '미입력' : `${healthData.vitals.bloodSugar} mg/dL`}
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      healthData.vitals.bloodSugar === 0 ? 'bg-gray-100 text-gray-700' :
+                      healthData.vitals.bloodSugar >= 126 ? 'bg-red-100 text-red-700' :
+                      healthData.vitals.bloodSugar >= 100 ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {healthData.vitals.bloodSugar === 0 ? '미입력' :
+                       healthData.vitals.bloodSugar >= 126 ? '당뇨 의심' :
+                       healthData.vitals.bloodSugar >= 100 ? '전단계' : '정상'}
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* 콜레스테롤 */}
                 {healthData.vitals.totalCholesterol && healthData.vitals.totalCholesterol > 0 && (
