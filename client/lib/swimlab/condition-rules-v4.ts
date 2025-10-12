@@ -367,6 +367,13 @@ export function applyDayCondition(
     const intensityPctDisplay = Math.round(intensityPercent * 100);
     const paceIncreaseDisplay = Math.round(cssPct * 100);
     explanation = `🏥 건강 상태 조정: ${intensityPctDisplay}% 강도 → 페이스 +${paceIncreaseDisplay}%, 휴식 증가. 과학적 운동 처방 (ACSM/WHO 기준)`;
+    
+    console.log('🏥 건강 상태 기반 페이스 조절:', {
+      intensityPercent,
+      cssPct,
+      paceMultiplier: (1 + cssPct).toFixed(2) + 'x',
+      restAdd
+    });
   }
   // 컨디션에 따른 페이스/휴식 조정 (거리는 그대로!)
   else if (condition === 'very_good') {

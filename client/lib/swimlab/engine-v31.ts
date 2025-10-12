@@ -1936,6 +1936,17 @@ function applyToSets(
     const adjCss = Math.round(baseCss * (1 + mod.cssPct));
     const zoneCss = paceOf(adjCss, s.zone, s.stroke);
     
+    // 첫 세트에서만 디버깅 로그
+    if (out.length === 0) {
+      console.log('🎯 페이스 조절 적용:', {
+        stroke: s.stroke,
+        baseCss: baseCss + '초/100m',
+        cssPct: (mod.cssPct * 100).toFixed(1) + '%',
+        adjCss: adjCss + '초/100m',
+        multiplier: (1 + mod.cssPct).toFixed(2) + 'x'
+      });
+    }
+    
     // 설명 문자열 업데이트
     let paced = s.desc.replace(/@ CSS[+−]?\d*″/, `@ ${fmtCss(zoneCss)}`);
     paced = paced.replace(/r\d+″/, `r${newRest}″`);
