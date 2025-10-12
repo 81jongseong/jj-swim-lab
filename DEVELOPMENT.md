@@ -2,6 +2,69 @@
 
 ## 📅 최근 업데이트 (2025-10-12)
 
+### 🗑️ **프로젝트 파일 정리 (2025-10-12)**
+
+#### 📊 **삭제된 파일 (총 39개)**
+
+**1. 중복 개발 문서 (3개)**
+- `DEVELOPMENT_LATEST.md` - DEVELOPMENT.md와 중복
+- `DEVELOPMENT_UPDATE.md` - DEVELOPMENT.md와 중복
+- `WORK_HISTORY.md` - DEVELOPMENT.md에 통합됨
+
+**2. 오래된 docs 파일 (2개)**
+- `docs/개선-필요-사항.md` - 이미 해결된 내용
+- `docs/회원-다중-선택-개선-계획.md` - 이미 구현됨
+
+**3. 오래된 백업 파일 (12개)**
+- `server/backups/backup-2025-09-*.json` (10개)
+- `server/backups/backup-2025-10-0[1-6]*.json` (2개)
+
+**4. 임시 테스트 파일 (6개)**
+- `server/check-checklist.js`
+- `server/check-current-user.js`
+- `server/check-server-db.js`
+- `server/check-user-centers.js`
+- `server/test-checklist-api.js`
+- `server/test-db.js`
+
+**5. 로그/리포트 파일 (3개)**
+- `health-check-report.json`
+- `lint.log`
+- `auto-fix-report.json`
+
+**6. 불필요 폴더 (3개)**
+- `client/client/` - 중복 폴더
+- `client/src_backup/` - 오래된 백업
+- `backups/old-engines/` - 오래된 엔진 백업
+- `backups/auto-fix-1759356798654/` - 오래된 자동 수정 백업
+
+**7. 백업 파일 (1개)**
+- `client/components/swimlab/BulkMemberVariablesModal.tsx.backup`
+
+#### 💡 **정리 효과**
+- **17,285줄** 삭제 (중복 코드 제거)
+- 프로젝트 구조 명확화
+- 디스크 공간 절약
+- Git 히스토리 가독성 향상
+
+#### 📂 **현재 백업 폴더 상태**
+```
+backups/
+└── optimization-20251012-175956/  (최신 최적화 백업)
+    ├── BulkMemberVariablesModal.tsx
+    ├── ProgramListView.tsx
+    └── swim-training-engine-page.tsx
+
+server/backups/  (최근 9개만 보관)
+├── backup-2025-10-07T10-55-20-938Z.json
+├── backup-2025-10-09T00-51-00-366Z.json
+├── backup-2025-10-10T10-47-53-313Z.json
+└── backup-2025-10-11T10-48-59-280Z.json
+... (5개 더)
+```
+
+---
+
 ### ♻️ **코드 최적화: BulkMemberVariablesModal 컴포넌트 분리 (2025-10-12)**
 
 #### 📊 **최적화 결과**
