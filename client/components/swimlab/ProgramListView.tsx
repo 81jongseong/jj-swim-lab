@@ -53,6 +53,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [methodDrillSearch, setMethodDrillSearch] = useState('');
   const [methodDrillFilter, setMethodDrillFilter] = useState<'all' | 'method' | 'drill'>('all');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [completionSessionIdx, setCompletionSessionIdx] = useState<number | null>(null);
   const [showDayConditionModal, setShowDayConditionModal] = useState(false);
   const [dayConditionSessionIdx, setDayConditionSessionIdx] = useState<number | null>(null);
@@ -104,6 +105,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       });
     } catch (error) {
       console.error('❌ 훈련법/드릴 로드 오류:', error);
+      setErrorMessage('훈련법/드릴 데이터를 불러오는 중 오류가 발생했습니다. 프로그램 수정 기능이 제한될 수 있습니다.');
+      setTimeout(() => setErrorMessage(null), 5000);
       // 오류 시에도 빈 배열로 초기화하여 UI가 표시되도록
       setTrainingMethods([]);
       setDrills([]);
@@ -178,6 +181,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       setPrograms(allPrograms);
     } catch (error) {
       console.error('프로그램 로드 실패:', error);
+      setErrorMessage('프로그램을 불러오는 중 오류가 발생했습니다. 로컬 데이터를 사용합니다.');
+      setTimeout(() => setErrorMessage(null), 5000);
       // 실패 시 localStorage만 사용
       setPrograms(listPrograms());
     } finally {
@@ -245,7 +250,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
           }
         } catch (error) {
           console.error('❌ 삭제 API 호출 오류:', error);
-          alert('프로그램 삭제 중 오류가 발생했습니다.');
+          setErrorMessage('프로그램 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          setTimeout(() => setErrorMessage(null), 5000);
           return;
         }
       } else {
@@ -265,7 +271,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       
     } catch (error) {
       console.error('❌ 프로그램 삭제 실패:', error);
-      alert('프로그램 삭제에 실패했습니다.');
+      setErrorMessage('프로그램 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setTimeout(() => setErrorMessage(null), 5000);
     }
   };
 
@@ -377,6 +384,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       }
     } catch (error) {
       console.error('완료율 저장 오류:', error);
+      setErrorMessage('완료율 저장에 실패했습니다. 네트워크 연결을 확인해주세요.');
+      setTimeout(() => setErrorMessage(null), 5000);
       throw error;
     }
   };
@@ -450,12 +459,37 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       }
     } catch (error) {
       console.error('당일 컨디션 저장 오류:', error);
+      setErrorMessage('당일 컨디션 저장에 실패했습니다. 네트워크 연결을 확인해주세요.');
+      setTimeout(() => setErrorMessage(null), 5000);
       throw error;
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* 에러 메시지 */}
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <svg className="w-5 h-5 text-red-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-red-800">오류 발생</h4>
+              <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* 헤더 및 통계 */}
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
