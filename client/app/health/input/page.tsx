@@ -960,7 +960,9 @@ export default function HealthInputPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">선택된 질환/상황</p>
-                      <p className="text-3xl font-bold text-gray-900">{healthData.orthopedics.length}개</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {healthData.orthopedics.length === 0 ? '선택 안함' : `${healthData.orthopedics.length}개`}
+                      </p>
                     </div>
                     <div className="text-4xl">
                       {healthData.orthopedics.length === 0 ? '✅' : '🏥'}
