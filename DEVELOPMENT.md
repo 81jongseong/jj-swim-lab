@@ -63,6 +63,99 @@ server/backups/  (최근 9개만 보관)
 ... (5개 더)
 ```
 
+#### 📁 **전체 프로젝트 구조**
+
+```
+jj-swim-lab/
+├── client/                    # 프론트엔드 (Next.js)
+│   ├── __tests__/            # Jest 테스트
+│   ├── app/                  # Next.js App Router 페이지
+│   ├── components/           # React 컴포넌트
+│   │   ├── swimlab/         # 수영 엔진 컴포넌트
+│   │   │   ├── member-variables/  # 회원 변수 설정 (✨ 새로 분리)
+│   │   │   └── program-list/      # 프로그램 카드 (✨ 새로 분리)
+│   │   └── ui/              # shadcn/ui 컴포넌트
+│   ├── content/             # 컨텐츠 데이터 (관절 가이드)
+│   ├── data/                # CSV, 정적 데이터
+│   ├── e2e/                 # Playwright E2E 테스트
+│   ├── hooks/               # React Custom Hooks
+│   ├── lib/                 # 유틸리티 라이브러리
+│   │   └── swimlab/        # 수영 엔진 로직
+│   ├── plans/               # 프로그램 내보내기
+│   ├── public/              # 정적 파일 (이미지, SVG, GLB)
+│   ├── reports/             # 테스트 리포트
+│   ├── scripts/             # 배포/테스트 스크립트
+│   ├── src/                 # 레거시 소스 (점진적 마이그레이션)
+│   ├── stores/              # Zustand 스토어 (3D 뷰어)
+│   ├── styles/              # CSS 스타일
+│   ├── swim-training-engine/ # 수영 엔진 v3.1 번들
+│   ├── types/               # TypeScript 타입 정의
+│   └── utils/               # 유틸리티 함수
+│
+├── server/                   # 백엔드 (Express + MongoDB)
+│   ├── backups/             # DB 백업 (자동, 최근 9개)
+│   ├── dist/                # TypeScript 빌드 결과
+│   ├── logs/                # 서버 로그
+│   ├── scripts/             # DB 시드, 마이그레이션
+│   ├── src/
+│   │   ├── config/          # 설정 파일
+│   │   ├── middleware/      # Express 미들웨어
+│   │   ├── models/          # Mongoose 모델
+│   │   ├── routes/          # API 라우트
+│   │   ├── services/        # 비즈니스 로직
+│   │   └── utils/           # 유틸리티
+│   └── uploads/             # 파일 업로드 (XLSX)
+│
+├── docs/                     # 프로젝트 문서 (26개)
+│   ├── API-문서.md
+│   ├── 설명가능-수영-엔진-완성.md
+│   ├── 10가지-목표-완전-체계.md
+│   └── ... (23개 더)
+│
+├── scripts/                  # 루트 스크립트
+│   ├── comprehensive-health-check.cjs  # 전체 점검
+│   ├── create-*.cjs         # 샘플 데이터 생성
+│   └── test-*.js            # 테스트 스크립트
+│
+├── tests/                    # 루트 테스트 (수영 엔진 로직)
+│   ├── dose.test.ts         # 운동량 테스트
+│   ├── guardrails.test.ts   # 안전 규칙 테스트
+│   ├── ortho-filter.test.ts # 정형외과 필터 테스트
+│   └── progression.test.ts  # 점진적 부하 테스트
+│
+├── src/                      # 공유 소스 (클라이언트/서버)
+│   ├── data/                # CSV 데이터
+│   ├── engine/              # 수영 엔진 코어
+│   └── swimlab/             # 수영 로직
+│
+├── backups/                  # 코드 백업
+│   └── optimization-20251012-175956/
+│
+├── test-results/             # 테스트 결과
+├── uploads/                  # 업로드 파일
+│
+├── DEVELOPMENT.md            # 개발 문서 (이 파일)
+├── README.md                 # 프로젝트 소개
+├── TESTING.md                # 테스트 가이드
+├── package.json              # 루트 패키지 (monorepo)
+├── pnpm-workspace.yaml       # pnpm 워크스페이스
+├── tsconfig.json             # TypeScript 설정
+└── vercel.json               # Vercel 배포 설정
+```
+
+**주요 폴더 설명:**
+
+| 폴더 | 용도 | 비고 |
+|------|------|------|
+| `client/` | 프론트엔드 앱 | Next.js 14, React 18 |
+| `server/` | 백엔드 API | Express, MongoDB |
+| `docs/` | 프로젝트 문서 | 26개 마크다운 |
+| `tests/` | 엔진 로직 테스트 | Jest 단위 테스트 |
+| `scripts/` | 유틸리티 스크립트 | 샘플 데이터, 점검 |
+| `src/` | 공유 코드 | 클라이언트/서버 공통 |
+| `backups/` | 코드 백업 | 최적화 전 원본 |
+| `uploads/` | 업로드 파일 | Excel 파일 등 |
+
 ---
 
 ### ♻️ **코드 최적화: BulkMemberVariablesModal 컴포넌트 분리 (2025-10-12)**
