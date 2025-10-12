@@ -36,7 +36,15 @@ import AllConditionsDrawer from '@/components/swimlab/AllConditionsDrawer';
 interface HealthInput {
   demographics: { age: number; sex: string };
   anthropometrics: { height_cm: number; weight_kg: number };
-  vitals: { rest_hr: number; rest_bp: { sbp: number; dbp: number }; on_beta_blocker: boolean };
+  vitals: { 
+    rest_hr: number; 
+    rest_bp: { sbp: number; dbp: number }; 
+    on_beta_blocker: boolean;
+    bloodSugar?: number;
+    totalCholesterol?: number;
+    ldlCholesterol?: number;
+    hdlCholesterol?: number;
+  };
   conditions: {
     hypertension: string;
     obesity: string;
@@ -256,10 +264,9 @@ export default function HealthInputPage() {
 
   const steps = [
     { id: 1, title: '기본 정보', description: '나이, 성별, 신체 정보' },
-    { id: 2, title: '건강검진', description: '혈압, 혈당, 콜레스테롤 등' },
-    { id: 3, title: '질환/상황', description: '관절 질환, 특수 상황 통합' },
-    { id: 4, title: '수영 정보', description: '실력, CSS, 선호/회피 영법' },
-    { id: 5, title: '운동목표', description: '운동 목표 및 선호도' }
+    { id: 2, title: '건강검진', description: '혈압, 혈당, 콜레스테롤' },
+    { id: 3, title: '질환/상황', description: '50+ 질환/특수상황' },
+    { id: 4, title: '수영+목표', description: '실력, CSS, 영법, 운동목표' }
   ];
 
   const jointConditions = allJointConditions.map(condition => ({
@@ -359,11 +366,13 @@ export default function HealthInputPage() {
                  healthData.vitals?.rest_bp?.sbp && healthData.vitals?.rest_bp?.sbp > 0 && 
                  healthData.vitals?.rest_bp?.dbp && healthData.vitals?.rest_bp?.dbp > 0);
       case 3:
-        return true; // 질환/특수상황은 선택사항 (AllConditionsDrawer로 통합)
+        return true; // 질환/특수상황은 선택사항
       case 4:
-        return !!(healthData.swim_profile?.level && healthData.swim_profile?.level !== 'beginner_1'); // 수영실력은 필수
-      case 5:
-        return !!(healthData.goals && healthData.goals.primary && healthData.goals.primary !== ''); // 운동목표는 필수
+        // 수영실력 + 운동목표 모두 필수
+        return !!(healthData.swim_profile?.level && 
+                 healthData.swim_profile?.level !== 'beginner_1' &&
+                 healthData.goals?.primary && 
+                 healthData.goals.primary !== '');
       default:
         return false;
     }
@@ -558,6 +567,62 @@ export default function HealthInputPage() {
                   placeholder="이완기 혈압을 입력하세요"
                 />
               </div>
+              <div>
+                <label htmlFor="blood_sugar" className="block text-sm font-medium text-gray-700 mb-1">공복 혈당 (mg/dL)</label>
+                <input
+                  id="blood_sugar"
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={healthData.vitals?.bloodSugar || ''}
+                  onChange={(e) => handleInputChange('vitals.bloodSugar', parseInt(e.target.value))}
+                  placeholder="공복 혈당을 입력하세요 (선택사항)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 정상: 100 미만, 당뇨 전단계: 100-125, 당뇨: 126 이상
+                </p>
+              </div>
+              <div>
+                <label htmlFor="total_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">총 콜레스테롤 (mg/dL)</label>
+                <input
+                  id="total_cholesterol"
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={healthData.vitals?.totalCholesterol || ''}
+                  onChange={(e) => handleInputChange('vitals.totalCholesterol', parseInt(e.target.value))}
+                  placeholder="총 콜레스테롤을 입력하세요 (선택사항)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 정상: 200 미만, 경계: 200-239, 높음: 240 이상
+                </p>
+              </div>
+              <div>
+                <label htmlFor="ldl_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">LDL 콜레스테롤 (mg/dL)</label>
+                <input
+                  id="ldl_cholesterol"
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={healthData.vitals?.ldlCholesterol || ''}
+                  onChange={(e) => handleInputChange('vitals.ldlCholesterol', parseInt(e.target.value))}
+                  placeholder="LDL 콜레스테롤을 입력하세요 (선택사항)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 정상: 100 미만, 경계: 130-159, 높음: 160 이상
+                </p>
+              </div>
+              <div>
+                <label htmlFor="hdl_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">HDL 콜레스테롤 (mg/dL)</label>
+                <input
+                  id="hdl_cholesterol"
+                  type="number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={healthData.vitals?.hdlCholesterol || ''}
+                  onChange={(e) => handleInputChange('vitals.hdlCholesterol', parseInt(e.target.value))}
+                  placeholder="HDL 콜레스테롤을 입력하세요 (선택사항)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 남성: 40 이상, 여성: 50 이상 (높을수록 좋음)
+                </p>
+              </div>
               <div className="flex items-center space-x-2">
                 <input
                   id="beta_blocker"
@@ -573,7 +638,12 @@ export default function HealthInputPage() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
               <div className="text-sm text-yellow-800">
-                혈압이 180/110 이상이거나 심장 질환이 있는 경우 의사와 상담 후 운동을 시작하세요.
+                <p className="font-semibold mb-2">⚠️ 건강검진 주의사항</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>혈압 180/110 이상: 의사 상담 필수</li>
+                  <li>공복 혈당 126 이상: 당뇨 진단, 운동 전 의사 상담</li>
+                  <li>총 콜레스테롤 240 이상: 심혈관 위험도 증가</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -1338,35 +1408,62 @@ export default function HealthInputPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">수영 실력별 특징</h3>
+            {/* 운동 목표 (Step 5에서 이동) */}
+            <div className="mt-8 pt-6 border-t-2 border-gray-200">
+              <h3 className="text-lg font-semibold mb-4">🎯 운동 목표</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                운동을 통해 달성하고 싶은 목표를 선택해주세요. (단일 선택)
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  '체중 감량',
+                  '심혈관 건강 개선',
+                  '관절 통증 완화',
+                  '체력 향상',
+                  '스트레스 해소',
+                  '수영 실력 향상'
+                ].map((goal) => (
+                  <button
+                    key={goal}
+                    type="button"
+                    onClick={() => handleGoalToggle(goal)}
+                    className={`p-4 border-2 rounded-lg text-left transition-all ${
+                      healthData.goals?.primary === goal
+                        ? 'border-green-500 bg-green-50 text-green-800 shadow-md'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {healthData.goals?.primary === goal && <CheckCircle className="h-5 w-5 text-green-600" />}
+                      <span className="font-medium">{goal}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">초급 (Beginner)</h4>
-                  <p className="text-sm text-gray-600">
-                    기본 영법(자유형, 배영) 가능. 운동 강도와 시간이 제한적으로 설정됩니다.
-                  </p>
+
+              {healthData.goals?.primary && (
+                <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+                  <Target className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div className="text-sm text-green-800">
+                    <p className="font-semibold mb-1">✅ 선택된 목표: {healthData.goals.primary}</p>
+                    <p>목표에 맞춤형 운동 프로그램이 생성됩니다.</p>
+                  </div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">중급 (Intermediate)</h4>
-                  <p className="text-sm text-gray-600">
-                    여러 영법 가능. 다양한 운동 프로그램을 제공받을 수 있습니다.
-                  </p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">고급 (Advanced)</h4>
-                  <p className="text-sm text-gray-600">
-                    모든 영법 가능. 고강도 운동 프로그램을 제공받을 수 있습니다.
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         );
 
       case 5:
+        // case 5 제거됨 - 운동목표가 Step 4로 통합됨
+        return null;
+
+      case 6:
+        // case 6도 제거됨
+        return null;
+
+      case 999:
         const availableGoals = [
           '체중 감량',
           '심혈관 건강 개선',
