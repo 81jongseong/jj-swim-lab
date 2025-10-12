@@ -27,7 +27,6 @@ export default function RevenueManagementPage() {
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'revenue' | 'cost'>('revenue');
   const [selectedMetric, setSelectedMetric] = useState<string>('registration');
   
@@ -168,6 +167,18 @@ export default function RevenueManagementPage() {
   useEffect(() => {
     refreshData();
   }, []);
+
+  // 금액을 한글로 변환하는 함수
+  const formatKoreanCurrency = (amount: number): string => {
+    if (amount >= 100000000) {
+      return `${(amount / 100000000).toFixed(1)}억원`;
+    } else if (amount >= 10000) {
+      return `${(amount / 10000).toFixed(0)}만원`;
+    } else if (amount >= 1000) {
+      return `${(amount / 1000).toFixed(0)}천원`;
+    }
+    return `${amount}원`;
+  };
 
   // 선택된 센터들의 추세 데이터 생성
   const generateTrendData = (): TrendLineData[] => {
@@ -313,7 +324,7 @@ export default function RevenueManagementPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">총 매출</p>
-              <p className="text-2xl font-bold text-gray-900">₩{revenueData.overview.totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatKoreanCurrency(revenueData.overview.totalRevenue)}</p>
             </div>
           </div>
         </div>
@@ -325,7 +336,7 @@ export default function RevenueManagementPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">순이익</p>
-              <p className="text-2xl font-bold text-gray-900">₩{revenueData.overview.netProfit.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatKoreanCurrency(revenueData.overview.netProfit)}</p>
             </div>
           </div>
         </div>
@@ -361,7 +372,7 @@ export default function RevenueManagementPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">센터당 평균</p>
-              <p className="text-2xl font-bold text-gray-900">₩{revenueData.overview.avgRevenuePerCenter.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatKoreanCurrency(revenueData.overview.avgRevenuePerCenter)}</p>
             </div>
           </div>
         </div>
@@ -372,13 +383,13 @@ export default function RevenueManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {Object.entries(revenueData.revenueSources).map(([key, value]) => (
             <div key={key} className="text-center">
-              <div className="text-2xl font-bold text-blue-600">₩{value.amount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-blue-600">{formatKoreanCurrency(value.amount)}</div>
               <div className="text-sm text-gray-600">
                 {key === 'membershipFees' ? '회원 등록비' :
                  key === 'lessonFees' ? '강습비' :
                  key === 'privateLessons' ? '개인레슨' :
                  key === 'equipmentRental' ? '장비 대여' : '기타 서비스'}
-          </div>
+              </div>
               <div className="text-xs text-gray-500">{value.percentage}%</div>
             </div>
           ))}
@@ -390,7 +401,7 @@ export default function RevenueManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(revenueData.costAnalysis).map(([key, value]) => (
             <div key={key} className="text-center">
-              <div className="text-2xl font-bold text-red-600">₩{value.amount.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-red-600">{formatKoreanCurrency(value.amount)}</div>
               <div className="text-sm text-gray-600">
                 {key === 'laborCosts' ? '인건비' :
                  key === 'rentCosts' ? '임대료' :
@@ -406,18 +417,9 @@ export default function RevenueManagementPage() {
         </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h3 className="text-lg font-semibold">🏢 센터별 비교 분석</h3>
-          <button
-            onClick={() => setComparisonMode(!comparisonMode)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              comparisonMode 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {comparisonMode ? '✅ 비교 모드 활성화' : '비교 모드'}
-          </button>
+          <p className="text-sm text-gray-500 mt-1">여러 센터를 선택하여 수익과 비용을 비교하세요</p>
         </div>
 
         <RegionNavigation
@@ -428,11 +430,11 @@ export default function RevenueManagementPage() {
           selectedCenters={selectedCenters}
           setSelectedCenters={setSelectedCenters}
           centerData={centerDataByRegion}
-          comparisonMode={comparisonMode}
+          comparisonMode={true}
           centerDataMap={centersData}
         />
 
-        {selectedCenters.length > 0 && comparisonMode && (
+        {selectedCenters.length > 0 && (
           <div className="mt-8 space-y-6">
             <ComparisonChart
               centers={selectedCenters.map(name => centersData[name]).filter(Boolean)}
@@ -650,10 +652,10 @@ export default function RevenueManagementPage() {
           </div>
         )}
 
-        {selectedCenters.length === 0 && comparisonMode && (
+        {selectedCenters.length === 0 && (
           <div className="mt-8 text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <p className="text-gray-500 text-lg">👆 위에서 센터를 선택하면 비교 차트가 표시됩니다</p>
-                      </div>
+          </div>
         )}
       </div>
     </div>

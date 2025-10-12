@@ -15,6 +15,18 @@
 
 import React from 'react';
 
+// 금액을 한글로 변환
+const formatKoreanCurrency = (amount: number): string => {
+  if (amount >= 100000000) {
+    return `${(amount / 100000000).toFixed(1)}억`;
+  } else if (amount >= 10000) {
+    return `${(amount / 10000).toFixed(0)}만`;
+  } else if (amount >= 1000) {
+    return `${(amount / 1000).toFixed(0)}천`;
+  }
+  return `${amount}`;
+};
+
 interface ChartItem {
   key: string;
   label: string;
@@ -64,7 +76,7 @@ export default function ComparisonChart({
               <span className="text-lg">{item.icon}</span>
               <span>{item.label}</span>
               <span className="ml-auto text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-                {centers.reduce((sum, c) => sum + item.getValue(c), 0).toLocaleString()}원
+                합계: {formatKoreanCurrency(centers.reduce((sum, c) => sum + item.getValue(c), 0))}원
               </span>
             </h3>
             <div className="space-y-3">
@@ -99,7 +111,7 @@ export default function ComparisonChart({
                           <div className="absolute inset-0 bg-white opacity-20 rounded-full animate-pulse"></div>
                         </div>
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-md">
-                          {amount.toLocaleString()}원
+                          {formatKoreanCurrency(amount)}원
                         </span>
                       </div>
                       <div className="w-16 text-right">
