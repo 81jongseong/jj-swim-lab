@@ -1518,7 +1518,11 @@ function buildDayPlan(opts: {
     // 팔/발차기/콤비네이션 세분화
     const pullN = Math.max(0, Math.round(n50 * pullRatio)); // 0 허용
     const kickN = Math.max(0, Math.round(n50 * kickRatio)); // 0 허용
-    const comboN = Math.max(1, n50 - pullN - kickN); // 최소 1개는 콤비네이션
+    const calculatedComboN = n50 - pullN - kickN;
+    
+    // 🔬 빌드업/디센딩/피라미드 과학적 반복 횟수: 최소 3회, 최적 4-6회
+    // 근거: 페이스 변화 학습은 최소 3-4회 반복 필요
+    const comboN = Math.max(3, Math.min(6, calculatedComboN));
     
     // 🏊 40개 드릴 중 목적성 있는 자동 선택 (목표 + 테마 + 레벨 기반)
     // ⚠️ 주의: 드릴은 선택된 영법(s1) 기반으로 작동
