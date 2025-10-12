@@ -96,8 +96,14 @@ export default function HealthInputPage() {
   // 단계 변경 시 페이지 맨 위로 스크롤
   const handleStepChange = (step: number) => {
     setCurrentStep(step);
+    // 즉시 스크롤
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  
+  // Step이 변경될 때마다 페이지 맨 위로 스크롤 (렌더링 후에도 적용)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
   const [healthData, setHealthData] = useState<HealthInput>({
     demographics: { age: 30, sex: 'male' },
     anthropometrics: { height_cm: 170, weight_kg: 70 },

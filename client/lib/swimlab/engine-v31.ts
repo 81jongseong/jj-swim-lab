@@ -2022,6 +2022,48 @@ function finalizePlan(
     difference: Math.round(estimatedMinutes - (targetMinutes || 0))
   });
 
+  // 🔧 시간 부족 시 메인 세트 반복 횟수 증가 (targetMinutes가 있을 때만)
+  if (targetMinutes && estimatedMinutes < targetMinutes * 0.9) {
+    // 메인 세트 찾기 (Z2, Z3, Z4)
+    const mainSetIdx = sets.findIndex(s => (s.zone === 'Z2' || s.zone === 'Z3' || s.zone === 'Z4') && s.meters >= 100);
+    
+    if (mainSetIdx >= 0) {
+      const shortageMinutes = targetMinutes - estimatedMinutes;
+      const currentMainSet = sets[mainSetIdx];
+      
+      // 현재 메인 세트의 1회 소요 시간 계산
+      const paceMatch = currentMainSet.desc.match(/@\s*(\d+):(\d+)/);
+      let timePerRep = 2.5; // 기본값 (분)
+      
+      if (paceMatch) {
+        const minutes = parseInt(paceMatch[1]);
+        const seconds = parseInt(paceMatch[2]);
+        timePerRep = (minutes + seconds / 60) + (currentMainSet.restSec / 60);
+      }
+      
+      // 필요한 추가 반복 횟수 계산
+      const additionalReps = Math.ceil(shortageMinutes / timePerRep);
+      const originalReps = parseReps(currentMainSet.desc);
+      const newReps = originalReps + additionalReps;
+      
+      // 메인 세트 반복 횟수 증가
+      sets[mainSetIdx].meters = (currentMainSet.meters / originalReps) * newReps;
+      sets[mainSetIdx].desc = currentMainSet.desc.replace(/^(\d+)×/, `${newReps}×`);
+      total = sets.reduce((s, x) => s + x.meters, 0);
+      
+      console.log('➕ 시간 부족으로 메인 세트 반복 증가:', {
+        shortageMinutes: Math.round(shortageMinutes),
+        originalReps,
+        newReps,
+        addedReps: additionalReps,
+        newTotalMeters: total
+      });
+      
+      // 시간 재계산
+      estimatedMinutes += additionalReps * timePerRep;
+    }
+  }
+
   // 시간 초과 시 쿨다운 거리 축소 (targetMinutes가 있을 때만)
   if (targetMinutes && estimatedMinutes > targetMinutes * 1.1) {
     const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운') || s.zone === 'Z1');
