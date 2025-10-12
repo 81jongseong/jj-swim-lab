@@ -68,6 +68,53 @@ interface IUser extends mongoose.Document {
             targetBMI?: number;
             lastHealthCheck?: Date;
         };
+        swimmingProfile?: {
+            css?: {
+                freestyle?: number;
+                backstroke?: number;
+                breaststroke?: number;
+                butterfly?: number;
+                lastUpdated?: Date;
+                updatedBy?: mongoose.Types.ObjectId;
+                updatedByRole?: 'self' | 'instructor';
+            };
+            mainStrokes?: string[];
+            preferredStrokes?: string[];
+            excludedStrokes?: string[];
+            trainingDays?: number[];
+            sessionsPerWeek?: number;
+            sessionDuration?: number;
+            poolLength?: number;
+            currentGoal?: string;
+            conditionIds?: string[];
+            teachingProgress?: Array<{
+                methodId: mongoose.Types.ObjectId;
+                methodName: string;
+                stroke: string;
+                category: string;
+                completedSteps: string[];
+                totalSteps: number;
+                completionRate: number;
+                lastPracticed?: Date;
+                masteryLevel?: 'learning' | 'practicing' | 'proficient' | 'mastered';
+                notes?: string;
+                evaluatedBy?: mongoose.Types.ObjectId;
+                evaluatedAt?: Date;
+            }>;
+            pendingChanges?: {
+                css?: Record<string, number>;
+                mainStrokes?: string[];
+                preferredStrokes?: string[];
+                excludedStrokes?: string[];
+                trainingDays?: number[];
+                sessionsPerWeek?: number;
+                sessionDuration?: number;
+                currentGoal?: string;
+                proposedBy?: mongoose.Types.ObjectId;
+                proposedAt?: Date;
+                reason?: string;
+            };
+        };
     };
     instructorInfo?: {
         experience?: string;

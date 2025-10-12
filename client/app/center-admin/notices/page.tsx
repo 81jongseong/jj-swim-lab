@@ -13,13 +13,14 @@ interface Notice {
   status: 'draft' | 'published' | 'archived';
   priority: 'low' | 'medium' | 'high';
   targetAudience: string[];
-  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
+  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin' | 'guest')[];
   targetRegions: string[];
   authorId: string;
   authorName: string;
   createdAt: Date;
   publishedAt?: Date;
   views: number;
+  isVisibleToGuest: boolean;
   attachments?: string[];
 }
 
@@ -36,7 +37,8 @@ function NoticesManagement() {
     priority: 'medium' as Notice['priority'],
     status: 'draft' as Notice['status'],
     targetUserTypes: [] as string[],
-    targetRegions: [] as string[]
+    targetRegions: [] as string[],
+    isVisibleToGuest: false
   });
 
   useEffect(() => {
@@ -614,11 +616,39 @@ function NoticesManagement() {
                     />
                     <span className="font-medium">⭐ 최고 관리자</span>
                   </label>
+
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 bg-yellow-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('guest')}
+                      onChange={() => toggleUserType('guest')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">👤 게스트 (비회원)</span>
+                  </label>
                 </div>
                 {formData.targetUserTypes.length === 0 && (
                   <p className="mt-2 text-sm text-red-600">최소 1개 이상의 계정 유형을 선택해주세요</p>
                 )}
               </div>
+
+              {/* 게스트 공개 옵션 */}
+              {formData.targetUserTypes.includes('guest') && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.isVisibleToGuest}
+                      onChange={(e) => setFormData({ ...formData, isVisibleToGuest: e.target.checked })}
+                      className="mr-2 w-4 h-4"
+                    />
+                    <span className="font-medium text-yellow-800">✅ 게스트(비회원)에게 공개</span>
+                  </label>
+                  <p className="text-xs text-yellow-700 mt-2">
+                    체크하면 로그인하지 않은 사용자도 우리 센터 공지사항을 볼 수 있습니다.
+                  </p>
+                </div>
+              )}
 
               {/* 대상 지역 */}
               <div>

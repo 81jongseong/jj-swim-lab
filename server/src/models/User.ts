@@ -140,6 +140,56 @@ interface IUser extends mongoose.Document {
       targetBMI?: number;
       lastHealthCheck?: Date;
     };
+    // 수영 관련 개인 정보
+    swimmingProfile?: {
+      css?: {
+        freestyle?: number; // 자유형 CSS (초/100m)
+        backstroke?: number; // 배영 CSS
+        breaststroke?: number; // 평영 CSS
+        butterfly?: number; // 접영 CSS
+        lastUpdated?: Date;
+        updatedBy?: mongoose.Types.ObjectId; // 입력자 ID
+        updatedByRole?: 'self' | 'instructor'; // 입력자 역할
+      };
+      mainStrokes?: string[]; // 주 영법 (복수 선택) - 프로그램 생성 시 메인으로 사용
+      preferredStrokes?: string[]; // 선호 영법 ['freestyle', 'breaststroke']
+      excludedStrokes?: string[]; // 회피 영법 ['butterfly'] (부상/선호도)
+      trainingDays?: number[]; // 선호 운동 요일 [1, 3, 5] (월수금)
+      sessionsPerWeek?: number; // 주당 세션 수 (기본 3)
+      sessionDuration?: number; // 세션 시간(분) (기본 60)
+      poolLength?: number; // 사용할 풀 길이 (미터) (기본: 센터의 메인 풀)
+      currentGoal?: string; // 현재 운동 목표
+      conditionIds?: string[]; // 질환/특수상황 ID 목록
+      // 강습법 체크리스트 진행 상황
+      teachingProgress?: Array<{
+        methodId: mongoose.Types.ObjectId; // 강습법 ID (TeachingMethod 참조)
+        methodName: string; // 강습법 이름 (스냅샷)
+        stroke: string; // 영법 (freestyle, breaststroke, etc.)
+        category: string; // 카테고리 (기술, 체력, 전술 등)
+        completedSteps: string[]; // 완료된 단계 ID 목록
+        totalSteps: number; // 전체 단계 수
+        completionRate: number; // 완료율 (0-100)
+        lastPracticed?: Date; // 마지막 연습 날짜
+        masteryLevel?: 'learning' | 'practicing' | 'proficient' | 'mastered'; // 숙련도
+        notes?: string; // 강사 메모
+        evaluatedBy?: mongoose.Types.ObjectId; // 평가한 강사 ID
+        evaluatedAt?: Date; // 평가 날짜
+      }>;
+      // 강사 수정사항 대기 (회원 승인 필요)
+      pendingChanges?: {
+        css?: Record<string, number>;
+        mainStrokes?: string[];
+        preferredStrokes?: string[];
+        excludedStrokes?: string[];
+        trainingDays?: number[];
+        sessionsPerWeek?: number;
+        sessionDuration?: number;
+        currentGoal?: string;
+        proposedBy?: mongoose.Types.ObjectId; // 제안한 강사 ID
+        proposedAt?: Date;
+        reason?: string; // 변경 이유
+      };
+    };
   };
   instructorInfo?: {
     experience?: string;
@@ -276,7 +326,65 @@ const userSchema = new mongoose.Schema({
       reason: { type: String, default: '' },
       changedAt: { type: Date, default: Date.now }
     }],
-    currentLevel: { type: String, default: 'beginner' }
+    currentLevel: { type: String, default: 'beginner' },
+    // 수영 관련 개인 정보
+    swimmingProfile: {
+      css: {
+        freestyle: { type: Number },
+        backstroke: { type: Number },
+        breaststroke: { type: Number },
+        butterfly: { type: Number },
+        lastUpdated: { type: Date },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        updatedByRole: { type: String, enum: ['self', 'instructor'] }
+      },
+      mainStrokes: [{ type: String }], // 주 영법
+      preferredStrokes: [{ type: String }],
+      excludedStrokes: [{ type: String }], // 회피 영법
+      trainingDays: [{ type: Number, min: 0, max: 6 }],
+      sessionsPerWeek: { type: Number, default: 3 },
+      sessionDuration: { type: Number, default: 60 },
+      poolLength: { type: Number, default: 25 },
+      currentGoal: { type: String },
+      conditionIds: [{ type: String }],
+      // 🧬 생리학적 지표
+      vo2max: { type: Number },
+      maxHeartRate: { type: Number },
+      restingHeartRate: { type: Number },
+      // 🏆 레이스 플랜 설정 (마지막 설정 저장)
+      lastRacePlan: {
+        raceDate: { type: String },
+        raceDistance: { type: Number },
+        raceStroke: { type: String },
+        currentTime: { type: Number },
+        targetTime: { type: Number },
+        taperWeeks: { type: Number },
+        // 복수 출전 종목
+        raceEvents: [{
+          distance: { type: Number },
+          stroke: { type: String },
+          currentTime: { type: Number },
+          targetTime: { type: Number },
+          priority: { type: String, enum: ['primary', 'secondary'] }
+        }],
+        updatedAt: { type: Date }
+      },
+      // 강사 수정사항 대기
+      pendingChanges: {
+        css: { type: mongoose.Schema.Types.Mixed },
+        mainStrokes: [{ type: String }],
+        preferredStrokes: [{ type: String }],
+        excludedStrokes: [{ type: String }],
+        trainingDays: [{ type: Number }],
+        sessionsPerWeek: { type: Number },
+        sessionDuration: { type: Number },
+        poolLength: { type: Number },
+        currentGoal: { type: String },
+        proposedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        proposedAt: { type: Date },
+        reason: { type: String }
+      }
+    }
   },
   // 강사 전용 필드
   instructorInfo: {

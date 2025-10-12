@@ -38,6 +38,8 @@ export type AthleteProfile = {
   cssPer100?: number; 
   stroke?: 'FR'|'BK'|'BR'|'FL';
   raceTargets?: RaceTarget[];  // ← 추가: 종목·목표(mm:ss)
+  groupClassName?: string; // 단체반 이름 (단체반인 경우)
+  groupMembers?: any[]; // 단체반 회원 목록 (단체반인 경우)
 };
 
 const KEY = 'swimlab.athletes.v1';

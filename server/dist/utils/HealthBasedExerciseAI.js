@@ -9,11 +9,11 @@ class HealthBasedExerciseAI {
             const medicalFactors = this.convertToMedicalFactors(input.healthData, input.medicalConditions);
             const medicalAssessment = MedicalGuidelineWeights_1.MedicalGuidelineWeights.calculateMedicalWeights(medicalFactors);
             const swimmingGuidance = MedicalGuidelineWeights_1.MedicalGuidelineWeights.assessSwimmingSpecificRisks(medicalFactors);
-            const healthWeights = await this.calculateHealthWeights(input.healthData, medicalAssessment.weighting);
-            const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions, medicalAssessment.classification);
-            const adjustmentFactors = this.calculateAdjustmentFactors(input.healthData, riskAssessment, input.currentFitnessLevel, medicalAssessment.weighting);
-            const exerciseRecommendation = this.generateExerciseRecommendation(input, healthWeights, adjustmentFactors, riskAssessment, medicalAssessment.classification);
-            const nextReviewDate = this.calculateNextReviewDate(riskAssessment, medicalAssessment.classification);
+            const healthWeights = await this.calculateHealthWeights(input.healthData);
+            const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions);
+            const adjustmentFactors = this.calculateAdjustmentFactors(input.healthData, riskAssessment, input.currentFitnessLevel);
+            const exerciseRecommendation = this.generateExerciseRecommendation(input, healthWeights, adjustmentFactors, riskAssessment);
+            const nextReviewDate = this.calculateNextReviewDate(riskAssessment);
             const result = {
                 exerciseRecommendation,
                 riskAssessment,

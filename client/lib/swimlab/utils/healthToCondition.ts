@@ -100,13 +100,13 @@ export function convertHealthToConditions(healthProfile: UserHealthProfile): {
     // 어깨 관련
     if (lower.includes('shoulder') || lower.includes('어깨')) {
       if (lower.includes('impingement') || lower.includes('충돌')) {
-        auto.push('shoulder_impingement');
+        auto.push('shoulder_impingement'); // 어깨 충돌 증후군
       } else if (lower.includes('rotator') || lower.includes('회전근')) {
-        auto.push('rotator_cuff_irritation');
+        auto.push('rotator_cuff_tendinopathy'); // 회전근개 건병증
       } else if (lower.includes('frozen') || lower.includes('오십견')) {
-        auto.push('frozen_shoulder');
+        auto.push('adhesive_capsulitis'); // 유착성 관절낭염
       } else {
-        auto.push('shoulder_pain_general');
+        auto.push('swimmer_shoulder_overuse'); // 스위머스 숄더
       }
     }
     
@@ -126,7 +126,11 @@ export function convertHealthToConditions(healthProfile: UserHealthProfile): {
       if (lower.includes('disc') || lower.includes('디스크')) {
         auto.push('disc_herniation');
       } else if (lower.includes('stenosis') || lower.includes('협착')) {
-        auto.push('spinal_stenosis');
+        if (lower.includes('lumbar') || lower.includes('요추')) {
+          auto.push('lumbar_spinal_stenosis');
+        } else {
+          auto.push('spinal_stenosis');
+        }
       } else {
         auto.push('back_pain_general');
       }

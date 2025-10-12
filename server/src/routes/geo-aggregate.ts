@@ -32,7 +32,7 @@
 
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import User from '../models/User';
+import { User } from '../models/User';
 import Center from '../models/Center';
 
 const router = express.Router();

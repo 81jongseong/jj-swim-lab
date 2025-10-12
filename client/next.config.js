@@ -73,7 +73,7 @@ const nextConfig = {
   // 컴파일러 최적화
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-    styledComponents: true,
+    // styledComponents: true, // styled-components 미사용으로 비활성화
   },
   
   // 이미지 최적화 (강화된 설정)

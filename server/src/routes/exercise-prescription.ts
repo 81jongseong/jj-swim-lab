@@ -18,6 +18,7 @@
  */
 
 import express from 'express';
+import mongoose from 'mongoose';
 import { ExercisePrescription } from '../models/ExercisePrescription';
 import { User } from '../models/User';
 import { HealthData } from '../models/HealthData';
@@ -38,14 +39,14 @@ router.post('/create', authMiddleware, async (req, res) => {
     console.log(`🏃‍♂️ 운동 처방 생성 요청: 사용자 ${userId}, 센터 ${centerId}`);
     
     // 권한 확인
-    if (currentUser.role === 'member' && currentUser.id !== userId) {
+    if (currentUser.userType === 'member' && currentUser._id !== userId) {
       return res.status(403).json({ 
         success: false, 
         message: '본인의 운동 처방만 생성할 수 있습니다.' 
       });
     }
     
-    if (currentUser.role === 'instructor' && !instructorId) {
+    if (currentUser.userType === 'instructor' && !instructorId) {
       return res.status(400).json({ 
         success: false, 
         message: '강사 처방 시 instructorId가 필요합니다.' 
@@ -105,10 +106,10 @@ router.post('/create', authMiddleware, async (req, res) => {
       healthGrade,
       currentPrescription: prescription,
       prescriptionInfo: {
-        createdBy: currentUser.role === 'member' ? 'user' : 
-                   currentUser.role === 'instructor' ? 'instructor' :
-                   currentUser.role === 'centerAdmin' ? 'center_admin' : 'system',
-        createdByUserId: currentUser.id,
+        createdBy: currentUser.userType === 'member' ? 'user' : 
+                   currentUser.userType === 'instructor' ? 'instructor' :
+                   currentUser.userType === 'center_admin' ? 'center_admin' : 'system',
+        createdByUserId: currentUser._id,
         creationReason: creationReason || '시스템 자동 생성',
         baseHealthData: healthData,
         algorithmVersion: '1.0'
@@ -160,7 +161,7 @@ router.get('/:userId', authMiddleware, async (req, res) => {
     const currentUser = req.user;
     
     // 권한 확인
-    if (currentUser.role === 'member' && currentUser.id !== userId) {
+    if (currentUser.userType === 'member' && currentUser._id !== userId) {
       return res.status(403).json({ 
         success: false, 
         message: '본인의 운동 처방만 조회할 수 있습니다.' 
@@ -219,7 +220,7 @@ router.post('/:prescriptionId/session', authMiddleware, async (req, res) => {
     }
     
     // 권한 확인
-    if (currentUser.role === 'member' && prescription.userId.toString() !== currentUser.id) {
+    if (currentUser.userType === 'member' && prescription.userId.toString() !== currentUser._id) {
       return res.status(403).json({ 
         success: false, 
         message: '본인의 운동 이력만 기록할 수 있습니다.' 
@@ -232,6 +233,7 @@ router.post('/:prescriptionId/session', authMiddleware, async (req, res) => {
     // 운동 이력 추가
     const exerciseSession = {
       sessionId,
+      userId: prescription.userId,
       date: new Date(),
       prescribedExercise: prescription.currentPrescription,
       actualPerformance: {
@@ -275,7 +277,7 @@ router.post('/:prescriptionId/session', authMiddleware, async (req, res) => {
     
     // 동적 조정 계산
     const adjustment = ExercisePrescriptionSystem.calculateHistoryBasedAdjustment(
-      prescription.exerciseHistory
+      prescription.exerciseHistory as any[]
     );
     
     console.log(`✅ 운동 이력 기록 완료: 완주율 ${actualPerformance.completionRate}%, 조정 ${adjustment.adjustmentType}`);
@@ -329,7 +331,7 @@ router.put('/:prescriptionId/adjust', authMiddleware, async (req, res) => {
     }
     
     // 권한 확인
-    if (currentUser.role === 'member' && prescription.userId.toString() !== currentUser.id) {
+    if (currentUser.userType === 'member' && prescription.userId.toString() !== currentUser._id) {
       return res.status(403).json({ 
         success: false, 
         message: '본인의 운동 처방만 조정할 수 있습니다.' 
@@ -374,10 +376,10 @@ router.put('/:prescriptionId/adjust', authMiddleware, async (req, res) => {
       amount: adjustmentAmount,
       reason: Array.isArray(reason) ? reason : [reason],
       confidence: manualAdjustment ? 1.0 : 0.8,
-      adjustedBy: currentUser.role === 'member' ? 'user' : 
-                  currentUser.role === 'instructor' ? 'instructor' :
-                  currentUser.role === 'centerAdmin' ? 'center_admin' : 'system',
-      adjustedByUserId: currentUser.id,
+      adjustedBy: (currentUser.userType === 'member' ? 'user' : 
+                  currentUser.userType === 'instructor' ? 'instructor' :
+                  currentUser.userType === 'center_admin' ? 'center_admin' : 'system') as 'user' | 'instructor' | 'center_admin' | 'system',
+      adjustedByUserId: new mongoose.Types.ObjectId(currentUser._id),
       previousPrescription,
       newPrescription
     };
@@ -419,7 +421,7 @@ router.get('/center/:centerId', authMiddleware, async (req, res) => {
     const currentUser = req.user;
     
     // 권한 확인
-    if (currentUser.role === 'member') {
+    if (currentUser.userType === 'member') {
       return res.status(403).json({ 
         success: false, 
         message: '센터별 운동 처방 조회 권한이 없습니다.' 
@@ -435,8 +437,8 @@ router.get('/center/:centerId', authMiddleware, async (req, res) => {
       .populate('user', 'name email phone')
       .populate('instructor', 'name')
       .sort({ 'status.lastUpdated': -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .limit(Number(limit) * 1)
+      .skip((Number(page) - 1) * Number(limit));
     
     const total = await ExercisePrescription.countDocuments(query);
     
@@ -446,7 +448,7 @@ router.get('/center/:centerId', authMiddleware, async (req, res) => {
         prescriptions,
         pagination: {
           current: page,
-          pages: Math.ceil(total / limit),
+          pages: Math.ceil(total / Number(limit)),
           total
         }
       },
@@ -480,7 +482,7 @@ router.get('/:prescriptionId/stats', authMiddleware, async (req, res) => {
     }
     
     // 권한 확인
-    if (currentUser.role === 'member' && prescription.userId.toString() !== currentUser.id) {
+    if (currentUser.userType === 'member' && prescription.userId.toString() !== currentUser._id) {
       return res.status(403).json({ 
         success: false, 
         message: '본인의 운동 처방 통계만 조회할 수 있습니다.' 

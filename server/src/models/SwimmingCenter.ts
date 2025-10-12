@@ -40,6 +40,12 @@ const swimmingCenterSchema = new mongoose.Schema({
     type: String,
   },
   facilities: {
+    // 사용 가능한 풀 길이 목록 (미터 단위)
+    availablePoolLengths: {
+      type: [Number],
+      default: [25], // 기본값: 25m 풀
+      required: true
+    },
     // 메인 수영장
     mainPool: {
       lanes: {

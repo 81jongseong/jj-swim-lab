@@ -45,6 +45,11 @@ const swimmingCenterSchema = new mongoose_1.default.Schema({
         type: String,
     },
     facilities: {
+        availablePoolLengths: {
+            type: [Number],
+            default: [25],
+            required: true
+        },
         mainPool: {
             lanes: {
                 type: Number,

@@ -29,9 +29,10 @@ export interface INotice extends Document {
     author: mongoose.Types.ObjectId;
     category: 'general' | 'course' | 'facility' | 'maintenance' | 'emergency' | 'membership' | 'quiz' | 'system';
     priority: 'low' | 'medium' | 'high' | 'urgent';
-    targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
+    targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin' | 'guest')[];
     targetCenters?: mongoose.Types.ObjectId[];
     isPublished: boolean;
+    isVisibleToGuest: boolean;
     publishedAt?: Date;
     expiresAt?: Date;
     attachments: {

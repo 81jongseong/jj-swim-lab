@@ -16,7 +16,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { motionPresets, staggerContainer } from '../../lib/motion';
 import HeroWave from '../../components/HeroWave';
@@ -24,8 +24,7 @@ import WaterRippleBackground from '../../components/WaterRippleBackground';
 import LottiePlayer from '../../components/LottiePlayer';
 
 export default function LandingPage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [landingContent, setLandingContent] = useState({
+  const landingContent = {
     title: "JJ Swim Lab",
     subtitle: "AI 기반 수영 교육 플랫폼",
     description: "개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요",
@@ -37,108 +36,10 @@ export default function LandingPage() {
       text: "강사 등록하기",
       href: "/auth/signup?type=instructor"
     }
-  });
-
-  // 편집 모드 토글
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-  };
-
-  // 내용 저장
-  const saveContent = () => {
-    // 실제로는 API 호출로 저장
-    console.log('랜딩 페이지 내용 저장:', landingContent);
-    setIsEditing(false);
-    alert('랜딩 페이지 내용이 저장되었습니다.');
   };
 
   return (
     <div className="min-h-screen bg-background relative">
-
-      {/* 편집 모달 */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">랜딩 페이지 편집</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
-                <input
-                  type="text"
-                  value={landingContent.title}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">부제목</label>
-                <input
-                  type="text"
-                  value={landingContent.subtitle}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, subtitle: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-                <textarea
-                  value={landingContent.description}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">주요 버튼 텍스트</label>
-                  <input
-                    type="text"
-                    value={landingContent.ctaPrimary.text}
-                    onChange={(e) => setLandingContent(prev => ({ 
-                      ...prev, 
-                      ctaPrimary: { ...prev.ctaPrimary, text: e.target.value }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">보조 버튼 텍스트</label>
-                  <input
-                    type="text"
-                    value={landingContent.ctaSecondary.text}
-                    onChange={(e) => setLandingContent(prev => ({ 
-                      ...prev, 
-                      ctaSecondary: { ...prev.ctaSecondary, text: e.target.value }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={saveContent}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 히어로 섹션 */}
       <HeroWave
         title={landingContent.title}
@@ -227,50 +128,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 통계 섹션 */}
-      <section className="py-20 bg-muted/50">
-        <div className="container mx-auto px-6">
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center"
-          >
-            <motion.div variants={motionPresets.slideUp}>
-              <div className="text-4xl font-bold text-primary mb-2">1,000+</div>
-              <div className="text-muted-foreground">활성 수강생</div>
-            </motion.div>
-            <motion.div variants={motionPresets.slideUp}>
-              <div className="text-4xl font-bold text-primary mb-2">50+</div>
-              <div className="text-muted-foreground">전문 강사</div>
-            </motion.div>
-            <motion.div variants={motionPresets.slideUp}>
-              <div className="text-4xl font-bold text-primary mb-2">15</div>
-              <div className="text-muted-foreground">센터</div>
-            </motion.div>
-            <motion.div variants={motionPresets.slideUp}>
-              <div className="text-4xl font-bold text-primary mb-2">98%</div>
-              <div className="text-muted-foreground">만족도</div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* 배경 애니메이션 */}
       <WaterRippleBackground />
-
-      {/* 편집 모드 버튼 (개발용) - 페이지 최하단 */}
-      <div className="w-full py-4 bg-gray-100 border-t border-gray-200">
-        <div className="container mx-auto px-6 flex justify-center">
-          <button
-            onClick={toggleEditMode}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            {isEditing ? '✅ 편집 완료' : '✏️ 랜딩 페이지 편집'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

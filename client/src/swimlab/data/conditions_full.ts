@@ -108,6 +108,22 @@ export const CONDITIONS: Condition[] = [
 
   // ========== SHOULDER (6개) ==========
   { 
+    id:'shoulder_impingement', 
+    name:'어깨 충돌 증후군', 
+    category:'shoulder', 
+    severity:'moderate',
+    impacts:[
+      {type:'movement',how:'오버헤드 볼륨 감소'},
+      {type:'equipment',how:'패들 금지'}
+    ],
+    strokeNotes:{
+      butterfly:{level:'avoid'},
+      freestyle:{level:'caution',mods:['볼륨 감소','풀부이 사용']},
+      breaststroke:{level:'safe'}
+    },
+    evidenceKeys:['RCRSP_CPG_JOSPT_2025','SAPS_SR_JOSPT_2020','SWIMMERS_SHOULDER_SR_2020']
+  },
+  { 
     id:'rotator_cuff_tendinopathy', 
     name:'회전근개 건병증', 
     category:'shoulder', 

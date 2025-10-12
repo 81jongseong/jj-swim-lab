@@ -60,13 +60,33 @@ class ExercisePrescriptionSystem {
             obesityGrade,
             cardiovascularGrade,
             fitnessGrade,
-            ageGrade
+            ageGrade,
+            exerciseHistory: 'beginner',
+            metabolicGrade: 'normal',
+            musculoskeletalGrade: 'normal',
+            respiratoryGrade: 'normal',
+            neurologicalGrade: 'normal',
+            lifestyleGrade: 'good',
+            sleepGrade: 'good',
+            stressGrade: 'low',
+            injuryHistory: 'none',
+            flexibilityGrade: 'good'
         });
         return {
             obesityGrade,
             cardiovascularGrade,
             fitnessGrade,
             ageGrade,
+            exerciseHistory: 'beginner',
+            metabolicGrade: 'normal',
+            musculoskeletalGrade: 'normal',
+            respiratoryGrade: 'normal',
+            neurologicalGrade: 'normal',
+            lifestyleGrade: 'good',
+            sleepGrade: 'good',
+            stressGrade: 'low',
+            injuryHistory: 'none',
+            flexibilityGrade: 'good',
             overallGrade
         };
     }
@@ -233,9 +253,9 @@ class ExercisePrescriptionSystem {
         const totalDistance = Math.round(sessionDuration * intensity.swimmingPace.metersPerMinute);
         const adjustment = exerciseHistory ? this.calculateHistoryBasedAdjustment(exerciseHistory) : null;
         const adjustedDuration = adjustment ?
-            Math.round(sessionDuration * (1 + adjustment.durationChange / 100)) : sessionDuration;
+            Math.round(sessionDuration * (1 + adjustment.adjustmentAmount / 100)) : sessionDuration;
         const adjustedIntensity = adjustment ?
-            this.calculateExerciseIntensity(restingHR, maxHR, baseIntensity * (1 + adjustment.intensityChange / 100), healthGrade) : intensity;
+            this.calculateExerciseIntensity(restingHR, maxHR, baseIntensity * (1 + adjustment.adjustmentAmount / 100), healthGrade) : intensity;
         return {
             sessionDuration: adjustedDuration,
             totalDistance: Math.round(totalDistance * (adjustedDuration / sessionDuration)),
@@ -279,7 +299,7 @@ class ExercisePrescriptionSystem {
         }
         const recentSessions = history.slice(-3);
         const avgCompletionRate = recentSessions.reduce((sum, session) => sum + session.actualPerformance.completionRate, 0) / 3;
-        const avgPerceivedExertion = recentSessions.reduce((sum, session) => sum + session.feedback.perceivedExertion, 0) / 3;
+        const avgPerceivedExertion = recentSessions.reduce((sum, session) => sum + session.actualPerformance.perceivedExertion, 0) / 3;
         const avgDifficulty = recentSessions.reduce((sum, session) => {
             const difficultyScore = session.feedback.difficulty === 'too_easy' ? 1 :
                 session.feedback.difficulty === 'appropriate' ? 0 : -1;

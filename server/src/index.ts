@@ -218,6 +218,14 @@ import exercisePrescriptionRoutes from './routes/exercise-prescription';
 import healthInputRoutes from './routes/health-input';
 import swimEngineRoutes from './routes/swim-engine';
 import geoAggregateRoutes from './routes/geo-aggregate';
+import swimProgramsRoutes from './routes/swim-programs';
+import swimProgramCompletionsRoutes from './routes/swim-program-completions';
+import swimProgramDayConditionRoutes from './routes/swim-program-day-condition';
+import groupClassesRoutes from './routes/group-classes';
+import teachingProgressRoutes from './routes/teaching-progress';
+import groupProgramsRoutes from './routes/group-programs';
+import unifiedProgramRoutes from './routes/unified-program';
+import myProgramsRoutes from './routes/my-programs';
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -517,6 +525,14 @@ app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
 app.use('/api/health', healthInputRoutes);
 app.use('/api/swim-engine', swimEngineRoutes);
 app.use('/api/geo', geoAggregateRoutes);
+app.use('/api/swim-programs', swimProgramsRoutes);
+app.use('/api/swim-programs', swimProgramCompletionsRoutes); // 완료율 관련 라우트
+app.use('/api/swim-programs', swimProgramDayConditionRoutes); // 당일 컨디션 입력 라우트
+app.use('/api/group-classes', groupClassesRoutes); // 단체반 관리 라우트
+app.use('/api/teaching-progress', teachingProgressRoutes); // 강습법 체크리스트 진행 상황
+app.use('/api/group-programs', groupProgramsRoutes); // 단체반 프로그램 라우트
+app.use('/api/unified-program', unifiedProgramRoutes); // 통합 프로그램 생성 라우트
+app.use('/api/my-programs', myProgramsRoutes); // 내 프로그램 조회 라우트 (회원용)
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
@@ -641,4 +657,5 @@ import './models/StudentProgress';
 import './models/SwimmingCenter';
 import './models/TeachingMethod';
 import './models/Video';
+import './models/GroupClass';
 export { app };

@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -215,6 +238,56 @@ router.get('/popular', auth_1.authMiddleware, async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ message: '인기 공지사항 조회 실패', error: error instanceof Error ? error.message : String(error) });
+    }
+});
+router.get('/guest', async (req, res) => {
+    try {
+        const { category, region, district, centerId, page = 1, limit = 10 } = req.query;
+        const query = {
+            isPublished: true,
+            isVisibleToGuest: true,
+            targetUserTypes: { $in: ['guest'] }
+        };
+        if (category)
+            query.category = category;
+        if (centerId) {
+            query.targetCenters = { $in: [centerId] };
+        }
+        else if (region || district) {
+            const centerQuery = {};
+            if (region)
+                centerQuery.region = region;
+            if (district)
+                centerQuery.district = district;
+            const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
+            const centers = await SwimmingCenter.find(centerQuery).select('_id');
+            const centerIds = centers.map(c => c._id);
+            query.$or = [
+                { targetCenters: { $in: centerIds } },
+                { targetCenters: { $exists: false } },
+                { targetCenters: { $size: 0 } }
+            ];
+        }
+        const skip = (Number(page) - 1) * Number(limit);
+        const notices = await Notice_1.Notice.find(query)
+            .populate('author', 'name')
+            .populate('targetCenters', 'name region district')
+            .sort({ isPinned: -1, createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+        const total = await Notice_1.Notice.countDocuments(query);
+        res.json({
+            notices,
+            pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total,
+                pages: Math.ceil(total / Number(limit))
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: '게스트 공지사항 목록 조회 실패', error: error instanceof Error ? error.message : String(error) });
     }
 });
 exports.default = router;

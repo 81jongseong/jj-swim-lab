@@ -6,9 +6,10 @@ export interface INotice extends Document {
   author: mongoose.Types.ObjectId;
   category: 'general' | 'course' | 'facility' | 'maintenance' | 'emergency' | 'membership' | 'quiz' | 'system';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
+  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin' | 'guest')[];
   targetCenters?: mongoose.Types.ObjectId[];
   isPublished: boolean;
+  isVisibleToGuest: boolean;
   publishedAt?: Date;
   expiresAt?: Date;
   attachments: {
@@ -57,7 +58,7 @@ const noticeSchema = new Schema<INotice>({
   },
   targetUserTypes: [{
     type: String,
-    enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+    enum: ['student', 'instructor', 'centerAdmin', 'superAdmin', 'guest'],
     required: true
   }],
   targetCenters: [{
@@ -65,6 +66,10 @@ const noticeSchema = new Schema<INotice>({
     ref: 'SwimmingCenter'
   }],
   isPublished: {
+    type: Boolean,
+    default: false,
+  },
+  isVisibleToGuest: {
     type: Boolean,
     default: false,
   },

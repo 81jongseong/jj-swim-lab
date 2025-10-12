@@ -284,27 +284,13 @@ const userMenuStructure = {
       { href: '/news', label: '📢 공지사항' },
     ],
     experience: [
-      { href: '/quiz', label: '🧠 퀴즈 체험' },
-      { href: '/health', label: '🏥 건강체크 체험' },
+      { href: '/guest-quiz', label: '🧠 퀴즈 체험' },
+      { href: '/health', label: '🏥 건강체크' },
       { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
-    ],
-    health: [
-      { href: '/health', label: '🏥 건강체크 체험' },
-    ],
-    tools: [
-      { href: '/3d-viewer', label: '🎨 3D 뷰어' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
     ],
     community: [
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 수영센터 찾기' },
-    ],
-    shop: [
-      { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 수영센터 찾기' },
-    ],
-    map: [
       { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     auth: [
@@ -351,8 +337,8 @@ const menuGrouping = {
   ],
   guest: [
     { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
-    { groupName: '🎯 체험 메뉴', categories: ['experience', 'health', 'tools'] },
-    { groupName: '💬 커뮤니티 & 상점', categories: ['community', 'shop', 'map'] },
+    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
+    { groupName: '💬 커뮤니티 & 상점', categories: ['community'] },
     { groupName: '🔑 로그인/회원가입', categories: ['auth'] }
   ]
 };

@@ -1511,4 +1511,28 @@ router.get('/my-center/courses', authMiddleware, requireRole(['centerAdmin']), a
   }
 });
 
+// 🌐 **게스트용 공개 라우트**
+/**
+ * 게스트용 센터 목록 조회 (인증 불필요)
+ * GET /api/centers/guest
+ * 
+ * 응답: 모든 활성 센터의 기본 정보
+ */
+router.get('/guest', async (req, res) => {
+  try {
+    const centers = await SwimmingCenter.find(
+      { isActive: true }, 
+      'name region district address phone email website'
+    ).lean();
+
+    res.json(centers);
+  } catch (error) {
+    console.error('게스트 센터 목록 조회 실패:', error);
+    res.status(500).json({ 
+      error: '센터 목록을 불러올 수 없습니다.',
+      message: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
 export default router; 

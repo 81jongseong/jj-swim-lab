@@ -90,8 +90,7 @@ export default function HomePage() {
 }
 
 function LandingPage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [landingContent, setLandingContent] = useState({
+  const landingContent = {
     title: "JJ Swim Lab",
     subtitle: "AI 기반 수영 교육 플랫폼",
     description: "개인 맞춤형 수영 강습법, 퀴즈, 진도 관리로 더 나은 수영을 경험하세요",
@@ -103,108 +102,10 @@ function LandingPage() {
       text: "강사 등록하기",
       href: "/auth/signup-instructor"
     }
-  });
-
-  // 편집 모드 토글
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-  };
-
-  // 내용 저장
-  const saveContent = () => {
-    // 실제로는 API 호출로 저장
-    console.log('랜딩 페이지 내용 저장:', landingContent);
-    setIsEditing(false);
-    alert('랜딩 페이지 내용이 저장되었습니다.');
   };
 
   return (
     <div className="min-h-screen bg-background relative">
-
-      {/* 편집 모달 */}
-      {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">랜딩 페이지 편집</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
-                <input
-                  type="text"
-                  value={landingContent.title}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">부제목</label>
-                <input
-                  type="text"
-                  value={landingContent.subtitle}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, subtitle: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-                <textarea
-                  value={landingContent.description}
-                  onChange={(e) => setLandingContent(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">주요 버튼 텍스트</label>
-                  <input
-                    type="text"
-                    value={landingContent.ctaPrimary.text}
-                    onChange={(e) => setLandingContent(prev => ({ 
-                      ...prev, 
-                      ctaPrimary: { ...prev.ctaPrimary, text: e.target.value }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">보조 버튼 텍스트</label>
-                  <input
-                    type="text"
-                    value={landingContent.ctaSecondary.text}
-                    onChange={(e) => setLandingContent(prev => ({ 
-                      ...prev, 
-                      ctaSecondary: { ...prev.ctaSecondary, text: e.target.value }
-                    }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                onClick={saveContent}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 히어로 섹션 */}
       <HeroWave 
         title={landingContent.title}
@@ -236,22 +137,8 @@ function LandingPage() {
             </motion.p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {/* 기능 카드 1 */}
-            <motion.div
-              variants={motionPresets.appear}
-              className="bg-card p-8 rounded-lg shadow-lg text-center"
-            >
-              <div className="text-5xl text-primary mb-4">
-                <i className="fas fa-robot"></i>
-              </div>
-              <h3 className="text-2xl font-semibold text-foreground mb-3">AI 자세 분석</h3>
-              <p className="text-muted-foreground">
-                실시간 AI 분석으로 정확한 자세 피드백을 받아보세요.
-              </p>
-            </motion.div>
-
-            {/* 기능 카드 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* 개인화된 학습 */}
             <motion.div
               variants={motionPresets.appear}
               className="bg-card p-8 rounded-lg shadow-lg text-center"
@@ -265,7 +152,7 @@ function LandingPage() {
               </p>
             </motion.div>
 
-            {/* 기능 카드 3 */}
+            {/* 실시간 피드백 */}
             <motion.div
               variants={motionPresets.appear}
               className="bg-card p-8 rounded-lg shadow-lg text-center"
@@ -275,7 +162,7 @@ function LandingPage() {
               </div>
               <h3 className="text-2xl font-semibold text-foreground mb-3">실시간 피드백</h3>
               <p className="text-muted-foreground">
-                강사 및 AI로부터 즉각적인 피드백을 받아 빠르게 실력을 향상시키세요.
+                강사로부터 즉각적인 피드백을 받아 빠르게 실력을 향상시키세요.
               </p>
             </motion.div>
           </div>
@@ -370,70 +257,10 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* 통계 섹션 */}
-      <section className="py-20 bg-muted">
-        <div className="container mx-auto px-6 text-center">
-          <motion.h2
-            variants={motionPresets.slideUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-foreground mb-12"
-          >
-            JJ Swim Lab의 놀라운 성과
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <motion.div
-              variants={motionPresets.appear}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-              className="bg-card p-8 rounded-lg shadow-lg"
-            >
-              <div className="text-6xl font-bold text-primary mb-3">95%</div>
-              <p className="text-xl text-muted-foreground">정확한 자세 분석</p>
-            </motion.div>
-            <motion.div
-              variants={motionPresets.appear}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-              className="bg-card p-8 rounded-lg shadow-lg"
-            >
-              <div className="text-6xl font-bold text-primary mb-3">80%</div>
-              <p className="text-xl text-muted-foreground">실력 향상</p>
-            </motion.div>
-            <motion.div
-              variants={motionPresets.appear}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-              className="bg-card p-8 rounded-lg shadow-lg"
-            >
-              <div className="text-6xl font-bold text-primary mb-3">10K+</div>
-              <p className="text-xl text-muted-foreground">만족한 사용자</p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-
       {/* 워터 리플 배경 */}
       <WaterRippleBackground>
         <div></div>
       </WaterRippleBackground>
-
-      {/* 편집 모드 버튼 (개발용) - 페이지 최하단 */}
-      <div className="w-full py-4 bg-gray-100 border-t border-gray-200">
-        <div className="container mx-auto px-6 flex justify-center">
-          <button
-            onClick={toggleEditMode}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            {isEditing ? '✅ 편집 완료' : '✏️ 랜딩 페이지 편집'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

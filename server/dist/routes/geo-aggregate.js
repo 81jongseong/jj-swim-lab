@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const User_1 = __importDefault(require("../models/User"));
+const User_1 = require("../models/User");
 const Center_1 = __importDefault(require("../models/Center"));
 const router = express_1.default.Router();
 async function geocodeAddress(address) {
@@ -71,7 +71,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             filter.userType = memberType;
         }
         filter.address = { $exists: true, $ne: '' };
-        const users = await User_1.default.find(filter)
+        const users = await User_1.User.find(filter)
             .select('address centerId createdAt userType')
             .lean();
         console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);

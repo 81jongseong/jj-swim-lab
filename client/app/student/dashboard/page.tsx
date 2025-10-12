@@ -125,9 +125,17 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">학생 대시보드</h1>
-        <p className="text-gray-600 mt-2">안녕하세요, {user?.name || '학생'}님! 오늘도 수영 연습을 시작해보세요.</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">학생 대시보드</h1>
+          <p className="text-gray-600 mt-2">안녕하세요, {user?.name || '학생'}님! 오늘도 수영 연습을 시작해보세요.</p>
+        </div>
+        <button
+          onClick={() => router.push('/student/statistics')}
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
+        >
+          📊 내 훈련 통계
+        </button>
       </div>
 
       {/* 주요 통계 */}

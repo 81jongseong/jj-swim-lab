@@ -66,5 +66,6 @@ import './models/StudentProgress';
 import './models/SwimmingCenter';
 import './models/TeachingMethod';
 import './models/Video';
+import './models/GroupClass';
 export { app };
 //# sourceMappingURL=index.d.ts.map

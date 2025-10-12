@@ -1,12 +1,16 @@
 {
-  "timestamp": "2025-10-06T18:18:46.218Z",
+  "timestamp": "2025-10-09T14:49:39.651Z",
   "stats": {
-    "totalChecks": 365,
-    "passed": 435,
-    "failed": 9,
+    "totalChecks": 391,
+    "passed": 468,
+    "failed": 12,
     "warnings": 7
   },
   "errors": [
+    {
+      "message": "PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음",
+      "solution": "server/src/index.ts에 \"import './models/PersonalProgramAdjustment';\" 추가 필요"
+    },
     {
       "message": "SwimCondition 모델이 index.ts에서 import되지 않음",
       "solution": "server/src/index.ts에 \"import './models/SwimCondition';\" 추가 필요"
@@ -14,6 +18,10 @@
     {
       "message": "SwimDrill 모델이 index.ts에서 import되지 않음",
       "solution": "server/src/index.ts에 \"import './models/SwimDrill';\" 추가 필요"
+    },
+    {
+      "message": "SwimProgram 모델이 index.ts에서 import되지 않음",
+      "solution": "server/src/index.ts에 \"import './models/SwimProgram';\" 추가 필요"
     },
     {
       "message": "SwimTrainingMethod 모델이 index.ts에서 import되지 않음",
@@ -38,6 +46,10 @@
     {
       "message": "runPipeline 라우트가 등록되지 않음",
       "solution": "server/src/index.ts에 \"app.use('/api/runPipeline', runPipelineRoutes);\" 추가"
+    },
+    {
+      "message": "swim-program-completions 라우트가 등록되지 않음",
+      "solution": "server/src/index.ts에 \"app.use('/api/swim-program-completions', swim-program-completionsRoutes);\" 추가"
     },
     {
       "message": "클라이언트 tsconfig.json 파싱 오류",

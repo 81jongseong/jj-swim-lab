@@ -1,6 +1,1926 @@
 # 🛠️ JJ Swim Lab 개발 문서
 
-## 📅 최근 업데이트 (2025-01-22)
+## 📅 최근 업데이트 (2025-01-12)
+
+### 🎯 **복수 출전 종목 완성 & 훈련법/드릴 DB 연동 (2025-01-12 01:30)**
+
+#### 🔧 **수정된 오류**
+1. **FeasibilityCheckerComponent 오류** → `FeasibilityChecker`로 수정
+2. **중복 현재/목표 기록 필드** → 삭제 (종목별로만 입력)
+3. **raceEvents DB 저장/로드 안됨** → User 모델 확장 및 저장/로드 로직 추가
+4. **훈련법/드릴 안 보임** → API 응답 구조 수정, 콘솔 로그 추가
+5. **레이스 모드 수정 오류** → `sessions[editingSessionIdx].day` 체크 추가
+6. **훈련법 수정 후 저장 안됨** → PUT API 엔드포인트 추가 (`PUT /api/swim-programs/:id`)
+7. **드롭다운 선택 시 즉시 저장** → `tempSetContent` 임시 변수 사용, 취소 버튼 추가
+
+#### 📊 **User 모델 확장 (raceEvents 저장)**
+```typescript
+lastRacePlan: {
+  raceDate: { type: String },
+  raceDistance: { type: Number },
+  raceStroke: { type: String },
+  currentTime: { type: Number },
+  targetTime: { type: Number },
+  taperWeeks: { type: Number },
+  // ⭐ 복수 출전 종목 저장
+  raceEvents: [{
+    distance: { type: Number },
+    stroke: { type: String },
+    currentTime: { type: Number },
+    targetTime: { type: Number },
+    priority: { type: String, enum: ['primary', 'secondary'] }
+  }],
+  updatedAt: { type: Date }
+}
+```
+
+#### 🔄 **자동 로드/저장**
+- **로드**: `raceEvents: swimmingProfile.lastRacePlan?.raceEvents || undefined`
+- **저장**: `raceEvents: memberVar.raceEvents || []`
+- **효과**: 다음 회원 불러오기 시 복수 종목 자동 로드 ✅
+
+#### 📡 **프로그램 수정 API 추가**
+```typescript
+PUT /api/swim-programs/:id
+{
+  content: { sessions, phases, totalMeters, totalDuration },
+  params: { mainStrokes, pool, sessionDuration, ... }
+}
+→ 프로그램 content와 params 업데이트
+```
+
+---
+
+### 🎯 **완료율 입력 & 레이스 플랜 표시 오류 수정 (2025-01-12 00:30)**
+
+#### 1️⃣ **완료율 입력 - 계획된 반복수 파싱** ✅
+- **문제**: 모든 세트가 `1회`로 고정 표시
+- **원인**: `plannedSets`의 `reps`가 1로 하드코딩
+- **해결**: `desc`에서 반복수 파싱 (`4×100m` → 반복 4회)
+  ```typescript
+  const parseRepsFromDesc = (desc: string): number => {
+    const match = desc.match(/^(?:\[.*?\]\s*)?(\d+)×/);
+    return match ? parseInt(match[1]) : 1;
+  };
+  ```
+- **효과**: 이제 정확한 반복수가 표시됨 (예: 4×100m → 100m × 4회)
+
+#### 2️⃣ **시간 계산 오류 - 쿨다운 축소 로직** ✅
+- **문제**: 50분×3회 = 150분인데 162분으로 표시
+- **원인**: 완료율/생리학적 지표 기반 강도 조절 (8% 증가)
+- **해결**: 이미 구현된 쿨다운 축소 로직 확인
+  - 페이스가 느려져 시간이 초과하면 쿨다운 거리를 자동으로 축소
+  - `finalizePlan`에서 `estimatedMinutes > targetMinutes * 1.1` 시 쿨다운 감소
+- **효과**: 입력한 시간(150분)에 맞춰 프로그램이 조정됨
+
+#### 3️⃣ **레이스 플랜 표시 오류 수정** ✅
+- **문제점**:
+  1. 주간 시간이 일일 시간으로 표시 (50분 → 90분)
+  2. 주간 거리 계산 오류
+  3. 주 영법 미표시
+- **수정 사항**:
+  ```typescript
+  // 주간 시간 (레이스 플랜)
+  {selectedProgram.programType === 'race' 
+    ? `${params.sessionDuration}분 × ${params.daysPerWeek}회 = ${sessionDuration * daysPerWeek}분`
+    : `${content.totalDuration}분`
+  }
+  
+  // 주간 거리 (레이스 플랜 - 평균 계산)
+  {selectedProgram.programType === 'race' && content.phases
+    ? `${(phases.reduce((sum, phase) => sum + phase.volumeTarget, 0) / totalWeeks).toLocaleString()}m (평균)`
+    : `${content.totalMeters?.toLocaleString()}m`
+  }
+  
+  // 주 영법 (길이 체크 추가)
+  {(params.mainStrokes && params.mainStrokes.length > 0)
+    ? params.mainStrokes.map(stroke => strokeNames[stroke]).join(', ')
+    : '미지정'
+  }
+  ```
+- **효과**: 정확한 시간/거리/영법 표시
+
+#### 4️⃣ **복수 출전 종목 UI (각 종목별 실현 가능성 분석)** ✅
+- **MemberVariable 인터페이스 확장**:
+  ```typescript
+  raceEvents?: Array<{
+    distance: number; // 50, 100, 200, 400, 800, 1500
+    stroke: string;   // freestyle, backstroke, breaststroke, butterfly
+    currentTime: number; // 초
+    targetTime: number;  // 초
+    priority: 'primary' | 'secondary'; // 주 종목 vs 부 종목
+  }>;
+  ```
+- **UI 구현**:
+  ```tsx
+  [출전 종목]  [+ 종목 추가]
+  
+  🥇 주 종목
+  ├─ 거리: 50m, 100m, 200m, 400m, 800m, 1500m
+  ├─ 영법: 자유형, 배영, 평영, 접영, 개인혼영
+  └─ [✕ 삭제] (불가)
+  
+  🥈 부 종목 1
+  ├─ 거리: 100m
+  ├─ 영법: 평영
+  └─ [✕ 삭제] (가능)
+  ```
+- **기능**:
+  - "종목 추가" 버튼으로 복수 종목 추가
+  - **각 종목별 현재/목표 기록 입력** (초 단위)
+  - 주 종목(첫 번째)은 삭제 불가
+  - 부 종목은 개별 삭제 가능
+  - 주 종목 변경 시 호환성 필드 자동 업데이트
+- **UI 구조**:
+  ```
+  🥇 주 종목
+  거리: [100m]  영법: [자유형]
+  현재 기록: [72.5]초*  목표 기록: [68.0]초*
+  
+  🎯 실현 가능성 분석 (자동 표시)
+  ├─ 실현 가능성: 75% (높음)
+  ├─ 주당 개선률: 0.89%
+  ├─ 권장 목표: 69.2초 (보수적), 68.5초 (도전적)
+  └─ 과학적 근거: Elite 레벨, CSS 72초
+  
+  🥈 부 종목 1  [✕ 삭제]
+  거리: [50m]  영법: [평영]
+  현재 기록: [45.0]초*  목표 기록: [42.0]초*
+  
+  🎯 실현 가능성 분석 (자동 표시)
+  ├─ 실현 가능성: 82% (높음)
+  ├─ 주당 개선률: 1.2%
+  └─ ...
+  ```
+
+#### 5️⃣ **프로그램 수정 - 훈련법/드릴 카테고리별 그룹화 + 취소 기능** ✅
+- **위치**: 
+  - 일반 프로그램: 상세보기 > 수정 > 세트 클릭
+  - 레이스 플랜: phases > 주차 > 날짜 > 세트 클릭 ⭐
+- **데이터 소스**: 
+  - `GET /api/swim-training-methods?isActive=true` (훈련법)
+  - `GET /api/swim-drills?isActive=true` (드릴)
+- **기능**:
+  ```tsx
+  🏋️ 훈련법/드릴 교체 (선택사항)
+  [-- 훈련법/드릴 선택 (DB에서 로드: 65개) --]
+  
+  📊 훈련법 (카테고리별 그룹화)
+    ├─ 🚀 속력 (4개) - Sprint, Descending, Build, USRPT
+    ├─ 💪 지구력 (3개) - Endurance, Tempo Hold, Aerobic Base
+    ├─ 🔥 역치 (1개) - Threshold
+    ├─ ⚡ VO2max (1개) - VO2max Sets
+    ├─ 🎯 레이스 전략 (2개) - Ascending, Negative Split
+    ├─ 📐 구조/패턴 (4개) - Pyramid, Ladder, Broken Swim
+    └─ ... (총 16개 카테고리)
+  
+  🎯 드릴 (영법별 그룹화)
+    ├─ 🏊 자유형 (8개) - Catch-Up, Single Arm, High Elbow
+    ├─ 🏊 배영 (5개) - Rotation, 12-Kick Switch
+    ├─ 🏊 평영 (5개) - Glide, 2 Kicks 1 Pull
+    ├─ 🏊 접영 (5개) - One-Arm Fly, Body Dolphin
+    ├─ 🦵 킥 (5개) - Kick Only, Vertical Kick
+    ├─ 💪 풀 (5개) - Pull Only, Paddle Pull
+    └─ 🎨 테크닉 (7개) - Body Position, Flip Turn
+  ```
+- **표시 형식 (상세 설명 포함)**:
+  ```
+  어센딩 인터벌 - 4×100m: CSS+6″→+4″→+2″→CSS, r20″ (Z3~Z4, 400~800m, 주 1~2회)
+  템포 홀드 - 3×400m @CSS, r30″ (Z3, 1200~1600m, 주 1회)
+  지구력 빌드 - 1×1500m @CSS+10″ (Z2, 1500~3000m, 주 1회)
+  ```
+- **툴팁 (마우스 호버)**:
+  ```
+  페이스 조절과 후반 피니시 강화
+  사용법: 4×100m: CSS+6″→+4″→+2″→CSS, r20″
+  대상: CSS 기반 페이스 훈련에 익숙한 중급 이상
+  ```
+- **사용 예시**:
+  ```
+  엔진이 생성: "8×100m Descending @~1:40→1:30, r 20″"
+  강사가 수정: 
+    1. 드롭다운에서 "어센딩 인터벌" 선택
+    2. textarea에 자동 입력됨 (즉시 저장 안됨)
+    3. 필요시 직접 수정
+    4. [✓ 적용] 클릭 → 저장
+    5. [✕ 취소] 클릭 → 변경사항 무시
+  ```
+- **취소 기능**:
+  - ✅ 드롭다운 선택 시 `tempSetContent`에만 저장
+  - ✅ [✕ 취소] 클릭 시 변경사항 무시
+  - ✅ [✓ 적용] 클릭 시 `editedProgram`에 반영
+- **부연 설명**:
+  - ✅ DB에서 실시간 로드 (**25개 훈련법 + 40개 드릴 = 65개**)
+  - ✅ 카테고리별 그룹화 (16개 훈련법 카테고리, 8개 드릴 카테고리)
+  - ✅ 상세 설명 포함 (사용법, 강도, 거리, 빈도)
+  - ✅ 반복수, 페이스, 휴식, 거리, 강도 모두 수정 가능
+- **확장 방법**:
+  - DB에 새 훈련법/드릴 추가 시 자동 반영
+  - 관리자/강사가 커스텀 훈련법 추가 가능
+  - 스크립트: `node server/scripts/import-training-methods-from-client.js`
+
+#### 6️⃣ **커리큘럼 프로그램 생성 UI** ✅
+- **새 페이지**: `/instructor/curriculum-program`
+- **구조**:
+  ```
+  워밍업 (고정)
+    ├─ 거리/시간 선택
+    ├─ 값 입력 (m 또는 분)
+    └─ 휴식시간 (초)
+  
+  메인세트 (복수 가능)
+    ├─ [강습법 선택] 드롭다운
+    ├─ 거리/시간 선택
+    ├─ 값 입력
+    └─ 휴식시간
+  
+  쿨다운 (고정)
+    ├─ 거리/시간 선택
+    ├─ 값 입력
+    └─ 휴식시간
+  ```
+- **기능**:
+  - **강습법 목록 불러오기**: 레벨별 (초급/중급) 강습법 로드
+  - **메인세트 추가**: "+ 메인세트 추가" 버튼
+  - **강습법 선택**: 드롭다운에서 선택 시 설명 자동 표시
+  - **거리/시간 선택**: 거리(m) 또는 시간(분) 단위 선택
+  - **휴식시간**: 각 블록별 휴식시간(초) 입력
+  - **워밍업/쿨다운**: 고정 구조, 삭제 불가
+  - **메인세트**: 개별 삭제 가능
+- **향후 통합**:
+  - 강습법 페이지에서 링크로 연결
+  - 생성된 프로그램을 회원에게 할당
+  - 강습법 체크리스트 통합
+
+---
+
+### 🎯 **회원별 통계 대시보드 & 레이스 플랜 DB 저장 & 질환 정보 추가 (2025-01-11 23:30)**
+
+#### 1️⃣ **레이스 플랜 설정 DB 저장 및 자동 로드** ✅
+- **User 모델 확장** (`server/src/models/User.ts`):
+  ```typescript
+  swimmingProfile: {
+    // ... 기존 필드
+    // 🏆 레이스 플랜 설정 (마지막 설정 저장)
+    lastRacePlan: {
+      raceDate: { type: String },
+      raceDistance: { type: Number },
+      raceStroke: { type: String },
+      currentTime: { type: Number },
+      targetTime: { type: Number },
+      taperWeeks: { type: Number },
+      updatedAt: { type: Date }
+    }
+  }
+  ```
+- **자동 로드 로직** (`BulkMemberVariablesModal.tsx`):
+  ```typescript
+  // 회원 불러오기 시 레이스 플랜 설정 자동 로드
+  startDate: swimmingProfile.lastRacePlan?.startDate || '',
+  raceDate: swimmingProfile.lastRacePlan?.raceDate || '',
+  raceDistance: swimmingProfile.lastRacePlan?.raceDistance || 100,
+  raceStroke: swimmingProfile.lastRacePlan?.raceStroke || 'freestyle',
+  currentTime: swimmingProfile.lastRacePlan?.currentTime || 0,
+  targetTime: swimmingProfile.lastRacePlan?.targetTime || 0,
+  taperWeeks: swimmingProfile.lastRacePlan?.taperWeeks || 2
+  ```
+- **저장 로직**:
+  ```typescript
+  // 레이스 모드인 경우에만 저장
+  lastRacePlan: memberVar.programType === 'race' ? {
+    raceDate: memberVar.raceDate,
+    raceDistance: memberVar.raceDistance,
+    raceStroke: memberVar.raceStroke,
+    currentTime: memberVar.currentTime,
+    targetTime: memberVar.targetTime,
+    taperWeeks: memberVar.taperWeeks,
+    updatedAt: new Date().toISOString()
+  } : undefined
+  ```
+- **효과**:
+  - 회원 불러오기 시 이전 레이스 플랜 설정 자동 로드
+  - 반복적인 입력 불필요
+  - 이력 관리 용이
+
+#### 2️⃣ **회원용 통계 페이지** ✅
+- **새 페이지**: `/student/statistics`
+  - 회원 본인이 자신의 훈련 통계 확인
+  - `MemberStatistics` 컴포넌트 재사용
+- **Student 대시보드 통합** (`/student/dashboard`):
+  - 대시보드 헤더에 "📊 내 훈련 통계" 버튼 추가
+  ```tsx
+  <button
+    onClick={() => router.push('/student/statistics')}
+    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 ..."
+  >
+    📊 내 훈련 통계
+  </button>
+  ```
+- **접근 제어**:
+  - 회원(student) 본인만 접근 가능
+  - `useAuth` 훅으로 권한 확인
+- **표시 내용**:
+  - 평균 완료율, 총 훈련 거리/시간, 주간 평균 거리
+  - 프로그램 이력 (최근 10개)
+  - 완료율 추이 그래프
+  - CSS 추이 (준비 중)
+  - 생리학적 지표 변화 (준비 중)
+
+#### 3️⃣ **나머지 질환 정보 추가** ✅
+- **추가된 질환** (19개):
+  1. `knee_pain`: 무릎 통증
+  2. `low_back_pain`: 허리 통증
+  3. `chlorine_sensitivity`: 염소 민감
+  4. `asthma`: 천식
+  5. `pregnancy`: 임신
+  6. `menstruation`: 생리 중
+  7. `cold`: 감기
+  8. `sleep_deprivation`: 수면 부족
+  9. `overtraining`: 과훈련
+  10. `neck_pain`: 목 통증 ⭐ 신규
+  11. `wrist_pain`: 손목 통증 ⭐ 신규
+  12. `ankle_pain`: 발목 통증 ⭐ 신규
+  13. `elderly`: 고령 (65세 이상) ⭐ 신규
+  14. `rhinitis`: 비염 ⭐ 신규
+  15. `ear_infection`: 귀 염증/중이염 ⭐ 신규
+  16. `skin_sensitivity`: 피부 민감/습진 ⭐ 신규
+  17. `high_blood_pressure`: 고혈압 (조절됨) ⭐ 신규
+  18. `diabetes`: 당뇨병 (조절됨) ⭐ 신규
+  19. `postpartum`: 산후 회복 ⭐ 신규
+- **각 질환별 정보 구조**:
+  ```typescript
+  {
+    name: string;
+    category: string;
+    description: string;
+    adjustments: {
+      intensity: string;
+      forbiddenStrokes: string[];
+      cautionStrokes: string[];
+      recommendedStrokes: string[];
+      forbiddenEquipment: string[];
+      recommendedEquipment: string[];
+      zoneRestrictions: string[];
+    };
+    scientificEvidence: Array<{
+      title: string;
+      authors: string;
+      year: number;
+      journal: string;
+      findings: string;
+    }>;
+    physiologicalMechanism: string;
+    recoveryTime: string;
+  }
+  ```
+- **예시 (무릎 통증)**:
+  - **조절**: 평영 금지, 돌핀킥 70%, 자유형/배영 권장
+  - **근거**: 평영 선수의 73%가 무릎 통증, 풀부이 사용 시 무릎 부담 85% 감소
+  - **메커니즘**: MCL과 반월상 연골에 반복적 전단력
+  - **회복**: 경미 1-2주, 중등도 4-8주, 중증 12주 이상
+- **효과**:
+  - 프로그램 상세보기에서 질환명 클릭 → 상세보기 모달
+  - 과학적 근거와 생리학적 메커니즘 확인
+  - 회복 기간 및 권장 조치 안내
+
+#### 향후 계획
+- **CSS 이력 API** 구현 (그래프 시각화)
+- **생리학적 지표 이력 API** 구현 (VO2max, HR 추이)
+- **스마트워치 연동** (자동 데이터 수집)
+- **목표 달성률 분석** (레이스 목표 vs 실제 기록)
+
+---
+
+### 🎯 **FeasibilityChecker & AllConditionsDrawer 개선 (2025-01-11 22:00)**
+
+#### 문제점 1: 권장 목표가 너무 보수적
+- **현상**: 주당 0.61%, 7주 = 4.2% 향상 가능한데 권장 목표는 72초→72초 (0초), 71.5초 (0.7%)만 제안
+- **원인 1**: `range_min = 0.0` (Elite 레벨)이라서 `conservativeImprovement = 0.0 * 0.7 = 0`
+- **원인 2**: `range`는 전체 기간 개선률인데, 주당으로 잘못 계산
+- **해결**: grade에 따라 다른 비율 적용 + 전체 기간 기준 사용
+  ```typescript
+  // range_min/mid/max는 이미 전체 기간 기준 (12주 기준 * scaleFactor)
+  const totalRangeMin = range_min; // 그대로 사용
+  const totalRangeMid = range_mid;
+  const totalRangeMax = range_max;
+  
+  if (grade === 'stretch') {
+    // 도전적 목표 → 중간~최대 범위
+    conservativeImprovement = (totalRangeMid * 0.7) / 100;
+    midImprovement = ((totalRangeMid + totalRangeMax) / 2) / 100;
+    aggressiveImprovement = (totalRangeMax * 0.95) / 100;
+  }
+  ```
+- **효과 (Elite 7주, req_pct_total=4.2%)**:
+  - **Before**: 안전 71.8초, 도전 71.5초 (0.2-0.5초 감소, 너무 보수적)
+  - **After**: 
+    - 보수적: `4.2 * 0.5 = 2.1%` → 72 * (1-0.021) = **70.49초** (1.51초 감소) ✅
+    - 중간: `4.2 * 0.7 = 2.94%` → **69.88초** (2.12초 감소) ✅
+    - 도전적: `4.2 * 0.9 = 3.78%` → **69.28초** (2.72초 감소) ✅
+- **핵심**: 사용자 목표가 "stretch"면, 권장은 사용자 목표의 50-90%
+
+#### 문제점 2: 완료율 표시 및 강도 조절 시스템 구현
+
+##### 완료율 표시 문제 해결
+- **문제**: 서버에서 완료율 데이터를 받아왔지만 UI에 표시되지 않음
+- **원인**: `ProgramListView.tsx`에서 `completionData` 매핑 누락
+- **해결**: 
+  ```typescript
+  // 완료율 정보를 직접 저장 (서버에서 가져온 데이터)
+  completionData: sp.content?.sessions?.map((session: any) => ({
+    sessionIdx: sp.content.sessions.indexOf(session),
+    completion: session.completion
+  })) || []
+  ```
+- **효과**: 완료율이 있는 세션은 "✓ 완료율 85%" 표시, 없는 세션은 "📝 완료율 입력" 버튼 표시
+
+##### 완료율 기반 강도 조절 시스템 구현
+- **목적**: 이전 주 완료율에 따라 다음 주 프로그램 강도를 자동 조절
+- **과학적 근거**:
+  - 90% 이상: 강도 5% 증가 (적응 완료)
+  - 80-89%: 현재 강도 유지
+  - 70-79%: 강도 5% 감소
+  - 70% 미만: 강도 15% 감소 (과부하 방지)
+
+- **구현**:
+  ```typescript
+  // engine-v31.ts
+  function calculateIntensityAdjustment(completionRate: number | undefined): number {
+    if (completionRate >= 90) return 1.05; // 5% 증가
+    if (completionRate >= 80) return 1.0;  // 유지
+    if (completionRate >= 70) return 0.95; // 5% 감소
+    return 0.85; // 15% 감소
+  }
+  
+  // page.tsx - 이전 주 완료율 조회
+  const recentPrograms = await apiClient.get(`/api/swim-programs/athlete/${member._id}?limit=1`);
+  const completedSessions = recentProgram.content.sessions.filter(
+    session => session.completion && session.completion.completionRate !== undefined
+  );
+  previousWeekCompletionRate = Math.round(totalCompletion / completedSessions.length);
+  ```
+
+- **효과**: 
+  - 완료율 100% → 다음 주 거리/시간 5% 증가
+  - 완료율 60% → 다음 주 거리/시간 15% 감소
+  - 자동으로 적응적 훈련 강도 조절
+
+#### 문제점 3: 404 오류 (프로필 저장 실패)
+- **현상**: 회원 불러오기 시 `athlete_68e7749fe1fbbb2367a67cb5` ID로 API 호출 → 404
+- **원인**: `MemberSelectModal`이 `athlete_` 접두사를 포함한 ID 전달, API는 순수 User ID 필요
+- **해결**:
+  ```typescript
+  // client/components/swimlab/BulkMemberVariablesModal.tsx
+  // athlete_ 접두사 제거 (API는 순수 User ID 필요)
+  const rawUserId = m._id.startsWith('athlete_') ? m._id.substring(8) : m._id;
+  
+  return {
+    memberId: rawUserId, // 순수 ID 사용
+    ...
+  };
+  ```
+
+#### 문제점 3: 완료율 0% 표시 (서버 응답 해석 오류)
+- **현상**: 체크박스 선택 시 `rate: 100` 계산되지만 팝업에 0% 표시
+- **원인**: `ProgramListView.tsx`에서 서버 응답의 `completionRate`를 잘못된 경로에서 찾음
+  ```typescript
+  // Before
+  const completionRate = response.data?.data?.completionRate || 
+                        data.simpleCompletion?.overallRate || 
+                        0; // → 항상 0
+  ```
+- **해결**: 클라이언트에서 직접 재계산
+  ```typescript
+  // After
+  let completionRate = 0;
+  if (data.completionType === 'detailed' && data.detailedCompletion) {
+    const totalPlanned = data.detailedCompletion.sets.reduce((sum, set) => 
+      sum + (set.planned.distance * set.planned.reps), 0
+    );
+    const totalActual = data.detailedCompletion.sets.reduce((sum, set) => 
+      sum + (set.actual.completed ? (set.actual.distance * set.actual.reps) : 0), 0
+    );
+    completionRate = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
+  } else if (data.simpleCompletion) {
+    completionRate = data.simpleCompletion.overallRate;
+  }
+  ```
+- **디버그 로그**: 서버 응답 구조와 최종 완료율을 로그로 확인
+
+#### 문제점 4: 레이스 플랜 7주 전체 미표시
+- **현상**: 7주 레이스 플랜인데 일부 주차만 표시됨
+- **예상 원인**: `weeklyPlans` 배열이 비어있거나 일부만 생성
+- **해결**: 디버그 로그 추가 (`raceProgramGenerator.ts`)
+  ```typescript
+  console.log(`📊 ${phaseType} 페이즈 생성 완료:`, {
+    weekStart: currentWeek - weeks,
+    weekEnd: currentWeek - 1,
+    totalWeeks: weeks,
+    generatedWeeklyPlans: weeklyPlans.length,
+    weeklyPlansPreview: weeklyPlans.map(w => ({
+      goal: w.goal,
+      daysCount: w.days.length
+    }))
+  });
+  ```
+- **다음 단계**: 브라우저 콘솔에서 로그 확인 → 실제로 7주가 생성되는지 검증
+
+#### 문제점 4: AllConditionsDrawer 카테고리 분류 과다
+- **현상**: 카테고리가 20개 이상(어깨, 무릎, 허리, 목, 피로, 호흡기, 귀, 피부, ...)으로 너무 세분화
+- **개선**: 4개 대분류로 통합
+  - **관절/근골격**: 어깨, 무릎, 허리, 목, 고관절, 손목/팔꿈치, 발목, 근육
+  - **내과질환**: 대사질환, 심혈관, 신장, 호흡기, 소화기
+  - **알레르기/피부**: 알레르기, 피부
+  - **컨디션/증상**: 피로, 귀, 생리, 환경, 신경, 자세
+
+```typescript
+// client/components/swimlab/AllConditionsDrawer.tsx
+const CATEGORY_GROUPS: Record<string, string> = {
+  '어깨': '관절/근골격',
+  '무릎': '관절/근골격',
+  '허리': '관절/근골격',
+  ...
+  '대사질환': '내과질환',
+  '심혈관': '내과질환',
+  ...
+};
+
+// 대분류 카테고리 추출
+const categories = useMemo(() => {
+  const groups = new Set<string>();
+  CONDITIONS.forEach(c => {
+    if (c.category) {
+      const group = CATEGORY_GROUPS[c.category] || c.category;
+      groups.add(group);
+    }
+  });
+  return Array.from(groups).sort();
+}, []);
+
+// 대분류 카테고리 필터
+if (category) {
+  base = base.filter(c => {
+    if (!c.category) return false;
+    const group = CATEGORY_GROUPS[c.category] || c.category;
+    return group === category;
+  });
+}
+```
+
+#### 효과
+✅ **FeasibilityChecker**: 7주 0.6%/주 → 71.24초 권장 (현실적, 1.05% 향상)
+✅ **404 오류 해결**: `athlete_` 접두사 제거로 API 호출 정상화
+✅ **완료율 디버그**: 상세 로그로 문제 원인 추적 가능
+✅ **AllConditionsDrawer**: 20개 → 4개 대분류로 카테고리 단순화, 검색 편의성 대폭 향상
+
+---
+
+### 🏁 **레이스 프로그램 상세 표시 개선 (2025-01-11 21:00)**
+
+#### 문제점
+- 레이스 프로그램 상세 화면에 페이즈 이름만 표시되고 실제 운동 계획(워밍업, 메인세트, 쿨다운)이 없음
+- 강사와 회원이 어떻게 훈련해야 하는지 알 수 없음
+- 주간 프로그램처럼 자세한 세트별 설명이 필요함
+
+#### 해결 방안
+**레이스 프로그램의 phases 데이터 구조를 활용하여 상세 운동 계획 표시**
+
+```typescript
+// 데이터 구조
+phases: [{
+  phase: 'base' | 'build' | 'peak' | 'taper',
+  weekStart: 1,
+  weekEnd: 2,
+  focus: '기초 체력 및 기술 다지기',
+  weeklyPlans: [{  // generateWeeklyPlan 결과
+    goal: '체력 향상',
+    planExplanation: '...',
+    days: [{
+      date: '2025-10-13',
+      theme: 'tech_tempo',
+      themeDesc: '기술+템포',
+      sets: [{
+        stroke: 'freestyle',
+        desc: '4×100m @ Z3, r20"',
+        meters: 400,
+        zone: 'Z3',
+        restSec: 20,
+        whyPace: 'CSS 기반 Z3(역치)',
+        whyRest: '...',
+        whySet: '템포 유지력 강화',
+        evidenceKeys: [...]
+      }],
+      totalMeters: 2000,
+      totalDuration: 60,
+      notes: ['워밍업 충분히']
+    }]
+  }],
+  volumeTarget: 10000,
+  intensityDistribution: { z1: 60, z2: 25, z3: 10, z4: 5, z5: 0 }
+}]
+```
+
+#### 구현 내용
+**client/components/swimlab/ProgramListView.tsx**
+```tsx
+{/* 레이스 프로그램 - Phases 상세 */}
+{selectedProgram.programType === 'race' && selectedProgram.content.phases && (
+  <div className="mb-6 space-y-4">
+    <h5 className="font-semibold text-gray-900 mb-3">🏆 페이즈별 훈련 계획</h5>
+    {selectedProgram.content.phases.map((phase: any, phaseIdx: number) => {
+      const phaseName = phase.phase === 'base' ? 'Base (기초)' :
+                       phase.phase === 'build' ? 'Build (증가)' :
+                       phase.phase === 'peak' ? 'Peak (정점)' :
+                       phase.phase === 'taper' ? 'Taper (조정)' : phase.phase;
+      
+      return (
+        <div key={phaseIdx} className="border-2 rounded-lg p-4 ...">
+          {/* 페이즈 헤더 */}
+          <h6>{phaseName}</h6>
+          <p>Week {phase.weekStart}-{phase.weekEnd} ({phase.weekEnd - phase.weekStart + 1}주)</p>
+          <p>🎯 {phase.focus}</p>
+          <p>주간 목표: {phase.volumeTarget}m | 강도 분포: Z1 {phase.intensityDistribution.z1}% ...</p>
+          
+          {/* 주차별 세션 상세 */}
+          {phase.weeklyPlans.map((weekPlan, weekIdx) => (
+            <div key={weekIdx}>
+              <p>📅 Week {phase.weekStart + weekIdx}</p>
+              
+              {/* 일별 훈련 */}
+              {weekPlan.days.map((day, dayIdx) => (
+                <div key={dayIdx}>
+                  <h6>{day.date} - {day.themeDesc}</h6>
+                  <p>{day.totalMeters}m / {Math.round(day.totalDuration)}분</p>
+                  
+                  {/* 세트 목록 */}
+                  {day.sets.map((set, setIdx) => (
+                    <div key={setIdx}>
+                      <span>{set.desc}</span>
+                      {set.whySet && <span> - {set.whySet}</span>}
+                    </div>
+                  ))}
+                  
+                  {/* 주의사항 */}
+                  {day.notes.map(note => (
+                    <p>⚠️ {note}</p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    })}
+  </div>
+)}
+```
+
+#### 표시 내용
+**Base (기초) - Week 1-2**
+- 🎯 기초 체력 및 기술 다지기
+- 주간 목표: 10000m | 강도 분포: Z1 60%, Z2 25%, Z3 10%, Z4 5%, Z5 0%
+
+**Week 1**
+- **월요일 2025-10-13** - 기술+템포 (2000m / 60분)
+  - 워밍업: 400m 자유형 이지 @ Z1
+  - 드릴: 8×50m 스컬링 @ Z1, r10"
+  - 메인세트: 4×100m 자유형 @ Z3, r20" - 템포 유지력 강화
+  - 쿨다운: 200m 횡영 @ Z1
+  - ⚠️ 워밍업 충분히, 통증 시 중단
+
+- **수요일 2025-10-15** - 지구력 (2200m / 65분)
+  - ...
+
+#### 효과
+✅ 레이스 프로그램도 주간 프로그램처럼 **상세한 운동 계획** 제공
+✅ 페이즈별/주차별/일별로 **구조화된 표시**
+✅ 각 세트의 **목적과 근거** 명시
+✅ 강사와 회원이 **정확히 무엇을 해야 하는지** 알 수 있음
+✅ 강도 분포와 주간 목표 거리 명시로 **과학적 훈련 계획** 이해 가능
+
+#### 연동 파일
+- `client/components/swimlab/ProgramListView.tsx` (상세 UI)
+- `client/lib/swimlab/raceProgramGenerator.ts` (phases 생성)
+- `client/lib/swimlab/engine-v31.ts` (weeklyPlans 생성)
+
+---
+
+## 📅 최근 업데이트 (2025-01-11)
+
+### 🎯 **컨디션 설정 탭 단순화 (2025-01-11 02:00)**
+
+#### 문제점
+- 컨디션 설정 탭과 BulkMemberVariablesModal 팝업에 **중복된 입력 UI**
+- 주영법, 회피영법, CSS, 운동목표를 2번 입력해야 함
+- 사용자 혼란 및 UX 저하
+
+#### 해결 방안
+**모든 설정을 팝업으로 통합**
+```
+컨디션 설정 탭 (단순화)
+  - 회원 불러오기 버튼
+  - [수정] 버튼 추가 (선택된 회원 있을 때 활성화)
+  - 불러온 회원 목록 표시
+  - 컨디션 선택 (28가지)
+  
+팝업 (BulkMemberVariablesModal)
+  - CSS 입력
+  - 주영법 (자유형, 배영, 평영, 접영만)
+  - 회피영법 (자유형, 배영, 평영, 접영만)
+  - 운동 요일
+  - 세션 시간
+  - 풀 길이
+  - 프로그램 타입 & 레이스 플랜
+  - 운동 목표 (10가지)
+  - 컨디션 선택 (28가지) ← 추가
+```
+
+#### 주요 변경사항
+1. **BulkMemberVariablesModal.tsx**
+   - 컨디션 선택 UI 추가 (28가지 질환/특수상황)
+   - `conditionsData` state 추가
+   - 동적 import로 `CONDITIONS` 로드
+   - 운동 목표 뒤에 컨디션 선택 섹션 배치
+
+2. **AthleteProfileBar.tsx**
+   - [수정] 버튼 추가 (회원 선택 시 활성화)
+   - 선택된 회원들의 프로필 데이터를 팝업으로 전달
+   - `onBulkVariablesNeeded` 콜백 호출
+
+3. **page.tsx (컨디션 설정 탭)**
+   - "시간 기반 프로그램 설정" 섹션 전체 제거
+   - 주영법 선택 UI 제거
+   - 회피영법 선택 UI 제거
+   - CSS 입력 UI 제거
+   - 운동 목표 선택 UI 제거
+   - "회원 설정 방법" 안내 추가
+
+#### 사용 흐름 (최종)
+```
+1. [회원 불러오기] 버튼 클릭
+   ↓
+2. 회원 선택 (체크박스, 다중 선택 가능)
+   ↓
+3. [✏️ 수정 (N명)] 버튼 클릭
+   ↓
+4. 팝업에서 모든 설정 입력
+   - CSS, 주영법, 회피영법, 운동요일
+   - 세션 시간, 풀 길이
+   - 프로그램 타입, 목표, 컨디션
+   ↓
+5. [저장 후 주간 계획 생성] 클릭
+   ↓
+6. 프로그램 자동 생성 완료
+```
+
+#### 제거된 중복 UI
+- ❌ 컨디션 설정 탭의 주영법 선택 (기본배영, 횡영 포함)
+- ❌ 컨디션 설정 탭의 회피영법 선택
+- ❌ 컨디션 설정 탭의 CSS 입력
+- ❌ 컨디션 설정 탭의 세션 시간 입력
+- ❌ 컨디션 설정 탭의 운동 목표 선택
+
+#### 추가 개선사항 (2025-01-11 02:30)
+1. **AthleteProfileBar**
+   - ~~수정 버튼 제거~~ (회원 불러오기에서 자동으로 팝업이 뜨므로 불필요)
+   - 회원 불러오기 → 자동으로 BulkMemberVariablesModal 팝업
+
+2. **CompletionInputModal**
+   - 초기 체크박스 상태: 모두 해제 (`completed: false`)
+   - time: 0으로 초기화
+   - 사용자가 직접 입력하도록 변경
+
+3. **ProgramListView**
+   - 레이스 프로그램 phases 렌더링 추가
+   - Base → Build → Peak → Taper 페이즈별 상세 표시
+   - 주차별 세션 정보 표시
+   - 프로그램 카드 레이아웃: `grid-cols-1 lg:grid-cols-2`
+   - 큰 화면에서 2열, 작은 화면에서 1열
+
+---
+
+### 🎯 **회원 변수 설정 UI 개선 (2025-01-11 01:00)**
+
+#### 주요 변경사항
+1. **세션 설정 (주 몇일) 제거**
+   - 운동 요일 선택으로 자동 계산 (`trainingDays.length`)
+   - 중복 입력 제거하여 UX 개선
+
+2. **세션 시간 UI 단순화**
+   - 30, 50, 60분 버튼 + 직접 입력
+   - "주당 세션 수"는 운동 요일 선택으로 대체
+
+3. **풀 길이 UI 개선**
+   - 25m, 50m 버튼 + 직접 입력
+   - 33m 옵션 제거 (일반적이지 않음)
+
+4. **레이스 플랜 UI 추가**
+   ```typescript
+   // 프로그램 타입 "레이스 플랜" 선택 시 나타남
+   - 훈련 시작일 (date input)
+   - 시합일 (date input)
+   - 대회 거리 (50m ~ 1500m)
+   - 대회 영법 (자유형, 배영, 평영, 접영, 개인혼영)
+   - 테이퍼링 주수 (1~3주)
+   - 현재 기록 (초)
+   - 목표 기록 (초)
+   - 실현 가능성 체커 (자동 표시)
+   ```
+
+5. **완료율 권한 오류 해결 (403 Forbidden)**
+   ```typescript
+   // server/src/routes/swim-program-completions.ts
+   // canEditCompletion() 함수에 권한 추가:
+   
+   // 4. 그룹 강사 확인 (단체반 회원)
+   if (member.assignedGroups) {
+     for (const group of member.assignedGroups) {
+       if (group.instructor === currentUserId) {
+         return true;
+       }
+     }
+   }
+   
+   // 5. 강사/센터 관리자 권한
+   if (currentUser.userType === 'instructor' || currentUser.userType === 'centerAdmin') {
+     return true;
+   }
+   ```
+
+#### UI 순서 (최종)
+```
+📊 CSS 입력 (4가지 영법)
+  ↓
+🏊 주 영법 (Main Strokes)
+  ↓
+🚫 회피 영법
+  ↓
+📅 운동 요일 (월/화/수/목/금/토/일)
+  ↓
+⏱️ 세션 시간 (30, 50, 60 + 직접 입력)
+  ↓
+🏊‍♂️ 풀 길이 (25, 50 + 직접 입력)
+  ↓
+📋 프로그램 타입 (기본 훈련 / 레이스 플랜)
+  ↓
+🏆 레이스 플랜 설정 (레이스 플랜 선택 시만 표시)
+  - 훈련 시작일
+  - 시합일
+  - 대회 거리/영법
+  - 테이퍼링 주수
+  - 현재/목표 기록
+  - 실현 가능성 체커
+  ↓
+🎯 운동 목표 (10가지)
+  ↓
+🏥 컨디션 (28가지)
+```
+
+#### 파일 수정 목록
+- `client/components/swimlab/BulkMemberVariablesModal.tsx`
+  - `sessionsPerWeek` 필드 제거
+  - 세션 설정 → 세션 시간으로 변경
+  - 풀 길이 UI 개선 (25, 50, 직접 입력)
+  - 레이스 플랜 UI 추가
+  - `trainingDays.length`로 주당 세션 수 자동 계산
+  
+- `server/src/routes/swim-program-completions.ts`
+  - `canEditCompletion()` 함수에 권한 추가
+  - 그룹 강사 확인 로직
+  - 강사/센터 관리자 권한
+
+- `client/app/admin/swim-training-engine/page.tsx` **(2025-01-11 추가)**
+  - 프로그램 생성 시 `sessionsPerWeek` → `trainingDays.length` 변경
+  - 레이스 플랜 생성: `daysPerWeek` 자동 계산
+  - 주간 플랜 생성: `weeklyMinutes` 자동 계산
+  - 프로필 저장 시 `sessionsPerWeek` 자동 계산
+
+#### 테스트 체크리스트
+- [x] 레이스 플랜 UI 표시 확인
+- [x] 실현 가능성 체커 표시 (현재 기록, 목표 기록, 시합일 입력 후)
+- [ ] 레이스 플랜 프로그램 생성 (기본 훈련과 혼재 없이)
+- [ ] 완료율 입력 403 오류 해결 확인
+
+---
+
+## 📅 최근 업데이트 (2025-01-10)
+
+### 🎯 **회원 다중 선택 시 개별 설정 시스템 (2025-01-10 22:00)**
+
+#### 문제점
+- **BulkMemberVariablesModal**이 "일괄 적용" 모달로 설계됨
+- CSS, 컨디션, 영법을 입력하면 **모든 회원에게 동일하게 적용**
+- 실제로는 각 회원마다 CSS, 컨디션, 영법이 다름!
+
+#### 해결 방안 (하이브리드 시스템)
+
+**1단계: 프로필 자동 로드**
+```typescript
+// 회원 불러오기 시 각 회원의 프로필에서 자동 로드
+- CSS: 프로필에 있으면 사용, 없으면 레벨 기반 추정
+  - beginner: 150초, intermediate: 120초, advanced: 90초
+- 컨디션: 저장된 conditionIds 자동 로드
+- 주영법/제외영법: mainStrokes, excludedStrokes 자동 로드
+```
+
+**2단계: 요약 보기 UI (기본 모드)**
+```
+┌─ 회원별 프로그램 설정 ───────────┐
+│                                  │
+│ 📊 선택된 회원 (3명)             │
+│                                  │
+│ ┌─ 홍길동 (상급) ──────┐        │
+│ │ CSS: 자유형 90초      │        │
+│ │ 컨디션: 무릎통증      │        │
+│ │ 주영법: 자유형, 배영  │        │
+│ │ [✏️ 개별 수정]        │        │
+│ └──────────────────────┘        │
+│                                  │
+│ ┌─ 김영희 (중급) ──────┐        │
+│ │ CSS: 120초 (레벨 추정)│        │
+│ │ 컨디션: 천식          │        │
+│ │ 주영법: 자유형        │        │
+│ │ [✏️ 개별 수정]        │        │
+│ └──────────────────────┘        │
+│                                  │
+│ 🏊 공통 설정                     │
+│ - 수영장: 25m                    │
+│ - 주 몇회: 3회                   │
+│ - 세션 시간: 60분                │
+│                                  │
+│ [✅ 프로그램 생성]               │
+└──────────────────────────────────┘
+```
+
+**3단계: 개별 수정 모드 (✏️ 클릭 시)**
+- 탭으로 회원 전환
+- 각 회원의 CSS, 컨디션, 영법 개별 수정 가능
+- "← 요약 보기로 돌아가기" 버튼
+
+#### 구현 파일
+- **`client/components/swimlab/BulkMemberVariablesModal.tsx`**
+  - `getEstimatedCSS()` 추가: 레벨 기반 CSS 추정
+  - 초기화 로직 개선: 프로필 CSS 우선, 없으면 레벨 추정
+  - `editingMemberIdx` 상태 추가
+  - 요약 보기 UI 추가 (회원 카드 + 공통 설정)
+  - 개별 수정 UI 준비 (향후 확장)
+
+- **`client/components/swimlab/MemberSelectModal.tsx`**
+  - 단일 회원 선택 시에도 팝업 사용: `selectedUsers.length >= 1`
+  - 이전: `> 1` (2명 이상만 팝업)
+  - 변경: `>= 1` (1명 이상 팝업)
+
+#### 효과
+- ✅ 회원마다 다른 CSS, 컨디션, 영법 적용
+- ✅ 프로필 정보 자동 활용 (중복 입력 불필요)
+- ✅ 필요시에만 개별 수정 (요약 → 개별)
+- ✅ 다중 생성 편의성 유지
+- ✅ UX 개선: 직관적인 요약 + 선택적 상세
+
+---
+
+### 🏊 **레벨별 영법/드릴 필터링 & 기본배영/횡영 통합 (2025-01-10)**
+
+#### 영법 시스템 개선
+
+**1. 레벨별 허용 영법 시스템 구축**:
+```typescript
+LEVEL_ALLOWED_STROKES = {
+  beginner: ['freestyle', 'backstroke', 'breaststroke'], // 초급: 기본 3가지
+  intermediate: ['freestyle', 'backstroke', 'breaststroke', 'butterfly'], // 중급: 접영 추가
+  advanced: ['freestyle', 'backstroke', 'breaststroke', 'butterfly', 'elementary_backstroke', 'sidestroke'], // 상급: 기본배영, 횡영 추가
+  master/expert: 모든 영법
+}
+```
+
+**2. 기본배영 & 횡영 통합 (전략적 배치)**:
+- **기본배영 (Elementary Backstroke)**: 저부하, 중립자세, 회복/컨디셔닝 목적
+- **횡영 (Sidestroke)**: 체력 절약형, 비대칭이지만 저강도
+- **제한**: 상급(advanced) 이상만 사용 가능
+
+**3. 영법 선택 로직 (전략적)**:
+
+**워밍업 전략**:
+- ✅ **복습 우선**: 전 수업에서 기본배영/횡영을 배웠으면 → 워밍업에서 복습
+- ✅ **이력 기반**: `weekHistory`에 'elementary' 또는 'side' 키워드 확인
+- ❌ **무작위 삽입 금지**: 배운 적 없으면 워밍업에 넣지 않음
+
+**쿨다운 전략**:
+- ✅ **평영 과다 사용 시** (40% 이상) → 횡영으로 상체 회복
+- ✅ **평영 부족 시** (10% 미만) → 쿨다운에 평영 보완
+- ✅ **평형적 사용 시** → 횡영 우선 (체력 절약형 회복)
+- 🎯 **평영 균형 조절**: 쿨다운이 영법 밸런스 조정 역할
+
+**4. CSS 시스템 완전 개선**:
+
+**페이스 계산** (비율 기반, 하드코딩 제거):
+- ❌ **이전**: CSS+16초, CSS+8초 (절대값 하드코딩)
+- ✅ **이후**: CSS×1.18, CSS×1.09 (비율 기반)
+- 🎯 **효과**: CSS 60초도 150초도 정확한 비율로 페이스 계산
+
+**휴식 시간** (회원별 회복 속도 반영):
+- ❌ **이전**: Z1=10초, Z2=15초 (고정)
+- ✅ **이후**: baseRest × (CSS/90) (CSS 기반 조정)
+- 🎯 **효과**: 빠른 선수(CSS 70초)는 휴식 짧게, 느린 선수(CSS 120초)는 휴식 길게
+
+**목표별 최적 CSS 거리**:
+```typescript
+실력 향상/스피드 → 100m CSS 우선
+체력 향상/기술/재활 → 200m CSS 우선
+장거리/오픈워터 → 400m CSS 우선
+```
+
+**CSS 우선순위 시스템**:
+```
+1. 목표에 맞는 거리의 실측 CSS
+   └─ 장거리 목표 + 400m CSS 있음 → 400m CSS 사용
+   
+2. 다른 거리 CSS → Riegel 공식으로 변환
+   ├─ 400m CSS → 100m 변환
+   ├─ 200m CSS → 100m 변환
+   ├─ 50m CSS → 100m 변환
+   └─ 25m CSS → 100m 변환
+   
+3. 레벨별 추정값 (초급/중급용)
+   ├─ beginner: 150초/100m
+   ├─ intermediate: 120초/100m
+   ├─ advanced: 90초/100m
+   └─ master: 75초/100m
+```
+
+**Riegel 공식**: T₂ = T₁ × (D₂/D₁)^1.06
+
+**5. CSS 측정 세션 자동 삽입**:
+
+**측정 주기** (레벨 + 목표 기반):
+```typescript
+beginner: 4주마다
+intermediate: 5주마다
+advanced (장거리 목표): 8주마다
+advanced (실력 향상): 4주마다
+기본: 6주마다
+```
+
+**측정 프로토콜** (Wakayoshi 1993):
+```
+워밍업 800m (Z1)
+  ↓
+400m 전력 수영 ⏱️ (T400 기록)
+  ↓
+완전 회복 10-20분
+  ↓
+200m 전력 수영 ⏱️ (T200 기록)
+  ↓
+CSS = (400-200)/(T400-T200) m/s
+  ↓
+쿨다운 400m (Z1)
+```
+
+**초급/중급 프로토콜** (부담 감소):
+- 200m + 100m 테스트 (400m+200m 대신)
+
+**자동화**:
+- 주 3회 이상 훈련 시만 CSS 측정 추가
+- 마지막 훈련일에 자동 삽입
+- 이력(`weekHistory`)에 'CSS_TEST' 추가
+- 다음 주차 프로그램부터 새로운 CSS 적용
+
+#### 드릴 시스템 개선
+
+**1. 레벨별 드릴 필터 매핑**:
+```typescript
+LEVEL_TO_DRILL_WHO = {
+  beginner: ['초보~중급', '모든 수준', '초보'],
+  intermediate: ['초보~중급', '중급~상급', '모든 수준', '중급'],
+  advanced: ['중급~상급', '상급 이상', '모든 수준', '상급', '초보~중급'],
+  master/expert: 모든 드릴
+}
+```
+
+**2. selectDrill 함수 개선**:
+- `level` 파라미터 추가
+- DRILLS 데이터의 `who` 필드와 교차 확인
+- 레벨에 맞지 않는 드릴 자동 필터링
+- 예: 초급자에게 상급 드릴(Single Arm, Paddle Pull) 제외
+
+**3. 적용 범위**:
+- PRE 블록의 모든 드릴 (pull, kick, combo)
+- 목표 + 테마 + **레벨** 3축 기반 선택
+
+#### 설계 철학
+
+**"초급자에게 접영/상급 드릴을 주지 않고, 상급자에게 초급 드릴만 주지 않는다"**
+
+- ✅ 초급(beginner): 자유형, 배영, 평영 / 초보 드릴
+- ✅ 중급(intermediate): +접영 / 초보~중급 드릴
+- ✅ 상급(advanced): +기본배영, 횡영 / 중급~상급 드릴
+- ✅ 마스터/전문가: 모든 영법, 모든 드릴
+
+#### 전략 요약
+
+```
+워밍업: 전 수업 복습 (이력 기반)
+  └─ 기본배영/횡영 배운 적 있음? → 복습
+  └─ 없음? → 기본 영법
+
+쿨다운: 평영 균형 조절 (동적 분석)
+  ├─ 평영 40%+ → 횡영 (상체 회복)
+  ├─ 평영 10%- → 평영 (부족 보완)
+  └─ 평영 정상 → 횡영 (최적 회복)
+```
+
+#### 엔진 전체 전략 체계
+
+**전략적 프로그램 생성 완전 확인** ✅
+
+모든 프로그램은 다음 요소를 **완전히** 활용하여 전략적/과학적으로 생성됩니다:
+
+1. **입력 요소 활용**:
+   - level, goal, strokesAllowed, strokesAvoid, css100
+   - conditionIds (28가지 질환 규칙), dayCondition, hasPain
+   - weekHistory (3주 이력 기반 다양성)
+
+2. **동적 분석**:
+   - 평영 사용량 분석 (40%/10% 임계값)
+   - 전날 테마 연계 (지구력→기술, 기술→고강도)
+   - 질환 심각도별 거리/강도/휴식 자동 조정
+
+3. **블록별 전략**:
+   - **WU (10%)**: 복습 우선 (이력) + 레벨 필터
+   - **PRE (15%)**: 목표+테마+레벨 3축 드릴 선택
+   - **MAIN (60%)**: 목표 기반 훈련법 + 이력 로테이션 + 컨디션 조정
+   - **CD (15%)**: 평영 균형 조절 (동적)
+
+4. **설명가능성**:
+   - whyPace, whyRest, whySet (모든 세트)
+   - evidenceKeys (과학적 근거)
+
+**상세 문서**: `docs/엔진-전략-체계-확인.md`
+
+---
+
+### 🎯 **완료율 시스템 수정 & 레이스 플랜 개선 (2025-01-10)**
+
+#### 완료율 수정사항
+
+**프론트엔드 (CompletionInputModal.tsx)**:
+1. **자동 완료율 계산**
+   - detailedSets 변경 시 useEffect로 completionRate 자동 업데이트
+   - 체크박스 체크 시 actual 값이 planned 값으로 자동 설정
+   - 체크 해제 시 actual 값 0으로 초기화
+   
+2. **완료율 로그 추가**
+   - 완료율 계산 시 콘솔 로그 출력 (`📊 완료율 계산`)
+   - 제출 시 데이터 검증 로그 (`💾 완료율 제출 데이터`)
+   
+3. **체크박스 버그 수정**
+   - `set.planned.time` (존재하지 않음) 참조 제거
+   - actual.time은 사용자 직접 입력 값 유지
+
+**백엔드 (swim-program-completions.ts)**:
+1. **완료율 계산 로직 수정**
+   - 기존: 거리율과 반복율을 따로 평균 → **틀림**
+   - 수정: 총 계획 거리 대비 총 실제 거리 비율 → **올바름**
+   ```typescript
+   totalPlannedDistance = Σ(planned.distance × planned.reps)
+   totalActualDistance = Σ(actual.distance × actual.reps)
+   completionRate = (totalActualDistance / totalPlannedDistance) × 100
+   ```
+
+#### 레이스 플랜 개선사항
+
+**1. 권장 목표 기록 개선 (raceGoalFeasibility.ts)**:
+- 문제: 안전한 목표가 현재 기록과 동일 (72초 → 72초)
+- 원인: `range_min`이 0일 때 개선이 없음
+- 해결: 최소 개선률 보장 (0.5% ~ 1.5%)
+```typescript
+conservativeImprovement = Math.max(range_min, 0.5) / 100
+midImprovement = Math.max(range_mid, 1.0) / 100
+aggressiveImprovement = Math.max(range_max, 1.5) / 100
+```
+
+**2. 신뢰도 소수점 표시 (FeasibilityChecker.tsx)**:
+- `{result.confidence}%` → `{result.confidence.toFixed(1)}%`
+
+**3. 레이스 프로그램 로그 추가 (page.tsx)**:
+- 각 회원의 programType 확인 로그
+- 레이스 플랜 검증 통과/실패 로그
+- API 응답 성공/실패 로그
+
+**4. raceProgramGenerator에 level 전달**:
+- novice → beginner
+- trained → intermediate
+- elite → advanced
+- engine-v31에서 레벨별 훈련법 필터링 가능
+
+---
+
+## 📅 이전 업데이트 (2025-01-09)
+
+### 🏊‍♂️ **완성: 생존수영 & 인명구조원 & 대회 시스템 UI 통합 (2025-01-09)**
+
+#### 핵심 개선사항
+
+**UI 통합 완료**:
+1. **10가지 목표 UI 표시**
+   - BulkMemberVariablesModal에 4가지 목표 추가 (장거리 수영, 오픈워터, 생존수영, 인명구조원)
+   - 3×3 그리드로 10개 목표 표시
+
+2. **레이스 플랜 목표 기록 입력 UI**
+   - 현재 기록 입력 (초 단위, 소수점 2자리)
+   - 목표 기록 입력 (초 단위, 소수점 2자리)
+   - 실시간 실현 가능성 검증 표시
+
+3. **FeasibilityChecker 컴포넌트**
+   - CSS 기반 과학적 검증
+   - 4단계 등급 표시 (Feasible/Stretch/Unlikely/Unrealistic)
+   - 신뢰도, 권장사항, CSS 분석 포함
+
+4. **레이스 프로그램 생성 로직 통합**
+   - programType='race' 시 raceProgramGenerator 사용
+   - Base→Build→Peak→Taper 페이즈별 통합 프로그램 생성
+   - 페이즈 정보와 실현 가능성 결과 포함하여 저장
+
+5. **styled-components 에러 해결** ✅
+   - 원인: `next.config.js`의 `compiler.styledComponents: true` 설정
+   - 해결: styled-components 미사용으로 해당 설정 비활성화
+   - FeasibilityChecker를 dynamic import로 로드 (SSR 비활성화)
+
+6. **CSS 계산 및 표시 개선** ✅
+   - csBonus를 거리별로 세분화 (50-100m: 1.12, 200m: 1.08, 400m: 1.05, 800m+: 1.02)
+   - 초 단위 권장 목표 표시 (안전한 목표 / 도전적 목표)
+   - CSS는 역치 속도로 단거리 예측에 제한적임을 명시
+
+7. **프로그램 블록 파싱 개선** ✅
+   - 엔진 출력 `desc` 필드에서 reps×distance 정규식 파싱
+   - "6×100m", "200m Easy" 등 다양한 형식 지원
+
+8. **완료율 저장 오류 수정** ✅
+   - 로컬 생성 ID(`prog_...`) 대신 MongoDB `_id` 사용
+   - programId validation 오류 해결
+
+9. **레이스 프로그램 필수 필드 추가** ✅
+   - params에 daysPerWeek, sessionDuration, pool, goal, cssPer100 추가
+
+**로직 구현 완료**:
+1. **생존수영 10차시 커리큘럼**
+   - 교육부/교육청 표준 교육과정 기반
+   - 기능 중심 훈련 (거리/기록 무관)
+   - ALT-PE (Activity Learning Time) 극대화
+   - 모든 세트에 whyPace, whyRest, whySet 명시
+
+2. **인명구조원 프로그램**
+   - A) 공식 5일 집중 과정 (대한인명구조협회)
+   - B) 4주 준비 프로그램 (지원자 사전 훈련)
+   - CSS 기반 역치 인터벌 + 과제특이성 훈련
+
+3. **대회 목표 기록 실현 가능성 검증**
+   - CSS/CS 기반 과학적 검증
+   - 레벨별 12주 개선률 (Novice: 3-8%, Trained: 1-3%, Elite: 0-1.5%)
+   - 완료율, 부상, 질환 제약 반영
+   - Riegel 식 거리 예측
+   - 4단계 등급: Feasible / Stretch / Unlikely / Unrealistic
+
+4. **대회 기반 프로그램 생성 (테이퍼 포함)**
+   - Base → Build → Peak → Taper → Race 피리어다이제이션
+   - 레벨별 테이퍼 (Novice 1주, Trained 2주, Elite 3주)
+   - 볼륨 40-60% 감소, 강도 유지
+   - 2-3% 추가 기록 향상 효과
+
+#### 과학적 근거
+- **CSS/CS**: PubMed, ResearchGate (역치/MLSS 근사)
+- **개선률**: SpringerOpen (Trained 1-3%), 스포츠과학 저널
+- **테이퍼**: Bompa & Haff (2009), Mujika & Padilla (2003)
+- **생존수영**: 교육부 표준, 울산교육청, 고용노동부
+- **인명구조원**: 대한인명구조협회, American Red Cross
+
+#### 파일 구조
+```
+client/lib/swimlab/
+├── survivalSwimCurriculum.ts     # 생존수영 10차시
+├── lifeguardProgram.ts            # 인명구조원 5일 + 4주
+├── raceGoalFeasibility.ts         # 목표 검증 (CSS 기반)
+├── raceProgramGenerator.ts        # 대회 프로그램 (테이퍼)
+└── engine-v31.ts                  # 10가지 목표 통합
+
+docs/
+└── 생존수영-인명구조원-가이드.md    # 종합 가이드
+```
+
+---
+
+## 📅 최근 업데이트 (2025-01-09)
+
+### 🌊 **완성: 장거리 수영 & 오픈워터 목표 추가 (2025-01-09)**
+
+#### 핵심 개선사항
+1. **새로운 훈련 목표 추가**
+   - **장거리 수영**: 3km 이상 완주 대비 (마라톤 수영, 철인3종)
+   - **오픈워터**: 사이팅/드래프팅 특화 (트라이애슬론)
+
+2. **훈련법 우선순위 정의**
+   - 장거리 수영: LSD(25) 중심, 90% 지구력
+   - 오픈워터: OW 모의(22) 중심, 70% 지구력 + 10% OW 특화
+
+3. **주간 테마 구성**
+   - 장거리 수영: 3일 모두 지구력 (초장거리 세트)
+   - 오픈워터: 지구력 + OW 모의 + 기술 혼합
+
+4. **문서화 완료**
+   - `docs/장거리-오픈워터-훈련-가이드.md` 생성
+   - `docs/목표별-훈련법-우선순위-분석.md` 업데이트 (6개→8개)
+   - 거리/강도 분포 업데이트
+
+#### 훈련법 특징
+- **장거리 수영**: 1500~3000m 연속 세트, 페이스 일관성 극대화
+- **오픈워터**: 사이팅 연습, 드래프팅 연습, 집단 수영 적응
+
+---
+
+## 📅 최근 업데이트 (2025-01-09)
+
+### 🔥 **완성: 수영 엔진 v3.1 프로그램 생성 통합 (2025-01-09)**
+
+#### 핵심 개선사항
+1. **엔진 v3.1 실제 통합**
+   - 클라이언트에서 `generateWeeklyPlan()` 직접 호출
+   - 25개 훈련법 + 40개 드릴 자동 선택
+   - CSS 기반 과학적 페이스 계산
+   - 질환별 자동 조정 적용
+
+2. **프로그램 생성 로직 개선**
+   - 단순 템플릿 → 엔진 v3.1 호출로 변경
+   - 목표/테마별 훈련법 자동 선택
+   - 이력 기반 다양성 (3주 연속 방지)
+   - 설명가능성: whyPace, whyRest, whySet 포함
+
+3. **엔진 입력 형식 수정**
+   - 요일: `['월요일']` → `['Mon', 'Tue'...]`
+   - 필드명: `mainStrokes` → `strokesAllowed`, `pool` → `poolLen`
+   - 필수 필드 추가: `startDate`, `dayCondition`, `hasPain`
+
+4. **CSS 필수 검증**
+   - 상급/마스터 레벨은 CSS 필수
+   - CSS 미입력 시 명확한 에러 메시지
+   - 프로그램 생성 전 검증
+
+5. **프로그램 삭제 개선**
+   - DELETE API에 `success` 플래그 추가
+   - 삭제 후 자동 새로고침
+   - `_id` 필드 명시적 저장
+
+6. **블록 표시 개선**
+   - `undefined×undefinedm` 오류 수정
+   - 기본값 설정: reps, distance, stroke
+   - totalDistance 자동 계산
+   - UI 개선: reps×distance, 영법, 페이스, 휴식, Zone 모두 표시
+
+#### 해결된 오류
+- ✅ 프로그램 생성 시 단순 템플릿만 생성 → 엔진 v3.1 통합
+- ✅ 엔진 입력 형식 불일치 → 정확한 타입으로 변환
+- ✅ CSS 미입력 시 undefined 페이스 → CSS 필수 검증 추가
+- ✅ 블록 정보 `undefined×undefined` → 기본값 설정
+- ✅ 프로그램 삭제 안 됨 → API 응답 수정 + `_id` 저장
+
+---
+
+## 📅 최근 업데이트 (2025-01-09)
+
+### 🏊‍♂️ **완성: 수영 엔진 v3.1 정리 및 문서화 (2025-01-09)**
+
+#### 핵심 개선사항
+1. **수영 엔진 v3.1 정리**
+   - 메인 엔진: `client/lib/swimlab/engine-v31.ts`
+   - 25개 훈련법 + 40개 드릴 자동 로테이션
+   - CSS 기반 과학적 페이스 계산
+   - 이력 기반 다양성 (3주 연속 방지)
+   - 질환별/특수상황별 자동 조정
+
+2. **구버전 엔진 파일 정리**
+   - 구버전 파일들을 `backups/old-engines/`로 이동
+   - 중복 엔진 파일들 정리
+   - 서버의 잘못된 엔진 파일 삭제
+
+3. **문서화 완료**
+   - `docs/수영엔진-최종-정리.md` 생성
+   - `docs/목표별-훈련법-우선순위-분석.md` 생성
+   - 엔진 구조, 데이터 파일, 사용법 상세 설명
+   - 6가지 목표별 훈련법 우선순위 차이점 비교 분석
+   - 강도 분포, 거리 분포, 카테고리 비중 시각화
+
+#### 해결된 문제
+- ✅ 엔진 파일 혼재 문제 → 메인 엔진 v3.1로 통일
+- ✅ 구버전 파일들로 인한 혼란 → 백업 폴더로 정리
+- ✅ 엔진 구조 불명확 → 상세 문서화 완료
+
+---
+
+## 📅 최근 업데이트 (2025-01-09)
+
+### 🎉 **완성: 개인 PT & 단체반 통합 시스템 (2025-01-09)**
+
+#### 핵심 개선사항
+1. **통합 회원 선택 시스템**
+   - 개인 PT 회원과 단체반을 한 화면에서 선택
+   - 단체반: 📚 보라색 배지로 구분
+   - 필터: 전체 / 개인 PT / 단체반
+
+2. **단체반 프로그램 생성**
+   - 공통 프로그램 1개만 DB 저장 (95% DB 절약)
+   - 회원 조회 시 실시간 조정사항 계산
+   - 질환/컨디션 기반 개인별 맞춤 안내
+
+3. **프로그램 삭제 개선**
+   - 서버 + 로컬 동시 삭제
+   - 삭제 후 자동 새로고침
+
+4. **세션 시간 입력 개선**
+   - 하드코딩: 30분, 50분, 60분
+   - 직접 입력: 10~180분 범위
+
+#### 해결된 오류
+- ✅ 단체반 프로그램 생성 시 404 오류 → `/api/group-programs` API 분리
+- ✅ 상급 단체반 CSS 입력창 안 나옴 → 레벨 변형(`advanced_1`, `advanced_2`) 포함
+- ✅ 프로그램 삭제 후 목록 사라짐 → `loadProgramsFromServer()` 호출
+- ✅ 세션 시간 직접 입력 안 됨 → onChange 로직 수정
+
+---
+
+## 📅 최근 업데이트 (2025-01-09)
+
+### 🔍 **완성: 회원 검색 및 전체 프로그램 조회 시스템 (2025-01-09)**
+
+#### 핵심 개선사항
+1. **AthleteProfileBar 검색 기능**
+   - 회원 5명 이상일 때 자동으로 검색창 표시
+   - 회원 이름으로 실시간 검색 필터링
+   - 검색 결과 수 / 전체 회원 수 표시
+
+2. **모든 프로그램 조회 API**
+   - `GET /api/swim-programs/all?limit=100&search={회원이름}`
+   - 센터 관리자: 소속 센터 프로그램만 조회
+   - Super Admin: 모든 프로그램 조회
+   - 회원 이름으로 검색 필터링 지원
+
+3. **ProgramListView 개선**
+   - 회원 선택 시: 해당 회원의 프로그램만 표시
+   - 회원 미선택 시: 모든 프로그램 표시 (최대 100개)
+   - 헤더에 현재 모드 표시 ("선택된 회원의 프로그램" / "모든 프로그램")
+   - 기존 검색 기능으로 회원 이름 필터링
+
+#### 사용 시나리오
+- **시나리오 1**: 회원 100명 중 "김철수" 검색 → 선택 → 해당 회원 프로그램만 표시
+- **시나리오 2**: 회원 선택 안 함 → 프로그램 목록 탭 → 모든 프로그램 표시 → 검색으로 필터링
+
+---
+
+### 🎓 **완성: 강습법 체크리스트 기반 프로그램 생성 시스템 (2025-01-07)**
+
+#### 핵심 개념
+- 초급/중급 회원은 CSS 대신 **강습법 체크리스트 진행 상황**을 기반으로 프로그램 생성
+- 강사가 체크리스트 단계를 완료 표시하면, 다음 단계를 자동 추천하여 프로그램에 반영
+- 상급/마스터는 기존대로 CSS 기반 체력 훈련
+
+#### 구현된 기능
+
+**1. User 모델 확장**
+```typescript
+swimmingProfile: {
+  teachingProgress: [
+    {
+      methodId: ObjectId,           // 강습법 ID
+      methodName: "자유형 기초",     // 강습법 이름
+      stroke: "freestyle",          // 영법
+      category: "기술",             // 카테고리
+      completedSteps: ["step1", "step2"], // 완료된 단계 ID
+      totalSteps: 5,                // 전체 단계 수
+      completionRate: 40,           // 완료율 (%)
+      lastPracticed: Date,          // 마지막 연습 날짜
+      masteryLevel: "practicing",   // learning | practicing | proficient | mastered
+      notes: "발차기 자세 개선 필요",
+      evaluatedBy: ObjectId,        // 평가한 강사
+      evaluatedAt: Date
+    }
+  ]
+}
+```
+
+**2. API 엔드포인트** (`/api/teaching-progress`)
+- `GET /:userId` - 회원의 모든 강습법 진행 상황 조회
+- `POST /:userId/method/:methodId/step` - 단계 완료/미완료 토글
+- `GET /:userId/next-recommendation` - 다음 강습법 자동 추천
+- `GET /:userId/summary` - 레벨별 진행률 요약
+
+**3. 프로그램 변환 유틸리티** (`server/src/utils/teachingMethodToProgramConverter.ts`)
+- `getNextTeachingStep()` - 다음 연습할 단계 추천
+- `convertTeachingStepToTrainingSet()` - 강습법 단계 → 훈련 세트 변환
+- `generateProgramFromTeachingMethod()` - 전체 프로그램 생성
+- `generateDefaultTechniqueProgram()` - 기본 기술 프로그램 (진행 상황 없을 때)
+
+**4. 프로그램 생성 자동 통합**
+```typescript
+// 클라이언트 요청
+POST /api/swim-programs
+{
+  athleteId: "...",
+  useTeachingMethod: true,  // 초급/중급은 true
+  // ... 기타 필드
+}
+
+// 서버 처리
+if (useTeachingMethod) {
+  1. teachingProgress 조회
+  2. 다음 단계 추천
+  3. 강습법 → 프로그램 변환
+  4. content에 반영하여 저장
+}
+```
+
+#### 추천 로직 우선순위
+1. 진행 중이고 선호 영법인 것 (high)
+2. 진행 중인 것 (완료율 낮은 순) (medium)
+3. 아직 시작하지 않은 선호 영법 (medium)
+4. 아직 시작하지 않은 다른 강습법 (low)
+
+#### 레벨별 거리 설정
+```typescript
+beginner:     워밍업 200m + 메인 400m + 쿨다운 100m = 1000m
+intermediate: 워밍업 300m + 메인 800m + 쿨다운 200m = 1500m
+advanced:     워밍업 400m + 메인 1400m + 쿨다운 200m = 2500m
+master:       워밍업 500m + 메인 2000m + 쿨다운 300m = 3000m
+```
+
+#### 사용 예시
+```typescript
+// 강사가 체크리스트 단계 완료 표시
+POST /api/teaching-progress/USER_ID/method/METHOD_ID/step
+{
+  stepId: "step3",
+  completed: true,
+  notes: "발차기 자세 좋아졌음"
+}
+
+// 프로그램 생성 시 자동 반영
+POST /api/swim-programs
+{
+  useTeachingMethod: true,
+  // → 서버가 자동으로 다음 단계("step4") 기반 프로그램 생성
+}
+```
+
+#### 향후 UI 개선 예정
+- 회원별 체크리스트 진행 상황 대시보드
+- 강사용 체크리스트 입력 UI
+- 프로그램 생성 시 추천 강습법 미리보기
+
+---
+
+## 📅 이전 업데이트 (2025-10-08)
+
+### 🎯 **완성: 회원 개인정보 기반 프로그램 생성 + 강사 승인 시스템 (2025-10-08 최신)**
+
+#### 🔐 **강사-회원 승인 시스템**
+
+**핵심 개념**: 강사가 CSS/선호영법/회피영법을 수정하면 즉시 적용되지 않고, 회원이 승인/거부 선택
+
+1. **본인이 수정**: 즉시 적용 ✅
+   ```typescript
+   PUT /api/users/:userId/swimming-profile/css
+   { css: { freestyle: 90 }, updatedByRole: 'self' }
+   → 즉시 저장
+   ```
+
+2. **강사가 수정**: 승인 대기 ⏳
+   ```typescript
+   PUT /api/users/:userId/swimming-profile/css
+   { css: { freestyle: 85 }, updatedByRole: 'instructor', reason: '재측정 결과' }
+   → pendingChanges에 저장 (실제 프로필에는 미반영)
+   ```
+
+3. **회원이 승인/거부**:
+   ```typescript
+   POST /api/users/:userId/swimming-profile/approve-changes
+   → pendingChanges → 실제 프로필 적용
+   
+   POST /api/users/:userId/swimming-profile/reject-changes
+   → pendingChanges 삭제
+   ```
+
+**데이터 구조**:
+```typescript
+swimmingProfile: {
+  css: { freestyle: 90 },            // 현재 값
+  preferredStrokes: ['freestyle'],   // 🏊 선호 영법
+  excludedStrokes: ['butterfly'],    // 🚫 회피 영법 (신규)
+  
+  pendingChanges: {                  // 승인 대기 중
+    css: { freestyle: 85 },
+    proposedBy: ObjectId("instructor123"),
+    proposedAt: "2025-01-21",
+    reason: "최근 기록 개선으로 CSS 재측정"
+  }
+}
+```
+
+#### 구현된 기능:
+
+**1. 다중 회원 선택 및 개별 변수 설정**
+   - ✅ `BulkMemberVariablesModal` 생성
+   - 회원별 개별 설정:
+     - CSS (영법별: 자유형, 배영, 평영, 접영) - 👨‍🏫 입력자 표시
+     - 🏊 선호 영법 (다중 선택)
+     - 🚫 회피 영법 (다중 선택) - **신규**
+     - 운동 요일 (일~토 자유 선택)
+     - 운동 목표 (체력 향상, 기술 연마 등)
+   - 일괄 적용 기능 (대표 회원 설정을 모두에게 복사)
+   - 회원별 네비게이션 (1/10, 2/10, ...)
+   - 기존 데이터 자동 로드 (회원의 저장된 정보)
+
+**2. 회원 선택 모달 개선**
+   - ✅ 단체반 회원 자동 조회 및 표시
+   - 단체반 라벨 표시 (📚 클래스명)
+   - 일반 회원 + 단체반 회원 통합 관리
+   - 다중 선택 시 변수 설정 모달 자동 표시
+
+**3. 완료율 입력 UI 고도화**
+   - ✅ 간편 입력: 슬라이더 방식
+   - ✅ 상세 입력: 세트별 거리/반복/시간 입력
+     - 자동 완료율 계산
+     - 세트별 완료 체크박스
+   - 요일별 완료율 상태 표시:
+     - ✓ 완료율 입력됨 (85%)
+     - 📝 완료율 입력 대기 (애니메이션)
+     - 대기 중 (미래 날짜)
+   - 완료율 수정 기능
+
+**4. 강사용 완료율 관리 페이지**
+   - ✅ `/instructor/completion-management` 생성
+   - PT 학생 / 단체반 학생 필터링
+   - 미입력 세션 일괄 조회
+   - 담당 단체반 목록 표시
+
+**5. 일괄 프로그램 생성 워크플로우**
+   ```
+   1. 회원 불러오기 버튼 클릭
+   2. 일반 회원 + 단체반 회원 목록 표시
+   3. 다중 선택 (2명 이상)
+   4. 개별 변수 설정 모달 표시
+   5. 각 회원의 CSS, 영법, 요일, 목표 입력
+   6. 일괄 적용 옵션으로 시간 절약
+   7. 설정 완료 → 선수 프로필 자동 생성
+   8. 🚀 일괄 프로그램 생성 버튼으로 한번에 생성
+   ```
+
+#### 수정된 런타임 오류:
+1. ✅ **403 Forbidden** - userId 문자열 비교 문제 (.toString() 추가)
+2. ✅ **500 Internal Server Error** - athlete ID ObjectId 변환 (실제 User _id 추출)
+3. ✅ **allMembers is not iterable** - 응답 데이터 배열 확인
+4. ✅ **addAthlete is not a function** - upsertAthlete로 변경
+5. ✅ **센터 정보 없음** - 센터 없으면 전체 학생 조회
+
+#### 파일 변경사항:
+- `server/src/models/GroupClass.ts` - 새로 생성
+- `server/src/models/User.ts` - swimmingProfile (CSS, 선호/회피영법, pendingChanges) 추가
+- `server/src/routes/group-classes.ts` - 새로 생성
+- `server/src/routes/users.ts` - 수영 프로필 관리 API 6개 추가
+  - PUT /swimming-profile/css (승인 시스템)
+  - PUT /swimming-profile (승인 시스템)
+  - POST /swimming-profile/approve-changes
+  - POST /swimming-profile/reject-changes
+  - GET /center-users (권한 완화)
+- `client/components/swimlab/BulkMemberVariablesModal.tsx` - 새로 생성 (회피영법 포함)
+- `client/components/swimlab/CompletionInputModal.tsx` - 상세 입력 추가
+- `client/components/swimlab/MemberSelectModal.tsx` - 단체반 통합
+- `client/components/swimlab/ProgramListView.tsx` - 요일별 완료율 표시
+- `client/components/swimlab/AthleteProfileBar.tsx` - 회원 불러오기 복원
+- `client/app/admin/swim-training-engine/page.tsx` - 일괄 생성 로직
+- `client/app/instructor/completion-management/page.tsx` - 새로 생성
+- `scripts/create-test-group-class.cjs` - 테스트 데이터 생성 스크립트
+
+---
+
+## 📅 이전 업데이트 (2025-10-08)
+
+### 🏊 **완료율 기반 적응형 프로그램 시스템 구축 시작 (2025-10-08)**
+
+#### 새로 추가된 기능:
+
+**1. SwimProgram 모델 확장**
+   - 각 세션에 `date` 필드 추가 (실제 수업 날짜)
+   - 세션별 `completion` 객체 추가:
+     - `completionRate`: 0-100% 완료율
+     - `feeling`: RPE 기반 난이도 ('easy' | 'moderate' | 'hard' | 'very_hard')
+     - `inputBy`: 입력자 ID (회원 본인 또는 강사)
+     - `inputByRole`: 입력자 역할 ('self' | 'instructor')
+     - `detailedSets`: 세트별 상세 완료 정보
+
+**2. 권한 관리 시스템 설계**
+   - 본인 프로그램: 항상 완료율 입력 가능
+   - 프로그램 생성자(강사): 해당 회원 완료율 입력 가능
+   - 담당 강사: PT 회원의 완료율 입력 가능
+
+**3. 완료율 입력 방식**
+   - **간편 입력**: 전체 완료율만 (슬라이더 0-100%)
+   - **상세 입력**: 세트별 거리/반복/시간 개별 입력
+
+**4. 과학적 분석 알고리즘 설계**
+   - TRIMP (Training Impulse) 기반 강도 조정
+   - Banister Fitness-Fatigue 모델 적용
+   - RPE (자각 운동 강도) 기반 난이도 판단
+   - 점진적 과부하 원칙 (Progressive Overload) 적용
+
+#### 문서화:
+- `docs/수영엔진-완료율-시스템.md` 생성
+  - 완료율 시스템 설계 전체 문서화
+  - 권한 관리 로직
+  - 개인/단체반/PT 워크플로우
+  - API 명세 (6개 개인 API + 6개 단체반 API)
+  - 데이터 모델 (GroupClass, GroupClassSession)
+  - 과학적 근거 참고 문헌
+
+#### 다음 작업 계획:
+1. GroupClass 모델 생성 (단체반 관리)
+2. 완료율 입력/조회 API 라우트 구현
+3. 개인 회원용 완료율 입력 UI
+4. 강사용 완료율 입력 UI (PT/단체반)
+5. 완료율 분석 및 다음 프로그램 추천 로직
+
+---
+
+## 📅 이전 업데이트 (2025-01-22)
+
+### 🌐 **게스트 공지사항 페이지 RegionNavigation 컴포넌트 연동 완료 (2025-01-22)**
+
+#### 발생한 오류들:
+
+**1. 센터 정보 표시 안됨**
+   - 게스트 공지사항 페이지(`/news`)에서 RegionNavigation 컴포넌트 사용 시 센터 정보가 표시되지 않음
+   - DB에서 센터 목록을 불러오지 못함
+
+**2. API 인증 오류**
+   - 게스트가 인증이 필요한 `/api/centers` 엔드포인트 호출 시도
+   - "Bearer 토큰을 제공해주세요" 오류 발생
+
+**3. regionData 누락**
+   - RegionNavigation 컴포넌트에 `regionData` prop이 제공되지 않아 시/도 목록이 표시되지 않음
+   - 컴포넌트 내부의 DEFAULT_REGION_DATA와 실제 센터 데이터의 지역명 불일치
+
+**4. 지역명 불일치**
+   - DB 센터 데이터: `'서울특별시'`, `'인천광역시'`, `'부산광역시'`
+   - 컴포넌트 기본값: `'서울시'`, `'인천시'`, `'부산시'`
+   - 지역 선택 시 매칭 실패
+
+**5. 센터 이름 불일치**
+   - 실제 DB 센터: `'강남센터'`, `'서초센터'`
+   - 샘플 데이터: `'강남 수영센터'`, `'서초 수영센터'`
+   - 필터링이 작동하지 않음
+
+**6. 센터 필터링 미작동**
+   - `filteredNotices`에서 센터 필터링 로직이 누락
+   - 특정 센터 선택 시에도 모든 센터의 공지사항이 표시됨
+
+#### 원인 분석:
+- **게스트용 센터 API 부재**: 인증이 필요하지 않은 공개 센터 목록 API가 없었음
+- **잘못된 API 엔드포인트**: 게스트가 관리자용 인증 API를 호출
+- **불완전한 props 전달**: RegionNavigation에 필요한 `regionData`, `centerDataMap` 누락
+- **주소 파싱 미구현**: API 응답에 `region`, `district` 필드가 없어 주소에서 추출 필요
+- **데이터 일관성 부족**: 지역명과 센터명이 통일되지 않음
+
+#### 해결 방법:
+
+**1. 서버에 게스트용 센터 API 추가**
+   ```typescript
+   // server/src/routes/centers.ts
+   router.get('/guest', async (req, res) => {
+     try {
+       const centers = await SwimmingCenter.find(
+         { isActive: true }, 
+         'name region district address phone email website'
+       ).lean();
+       res.json(centers);
+     } catch (error) {
+       res.status(500).json({ 
+         error: '센터 목록을 불러올 수 없습니다.',
+         message: error instanceof Error ? error.message : '알 수 없는 오류'
+       });
+     }
+   });
+   ```
+
+**2. 클라이언트에서 주소 파싱 및 데이터 구조화**
+   ```typescript
+   // client/app/news/page.tsx
+   const parseAddress = (address: string) => {
+     const parts = address.split(' ');
+     if (parts.length >= 2) {
+       return { region: parts[0], district: parts[1] };
+     }
+     return { region: '서울특별시', district: '강남구' };
+   };
+
+   const loadCenters = async () => {
+     const response = await fetch('http://localhost:5000/api/centers/guest');
+     const data = await response.json();
+     const processedCenters = data.map((center: any) => {
+       const { region, district } = parseAddress(center.address);
+       return { ...center, region, district };
+     });
+     setCenters(processedCenters);
+   };
+   ```
+
+**3. RegionNavigation에 필요한 모든 데이터 구성**
+   ```typescript
+   const { centerData, centerDataMap, regionData } = useMemo(() => {
+     const data: { [region: string]: { [district: string]: string[] } } = {};
+     const map: { [centerName: string]: any } = {};
+     
+     // 전국 시/도, 시/군/구 데이터 (정확한 지역명 사용)
+     const regions: { [key: string]: string[] } = {
+       '서울특별시': ['강남구', '강동구', ...],
+       '경기도': ['고양시', '수원시', ...],
+       '인천광역시': ['계양구', '남동구', ...],
+       // 전국 17개 시/도 모두 포함
+     };
+     
+     centers.forEach(center => {
+       if (center.region && center.district) {
+         if (!data[center.region]) data[center.region] = {};
+         if (!data[center.region][center.district]) {
+           data[center.region][center.district] = [];
+         }
+         data[center.region][center.district].push(center.name);
+         
+         map[center.name] = { /* 센터 상세 정보 */ };
+       }
+     });
+     
+     return { centerData: data, centerDataMap: map, regionData: regions };
+   }, [centers]);
+   ```
+
+**4. 센터 필터링 로직 추가**
+   ```typescript
+   const filteredNotices = useMemo(() => {
+     let filtered = notices;
+     
+     // 카테고리 필터링
+     if (selectedCategory !== 'all') {
+       filtered = filtered.filter(item => item.category === selectedCategory);
+     }
+     
+     // 지역 필터링
+     if (selectedRegions.length > 0) {
+       filtered = filtered.filter(item => {
+         if (item.targetCenters.length === 0) return true;
+         return item.targetCenters.some(center => 
+           selectedRegions.includes(center.region)
+         );
+       });
+     }
+     
+     // 구/군 필터링
+     if (selectedDistricts.length > 0) {
+       filtered = filtered.filter(item => {
+         if (item.targetCenters.length === 0) return true;
+         return item.targetCenters.some(center => 
+           selectedDistricts.includes(center.district)
+         );
+       });
+     }
+     
+     // 센터 필터링
+     if (selectedCenters.length > 0) {
+       filtered = filtered.filter(item => {
+         if (item.targetCenters.length === 0) return true;
+         return item.targetCenters.some(center => 
+           selectedCenters.includes(center.name)
+         );
+       });
+     }
+     
+     return filtered;
+   }, [notices, selectedCategory, selectedRegions, selectedDistricts, selectedCenters]);
+   ```
+
+**5. 샘플 데이터 센터 이름 통일**
+   ```typescript
+   // 실제 DB 센터 이름과 일치하도록 수정
+   targetCenters: [
+     { _id: '68e3e8e02c5e9ec21493aedd', name: '강남센터', region: '서울특별시', district: '강남구' }
+   ]
+   ```
+
+#### 결과:
+```
+✅ 게스트용 센터 목록 API 구현 완료
+✅ RegionNavigation 컴포넌트에 실제 센터 데이터 전달
+✅ 지역별/센터별 공지사항 필터링 기능 완성
+✅ 인증 없이 센터 정보 조회 가능
+✅ 로딩 없이 즉시 반응하는 UX 구현
+```
+
+---
 
 ### 🚨 **건강현황 페이지 500 오류 해결 (2025-01-22)**
 
@@ -6075,6 +7995,500 @@ Route (app)                              Size     First Load JS
   - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
 - runPipeline 라우트가 등록되지 않음
   - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 7. 오후 4:47:52)
+
+- 총 검사: 365개
+- 통과: 435개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 7. 오후 7:57:29)
+
+- 총 검사: 365개
+- 통과: 435개
+- 실패: 9개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 8. 오후 12:13:37)
+
+- 총 검사: 369개
+- 통과: 438개
+- 실패: 10개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 8. 오후 1:41:46)
+
+- 총 검사: 371개
+- 통과: 440개
+- 실패: 11개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 8. 오후 2:38:37)
+
+- 총 검사: 376개
+- 통과: 447개
+- 실패: 11개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 9. 오전 10:43:06)
+
+- 총 검사: 377개
+- 통과: 449개
+- 실패: 11개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 9. 오전 10:43:21)
+
+- 총 검사: 377개
+- 통과: 449개
+- 실패: 11개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 9. 오후 4:26:19)
+
+- 총 검사: 379개
+- 통과: 452개
+- 실패: 11개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 9. 오후 11:44:06)
+
+- 총 검사: 391개
+- 통과: 468개
+- 실패: 12개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 9. 오후 11:49:39)
+
+- 총 검사: 391개
+- 통과: 468개
+- 실패: 12개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
 - 클라이언트 tsconfig.json 파싱 오류
   - 해결: Unexpected token '/', "/**
  * 🔧 "... is not valid JSON

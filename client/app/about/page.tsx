@@ -37,100 +37,135 @@ interface CenterInfo {
   }>;
 }
 
-// 게스트용 센터 정보 뷰
+// 게스트용 플랫폼 소개 뷰
 const GuestCenterView: React.FC<{ centerInfo: CenterInfo }> = ({ centerInfo }) => (
   <div className="space-y-8">
     <div className="text-center">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">{centerInfo.name}</h1>
-      <p className="text-xl text-gray-600 max-w-3xl mx-auto">{centerInfo.shortDescription}</p>
+      <h1 className="text-4xl font-bold text-gray-900 mb-4">JJ Swim Lab</h1>
+      <p className="text-xl text-blue-600 font-semibold mb-6">스마트 수영 교육 플랫폼</p>
+      <p className="text-gray-700 leading-relaxed max-w-4xl mx-auto">
+        JJ Swim Lab은 수영장 센터와 강사, 회원을 연결하는 통합 수영 교육 관리 플랫폼입니다. 
+        AI 기반 건강 분석, 맞춤형 훈련 프로그램 생성, 실시간 진도 관리 등 첨단 기술을 활용하여 
+        효율적이고 체계적인 수영 교육을 지원합니다.
+      </p>
     </div>
 
+    {/* 주요 기능 */}
     <div className="bg-white rounded-lg shadow-lg p-8">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">센터 소개</h2>
-      <p className="text-gray-700 leading-relaxed">{centerInfo.description}</p>
-    </div>
-
-    <div className="grid md:grid-cols-2 gap-8">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">연락처</h3>
-        <div className="space-y-2 text-gray-700">
-          <p><strong>주소:</strong> {centerInfo.address}</p>
-          <p><strong>전화:</strong> {centerInfo.phone}</p>
-          <p><strong>이메일:</strong> {centerInfo.email}</p>
-          {centerInfo.website && <p><strong>웹사이트:</strong> <a href={centerInfo.website} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{centerInfo.website}</a></p>}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">운영시간</h3>
-        <div className="space-y-2 text-gray-700">
-          <p><strong>월요일:</strong> {centerInfo.businessHours.monday}</p>
-          <p><strong>화요일:</strong> {centerInfo.businessHours.tuesday}</p>
-          <p><strong>수요일:</strong> {centerInfo.businessHours.wednesday}</p>
-          <p><strong>목요일:</strong> {centerInfo.businessHours.thursday}</p>
-          <p><strong>금요일:</strong> {centerInfo.businessHours.friday}</p>
-          <p><strong>토요일:</strong> {centerInfo.businessHours.saturday}</p>
-          <p><strong>일요일:</strong> {centerInfo.businessHours.sunday}</p>
-        </div>
-      </div>
-    </div>
-
-    <div className="bg-white rounded-lg shadow-lg p-8">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">시설 및 특징</h2>
-      <div className="grid md:grid-cols-2 gap-8">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">시설</h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-700">
-            {centerInfo.facilities.map((facility, index) => (
-              <li key={index}>{facility}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">특징</h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-700">
-            {centerInfo.features.map((feature, index) => (
-              <li key={index}>{feature}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div className="bg-white rounded-lg shadow-lg p-8">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">강사진</h2>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {centerInfo.instructors.map((instructor, index) => (
-          <div key={index} className="text-center p-4 border rounded-lg">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-              {instructor.image ? (
-                <img src={instructor.image} alt={instructor.name} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                <span className="text-2xl text-gray-500">👤</span>
-              )}
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">{instructor.name}</h4>
-            <p className="text-sm text-gray-600 mb-1">{instructor.specialty}</p>
-            <p className="text-xs text-gray-500">{instructor.experience}</p>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">🎯 주요 기능</h2>
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
+          <span className="text-blue-600 text-2xl">🏊‍♂️</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">맞춤형 훈련 프로그램</h4>
+            <p className="text-sm text-gray-600">개인의 건강 상태와 목표에 맞는 수영 프로그램 자동 생성</p>
           </div>
-        ))}
+        </div>
+        <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg">
+          <span className="text-green-600 text-2xl">📊</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">건강 프로필 관리</h4>
+            <p className="text-sm text-gray-600">회원의 건강 상태, 컨디션, 질환을 체계적으로 관리</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-3 p-4 bg-purple-50 rounded-lg">
+          <span className="text-purple-600 text-2xl">📈</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">실시간 진도 추적</h4>
+            <p className="text-sm text-gray-600">학습 진도와 실력 향상을 실시간으로 확인</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-3 p-4 bg-yellow-50 rounded-lg">
+          <span className="text-yellow-600 text-2xl">👥</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">통합 관리 시스템</h4>
+            <p className="text-sm text-gray-600">센터, 강사, 회원을 하나의 플랫폼에서 관리</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg">
+          <span className="text-red-600 text-2xl">💬</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">실시간 피드백</h4>
+            <p className="text-sm text-gray-600">강사와 학생 간 즉각적인 소통과 피드백</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-3 p-4 bg-indigo-50 rounded-lg">
+          <span className="text-indigo-600 text-2xl">📱</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">모바일 최적화</h4>
+            <p className="text-sm text-gray-600">PC와 모바일에서 언제 어디서나 접근 가능</p>
+          </div>
+        </div>
       </div>
     </div>
 
+    {/* 플랫폼 장점 */}
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">✨ 왜 JJ Swim Lab인가요?</h2>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-4xl mb-3">🎯</div>
+          <h4 className="font-semibold text-gray-900 mb-2">개인 맞춤형 교육</h4>
+          <p className="text-sm text-gray-600">
+            AI 기반 분석으로 각 개인의 건강 상태, 체력, 목표에 맞는 최적의 수영 프로그램을 제공합니다.
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-4xl mb-3">⚡</div>
+          <h4 className="font-semibold text-gray-900 mb-2">효율적인 관리</h4>
+          <p className="text-sm text-gray-600">
+            센터 운영부터 강사 관리, 회원 진도 추적까지 모든 과정을 하나의 플랫폼에서 간편하게 관리합니다.
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-4xl mb-3">🔒</div>
+          <h4 className="font-semibold text-gray-900 mb-2">안전한 데이터 관리</h4>
+          <p className="text-sm text-gray-600">
+            회원의 건강 정보와 개인 데이터를 안전하게 보호하며, 권한별 접근 제어를 통해 보안을 강화합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* 사용 대상 */}
     <div className="bg-white rounded-lg shadow-lg p-8">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">강습 과정</h2>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {centerInfo.courses.map((course, index) => (
-          <div key={index} className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-            <h4 className="font-semibold text-gray-900 mb-2">{course.name}</h4>
-            <p className="text-sm text-gray-600 mb-3">{course.description}</p>
-            <div className="space-y-1 text-xs text-gray-500">
-              <p><strong>난이도:</strong> {course.level}</p>
-              <p><strong>기간:</strong> {course.duration}</p>
-              <p><strong>가격:</strong> {course.price}</p>
-            </div>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">👥 누가 사용하나요?</h2>
+      <div className="space-y-4">
+        <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-lg">
+          <span className="text-3xl">🏢</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">수영장 센터</h4>
+            <p className="text-sm text-gray-600">회원 및 강사를 통합 관리하고, 센터 운영 효율을 극대화합니다.</p>
           </div>
-        ))}
+        </div>
+        <div className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg">
+          <span className="text-3xl">👨‍🏫</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">강사</h4>
+            <p className="text-sm text-gray-600">수업 일정, 학생 진도, 피드백을 체계적으로 관리하고 효과적인 교육을 제공합니다.</p>
+          </div>
+        </div>
+        <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-lg">
+          <span className="text-3xl">🏊</span>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-1">회원 (학생)</h4>
+            <p className="text-sm text-gray-600">개인 맞춤 훈련 프로그램을 받고, 건강 상태를 체크하며, 실력 향상을 추적합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* 문의하기 */}
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-8 text-white text-center">
+      <h2 className="text-3xl font-bold mb-4">JJ Swim Lab과 함께하세요</h2>
+      <p className="text-lg mb-6">더 스마트하고 효율적인 수영 교육 관리를 경험해보세요.</p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/auth/signup?type=student" className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+          회원 가입하기
+        </a>
+        <a href="/auth/signup?type=instructor" className="px-8 py-3 bg-transparent border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
+          강사 등록하기
+        </a>
       </div>
     </div>
   </div>

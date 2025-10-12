@@ -64,7 +64,7 @@ router.post('/', auth_1.auth, async (req, res) => {
     try {
         const drillData = {
             ...req.body,
-            createdBy: req.user.id
+            createdBy: req.user._id
         };
         const drill = new SwimDrill_1.SwimDrill(drillData);
         await drill.save();

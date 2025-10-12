@@ -162,10 +162,10 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     const result = await HealthBasedExerciseAI.calculateHealthBasedExercise({
       userId,
       healthData,
-      currentFitnessLevel: user.fitnessLevel || 'beginner',
-      exerciseGoals: user.exerciseGoals || [],
-      medicalConditions: healthData.medicalConditions || [],
-      currentExerciseCapacity: user.currentExerciseCapacity
+      currentFitnessLevel: (user as any).fitnessLevel || 'beginner',
+      exerciseGoals: (user as any).exerciseGoals || [],
+      medicalConditions: (healthData as any).medicalConditions || [],
+      currentExerciseCapacity: (user as any).currentExerciseCapacity
     });
     
     if (!result.success) {
@@ -180,8 +180,8 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
       data: {
         user: {
           name: user.name,
-          age: healthData.age,
-          fitnessLevel: user.fitnessLevel || 'beginner'
+          age: (healthData as any).age,
+          fitnessLevel: (user as any).fitnessLevel || 'beginner'
         },
         recommendation: result.data
       },

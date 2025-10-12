@@ -103,6 +103,7 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
+import Center from '../models/Center';
 import { 
   authMiddleware, 
   requireRole, 
@@ -117,27 +118,30 @@ interface AuthRequest extends Request {
 const router: Router = express.Router();
 
 // 센터 계정 전용 사용자 조회 (해당 센터의 강사와 회원만)
-router.get('/center-users', authMiddleware, requireRole(['centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { page = 1, limit = 20, userType, level, search, status } = req.query;
+    const { page = 1, limit = 20, userType, level, search, status, includeGroupStudents } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
     
     const query: any = {};
     
-    // 센터 관리자는 자신의 센터에 속한 사용자만 조회
+    // 센터 정보가 있는 경우에만 센터 필터 적용
     const centerId = (req as any).user.centerId;
-    if (!centerId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: '센터 정보를 찾을 수 없습니다.' 
-      });
-    }
     
-    // 센터에 속한 사용자들만 조회
-    query['$or'] = [
-      { 'instructorInfo.assignedCenters': centerId },
-      { 'studentInfo.enrolledCenters': centerId }
-    ];
+    // 관리자는 모든 사용자 조회 가능
+    if ((req as any).user.userType === 'admin' || (req as any).user.userType === 'superAdmin') {
+      // 필터 없음 (모든 사용자)
+    } else if (centerId) {
+      // 센터에 속한 사용자들만 조회
+      query['$or'] = [
+        { 'instructorInfo.assignedCenters': centerId },
+        { 'studentInfo.enrolledCenters': centerId },
+        { centerId: centerId } // centerId 필드가 있는 경우
+      ];
+    } else {
+      // 센터 정보가 없으면 전체 학생 조회 (개발/테스트용)
+      query.userType = 'student';
+    }
     
     // 사용자 유형별 필터링
     if (userType) {
@@ -184,11 +188,51 @@ router.get('/center-users', authMiddleware, requireRole(['centerAdmin']), async 
       delete query.$or; // $or를 $and로 대체
     }
     
-    const users = await User.find(query)
+    let users = await User.find(query)
       .select('-password')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
+    
+    // 단체반 회원 포함 요청이 있는 경우
+    if (includeGroupStudents === 'true') {
+      try {
+        const GroupClass = require('../models/GroupClass').default;
+        const groupClasses = await GroupClass.find({ status: 'active' });
+        
+        console.log(`📚 활성 단체반 ${groupClasses.length}개 발견`);
+        
+        // 단체반 회원들 ID 수집
+        const groupStudentIds = groupClasses.flatMap(gc => {
+          const activeStudents = gc.students.filter(s => s.status === 'active');
+          console.log(`  - ${gc.className}: ${activeStudents.length}명`);
+          return activeStudents.map(s => s.userId);
+        });
+        
+        console.log(`📝 총 단체반 학생 ID: ${groupStudentIds.length}개`);
+        
+        if (groupStudentIds.length > 0) {
+          // 단체반 회원들의 상세 정보 가져오기
+          const groupUsers = await User.find({
+            _id: { $in: groupStudentIds }
+          }).select('-password');
+          
+          console.log(`✅ 단체반 회원 ${groupUsers.length}명 조회됨`);
+          
+          // 기존 사용자와 단체반 회원 합치기 (중복 제거)
+          const existingIds = users.map(u => u._id.toString());
+          const newGroupUsers = groupUsers.filter(gu => 
+            !existingIds.includes(gu._id.toString())
+          );
+          
+          console.log(`➕ 새로운 단체반 회원 ${newGroupUsers.length}명 추가`);
+          
+          users = [...users, ...newGroupUsers];
+        }
+      } catch (groupError) {
+        console.error('❌ 단체반 회원 조회 실패:', groupError);
+      }
+    }
     
     const total = await User.countDocuments(query);
     
@@ -785,6 +829,40 @@ router.delete('/:id', authMiddleware, requirePermission('userManagement'), async
   }
 });
 
+// 회원 질환/특수상황 업데이트
+router.patch('/:id/conditions', authMiddleware, async (req, res) => {
+  try {
+    const { conditionIds } = req.body;
+    
+    if (!Array.isArray(conditionIds)) {
+      return res.status(400).json({ error: 'conditionIds는 배열이어야 합니다.' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    // conditionIds를 healthInfo에 저장
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { 
+        'healthInfo.conditionIds': conditionIds,
+        'healthInfo.updatedAt': new Date()
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    return res.json({
+      message: '질환/특수상황이 성공적으로 업데이트되었습니다.',
+      conditionIds: (updatedUser as any)?.healthInfo?.conditionIds || []
+    });
+  } catch (err) {
+    console.error('질환 업데이트 오류:', err);
+    return res.status(500).json({ error: '질환 업데이트에 실패했습니다.' });
+  }
+});
+
 // 사용자 활성화/비활성화
 router.patch('/:id/toggle-status', authMiddleware, requirePermission('userManagement'), async (req, res) => {
   try {
@@ -920,5 +998,314 @@ async function getInstructorCourses(instructorId: string): Promise<string[]> {
   // return courses.map(course => course._id.toString());
   return [];
 }
+
+/**
+ * PUT /api/users/:userId/swimming-profile/css
+ * 회원의 CSS 업데이트 (강사 또는 본인)
+ */
+router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = (req as any).user;
+    const { css, updatedByRole, reason } = req.body; // css: { freestyle: 90, backstroke: 100, ... }
+    
+    // 권한 확인: 본인 또는 강사만 가능
+    console.log('🔍 CSS 수정 권한 체크:', {
+      currentUserId: currentUser._id.toString(),
+      targetUserId: userId.toString(),
+      currentUserType: currentUser.userType,
+      isSelf: currentUser._id.toString() === userId.toString()
+    });
+    
+    if (
+      currentUser._id.toString() !== userId.toString() &&
+      currentUser.userType !== 'instructor' &&
+      currentUser.userType !== 'centerAdmin' &&  // center_admin → centerAdmin
+      currentUser.userType !== 'superAdmin' &&   // admin → superAdmin
+      !currentUser.instructorInfo // instructorInfo가 있으면 강사로 간주
+    ) {
+      return res.status(403).json({ 
+        error: 'CSS 수정 권한이 없습니다.',
+        debug: {
+          userType: currentUser.userType,
+          hasInstructorInfo: !!currentUser.instructorInfo
+        }
+      });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    // studentInfo가 없으면 생성
+    if (!user.studentInfo) {
+      (user as any).studentInfo = {};
+    }
+    if (!(user.studentInfo as any).swimmingProfile) {
+      (user.studentInfo as any).swimmingProfile = {};
+    }
+    
+    const isSelf = currentUser._id.toString() === userId.toString();
+    
+    // 본인이 수정하는 경우 → 즉시 적용
+    if (isSelf) {
+      (user.studentInfo as any).swimmingProfile.css = {
+        ...(css || {}),
+        lastUpdated: new Date(),
+        updatedBy: currentUser._id,
+        updatedByRole: 'self'
+      };
+      
+      await user.save();
+      
+      return res.json({
+        success: true,
+        message: 'CSS가 성공적으로 업데이트되었습니다.',
+        data: {
+          css: (user.studentInfo as any).swimmingProfile.css,
+          updatedBy: currentUser.name,
+          updatedByRole: 'self'
+        }
+      });
+    }
+    
+    // 강사가 수정하는 경우 → 승인 대기 상태로 저장
+    if (!((user.studentInfo as any).swimmingProfile.pendingChanges)) {
+      (user.studentInfo as any).swimmingProfile.pendingChanges = {};
+    }
+    
+    (user.studentInfo as any).swimmingProfile.pendingChanges.css = css;
+    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedBy = currentUser._id;
+    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedAt = new Date();
+    (user.studentInfo as any).swimmingProfile.pendingChanges.reason = reason || '강사가 CSS를 재측정했습니다.';
+    
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: 'CSS 변경 제안이 전송되었습니다. 회원의 승인을 기다리고 있습니다.',
+      data: {
+        pendingChanges: (user.studentInfo as any).swimmingProfile.pendingChanges,
+        needsApproval: true
+      }
+    });
+  } catch (err) {
+    console.error('CSS 업데이트 오류:', err);
+    return res.status(500).json({ error: 'CSS 업데이트에 실패했습니다.' });
+  }
+});
+
+/**
+ * PUT /api/users/:userId/swimming-profile
+ * 회원의 수영 프로필 전체 업데이트
+ */
+router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = (req as any).user;
+    const { 
+      mainStrokes, 
+      preferredStrokes, 
+      excludedStrokes, 
+      trainingDays, 
+      sessionsPerWeek, 
+      sessionDuration, 
+      currentGoal, 
+      conditionIds, 
+      reason 
+    } = req.body;
+    
+    // 권한 확인
+    console.log('🔍 프로필 수정 권한 체크:', {
+      currentUserId: currentUser._id.toString(),
+      targetUserId: userId.toString(),
+      currentUserType: currentUser.userType,
+      isSelf: currentUser._id.toString() === userId.toString()
+    });
+    
+    if (
+      currentUser._id.toString() !== userId.toString() &&
+      currentUser.userType !== 'instructor' &&
+      currentUser.userType !== 'centerAdmin' &&  // center_admin → centerAdmin
+      currentUser.userType !== 'superAdmin' &&   // admin → superAdmin
+      !currentUser.instructorInfo // instructorInfo가 있으면 강사로 간주
+    ) {
+      return res.status(403).json({ 
+        error: '수영 프로필 수정 권한이 없습니다.',
+        debug: {
+          userType: currentUser.userType,
+          hasInstructorInfo: !!currentUser.instructorInfo
+        }
+      });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    // studentInfo가 없으면 생성
+    if (!user.studentInfo) {
+      (user as any).studentInfo = {};
+    }
+    if (!(user.studentInfo as any).swimmingProfile) {
+      (user.studentInfo as any).swimmingProfile = {};
+    }
+    
+    const isSelf = currentUser._id.toString() === userId.toString();
+    
+    // 본인이 수정하는 경우 → 즉시 적용
+    if (isSelf) {
+      if (mainStrokes) (user.studentInfo as any).swimmingProfile.mainStrokes = mainStrokes;
+      if (preferredStrokes) (user.studentInfo as any).swimmingProfile.preferredStrokes = preferredStrokes;
+      if (excludedStrokes) (user.studentInfo as any).swimmingProfile.excludedStrokes = excludedStrokes;
+      if (trainingDays) (user.studentInfo as any).swimmingProfile.trainingDays = trainingDays;
+      if (sessionsPerWeek) (user.studentInfo as any).swimmingProfile.sessionsPerWeek = sessionsPerWeek;
+      if (sessionDuration) (user.studentInfo as any).swimmingProfile.sessionDuration = sessionDuration;
+      if (currentGoal) (user.studentInfo as any).swimmingProfile.currentGoal = currentGoal;
+      if (conditionIds) (user.studentInfo as any).swimmingProfile.conditionIds = conditionIds;
+      
+      await user.save();
+      
+      return res.json({
+        success: true,
+        message: '수영 프로필이 성공적으로 업데이트되었습니다.',
+        data: (user.studentInfo as any).swimmingProfile
+      });
+    }
+    
+    // 강사가 수정하는 경우 → 승인 대기 상태로 저장
+    if (!((user.studentInfo as any).swimmingProfile.pendingChanges)) {
+      (user.studentInfo as any).swimmingProfile.pendingChanges = {};
+    }
+    
+    if (mainStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.mainStrokes = mainStrokes;
+    if (preferredStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.preferredStrokes = preferredStrokes;
+    if (excludedStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.excludedStrokes = excludedStrokes;
+    if (trainingDays) (user.studentInfo as any).swimmingProfile.pendingChanges.trainingDays = trainingDays;
+    if (sessionsPerWeek) (user.studentInfo as any).swimmingProfile.pendingChanges.sessionsPerWeek = sessionsPerWeek;
+    if (conditionIds) (user.studentInfo as any).swimmingProfile.pendingChanges.conditionIds = conditionIds;
+    if (sessionDuration) (user.studentInfo as any).swimmingProfile.pendingChanges.sessionDuration = sessionDuration;
+    if (currentGoal) (user.studentInfo as any).swimmingProfile.pendingChanges.currentGoal = currentGoal;
+    
+    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedBy = currentUser._id;
+    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedAt = new Date();
+    (user.studentInfo as any).swimmingProfile.pendingChanges.reason = reason || '강사가 프로필 변경을 제안했습니다.';
+    
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: '프로필 변경 제안이 전송되었습니다. 회원의 승인을 기다리고 있습니다.',
+      data: {
+        pendingChanges: (user.studentInfo as any).swimmingProfile.pendingChanges,
+        needsApproval: true
+      }
+    });
+  } catch (err) {
+    console.error('수영 프로필 업데이트 오류:', err);
+    return res.status(500).json({ error: '수영 프로필 업데이트에 실패했습니다.' });
+  }
+});
+
+/**
+ * POST /api/users/:userId/swimming-profile/approve-changes
+ * 강사가 제안한 변경사항 승인
+ */
+router.post('/:userId/swimming-profile/approve-changes', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = (req as any).user;
+    
+    // 본인만 승인 가능
+    if (currentUser._id.toString() !== userId.toString()) {
+      return res.status(403).json({ error: '본인의 변경사항만 승인할 수 있습니다.' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    const pendingChanges = (user.studentInfo as any)?.swimmingProfile?.pendingChanges;
+    if (!pendingChanges) {
+      return res.status(404).json({ error: '대기 중인 변경사항이 없습니다.' });
+    }
+    
+    // 대기 중인 변경사항을 실제 프로필에 적용
+    const profile = (user.studentInfo as any).swimmingProfile;
+    
+    if (pendingChanges.css) {
+      profile.css = {
+        ...pendingChanges.css,
+        lastUpdated: new Date(),
+        updatedBy: pendingChanges.proposedBy,
+        updatedByRole: 'instructor'
+      };
+    }
+    if (pendingChanges.mainStrokes) profile.mainStrokes = pendingChanges.mainStrokes;
+    if (pendingChanges.preferredStrokes) profile.preferredStrokes = pendingChanges.preferredStrokes;
+    if (pendingChanges.excludedStrokes) profile.excludedStrokes = pendingChanges.excludedStrokes;
+    if (pendingChanges.trainingDays) profile.trainingDays = pendingChanges.trainingDays;
+    if (pendingChanges.sessionsPerWeek) profile.sessionsPerWeek = pendingChanges.sessionsPerWeek;
+    if (pendingChanges.sessionDuration) profile.sessionDuration = pendingChanges.sessionDuration;
+    if (pendingChanges.currentGoal) profile.currentGoal = pendingChanges.currentGoal;
+    if (pendingChanges.conditionIds) profile.conditionIds = pendingChanges.conditionIds;
+    
+    // 대기 중인 변경사항 삭제
+    profile.pendingChanges = undefined;
+    
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: '변경사항이 승인되어 적용되었습니다.',
+      data: profile
+    });
+  } catch (err) {
+    console.error('변경사항 승인 오류:', err);
+    return res.status(500).json({ error: '변경사항 승인에 실패했습니다.' });
+  }
+});
+
+/**
+ * POST /api/users/:userId/swimming-profile/reject-changes
+ * 강사가 제안한 변경사항 거부
+ */
+router.post('/:userId/swimming-profile/reject-changes', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUser = (req as any).user;
+    
+    // 본인만 거부 가능
+    if (currentUser._id !== userId) {
+      return res.status(403).json({ error: '본인의 변경사항만 거부할 수 있습니다.' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    
+    const pendingChanges = (user.studentInfo as any)?.swimmingProfile?.pendingChanges;
+    if (!pendingChanges) {
+      return res.status(404).json({ error: '대기 중인 변경사항이 없습니다.' });
+    }
+    
+    // 대기 중인 변경사항 삭제
+    (user.studentInfo as any).swimmingProfile.pendingChanges = undefined;
+    
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: '변경사항이 거부되었습니다.'
+    });
+  } catch (err) {
+    console.error('변경사항 거부 오류:', err);
+    return res.status(500).json({ error: '변경사항 거부에 실패했습니다.' });
+  }
+});
 
 export default router;

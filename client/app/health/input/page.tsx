@@ -93,6 +93,9 @@ export default function HealthInputPage() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [birthDate, setBirthDate] = useState('');
+  const [isElderly, setIsElderly] = useState(false);
+  
   const [healthData, setHealthData] = useState<Partial<HealthInput>>({
     demographics: { age: 0, sex: '' },
     anthropometrics: { height_cm: 0, weight_kg: 0 },
@@ -334,6 +337,35 @@ export default function HealthInputPage() {
     }));
   };
 
+  // 생년월일로부터 나이 계산 및 65세 이상 판단
+  const handleBirthDateChange = (dateString: string) => {
+    setBirthDate(dateString);
+    
+    if (!dateString) return;
+    
+    const birth = new Date(dateString);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    // 65세 이상 여부 판단
+    const elderly = age >= 65;
+    setIsElderly(elderly);
+    
+    // healthData에 나이 업데이트
+    setHealthData(prev => ({
+      ...prev,
+      demographics: {
+        ...prev.demographics,
+        age: age
+      } as any
+    }));
+  };
+
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
@@ -395,15 +427,24 @@ export default function HealthInputPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">나이</label>
+                <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  생년월일
+                </label>
                 <input
-                  id="age"
-                  type="number"
+                  id="birthDate"
+                  type="date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={healthData.demographics?.age || 0}
-                  onChange={(e) => handleInputChange('demographics.age', parseInt(e.target.value))}
-                  placeholder="나이를 입력하세요"
+                  value={birthDate}
+                  onChange={(e) => handleBirthDateChange(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  placeholder="생년월일을 선택하세요"
                 />
+                {healthData.demographics?.age > 0 && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    만 {healthData.demographics.age}세
+                    {isElderly && <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">65세 이상</span>}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="sex" className="block text-sm font-medium text-gray-700 mb-1">성별</label>
@@ -461,6 +502,22 @@ export default function HealthInputPage() {
                 />
               </div>
             </div>
+            
+            {/* 65세 이상 안내 메시지 */}
+            {isElderly && (
+              <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">👴</div>
+                  <div>
+                    <h4 className="font-semibold text-purple-900 mb-1">65세 이상 맞춤 프로그램</h4>
+                    <p className="text-sm text-purple-800">
+                      65세 이상 회원님을 위한 안전하고 효과적인 수영 프로그램이 자동으로 설계됩니다.
+                      저강도 운동과 충분한 휴식을 포함하여 건강하게 수영을 즐기실 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {healthData.anthropometrics?.height_cm && healthData.anthropometrics?.weight_kg && (
               <div className="bg-white rounded-lg shadow p-6">

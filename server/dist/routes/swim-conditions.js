@@ -68,7 +68,7 @@ router.post('/', auth_1.auth, async (req, res) => {
     try {
         const conditionData = {
             ...req.body,
-            createdBy: req.user.id
+            createdBy: req.user._id
         };
         const condition = new SwimCondition_1.SwimCondition(conditionData);
         await condition.save();

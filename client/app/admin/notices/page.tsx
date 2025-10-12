@@ -14,7 +14,7 @@ interface Notice {
   category: 'general' | 'course' | 'facility' | 'maintenance' | 'emergency' | 'membership' | 'quiz' | 'system';
   isPublished: boolean;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin')[];
+  targetUserTypes: ('student' | 'instructor' | 'centerAdmin' | 'superAdmin' | 'guest')[];
   targetCenters: string[];
   author: { name: string; userId: string };
   createdAt: Date;
@@ -23,6 +23,7 @@ interface Notice {
   tags: string[];
   isPinned: boolean;
   allowComments: boolean;
+  isVisibleToGuest: boolean;
   expiresAt?: Date;
   attachments?: { filename: string; url: string; size: number; type: string; }[];
 }
@@ -58,6 +59,7 @@ function SuperAdminNoticesManagement() {
     tags: [] as string[],
     isPinned: false,
     allowComments: true,
+    isVisibleToGuest: false,
     sendToAllUserTypes: false
   });
   const [selectedProvince, setSelectedProvince] = useState<string>('');
@@ -1043,12 +1045,41 @@ function SuperAdminNoticesManagement() {
                     />
                     <span className="font-medium">⭐ 최고 관리자</span>
                   </label>
+
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 bg-yellow-50">
+                    <input
+                      type="checkbox"
+                      checked={formData.targetUserTypes.includes('guest')}
+                      onChange={() => toggleUserType('guest')}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <span className="font-medium">👤 게스트 (비회원)</span>
+                  </label>
                 </div>
                 )}
                 {!formData.sendToAllUserTypes && formData.targetUserTypes.length === 0 && (
                   <p className="mt-2 text-sm text-red-600">최소 1개 이상의 계정 유형을 선택해주세요</p>
                 )}
               </div>
+
+              {/* 게스트 공개 옵션 */}
+              {formData.targetUserTypes.includes('guest') && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.isVisibleToGuest}
+                      onChange={(e) => setFormData({ ...formData, isVisibleToGuest: e.target.checked })}
+                      className="mr-2 w-4 h-4"
+                    />
+                    <span className="font-medium text-yellow-800">✅ 게스트(비회원)에게 공개</span>
+                  </label>
+                  <p className="text-xs text-yellow-700 mt-2">
+                    체크하면 로그인하지 않은 사용자도 이 공지사항을 볼 수 있습니다. 
+                    지역별 센터 선택 시 해당 지역 게스트만 표시됩니다.
+                  </p>
+                </div>
+              )}
             </div>
 
               {/* 발송 대상 요약 */}

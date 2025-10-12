@@ -61,7 +61,60 @@ const userSchema = new mongoose_1.default.Schema({
                 reason: { type: String, default: '' },
                 changedAt: { type: Date, default: Date.now }
             }],
-        currentLevel: { type: String, default: 'beginner' }
+        currentLevel: { type: String, default: 'beginner' },
+        swimmingProfile: {
+            css: {
+                freestyle: { type: Number },
+                backstroke: { type: Number },
+                breaststroke: { type: Number },
+                butterfly: { type: Number },
+                lastUpdated: { type: Date },
+                updatedBy: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
+                updatedByRole: { type: String, enum: ['self', 'instructor'] }
+            },
+            mainStrokes: [{ type: String }],
+            preferredStrokes: [{ type: String }],
+            excludedStrokes: [{ type: String }],
+            trainingDays: [{ type: Number, min: 0, max: 6 }],
+            sessionsPerWeek: { type: Number, default: 3 },
+            sessionDuration: { type: Number, default: 60 },
+            poolLength: { type: Number, default: 25 },
+            currentGoal: { type: String },
+            conditionIds: [{ type: String }],
+            vo2max: { type: Number },
+            maxHeartRate: { type: Number },
+            restingHeartRate: { type: Number },
+            lastRacePlan: {
+                raceDate: { type: String },
+                raceDistance: { type: Number },
+                raceStroke: { type: String },
+                currentTime: { type: Number },
+                targetTime: { type: Number },
+                taperWeeks: { type: Number },
+                raceEvents: [{
+                        distance: { type: Number },
+                        stroke: { type: String },
+                        currentTime: { type: Number },
+                        targetTime: { type: Number },
+                        priority: { type: String, enum: ['primary', 'secondary'] }
+                    }],
+                updatedAt: { type: Date }
+            },
+            pendingChanges: {
+                css: { type: mongoose_1.default.Schema.Types.Mixed },
+                mainStrokes: [{ type: String }],
+                preferredStrokes: [{ type: String }],
+                excludedStrokes: [{ type: String }],
+                trainingDays: [{ type: Number }],
+                sessionsPerWeek: { type: Number },
+                sessionDuration: { type: Number },
+                poolLength: { type: Number },
+                currentGoal: { type: String },
+                proposedBy: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
+                proposedAt: { type: Date },
+                reason: { type: String }
+            }
+        }
     },
     instructorInfo: {
         experience: { type: String, default: '' },

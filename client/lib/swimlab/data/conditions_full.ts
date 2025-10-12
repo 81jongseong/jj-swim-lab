@@ -52,6 +52,7 @@ export const CONDITIONS: ConditionFull[] = [
   { id: 'lumbar_flexion_intolerance', label: '허리 굴곡 민감', group: 'CHRONIC', category: '허리', keywords: ['요추굴곡', '허리굽히기'] },
   { id: 'disc_herniation', label: '추간판탈출증', group: 'CHRONIC', category: '허리', keywords: ['디스크', 'herniation'] },
   { id: 'spinal_stenosis', label: '척추관협착증', group: 'CHRONIC', category: '허리', keywords: ['협착증', 'stenosis'] },
+  { id: 'lumbar_spinal_stenosis', label: '요추관협착증', group: 'CHRONIC', category: '허리', keywords: ['요추협착', 'lumbar stenosis'] },
   
   // 목
   { id: 'cervical_strain', label: '목 긴장', group: 'CHRONIC', category: '목', keywords: ['경추', '목통증'] },

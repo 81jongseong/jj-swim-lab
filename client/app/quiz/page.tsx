@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
@@ -53,6 +54,7 @@ interface QuizAttempt {
 }
 
 export default function QuizPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
@@ -65,9 +67,18 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [useRandomMode, setUseRandomMode] = useState(false); // 🎲 랜덤 모드 선택
 
+  // 게스트는 게스트 퀴즈 페이지로 리다이렉트
   useEffect(() => {
-    fetchQuizzes();
-  }, []);
+    if (!user) {
+      router.push('/guest-quiz');
+    }
+  }, [user, router]);
+
+  useEffect(() => {
+    if (user) {
+      fetchQuizzes();
+    }
+  }, [user]);
 
   const fetchQuizzes = async () => {
     try {

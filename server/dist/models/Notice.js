@@ -51,7 +51,7 @@ const noticeSchema = new mongoose_1.Schema({
     },
     targetUserTypes: [{
             type: String,
-            enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+            enum: ['student', 'instructor', 'centerAdmin', 'superAdmin', 'guest'],
             required: true
         }],
     targetCenters: [{
@@ -59,6 +59,10 @@ const noticeSchema = new mongoose_1.Schema({
             ref: 'SwimmingCenter'
         }],
     isPublished: {
+        type: Boolean,
+        default: false,
+    },
+    isVisibleToGuest: {
         type: Boolean,
         default: false,
     },

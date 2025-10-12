@@ -62,7 +62,7 @@ router.post('/', auth_1.auth, async (req, res) => {
     try {
         const methodData = {
             ...req.body,
-            createdBy: req.user.id
+            createdBy: req.user._id
         };
         const method = new SwimTrainingMethod_1.SwimTrainingMethod(methodData);
         await method.save();

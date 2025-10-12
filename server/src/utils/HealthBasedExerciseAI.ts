@@ -102,17 +102,16 @@ export class HealthBasedExerciseAI {
       const swimmingGuidance = MedicalGuidelineWeights.assessSwimmingSpecificRisks(medicalFactors);
       
       // 4. 기존 건강정보 가중치 계산 (의학적 가중치와 결합)
-      const healthWeights = await this.calculateHealthWeights(input.healthData, medicalAssessment.weighting);
+      const healthWeights = await this.calculateHealthWeights(input.healthData);
       
       // 5. 기존 위험도 평가 (의학적 평가와 결합)
-      const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions, medicalAssessment.classification);
+      const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions);
       
       // 6. 조정 팩터 계산 (의학적 가이드라인 반영)
       const adjustmentFactors = this.calculateAdjustmentFactors(
         input.healthData,
         riskAssessment,
-        input.currentFitnessLevel,
-        medicalAssessment.weighting
+        input.currentFitnessLevel
       );
       
       // 7. 운동 추천 생성 (의학적 제약사항 반영)
@@ -120,12 +119,11 @@ export class HealthBasedExerciseAI {
         input,
         healthWeights,
         adjustmentFactors,
-        riskAssessment,
-        medicalAssessment.classification
+        riskAssessment
       );
       
       // 8. 다음 검토 날짜 계산
-      const nextReviewDate = this.calculateNextReviewDate(riskAssessment, medicalAssessment.classification);
+      const nextReviewDate = this.calculateNextReviewDate(riskAssessment);
       
       const result: HealthBasedExerciseResult = {
         exerciseRecommendation,

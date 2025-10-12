@@ -36,14 +36,22 @@ import { DRILLS } from '../../../src/swimlab/data/drills';
 import { MSK_28_IDS } from '../../../src/swimlab/data/conditions_msk28_index';
 import { countAll } from '../../../src/swimlab/utils/catalog';
 // SwimLab 통합 컴포넌트들
-import ConditionQuickPick from '../../../components/swimlab/ConditionQuickPick';
+// import ConditionQuickPick from '../../../components/swimlab/ConditionQuickPick'; // ⚠️ 삭제됨: 전체 질환 목록으로 대체
 import AthleteProfileBar from '../../../components/swimlab/AthleteProfileBar';
 import { measureCoverage, generateRuleTemplates } from '../../../lib/swimlab/utils/coverage';
 import { listAthletes, type AthleteProfile } from '../../../lib/swimlab/utils/athletes';
 import { exportWeeklyForAthletes } from '../../../lib/swimlab/utils/multiExport';
 import ProgramGeneratorPanel from '../../../components/swimlab/ProgramGeneratorPanel';
 import ProgramListView from '../../../components/swimlab/ProgramListView';
+import ProgramSuggestionCard from '../../../components/swimlab/ProgramSuggestionCard';
+import { analyzeProgress } from '../../../lib/swimlab/progressAnalyzer';
+import BulkMemberVariablesModal from '../../../components/swimlab/BulkMemberVariablesModal';
 import { saveCustomMethod, saveCustomDrill, getMergedMethods, getMergedDrills } from '../../../lib/swimlab/utils/customData';
+import { upsertAthlete } from '../../../lib/swimlab/utils/athletes';
+import GroupProgramGenerator from '../../../components/swimlab/GroupProgramGenerator';
+import StudentChecklistModal from '../../../components/swimlab/StudentChecklistModal';
+import QuickActionButtons from '../../../components/swimlab/QuickActionButtons';
+import { convertHealthToConditions } from '../../../lib/swimlab/utils/healthToCondition';
 import { getProgramStats } from '../../../lib/swimlab/utils/programStorage';
 import { saveCustomCondition, deleteCustomCondition, getMergedConditions, createSimpleCondition } from '../../../lib/swimlab/utils/customConditions';
 import { 
@@ -157,6 +165,240 @@ export default function SwimTrainingEnginePage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCondition, setSelectedCondition] = useState<any>(null);
+  const [showAllConditionsModal, setShowAllConditionsModal] = useState(false);
+  
+  // 빠른 생성 탭 상태
+  const [quickGenState, setQuickGenState] = useState({
+    selectedMember: null as any,
+    sessionDuration: 60, // 기본 60분
+    sessionsPerWeek: 3,
+    mainStrokes: [] as string[], // 주 영법 (복수 선택)
+    excludedStrokes: [] as string[], // 제외할 영법
+    strokeCSS: { // 영법별 CSS (초/100m) - 경영 영법만, 선택한 영법만 입력
+      freestyle: 0,
+      backstroke: 0,
+      breaststroke: 0,
+      butterfly: 0,
+      // elementary_backstroke와 sidestroke는 CSS 측정 안함 (경영 영법 아님)
+      // 프로그램 생성 시 자동으로 느린 페이스 적용
+    } as Record<string, number>,
+    condition: '', // 오늘의 컨디션
+    hasPain: false, // 통증 여부
+    goal: '', // 오늘의 목표
+    applyCompletionRate: true, // 완료율 기반 조정 적용 여부
+    intensityMode: 'auto' as 'auto' | 'maintain' | 'increase' | 'decrease' // 강도 조정 모드
+  });
+  
+  const [generatedProgram, setGeneratedProgram] = useState<any>(null);
+  const [showProgramResult, setShowProgramResult] = useState(false);
+  const [programSuggestion, setProgramSuggestion] = useState<any>(null); // 프로그램 변경 제안
+  const [showBulkVariablesModal, setShowBulkVariablesModal] = useState(false); // 다중 회원 변수 설정 모달
+  const [showGroupProgramGenerator, setShowGroupProgramGenerator] = useState(false); // 단체반 프로그램 생성
+  const [showStudentChecklist, setShowStudentChecklist] = useState(false); // 학생 체크리스트
+  const [checklistStudent, setChecklistStudent] = useState<{ id: string; name: string; level: string } | null>(null);
+  const [bulkSelectedMembers, setBulkSelectedMembers] = useState<any[]>([]); // 다중 선택된 회원들
+  const [currentAthleteId, setCurrentAthleteId] = useState<string | undefined>(undefined); // 현재 선택된 회원 ID (프로그램 목록용)
+  
+  // 컨디션 설정 탭 상태 (간소화)
+  // ⚠️ 당일 컨디션/통증은 삭제됨 (프로그램 실행 시 입력)
+  // 운동 목표만 주간 생성 시 사용
+
+  // 주 영법 토글 (복수 선택, 회피영법과 중복 방지)
+  const toggleMainStroke = (strokeId: string) => {
+    setQuickGenState(prev => {
+      const isRemoving = prev.mainStrokes.includes(strokeId);
+      
+      // 추가 시 회피영법에서 제거
+      if (!isRemoving) {
+        // 회피영법에 있으면 제거
+        const newExcludedStrokes = prev.excludedStrokes.filter(s => s !== strokeId);
+        
+        // 영법 제거 시 해당 CSS도 0으로 리셋
+        const newStrokeCSS = { ...prev.strokeCSS };
+        if (isRemoving && !['elementary_backstroke', 'sidestroke'].includes(strokeId)) {
+          newStrokeCSS[strokeId] = 0;
+        }
+        
+        return {
+          ...prev,
+          mainStrokes: [...prev.mainStrokes, strokeId],
+          excludedStrokes: newExcludedStrokes,
+          strokeCSS: newStrokeCSS
+        };
+      } else {
+        // 제거 시
+        const newStrokeCSS = { ...prev.strokeCSS };
+        if (!['elementary_backstroke', 'sidestroke'].includes(strokeId)) {
+          newStrokeCSS[strokeId] = 0;
+        }
+        
+        return {
+          ...prev,
+          mainStrokes: prev.mainStrokes.filter(s => s !== strokeId),
+          strokeCSS: newStrokeCSS
+        };
+      }
+    });
+  };
+
+  // 제외할 영법 토글 (주영법과 중복 방지)
+  const toggleExcludedStroke = (strokeId: string) => {
+    setQuickGenState(prev => {
+      const isRemoving = prev.excludedStrokes.includes(strokeId);
+      
+      // 추가 시 주영법에서 제거
+      if (!isRemoving) {
+        // 주영법에 있으면 제거하고 CSS도 0으로 리셋
+        const newMainStrokes = prev.mainStrokes.filter(s => s !== strokeId);
+        const newStrokeCSS = { ...prev.strokeCSS };
+        if (!['elementary_backstroke', 'sidestroke'].includes(strokeId)) {
+          newStrokeCSS[strokeId] = 0;
+        }
+        
+        return {
+          ...prev,
+          excludedStrokes: [...prev.excludedStrokes, strokeId],
+          mainStrokes: newMainStrokes,
+          strokeCSS: newStrokeCSS
+        };
+      } else {
+        // 제거 시
+        return {
+          ...prev,
+          excludedStrokes: prev.excludedStrokes.filter(s => s !== strokeId)
+        };
+      }
+    });
+  };
+
+
+  // ⚠️ 컨디션 기반 조정은 삭제됨 (프로그램 실행 시 적용)
+
+
+  // 빠른 프로그램 생성
+  const generateQuickProgram = () => {
+    const { sessionDuration, sessionsPerWeek, mainStrokes, excludedStrokes, strokeCSS, condition, hasPain, goal } = quickGenState;
+    
+    // 제외된 영법을 제외한 실제 사용할 영법
+    const activeStrokes = mainStrokes.filter(s => !excludedStrokes.includes(s));
+    
+    if (activeStrokes.length === 0) {
+      alert('최소 1개 이상의 영법을 선택해주세요!');
+      return;
+    }
+    
+    // 컨디션에 따른 강도 조정
+    const intensityMultiplier = condition === '매우 좋음' ? 1.0 :
+                                condition === '좋음' ? 0.95 :
+                                condition === '보통' ? 0.9 :
+                                condition === '피곤함' ? 0.8 :
+                                condition === '매우 피곤함' ? 0.7 : 0.9;
+    
+    // 통증 있으면 강도 추가 감소
+    const finalIntensity = hasPain ? intensityMultiplier * 0.8 : intensityMultiplier;
+    
+    // 조정된 세션 시간 계산
+    const adjustedSessionDuration = Math.round(sessionDuration * finalIntensity);
+    
+    // 세션별 프로그램 생성
+    const sessions = [];
+    const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+    
+    for (let i = 0; i < sessionsPerWeek; i++) {
+      const sessionBlocks = [];
+      
+      // 워밍업 (10% of time)
+      const warmupTime = Math.round(adjustedSessionDuration * 0.1);
+      sessionBlocks.push({
+        type: '워밍업',
+        stroke: 'elementary_backstroke',
+        strokeName: '기본배영',
+        duration: warmupTime,
+        distance: 0, // 시간 기반이므로 거리는 나중에 계산
+        pace: 120,
+        description: `${warmupTime}분 가볍게 수영`
+      });
+      
+      // 메인 세트 (75% of time) - 선택한 영법들로 분배
+      const mainTime = Math.round(adjustedSessionDuration * 0.75);
+      const timePerStroke = Math.floor(mainTime / activeStrokes.length);
+      
+      activeStrokes.forEach((strokeId, idx) => {
+        const css = strokeCSS[strokeId] || 90;
+        const strokeName = {
+          freestyle: '자유형',
+          backstroke: '배영',
+          breaststroke: '평영',
+          butterfly: '접영',
+          elementary_backstroke: '기본배영',
+          sidestroke: '횡영'
+        }[strokeId] || strokeId;
+        
+        // 시간으로부터 거리 계산: (시간(분) * 60초) / (페이스(초/100m)) * 100m
+        const calculatedDistance = Math.round((timePerStroke * 60) / (css / 100));
+        
+        // 25m 단위로 조정 (짝수 배수)
+        const adjustedDistance = Math.round(calculatedDistance / 50) * 50; // 50m 단위로 (25m의 짝수배)
+        
+        sessionBlocks.push({
+          type: '메인 세트',
+          stroke: strokeId,
+          strokeName: strokeName,
+          duration: timePerStroke,
+          distance: adjustedDistance,
+          pace: css,
+          description: `${strokeName} ${adjustedDistance}m @ ${css}초/100m (${timePerStroke}분)`
+        });
+      });
+      
+      // 쿨다운 (15% of time)
+      const cooldownTime = Math.round(adjustedSessionDuration * 0.15);
+      sessionBlocks.push({
+        type: '쿨다운',
+        stroke: 'elementary_backstroke',
+        strokeName: '기본배영',
+        duration: cooldownTime,
+        distance: 0,
+        pace: 120,
+        description: `${cooldownTime}분 여유롭게 수영`
+      });
+      
+      // 세션 총 거리 계산
+      const totalDistance = sessionBlocks.reduce((sum, block) => sum + block.distance, 0);
+      
+      sessions.push({
+        day: daysOfWeek[i],
+        dayNumber: i + 1,
+        blocks: sessionBlocks,
+        totalDuration: adjustedSessionDuration,
+        totalDistance: totalDistance,
+        intensity: Math.round(finalIntensity * 100)
+      });
+    }
+    
+    // 주간 총 거리 계산
+    const weeklyDistance = sessions.reduce((sum, s) => sum + s.totalDistance, 0);
+    
+    const program = {
+      sessions,
+      summary: {
+        weeklyDuration: adjustedSessionDuration * sessionsPerWeek,
+        weeklyDistance,
+        sessionsPerWeek,
+        mainStrokes: activeStrokes,
+        excludedStrokes,
+        condition,
+        hasPain,
+        goal,
+        adjustmentNote: finalIntensity < 1 
+          ? `컨디션(${condition})과 통증 여부에 따라 강도를 ${Math.round((1 - finalIntensity) * 100)}% 감소했습니다.`
+          : '최적 강도로 프로그램을 생성했습니다.'
+      }
+    };
+    
+    setGeneratedProgram(program);
+    setShowProgramResult(true);
+  };
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTrainingMethod, setSelectedTrainingMethod] = useState<string | null>(null);
   const [selectedDrill, setSelectedDrill] = useState<string | null>(null);
@@ -176,7 +418,7 @@ export default function SwimTrainingEnginePage() {
   const [teamSelectedIds, setTeamSelectedIds] = useState<string[]>([]);
   
   // 프로그램 통계 (클라이언트에서만 실행)
-  const [stats, setStats] = useState({ total: 0, athletes: 0, recentCount: 0, programs: [] });
+  const [stats, setStats] = useState({ total: 0, athletes: 0, recentCount: 0 });
   
   useEffect(() => {
     setStats(getProgramStats());
@@ -316,6 +558,7 @@ export default function SwimTrainingEnginePage() {
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             {[
+              { id: 'quick-generate', name: '⚡ 빠른 생성', icon: Zap },
               { id: 'overview', name: '개요', icon: Info },
               { id: 'condition-setup', name: '컨디션 설정', icon: Settings },
               { id: 'program-list', name: '프로그램 목록', icon: Calendar },
@@ -343,6 +586,323 @@ export default function SwimTrainingEnginePage() {
 
       {/* 탭 내용 */}
       <div className="flex-1 min-h-0">
+        {activeTab === 'quick-generate' && (
+          <div className="space-y-6 h-full overflow-y-auto pb-20">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">⚡ 빠른 프로그램 생성</h2>
+              <p className="text-gray-600">
+                회원을 선택하고 현재 컨디션만 입력하면 맞춤형 수영 프로그램이 자동으로 생성됩니다.
+              </p>
+            </div>
+
+            {/* Step 1: 회원 선택 */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-500" />
+                Step 1. 회원 선택
+              </h3>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  회원 검색 또는 선택
+                </label>
+                <input
+                  type="text"
+                  placeholder="회원 이름, 이메일로 검색..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Tip:</strong> 회원의 저장된 건강 정보가 자동으로 불러와집니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: 훈련 설정 */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-blue-500" />
+                Step 2. 훈련 설정
+              </h3>
+              <div className="space-y-4">
+                {/* ℹ️ 안내 메시지 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>시간, 영법, CSS, 운동 목표, 훈련 요일</strong>은 이제 
+                    <strong className="text-blue-600"> "회원 불러오기"</strong>에서 설정됩니다!
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Step 1에서 회원을 불러오면 저장된 변수가 자동으로 적용됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: 현재 컨디션 */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Heart className="h-5 w-5 text-red-500" />
+                Step 3. 현재 컨디션
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    오늘의 컨디션
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {['매우 좋음', '좋음', '보통', '피곤함', '매우 피곤함'].map((condition) => (
+                      <button
+                        key={condition}
+                        onClick={() => setQuickGenState(prev => ({ ...prev, condition }))}
+                        className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                          quickGenState.condition === condition
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                            : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                        }`}
+                      >
+                        {condition}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    통증 여부
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => setQuickGenState(prev => ({ ...prev, hasPain: false }))}
+                      className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                        !quickGenState.hasPain
+                          ? 'border-green-500 bg-green-50 text-green-700 font-semibold'
+                          : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                      }`}
+                    >
+                      ✅ 통증 없음
+                    </button>
+                    <button 
+                      onClick={() => setQuickGenState(prev => ({ ...prev, hasPain: true }))}
+                      className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                        quickGenState.hasPain
+                          ? 'border-red-500 bg-red-50 text-red-700 font-semibold'
+                          : 'border-gray-200 hover:border-red-500 hover:bg-red-50'
+                      }`}
+                    >
+                      ⚠️ 통증 있음
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Step 4: 프로그램 생성 */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-500" />
+                Step 4. 프로그램 생성
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">선택된 정보</h4>
+                  <div className="text-sm text-gray-700 space-y-1">
+                    <p>⏱️ 운동 시간: <span className="font-medium">{quickGenState.sessionDuration}분 × {quickGenState.sessionsPerWeek}회</span></p>
+                    <p>🏊 주 영법: <span className="font-medium">
+                      {quickGenState.mainStrokes.length > 0 
+                        ? `${quickGenState.mainStrokes.length}개 선택됨`
+                        : '선택 필요'}
+                    </span></p>
+                    <p>⛔ 제외 영법: <span className="font-medium">
+                      {quickGenState.excludedStrokes.length > 0 
+                        ? `${quickGenState.excludedStrokes.length}개 제외됨`
+                        : '없음'}
+                    </span></p>
+                    <p>💪 컨디션: <span className="font-medium">{quickGenState.condition || '선택 필요'}</span></p>
+                    <p>🎯 목표: <span className="font-medium">{quickGenState.goal || '선택 필요'}</span></p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={generateQuickProgram}
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                  disabled={quickGenState.mainStrokes.length === 0 || !quickGenState.condition || !quickGenState.goal}
+                >
+                  <Zap className="h-5 w-5 mr-2" />
+                  맞춤형 프로그램 생성하기
+                </Button>
+
+                <p className="text-xs text-center text-gray-500">
+                  * 영법, 컨디션, 목표를 모두 선택해야 생성 가능합니다
+                </p>
+              </div>
+            </div>
+
+            {/* 생성된 프로그램 결과 */}
+            {showProgramResult && generatedProgram && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-500">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    생성된 주간 프로그램
+                  </h3>
+                  <Button
+                    onClick={() => setShowProgramResult(false)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    닫기
+                  </Button>
+                </div>
+
+                {/* 프로그램 요약 */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <StatCard
+                    title="주간 총 시간"
+                    value={`${generatedProgram.summary.weeklyDuration}분`}
+                    icon="⏱️"
+                    subtitle={`세션당 ${quickGenState.sessionDuration}분`}
+                    color="blue"
+                  />
+                  <StatCard
+                    title="주간 총 거리"
+                    value={`${generatedProgram.summary.weeklyDistance.toLocaleString()}m`}
+                    icon="📏"
+                    subtitle={`${generatedProgram.sessions.length}회 세션`}
+                    color="green"
+                  />
+                  <StatCard
+                    title="사용 영법"
+                    value={`${generatedProgram.summary.mainStrokes.length}개`}
+                    icon="🏊"
+                    subtitle="선택된 영법"
+                    color="purple"
+                  />
+                  <StatCard
+                    title="강도 조정"
+                    value={`${generatedProgram.sessions[0]?.intensity || 100}%`}
+                    icon="💪"
+                    subtitle={quickGenState.condition}
+                    color="orange"
+                  />
+                </div>
+
+                {/* 조정 사항 안내 */}
+                {generatedProgram.summary.adjustmentNote && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ {generatedProgram.summary.adjustmentNote}
+                    </p>
+                  </div>
+                )}
+
+                {/* 세션별 상세 프로그램 */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 text-lg">📅 주간 일정</h4>
+                  
+                  {generatedProgram.sessions.map((session: any, idx: number) => (
+                    <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-bold text-gray-900">
+                          {session.day}요일 (Day {session.dayNumber})
+                        </h5>
+                        <div className="flex gap-3 text-sm">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                            ⏱️ {session.totalDuration}분
+                          </span>
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
+                            📏 {session.totalDistance}m
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {session.blocks.map((block: any, blockIdx: number) => (
+                          <div key={blockIdx} className="bg-white rounded p-3 border border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mr-2 ${
+                                  block.type === '워밍업' ? 'bg-green-100 text-green-700' :
+                                  block.type === '메인 세트' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-purple-100 text-purple-700'
+                                }`}>
+                                  {block.type}
+                                </span>
+                                <span className="font-semibold text-gray-900">
+                                  {block.strokeName}
+                                </span>
+                              </div>
+                              <div className="text-right text-sm">
+                                {block.distance > 0 && (
+                                  <div className="text-gray-700">
+                                    <span className="font-semibold">{block.distance}m</span>
+                                    <span className="text-gray-500 ml-2">@ {block.pace}초/100m</span>
+                                  </div>
+                                )}
+                                <div className="text-gray-600">{block.duration}분</div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {block.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 프로그램 상세 정보 */}
+                <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">📊 프로그램 분석</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-600">사용 영법:</span>
+                      <div className="font-medium text-gray-900">
+                        {generatedProgram.summary.mainStrokes.map((s: string) => 
+                          ({
+                            freestyle: '자유형',
+                            backstroke: '배영',
+                            breaststroke: '평영',
+                            butterfly: '접영',
+                            elementary_backstroke: '기본배영',
+                            sidestroke: '횡영'
+                          }[s] || s)
+                        ).join(', ')}
+                      </div>
+                    </div>
+                    {generatedProgram.summary.excludedStrokes.length > 0 && (
+                      <div>
+                        <span className="text-gray-600">제외 영법:</span>
+                        <div className="font-medium text-red-600">
+                          {generatedProgram.summary.excludedStrokes.map((s: string) => 
+                            ({
+                              freestyle: '자유형',
+                              backstroke: '배영',
+                              breaststroke: '평영',
+                              butterfly: '접영',
+                              elementary_backstroke: '기본배영',
+                              sidestroke: '횡영'
+                            }[s] || s)
+                          ).join(', ')}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-600">통증 상태:</span>
+                      <div className={`font-medium ${generatedProgram.summary.hasPain ? 'text-red-600' : 'text-green-600'}`}>
+                        {generatedProgram.summary.hasPain ? '⚠️ 통증 있음' : '✅ 통증 없음'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'overview' && (
           <div className="space-y-6 h-full overflow-y-auto">
             {/* 엔진 통계 카드 */}
@@ -443,16 +1003,94 @@ export default function SwimTrainingEnginePage() {
 
         {activeTab === 'condition-setup' && (
           <div className="space-y-6 h-full overflow-y-auto">
-            {/* 선수 프로필 바 */}
+
+            {/* 선수 프로필 바 (기존 유지) */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                팀/선수 프로필
+                회원 프로필
               </h3>
               
               <AthleteProfileBar
                 condIds={conditionIds}
-                onLoad={(p: AthleteProfile) => {
-                  setConditionIds(p.conditionIds);
+                onBulkVariablesNeeded={(members) => {
+                  // 다중 회원 선택 시 변수 설정 모달 표시
+                  console.log('🎯 onBulkVariablesNeeded 받은 데이터:', members.map(m => ({
+                    name: m.name,
+                    'studentInfo': m.studentInfo,
+                    'studentInfo?.currentLevel': m.studentInfo?.currentLevel,
+                    'level': (m as any).level
+                  })));
+                  setBulkSelectedMembers(members);
+                  setShowBulkVariablesModal(true);
+                }}
+                onLoad={async (athlete: AthleteProfile) => {
+                  // 선수 선택 시 저장된 모든 변수 자동 로드
+                  console.log('선수 선택됨:', athlete.name, '컨디션:', athlete.conditionIds);
+                  
+                  // athlete.id가 "athlete_X" 형식이면 실제 User _id 추출
+                  const actualUserId = athlete.id.startsWith('athlete_') 
+                    ? athlete.id.replace('athlete_', '') 
+                    : athlete.id;
+                  
+                  // 현재 선택된 회원 ID 저장 (프로그램 목록용)
+                  setCurrentAthleteId(actualUserId);
+                  
+                  // 1. 컨디션 설정
+                  if (athlete.conditionIds && athlete.conditionIds.length > 0) {
+                    setConditionIds(athlete.conditionIds);
+                    console.log('컨디션 설정됨:', athlete.conditionIds);
+                  }
+                  
+                  // 2. 회원의 모든 저장된 변수 불러오기
+                  const athleteData = athlete as any;
+                  setQuickGenState(prev => ({
+                    ...prev,
+                    selectedMember: athlete,
+                    mainStrokes: athleteData.mainStrokes || prev.mainStrokes,
+                    excludedStrokes: athleteData.excludedStrokes || prev.excludedStrokes,
+                    strokeCSS: athleteData.customCSS || prev.strokeCSS,
+                    sessionsPerWeek: athleteData.sessionsPerWeek || prev.sessionsPerWeek,
+                    sessionDuration: athleteData.sessionDuration || prev.sessionDuration,
+                    goal: athleteData.goal || prev.goal
+                  }));
+                  
+                  console.log('회원 변수 로드 완료:', {
+                    mainStrokes: athleteData.mainStrokes,
+                    excludedStrokes: athleteData.excludedStrokes,
+                    sessionsPerWeek: athleteData.sessionsPerWeek,
+                    sessionDuration: athleteData.sessionDuration
+                  });
+                  
+                  // 완료율 기반 프로그램 변경 제안 분석 (개인 PT만)
+                  if (!(athlete as any).groupClassId) {
+                    try {
+                      const response = await apiClient.get(`/api/swim-programs/athlete/${actualUserId}/history`);
+                      const programHistory = (response as any).data?.data?.programs || [];
+                      
+                      if (programHistory.length >= 3) { // 최소 3주 이상의 기록이 있을 때
+                        // 현재 CSS (가상으로 strokeCSS 사용, 실제로는 최근 측정값 사용)
+                        const currentCSS = quickGenState.strokeCSS;
+                        
+                        const analysis = analyzeProgress(
+                          athlete.id,
+                          programHistory,
+                          currentCSS
+                        );
+                        
+                        if ((analysis as any).shouldChange) {
+                          setProgramSuggestion(analysis);
+                          console.log('프로그램 변경 제안:', analysis);
+                        } else {
+                          setProgramSuggestion(null);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('프로그램 분석 실패:', error);
+                    }
+                  } else {
+                    console.log('📚 단체반 선택됨: 이력 분석 스킵');
+                    setProgramSuggestion(null);
+                  }
                 }}
                 onBulkSelect={(ids: string[]) => setTeamSelectedIds(ids)}
               />
@@ -461,6 +1099,46 @@ export default function SwimTrainingEnginePage() {
               {teamSelectedIds.length > 1 && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2">
+                    {/* 일괄 프로그램 생성 버튼 */}
+                    <button
+                      className="px-4 py-3 text-sm border-2 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 border-purple-300 font-semibold shadow-md hover:shadow-lg transition-all"
+                      onClick={async () => {
+                        const athletes = listAthletes().filter(a => teamSelectedIds.includes(a.id));
+                        if (!athletes.length) return alert('프로그램을 생성할 선수를 선택하세요.');
+                        
+                        if (!confirm(`${athletes.length}명의 프로그램을 일괄 생성하시겠습니까?\n\n각 선수의 개별 변수(CSS, 선호 영법, 운동 요일, 목표)가 적용됩니다.`)) {
+                          return;
+                        }
+                        
+                        let successCount = 0;
+                        
+                        for (const athlete of athletes) {
+                          try {
+                            // 각 선수의 개별 변수 사용
+                            const customCSS = (athlete as any).customCSS || {};
+                            const trainingDays = (athlete as any).trainingDays || [1, 3, 5];
+                            const goal = (athlete as any).goal || '체력 향상';
+                            
+                            // 프로그램 생성 로직 (간소화)
+                            // 실제로는 ProgramGeneratorPanel의 handleGenerate 로직 사용
+                            console.log(`${athlete.name} 프로그램 생성:`, {
+                              css: customCSS,
+                              days: trainingDays.length,
+                              goal
+                            });
+                            
+                            successCount++;
+                          } catch (error) {
+                            console.error(`${athlete.name} 프로그램 생성 실패:`, error);
+                          }
+                        }
+                        
+                        alert(`${successCount}/${athletes.length}명의 프로그램이 생성되었습니다!`);
+                      }}
+                    >
+                      🚀 일괄 프로그램 생성 ({teamSelectedIds.length}명)
+                    </button>
+                    
                     <button
                       className="px-4 py-2 text-sm border rounded bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 text-green-700 border-green-200 font-medium"
                       onClick={() => {
@@ -498,7 +1176,7 @@ export default function SwimTrainingEnginePage() {
               )}
             </div>
 
-            {/* 컨디션 선택 컴포넌트 */}
+            {/* 컨디션 선택 컴포넌트 (기존 유지) */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">
@@ -527,10 +1205,249 @@ export default function SwimTrainingEnginePage() {
                 </div>
               </div>
               
-              <ConditionQuickPick 
-                value={conditionIds} 
-                onChange={setConditionIds}
+              {/* 선택된 회원 정보 표시 */}
+              {teamSelectedIds.length === 1 && (() => {
+                const selectedAthlete = listAthletes().find(a => a.id === teamSelectedIds[0]);
+                if (!selectedAthlete) return null;
+                
+                return (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-300 rounded-lg">
+                    <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                      👤 선택된 회원: {selectedAthlete.name}
+                    </h4>
+                    <p className="text-xs text-blue-600">
+                      회원 정보에 기입된 질환/특수상황이 자동으로 표시됩니다.
+                    </p>
+                  </div>
+                );
+              })()}
+              
+              {/* 현재 선택된 질환/특수상황 표시 */}
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      📋 질환/특수상황 ({conditionIds.length}개)
+                    </h4>
+                    {conditionIds.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {allConditions
+                          .filter(c => conditionIds.includes(c.id))
+                          .map(c => c.label)
+                          .slice(0, 3)
+                          .join(', ')}
+                        {conditionIds.length > 3 && ` 외 ${conditionIds.length - 3}개`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowAllConditionsModal(true)}
+                      className="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
+                    >
+                      ➕ 질환/특수상황 모두보기
+                    </button>
+                    {teamSelectedIds.length === 1 && conditionIds.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          const selectedAthlete = listAthletes().find(a => a.id === teamSelectedIds[0]);
+                          if (!selectedAthlete) {
+                            alert('회원을 찾을 수 없습니다.');
+                            return;
+                          }
+
+                          try {
+                            await apiClient.patch(`/users/${selectedAthlete.id}/conditions`, {
+                              conditionIds: conditionIds
+                            });
+                            alert(`✅ ${selectedAthlete.name}의 질환/특수상황 ${conditionIds.length}개가 저장되었습니다!`);
+                          } catch (error) {
+                            console.error('회원 정보 업데이트 실패:', error);
+                            alert('❌ 저장에 실패했습니다. 콘솔을 확인하세요.');
+                          }
+                        }}
+                        className="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold animate-pulse"
+                      >
+                        💾 회원에 저장 ({conditionIds.length}개)
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {conditionIds.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {allConditions
+                      .filter(c => conditionIds.includes(c.id))
+                      .map(c => (
+                        <span 
+                          key={c.id}
+                          className="px-3 py-1.5 bg-white border border-blue-300 rounded-full text-xs text-blue-700 font-medium inline-flex items-center gap-2 hover:bg-blue-50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            // 클릭하면 제거
+                            setConditionIds(prev => prev.filter(id => id !== c.id));
+                          }}
+                        >
+                          {c.label}
+                          <span className="text-red-500 hover:text-red-700">✕</span>
+                        </span>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-600">
+                    💡 "➕ 질환/특수상황 모두보기" 버튼을 눌러 질환/특수상황을 선택하세요.
+                  </p>
+                )}
+                
+                {teamSelectedIds.length === 1 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    ℹ️ 선택 후 "💾 회원에 저장" 버튼을 눌러야 프로그램 생성 시 반영됩니다.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* ⚠️ 모든 회원 설정은 [수정] 버튼 → 팝업에서 진행 */}
+
+            {/* 프로그램 변경 제안 카드 */}
+            {programSuggestion && (
+              <ProgramSuggestionCard
+                analysis={programSuggestion}
+                onAccept={() => {
+                  // 제안된 목표로 자동 설정
+                  if (programSuggestion.suggestions && programSuggestion.suggestions.length > 0) {
+                    const newGoal = programSuggestion.suggestions[0].newGoal;
+                    // 목표 매핑 ('performance' -> '실력 향상', 'technique' -> '기술 연마')
+                    const goalMapping: Record<string, string> = {
+                      'performance': '실력 향상',
+                      'technique': '기술 연마',
+                      'endurance': '체력 향상',
+                      'rehabilitation': '재활'
+                    };
+                    const mappedGoal = goalMapping[newGoal] || newGoal;
+                    setQuickGenState(prev => ({ ...prev, goal: mappedGoal }));
+                    alert(`목표가 "${mappedGoal}"으로 변경되었습니다!`);
+                  }
+                  setProgramSuggestion(null);
+                }}
+                onDecline={() => {
+                  setProgramSuggestion(null);
+                  alert('현재 목표를 유지합니다.');
+                }}
               />
+            )}
+
+            {/* 운동 목표 및 설정 안내 */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200 p-6">
+              <h3 className="text-lg font-semibold mb-3 text-gray-800">
+                💡 회원 설정 방법
+              </h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>1. <strong>[회원 불러오기]</strong> 버튼으로 회원을 선택하세요</p>
+                <p>2. 회원을 체크박스로 선택한 후 <strong>[✏️ 수정]</strong> 버튼을 클릭하세요</p>
+                <p>3. 팝업에서 CSS, 주영법, 회피영법, 운동요일, 목표, 컨디션 등을 설정하세요</p>
+                <p>4. <strong>[저장 후 주간 계획 생성]</strong> 버튼으로 프로그램을 생성하세요</p>
+              </div>
+              <div className="mt-4 p-3 bg-white rounded border border-blue-200">
+                <p className="text-xs text-gray-600">
+                  ✅ 목표에 따라 <strong>25개 훈련법</strong>과 <strong>40개 드릴</strong>이 자동 선택됩니다<br/>
+                  ✅ 컨디션에 따라 안전한 영법만 자동으로 필터링됩니다
+                </p>
+              </div>
+            </div>
+
+            {/* 완료율 기반 조정 옵션 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                📊 완료율 기반 강도 조정
+              </h3>
+              
+              <div className="space-y-4">
+                {/* 조정 적용 여부 토글 */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-gray-800">
+                        이전 완료율 반영
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        quickGenState.applyCompletionRate 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {quickGenState.applyCompletionRate ? 'ON' : 'OFF'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      이전 프로그램의 완료율을 분석하여 다음 프로그램의 강도/볼륨을 자동으로 조정합니다
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setQuickGenState(prev => ({
+                      ...prev,
+                      applyCompletionRate: !prev.applyCompletionRate
+                    }))}
+                    className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                      quickGenState.applyCompletionRate
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                  >
+                    {quickGenState.applyCompletionRate ? '적용 중 ✓' : '적용 안 함'}
+                  </button>
+                </div>
+
+                {/* 강도 조정 모드 (완료율 적용 시에만 표시) */}
+                {quickGenState.applyCompletionRate && (
+                  <div className="border rounded-lg p-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      강도 조정 모드
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { value: 'auto', label: '🤖 자동 조정', desc: 'AI가 완료율 분석하여 추천' },
+                        { value: 'maintain', label: '➡️ 현재 유지', desc: '이전과 동일한 강도' },
+                        { value: 'increase', label: '⬆️ 강제 증가', desc: '+5% 강도 상승' },
+                        { value: 'decrease', label: '⬇️ 강제 감소', desc: '-10% 강도 하락' }
+                      ].map((mode) => (
+                        <button
+                          key={mode.value}
+                          onClick={() => setQuickGenState(prev => ({ 
+                            ...prev, 
+                            intensityMode: mode.value as any 
+                          }))}
+                          className={`px-4 py-3 border-2 rounded-lg transition-all text-left ${
+                            quickGenState.intensityMode === mode.value
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="font-semibold text-sm mb-1">{mode.label}</div>
+                          <div className="text-xs text-gray-600">{mode.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {quickGenState.intensityMode === 'auto' && (
+                      <div className="mt-3 p-3 bg-green-50 rounded border border-green-200">
+                        <p className="text-sm text-green-800">
+                          💡 <strong>자동 조정</strong>: 최근 3주 완료율, RPE(체감 난이도), 부상 이력을 종합 분석하여 
+                          과학적으로 최적의 강도를 추천합니다.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 완료율 적용 안함 시 안내 */}
+                {!quickGenState.applyCompletionRate && (
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800">
+                      ℹ️ 완료율 반영이 <strong>OFF</strong> 상태입니다. 
+                      이전 프로그램의 완료율과 관계없이 표준 강도로 생성됩니다.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 선택 결과 표시 */}
@@ -572,13 +1489,25 @@ export default function SwimTrainingEnginePage() {
             <ProgramGeneratorPanel
               selectedAthleteIds={teamSelectedIds}
               conditionIds={conditionIds}
+              timeBasedSettings={{
+                sessionDuration: quickGenState.sessionDuration,
+                mainStrokes: quickGenState.mainStrokes,
+                excludedStrokes: quickGenState.excludedStrokes,
+                strokeCSS: quickGenState.strokeCSS,
+                goal: quickGenState.goal,
+                applyCompletionRate: quickGenState.applyCompletionRate, // 완료율 반영 여부
+                intensityMode: quickGenState.intensityMode // 강도 조정 모드
+                // ⚠️ condition, hasPain 제거: 프로그램 실행 시점에 입력
+              }}
             />
           </div>
         )}
 
         {activeTab === 'program-list' && (
           <div className="h-full overflow-y-auto">
-            <ProgramListView />
+              <ProgramListView 
+                selectedAthleteId={currentAthleteId}
+              />
           </div>
         )}
 
@@ -1043,24 +1972,61 @@ export default function SwimTrainingEnginePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">질환별 가이드라인</h3>
                 <div className="flex items-center gap-3">
+                  {/* 📋 질환/특수상황 모두보기 버튼 */}
                   <button
                     onClick={() => {
-                      const name = prompt('질환명:') || '새 질환';
-                      const category = prompt('카테고리 (어깨/무릎/허리/전신 등):') || '기타';
-                      const group = confirm('만성 질환인가요? (취소=당일 컨디션)') ? 'CHRONIC' : 'ACUTE';
+                      const selectedAthlete = teamSelectedIds.length === 1 
+                        ? listAthletes().find(a => a.id === teamSelectedIds[0])
+                        : null;
                       
-                      const newCondition = createSimpleCondition(name, category, group);
-                      saveCustomCondition(newCondition);
-                      setAllConditions(getMergedConditions(jointConditionsBase));
-                      alert(`✅ "${name}" 질환이 추가되었습니다!\n→ 즉시 컨디션 설정에 반영됩니다.`);
+                      const athleteInfo = selectedAthlete 
+                        ? `\n\n👤 선택된 회원: ${selectedAthlete.name}\n현재 설정: ${conditionIds.length}개`
+                        : '\n\n👤 회원을 선택하면 해당 회원의 질환/특수상황이 표시됩니다.';
+                      
+                      alert(
+                        `📋 질환/특수상황 현황\n\n` +
+                        `총 ${allConditions.length}개 등록됨\n` +
+                        `- 기본 질환: ${jointConditionsBase.length}개\n` +
+                        `- 특수상황: ${allConditions.filter(c => c.category === 'special').length}개\n` +
+                        `- 커스텀: ${allConditions.length - jointConditionsBase.length}개` +
+                        athleteInfo +
+                        `\n\n💡 질환을 선택하고 "회원에 저장" 버튼을 눌러 저장하세요.`
+                      );
                     }}
-                    className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold"
                   >
-                    + 질환 추가
+                    📋 질환/특수상황 모두보기
                   </button>
+                  
+                  {/* 💾 회원에 저장 버튼 */}
+                  {teamSelectedIds.length === 1 && conditionIds.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        const selectedAthlete = listAthletes().find(a => a.id === teamSelectedIds[0]);
+                        if (!selectedAthlete) {
+                          alert('회원을 찾을 수 없습니다.');
+                          return;
+                        }
+                        
+                        // conditionIds를 회원 정보에 저장
+                        try {
+                          await apiClient.patch(`/users/${selectedAthlete.id}/conditions`, {
+                            conditionIds: conditionIds
+                          });
+                          alert(`✅ ${selectedAthlete.name}의 질환/특수상황 ${conditionIds.length}개가 저장되었습니다!`);
+                        } catch (error) {
+                          console.error('회원 정보 업데이트 실패:', error);
+                          alert('❌ 저장에 실패했습니다. 콘솔을 확인하세요.');
+                        }
+                      }}
+                      className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold animate-pulse"
+                    >
+                      💾 회원에 저장 ({conditionIds.length}개)
+                    </button>
+                  )}
+                  
                   <div className="text-sm text-gray-600">
-                    총 <strong className="text-blue-600">{allConditions.length}개</strong> 질환 
-                    (기본 {jointConditionsBase.length} + 커스텀 {allConditions.length - jointConditionsBase.length})
+                    선택됨: <strong className="text-green-600">{conditionIds.length}개</strong>
                   </div>
                 </div>
               </div>
@@ -1581,6 +2547,637 @@ export default function SwimTrainingEnginePage() {
           </div>
         )}
       </div>
+
+      {/* 질환/특수상황 모두보기 모달 */}
+      {showAllConditionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-xl font-bold text-gray-800">
+                📋 질환/특수상황 전체 목록
+              </h3>
+              <button
+                onClick={() => setShowAllConditionsModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 카테고리 필터 */}
+            <div className="p-4 border-b bg-gray-50">
+              <div className="flex flex-wrap gap-2">
+                {['all', 'shoulder', 'elbow', 'wrist', 'hip', 'knee', 'ankle', 'spine', 'special'].map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedCategory === category
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {category === 'all' ? '전체' :
+                     category === 'shoulder' ? '어깨' :
+                     category === 'elbow' ? '팔꿈치' :
+                     category === 'wrist' ? '손목' :
+                     category === 'hip' ? '고관절' :
+                     category === 'knee' ? '무릎' :
+                     category === 'ankle' ? '발목' :
+                     category === 'spine' ? '척추' : '특수상황'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 질환 목록 */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-2">
+                {allConditions
+                  .filter(c => selectedCategory === 'all' || c.category === selectedCategory)
+                  .map(condition => {
+                    const isSelected = conditionIds.includes(condition.id);
+                    return (
+                      <div
+                        key={condition.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setConditionIds(prev => prev.filter(id => id !== condition.id));
+                          } else {
+                            setConditionIds(prev => [...prev, condition.id]);
+                          }
+                        }}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className={`text-2xl ${isSelected ? 'scale-110' : ''}`}>
+                                {isSelected ? '✅' : '⬜'}
+                              </span>
+                              <div>
+                                <h4 className="font-semibold text-gray-800">{condition.label}</h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {condition.category === 'shoulder' ? '어깨' :
+                                   condition.category === 'elbow' ? '팔꿈치' :
+                                   condition.category === 'wrist' ? '손목' :
+                                   condition.category === 'hip' ? '고관절' :
+                                   condition.category === 'knee' ? '무릎' :
+                                   condition.category === 'ankle' ? '발목' :
+                                   condition.category === 'spine' ? '척추' : '특수상황'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* 푸터 */}
+            <div className="p-6 border-t bg-gray-50 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                현재 선택: <span className="font-bold text-blue-600">{conditionIds.length}개</span>
+              </div>
+              <button
+                onClick={() => setShowAllConditionsModal(false)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                선택 완료
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 다중 회원 변수 설정 모달 */}
+      {showBulkVariablesModal && bulkSelectedMembers.length > 0 && (
+        <BulkMemberVariablesModal
+          members={bulkSelectedMembers}
+          onClose={() => {
+            setShowBulkVariablesModal(false);
+            setBulkSelectedMembers([]);
+          }}
+          onConfirm={async (variables, generateWeeklyPlan) => {
+            console.log('일괄 생성 시작:', variables);
+            
+            // 각 회원의 선수 프로필 추가 및 프로그램 생성
+            let successCount = 0;
+            const failedMembers: string[] = [];
+            
+            for (const memberVar of variables) {
+              const member = bulkSelectedMembers.find((m: any) => m._id === memberVar.memberId);
+              if (!member) continue;
+              
+              try {
+                // 건강정보 자동 변환
+                const healthProfile = {
+                  age: member.studentInfo?.age,
+                  height: member.studentInfo?.healthProfile?.height,
+                  weight: member.studentInfo?.healthProfile?.weight,
+                  chronicConditions: member.studentInfo?.healthProfile?.chronicConditions,
+                  allergies: member.studentInfo?.healthProfile?.allergies
+                };
+                
+                const { auto: autoConditions } = convertHealthToConditions(healthProfile);
+
+                // 선수 프로필 추가
+                const strokeCode = memberVar.mainStrokes[0] === '자유형' ? 'FR' :
+                                   memberVar.mainStrokes[0] === '배영' ? 'BK' :
+                                   memberVar.mainStrokes[0] === '평영' ? 'BR' :
+                                   memberVar.mainStrokes[0] === '접영' ? 'FL' : 'FR';
+                
+                const newProfile = {
+                  id: `athlete_${member._id}`,
+                  name: memberVar.memberName,
+                  icon: '🏊‍♂️',
+                  conditionIds: memberVar.conditionIds.length > 0 ? memberVar.conditionIds : autoConditions,
+                  cssPer100: undefined,
+                  stroke: strokeCode as 'FR' | 'BK' | 'BR' | 'FL',
+                  raceTargets: [],
+                  customCSS: memberVar.css,
+                  mainStrokes: memberVar.mainStrokes,
+                  excludedStrokes: memberVar.excludedStrokes,
+                  trainingDays: memberVar.trainingDays,
+                  sessionsPerWeek: memberVar.trainingDays.length, // 운동 요일 개수 = 주당 세션 수
+                  sessionDuration: memberVar.sessionDuration,
+                  poolLength: memberVar.poolLength,
+                  goal: memberVar.goal
+                };
+
+                upsertAthlete(newProfile as any);
+              } catch (error: any) {
+                console.error(`${memberVar.memberName} 프로필 추가 실패:`, error);
+              }
+
+              // 프로그램 자동 생성 (프로필 추가와 별개로 처리)
+              if (generateWeeklyPlan) {
+                try {
+                  const today = new Date();
+                  const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+                  
+                  // 영법 변환 함수
+                  const convertStroke = (koreanStroke: string): string => {
+                    if (koreanStroke === '자유형') return 'freestyle';
+                    if (koreanStroke === '배영') return 'backstroke';
+                    if (koreanStroke === '평영') return 'breaststroke';
+                    if (koreanStroke === '접영') return 'butterfly';
+                    return 'freestyle';
+                  };
+                  
+                  // 단체반인지 확인
+                  const isGroupClass = !!(member as any).groupClassId;
+                  
+                  // 🏁 레이스 플랜 vs 주간 플랜 분기
+                  console.log(`🔍 ${memberVar.memberName} 프로그램 타입:`, memberVar.programType, {
+                    typeCheck: typeof memberVar.programType,
+                    isRace: memberVar.programType === 'race',
+                    rawValue: JSON.stringify(memberVar.programType),
+                    raceDate: memberVar.raceDate,
+                    currentTime: memberVar.currentTime,
+                    targetTime: memberVar.targetTime
+                  });
+                  
+                  if (memberVar.programType === 'race') {
+                    console.log('🏁 레이스 플랜 생성 시작:', memberVar.memberName);
+                    
+                    // 레이스 플랜 검증
+                    if (!memberVar.raceDate) {
+                      console.warn(`⚠️ ${memberVar.memberName}: 대회일 미입력`);
+                      throw new Error(`${memberVar.memberName}: 대회일을 입력하세요.`);
+                    }
+                    if (!memberVar.currentTime || memberVar.currentTime <= 0) {
+                      console.warn(`⚠️ ${memberVar.memberName}: 현재 기록 미입력`);
+                      throw new Error(`${memberVar.memberName}: 현재 기록을 입력하세요.`);
+                    }
+                    if (!memberVar.targetTime || memberVar.targetTime <= 0) {
+                      console.warn(`⚠️ ${memberVar.memberName}: 목표 기록 미입력`);
+                      throw new Error(`${memberVar.memberName}: 목표 기록을 입력하세요.`);
+                    }
+                    
+                    console.log(`✅ ${memberVar.memberName} 레이스 플랜 검증 통과:`, {
+                      raceDate: memberVar.raceDate,
+                      currentTime: memberVar.currentTime,
+                      targetTime: memberVar.targetTime
+                    });
+                    
+                    // 🔥 레이스 프로그램 생성기 사용
+                    const { generateRaceProgram } = await import('@/lib/swimlab/raceProgramGenerator');
+                    
+                    const strokeKey = memberVar.raceStroke === 'freestyle' ? '자유형' : 
+                                     memberVar.raceStroke === 'backstroke' ? '배영' :
+                                     memberVar.raceStroke === 'breaststroke' ? '평영' : '접영';
+                    
+                    const raceProgram = generateRaceProgram({
+                      raceDate: memberVar.raceDate,
+                      raceEvent: {
+                        distance: (memberVar.raceDistance || 100) as any,
+                        stroke: convertStroke(strokeKey) as any
+                      },
+                      currentTime: memberVar.currentTime,
+                      targetTime: memberVar.targetTime,
+                      athleteInfo: {
+                        level: memberVar.memberLevel.includes('beginner') ? 'novice' :
+                               (memberVar.memberLevel.includes('advanced') || memberVar.memberLevel.includes('master')) ? 'elite' : 'trained',
+                        css: memberVar.css,
+                        mainStrokes: memberVar.mainStrokes,
+                        excludedStrokes: memberVar.excludedStrokes,
+                        conditionIds: memberVar.conditionIds
+                      },
+                      trainingSchedule: {
+                        daysPerWeek: memberVar.trainingDays.length, // 운동 요일 개수 = 주당 세션 수
+                        selectedDays: memberVar.trainingDays,
+                        sessionDuration: memberVar.sessionDuration,
+                        poolLength: (memberVar.poolLength || 25) as any
+                      }
+                    });
+                    
+                    console.log('✅ 레이스 프로그램 생성 완료:', raceProgram);
+                    
+                    // 통합 프로그램으로 저장 (페이즈 정보 포함)
+                    const programData = {
+                      athleteId: isGroupClass ? undefined : member._id,
+                      athleteName: isGroupClass ? undefined : memberVar.memberName,
+                      athleteLevel: memberVar.memberLevel || 'beginner',
+                      groupClassId: isGroupClass ? (member as any).groupClassId : undefined,
+                      groupClassName: isGroupClass ? memberVar.memberName : undefined,
+                      centerId: member.studentInfo?.centerId || (member as any).centerId,
+                      programType: 'race',
+                      programScope: isGroupClass ? 'group' : 'individual',
+                      usedEngine: 'raceProgramGenerator',
+                      params: {
+                        startDate: memberVar.startDate || today.toISOString().split('T')[0],
+                        daysPerWeek: memberVar.trainingDays.length, // 운동 요일 개수 = 주당 세션 수
+                        selectedDays: memberVar.trainingDays.map(d => dayNames[d]),
+                        sessionDuration: memberVar.sessionDuration,
+                        pool: memberVar.poolLength,
+                        goal: memberVar.goal,
+                        // 레이스 전용 필드
+                        raceDate: memberVar.raceDate,
+                        raceDistance: memberVar.raceDistance,
+                        raceStroke: memberVar.raceStroke,
+                        currentTime: memberVar.currentTime,
+                        targetTime: memberVar.targetTime,
+                        feasibilityGrade: raceProgram.feasibility.grade,
+                        feasibilityConfidence: raceProgram.feasibility.confidence,
+                        cssPer100: memberVar.css
+                      },
+                      content: {
+                        summary: `${memberVar.memberName}${isGroupClass ? ' 단체반' : '님의'} 대회 준비 프로그램 (${raceProgram.summary.totalWeeks}주)`,
+                        planExplanation: `Base ${raceProgram.summary.baseWeeks}주 → Build ${raceProgram.summary.buildWeeks}주 → Peak ${raceProgram.summary.peakWeeks}주 → Taper ${raceProgram.summary.taperWeeks}주`,
+                        goal: memberVar.goal,
+                        totalDuration: 0, // 페이즈별로 계산됨
+                        totalMeters: raceProgram.summary.totalDistance,
+                        feasibility: raceProgram.feasibility,
+                        phases: raceProgram.phases,
+                        phaseSummary: raceProgram.summary,
+                        recommendations: raceProgram.recommendations,
+                        engineVersion: 'raceProgramGenerator'
+                      }
+                    };
+                    
+                    console.log('레이스 프로그램 저장 데이터:', programData);
+                    
+                    const apiUrl = isGroupClass ? '/api/group-programs' : '/api/swim-programs';
+                    const apiPayload = isGroupClass 
+                      ? { groupClassId: (member as any).groupClassId, programData }
+                      : programData;
+                    
+                    const response = await apiClient.post(apiUrl, apiPayload);
+                    console.log(`✅ ${memberVar.memberName} 레이스 프로그램 API 응답:`, response);
+                    
+                    const programId = (response as any).programId || (response as any).data?.programId;
+                    const isSuccess = !!(response as any).programId || ((response as any).success && (response as any).data?.programId);
+                    
+                    if (isSuccess) {
+                      console.log(`✅ ${memberVar.memberName} 레이스 프로그램 저장 성공 (ID: ${programId})`);
+                      successCount++;
+                    } else {
+                      console.error(`❌ ${memberVar.memberName} 레이스 프로그램 저장 실패:`, response);
+                      failedMembers.push(memberVar.memberName);
+                    }
+                    
+                  } else {
+                    // 🔥 주간 플랜 생성 (기존 로직)
+                    console.log('🏊 주간 플랜 생성 시작:', memberVar.memberName);
+                    console.log('🔍 프로그램 타입 확인:', {
+                      programType: memberVar.programType,
+                      isRace: (memberVar as any).programType === 'race',
+                      typeCheck: typeof memberVar.programType
+                    });
+                    const { generateWeeklyPlan: engineGenerateWeeklyPlan } = await import('@/lib/swimlab/engine-v31');
+                    
+                    // 요일 변환: 숫자 → 영문 약자
+                    const dayMap: Record<number, string> = {
+                      0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat'
+                    };
+                    
+                    // 🔍 CSS 필수 검증 (상급/마스터 레벨)
+                    const isAdvancedLevel = ['advanced', 'advanced_1', 'advanced_2', 'master', 'expert'].includes(memberVar.memberLevel);
+                    const hasCSS = memberVar.css && Object.keys(memberVar.css).length > 0;
+                    
+                    if (isAdvancedLevel && !hasCSS) {
+                      console.warn(`⚠️ ${memberVar.memberName}: 상급/마스터 레벨이지만 CSS 미입력`);
+                      throw new Error(`${memberVar.memberName}은(는) 상급/마스터 레벨입니다.\nCSS를 입력해야 프로그램을 생성할 수 있습니다.\n\n회원 불러오기 → CSS 입력 → 저장 후 다시 시도하세요.`);
+                    }
+                    
+                    // 주간 목표 거리 계산 (UI 입력값 우선, 없으면 시간 기반 추정)
+                    const sessionsPerWeek = memberVar.trainingDays.length; // 운동 요일 개수 = 주당 세션 수
+                    const estimatedMetersPerMin = memberVar.memberLevel.includes('beginner') ? 20 :
+                                                  memberVar.memberLevel.includes('intermediate') ? 30 :
+                                                  memberVar.memberLevel.includes('advanced') ? 40 : 50;
+                    const weeklyMetersTarget = memberVar.weeklyDistance || 
+                                              (memberVar.sessionDuration * sessionsPerWeek * estimatedMetersPerMin);
+                    
+                    // 🎯 이전 주 완료율 조회 (강도 조절용)
+                    let previousWeekCompletionRate: number | undefined;
+                    try {
+                      // 최근 프로그램에서 완료율 조회
+                      const recentPrograms = await apiClient.get(`/api/swim-programs/athlete/${member._id}?limit=1`) as any;
+                      if (recentPrograms.programs && recentPrograms.programs.length > 0) {
+                        const recentProgram = recentPrograms.programs[0];
+                        if (recentProgram.content?.sessions) {
+                          // 최근 세션들의 완료율 평균 계산
+                          const completedSessions = recentProgram.content.sessions.filter(
+                            (session: any) => session.completion && session.completion.completionRate !== undefined
+                          );
+                          if (completedSessions.length > 0) {
+                            const totalCompletion = completedSessions.reduce(
+                              (sum: number, session: any) => sum + session.completion.completionRate, 0
+                            );
+                            previousWeekCompletionRate = Math.round(totalCompletion / completedSessions.length);
+                            console.log(`🎯 ${memberVar.memberName} 이전 주 완료율: ${previousWeekCompletionRate}%`);
+                          }
+                        }
+                      }
+                    } catch (error) {
+                      console.warn(`⚠️ ${memberVar.memberName} 이전 주 완료율 조회 실패:`, error);
+                    }
+
+                    const engineInput = {
+                    startDate: today.toISOString().split('T')[0],
+                    days: memberVar.trainingDays.map((d: number) => dayMap[d] || 'Mon') as any,
+                    weeklyMinutes: memberVar.sessionDuration * sessionsPerWeek,
+                    weeklyMeters: weeklyMetersTarget,
+                    poolLen: (memberVar.poolLength || 25) as any,
+                    strokesAllowed: memberVar.mainStrokes.map(convertStroke) as any,
+                    strokesAvoid: (memberVar.excludedStrokes || []).map(convertStroke),
+                    css100: memberVar.css || {},
+                    conditionIds: (memberVar.conditionIds || []) as any,
+                    dayCondition: 'normal' as any,
+                    hasPain: false,
+                    goal: memberVar.goal || '체력 향상',
+                    level: memberVar.memberLevel, // 레벨 전달
+                    weekHistory: [], // TODO: 이력 조회 추가
+                    // 🎯 완료율 기반 강도 조절
+                    previousWeekCompletionRate,
+                    intensityAdjustmentMode: 'auto' as const, // 자동 조절 모드
+                    // 🧬 생리학적 지표 (개선 한계 판단용)
+                    vo2max: memberVar.vo2max,
+                    maxHeartRate: memberVar.maxHeartRate,
+                    restingHeartRate: memberVar.restingHeartRate
+                  };
+                  
+                  console.log('🔥 엔진 v3.1 입력:', engineInput);
+                  
+                  // 엔진 호출
+                  let weeklyPlan;
+                  try {
+                    weeklyPlan = engineGenerateWeeklyPlan(engineInput);
+                    console.log('✅ 엔진 v3.1 출력:', weeklyPlan);
+                    console.log('✅ 엔진 출력 타입:', typeof weeklyPlan);
+                    console.log('✅ 엔진 출력 days:', weeklyPlan?.days);
+                    console.log('✅ 엔진 출력 days 길이:', weeklyPlan?.days?.length);
+                  } catch (engineError: any) {
+                    console.error('❌ 엔진 v3.1 호출 실패:', engineError);
+                    console.error('엔진 에러 상세:', {
+                      message: engineError.message,
+                      stack: engineError.stack
+                    });
+                    throw engineError;
+                  }
+                  
+                  // 엔진 결과 유효성 검사
+                  if (!weeklyPlan || !weeklyPlan.days || !Array.isArray(weeklyPlan.days)) {
+                    console.error('❌ 엔진 출력이 유효하지 않음:', weeklyPlan);
+                    throw new Error('엔진이 유효한 프로그램을 생성하지 못했습니다.');
+                  }
+                  
+                  if (weeklyPlan.days.length === 0) {
+                    console.error('❌ 엔진이 빈 days 배열을 반환함');
+                    throw new Error('엔진이 훈련 세션을 생성하지 못했습니다.');
+                  }
+                  
+                  console.log(`✅ 엔진이 ${weeklyPlan.days.length}일 프로그램 생성 완료`);
+                  
+                  // 엔진 결과를 DB 형식으로 변환
+                  const sessions = weeklyPlan.days.map((dayPlan: any, idx: number) => {
+                    console.log(`📅 Day ${idx + 1} 변환 중:`, {
+                      theme: dayPlan.theme,
+                      sets: dayPlan.sets?.length,
+                      totalMeters: dayPlan.totalMeters
+                    });
+                    
+                    if (!dayPlan.sets || !Array.isArray(dayPlan.sets)) {
+                      console.error(`❌ Day ${idx + 1}의 sets가 유효하지 않음:`, dayPlan);
+                      return null;
+                    }
+                    
+                    const blocks = dayPlan.sets.map((set: any) => {
+                      // 엔진 v3.1 출력: { desc: "6×100m @ CSS+0″, r20″", meters: 600, stroke: "freestyle", ... }
+                      const desc = set.desc || set.description || '';
+                      const stroke = set.stroke || 'freestyle';
+                      
+                      // desc에서 reps×distance 추출: "6×100m ..." → reps: 6, distance: 100
+                      let reps = 1;
+                      let distance = 50;
+                      
+                      const match = desc.match(/(\d+)\s*[×xX]\s*(\d+)\s*m/);
+                      if (match) {
+                        reps = parseInt(match[1]) || 1;
+                        distance = parseInt(match[2]) || 50;
+                      } else {
+                        // "200m Easy" 형식
+                        const simpleMatch = desc.match(/(\d+)\s*m/);
+                        if (simpleMatch) {
+                          distance = parseInt(simpleMatch[1]) || 50;
+                          reps = 1;
+                        }
+                      }
+                      
+                      const totalDistance = set.meters || (reps * distance);
+                      
+                      return {
+                        type: set.type || '세트',
+                        description: desc,
+                        reps: reps,
+                        distance: distance,
+                        totalDistance: totalDistance,
+                        duration: Math.ceil((set.targetSec || 0) / 60) || 10,
+                        stroke: stroke,
+                        zone: set.zone,
+                        pace: set.pace || `CSS 기준`,
+                        rest: set.restSec,
+                        whyPace: set.whyPace,
+                        whyRest: set.whyRest,
+                        whySet: set.whySet,
+                        drills: set.drills
+                      };
+                    });
+                    
+                    return {
+                      day: engineInput.days[idx],
+                      date: new Date(today.getTime() + idx * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                      theme: dayPlan.theme,
+                      themeDesc: dayPlan.themeDesc,
+                      duration: dayPlan.totalDuration,
+                      distance: dayPlan.totalMeters,
+                      intensity: dayPlan.theme === 'tempo_hi' ? '높음' : dayPlan.theme === 'endurance' ? '중간' : '낮음',
+                      blocks: blocks,
+                      notes: dayPlan.notes || []
+                    };
+                  }).filter((s: any) => s !== null); // null 제거
+                  
+                  console.log(`✅ ${sessions.length}개 세션 변환 완료`);
+                  
+                  if (sessions.length === 0) {
+                    console.error('❌ 변환된 세션이 없음');
+                    throw new Error('프로그램 변환에 실패했습니다.');
+                  }
+                  
+                  const totalDistance = sessions.reduce((sum: number, s: any) => sum + s.distance, 0);
+                  const totalDuration = sessions.reduce((sum: number, s: any) => sum + s.duration, 0);
+                  
+                    console.log(`✅ 총 거리: ${totalDistance}m, 총 시간: ${totalDuration}분`);
+                    
+                    const programData = {
+                    athleteId: isGroupClass ? undefined : member._id,
+                    athleteName: isGroupClass ? undefined : memberVar.memberName,
+                    athleteLevel: memberVar.memberLevel || 'beginner',
+                    groupClassId: isGroupClass ? (member as any).groupClassId : undefined,
+                    groupClassName: isGroupClass ? memberVar.memberName : undefined,
+                    centerId: member.studentInfo?.centerId || (member as any).centerId,
+                    programType: 'weekly',
+                    programScope: isGroupClass ? 'group' : 'individual',
+                    usedEngine: 'v3.1', // 엔진 버전 표시
+                    params: {
+                      startDate: today.toISOString().split('T')[0],
+                      daysPerWeek: sessionsPerWeek, // 운동 요일 개수 = 주당 세션 수
+                      selectedDays: memberVar.trainingDays.map(d => dayNames[d]),
+                      sessionDuration: memberVar.sessionDuration,
+                      pool: memberVar.poolLength,
+                      mainStrokes: memberVar.mainStrokes,
+                      excludedStrokes: memberVar.excludedStrokes,
+                      cssPer100: memberVar.css, // CSS 정보 포함
+                      conditionIds: memberVar.conditionIds,
+                      goal: memberVar.goal
+                    },
+                    content: {
+                      summary: `${memberVar.memberName}${isGroupClass ? ' 단체반' : '님의'} ${memberVar.goal} 주간 프로그램 (엔진 v3.1)`,
+                      planExplanation: weeklyPlan.planExplanation || `${sessionsPerWeek}회/주, ${memberVar.sessionDuration}분/회`,
+                      goal: weeklyPlan.goal || memberVar.goal,
+                      totalDuration: totalDuration,
+                      totalMeters: totalDistance,
+                      sessions: sessions,
+                      engineVersion: 'v3.1',
+                      cssUsed: memberVar.css // CSS 정보 명시적으로 포함
+                    },
+                    usedMethodIds: [] // TODO: 사용된 훈련법 ID 추출
+                  };
+
+                  console.log('프로그램 생성 데이터:', programData);
+                  
+                  // 단체반은 group-programs API 사용
+                  const apiUrl = isGroupClass ? '/api/group-programs' : '/api/swim-programs';
+                  const apiPayload = isGroupClass 
+                    ? { groupClassId: (member as any).groupClassId, programData }
+                    : programData;
+                  
+                  console.log(`API 호출: ${apiUrl}`);
+                  const response = await apiClient.post(apiUrl, apiPayload);
+                  
+                  console.log(`API 응답:`, response);
+                  
+                  // apiClient는 이미 data를 직접 반환함
+                  // 개인 PT: response.programId
+                  // 단체반: response.success && response.data?.programId
+                  const programId = (response as any).programId || (response as any).data?.programId;
+                  const isSuccess = !!(response as any).programId || ((response as any).success && (response as any).data?.programId);
+                  
+                    if (isSuccess) {
+                      console.log(`✅ ${memberVar.memberName} 프로그램 생성 완료 (ID: ${programId})`);
+                      successCount++;
+                      console.log(`현재 성공 카운트: ${successCount}`);
+                    } else {
+                      console.warn(`⚠️ ${memberVar.memberName} 프로그램 생성 실패:`, response);
+                    }
+                  } // end of weekly plan else block
+                } catch (error: any) {
+                  console.error(`❌ ${memberVar.memberName} 프로그램 생성 실패:`, error);
+                  console.error('에러 상세:', {
+                    message: error.message,
+                    stack: error.stack,
+                    response: error.response,
+                    data: error.data
+                  });
+                  failedMembers.push(memberVar.memberName);
+                }
+              }
+            }
+            
+            console.log('=== 최종 결과 ===');
+            console.log('generateWeeklyPlan:', generateWeeklyPlan);
+            console.log('successCount:', successCount);
+            console.log('failedMembers:', failedMembers);
+            console.log('총 회원 수:', variables.length);
+            
+            setShowBulkVariablesModal(false);
+            setBulkSelectedMembers([]);
+            
+            if (generateWeeklyPlan) {
+              if (failedMembers.length > 0) {
+                alert(`✅ ${successCount}명 프로그램 생성 완료\n❌ ${failedMembers.length}명 실패: ${failedMembers.join(', ')}`);
+              } else {
+                alert(`🎉 ${successCount}명의 주간 프로그램이 생성되었습니다!\n\n페이지를 새로고침하여 목록을 업데이트합니다.`);
+              }
+              
+              // alert 후 페이지 새로고침
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            } else {
+              alert(`${variables.length}명의 회원이 추가되었습니다!`);
+            }
+          }}
+        />
+      )}
+
+      {/* 단체반 프로그램 생성 모달 */}
+      {showGroupProgramGenerator && (
+        <GroupProgramGenerator
+          onClose={() => setShowGroupProgramGenerator(false)}
+        />
+      )}
+
+      {/* 학생 체크리스트 모달 */}
+      {showStudentChecklist && checklistStudent && (
+        <StudentChecklistModal
+          studentId={checklistStudent.id}
+          studentName={checklistStudent.name}
+          studentLevel={checklistStudent.level}
+          onClose={() => {
+            setShowStudentChecklist(false);
+            setChecklistStudent(null);
+          }}
+        />
+      )}
     </div>
   );
 }

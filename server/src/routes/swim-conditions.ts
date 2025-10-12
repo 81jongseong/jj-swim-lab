@@ -80,7 +80,7 @@ router.post('/', auth, async (req, res) => {
   try {
     const conditionData = {
       ...req.body,
-      createdBy: req.user.id
+      createdBy: (req as any).user._id
     };
     
     const condition = new SwimCondition(conditionData);

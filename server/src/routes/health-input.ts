@@ -101,7 +101,7 @@ router.post('/input', authMiddleware, async (req: AuthRequest, res: Response) =>
     }
 
     // 건강정보 업데이트 (healthProfile에 저장)
-    user.healthProfile = {
+    (user as any).healthProfile = {
       age: healthData.age,
       gender: healthData.gender,
       height: healthData.height,
@@ -129,7 +129,7 @@ router.post('/input', authMiddleware, async (req: AuthRequest, res: Response) =>
       message: '건강정보가 성공적으로 저장되었습니다.',
       data: {
         userId: user._id,
-        healthProfile: user.healthProfile,
+        healthProfile: (user as any).healthProfile,
         autoClassification: {
           bmi: bmi?.toFixed(1),
           obesityStatus,
@@ -288,8 +288,8 @@ router.get('/info', authMiddleware, async (req: AuthRequest, res: Response) => {
       success: true,
       message: '건강정보를 성공적으로 조회했습니다.',
       data: {
-        healthInfo: user.healthInfo || {},
-        lastUpdated: user.healthInfo?.lastUpdated || null
+        healthInfo: (user as any).healthInfo || {},
+        lastUpdated: (user as any).healthInfo?.lastUpdated || null
       }
     });
 

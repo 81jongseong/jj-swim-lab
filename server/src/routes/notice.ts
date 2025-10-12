@@ -285,4 +285,62 @@ router.get('/popular', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+// 게스트용 공지사항 목록 조회 (인증 불필요)
+router.get('/guest', async (req, res) => {
+  try {
+    const { category, region, district, centerId, page = 1, limit = 10 } = req.query;
+
+    const query: any = { 
+      isPublished: true,
+      isVisibleToGuest: true,
+      targetUserTypes: { $in: ['guest'] }
+    };
+    
+    if (category) query.category = category;
+    
+    // 지역 필터링
+    if (centerId) {
+      query.targetCenters = { $in: [centerId] };
+    } else if (region || district) {
+      // 지역으로 센터 검색 후 필터링
+      const centerQuery: any = {};
+      if (region) centerQuery.region = region;
+      if (district) centerQuery.district = district;
+      
+      const { SwimmingCenter } = await import('../models/SwimmingCenter');
+      const centers = await SwimmingCenter.find(centerQuery).select('_id');
+      const centerIds = centers.map(c => c._id);
+      
+      query.$or = [
+        { targetCenters: { $in: centerIds } },
+        { targetCenters: { $exists: false } },
+        { targetCenters: { $size: 0 } }
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    const notices = await Notice.find(query)
+      .populate('author', 'name')
+      .populate('targetCenters', 'name region district')
+      .sort({ isPinned: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Notice.countDocuments(query);
+
+    res.json({
+      notices,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: '게스트 공지사항 목록 조회 실패', error: error instanceof Error ? error.message : String(error) });
+  }
+});
+
 export default router; 

@@ -19,6 +19,35 @@ import React, { useMemo, useState } from 'react';
 import { CONDITIONS, type ConditionFull } from '@/lib/swimlab/data/conditions_full';
 import { normalizeConditionId } from '@/lib/swimlab/utils/idmap';
 
+// 카테고리 통합 매핑 (세부 카테고리 → 대분류)
+const CATEGORY_GROUPS: Record<string, string> = {
+  '어깨': '관절/근골격',
+  '무릎': '관절/근골격',
+  '허리': '관절/근골격',
+  '목': '관절/근골격',
+  '목/어깨': '관절/근골격',
+  '고관절': '관절/근골격',
+  '손목/팔꿈치': '관절/근골격',
+  '발목': '관절/근골격',
+  '근육': '관절/근골격',
+  
+  '대사질환': '내과질환',
+  '심혈관': '내과질환',
+  '신장': '내과질환',
+  '호흡기': '내과질환',
+  '소화기': '내과질환',
+  
+  '알레르기': '알레르기/피부',
+  '피부': '알레르기/피부',
+  
+  '피로': '컨디션/증상',
+  '귀': '컨디션/증상',
+  '생리': '컨디션/증상',
+  '환경': '컨디션/증상',
+  '신경': '컨디션/증상',
+  '자세': '컨디션/증상'
+};
+
 export default function AllConditionsDrawer({ 
   value, 
   onChange, 
@@ -29,22 +58,32 @@ export default function AllConditionsDrawer({
   onClose: () => void;
 }){
   const [q, setQ] = useState('');
-  const [category, setCategory] = useState<string>('');
+  const [category, setCategory] = useState<string>(''); // 대분류 선택
   const set = useMemo(() => new Set(value), [value]);
   
-  // 카테고리 목록 추출
+  // 대분류 카테고리 추출
   const categories = useMemo(() => {
-    const cats = new Set(CONDITIONS.map(c => c.category).filter(Boolean));
-    return Array.from(cats).sort();
+    const groups = new Set<string>();
+    CONDITIONS.forEach(c => {
+      if (c.category) {
+        const group = CATEGORY_GROUPS[c.category] || c.category;
+        groups.add(group);
+      }
+    });
+    return Array.from(groups).sort();
   }, []);
 
   // 필터링된 목록
   const list = useMemo(() => {
     let base = CONDITIONS as ConditionFull[];
     
-    // 카테고리 필터
+    // 대분류 카테고리 필터
     if (category) {
-      base = base.filter(c => c.category === category);
+      base = base.filter(c => {
+        if (!c.category) return false;
+        const group = CATEGORY_GROUPS[c.category] || c.category;
+        return group === category;
+      });
     }
     
     // 검색어 필터

@@ -16,7 +16,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'c
     try {
         console.log('🔍 센터 목록 조회 요청:', req.user?.userType);
         const centers = await SwimmingCenter_1.SwimmingCenter.find({ isActive: true })
-            .select('name location contactInfo facilities createdAt')
+            .select('name location contactInfo facilities province city gu dong createdAt')
             .sort({ createdAt: -1 });
         res.json({
             success: true,
@@ -1207,6 +1207,19 @@ router.get('/my-center/courses', auth_1.authMiddleware, (0, auth_1.requireRole)(
         res.status(500).json({
             success: false,
             message: '센터 강습 과정 조회에 실패했습니다.'
+        });
+    }
+});
+router.get('/guest', async (req, res) => {
+    try {
+        const centers = await SwimmingCenter_1.SwimmingCenter.find({ isActive: true }, 'name region district address phone email website').lean();
+        res.json(centers);
+    }
+    catch (error) {
+        console.error('게스트 센터 목록 조회 실패:', error);
+        res.status(500).json({
+            error: '센터 목록을 불러올 수 없습니다.',
+            message: error instanceof Error ? error.message : '알 수 없는 오류'
         });
     }
 });

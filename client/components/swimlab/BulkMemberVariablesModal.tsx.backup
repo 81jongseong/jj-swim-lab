@@ -1,0 +1,677 @@
+/**
+ * 🏊 SwimLab - 다중 회원 개별 변수 설정 모달
+ * 
+ * 📋 **컴포넌트 목적**
+ * - 여러 회원을 선택했을 때 각자의 변수 설정
+ * - CSS, 선호 영법, 운동 요일 개별 입력
+ * - 일괄 적용 옵션 제공
+ * 
+ * 🔄 **연동되는 데이터**
+ * - AthleteProfile (선수 프로필)
+ * 
+ * 💡 **주요 기능**
+ * - 회원별 CSS 입력
+ * - 회원별 선호 영법 선택
+ * - 회원별 운동 요일 선택
+ * - 일괄 적용 (모두 동일하게)
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-XX: 초기 컴포넌트 생성
+ */
+
+'use client';
+
+import React, { useState } from 'react';
+import Button from '@/components/Button';
+import apiClient from '@/utils/api';
+
+interface MemberVariable {
+  memberId: string;
+  memberName: string;
+  css: Record<string, number>; // 영법별 CSS
+  mainStrokes: string[]; // 주 영법 (프로그램의 메인)
+  preferredStrokes: string[]; // 선호 영법
+  excludedStrokes: string[]; // 회피 영법
+  trainingDays: number[]; // 운동 요일 (0: 일요일, 1: 월요일, ...)
+  sessionsPerWeek: number; // 주당 세션 수
+  sessionDuration: number; // 세션 시간(분)
+  poolLength: number; // 풀 길이 (미터)
+  programType: 'base' | 'race'; // 프로그램 타입
+  goal: string; // 운동 목표
+  conditionIds: string[]; // 질환/특수상황
+}
+
+interface BulkMemberVariablesModalProps {
+  members: Array<{ 
+    _id: string; 
+    name: string;
+    studentInfo?: any; // 회원의 전체 정보
+  }>;
+  onClose: () => void;
+  onConfirm: (variables: MemberVariable[], generateWeeklyPlan?: boolean) => void;
+}
+
+export default function BulkMemberVariablesModal({
+  members,
+  onClose,
+  onConfirm
+}: BulkMemberVariablesModalProps) {
+  const [currentMemberIdx, setCurrentMemberIdx] = useState(0);
+  const [memberVariables, setMemberVariables] = useState<MemberVariable[]>(
+    members.map(m => {
+      // 회원의 기존 수영 프로필 불러오기
+      const swimmingProfile = m.studentInfo?.swimmingProfile || {};
+      const existingCSS = swimmingProfile.css || {};
+      
+      return {
+        memberId: m._id,
+        memberName: m.name,
+        css: {
+          freestyle: existingCSS.freestyle || 0,
+          backstroke: existingCSS.backstroke || 0,
+          breaststroke: existingCSS.breaststroke || 0,
+          butterfly: existingCSS.butterfly || 0
+        },
+        mainStrokes: swimmingProfile.mainStrokes || ['freestyle'],
+        preferredStrokes: swimmingProfile.preferredStrokes || ['freestyle'],
+        excludedStrokes: swimmingProfile.excludedStrokes || [],
+        trainingDays: swimmingProfile.trainingDays || [1, 3, 5],
+        sessionsPerWeek: swimmingProfile.sessionsPerWeek || 3,
+        sessionDuration: swimmingProfile.sessionDuration || 60,
+        poolLength: swimmingProfile.poolLength || 25,
+        programType: 'base' as 'base' | 'race',
+        goal: swimmingProfile.currentGoal || '체력 향상',
+        conditionIds: swimmingProfile.conditionIds || []
+      };
+    })
+  );
+
+  const currentMember = memberVariables[currentMemberIdx];
+  const currentMemberData = members[currentMemberIdx];
+  const cssInfo = currentMemberData?.studentInfo?.swimmingProfile?.css;
+  
+  const strokes = [
+    { id: 'freestyle', label: '자유형', icon: '🏊' },
+    { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
+    { id: 'breaststroke', label: '평영', icon: '🤿' },
+    { id: 'butterfly', label: '접영', icon: '🦋' }
+  ];
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const goals = ['체력 향상', '체중 감량', '기술 연마', '실력 향상', '재활', '스트레스 해소'];
+
+  const updateCurrentMember = (updates: Partial<MemberVariable>) => {
+    const newVariables = [...memberVariables];
+    newVariables[currentMemberIdx] = { ...newVariables[currentMemberIdx], ...updates };
+    setMemberVariables(newVariables);
+  };
+
+  const applyToAll = () => {
+    if (!confirm('현재 설정을 모든 회원에게 동일하게 적용하시겠습니까?')) return;
+    
+    const template = memberVariables[currentMemberIdx];
+    const newVariables = memberVariables.map(v => ({
+      ...v,
+      css: { ...template.css },
+      mainStrokes: [...template.mainStrokes],
+      preferredStrokes: [...template.preferredStrokes],
+      excludedStrokes: [...template.excludedStrokes],
+      trainingDays: [...template.trainingDays],
+      sessionsPerWeek: template.sessionsPerWeek,
+      sessionDuration: template.sessionDuration,
+      poolLength: template.poolLength,
+      programType: template.programType,
+      goal: template.goal,
+      conditionIds: [...template.conditionIds]
+    }));
+    setMemberVariables(newVariables);
+    alert('모든 회원에게 동일한 설정이 적용되었습니다!');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        {/* 헤더 */}
+        <div className="sticky top-0 bg-white border-b p-6 z-10">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-semibold text-gray-900">
+              회원별 변수 설정 ({currentMemberIdx + 1}/{members.length})
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+          <p className="text-sm text-gray-600">
+            각 회원의 CSS, 선호 영법, 운동 요일을 설정하세요
+          </p>
+        </div>
+
+        {/* 본문 */}
+        <div className="p-6 space-y-6">
+          {/* 회원 네비게이션 */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-semibold text-gray-700">현재 설정 중:</span>
+              <span className="px-3 py-1 bg-blue-600 text-white rounded-lg font-semibold">
+                {currentMember.memberName}
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {memberVariables.map((v, idx) => (
+                <button
+                  key={v.memberId}
+                  onClick={() => setCurrentMemberIdx(idx)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                    idx === currentMemberIdx
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
+                  }`}
+                >
+                  {v.memberName}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CSS 입력 */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="font-semibold text-gray-900">📊 CSS (Critical Swim Speed)</h4>
+                {cssInfo?.lastUpdated && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    마지막 측정: {new Date(cssInfo.lastUpdated).toLocaleDateString()} 
+                    {cssInfo.updatedByRole && (
+                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        cssInfo.updatedByRole === 'instructor' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {cssInfo.updatedByRole === 'instructor' ? '👨‍🏫 강사 측정' : '👤 본인 입력'}
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  const defaultCSS = { freestyle: 90, backstroke: 100, breaststroke: 110, butterfly: 95 };
+                  updateCurrentMember({ css: defaultCSS });
+                }}
+                className="text-xs text-blue-600 hover:text-blue-800"
+              >
+                기본값 설정
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {strokes.map(stroke => (
+                <div key={stroke.id}>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    {stroke.icon} {stroke.label}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={currentMember.css[stroke.id] || ''}
+                      onChange={(e) => {
+                        updateCurrentMember({
+                          css: { ...currentMember.css, [stroke.id]: parseInt(e.target.value) || 0 }
+                        });
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg text-sm pr-12"
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                      초/100m
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 주 영법 (Main Strokes) */}
+          <div className="border rounded-lg p-4 bg-blue-50">
+            <h4 className="font-semibold text-gray-900 mb-3">⭐ 주 영법 (Main)</h4>
+            <p className="text-xs text-gray-600 mb-3">프로그램의 메인으로 사용할 영법 (프로그램 생성 시 기준)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {strokes.map(stroke => {
+                const isExcluded = currentMember.excludedStrokes.includes(stroke.id);
+                return (
+                  <button
+                    key={stroke.id}
+                    onClick={() => {
+                      if (isExcluded) {
+                        alert('회피 영법으로 설정된 영법은 주 영법으로 선택할 수 없습니다.');
+                        return;
+                      }
+                      const current = currentMember.mainStrokes;
+                      const isSelected = current.includes(stroke.id);
+                      updateCurrentMember({
+                        mainStrokes: isSelected
+                          ? current.filter(s => s !== stroke.id)
+                          : [...current, stroke.id]
+                      });
+                    }}
+                    disabled={isExcluded}
+                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                      isExcluded 
+                        ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : currentMember.mainStrokes.includes(stroke.id)
+                        ? 'border-purple-500 bg-purple-100 text-purple-700 font-semibold'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{stroke.icon}</div>
+                    <div className="text-xs">{stroke.label}</div>
+                    {isExcluded && <div className="text-xs text-red-600 mt-1">회피중</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 선호 영법 */}
+          <div className="border rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">🏊 선호 영법 (Preferred)</h4>
+            <p className="text-xs text-gray-600 mb-3">서브 세트에서 우선적으로 사용할 영법</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {strokes.map(stroke => {
+                const isExcluded = currentMember.excludedStrokes.includes(stroke.id);
+                return (
+                  <button
+                    key={stroke.id}
+                    onClick={() => {
+                      if (isExcluded) {
+                        alert('회피 영법으로 설정된 영법은 선호 영법으로 선택할 수 없습니다.');
+                        return;
+                      }
+                      const current = currentMember.preferredStrokes;
+                      const isSelected = current.includes(stroke.id);
+                      updateCurrentMember({
+                        preferredStrokes: isSelected
+                          ? current.filter(s => s !== stroke.id)
+                          : [...current, stroke.id]
+                      });
+                    }}
+                    disabled={isExcluded}
+                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                      isExcluded 
+                        ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : currentMember.preferredStrokes.includes(stroke.id)
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{stroke.icon}</div>
+                    <div className="text-xs">{stroke.label}</div>
+                    {isExcluded && <div className="text-xs text-red-600 mt-1">회피중</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 회피 영법 */}
+          <div className="border rounded-lg p-4 bg-red-50">
+            <h4 className="font-semibold text-gray-900 mb-3">🚫 회피 영법</h4>
+            <p className="text-xs text-gray-600 mb-3">부상이나 선호도로 인해 피하고 싶은 영법 (프로그램에서 제외)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {strokes.map(stroke => {
+                const isPreferred = currentMember.preferredStrokes.includes(stroke.id);
+                return (
+                  <button
+                    key={stroke.id}
+                    onClick={() => {
+                      if (isPreferred) {
+                        alert('선호 영법으로 설정된 영법은 회피 영법으로 선택할 수 없습니다.');
+                        return;
+                      }
+                      const current = currentMember.excludedStrokes;
+                      const isSelected = current.includes(stroke.id);
+                      updateCurrentMember({
+                        excludedStrokes: isSelected
+                          ? current.filter(s => s !== stroke.id)
+                          : [...current, stroke.id]
+                      });
+                    }}
+                    disabled={isPreferred}
+                    className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                      isPreferred
+                        ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : currentMember.excludedStrokes.includes(stroke.id)
+                        ? 'border-red-500 bg-red-100 text-red-700 font-semibold'
+                        : 'border-gray-200 hover:border-red-300'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{stroke.icon}</div>
+                    <div className="text-xs">{stroke.label}</div>
+                    {isPreferred && <div className="text-xs text-blue-600 mt-1">선호중</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 운동 요일 */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-gray-900">📅 운동 요일</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateCurrentMember({ trainingDays: [1, 2, 3, 4, 5] })}
+                  className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  평일
+                </button>
+                <button
+                  onClick={() => updateCurrentMember({ trainingDays: [1, 3, 5] })}
+                  className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  월수금
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {days.map((day, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    const current = currentMember.trainingDays;
+                    const isSelected = current.includes(idx);
+                    updateCurrentMember({
+                      trainingDays: isSelected
+                        ? current.filter(d => d !== idx)
+                        : [...current, idx].sort((a, b) => a - b)
+                    });
+                  }}
+                  className={`px-3 py-2 border-2 rounded-lg font-semibold transition-all ${
+                    currentMember.trainingDays.includes(idx)
+                      ? 'border-blue-500 bg-blue-500 text-white'
+                      : 'border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              선택된 요일: {currentMember.trainingDays.length}일/주
+            </p>
+          </div>
+
+          {/* 세션 설정 */}
+          <div className="border rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">⏱️ 세션 설정</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  주당 세션 수
+                </label>
+                <select
+                  value={currentMember.sessionsPerWeek}
+                  onChange={(e) => updateCurrentMember({ sessionsPerWeek: parseInt(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7].map(n => (
+                    <option key={n} value={n}>{n}일/주</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-2">
+                  세션 시간 (분)
+                </label>
+                <select
+                  value={currentMember.sessionDuration}
+                  onChange={(e) => updateCurrentMember({ sessionDuration: parseInt(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {[30, 45, 60, 75, 90, 120].map(n => (
+                    <option key={n} value={n}>{n}분</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 주당 {currentMember.sessionsPerWeek}회 × {currentMember.sessionDuration}분 = 
+              총 {currentMember.sessionsPerWeek * currentMember.sessionDuration}분/주
+            </p>
+          </div>
+
+          {/* 풀 길이 선택 */}
+          <div className="border rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">🏊‍♂️ 풀 길이</h4>
+            <div className="grid grid-cols-4 gap-3">
+              {[25, 33, 50].map(length => (
+                <button
+                  key={length}
+                  onClick={() => updateCurrentMember({ poolLength: length })}
+                  className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                    currentMember.poolLength === length
+                      ? 'border-cyan-500 bg-cyan-100 text-cyan-700 font-semibold'
+                      : 'border-gray-200 hover:border-cyan-300'
+                  }`}
+                >
+                  {length}m
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 회원이 훈련할 풀의 길이를 선택하세요 (25m 단수영장, 50m 장수영장)
+            </p>
+          </div>
+
+          {/* 프로그램 타입 */}
+          <div className="border rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">📋 프로그램 타입</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => updateCurrentMember({ programType: 'base' })}
+                className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                  currentMember.programType === 'base'
+                    ? 'border-green-500 bg-green-100 text-green-700 font-semibold'
+                    : 'border-gray-200 hover:border-green-300'
+                }`}
+              >
+                <div className="text-lg mb-1">🏊</div>
+                <div className="font-semibold">기본 훈련</div>
+                <div className="text-xs mt-1">일반적인 체력 향상 프로그램</div>
+              </button>
+              <button
+                onClick={() => updateCurrentMember({ programType: 'race' })}
+                className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                  currentMember.programType === 'race'
+                    ? 'border-purple-500 bg-purple-100 text-purple-700 font-semibold'
+                    : 'border-gray-200 hover:border-purple-300'
+                }`}
+              >
+                <div className="text-lg mb-1">🏆</div>
+                <div className="font-semibold">레이스 플랜</div>
+                <div className="text-xs mt-1">대회 준비 프로그램</div>
+              </button>
+            </div>
+          </div>
+
+          {/* 운동 목표 */}
+          <div className="border rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">🎯 운동 목표</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {goals.map(goal => (
+                <button
+                  key={goal}
+                  onClick={() => updateCurrentMember({ goal })}
+                  className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                    currentMember.goal === goal
+                      ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold'
+                      : 'border-gray-200 hover:border-purple-300'
+                  }`}
+                >
+                  {goal}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 일괄 적용 버튼 */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 mb-1">
+                  💡 현재 설정을 모든 회원에게 적용
+                </p>
+                <p className="text-xs text-gray-600">
+                  시간을 절약하고 싶다면 대표 회원 1명의 설정을 모두에게 적용하세요
+                </p>
+              </div>
+              <Button
+                onClick={applyToAll}
+                variant="secondary"
+                className="ml-4"
+              >
+                일괄 적용
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* 푸터 */}
+        <div className="sticky bottom-0 bg-white border-t p-6">
+          <div className="flex items-center justify-between">
+            {/* 진행 상태 */}
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-gray-600">
+                진행: {currentMemberIdx + 1} / {members.length}
+              </div>
+              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-600 transition-all"
+                  style={{ width: `${((currentMemberIdx + 1) / members.length) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* 네비게이션 버튼 */}
+            <div className="flex gap-3">
+              {currentMemberIdx > 0 && (
+                <Button
+                  onClick={() => setCurrentMemberIdx(currentMemberIdx - 1)}
+                  variant="ghost"
+                >
+                  ← 이전
+                </Button>
+              )}
+              {currentMemberIdx < members.length - 1 ? (
+                <Button
+                  onClick={() => setCurrentMemberIdx(currentMemberIdx + 1)}
+                  variant="primary"
+                >
+                  다음 →
+                </Button>
+              ) : (
+                <Button
+                  onClick={async () => {
+                    // 각 회원의 수영 프로필을 API에 저장
+                    let savedCount = 0;
+                    
+                    for (const memberVar of memberVariables) {
+                      try {
+                        // CSS 저장 (강사가 입력하면 승인 대기 상태로)
+                        const cssResponse = await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile/css`, {
+                          css: memberVar.css,
+                          updatedByRole: 'instructor',
+                          reason: '강사가 CSS를 측정/수정했습니다.'
+                        });
+                        
+                        // 나머지 프로필 저장 (강사가 입력하면 승인 대기 상태로)
+                        const profileResponse = await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile`, {
+                          mainStrokes: memberVar.mainStrokes,
+                          preferredStrokes: memberVar.preferredStrokes,
+                          excludedStrokes: memberVar.excludedStrokes,
+                          trainingDays: memberVar.trainingDays,
+                          sessionsPerWeek: memberVar.sessionsPerWeek,
+                          sessionDuration: memberVar.sessionDuration,
+                          poolLength: memberVar.poolLength,
+                          currentGoal: memberVar.goal,
+                          conditionIds: memberVar.conditionIds,
+                          reason: '강사가 회원 프로필을 설정/수정했습니다.'
+                        });
+                        
+                        // 승인 대기인지 확인
+                        const needsApproval = cssResponse.data?.needsApproval || profileResponse.data?.needsApproval;
+                        
+                        savedCount++;
+                        
+                        if (needsApproval) {
+                          console.log(`${memberVar.memberName}: 승인 대기 상태로 저장됨`);
+                        }
+                      } catch (error: any) {
+                        console.error(`${memberVar.memberName} 프로필 저장 실패:`, error);
+                        // 403 오류는 권한 문제이므로 무시하고 계속 진행
+                        if (error.response?.status === 403) {
+                          console.warn(`${memberVar.memberName}: 권한 부족 (승인 대기 상태로 저장될 수 있음)`);
+                        }
+                      }
+                    }
+                    
+                    alert(`${savedCount}/${memberVariables.length}명의 프로필이 저장되었습니다!`);
+                    onConfirm(memberVariables);
+                  }}
+                  variant="primary"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  ✓ 설정 완료 및 저장
+                </Button>
+                <Button
+                  onClick={async () => {
+                    // 각 회원의 수영 프로필을 API에 저장 + 주간 계획 생성
+                    let savedCount = 0;
+                    
+                    for (const memberVar of memberVariables) {
+                      try {
+                        await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile/css`, {
+                          css: memberVar.css,
+                          updatedByRole: 'instructor',
+                          reason: '강사가 CSS를 측정/수정했습니다.'
+                        });
+                        
+                        await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile`, {
+                          mainStrokes: memberVar.mainStrokes,
+                          preferredStrokes: memberVar.preferredStrokes,
+                          excludedStrokes: memberVar.excludedStrokes,
+                          trainingDays: memberVar.trainingDays,
+                          sessionsPerWeek: memberVar.sessionsPerWeek,
+                          sessionDuration: memberVar.sessionDuration,
+                          poolLength: memberVar.poolLength,
+                          currentGoal: memberVar.goal,
+                          conditionIds: memberVar.conditionIds,
+                          reason: '강사가 회원 프로필을 설정/수정했습니다.'
+                        });
+                        
+                        savedCount++;
+                      } catch (error: any) {
+                        console.error(`${memberVar.memberName} 프로필 저장 실패:`, error);
+                      }
+                    }
+                    
+                    alert(`${savedCount}/${memberVariables.length}명의 프로필이 저장되었습니다!\n\n이제 주간 계획을 생성합니다.`);
+                    
+                    // 주간 계획 생성 신호와 함께 확인
+                    onConfirm(memberVariables, true);
+                  }}
+                  variant="primary"
+                  className="bg-purple-600 hover:bg-purple-700 ml-2"
+                >
+                  📅 저장 후 주간 계획 생성 ({memberVariables.length}명)
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

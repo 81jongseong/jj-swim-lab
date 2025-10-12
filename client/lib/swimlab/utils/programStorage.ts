@@ -16,8 +16,11 @@
 
 export type SavedProgram = {
   id: string;
+  _id?: string; // MongoDB ID (삭제 시 사용)
   athleteName: string;
   athleteId?: string;
+  athleteLevel?: string;
+  programScope?: 'individual' | 'group';
   programType: 'weekly' | 'race';
   createdAt: string;
   createdBy?: string;
@@ -33,6 +36,7 @@ export type SavedProgram = {
     cssPer100: number;
     heightCm: number;
     conditionIds: string[];
+    goal?: string; // 훈련 목표 추가 (기술 연마, 체력 향상, 실력 향상, 체중 감량)
     raceDate?: string;
     taperWeeks?: number;
   };
@@ -40,9 +44,11 @@ export type SavedProgram = {
   // 생성된 프로그램 내용
   content: {
     summary: string;
+    planExplanation?: string; // 주간 계획 설명 추가
     totalMeters: number;
     sessions: Array<{
       day: string;
+      themeDesc?: string; // 테마 설명 추가
       sets: string[];
     }>;
   };
