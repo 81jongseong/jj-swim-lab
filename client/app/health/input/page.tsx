@@ -129,7 +129,7 @@ export default function HealthInputPage() {
   const [showConditionsDrawer, setShowConditionsDrawer] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 단계 정의 (2단계만)
+  // 단계 정의 (3단계)
   const steps = [
     { 
       id: 1, 
@@ -142,6 +142,12 @@ export default function HealthInputPage() {
       title: '수영+운동 목표', 
       icon: '🏊',
       description: '수영 급수, CSS, 영법, 주간 일정, 운동 목표' 
+    },
+    {
+      id: 3,
+      title: '건강 브리핑',
+      icon: '📊',
+      description: '건강 분석, 운동 강도 권장, 체험 프로그램'
     }
   ];
 
@@ -243,6 +249,79 @@ export default function HealthInputPage() {
     });
   };
 
+  // 건강 분석 로직
+  const analyzeHealth = () => {
+    const bmi = healthData.anthropometrics.weight_kg / Math.pow(healthData.anthropometrics.height_cm / 100, 2);
+    const hasHighBP = healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80;
+    const hasDiabetes = healthData.vitals.bloodSugar && healthData.vitals.bloodSugar >= 126;
+    const hasDyslipidemia = (healthData.vitals.totalCholesterol && healthData.vitals.totalCholesterol >= 240) || 
+                            (healthData.vitals.ldlCholesterol && healthData.vitals.ldlCholesterol >= 160);
+    
+    const recommendations = [];
+    
+    // 비만 관련 권장사항
+    if (bmi >= 30) {
+      recommendations.push({ 
+        icon: '⚠️', 
+        type: 'warning',
+        title: '고도비만 (BMI ≥30)', 
+        content: '주당 250분 이상, 주 5-6일 권장 (체중 감량 목표)'
+      });
+    } else if (bmi >= 25) {
+      recommendations.push({ 
+        icon: '💡', 
+        type: 'info',
+        title: '경도비만 (BMI 25-29.9)', 
+        content: '주당 150-250분, 유산소 중심 운동 권장'
+      });
+    }
+    
+    // 고혈압 관련
+    if (hasHighBP) {
+      recommendations.push({ 
+        icon: '❤️', 
+        type: 'warning',
+        title: '고혈압 주의', 
+        content: 'Zone 2 강도 유지, 고강도 인터벌은 피하세요. 의사 상담 권장'
+      });
+    }
+    
+    // 당뇨 관련
+    if (hasDiabetes) {
+      recommendations.push({ 
+        icon: '🩺', 
+        type: 'danger',
+        title: '당뇨 의심 (공복혈당 ≥126)', 
+        content: '운동 전 반드시 의사 상담 필요. 저혈당 예방 준비 필수'
+      });
+    }
+    
+    // 고지혈증 관련
+    if (hasDyslipidemia) {
+      recommendations.push({ 
+        icon: '💊', 
+        type: 'warning',
+        title: '고지혈증 의심', 
+        content: '유산소 운동 중심, 주 150분 이상 권장'
+      });
+    }
+    
+    // 관절 질환 관련
+    const hasJointIssues = healthData.orthopedics.some(id => 
+      ['knee-pain', 'back-pain', 'shoulder-pain', 'ankle-pain'].includes(id)
+    );
+    if (hasJointIssues) {
+      recommendations.push({ 
+        icon: '🦴', 
+        type: 'info',
+        title: '관절 보호 필요', 
+        content: '저충격 영법 권장 (배영, 평영). 접영은 피하세요'
+      });
+    }
+    
+    return { bmi, recommendations };
+  };
+
   // 유효성 검사
   const isStepValid = (step: number): boolean => {
     switch (step) {
@@ -259,27 +338,64 @@ export default function HealthInputPage() {
           healthData.goals?.primary &&
           healthData.goals.primary !== ''
         );
+      case 3:
+        return true; // Step 3은 항상 유효 (브리핑만 보여줌)
       default:
         return false;
     }
   };
 
-  // 저장
-  const handleSubmit = async () => {
-    if (!isStepValid(2)) {
-      alert('필수 항목을 모두 입력해주세요.');
-      return;
-    }
-
+  // 저장만 하기 (나중에 프로그램 생성)
+  const handleSaveOnly = async () => {
     setIsSaving(true);
     try {
       // TODO: API 호출
       console.log('건강정보 저장:', healthData);
-      alert('건강정보가 저장되었습니다!');
+      alert('건강정보가 저장되었습니다! 대시보드에서 프로그램을 생성할 수 있습니다.');
       router.push('/dashboard');
     } catch (error) {
       console.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 하루짜리 체험 프로그램 생성
+  const handleGenerateDailyProgram = async () => {
+    setIsSaving(true);
+    try {
+      // 1. 건강정보 저장
+      console.log('건강정보 저장:', healthData);
+      
+      // 2. 하루짜리 프로그램 생성
+      const programParams = {
+        athleteId: 'guest', // 게스트 사용자
+        athleteName: '체험 회원',
+        programType: 'daily', // 하루짜리 체험
+        params: {
+          startDate: new Date().toISOString().split('T')[0],
+          daysPerWeek: 1, // 하루만
+          sessionDuration: healthData.swim_profile.sessionDuration || 60,
+          pool: 25,
+          mainStrokes: healthData.swim_profile.mainStrokes || ['freestyle'],
+          excludedStrokes: healthData.swim_profile.excludedStrokes || [],
+          cssPer100: healthData.swim_profile.css || {},
+          conditionIds: healthData.orthopedics,
+          goal: healthData.goals?.primary || '체력 향상'
+        }
+      };
+      
+      console.log('🏊 하루짜리 체험 프로그램 생성:', programParams);
+      
+      // TODO: 실제 API 호출
+      // const response = await apiClient.post('/api/programs/daily-trial', programParams);
+      
+      alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!\n\n프로그램 페이지로 이동합니다.');
+      router.push('/swimlab/programs');
+    } catch (error) {
+      console.error('프로그램 생성 오류:', error);
+      alert('프로그램 생성 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -585,6 +701,204 @@ export default function HealthInputPage() {
           </div>
         );
 
+      case 3:
+        const { bmi, recommendations } = analyzeHealth();
+        
+        return (
+          <div className="space-y-8">
+            {/* 건강 상태 요약 */}
+            <div>
+              <h3 className="text-2xl font-bold mb-6 flex items-center">
+                <span className="text-3xl mr-3">📊</span>
+                나의 건강 상태 요약
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* BMI */}
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">BMI</p>
+                      <p className="text-3xl font-bold text-gray-900">{bmi.toFixed(1)}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      bmi >= 30 ? 'bg-red-100 text-red-700' :
+                      bmi >= 25 ? 'bg-orange-100 text-orange-700' :
+                      bmi >= 23 ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {bmi >= 30 ? '고도비만' : bmi >= 25 ? '경도비만' : bmi >= 23 ? '과체중' : '정상'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 혈압 */}
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">혈압</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {healthData.vitals.rest_bp.sbp}/{healthData.vitals.rest_bp.dbp}
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90 ? 'bg-red-100 text-red-700' :
+                      healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80 ? 'bg-orange-100 text-orange-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90 ? '고혈압 2기' :
+                       healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80 ? '고혈압 1기' : '정상'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 혈당 */}
+                {healthData.vitals.bloodSugar && healthData.vitals.bloodSugar > 0 && (
+                  <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">공복 혈당</p>
+                        <p className="text-2xl font-bold text-gray-900">{healthData.vitals.bloodSugar} mg/dL</p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        healthData.vitals.bloodSugar >= 126 ? 'bg-red-100 text-red-700' :
+                        healthData.vitals.bloodSugar >= 100 ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {healthData.vitals.bloodSugar >= 126 ? '당뇨 의심' :
+                         healthData.vitals.bloodSugar >= 100 ? '전단계' : '정상'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 질환 개수 */}
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">선택된 질환/상황</p>
+                      <p className="text-3xl font-bold text-gray-900">{healthData.orthopedics.length}개</p>
+                    </div>
+                    <div className="text-4xl">
+                      {healthData.orthopedics.length === 0 ? '✅' : '🏥'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 맞춤 운동 강도 권장 */}
+            {recommendations.length > 0 && (
+              <div>
+                <h3 className="text-2xl font-bold mb-6 flex items-center">
+                  <span className="text-3xl mr-3">🎯</span>
+                  맞춤 운동 강도 권장
+                </h3>
+                
+                <div className="space-y-4">
+                  {recommendations.map((rec, idx) => (
+                    <div 
+                      key={idx}
+                      className={`border-l-4 rounded-lg p-5 ${
+                        rec.type === 'danger' ? 'border-red-500 bg-red-50' :
+                        rec.type === 'warning' ? 'border-orange-500 bg-orange-50' :
+                        'border-blue-500 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-3xl">{rec.icon}</span>
+                        <div className="flex-1">
+                          <h4 className={`font-bold text-lg mb-2 ${
+                            rec.type === 'danger' ? 'text-red-800' :
+                            rec.type === 'warning' ? 'text-orange-800' :
+                            'text-blue-800'
+                          }`}>
+                            {rec.title}
+                          </h4>
+                          <p className={`text-sm ${
+                            rec.type === 'danger' ? 'text-red-700' :
+                            rec.type === 'warning' ? 'text-orange-700' :
+                            'text-blue-700'
+                          }`}>
+                            {rec.content}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 체험 프로그램 생성 안내 */}
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-300 rounded-xl p-8">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  🏊‍♂️ 오늘의 맞춤 프로그램을 받아보세요!
+                </h3>
+                <p className="text-gray-700 mb-2">
+                  입력하신 건강 정보를 바탕으로 <strong className="text-purple-600">오늘 하루 동안</strong> 실천할 수 있는
+                </p>
+                <p className="text-gray-700">
+                  <strong className="text-purple-600">맞춤형 수영 프로그램</strong>을 자동으로 생성해드립니다.
+                </p>
+              </div>
+
+              <div className="bg-white/70 border border-purple-200 rounded-lg p-5 mb-6">
+                <p className="text-sm text-gray-800 mb-3 font-semibold">📝 프로그램에 포함될 내용:</p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>준비운동</strong> - 관절 보호를 위한 스트레칭</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>메인 세트</strong> - {healthData.goals?.primary || '체력 향상'} 목표에 맞춘 운동</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>안전한 강도</strong> - 질환 고려한 적절한 운동 강도</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>마무리 운동</strong> - 쿨다운 및 회복</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-semibold mb-1">💡 체험 프로그램 안내</p>
+                    <p>• 하루짜리 프로그램으로 간단히 체험해보세요</p>
+                    <p>• 정회원 가입 시 주간/월간 프로그램과 대회 준비 프로그램을 이용하실 수 있습니다</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={handleGenerateDailyProgram}
+                  disabled={isSaving}
+                  className="flex-1 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
+                >
+                  <span>🏊</span>
+                  <span>{isSaving ? '프로그램 생성 중...' : '오늘의 프로그램 생성하기'}</span>
+                </button>
+                
+                <button
+                  onClick={handleSaveOnly}
+                  disabled={isSaving}
+                  className="px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                >
+                  나중에 하기
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -654,17 +968,17 @@ export default function HealthInputPage() {
         {renderStepContent()}
       </div>
 
-      {/* 버튼 */}
-      <div className="flex justify-between">
-        <button
-          onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-          disabled={currentStep === 1}
-          className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          이전
-        </button>
+      {/* 버튼 - Step 3에서는 숨김 (자체 버튼 사용) */}
+      {currentStep !== 3 && (
+        <div className="flex justify-between">
+          <button
+            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+            disabled={currentStep === 1}
+            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            이전
+          </button>
 
-        {currentStep < steps.length ? (
           <button
             onClick={() => setCurrentStep(currentStep + 1)}
             disabled={!isStepValid(currentStep)}
@@ -673,17 +987,8 @@ export default function HealthInputPage() {
             <span>다음</span>
             <ArrowRight className="h-4 w-4" />
           </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={isSaving || !isStepValid(currentStep)}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            <Save className="h-4 w-4" />
-            <span>{isSaving ? '저장 중...' : '저장'}</span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* AllConditionsDrawer */}
       {showConditionsDrawer && (
