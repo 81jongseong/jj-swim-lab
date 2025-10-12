@@ -1650,9 +1650,10 @@ function buildDayPlan(opts: {
       });
 
       const nB = Math.max(1, Math.round(backM / 100));
-      const selectedMethodBack = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, 'backstroke', 100);
+      const strokeBack = pickStroke('back'); // 회피 영법 고려
+      const selectedMethodBack = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBack, 100);
       sets.push({
-        stroke: 'backstroke',
+        stroke: strokeBack,
         zone: selectedMethodBack.zone,
         restSec: restOf(selectedMethodBack.zone),
         rpe: rpeOf(selectedMethodBack.zone),
@@ -1698,9 +1699,10 @@ function buildDayPlan(opts: {
       });
 
       const nB = Math.max(1, Math.round(backM / 200));
-      const selectedMethodBackEnd = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, 'backstroke', 200);
+      const strokeBackEnd = pickStroke('back'); // 회피 영법 고려
+      const selectedMethodBackEnd = selectTrainingMethod(opts.goal, opts.theme, opts.weekHistory, opts.css100, strokeBackEnd, 200);
       sets.push({
-        stroke: 'backstroke',
+        stroke: strokeBackEnd,
         zone: selectedMethodBackEnd.zone,
         restSec: restOf(selectedMethodBackEnd.zone),
         rpe: rpeOf(selectedMethodBackEnd.zone),
@@ -1746,8 +1748,9 @@ function buildDayPlan(opts: {
       });
 
       const nB = Math.max(2, Math.round(backM / 50));
+      const strokeBackHi = pickStroke('back'); // 회피 영법 고려
       sets.push({
-        stroke: 'backstroke',
+        stroke: strokeBackHi,
         zone: 'Z4',
         restSec: restOf('Z4'),
         rpe: rpeOf('Z4'),
