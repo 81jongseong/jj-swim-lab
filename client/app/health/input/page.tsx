@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { allJointConditions } from '../../../data/joint-conditions';
 import { getChecklistItems, sampleInstructorChecklists, getInstructorChecklist } from '../../../data/swimming-checklist';
+import AllConditionsDrawer from '@/components/swimlab/AllConditionsDrawer';
 // 로컬 함수로 대체
 // 로컬 타입 정의
 interface HealthInput {
@@ -95,6 +96,7 @@ export default function HealthInputPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [birthDate, setBirthDate] = useState('');
   const [isElderly, setIsElderly] = useState(false);
+  const [showConditionsDrawer, setShowConditionsDrawer] = useState(false);
   
   const [healthData, setHealthData] = useState<Partial<HealthInput>>({
     demographics: { age: 0, sex: '' },
@@ -604,84 +606,64 @@ export default function HealthInputPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-4">관절 질환 선택</h3>
+              <h3 className="text-lg font-semibold mb-4">관절 질환 및 특수 상황 선택</h3>
               <p className="text-sm text-gray-600 mb-6">
-                현재 가지고 있는 관절 질환이나 통증이 있다면 선택해주세요. (복수 선택 가능)
+                현재 가지고 있는 관절 질환, 통증, 특수 상황을 선택해주세요. (복수 선택 가능)<br/>
+                <span className="text-blue-600 font-medium">💡 최고 관리자 컨디션 설정 모듈 재사용</span>
               </p>
               
-              {/* 카테고리 필터 */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">카테고리별 필터</label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { label: '전체', value: 'all' },
-                    { label: '무릎', value: 'knee' },
-                    { label: '어깨', value: 'shoulder' },
-                    { label: '척추', value: 'spine' },
-                    { label: '발목', value: 'ankle' },
-                    { label: '팔꿈치', value: 'elbow' },
-                    { label: '고관절', value: 'hip' },
-                    { label: '손목', value: 'wrist' }
-                  ].map((category) => (
-                    <button
-                      key={category.value}
-                      onClick={() => setSelectedCategory(category.value)}
-                      className={`px-3 py-1 text-sm rounded-full border ${
-                        selectedCategory === category.value
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {category.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* AllConditionsDrawer 열기 버튼 */}
+              <button
+                type="button"
+                onClick={() => setShowConditionsDrawer(true)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium flex items-center justify-between shadow-md hover:shadow-lg"
+              >
+                <span className="flex items-center space-x-2">
+                  <span>🏥</span>
+                  <span>질환/특수상황 선택하기</span>
+                </span>
+                <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
+                  {healthData.orthopedics && healthData.orthopedics.length > 0 
+                    ? `${healthData.orthopedics.length}개 선택됨` 
+                    : '선택 안함'}
+                </span>
+              </button>
               
-              {/* 질환 목록 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
-                {jointConditions
-                  .filter(condition => 
-                    selectedCategory === 'all' || condition.category === selectedCategory
-                  )
-                  .map((condition) => (
-                    <div key={condition.id} className="flex items-center space-x-2 p-2 border border-gray-200 rounded hover:bg-gray-50">
-                      <input
-                        id={condition.id}
-                        type="checkbox"
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                        checked={healthData.orthopedics?.includes(condition.id) || false}
-                        onChange={() => handleJointConditionToggle(condition.id)}
-                      />
-                      <label htmlFor={condition.id} className="flex-1 text-sm font-medium text-gray-700">
-                        <div className="flex items-center justify-between">
-                          <span>{condition.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 text-xs rounded ${
-                              condition.severity === 'mild' ? 'bg-green-100 text-green-800' :
-                              condition.severity === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {condition.severity === 'mild' ? '경증' : 
-                               condition.severity === 'moderate' ? '중등도' : '중증'}
-                            </span>
-                            <span className="px-2 py-1 border border-gray-300 rounded-full text-xs">
-                              {condition.category}
-                            </span>
-                          </div>
+              {/* 선택된 질환 목록 표시 */}
+              {healthData.orthopedics && healthData.orthopedics.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-800">✅ 선택된 질환/상황 ({healthData.orthopedics.length}개)</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {healthData.orthopedics.map((conditionId) => {
+                      const condition = jointConditions.find(c => c.id === conditionId);
+                      return condition ? (
+                        <div
+                          key={conditionId}
+                          className="group px-4 py-2 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm flex items-center space-x-2 hover:bg-blue-100 transition-colors"
+                        >
+                          <span className="font-medium">{condition.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleJointConditionToggle(conditionId)}
+                            className="text-blue-400 hover:text-blue-600 font-bold text-lg leading-none group-hover:scale-110 transition-transform"
+                            title="제거"
+                          >
+                            ×
+                          </button>
                         </div>
-                      </label>
-                    </div>
-                  ))}
-              </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {healthData.orthopedics && healthData.orthopedics.length > 0 && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div className="text-sm text-green-800">
-                  <p className="font-medium mb-2">선택된 관절 질환: {healthData.orthopedics.length}개</p>
-                  <p>선택된 관절 질환에 따라 안전한 수영 영법과 운동 강도가 자동으로 조정됩니다.</p>
+                  <p className="font-semibold mb-2">선택 완료: {healthData.orthopedics.length}개 질환/상황</p>
+                  <p>선택하신 질환과 특수 상황에 따라 <strong>안전한 수영 영법과 운동 강도가 자동으로 조정</strong>됩니다.</p>
                 </div>
               </div>
             )}
@@ -1698,6 +1680,20 @@ export default function HealthInputPage() {
           </button>
         )}
       </div>
+
+      {/* AllConditionsDrawer 모달 */}
+      {showConditionsDrawer && (
+        <AllConditionsDrawer
+          value={healthData.orthopedics || []}
+          onChange={(selectedIds) => {
+            setHealthData(prev => ({
+              ...prev,
+              orthopedics: selectedIds
+            }));
+          }}
+          onClose={() => setShowConditionsDrawer(false)}
+        />
+      )}
     </div>
   );
 }
