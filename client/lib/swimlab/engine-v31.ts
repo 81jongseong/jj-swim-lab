@@ -1489,7 +1489,8 @@ function buildDayPlan(opts: {
   // PRE (15%) - 🏊 40개 드릴 자동 배치
   {
     const target = snap25(M * quota.PRE, opts.poolLen);
-    const s1 = pickStroke('back');
+    // 드릴용 영법: 배영이 사용 가능하면 배영, 아니면 자유형
+    const s1 = hasBackstroke ? pickStroke('back') : pickStroke('free');
     const n50 = Math.max(2, Math.round(target / 50));
     
     // 테마별 PRE 구성 비율 (다양성 확보)
@@ -1786,7 +1787,8 @@ function buildDayPlan(opts: {
     const breastMeters = sets.filter(s => s.stroke === 'breaststroke').reduce((sum, s) => sum + s.meters, 0);
     const breastRatio = breastMeters / M; // 평영 비율
     
-    let cdStroke: Stroke = pickStroke('back');
+    // 쿨다운용 기본 영법: 배영이 사용 가능하면 배영, 아니면 자유형
+    let cdStroke: Stroke = hasBackstroke ? pickStroke('back') : pickStroke('free');
     
     // 쿨다운 영법 선택 전략 (상급 이상만)
     if (finalAllowedStrokes.includes('sidestroke') || finalAllowedStrokes.includes('elementary_backstroke')) {
