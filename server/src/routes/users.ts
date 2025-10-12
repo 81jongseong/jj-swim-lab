@@ -1110,9 +1110,17 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
       excludedStrokes, 
       trainingDays, 
       sessionsPerWeek, 
-      sessionDuration, 
+      sessionDuration,
+      poolLength,
       currentGoal, 
-      conditionIds, 
+      conditionIds,
+      weeklyDistance,
+      // 🧬 생리학적 지표
+      vo2max,
+      maxHeartRate,
+      restingHeartRate,
+      // 🏆 레이스 플랜
+      lastRacePlan,
       reason 
     } = req.body;
     
@@ -1163,8 +1171,16 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
       if (trainingDays) (user.studentInfo as any).swimmingProfile.trainingDays = trainingDays;
       if (sessionsPerWeek) (user.studentInfo as any).swimmingProfile.sessionsPerWeek = sessionsPerWeek;
       if (sessionDuration) (user.studentInfo as any).swimmingProfile.sessionDuration = sessionDuration;
+      if (poolLength !== undefined) (user.studentInfo as any).swimmingProfile.poolLength = poolLength;
       if (currentGoal) (user.studentInfo as any).swimmingProfile.currentGoal = currentGoal;
       if (conditionIds) (user.studentInfo as any).swimmingProfile.conditionIds = conditionIds;
+      if (weeklyDistance !== undefined) (user.studentInfo as any).swimmingProfile.weeklyDistance = weeklyDistance;
+      // 🧬 생리학적 지표
+      if (vo2max !== undefined) (user.studentInfo as any).swimmingProfile.vo2max = vo2max;
+      if (maxHeartRate !== undefined) (user.studentInfo as any).swimmingProfile.maxHeartRate = maxHeartRate;
+      if (restingHeartRate !== undefined) (user.studentInfo as any).swimmingProfile.restingHeartRate = restingHeartRate;
+      // 🏆 레이스 플랜
+      if (lastRacePlan) (user.studentInfo as any).swimmingProfile.lastRacePlan = lastRacePlan;
       
       await user.save();
       
@@ -1175,33 +1191,35 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
       });
     }
     
-    // 강사가 수정하는 경우 → 승인 대기 상태로 저장
-    if (!((user.studentInfo as any).swimmingProfile.pendingChanges)) {
-      (user.studentInfo as any).swimmingProfile.pendingChanges = {};
-    }
+    // 강사가 수정하는 경우 → 즉시 적용 (프로그램 생성을 위해 필요)
+    if (mainStrokes) (user.studentInfo as any).swimmingProfile.mainStrokes = mainStrokes;
+    if (preferredStrokes) (user.studentInfo as any).swimmingProfile.preferredStrokes = preferredStrokes;
+    if (excludedStrokes) (user.studentInfo as any).swimmingProfile.excludedStrokes = excludedStrokes;
+    if (trainingDays) (user.studentInfo as any).swimmingProfile.trainingDays = trainingDays;
+    if (sessionsPerWeek) (user.studentInfo as any).swimmingProfile.sessionsPerWeek = sessionsPerWeek;
+    if (sessionDuration) (user.studentInfo as any).swimmingProfile.sessionDuration = sessionDuration;
+    if (poolLength !== undefined) (user.studentInfo as any).swimmingProfile.poolLength = poolLength;
+    if (currentGoal) (user.studentInfo as any).swimmingProfile.currentGoal = currentGoal;
+    if (conditionIds) (user.studentInfo as any).swimmingProfile.conditionIds = conditionIds;
+    if (weeklyDistance !== undefined) (user.studentInfo as any).swimmingProfile.weeklyDistance = weeklyDistance;
+    // 🧬 생리학적 지표
+    if (vo2max !== undefined) (user.studentInfo as any).swimmingProfile.vo2max = vo2max;
+    if (maxHeartRate !== undefined) (user.studentInfo as any).swimmingProfile.maxHeartRate = maxHeartRate;
+    if (restingHeartRate !== undefined) (user.studentInfo as any).swimmingProfile.restingHeartRate = restingHeartRate;
+    // 🏆 레이스 플랜
+    if (lastRacePlan) (user.studentInfo as any).swimmingProfile.lastRacePlan = lastRacePlan;
     
-    if (mainStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.mainStrokes = mainStrokes;
-    if (preferredStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.preferredStrokes = preferredStrokes;
-    if (excludedStrokes) (user.studentInfo as any).swimmingProfile.pendingChanges.excludedStrokes = excludedStrokes;
-    if (trainingDays) (user.studentInfo as any).swimmingProfile.pendingChanges.trainingDays = trainingDays;
-    if (sessionsPerWeek) (user.studentInfo as any).swimmingProfile.pendingChanges.sessionsPerWeek = sessionsPerWeek;
-    if (conditionIds) (user.studentInfo as any).swimmingProfile.pendingChanges.conditionIds = conditionIds;
-    if (sessionDuration) (user.studentInfo as any).swimmingProfile.pendingChanges.sessionDuration = sessionDuration;
-    if (currentGoal) (user.studentInfo as any).swimmingProfile.pendingChanges.currentGoal = currentGoal;
-    
-    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedBy = currentUser._id;
-    (user.studentInfo as any).swimmingProfile.pendingChanges.proposedAt = new Date();
-    (user.studentInfo as any).swimmingProfile.pendingChanges.reason = reason || '강사가 프로필 변경을 제안했습니다.';
+    // 수정 이력 기록 (승인 없이 즉시 적용)
+    (user.studentInfo as any).swimmingProfile.lastModifiedBy = currentUser._id;
+    (user.studentInfo as any).swimmingProfile.lastModifiedAt = new Date();
+    (user.studentInfo as any).swimmingProfile.modificationReason = reason || '강사가 프로필을 설정/수정했습니다.';
     
     await user.save();
     
     return res.json({
       success: true,
-      message: '프로필 변경 제안이 전송되었습니다. 회원의 승인을 기다리고 있습니다.',
-      data: {
-        pendingChanges: (user.studentInfo as any).swimmingProfile.pendingChanges,
-        needsApproval: true
-      }
+      message: '수영 프로필이 성공적으로 업데이트되었습니다.',
+      data: (user.studentInfo as any).swimmingProfile
     });
   } catch (err) {
     console.error('수영 프로필 업데이트 오류:', err);

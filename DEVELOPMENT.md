@@ -30,10 +30,27 @@
    - ✅ CSS UI 있음 (315-370줄)
    - ✅ 레이스 플랜 UI 있음 (700-950줄)
 
-#### 🔜 **다음 단계**
-- 브라우저 콘솔에서 실제 로드된 데이터 확인
-- 서버 응답에 swimmingProfile 포함 여부 확인
-- 필요시 서버 라우트 수정
+#### ✅ **해결 방법**
+1. **서버 API 수정** (server/src/routes/users.ts:1103-1228)
+   - `PUT /api/users/:userId/swimming-profile` 엔드포인트 확장
+   - 추가된 필드:
+     - `poolLength` (풀 길이)
+     - `weeklyDistance` (주간 목표 거리)
+     - `vo2max`, `maxHeartRate`, `restingHeartRate` (생리학적 지표)
+     - `lastRacePlan` (레이스 플랜 전체)
+   - 강사 권한: 승인 없이 즉시 적용 (프로그램 생성을 위해 필요)
+   - 본인 권한: 즉시 적용
+
+2. **디버그 로그 확장** (BulkMemberVariablesModal.tsx:138)
+   - '전체 swimmingProfile' 출력 추가
+   - 서버에서 받은 데이터 전체 확인 가능
+
+#### 🎯 **테스트 방법**
+1. 서버 재시작 필요 (`cd server; npm start`)
+2. 수영 엔진 → 회원 불러오기 → 변수 설정
+3. vo2max, heartRate, CSS, 레이스 플랜 입력
+4. "설정 완료 및 저장" 클릭
+5. 다시 불러오기 → 모든 값이 정상적으로 로드되어야 함
 
 ---
 

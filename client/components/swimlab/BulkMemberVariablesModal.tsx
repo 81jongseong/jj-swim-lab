@@ -134,7 +134,8 @@ export default function BulkMemberVariablesModal({
         maxHeartRate: swimmingProfile.maxHeartRate,
         restingHeartRate: swimmingProfile.restingHeartRate,
         css: existingCSS,
-        lastRacePlan: swimmingProfile.lastRacePlan
+        lastRacePlan: swimmingProfile.lastRacePlan,
+        '전체 swimmingProfile': swimmingProfile
       });
       
       const memberLevel = m.studentInfo?.currentLevel || (m as any).level || 'beginner';
