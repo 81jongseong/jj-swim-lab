@@ -526,12 +526,17 @@ export default function HealthInputPage() {
       const sessionDuration = healthData.swim_profile.sessionDuration || 50; // 운동 시간은 그대로 유지
       
       // 건강 상태에 따른 dayCondition 매핑 (강도 기반)
+      // ⚠️ 중요: dayCondition이 'normal'/'good'일 때는 페이스 조절이 안 됨!
+      // 건강 상태가 안 좋을수록 'tired'/'very_tired'로 매핑해서 페이스를 느리게 만들어야 함
       let dayCondition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired' = 'good';
-      if (healthAnalysis.baseIntensity >= 90) dayCondition = 'very_good';
-      else if (healthAnalysis.baseIntensity >= 80) dayCondition = 'good';
-      else if (healthAnalysis.baseIntensity >= 70) dayCondition = 'normal';
-      else if (healthAnalysis.baseIntensity >= 60) dayCondition = 'tired';
+      if (healthAnalysis.baseIntensity >= 95) dayCondition = 'very_good';
+      else if (healthAnalysis.baseIntensity >= 85) dayCondition = 'good';
+      else if (healthAnalysis.baseIntensity >= 75) dayCondition = 'normal';
+      else if (healthAnalysis.baseIntensity >= 65) dayCondition = 'tired';
       else dayCondition = 'very_tired';
+      
+      // 70% 강도 (고혈압1기+고지혈증) → 'tired'로 매핑
+      // 이렇게 하면 페이스가 +3초 느려지고 휴식이 +5~10초 늘어나서 시간이 늘어남
 
       console.log('⏰ 운동 설정:', {
         sessionDuration,
@@ -551,7 +556,7 @@ export default function HealthInputPage() {
         strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
         css100: strokeCSS,
         conditionIds: healthData.orthopedics as any,
-        dayCondition: 'normal' as any,
+        dayCondition: dayCondition as any,
         hasPain: healthData.orthopedics.length > 0,
         goal: healthData.goals?.primary || '체력 향상',
         level: healthData.swim_profile.level,

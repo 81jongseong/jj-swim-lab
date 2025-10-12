@@ -1402,9 +1402,18 @@ function buildDayPlan(opts: {
   }[opts.theme];
 
   const pickStroke = (prefer: 'free' | 'back'): Stroke => {
-    if (prefer === 'free' && finalAllowedStrokes.includes('freestyle')) return 'freestyle';
-    if (finalAllowedStrokes.includes('backstroke')) return 'backstroke';
-    return finalAllowedStrokes[0]; // 첫 번째 허용 영법
+    // 회피 영법 제외한 실제 사용 가능한 영법 필터링
+    const availableStrokes = finalAllowedStrokes.filter(s => !opts.strokesAvoid.includes(s));
+    
+    // 사용 가능한 영법이 없으면 허용 영법 중 첫 번째 사용 (안전 장치)
+    if (availableStrokes.length === 0) {
+      console.warn('⚠️ 모든 영법이 회피됨, 허용 영법 중 첫 번째 사용:', finalAllowedStrokes[0]);
+      return finalAllowedStrokes[0];
+    }
+    
+    if (prefer === 'free' && availableStrokes.includes('freestyle')) return 'freestyle';
+    if (availableStrokes.includes('backstroke')) return 'backstroke';
+    return availableStrokes[0]; // 첫 번째 사용 가능한 영법
   };
   
   // CSS 기반 휴식 시간 계산 헬퍼 (회원별 회복 속도 반영)
