@@ -32,6 +32,10 @@ import {
 } from 'lucide-react';
 import { allJointConditions } from '../../../data/joint-conditions';
 import AllConditionsDrawer from '@/components/swimlab/AllConditionsDrawer';
+import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSection';
+import PhysiologicalMetricsSection from '@/components/swimlab/member-variables/PhysiologicalMetricsSection';
+import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
+import TrainingScheduleSection from '@/components/swimlab/member-variables/TrainingScheduleSection';
 
 // 타입 정의
 interface HealthInput {
@@ -506,191 +510,56 @@ export default function HealthInputPage() {
               </select>
             </div>
 
-            {/* 선호/회피 영법 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-md font-semibold mb-3">선호 영법 (복수 선택)</h4>
-                <div className="space-y-2">
-                  {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
-                    const labels = { freestyle: '자유형', backstroke: '배영', breaststroke: '평영', butterfly: '접영' };
-                    const isExcluded = healthData.swim_profile?.excludedStrokes?.includes(stroke);
-                    const isSelected = healthData.swim_profile?.mainStrokes?.includes(stroke);
-                    return (
-                      <button
-                        key={stroke}
-                        type="button"
-                        onClick={() => {
-                          if (isExcluded) return;
-                          const current = healthData.swim_profile?.mainStrokes || [];
-                          const updated = isSelected ? current.filter(s => s !== stroke) : [...current, stroke];
-                          handleInputChange('swim_profile.mainStrokes', updated);
-                        }}
-                        disabled={isExcluded}
-                        className={`w-full text-left px-4 py-3 border rounded-lg transition-all ${
-                          isExcluded
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : isSelected ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{labels[stroke as keyof typeof labels]}</span>
-                          {isSelected && <CheckCircle className="h-4 w-4" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            {/* 선호/회피 영법 - 재사용 컴포넌트 */}
+            <StrokesSelectionSection
+              mainStrokes={healthData.swim_profile?.mainStrokes || []}
+              excludedStrokes={healthData.swim_profile?.excludedStrokes || []}
+              strokes={[
+                { id: 'freestyle', label: '자유형', icon: '🏊' },
+                { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
+                { id: 'breaststroke', label: '평영', icon: '🏊‍♀️' },
+                { id: 'butterfly', label: '접영', icon: '🦋' }
+              ]}
+              onUpdate={(data) => {
+                if (data.mainStrokes !== undefined) handleInputChange('swim_profile.mainStrokes', data.mainStrokes);
+                if (data.excludedStrokes !== undefined) handleInputChange('swim_profile.excludedStrokes', data.excludedStrokes);
+              }}
+            />
 
-              <div>
-                <h4 className="text-md font-semibold mb-3">회피 영법 (복수 선택)</h4>
-                <div className="space-y-2">
-                  {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
-                    const labels = { freestyle: '자유형', backstroke: '배영', breaststroke: '평영', butterfly: '접영' };
-                    const isMain = healthData.swim_profile?.mainStrokes?.includes(stroke);
-                    const isExcluded = healthData.swim_profile?.excludedStrokes?.includes(stroke);
-                    return (
-                      <button
-                        key={stroke}
-                        type="button"
-                        onClick={() => {
-                          if (isMain) return;
-                          const current = healthData.swim_profile?.excludedStrokes || [];
-                          const updated = isExcluded ? current.filter(s => s !== stroke) : [...current, stroke];
-                          handleInputChange('swim_profile.excludedStrokes', updated);
-                        }}
-                        disabled={isMain}
-                        className={`w-full text-left px-4 py-3 border rounded-lg transition-all ${
-                          isMain
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : isExcluded ? 'bg-red-600 text-white border-red-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-red-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{labels[stroke as keyof typeof labels]}</span>
-                          {isExcluded && <CheckCircle className="h-4 w-4" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            {/* CSS - 재사용 컴포넌트 */}
+            <CSSInputSection
+              css={healthData.swim_profile?.css || { freestyle: 0, backstroke: 0, breaststroke: 0, butterfly: 0 }}
+              strokes={[
+                { id: 'freestyle', label: '자유형', icon: '🏊' },
+                { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
+                { id: 'breaststroke', label: '평영', icon: '🏊‍♀️' },
+                { id: 'butterfly', label: '접영', icon: '🦋' }
+              ]}
+              onUpdate={(css) => handleInputChange('swim_profile.css', css)}
+            />
 
-            {/* CSS (선택사항) */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <span className="text-2xl mr-2">💪</span>
-                CSS (Critical Swim Speed)
-                <span className="ml-2 text-sm font-normal text-gray-500">(선택사항)</span>
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                💡 CSS는 100m 기준 초 단위입니다. 예: 120초 = 2분/100m
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { stroke: 'freestyle', label: '자유형', placeholder: '120' },
-                  { stroke: 'backstroke', label: '배영', placeholder: '130' },
-                  { stroke: 'breaststroke', label: '평영', placeholder: '140' },
-                  { stroke: 'butterfly', label: '접영', placeholder: '150' }
-                ].map(({ stroke, label, placeholder }) => (
-                  <div key={stroke}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                    <input
-                      type="number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      value={healthData.swim_profile?.css?.[stroke as keyof typeof healthData.swim_profile.css] || ''}
-                      onChange={(e) => {
-                        const current = healthData.swim_profile?.css || { freestyle: 0, backstroke: 0, breaststroke: 0, butterfly: 0 };
-                        handleInputChange('swim_profile.css', { ...current, [stroke]: parseInt(e.target.value) || 0 });
-                      }}
-                      placeholder={placeholder}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* 주간 훈련 일정 - 재사용 컴포넌트 */}
+            <TrainingScheduleSection
+              trainingDays={[]}
+              sessionDuration={healthData.swim_profile?.sessionDuration || 0}
+              poolLength={25}
+              onUpdate={(data) => {
+                if (data.sessionDuration !== undefined) handleInputChange('swim_profile.sessionDuration', data.sessionDuration);
+                if (data.trainingDays !== undefined) handleInputChange('swim_profile.daysPerWeek', data.trainingDays.length);
+              }}
+            />
 
-            {/* 주간 훈련 일정 (선택사항) */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <span className="text-2xl mr-2">📅</span>
-                주간 훈련 일정
-                <span className="ml-2 text-sm font-normal text-gray-500">(선택사항)</span>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">주당 운동 일수</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={healthData.swim_profile?.daysPerWeek || ''}
-                    onChange={(e) => handleInputChange('swim_profile.daysPerWeek', parseInt(e.target.value))}
-                  >
-                    <option value="">선택하세요</option>
-                    {[2, 3, 4, 5, 6].map(days => (
-                      <option key={days} value={days}>주 {days}일</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">회당 운동 시간 (분)</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={healthData.swim_profile?.sessionDuration || ''}
-                    onChange={(e) => handleInputChange('swim_profile.sessionDuration', parseInt(e.target.value))}
-                  >
-                    <option value="">선택하세요</option>
-                    {[30, 45, 60, 75, 90].map(mins => (
-                      <option key={mins} value={mins}>{mins}분</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* 생리학적 지표 (선택사항) */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <span className="text-2xl mr-2">🫀</span>
-                생리학적 지표
-                <span className="ml-2 text-sm font-normal text-gray-500">(선택사항)</span>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">VO2max (ml/kg/min)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={healthData.swim_profile?.vo2max || ''}
-                    onChange={(e) => handleInputChange('swim_profile.vo2max', parseInt(e.target.value) || 0)}
-                    placeholder="45"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">최대 산소 섭취량</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">최고 심박수 (bpm)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={healthData.swim_profile?.maxHeartRate || ''}
-                    onChange={(e) => handleInputChange('swim_profile.maxHeartRate', parseInt(e.target.value) || 0)}
-                    placeholder="190"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">최대 운동 시 심박수</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">안정시 심박수 (bpm)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={healthData.swim_profile?.restingHeartRate || ''}
-                    onChange={(e) => handleInputChange('swim_profile.restingHeartRate', parseInt(e.target.value) || 0)}
-                    placeholder="60"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">휴식 시 심박수</p>
-                </div>
-              </div>
-            </div>
+            {/* 생리학적 지표 - 재사용 컴포넌트 */}
+            <PhysiologicalMetricsSection
+              vo2max={healthData.swim_profile?.vo2max}
+              maxHeartRate={healthData.swim_profile?.maxHeartRate}
+              restingHeartRate={healthData.swim_profile?.restingHeartRate}
+              onUpdate={(metrics) => {
+                if (metrics.vo2max !== undefined) handleInputChange('swim_profile.vo2max', metrics.vo2max);
+                if (metrics.maxHeartRate !== undefined) handleInputChange('swim_profile.maxHeartRate', metrics.maxHeartRate);
+                if (metrics.restingHeartRate !== undefined) handleInputChange('swim_profile.restingHeartRate', metrics.restingHeartRate);
+              }}
+            />
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
