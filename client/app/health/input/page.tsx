@@ -92,6 +92,12 @@ export default function HealthInputPage() {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // 단계 변경 시 페이지 맨 위로 스크롤
+  const handleStepChange = (step: number) => {
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [healthData, setHealthData] = useState<HealthInput>({
     demographics: { age: 30, sex: 'male' },
     anthropometrics: { height_cm: 170, weight_kg: 70 },
@@ -1249,7 +1255,7 @@ export default function HealthInputPage() {
             <div key={step.id} className="flex items-center">
               <div 
                 className="flex flex-col items-center cursor-pointer hover:scale-105 transition-all"
-                onClick={() => setCurrentStep(step.id)}
+                onClick={() => handleStepChange(step.id)}
               >
                 {/* 아이콘 + 번호 */}
                 <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl border-3 transition-all shadow-md ${
@@ -1302,7 +1308,7 @@ export default function HealthInputPage() {
       {currentStep !== 3 && (
         <div className="flex justify-between">
           <button
-            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+            onClick={() => handleStepChange(Math.max(1, currentStep - 1))}
             disabled={currentStep === 1}
             className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -1310,7 +1316,7 @@ export default function HealthInputPage() {
           </button>
 
           <button
-            onClick={() => setCurrentStep(currentStep + 1)}
+            onClick={() => handleStepChange(currentStep + 1)}
             disabled={!isStepValid(currentStep)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
