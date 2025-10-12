@@ -381,13 +381,13 @@ function selectTrainingMethod(
   let themeIds: string[];
   
   if (theme === 'tech_tempo') {
-    // 기술+템포: 역치, 템포 홀드, 스컬링 등
-    themeIds = ['06', '05', '13', '18', '23', '01'];
+    // 기술+템포: 역치, 템포 홀드 (Z2-Z3 중심, Z1 제외)
+    themeIds = ['06', '05', '18', '23', '01']; // 13번(Z1) 제거
   } else if (theme === 'endurance') {
-    // 지구력: LSD, 풀 집중, 브로큰 사다리 등
+    // 지구력: LSD, 풀 집중, 브로큰 사다리 등 (Z2 중심)
     themeIds = ['25', '10', '16', '14', '24', '15'];
   } else {
-    // tempo_hi: 스프린트, 디센딩, USRPT, 빌드업 등
+    // tempo_hi: 스프린트, 디센딩, USRPT, 빌드업 등 (Z3-Z5)
     themeIds = ['08', '02', '07', '04', '12', '21'];
   }
   
@@ -722,24 +722,22 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
     biologicalAdjustment = 0.9; // 낮은 잠재력은 안전하게
   }
   
-  // 🏥 건강 상태 기반 거리 조절 (과학적 접근)
-  // 70% 강도 → 거리만 70%로 조절, 시간은 그대로 + 페이스 143%로 느리게
-  // 결과: 같은 운동 효과, 같은 시간, 안전한 강도
-  let healthVolumeAdjustment = 1.0; // 거리만 조절
+  // 🏥 건강 상태 기반 과학적 조절
+  // 옵션 B: 거리 유지 + 페이스만 느리게 (시간 동일, 강도만 낮춤)
+  // 70% 강도 → 거리는 그대로, 페이스만 1.43배 느리게
+  // 결과: 같은 거리, 같은 시간, 낮은 강도
+  
   if (i.intensityPercent && i.intensityPercent < 1.0) {
-    healthVolumeAdjustment = i.intensityPercent; // 70% 강도 → 0.7배 거리
-    console.log(`🏥 건강 상태 기반 거리 조절: ${Math.round(i.intensityPercent * 100)}% 강도 → ${Math.round(healthVolumeAdjustment * 100)}% 거리, 시간은 그대로`);
+    console.log(`🏥 건강 상태 기반 과학적 조절: ${Math.round(i.intensityPercent * 100)}% 강도 → 거리 유지, 페이스 ${Math.round((1/i.intensityPercent) * 100)}% (느리게)`);
   }
   
-  // 최종 조정 계수
-  // 시간: 완료율 + 생리학적 지표만 적용 (건강 상태는 시간에 영향 안 줌)
-  // 거리: 완료율 + 생리학적 지표 + 건강 상태 모두 적용
-  const timeAdjustment = intensityAdjustment * biologicalAdjustment;
-  const volumeAdjustment = intensityAdjustment * biologicalAdjustment * healthVolumeAdjustment;
+  // 최종 조정 계수 (완료율 + 생리학적 지표만 적용)
+  // 건강 상태는 페이스로만 조절, 거리/시간은 그대로
+  const finalAdjustment = intensityAdjustment * biologicalAdjustment;
   
   // 조정된 목표 계산
-  const adjustedWeeklyMinutes = Math.round(i.weeklyMinutes * timeAdjustment); // 시간은 건강 조절 제외
-  const adjustedWeeklyMeters = Math.round(i.weeklyMeters * volumeAdjustment); // 거리는 건강 조절 포함
+  const adjustedWeeklyMinutes = Math.round(i.weeklyMinutes * finalAdjustment);
+  const adjustedWeeklyMeters = Math.round(i.weeklyMeters * finalAdjustment);
   
   const perDay = deriveDailyTarget(adjustedWeeklyMinutes, adjustedWeeklyMeters, i.days.length);
   const out: DayPlan[] = [];
