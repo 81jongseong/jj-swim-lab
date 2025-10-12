@@ -49,6 +49,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
   const [editingSessionIdx, setEditingSessionIdx] = useState<number | null>(null);
   const [editingSetIdx, setEditingSetIdx] = useState<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [completionSessionIdx, setCompletionSessionIdx] = useState<number | null>(null);
   const [showDayConditionModal, setShowDayConditionModal] = useState(false);
   const [dayConditionSessionIdx, setDayConditionSessionIdx] = useState<number | null>(null);
@@ -250,10 +252,10 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       }
       
       // 로컬에서도 삭제
-      deleteProgram(id);
+    deleteProgram(id);
       
       // 상세 모달 닫기
-      setSelectedProgram(null);
+    setSelectedProgram(null);
       
       // 목록 새로고침
       console.log('🔄 프로그램 목록 새로고침...');
@@ -456,7 +458,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       <div className="bg-white rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">생성된 프로그램 목록</h3>
+          <h3 className="text-xl font-semibold text-gray-900">생성된 프로그램 목록</h3>
             <p className="text-sm text-gray-500 mt-1">
               {selectedAthleteId ? '선택된 회원의 프로그램' : '모든 프로그램'}
             </p>
@@ -473,13 +475,13 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                 📊 통계 보기
               </Button>
             )}
-            <Button
-              onClick={refresh}
-              variant="ghost"
-              size="sm"
-            >
-              🔄 새로고침
-            </Button>
+          <Button
+            onClick={refresh}
+            variant="ghost"
+            size="sm"
+          >
+            🔄 새로고침
+          </Button>
           </div>
         </div>
         
@@ -645,14 +647,14 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                   <span>{program.content?.totalMeters?.toLocaleString() || '0'}m / {program.params?.daysPerWeek || 3}일</span>
                 </div>
                 {program.params?.stroke && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <span>🏊</span>
-                    <span>
-                      {program.params.stroke === 'FR' ? '자유형' :
-                       program.params.stroke === 'BK' ? '배영' :
-                       program.params.stroke === 'BR' ? '평영' : '접영'}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <span>🏊</span>
+                  <span>
+                    {program.params.stroke === 'FR' ? '자유형' :
+                     program.params.stroke === 'BK' ? '배영' :
+                     program.params.stroke === 'BR' ? '평영' : '접영'}
+                  </span>
+                </div>
                 )}
                 <div className="flex items-center gap-2 text-gray-600">
                   <span>⚕️</span>
@@ -781,7 +783,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                             return strokeNames[stroke] || stroke;
                           }).join(', ')
                         : selectedProgram.params.stroke === 'FR' ? '자유형' :
-                          selectedProgram.params.stroke === 'BK' ? '배영' :
+                       selectedProgram.params.stroke === 'BK' ? '배영' :
                           selectedProgram.params.stroke === 'BR' ? '평영' : '접영'
                       }
                     </p>
@@ -898,7 +900,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       
                       return (
                         <button
-                          key={id}
+                        key={id} 
                           onClick={() => {
                             setSelectedConditionId(id);
                             setShowConditionDetail(true);
@@ -932,15 +934,15 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                 {/* 레이스 프로그램이 아닐 때만 표시 */}
                 {selectedProgram.programType !== 'race' && (
                   <>
-                    <h4 className="font-semibold text-gray-900 mb-3">🏊‍♂️ 훈련 프로그램</h4>
-                    
-                    {/* 요약 */}
-                    <div className="bg-blue-50 p-3 rounded mb-4">
-                      <p className="text-sm text-blue-800">{selectedProgram.content.summary}</p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        총 거리: {selectedProgram.content.totalMeters.toLocaleString()}m
-                      </p>
-                    </div>
+                <h4 className="font-semibold text-gray-900 mb-3">🏊‍♂️ 훈련 프로그램</h4>
+                
+                {/* 요약 */}
+                <div className="bg-blue-50 p-3 rounded mb-4">
+                  <p className="text-sm text-blue-800">{selectedProgram.content.summary}</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    총 거리: {selectedProgram.content.totalMeters.toLocaleString()}m
+                  </p>
+                </div>
 
                     {/* 주간 계획 설명 (있는 경우) */}
                     {selectedProgram.content.planExplanation && (
@@ -1199,7 +1201,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h5 className="font-medium text-gray-900">{session.day}</h5>
+                        <h5 className="font-medium text-gray-900">{session.day}</h5>
                             {session.date && (
                               <span className="text-xs text-gray-500">
                                 ({session.date})
@@ -1313,16 +1315,16 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                             }
                             return null;
                           })()}
-                          <button
-                            onClick={() => {
-                              setEditedProgram({ ...selectedProgram });
-                              setEditingSessionIdx(sessionIdx);
-                              setIsEditing(true);
-                            }}
-                            className="text-xs px-2 py-1 border rounded hover:bg-white"
-                          >
-                            ✏️ 수정
-                          </button>
+                        <button
+                          onClick={() => {
+                            setEditedProgram({ ...selectedProgram });
+                            setEditingSessionIdx(sessionIdx);
+                            setIsEditing(true);
+                          }}
+                          className="text-xs px-2 py-1 border rounded hover:bg-white"
+                        >
+                          ✏️ 수정
+                        </button>
                         </div>
                       </div>
                       <ul className="space-y-1 text-sm text-gray-700">
@@ -1330,21 +1332,21 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                           const setData = typeof set === 'string' ? null : set;
                           
                           return (
-                            <li 
-                              key={setIdx} 
+                          <li 
+                            key={setIdx} 
                               className="pl-4 border-l-2 border-blue-300 hover:border-blue-500 p-2 rounded mb-2"
                             >
                               {/* 세트 설명 */}
                               <div 
                                 className="cursor-pointer hover:bg-white p-1 rounded"
-                                onClick={() => {
-                                  setEditedProgram({ ...selectedProgram });
-                                  setEditingSessionIdx(sessionIdx);
-                                  setEditingSetIdx(setIdx);
-                                  setIsEditing(true);
-                                }}
-                                title="클릭하여 수정"
-                              >
+                            onClick={() => {
+                              setEditedProgram({ ...selectedProgram });
+                              setEditingSessionIdx(sessionIdx);
+                              setEditingSetIdx(setIdx);
+                              setIsEditing(true);
+                            }}
+                            title="클릭하여 수정"
+                          >
                                 {typeof set === 'string' ? (
                                   set
                                 ) : (
@@ -1453,7 +1455,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                                   )}
                                 </div>
                               )}
-                            </li>
+                          </li>
                           );
                         })}
                       </ul>
@@ -1578,8 +1580,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                             }
                             
                             updatedProgram = {
-                              ...editedProgram,
-                              content: { ...editedProgram.content, sessions: newSessions }
+                          ...editedProgram,
+                          content: { ...editedProgram.content, sessions: newSessions }
                             };
                           }
                           
@@ -1844,7 +1846,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       onChange={(e) => {
                         const newValue = Number(e.target.value);
                         setEditedProgram({
-                          ...editedProgram,
+                        ...editedProgram,
                           params: { 
                             ...editedProgram.params, 
                             cssPer100: typeof editedProgram.params.cssPer100 === 'object'
@@ -1899,17 +1901,40 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
               )}
             </div>
 
-            <div className="p-6 border-t bg-gray-50 flex gap-2 justify-end">
-              <Button
-                onClick={() => setIsEditing(false)}
-                variant="secondary"
-                size="md"
-              >
-                취소
-              </Button>
+            <div className="p-6 border-t bg-gray-50">
+              {/* 저장 메시지 */}
+              {saveMessage && (
+                <div className={`mb-4 p-3 rounded-lg ${
+                  saveMessage.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+                }`}>
+                  <div className="flex items-center">
+                    {saveMessage.type === 'success' ? (
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <span className="font-medium">{saveMessage.text}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  onClick={() => setIsEditing(false)}
+                  variant="secondary"
+                  size="md"
+                >
+                  취소
+                </Button>
               <Button
                 onClick={async () => {
                   try {
+                    setIsSaving(true);
+                    setSaveMessage(null);
                     console.log('💾 [저장] 클릭 - 서버에 저장 시작');
                     console.log('📤 저장할 데이터:', {
                       id: editedProgram.id,
@@ -1917,7 +1942,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                     });
                     
                     // 로컬 저장
-                    saveProgram(editedProgram);
+                  saveProgram(editedProgram);
                     
                     // 서버에 저장
                     if (editedProgram.id) {
@@ -1967,26 +1992,41 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       console.log('✅ selectedProgram 업데이트 완료');
                     }
                     
-                    setEditingSessionIdx(null);
-                    setEditingSetIdx(null);
+                  setEditingSessionIdx(null);
+                  setEditingSetIdx(null);
                     setRacePhaseIdx(null);
                     setRaceWeekIdx(null);
                     setRaceDayIdx(null);
                     setTempSetContent('');
-                    setIsEditing(false);
+                  setIsEditing(false);
                     
                     console.log('🔄 UI 업데이트 완료');
-                    alert('✅ 프로그램이 수정되었습니다!');
+                  setSaveMessage({ type: 'success', text: '프로그램이 성공적으로 수정되었습니다!' });
+                  setTimeout(() => setSaveMessage(null), 3000);
                   } catch (error) {
                     console.error('❌ 프로그램 저장 오류:', error);
-                    alert('⚠️ 프로그램 저장에 실패했습니다.');
+                    setSaveMessage({ type: 'error', text: '프로그램 저장에 실패했습니다. 다시 시도해주세요.' });
+                  } finally {
+                    setIsSaving(false);
                   }
                 }}
                 variant="primary"
                 size="md"
+                disabled={isSaving}
               >
-                💾 저장
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    저장 중...
+                  </>
+                ) : (
+                  '💾 저장'
+                )}
               </Button>
+              </div>
             </div>
           </div>
         </div>
