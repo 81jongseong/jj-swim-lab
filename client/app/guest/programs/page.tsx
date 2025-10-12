@@ -149,7 +149,7 @@ export default function GuestProgramsPage() {
                     <div>
                       <p className="text-xs text-gray-600 mb-1">예상 시간</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {Math.round(program.engineOutput.totalDuration / 60)}분
+                        {program.engineOutput.totalDuration}분
                       </p>
                     </div>
                     <div>

@@ -1981,57 +1981,8 @@ function finalizePlan(
     shrinkCount++;
   }
 
-  // 🎯 시간 기반 쿨다운 조절 (페이스가 느려지면 쿨다운 거리 줄임)
-  if (targetMinutes) {
-    // 예상 소요 시간 계산 (각 세트의 페이스 기반)
-    let estimatedMinutes = 0;
-    sets.forEach(s => {
-      const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
-      if (paceMatch) {
-        const minutes = parseInt(paceMatch[1]);
-        const seconds = parseInt(paceMatch[2]);
-        const pace100m = minutes * 60 + seconds; // 초/100m
-        const estimatedTime = (s.meters / 100) * pace100m / 60; // 분
-        estimatedMinutes += estimatedTime + (s.restSec / 60); // 휴식 포함
-      } else {
-        // 페이스 정보 없으면 기본 90초/100m 가정
-        estimatedMinutes += (s.meters / 100) * 1.5 + (s.restSec / 60);
-      }
-    });
-
-    console.log('⏱️ 시간 기반 조절:', {
-      targetMinutes,
-      estimatedMinutes: Math.round(estimatedMinutes),
-      difference: Math.round(estimatedMinutes - targetMinutes)
-    });
-
-    // 시간 초과 시 쿨다운 거리 축소
-    if (estimatedMinutes > targetMinutes * 1.1) {
-      const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운'));
-      if (cooldownIdx >= 0 && sets[cooldownIdx].meters > poolLen * 2) {
-        const excessMinutes = estimatedMinutes - targetMinutes;
-        const metersToReduce = Math.min(
-          Math.round(excessMinutes / 1.5 * 100 / poolLen) * poolLen, // 90초/100m 기준
-          sets[cooldownIdx].meters - poolLen // 최소 1개 풀은 남김
-        );
-        
-        sets[cooldownIdx].meters -= metersToReduce;
-        total -= metersToReduce;
-        
-        sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, (match) => {
-          const n = parseInt(match);
-          const newReps = Math.max(1, Math.round(sets[cooldownIdx].meters / poolLen / (sets[cooldownIdx].meters / (n * poolLen))));
-          return `${newReps}×`;
-        });
-        
-        console.log('⚠️ 시간 초과로 쿨다운 거리 축소:', {
-          excessMinutes: Math.round(excessMinutes),
-          metersToReduce,
-          newCooldownMeters: sets[cooldownIdx].meters
-        });
-      }
-    }
-  }
+  // 🎯 시간 기반 조절 로직 제거 - 항상 계획된 거리대로 수행
+  // (사용자 요청: 운동 강도를 낮춰서 시간이 늘어지면 쿨다운 거리를 줄이는 로직 제거)
 
   return { sets, total, notes: [mod.explanation] };
 }

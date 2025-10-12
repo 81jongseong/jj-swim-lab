@@ -291,6 +291,18 @@ export default function HealthInputPage() {
         recommend: ['Zone 2-3 강도', '유산소 중심', '점진적 강도 증가'],
         detail: '체중 감량을 위해서는 일반 권장량(150분)보다 더 많은 운동 시간이 필요합니다. 꾸준히 하는 것이 중요합니다.'
       });
+    } else if (bmi >= 23) {
+      baseIntensity = Math.min(baseIntensity, 85); // 과체중: 85% 강도
+      recommendations.push({ 
+        icon: '📊', 
+        type: 'info',
+        title: '과체중 (BMI 23-24.9)', 
+        intensity: '정상 대비 85% 강도',
+        duration: '주당 150분 이상 (주 4-5일)',
+        avoid: ['급격한 체중 감량', '과도한 고강도'],
+        recommend: ['유산소 중심', '점진적 강도 증가', '균형 잡힌 식단', '규칙적 운동'],
+        detail: '과체중 상태에서는 정상 체중으로의 복귀를 위해 유산소 운동을 중심으로 하되, 점진적으로 강도를 높여야 합니다. 급격한 변화보다는 꾸준한 운동 습관이 중요합니다.'
+      });
     }
     
     // 고혈압 관련 (ACSM 기반)
