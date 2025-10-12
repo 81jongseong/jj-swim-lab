@@ -1408,12 +1408,21 @@ function buildDayPlan(opts: {
   
   // 사용자 설정 + 레벨 제한 교차 확인
   const finalAllowedStrokes = opts.strokesAllowed.filter(s => levelAllowedStrokes.includes(s));
-
-  // 테마별 영법 배분
-  const ratio = {
+  
+  // 회피 영법 제외한 실제 사용 가능한 영법
+  const availableStrokes = finalAllowedStrokes.filter(s => !opts.strokesAvoid.includes(s));
+  
+  // 과학적 영법 배분: 사용 가능한 영법만으로 비율 계산
+  // 배영 회피 시 자유형 100% 사용
+  const hasBackstroke = availableStrokes.includes('backstroke');
+  const ratio = hasBackstroke ? {
     tech_tempo: { free: 0.6, back: 0.4 },
     endurance: { free: 0.7, back: 0.3 },
     tempo_hi: { free: 0.65, back: 0.35 }
+  }[opts.theme] : {
+    tech_tempo: { free: 1.0, back: 0.0 },
+    endurance: { free: 1.0, back: 0.0 },
+    tempo_hi: { free: 1.0, back: 0.0 }
   }[opts.theme];
 
   const pickStroke = (prefer: 'free' | 'back'): Stroke => {
