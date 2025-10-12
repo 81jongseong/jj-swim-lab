@@ -24,7 +24,11 @@ export default function GuestProgramsPage() {
     // TODO: 실제 API 호출
     const savedProgram = localStorage.getItem('guest-daily-program');
     if (savedProgram) {
-      setProgram(JSON.parse(savedProgram));
+      const parsed = JSON.parse(savedProgram);
+      console.log('📦 로드된 프로그램:', parsed);
+      console.log('🔍 엔진 출력 존재?:', !!parsed.engineOutput);
+      console.log('🔍 엔진 출력 구조:', parsed.engineOutput);
+      setProgram(parsed);
     }
     setLoading(false);
   }, []);
@@ -77,21 +81,31 @@ export default function GuestProgramsPage() {
           <p className="text-gray-600">나의 건강 상태에 맞춘 하루 운동 프로그램입니다</p>
         </div>
 
-        {/* 프로그램 정보 */}
+          {/* 프로그램 정보 */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          {/* 디버깅 정보 */}
+          {!program.engineOutput && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800 font-semibold">⚠️ 엔진 출력이 없습니다</p>
+              <p className="text-xs text-red-600 mt-1">프로그램 데이터: {JSON.stringify(Object.keys(program))}</p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="flex items-center space-x-3">
               <Calendar className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-xs text-gray-600">날짜</p>
-                <p className="font-semibold text-gray-900">{program.date || '오늘'}</p>
+                <p className="font-semibold text-gray-900">{program.engineOutput?.date || program.date || '오늘'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Clock className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-xs text-gray-600">운동 시간</p>
-                <p className="font-semibold text-gray-900">{program.duration || '60'}분</p>
+                <p className="font-semibold text-gray-900">
+                  {program.engineOutput ? Math.round(program.engineOutput.totalDuration / 60) : program.duration || '60'}분
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">

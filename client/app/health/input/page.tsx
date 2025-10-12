@@ -530,9 +530,16 @@ export default function HealthInputPage() {
       
       // 4. 실제 엔진으로 프로그램 생성 (주간 플랜이지만 1일만 사용)
       const weeklyPlan = generateWeeklyPlan(engineInput);
+      
+      console.log('📦 주간 플랜 전체:', weeklyPlan);
+      console.log('📅 생성된 일수:', weeklyPlan.days.length);
+      
       const generatedProgram = weeklyPlan.days[0]; // 첫날만 사용 (하루짜리)
       
-      console.log('✅ 생성된 프로그램:', generatedProgram);
+      console.log('✅ 오늘의 프로그램:', generatedProgram);
+      console.log('📊 세트 개수:', generatedProgram?.sets?.length || 0);
+      console.log('📏 총 거리:', generatedProgram?.totalMeters || 0);
+      console.log('⏱️ 총 시간:', generatedProgram?.totalDuration || 0);
       
       // 5. 프로그램 데이터 저장
       const programData = {
