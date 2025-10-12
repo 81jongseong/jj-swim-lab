@@ -2,6 +2,41 @@
 
 ## 📅 최근 업데이트 (2025-10-12)
 
+### 🔍 **회원 프로필 자동 로드 디버깅 (2025-10-12)**
+
+#### 🐛 **증상**
+- 수영 엔진에서 "회원 불러오기" 시 기존 옵션 내용들이 불러와지지 않음
+- 심박수 (vo2max, maxHeartRate, restingHeartRate)
+- CSS (freestyle, backstroke, breaststroke, butterfly)
+- 대회일 (raceDate, startDate)
+- 현재/목표 CSS
+
+#### 🔧 **조치사항**
+1. **console.log 추가** (BulkMemberVariablesModal.tsx:132-138)
+   - swimmingProfile 로드 시 디버그 정보 출력
+   - vo2max, maxHeartRate, restingHeartRate 값 확인
+   - css, lastRacePlan 값 확인
+
+2. **User 모델 확인** (server/src/models/User.ts:351-353)
+   - ✅ vo2max, maxHeartRate, restingHeartRate 필드 정의됨
+   - ✅ lastRacePlan 필드 정의됨
+
+3. **API 확인** (server/src/routes/users.ts:191-195)
+   - `.select('-password')` → swimmingProfile은 기본 포함
+   - ✅ 문제 없음
+
+4. **UI 확인** (BulkMemberVariablesModal.tsx)
+   - ✅ 생리학적 지표 UI 있음 (454-547줄)
+   - ✅ CSS UI 있음 (315-370줄)
+   - ✅ 레이스 플랜 UI 있음 (700-950줄)
+
+#### 🔜 **다음 단계**
+- 브라우저 콘솔에서 실제 로드된 데이터 확인
+- 서버 응답에 swimmingProfile 포함 여부 확인
+- 필요시 서버 라우트 수정
+
+---
+
 ### 🎯 **Revenue-Management 페이지 완전 복원 (2025-10-12)**
 
 #### ✅ **복원된 기능**

@@ -129,6 +129,14 @@ export default function BulkMemberVariablesModal({
       const existingCSS = swimmingProfile.css || {};
       const healthProfile = m.studentInfo?.healthProfile || {};
       
+      console.log(`🔍 ${m.name} 프로필 로드:`, {
+        vo2max: swimmingProfile.vo2max,
+        maxHeartRate: swimmingProfile.maxHeartRate,
+        restingHeartRate: swimmingProfile.restingHeartRate,
+        css: existingCSS,
+        lastRacePlan: swimmingProfile.lastRacePlan
+      });
+      
       const memberLevel = m.studentInfo?.currentLevel || (m as any).level || 'beginner';
       
       // CSS: 프로필 or 레벨 추정
