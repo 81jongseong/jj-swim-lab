@@ -1426,9 +1426,11 @@ function buildDayPlan(opts: {
       return finalAllowedStrokes[0];
     }
     
+    // 선호하는 영법 선택 (회피 영법은 이미 필터링됨)
     if (prefer === 'free' && availableStrokes.includes('freestyle')) return 'freestyle';
-    if (availableStrokes.includes('backstroke')) return 'backstroke';
-    return availableStrokes[0]; // 첫 번째 사용 가능한 영법
+    if (prefer === 'back' && availableStrokes.includes('backstroke')) return 'backstroke';
+    // 선호 영법이 없으면 첫 번째 사용 가능한 영법
+    return availableStrokes[0];
   };
   
   // CSS 기반 휴식 시간 계산 헬퍼 (회원별 회복 속도 반영)
