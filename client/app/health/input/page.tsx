@@ -263,10 +263,8 @@ export default function HealthInputPage() {
   }, [searchParams]);
 
   const steps = [
-    { id: 1, title: '기본 정보', description: '나이, 성별, 신체 정보' },
-    { id: 2, title: '건강검진', description: '혈압, 혈당, 콜레스테롤' },
-    { id: 3, title: '질환/상황', description: '50+ 질환/특수상황' },
-    { id: 4, title: '수영+목표', description: '실력, CSS, 영법, 운동목표' }
+    { id: 1, title: '기본+건강', description: '신체정보, 건강검진, 질환/상황' },
+    { id: 2, title: '수영+목표', description: '실력, CSS, 영법, 운동목표' }
   ];
 
   const jointConditions = allJointConditions.map(condition => ({
@@ -299,6 +297,82 @@ export default function HealthInputPage() {
       
       current[keys[keys.length - 1]] = value;
       
+      // 키/몸무게 입력 시 자동으로 BMI 계산 및 비만 판단
+      if (field === 'anthropometrics.height_cm' || field === 'anthropometrics.weight_kg') {
+        const height = field === 'anthropometrics.height_cm' ? value : newData.anthropometrics?.height_cm;
+        const weight = field === 'anthropometrics.weight_kg' ? value : newData.anthropometrics?.weight_kg;
+        
+        if (height && weight && height > 0 && weight > 0) {
+          const bmi = weight / Math.pow(height / 100, 2);
+          
+          // WHO 아시아-태평양 기준
+          let obesityLevel: 'normal' | 'overweight' | 'obesity' = 'normal';
+          let obesityConditionId: string | null = null;
+          
+          if (bmi >= 30) {
+            obesityLevel = 'obesity';
+            obesityConditionId = 'obesity-severe'; // 고도비만
+          } else if (bmi >= 25) {
+            obesityLevel = 'obesity';
+            obesityConditionId = 'obesity'; // 경도비만
+          } else if (bmi >= 23) {
+            obesityLevel = 'overweight';
+            obesityConditionId = 'overweight'; // 과체중
+          }
+          
+          if (!newData.conditions) newData.conditions = {} as any;
+          newData.conditions.obesity = obesityLevel;
+          
+          // 비만/과체중일 경우 orthopedics에 자동 추가
+          if (obesityConditionId && !newData.orthopedics?.includes(obesityConditionId)) {
+            newData.orthopedics = [...(newData.orthopedics || []), obesityConditionId];
+          }
+          // 정상 체중이면 비만 관련 조건 제거
+          else if (obesityLevel === 'normal') {
+            newData.orthopedics = (newData.orthopedics || []).filter(
+              id => !['obesity', 'obesity-severe', 'overweight'].includes(id)
+            );
+          }
+        }
+      }
+      
+      // 혈압 입력 시 자동으로 고혈압 판단
+      if (field.includes('rest_bp')) {
+        const sbp = field === 'vitals.rest_bp.sbp' ? value : newData.vitals?.rest_bp?.sbp;
+        const dbp = field === 'vitals.rest_bp.dbp' ? value : newData.vitals?.rest_bp?.dbp;
+        
+        if (sbp && dbp) {
+          let hypertensionLevel: 'normal' | 'elevated' | 'stage1' | 'stage2' = 'normal';
+          let hypertensionConditionId: string | null = null;
+          
+          // ACC/AHA 2017 기준
+          if (sbp >= 140 || dbp >= 90) {
+            hypertensionLevel = 'stage2';
+            hypertensionConditionId = 'hypertension-stage2';
+          } else if (sbp >= 130 || dbp >= 80) {
+            hypertensionLevel = 'stage1';
+            hypertensionConditionId = 'hypertension';
+          } else if (sbp >= 120) {
+            hypertensionLevel = 'elevated';
+            hypertensionConditionId = 'hypertension-elevated';
+          }
+          
+          if (!newData.conditions) newData.conditions = {} as any;
+          newData.conditions.hypertension = hypertensionLevel;
+          
+          // 고혈압일 경우 orthopedics에 자동 추가
+          if (hypertensionConditionId && !newData.orthopedics?.includes(hypertensionConditionId)) {
+            newData.orthopedics = [...(newData.orthopedics || []), hypertensionConditionId];
+          }
+          // 정상 혈압이면 고혈압 관련 조건 제거
+          else if (hypertensionLevel === 'normal') {
+            newData.orthopedics = (newData.orthopedics || []).filter(
+              id => !['hypertension', 'hypertension-stage2', 'hypertension-elevated'].includes(id)
+            );
+          }
+        }
+      }
+      
       // 콜레스테롤 입력 시 자동으로 dyslipidemia 판단
       if (field.includes('Cholesterol')) {
         const tc = field === 'vitals.totalCholesterol' ? value : newData.vitals?.totalCholesterol;
@@ -308,6 +382,13 @@ export default function HealthInputPage() {
         const hasDyslipidemia = (tc && tc >= 240) || (ldl && ldl >= 160);
         if (!newData.conditions) newData.conditions = {} as any;
         newData.conditions.dyslipidemia = hasDyslipidemia || false;
+        
+        // 고지혈증일 경우 orthopedics에 자동 추가
+        if (hasDyslipidemia && !newData.orthopedics?.includes('dyslipidemia')) {
+          newData.orthopedics = [...(newData.orthopedics || []), 'dyslipidemia'];
+        } else if (!hasDyslipidemia) {
+          newData.orthopedics = (newData.orthopedics || []).filter(id => id !== 'dyslipidemia');
+        }
       }
       
       // 혈당 입력 시 자동으로 diabetes 판단
@@ -316,6 +397,13 @@ export default function HealthInputPage() {
         const hasDiabetes = value && value >= 126;
         if (!newData.conditions) newData.conditions = {} as any;
         newData.conditions.diabetes = hasDiabetes || false;
+        
+        // 당뇨병일 경우 orthopedics에 자동 추가
+        if (hasDiabetes && !newData.orthopedics?.includes('diabetes')) {
+          newData.orthopedics = [...(newData.orthopedics || []), 'diabetes'];
+        } else if (!hasDiabetes) {
+          newData.orthopedics = (newData.orthopedics || []).filter(id => id !== 'diabetes');
+        }
       }
       
       return newData;
@@ -377,18 +465,14 @@ export default function HealthInputPage() {
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
+        // 기본정보 필수: 나이, 성별, 키, 몸무게
+        // 건강검진/질환은 선택사항
         return !!(healthData.demographics?.age && healthData.demographics?.age > 0 && 
                  healthData.demographics?.sex && healthData.demographics?.sex !== '' &&
                  healthData.anthropometrics?.height_cm && healthData.anthropometrics?.height_cm > 0 && 
                  healthData.anthropometrics?.weight_kg && healthData.anthropometrics?.weight_kg > 0);
       case 2:
-        return !!(healthData.vitals?.rest_hr && healthData.vitals?.rest_hr > 0 && 
-                 healthData.vitals?.rest_bp?.sbp && healthData.vitals?.rest_bp?.sbp > 0 && 
-                 healthData.vitals?.rest_bp?.dbp && healthData.vitals?.rest_bp?.dbp > 0);
-      case 3:
-        return true; // 질환/특수상황은 선택사항
-      case 4:
-        // 수영실력 + 운동목표 모두 필수
+        // 수영실력 + 운동목표 필수, CSS/영법은 선택사항
         return !!(healthData.swim_profile?.level && 
                  healthData.swim_profile?.level !== 'beginner_1' &&
                  healthData.goals?.primary && 
@@ -527,15 +611,16 @@ export default function HealthInputPage() {
               </div>
             )}
             
+            {/* BMI 자동 계산 및 비만 진단 */}
             {healthData.anthropometrics?.height_cm && healthData.anthropometrics?.weight_kg && (
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">BMI 계산 결과</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">📊 BMI 자동 진단</h3>
                 </div>
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold mb-2">{calculateBMI()}</div>
-                    <div className={`px-2 py-1 rounded-full text-sm text-white ${
+                    <div className={`inline-block px-4 py-2 rounded-full text-sm font-semibold text-white ${
                       getBMICategory(parseFloat(calculateBMI())).color === 'green' ? 'bg-green-600' :
                       getBMICategory(parseFloat(calculateBMI())).color === 'yellow' ? 'bg-yellow-600' :
                       getBMICategory(parseFloat(calculateBMI())).color === 'orange' ? 'bg-orange-600' :
@@ -543,10 +628,254 @@ export default function HealthInputPage() {
                     }`}>
                       {getBMICategory(parseFloat(calculateBMI())).category}
                     </div>
+                    {healthData.conditions?.obesity !== 'normal' && (
+                      <p className="text-sm text-orange-700 mt-2">
+                        ✅ 질환/상황에 자동 추가됨
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
+
+            {/* 건강검진 (선택사항) */}
+            <div className="mt-8 pt-6 border-t-2 border-gray-200">
+              <h3 className="text-lg font-semibold mb-4">🏥 건강검진 결과 (선택사항)</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                최근 건강검진 결과가 있다면 입력하세요. 자동으로 질환을 진단하고 안전한 운동 강도를 설정합니다.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="rest_hr" className="block text-sm font-medium text-gray-700 mb-1">
+                    안정시 심박수 (bpm) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="rest_hr"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.rest_hr || ''}
+                    onChange={(e) => handleInputChange('vitals.rest_hr', parseInt(e.target.value))}
+                    placeholder="예: 70"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="sbp" className="block text-sm font-medium text-gray-700 mb-1">
+                    수축기 혈압 (mmHg) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="sbp"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.rest_bp?.sbp || ''}
+                    onChange={(e) => handleInputChange('vitals.rest_bp.sbp', parseInt(e.target.value))}
+                    placeholder="예: 120"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dbp" className="block text-sm font-medium text-gray-700 mb-1">
+                    이완기 혈압 (mmHg) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="dbp"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.rest_bp?.dbp || ''}
+                    onChange={(e) => handleInputChange('vitals.rest_bp.dbp', parseInt(e.target.value))}
+                    placeholder="예: 80"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="blood_sugar" className="block text-sm font-medium text-gray-700 mb-1">
+                    공복 혈당 (mg/dL) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="blood_sugar"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.bloodSugar || ''}
+                    onChange={(e) => handleInputChange('vitals.bloodSugar', parseInt(e.target.value))}
+                    placeholder="예: 95"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 정상: 100 미만, 당뇨 전단계: 100-125, 당뇨: 126 이상
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="total_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">
+                    총 콜레스테롤 (mg/dL) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="total_cholesterol"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.totalCholesterol || ''}
+                    onChange={(e) => handleInputChange('vitals.totalCholesterol', parseInt(e.target.value))}
+                    placeholder="예: 190"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 정상: 200 미만, 경계: 200-239, 높음: 240 이상
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="ldl_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">
+                    LDL 콜레스테롤 (mg/dL) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="ldl_cholesterol"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.ldlCholesterol || ''}
+                    onChange={(e) => handleInputChange('vitals.ldlCholesterol', parseInt(e.target.value))}
+                    placeholder="예: 110"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 정상: 100 미만, 경계: 130-159, 높음: 160 이상
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="hdl_cholesterol" className="block text-sm font-medium text-gray-700 mb-1">
+                    HDL 콜레스테롤 (mg/dL) <span className="text-gray-400 text-xs">선택</span>
+                  </label>
+                  <input
+                    id="hdl_cholesterol"
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={healthData.vitals?.hdlCholesterol || ''}
+                    onChange={(e) => handleInputChange('vitals.hdlCholesterol', parseInt(e.target.value))}
+                    placeholder="예: 55"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 남성: 40 이상, 여성: 50 이상 (높을수록 좋음)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 자동 진단 결과 표시 */}
+            {(healthData.conditions?.diabetes || healthData.conditions?.dyslipidemia || healthData.conditions?.hypertension !== 'normal') && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-6">
+                <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  🔍 자동 진단 결과
+                </h4>
+                <div className="space-y-2 text-sm">
+                  {healthData.conditions?.obesity !== 'normal' && (
+                    <div className="flex items-center gap-2 text-orange-800">
+                      <span className="text-lg">⚖️</span>
+                      <span><strong>{getBMICategory(parseFloat(calculateBMI())).category}</strong> (BMI {calculateBMI()})</span>
+                      <span className="text-green-600 font-medium">→ 질환/상황에 추가됨</span>
+                    </div>
+                  )}
+                  {healthData.conditions?.hypertension === 'stage2' && (
+                    <div className="flex items-center gap-2 text-red-800">
+                      <span className="text-lg">🩺</span>
+                      <span><strong>고혈압 2기</strong> (SBP ≥140 or DBP ≥90)</span>
+                      <span className="text-green-600 font-medium">→ 질환/상황에 추가됨</span>
+                    </div>
+                  )}
+                  {healthData.conditions?.hypertension === 'stage1' && (
+                    <div className="flex items-center gap-2 text-orange-800">
+                      <span className="text-lg">🩺</span>
+                      <span><strong>고혈압 1기</strong> (SBP ≥130 or DBP ≥80)</span>
+                      <span className="text-green-600 font-medium">→ 질환/상황에 추가됨</span>
+                    </div>
+                  )}
+                  {healthData.conditions?.diabetes && (
+                    <div className="flex items-center gap-2 text-red-800">
+                      <span className="text-lg">💉</span>
+                      <span><strong>당뇨병 의심</strong> (공복혈당 ≥126 mg/dL)</span>
+                      <span className="text-green-600 font-medium">→ 질환/상황에 추가됨</span>
+                    </div>
+                  )}
+                  {healthData.conditions?.dyslipidemia && (
+                    <div className="flex items-center gap-2 text-red-800">
+                      <span className="text-lg">🧪</span>
+                      <span><strong>고지혈증 의심</strong> (TC ≥240 or LDL ≥160)</span>
+                      <span className="text-green-600 font-medium">→ 질환/상황에 추가됨</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-blue-700 mt-4 font-medium">
+                  💡 자동 진단된 질환은 다음 단계에서 확인하고 추가/제거할 수 있습니다.
+                </p>
+              </div>
+            )}
+
+            {/* 질환/상황 선택 */}
+            <div className="mt-8 pt-6 border-t-2 border-gray-200">
+              <h3 className="text-lg font-semibold mb-4">🏥 질환 및 특수 상황</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                추가로 있는 관절 질환, 통증, 특수 상황을 선택하세요. (복수 선택 가능)<br/>
+                <span className="text-blue-600 font-medium">💡 위에서 자동 진단된 질환도 포함되어 표시됩니다</span>
+              </p>
+              
+              {/* AllConditionsDrawer 열기 버튼 */}
+              <button
+                type="button"
+                onClick={() => setShowConditionsDrawer(true)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium flex items-center justify-between shadow-md hover:shadow-lg"
+              >
+                <span className="flex items-center space-x-2">
+                  <span>🏥</span>
+                  <span>질환/특수상황 선택하기</span>
+                </span>
+                <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
+                  {healthData.orthopedics && healthData.orthopedics.length > 0 
+                    ? `${healthData.orthopedics.length}개 선택됨` 
+                    : '선택 안함'}
+                </span>
+              </button>
+              
+              {/* 선택된 질환 목록 표시 */}
+              {healthData.orthopedics && healthData.orthopedics.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-800">✅ 선택된 질환/상황 ({healthData.orthopedics.length}개)</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {healthData.orthopedics.map((conditionId) => {
+                      const condition = jointConditions.find(c => c.id === conditionId);
+                      const isAutoDiagnosed = ['obesity', 'obesity-severe', 'overweight', 'hypertension', 'hypertension-stage2', 'hypertension-elevated', 'diabetes', 'dyslipidemia'].includes(conditionId);
+                      return condition ? (
+                        <div
+                          key={conditionId}
+                          className={`group px-4 py-2 border rounded-lg text-sm flex items-center space-x-2 transition-colors ${
+                            isAutoDiagnosed 
+                              ? 'bg-green-50 border-green-300 text-green-800'
+                              : 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100'
+                          }`}
+                        >
+                          {isAutoDiagnosed && <span className="text-green-600">✨</span>}
+                          <span className="font-medium">{condition.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleJointConditionToggle(conditionId)}
+                            className={`font-bold text-lg leading-none group-hover:scale-110 transition-transform ${
+                              isAutoDiagnosed ? 'text-green-400 hover:text-green-600' : 'text-blue-400 hover:text-blue-600'
+                            }`}
+                            title={isAutoDiagnosed ? '자동 진단 (제거 가능)' : '제거'}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    ✨ = 자동 진단 질환 (건강검진 결과 기반)
+                  </p>
+                </div>
+              )}
+
+              {healthData.orthopedics && healthData.orthopedics.length > 0 && (
+                <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div className="text-sm text-green-800">
+                    <p className="font-semibold mb-2">선택 완료: {healthData.orthopedics.length}개 질환/상황</p>
+                    <p>선택하신 질환과 특수 상황에 따라 <strong>안전한 수영 영법과 운동 강도가 자동으로 조정</strong>됩니다.</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         );
 
