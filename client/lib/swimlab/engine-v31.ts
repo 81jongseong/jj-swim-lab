@@ -2164,9 +2164,12 @@ function finalizePlan(
     estimatedMinutes += setMinutes;
     
     timeDetails.push({
-      desc: s.desc.substring(0, 30),
+      desc: s.desc.substring(0, 50),
+      meters: s.meters,
       reps,
       distPerRep,
+      paceStr: paceMatch ? `${paceMatch[1]}:${paceMatch[2]}` : 'N/A',
+      paceSeconds: paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 0,
       swimSec: totalSwimSeconds,
       restSec: totalRestSeconds,
       totalMin: setMinutes.toFixed(1)

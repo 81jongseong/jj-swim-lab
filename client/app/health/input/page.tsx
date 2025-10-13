@@ -614,8 +614,8 @@ export default function HealthInputPage() {
         healthData: healthData
       };
       
-      // 로컬 스토리지에 저장 (엔진 버전 v31 포함)
-      localStorage.setItem('guest-daily-program-v31', JSON.stringify(programData));
+      // 로컬 스토리지에 저장 (엔진 버전 v32 - 시간 계산 개선)
+      localStorage.setItem('guest-daily-program-v32', JSON.stringify(programData));
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');
