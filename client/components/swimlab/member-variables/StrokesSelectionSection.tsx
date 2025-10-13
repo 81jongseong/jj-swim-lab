@@ -51,22 +51,22 @@ export default function StrokesSelectionSection({
     conditionIds.forEach(condId => {
       // 어깨 충돌증
       if (condId.includes('shoulder_impingement') || condId.includes('견관절')) {
-        strokeWarnings.freestyle.push('어깨 충돌증: 자유형 주의 (거리 70% 제한)');
-        strokeWarnings.butterfly.push('어깨 충돌증: 접영 금지');
+        strokeWarnings.freestyle.push('어깨 충돌증: 자유형 주의 (강도 70%로 조절)');
+        strokeWarnings.butterfly.push('어깨 충돌증: 접영 금지 (관절 부담 과다)');
       }
       // 회전근개 손상
       if (condId.includes('rotator_cuff') || condId.includes('회전근개')) {
-        strokeWarnings.freestyle.push('회전근개 손상: 자유형 주의');
-        strokeWarnings.butterfly.push('회전근개 손상: 접영 금지');
+        strokeWarnings.freestyle.push('회전근개 손상: 자유형 주의 (강도 조절 필요)');
+        strokeWarnings.butterfly.push('회전근개 손상: 접영 금지 (회전 부담)');
       }
       // 무릎 연골 손상
       if (condId.includes('knee') || condId.includes('무릎')) {
-        strokeWarnings.breaststroke.push('무릎 질환: 평영 금지');
+        strokeWarnings.breaststroke.push('무릎 질환: 평영 금지 (웨지킥 부담)');
       }
       // 허리 디스크
       if (condId.includes('lumbar') || condId.includes('허리')) {
-        strokeWarnings.breaststroke.push('허리 질환: 평영 주의');
-        strokeWarnings.butterfly.push('허리 질환: 접영 금지');
+        strokeWarnings.breaststroke.push('허리 질환: 평영 주의 (허리 굴곡)');
+        strokeWarnings.butterfly.push('허리 질환: 접영 금지 (과도한 척추 움직임)');
       }
     });
     

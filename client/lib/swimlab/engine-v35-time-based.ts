@@ -792,8 +792,9 @@ export function generateTimeBasedProgram(opts: {
     weeklyFrequency: opts.weeklyFrequency || 3,
     selectedTheme: theme,
     themeDesc: themeDescriptions[theme],
+    conditionIds: opts.conditionIds,
     primaryStroke,
-    availableStrokes,
+    availableStrokes, // 🏊 사용 가능한 영법 (질환 시 재활 영법 자동 추가)
     avoidStrokes: opts.strokesAvoid,
     strokeRotation: availableStrokes.length > 1 ? '세트별 영법 순환' : '단일 영법'
   });
@@ -860,7 +861,8 @@ export function generateTimeBasedProgram(opts: {
   
   // 주의 영법 체크
   if (conditionRules.strokeAdjustments[primaryStroke]?.reduceVolume) {
-    strokeWarnings.push(`💡 ${getStrokeName(primaryStroke)} 영법은 주의가 필요합니다. 거리를 ${(conditionRules.strokeAdjustments[primaryStroke].volumePct * 100).toFixed(0)}%로 제한합니다.`);
+    const intensityPct = Math.round((conditionRules.strokeAdjustments[primaryStroke].volumePct || 0.7) * 100);
+    strokeWarnings.push(`💡 ${getStrokeName(primaryStroke)} 영법은 주의가 필요합니다. 페이스를 느리게 조절하여 강도를 ${intensityPct}%로 제한합니다.`);
   }
   
   if (strokeWarnings.length > 0) {
@@ -963,24 +965,25 @@ export function generateTimeBasedProgram(opts: {
       // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
       const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
+      const pullStroke = getStrokeForSet(setIndex++);
       const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
-        stroke: 'freestyle',
+        stroke: pullStroke,
         zone: 'Z2',
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
         equipment: selectedDrill.equipment,
         subtype: 'DRILL_PULL', // 드릴 파트 - 팔
         meters,
-        desc,
+        desc: desc.replace('[자유형]', `[${getStrokeName(pullStroke)}]`),
         whyPace: 'CSS 기반 Z2(유산소 기초) → 미토콘드리아 밀도↑, 지방 대사 개선',
         whyRest: `Z2 기본 r${restSeconds}″. 기술 유지와 환기 위한 회복`,
         whySet: `${selectedDrill.name}: ${selectedDrill.rationale}`,
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
-      console.log('✅ 팔 드릴 생성:', { reps, meters, desc });
+      console.log('✅ 팔 드릴 생성:', { reps, meters, desc, stroke: getStrokeName(pullStroke) });
     }
     
     // 4-2. 발차기 드릴 (레벨별 자동 선택)
@@ -1014,24 +1017,25 @@ export function generateTimeBasedProgram(opts: {
       // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
       const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
+      const kickStroke = getStrokeForSet(setIndex++);
       const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
-        stroke: 'freestyle',
+        stroke: kickStroke,
         zone: 'Z2',
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
         equipment: selectedDrill.equipment,
         subtype: 'DRILL_KICK', // 드릴 파트 - 발차기
         meters,
-        desc,
+        desc: desc.replace('[자유형]', `[${getStrokeName(kickStroke)}]`),
         whyPace: `발차기는 전신 수영보다 1.5배 느림 (CSS ${formatPace(adjustedCss)} × 1.5)`,
         whyRest: `Z2 기본 r${restSeconds}″. 기술 유지와 환기 위한 회복`,
         whySet: `${selectedDrill.name}: ${selectedDrill.rationale}`,
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
-      console.log('✅ 발차기 드릴 생성:', { reps, meters, desc });
+      console.log('✅ 발차기 드릴 생성:', { reps, meters, desc, stroke: getStrokeName(kickStroke) });
     }
   }
   
@@ -1093,15 +1097,18 @@ export function generateTimeBasedProgram(opts: {
       }
       const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} ${paceDescription}, r${selectedMethod.restSeconds}″`;
       
+      const mainStroke = getStrokeForSet(setIndex++);
+      const finalDesc = desc.replace('[자유형]', `[${getStrokeName(mainStroke)}]`);
+      
       sets.push({
-        stroke: 'freestyle',
+        stroke: mainStroke,
         zone: selectedMethod.zone,
         restSec: selectedMethod.restSeconds,
         rpe: getRPEForZone(selectedMethod.zone),
         equipment: selectedMethod.equipment || [],
         subtype: i === 0 ? 'MAIN' : 'MAIN_SUB', // 메인 파트 표시
         meters,
-        desc,
+        desc: finalDesc,
         whyPace: selectedMethod.whyPace,
         whyRest: selectedMethod.whyRest,
         whySet: selectedMethod.whySet,
@@ -1109,7 +1116,7 @@ export function generateTimeBasedProgram(opts: {
         evidenceKeys: selectedMethod.evidenceKeys
       });
       
-      console.log(`✅ 메인 세트 ${i + 1} 생성:`, { reps, meters, desc });
+      console.log(`✅ 메인 세트 ${i + 1} 생성:`, { reps, meters, desc: finalDesc, stroke: getStrokeName(mainStroke) });
     }
   }
   
@@ -1134,24 +1141,25 @@ export function generateTimeBasedProgram(opts: {
     
     const meters = reps * distPerRep;
     // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
+    const cooldownStroke = getStrokeForSet(setIndex++);
     const desc = `[자유형] ${reps}×${distPerRep}m 쿨다운 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
     sets.push({
-      stroke: 'freestyle',
+      stroke: cooldownStroke,
       zone: 'Z1',
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
       subtype: 'COOLDOWN', // 쿨다운 파트 표시
       meters,
-      desc,
+      desc: desc.replace('[자유형]', `[${getStrokeName(cooldownStroke)}]`),
       whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',
       whyRest: `Z1 기본 r${restSeconds}″. 저강도 회복/환기`,
       whySet: '쿨다운으로 젖산 제거 촉진, 회복 시작',
       evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
     });
     
-    console.log('✅ 쿨다운 생성:', { reps, meters, desc });
+    console.log('✅ 쿨다운 생성:', { reps, meters, desc, stroke: getStrokeName(cooldownStroke) });
   }
   
   // 7. 최종 검증: 실제 소요 시간 계산
