@@ -528,21 +528,27 @@ function calculateRepsFromTime(
 ): number {
   const targetSeconds = targetMinutes * 60;
   
-  // 1회당 소요 시간 계산
-  let timePerRep: number;
+  // 1회당 소요 시간 계산 (수영 시간만, 휴식은 별도)
+  let swimTimePerRep: number;
   if (isPer100m) {
-    // per 100m 페이스: (거리 / 100) * 페이스 + 휴식
-    timePerRep = (distPerRep / 100) * paceSeconds + restSeconds;
+    // per 100m 페이스: (거리 / 100) * 페이스
+    swimTimePerRep = (distPerRep / 100) * paceSeconds;
   } else {
-    // per set 페이스: 페이스 + 휴식
-    timePerRep = paceSeconds + restSeconds;
+    // per set 페이스
+    swimTimePerRep = paceSeconds;
   }
   
-  // 반복 횟수 = 목표 시간 / 1회당 시간
-  const calculatedReps = Math.round(targetSeconds / timePerRep);
+  // 반복 횟수 역산: targetSeconds = (swimTime * reps) + (rest * (reps - 1))
+  // targetSeconds = swimTime * reps + rest * reps - rest
+  // targetSeconds + rest = reps * (swimTime + rest)
+  // reps = (targetSeconds + rest) / (swimTime + rest)
+  const calculatedReps = Math.round((targetSeconds + restSeconds) / (swimTimePerRep + restSeconds));
   
   // 과학적 범위 내로 제한
   const finalReps = Math.max(minReps, Math.min(maxReps, calculatedReps));
+  
+  // 실제 소요 시간 계산 (검증용)
+  const actualTotalSeconds = (swimTimePerRep * finalReps) + (restSeconds * (finalReps - 1));
   
   console.log(`⏱️ 시간 역산 계산:`, {
     targetMinutes,
@@ -551,12 +557,13 @@ function calculateRepsFromTime(
     paceSeconds,
     restSeconds,
     isPer100m,
-    timePerRep: timePerRep.toFixed(1) + '초',
-    expectedTotalTime: (finalReps * timePerRep / 60).toFixed(1) + '분',
+    swimTimePerRep: swimTimePerRep.toFixed(1) + '초',
     calculatedReps,
     minReps,
     maxReps,
-    finalReps
+    finalReps,
+    expectedTotalTime: (actualTotalSeconds / 60).toFixed(1) + '분',
+    accuracy: ((actualTotalSeconds / targetSeconds) * 100).toFixed(1) + '%'
   });
   
   return finalReps;
@@ -583,8 +590,8 @@ function calculateSetDuration(
     swimSeconds = paceSeconds * reps;
   }
   
-  // 휴식: 모든 반복 후 (세트 전환 포함)
-  const totalRestSeconds = restSeconds * reps;
+  // 휴식: 마지막 반복 제외 (reps - 1)
+  const totalRestSeconds = restSeconds * (reps - 1);
   
   return (swimSeconds + totalRestSeconds) / 60; // 분 단위 반환
 }
