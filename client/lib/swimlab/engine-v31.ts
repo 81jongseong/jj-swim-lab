@@ -2140,29 +2140,37 @@ function finalizePlan(
     const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
     const distPerRep = s.meters / reps;
     
-    // 2. 페이스 파싱 (예: "@ 2:22" = 2분 22초 per 100m)
+    // 2. 페이스 파싱 (예: "@ 2:22" = 페이스 시간)
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
     let totalSwimSeconds = 0;
     
     if (paceMatch) {
       const paceMinutes = parseInt(paceMatch[1]);
       const paceSeconds = parseInt(paceMatch[2]);
-      const pacePer100m = paceMinutes * 60 + paceSeconds;
+      const paceTime = paceMinutes * 60 + paceSeconds;
       
-      // 🎯 우리 엔진의 페이스는 항상 per 100m 기준!
-      // 예: 2×100m @ 2:22 → 각 100m마다 2:22 (142초)
-      //     3×300m @ 5:18 → 각 100m마다 5:18 (318초), 300m는 954초
-      //     2×50m @ 0:49 → 각 100m마다 0:49 (49초), 50m는 24.5초
+      // 🎯 페이스 해석: 거리별로 다름
+      // - 100m 이하: per 100m 페이스
+      // - 100m 초과: per set 페이스
+      // 예: 2×100m @ 2:22 → per 100m (각 100m에 2:22)
+      //     3×300m @ 5:18 → per set (각 300m에 5:18)
+      //     2×50m @ 0:49 → per 100m (각 100m에 0:49, 50m는 24.5초)
       
-      // 총 수영 거리에 대한 시간 계산
-      totalSwimSeconds = (s.meters / 100) * pacePer100m;
+      if (distPerRep <= 100) {
+        // per 100m 페이스
+        totalSwimSeconds = (s.meters / 100) * paceTime;
+      } else {
+        // per set 페이스 (300m, 400m 등)
+        totalSwimSeconds = paceTime * reps;
+      }
     } else {
       // 페이스 정보 없으면 기본 90초/100m 가정
       totalSwimSeconds = (s.meters / 100) * 90;
     }
     
-    // 3. 휴식 시간 계산 (마지막 반복은 휴식 없음)
-    const totalRestSeconds = s.restSec * (reps - 1);
+    // 3. 휴식 시간 계산
+    // 🔧 세트 간 전환을 위해 마지막 반복 후에도 휴식 포함
+    const totalRestSeconds = s.restSec * reps;
     
     // 4. 총 시간 (분)
     const setMinutes = (totalSwimSeconds + totalRestSeconds) / 60;
@@ -2173,8 +2181,9 @@ function finalizePlan(
       meters: s.meters,
       reps,
       distPerRep,
-      pacePer100m: paceMatch ? `${paceMatch[1]}:${paceMatch[2]}` : 'N/A',
-      pacePer100mSec: paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 0,
+      paceDisplay: paceMatch ? `${paceMatch[1]}:${paceMatch[2]}` : 'N/A',
+      paceType: distPerRep <= 100 ? 'per 100m' : 'per set',
+      paceSeconds: paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 0,
       totalSwimSec: totalSwimSeconds,
       totalRestSec: totalRestSeconds,
       totalMin: setMinutes.toFixed(1)
@@ -2196,8 +2205,9 @@ function finalizePlan(
       meters: detail.meters,
       reps: detail.reps,
       distPerRep: detail.distPerRep,
-      pacePer100m: detail.pacePer100m,
-      pacePer100mSec: detail.pacePer100mSec,
+      pace: detail.paceDisplay,
+      paceType: detail.paceType,
+      paceSeconds: detail.paceSeconds,
       totalSwimSec: detail.totalSwimSec,
       totalRestSec: detail.totalRestSec,
       totalMin: detail.totalMin
