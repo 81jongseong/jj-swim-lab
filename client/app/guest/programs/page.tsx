@@ -147,6 +147,24 @@ export default function GuestProgramsPage() {
                 </p>
               </div>
 
+              {/* 영법 경고 */}
+              {program.engineOutput?.strokeWarnings && program.engineOutput.strokeWarnings.length > 0 && (
+                <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-5 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">⚠️</div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-yellow-900 mb-2">영법 주의사항</h3>
+                      {program.engineOutput.strokeWarnings.map((warning: string, idx: number) => (
+                        <p key={idx} className="text-yellow-800 text-sm mb-1">{warning}</p>
+                      ))}
+                      <p className="text-xs text-yellow-700 mt-3">
+                        💡 질환이 있어도 운동을 계속하시려면 강사와 상담 후 진행하세요.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 프로그램 요약 */}
               {program.engineOutput && (
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5 mb-4">

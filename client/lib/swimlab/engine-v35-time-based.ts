@@ -119,6 +119,7 @@ interface DayPlan {
   totalMeters: number;
   estimatedMinutes: number;
   usedMethodIds: string[];
+  strokeWarnings?: string[]; // 영법 경고 메시지
 }
 
 /**
@@ -880,6 +881,7 @@ export function generateTimeBasedProgram(opts: {
   });
   
   const sets: SetItem[] = [];
+  let setIndex = 0; // 세트별 영법 순환용 인덱스
   
   // 3. 워밍업 (레벨별 거리 단위)
   {
@@ -904,7 +906,7 @@ export function generateTimeBasedProgram(opts: {
     // 🎯 페이스를 세트 거리 기준으로 표시 (100m 세트 → 100m 페이스)
     const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
-    const warmupStroke = getStrokeForSet(0);
+    const warmupStroke = getStrokeForSet(setIndex++);
     sets.push({
       stroke: warmupStroke,
       zone: 'Z1',
@@ -920,7 +922,7 @@ export function generateTimeBasedProgram(opts: {
       evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
     });
     
-    console.log('✅ 워밍업 생성:', { reps, meters, desc });
+    console.log('✅ 워밍업 생성:', { reps, meters, desc, stroke: getStrokeName(warmupStroke) });
   }
   
   // 4. 드릴 (레벨별 거리 단위)
@@ -1204,7 +1206,8 @@ export function generateTimeBasedProgram(opts: {
     sets,
     totalMeters,
     estimatedMinutes: Math.round(totalMinutes),
-    usedMethodIds: sets.filter(s => s.methodId).map(s => s.methodId!)
+    usedMethodIds: sets.filter(s => s.methodId).map(s => s.methodId!),
+    strokeWarnings: strokeWarnings.length > 0 ? strokeWarnings : undefined
   };
 }
 
