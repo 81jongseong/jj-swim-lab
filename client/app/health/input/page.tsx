@@ -621,9 +621,9 @@ export default function HealthInputPage() {
       
       console.log('💾 프로그램 저장:', { 
         key: 'guest-daily-program-v33', 
-        date: startDate,
-        sets: dailyOutput.sets.length,
-        totalMeters: dailyOutput.totalMeters,
+        date: programData.date,
+        sets: generatedProgram.sets.length,
+        totalMeters: generatedProgram.totalMeters,
         duration: programData.duration
       });
       
