@@ -26,19 +26,66 @@ interface StrokesSelectionSectionProps {
     mainStrokes?: string[];
     excludedStrokes?: string[];
   }) => void;
+  conditionIds?: string[]; // 질환 ID 리스트
 }
 
 export default function StrokesSelectionSection({
   mainStrokes,
   excludedStrokes,
   strokes,
-  onUpdate
+  onUpdate,
+  conditionIds = []
 }: StrokesSelectionSectionProps) {
+  // 🏥 질환별 영법 경고 가져오기
+  const getStrokeWarning = (strokeId: string): string | null => {
+    if (!conditionIds || conditionIds.length === 0) return null;
+    
+    // condition-rules-v4.ts의 로직 간소화 버전
+    const strokeWarnings: Record<string, string[]> = {
+      freestyle: [],
+      backstroke: [],
+      breaststroke: [],
+      butterfly: []
+    };
+    
+    conditionIds.forEach(condId => {
+      // 어깨 충돌증
+      if (condId.includes('shoulder_impingement') || condId.includes('견관절')) {
+        strokeWarnings.freestyle.push('어깨 충돌증: 자유형 주의 (거리 70% 제한)');
+        strokeWarnings.butterfly.push('어깨 충돌증: 접영 금지');
+      }
+      // 회전근개 손상
+      if (condId.includes('rotator_cuff') || condId.includes('회전근개')) {
+        strokeWarnings.freestyle.push('회전근개 손상: 자유형 주의');
+        strokeWarnings.butterfly.push('회전근개 손상: 접영 금지');
+      }
+      // 무릎 연골 손상
+      if (condId.includes('knee') || condId.includes('무릎')) {
+        strokeWarnings.breaststroke.push('무릎 질환: 평영 금지');
+      }
+      // 허리 디스크
+      if (condId.includes('lumbar') || condId.includes('허리')) {
+        strokeWarnings.breaststroke.push('허리 질환: 평영 주의');
+        strokeWarnings.butterfly.push('허리 질환: 접영 금지');
+      }
+    });
+    
+    return strokeWarnings[strokeId as keyof typeof strokeWarnings]?.[0] || null;
+  };
+
   const toggleMainStroke = (strokeId: string) => {
     if (excludedStrokes.includes(strokeId)) {
       alert('제외 영법으로 설정된 영법은 주 영법으로 선택할 수 없습니다.');
       return;
     }
+    
+    // 🚨 질환 경고 체크
+    const warning = getStrokeWarning(strokeId);
+    if (warning) {
+      const confirmed = confirm(`⚠️ ${warning}\n\n그래도 이 영법을 선택하시겠습니까?\n(강사와 상담 후 진행을 권장합니다)`);
+      if (!confirmed) return;
+    }
+    
     const isSelected = mainStrokes.includes(strokeId);
     onUpdate({
       mainStrokes: isSelected
@@ -69,22 +116,31 @@ export default function StrokesSelectionSection({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {strokes.map(stroke => {
             const isExcluded = excludedStrokes.includes(stroke.id);
+            const warning = getStrokeWarning(stroke.id);
+            const hasWarning = warning !== null;
+            
             return (
               <button
                 key={stroke.id}
                 onClick={() => toggleMainStroke(stroke.id)}
                 disabled={isExcluded}
-                className={`px-4 py-3 border-2 rounded-lg transition-all ${
+                className={`px-4 py-3 border-2 rounded-lg transition-all relative ${
                   isExcluded 
                     ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
                     : mainStrokes.includes(stroke.id)
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    ? hasWarning
+                      ? 'border-yellow-500 bg-yellow-50 text-yellow-700 font-semibold'
+                      : 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
+                    : hasWarning
+                    ? 'border-yellow-300 hover:border-yellow-400 bg-yellow-50/30'
                     : 'border-gray-200 hover:border-blue-300'
                 }`}
               >
+                {hasWarning && <div className="absolute -top-2 -right-2 text-xl">⚠️</div>}
                 <div className="text-xl mb-1">{stroke.icon}</div>
                 <div className="text-xs">{stroke.label}</div>
                 {isExcluded && <div className="text-xs text-red-600 mt-1">제외됨</div>}
+                {hasWarning && !isExcluded && <div className="text-xs text-yellow-600 mt-1">주의</div>}
               </button>
             );
           })}

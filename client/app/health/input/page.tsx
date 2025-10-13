@@ -898,6 +898,7 @@ export default function HealthInputPage() {
             <StrokesSelectionSection
               mainStrokes={healthData.swim_profile?.mainStrokes || []}
               excludedStrokes={healthData.swim_profile?.excludedStrokes || []}
+              conditionIds={healthData.orthopedics || []} // 🏥 질환 정보 전달
               strokes={[
                 { id: 'freestyle', label: '자유형', icon: '🏊' },
                 { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
