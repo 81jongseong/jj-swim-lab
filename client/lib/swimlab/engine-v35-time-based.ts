@@ -733,21 +733,6 @@ function getRPEForZone(zone: Zone): number {
 }
 
 /**
- * 🎯 영법 이름 한글 변환
- */
-function getStrokeName(stroke: Stroke): string {
-  const names: Record<Stroke, string> = {
-    freestyle: '자유형',
-    backstroke: '배영',
-    breaststroke: '평영',
-    butterfly: '접영',
-    elementary_backstroke: '기본배영',
-    sidestroke: '측영'
-  };
-  return names[stroke];
-}
-
-/**
  * 🎯 시간 기반 일일 프로그램 생성
  * 
  * 핵심 로직:
