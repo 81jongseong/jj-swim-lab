@@ -548,6 +548,42 @@ export default function CommunityPage() {
             수영에 대한 정보를 공유하고 다른 수영인들과 소통해보세요.
           </p>
         </div>
+        
+        {/* 🎁 게스트 상태 배너 */}
+        {isGuest && (
+          <div className="mb-6 bg-gradient-to-r from-purple-50 via-blue-50 to-purple-50 border-2 border-purple-300 rounded-xl p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="text-5xl">🎁</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-purple-900 mb-2">체험 회원으로 이용 중입니다</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p className="flex items-center gap-2">
+                    <span className="text-green-600">✅</span>
+                    <span>게시글 미리보기 <strong className="text-purple-700">(최대 3개)</strong></span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-red-600">🔒</span>
+                    <span>게시글 작성 및 댓글 <strong className="text-red-700">(회원 전용)</strong></span>
+                  </p>
+                </div>
+                <div className="mt-4 flex gap-3">
+                  <a 
+                    href="/auth/signup"
+                    className="px-6 py-2.5 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors shadow-md"
+                  >
+                    무료 회원가입하고 모든 기능 이용하기 →
+                  </a>
+                  <a
+                    href="/swimlab/trial"
+                    className="px-6 py-2.5 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                  >
+                    AI 프로그램 체험하기
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 커뮤니티 통계 카드 */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
