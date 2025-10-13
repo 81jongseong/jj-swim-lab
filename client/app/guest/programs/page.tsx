@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Target } from 'lucide-react';
+import { canEditProgram, MEMBERSHIP_CONFIGS } from '@/types/membership';
 
 export default function GuestProgramsPage() {
   const router = useRouter();
@@ -140,11 +141,46 @@ export default function GuestProgramsPage() {
                 )}
               </h3>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-800 font-medium">
-                  💡 체험 프로그램이므로 하루 분량만 제공됩니다.<br/>
-                  정회원 가입 시 주간/월간 프로그램과 대회 준비 프로그램을 이용하실 수 있습니다!
-                </p>
+              {/* 🎁 게스트 상태 배너 */}
+              <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-purple-50 border-2 border-purple-300 rounded-xl p-6 mb-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="text-5xl">🎁</div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-purple-900 mb-2">체험 프로그램입니다</h3>
+                    <div className="space-y-2 text-sm text-gray-700 mb-4">
+                      <p className="flex items-center gap-2">
+                        <span className="text-green-600">✅</span>
+                        <span>1일 AI 맞춤 프로그램</span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="text-red-600">🔒</span>
+                        <span><strong>주간/월간 프로그램</strong> (회원 전용)</span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="text-red-600">🔒</span>
+                        <span><strong>프로그램 저장 및 수정</strong> (회원 전용)</span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="text-red-600">🔒</span>
+                        <span><strong>진도 기록 및 분석</strong> (회원 전용)</span>
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <a 
+                        href="/auth/signup"
+                        className="px-6 py-2.5 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors shadow-md"
+                      >
+                        무료 회원가입하고 모든 기능 이용 →
+                      </a>
+                      <a
+                        href="/swimlab/trial"
+                        className="px-6 py-2.5 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                      >
+                        다시 체험하기
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* 영법 경고 */}
