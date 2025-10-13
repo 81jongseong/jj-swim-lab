@@ -2129,60 +2129,173 @@ function finalizePlan(
   // 예: 100m 109초 → 70% 강도 → 139초 페이스로 느려져서 같은 거리에 시간이 더 걸림
   // 해결: 목표 시간 초과 시 쿨다운 거리를 줄여서 전체 시간을 맞춤
 
-  // 예상 소요 시간 계산 (각 세트의 페이스 기반)
+  // 🎯 정확한 소요 시간 계산 (페이스 + 휴식)
   let estimatedMinutes = 0;
+  const timeDetails: any[] = [];
+  
   sets.forEach(s => {
+    // 1. 반복 횟수 파싱 (예: "3×100m")
+    const repsMatch = s.desc.match(/^(\d+)×/);
+    const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
+    const distPerRep = s.meters / reps;
+    
+    // 2. 페이스 파싱 (예: "@ 2:22" = 2분 22초)
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
+    let totalSwimSeconds = 0;
+    
     if (paceMatch) {
-      const minutes = parseInt(paceMatch[1]);
-      const seconds = parseInt(paceMatch[2]);
-      const pace100m = minutes * 60 + seconds; // 초/100m
-      const estimatedTime = (s.meters / 100) * pace100m / 60; // 분
-      estimatedMinutes += estimatedTime + (s.restSec / 60); // 휴식 포함
+      const paceMinutes = parseInt(paceMatch[1]);
+      const paceSeconds = parseInt(paceMatch[2]);
+      const paceTotalSeconds = paceMinutes * 60 + paceSeconds;
+      
+      // 페이스가 세트당 시간인지 100m당 시간인지 판단
+      // 예: 100m @ 2:22 → 100m 기준, 50m @ 0:49 → 50m 기준
+      totalSwimSeconds = paceTotalSeconds * reps;
     } else {
       // 페이스 정보 없으면 기본 90초/100m 가정
-      estimatedMinutes += (s.meters / 100) * 1.5 + (s.restSec / 60);
+      totalSwimSeconds = (s.meters / 100) * 90;
     }
+    
+    // 3. 휴식 시간 계산 (마지막 반복은 휴식 없음)
+    const totalRestSeconds = s.restSec * (reps - 1);
+    
+    // 4. 총 시간 (분)
+    const setMinutes = (totalSwimSeconds + totalRestSeconds) / 60;
+    estimatedMinutes += setMinutes;
+    
+    timeDetails.push({
+      desc: s.desc.substring(0, 30),
+      reps,
+      distPerRep,
+      swimSec: totalSwimSeconds,
+      restSec: totalRestSeconds,
+      totalMin: setMinutes.toFixed(1)
+    });
   });
 
-  console.log('⏱️ 시간 기반 조절:', {
+  console.log('⏱️ 시간 계산 상세:', {
     targetMinutes,
-    estimatedMinutes: Math.round(estimatedMinutes),
-    difference: Math.round(estimatedMinutes - (targetMinutes || 0))
+    estimatedMinutes: estimatedMinutes.toFixed(1),
+    difference: (estimatedMinutes - (targetMinutes || 0)).toFixed(1),
+    breakdown: timeDetails
   });
 
   // 🏥 시간 부족/초과 확인 (과학적 거리 조절로 인해 거의 발생하지 않음)
   // 건강 상태 기반 거리 조절로 인해 시간이 자동으로 맞춰짐
   // 예: 70% 강도 → 거리 70% + 페이스 143% = 시간 약 100%
 
-  // 시간 초과 시 쿨다운 거리 축소 (targetMinutes가 있을 때만)
-  if (targetMinutes && estimatedMinutes > targetMinutes * 1.1) {
-    const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운') || s.zone === 'Z1');
-    if (cooldownIdx >= 0 && sets[cooldownIdx].meters > poolLen * 2) {
-      const excessMinutes = estimatedMinutes - targetMinutes;
-      const metersToReduce = Math.min(
-        Math.round(excessMinutes / 1.5 * 100 / poolLen) * poolLen, // 90초/100m 기준
-        sets[cooldownIdx].meters - poolLen // 최소 1개 풀은 남김
-      );
+  // 🔧 시간 조절: 목표 시간과 예상 시간의 차이가 ±5% 이상이면 조절
+  if (targetMinutes && Math.abs(estimatedMinutes - targetMinutes) > targetMinutes * 0.05) {
+    const diff = estimatedMinutes - targetMinutes;
+    
+    if (diff > 0) {
+      // ⏰ 시간 초과: 우선순위대로 거리 축소
+      // 1순위: 쿨다운 (Z1) - 과학적으로 최소 2×poolLen은 유지
+      // 2순위: 워밍업 (Z1) - 과학적으로 최소 2×poolLen은 유지
+      // 3순위: 메인 세트 (Z2/Z3) - 과학적 메타데이터의 minReps 이상 유지
       
-      sets[cooldownIdx].meters -= metersToReduce;
-      total -= metersToReduce;
+      let remainingMinutes = diff;
+      const adjustments: any[] = [];
       
-      // 세트 설명도 업데이트
-      sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, (match) => {
-        const n = parseInt(match);
-        const newReps = Math.max(1, Math.round(sets[cooldownIdx].meters / poolLen / (sets[cooldownIdx].meters / (n * poolLen))));
-        return `${newReps}×`;
-      });
+      // 1. 쿨다운 축소 (최소 2×poolLen 유지)
+      const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운'));
+      if (cooldownIdx >= 0 && remainingMinutes > 0) {
+        const minCooldown = poolLen * 2; // 최소 2회 반복
+        const currentMeters = sets[cooldownIdx].meters;
+        const maxReducible = Math.max(0, currentMeters - minCooldown);
+        
+        if (maxReducible > 0) {
+          const reps = parseReps(sets[cooldownIdx].desc);
+          const distPerRep = currentMeters / reps;
+          const paceMatch = sets[cooldownIdx].desc.match(/@\s*(\d+):(\d+)/);
+          const paceSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+          
+          // 줄여야 할 반복 횟수 계산
+          const repsToReduce = Math.min(
+            Math.ceil((remainingMinutes * 60) / (paceSeconds + sets[cooldownIdx].restSec)),
+            Math.floor(maxReducible / distPerRep)
+          );
+          
+          if (repsToReduce > 0) {
+            const metersReduced = repsToReduce * distPerRep;
+            sets[cooldownIdx].meters -= metersReduced;
+            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, `${reps - repsToReduce}×`);
+            
+            const minutesReduced = (repsToReduce * paceSeconds + repsToReduce * sets[cooldownIdx].restSec) / 60;
+            remainingMinutes -= minutesReduced;
+            total -= metersReduced;
+            
+            adjustments.push({
+              section: '쿨다운',
+              repsReduced: repsToReduce,
+              metersReduced,
+              minutesReduced: minutesReduced.toFixed(1)
+            });
+          }
+        }
+      }
       
-      console.log('⚠️ 시간 초과로 쿨다운 거리 축소:', {
-        excessMinutes: Math.round(excessMinutes),
-        metersToReduce,
-        newCooldownMeters: sets[cooldownIdx].meters
+      // 2. 워밍업 축소 (최소 2×poolLen 유지)
+      if (remainingMinutes > 1) {
+        const warmupIdx = sets.findIndex(s => s.desc.includes('워밍업'));
+        if (warmupIdx >= 0) {
+          const minWarmup = poolLen * 2;
+          const currentMeters = sets[warmupIdx].meters;
+          const maxReducible = Math.max(0, currentMeters - minWarmup);
+          
+          if (maxReducible > 0) {
+            const reps = parseReps(sets[warmupIdx].desc);
+            const distPerRep = currentMeters / reps;
+            const paceMatch = sets[warmupIdx].desc.match(/@\s*(\d+):(\d+)/);
+            const paceSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+            
+            const repsToReduce = Math.min(
+              Math.ceil((remainingMinutes * 60) / (paceSeconds + sets[warmupIdx].restSec)),
+              Math.floor(maxReducible / distPerRep)
+            );
+            
+            if (repsToReduce > 0) {
+              const metersReduced = repsToReduce * distPerRep;
+              sets[warmupIdx].meters -= metersReduced;
+              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/^(\d+)×/, `${reps - repsToReduce}×`);
+              
+              const minutesReduced = (repsToReduce * paceSeconds + repsToReduce * sets[warmupIdx].restSec) / 60;
+              remainingMinutes -= minutesReduced;
+              total -= metersReduced;
+              
+              adjustments.push({
+                section: '워밍업',
+                repsReduced: repsToReduce,
+                metersReduced,
+                minutesReduced: minutesReduced.toFixed(1)
+              });
+            }
+          }
+        }
+      }
+      
+      console.log('⏰ 시간 초과 조절:', {
+        excessMinutes: diff.toFixed(1),
+        adjustments,
+        remainingExcess: remainingMinutes.toFixed(1)
       });
       
       // 시간 재계산
-      estimatedMinutes -= (metersToReduce / 100) * 1.5;
+      estimatedMinutes = 0;
+      sets.forEach(s => {
+        const repsMatch = s.desc.match(/^(\d+)×/);
+        const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
+        const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
+        const paceTotalSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+        estimatedMinutes += (paceTotalSeconds * reps + s.restSec * (reps - 1)) / 60;
+      });
+      
+    } else {
+      // ⏰ 시간 부족: 추가 세트는 넣지 않음 (사용자에게 짧은 프로그램 제공)
+      console.log('ℹ️ 예상 시간이 목표보다 짧음:', {
+        shortfall: Math.abs(diff).toFixed(1),
+        action: '추가 세트 없이 그대로 유지 (사용자에게 유리)'
+      });
     }
   }
 
@@ -2191,8 +2304,10 @@ function finalizePlan(
 
   console.log('⏰ finalizePlan 최종 결과:', {
     totalMeters: total,
-    estimatedMinutes: Math.round(estimatedMinutes),
+    estimatedMinutes: estimatedMinutes.toFixed(1),
+    targetMinutes,
     finalDuration,
+    accuracy: targetMinutes ? `${((estimatedMinutes / targetMinutes) * 100).toFixed(1)}%` : 'N/A',
     setsCount: sets.length
   });
 
