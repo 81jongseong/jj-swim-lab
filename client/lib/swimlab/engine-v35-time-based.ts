@@ -324,7 +324,7 @@ export function generateTimeBasedProgram(opts: {
     // 4-1. 팔 드릴
     {
       const distPerRep = 50;
-      const paceSeconds = (adjustedCss * 1.09) / 2; // Z2, 50m 기준
+      const paceSeconds = (adjustedCss * 1.09) / 2; // Z2, 50m 기준 (per set)
       const restSeconds = getRestForZone('Z2');
       
       const reps = calculateRepsFromTime(
@@ -334,7 +334,7 @@ export function generateTimeBasedProgram(opts: {
         restSeconds,
         SCIENTIFIC_REPS.drill.min,
         SCIENTIFIC_REPS.drill.max,
-        true
+        false // paceSeconds는 50m 전체 시간 (per set)
       );
       
       const meters = reps * distPerRep;
@@ -362,7 +362,7 @@ export function generateTimeBasedProgram(opts: {
     // 4-2. 발차기 드릴
     {
       const distPerRep = 50;
-      const paceSeconds = (adjustedCss * 1.5) / 2; // 발차기는 1.5배 느림
+      const paceSeconds = (adjustedCss * 1.5) / 2; // 발차기는 1.5배 느림 (per set)
       const restSeconds = getRestForZone('Z2');
       
       const reps = calculateRepsFromTime(
@@ -372,7 +372,7 @@ export function generateTimeBasedProgram(opts: {
         restSeconds,
         SCIENTIFIC_REPS.drill.min,
         SCIENTIFIC_REPS.drill.max,
-        true
+        false // paceSeconds는 50m 전체 시간 (per set)
       );
       
       const meters = reps * distPerRep;
