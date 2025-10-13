@@ -825,10 +825,25 @@ export function generateTimeBasedProgram(opts: {
   const baseCss = opts.css100[primaryStroke] || opts.css100['freestyle'] || 90;
   
   // 🚨 질환별 영법 경고 시스템
+  console.log('🔍 영법 조정 디버그:', {
+    primaryStroke,
+    strokeAdjustments: conditionRules.strokeAdjustments,
+    primaryStrokeAdj: conditionRules.strokeAdjustments[primaryStroke],
+    conditionIds: opts.conditionIds
+  });
+  
   const strokeWarnings: string[] = [];
+  
+  // 회피 영법 체크
   if (conditionRules.strokeAdjustments[primaryStroke]?.avoid) {
-    strokeWarnings.push(`⚠️ ${primaryStroke} 영법은 현재 질환으로 인해 권장되지 않습니다.`);
+    strokeWarnings.push(`⚠️ ${getStrokeName(primaryStroke)} 영법은 현재 질환으로 인해 권장되지 않습니다.`);
   }
+  
+  // 주의 영법 체크
+  if (conditionRules.strokeAdjustments[primaryStroke]?.reduceVolume) {
+    strokeWarnings.push(`💡 ${getStrokeName(primaryStroke)} 영법은 주의가 필요합니다. 거리를 ${(conditionRules.strokeAdjustments[primaryStroke].volumePct * 100).toFixed(0)}%로 제한합니다.`);
+  }
+  
   if (strokeWarnings.length > 0) {
     console.warn('🚨 영법 경고:', strokeWarnings.join('\n'));
   }
