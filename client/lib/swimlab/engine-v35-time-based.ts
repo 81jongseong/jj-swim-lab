@@ -547,8 +547,16 @@ function calculateRepsFromTime(
   const timePerRepWithRest = swimTimePerRep + restSeconds;
   const calculatedReps = Math.floor((targetSeconds + restSeconds) / timePerRepWithRest);
   
-  // 과학적 범위 내로 제한
-  const finalReps = Math.max(minReps, Math.min(maxReps, calculatedReps));
+  // 과학적 범위 내로 제한 (단, 시간 우선)
+  let finalReps = Math.max(minReps, Math.min(maxReps, calculatedReps));
+  
+  // 🎯 시간 우선 모드: minReps 적용 시 시간 초과하면 calculatedReps 사용
+  const timeWithMinReps = (swimTimePerRep * minReps) + (restSeconds * (minReps - 1));
+  if (timeWithMinReps > targetSeconds * 1.1) {
+    // minReps로 하면 10% 이상 초과 → calculatedReps 사용
+    finalReps = Math.max(1, Math.min(maxReps, calculatedReps));
+    console.log(`⚠️ minReps(${minReps}) 적용 시 시간 초과 → calculatedReps(${calculatedReps}) 사용`);
+  }
   
   // 실제 소요 시간 계산 (검증용)
   const actualTotalSeconds = (swimTimePerRep * finalReps) + (restSeconds * (finalReps - 1));
