@@ -1,6 +1,6 @@
 /**
  * 🏊 JJ Swim Lab - 수영 프로그램 생성 엔진 v3.5 (Time-Based Scientific System)
- * Updated: 2025-10-13 - Rest calculation fix (reps-1)
+ * Updated: 2025-10-13 - Time-priority mode (minReps flexible)
  * 
  * 🎯 핵심 개선사항:
  * 1. **시간 역산 시스템**: 거리가 아닌 시간을 기준으로 프로그램 생성
@@ -547,15 +547,25 @@ function calculateRepsFromTime(
   const timePerRepWithRest = swimTimePerRep + restSeconds;
   const calculatedReps = Math.floor((targetSeconds + restSeconds) / timePerRepWithRest);
   
-  // 과학적 범위 내로 제한 (단, 시간 우선)
-  let finalReps = Math.max(minReps, Math.min(maxReps, calculatedReps));
-  
-  // 🎯 시간 우선 모드: minReps 적용 시 시간 초과하면 calculatedReps 사용
+  // 🎯 시간 우선 vs 과학적 최소 반복 균형
   const timeWithMinReps = (swimTimePerRep * minReps) + (restSeconds * (minReps - 1));
-  if (timeWithMinReps > targetSeconds * 1.1) {
-    // minReps로 하면 10% 이상 초과 → calculatedReps 사용
-    finalReps = Math.max(1, Math.min(maxReps, calculatedReps));
-    console.log(`⚠️ minReps(${minReps}) 적용 시 시간 초과 → calculatedReps(${calculatedReps}) 사용`);
+  const timeWithCalcReps = (swimTimePerRep * calculatedReps) + (restSeconds * (calculatedReps - 1));
+  
+  let finalReps: number;
+  let adjustmentNote: string = '';
+  
+  if (calculatedReps >= minReps) {
+    // 계산된 반복이 최소 이상 → 그대로 사용
+    finalReps = Math.min(maxReps, calculatedReps);
+    adjustmentNote = '✅ 시간 & 과학적 범위 모두 충족';
+  } else if (timeWithMinReps <= targetSeconds * 1.05) {
+    // minReps 사용해도 5% 이내 → minReps 사용 (과학적 효과 우선)
+    finalReps = minReps;
+    adjustmentNote = `✅ minReps(${minReps}) 사용 (과학적 효과 우선, +${((timeWithMinReps / targetSeconds - 1) * 100).toFixed(1)}% 시간)`;
+  } else {
+    // minReps 사용 시 5% 이상 초과 → calculatedReps 사용 (시간 우선)
+    finalReps = Math.max(1, calculatedReps);
+    adjustmentNote = `⚠️ 시간 우선: calculatedReps(${calculatedReps}) 사용 (minReps ${minReps}는 시간 초과)`;
   }
   
   // 실제 소요 시간 계산 (검증용)
@@ -573,6 +583,7 @@ function calculateRepsFromTime(
     minReps,
     maxReps,
     finalReps,
+    adjustmentNote,
     expectedTotalTime: (actualTotalSeconds / 60).toFixed(1) + '분',
     accuracy: ((actualTotalSeconds / targetSeconds) * 100).toFixed(1) + '%'
   });
