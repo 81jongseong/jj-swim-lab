@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>캐시 완전 삭제</title>
+</head>
+<body>
+    <h1>캐시 삭제 중...</h1>
+    <script>
+        // 모든 localStorage 키 삭제
+        const keys = Object.keys(localStorage);
+        console.log('🗑️ 삭제할 키:', keys);
+        
+        keys.forEach(key => {
+            if (key.includes('guest-daily-program')) {
+                console.log('삭제:', key);
+                localStorage.removeItem(key);
+            }
+        });
+        
+        console.log('✅ 캐시 삭제 완료!');
+        
+        // 3초 후 메인 페이지로 이동
+        setTimeout(() => {
+            window.location.href = '/health/input';
+        }, 3000);
+    </script>
+    <p>3초 후 건강 정보 입력 페이지로 이동합니다...</p>
+    <p>또는 <a href="/health/input">여기를 클릭</a>하세요.</p>
+</body>
+</html>
+

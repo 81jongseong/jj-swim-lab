@@ -634,7 +634,12 @@ export default function HealthInputPage() {
       router.push('/guest/programs');
     } catch (error) {
       console.error('❌ 프로그램 생성 오류:', error);
-      alert(`프로그램 생성 중 오류가 발생했습니다.\n\n${error}`);
+      console.error('❌ 오류 상세:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        error
+      });
+      alert(`프로그램 생성 중 오류가 발생했습니다.\n\n${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSaving(false);
     }
