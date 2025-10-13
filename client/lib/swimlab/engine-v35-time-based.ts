@@ -704,6 +704,21 @@ function getRestForZone(zone: Zone): number {
 }
 
 /**
+ * 🏊 영법 이름 한글 변환
+ */
+function getStrokeName(stroke: Stroke): string {
+  const names: Record<Stroke, string> = {
+    freestyle: '자유형',
+    backstroke: '배영',
+    breaststroke: '평영',
+    butterfly: '접영',
+    elementary_backstroke: '기본배영',
+    sidestroke: '횡영'
+  };
+  return names[stroke] || '자유형';
+}
+
+/**
  * 🎯 Zone별 RPE
  */
 function getRPEForZone(zone: Zone): number {
@@ -763,13 +778,20 @@ export function generateTimeBasedProgram(opts: {
     tempo_hi: '고강도 템포 (High Intensity) - 스피드와 파워 극대화'
   };
   
+  // 🏊 영법 선택 (선호 영법 가중치 + 회피 영법 제외)
+  const availableStrokes = opts.strokesAllowed.filter(s => !opts.strokesAvoid.includes(s));
+  const primaryStroke: Stroke = availableStrokes.length > 0 ? availableStrokes[0] as Stroke : 'freestyle';
+  
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
     level: opts.level,
     weeklyFrequency: opts.weeklyFrequency || 3,
     selectedTheme: theme,
-    themeDesc: themeDescriptions[theme]
+    themeDesc: themeDescriptions[theme],
+    primaryStroke,
+    availableStrokes,
+    avoidStrokes: opts.strokesAvoid
   });
   
   // 🔬 과학적 인자 종합 계산
@@ -815,7 +837,16 @@ export function generateTimeBasedProgram(opts: {
   
   // 2. 컨디션 기반 페이스 조절
   const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition);
-  const baseCss = opts.css100['freestyle'] || 90;
+  const baseCss = opts.css100[primaryStroke] || opts.css100['freestyle'] || 90;
+  
+  // 🚨 질환별 영법 경고 시스템
+  const strokeWarnings: string[] = [];
+  if (conditionRules.strokeAdjustments[primaryStroke]?.avoid) {
+    strokeWarnings.push(`⚠️ ${primaryStroke} 영법은 현재 질환으로 인해 권장되지 않습니다.`);
+  }
+  if (strokeWarnings.length > 0) {
+    console.warn('🚨 영법 경고:', strokeWarnings.join('\n'));
+  }
   
   // 🔬 종합 페이스 조절 (모든 과학적 인자 통합)
   const finalMultiplier = scientificAdj.finalPaceMultiplier * (1 + conditionRules.cssPct);
@@ -856,14 +887,14 @@ export function generateTimeBasedProgram(opts: {
     const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
     sets.push({
-      stroke: 'freestyle',
+      stroke: primaryStroke,
       zone: 'Z1',
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
       subtype: 'WARMUP', // 워밍업 파트 표시
       meters,
-      desc,
+      desc: desc.replace('[자유형]', `[${getStrokeName(primaryStroke)}]`),
       whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',
       whyRest: `Z1 기본 r${restSeconds}″. 저강도 회복/환기`,
       whySet: '워밍업으로 체온·가동성 확보, 이후 템포 세트 품질 보장',
