@@ -126,7 +126,8 @@ function selectTrainingMethodByGoalAndTheme(
   goal: string,
   theme: 'tech_tempo' | 'endurance' | 'tempo_hi',
   baseCss: number,
-  targetMinutes: number
+  targetMinutes: number,
+  splitIndex: number = 0 // 메인 세트 분할 시 인덱스 (0, 1, 2...)
 ): {
   methodId: string;
   name: string;
@@ -258,18 +259,32 @@ function selectTrainingMethodByGoalAndTheme(
       equipment: [],
       rationale: '엔돌핀 분비, 명상적 수영 (Peluso & Andrade 2005)'
     },
-    '장거리 수영': {
-      methodId: '25',
-      name: 'LSD(장거리 저강도) 지속 수영',
-      zone: 'Z2' as Zone,
-      distPerRep: 400,
-      paceMultiplier: 1.0,
-      restZone: 'Z2',
-      minReps: 3,
-      maxReps: 6,
-      equipment: [],
-      rationale: '지구력 극대화, 90분+ 지속 적응 (Costill 1991)'
-    },
+    '장거리 수영': [
+      {
+        methodId: '25',
+        name: 'LSD(장거리 저강도) 지속 수영',
+        zone: 'Z2' as Zone,
+        distPerRep: 400,
+        paceMultiplier: 1.0,
+        restZone: 'Z2',
+        minReps: 3,
+        maxReps: 6,
+        equipment: [],
+        rationale: '지구력 극대화, 90분+ 지속 적응 (Costill 1991)'
+      },
+      {
+        methodId: '05',
+        name: '템포 홀드(일정 페이스)',
+        zone: 'Z3' as Zone,
+        distPerRep: 200,
+        paceMultiplier: 1.0,
+        restZone: 'Z3',
+        minReps: 4,
+        maxReps: 8,
+        equipment: [],
+        rationale: '페이스 유지력, 장거리 페이스 감각 (NSCA 2017)'
+      }
+    ],
     '스프린트': {
       methodId: '08',
       name: '스프린트 반복(폭발력)',
@@ -361,7 +376,15 @@ function selectTrainingMethodByGoalAndTheme(
   
   // 테마별 훈련법 선택
   const themeMethods = themeMethodMap[theme] || themeMethodMap['endurance'];
-  const method = themeMethods[goal] || themeMethods['default']; // 기본값: 테마별 default
+  let goalMethods = themeMethods[goal] || themeMethods['default'];
+  
+  // 🎯 배열이면 splitIndex에 따라 선택 (다양성 확보)
+  let method: any;
+  if (Array.isArray(goalMethods)) {
+    method = goalMethods[splitIndex % goalMethods.length]; // 순환 선택
+  } else {
+    method = goalMethods;
+  }
   
   // 페이스 계산
   const pace100m = Math.round(baseCss * method.paceMultiplier);
@@ -869,8 +892,8 @@ export function generateTimeBasedProgram(opts: {
     });
     
     for (let i = 0; i < mainSplits; i++) {
-      // 🎯 목표별 + 테마별 훈련법 자동 선택
-      const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod);
+      // 🎯 목표별 + 테마별 훈련법 자동 선택 (splitIndex로 다양성 확보)
+      const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod, i);
       
       console.log(`🎯 메인 훈련법 ${i + 1}/${mainSplits}:`, {
         goal: opts.goal,
