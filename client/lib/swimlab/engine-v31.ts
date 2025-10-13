@@ -2511,15 +2511,6 @@ function finalizePlan(
 
 // ---------- 헬퍼 함수 ----------
 
-/**
- * desc에서 반복 횟수 파싱
- * 예: "[자유형] 2×100m 워밍업" → 2
- */
-function parseReps(desc: string): number {
-  const match = desc.match(/(\d+)×/);
-  return match ? parseInt(match[1]) : 1;
-}
-
 function filler(poolLen: number): SetItem {
   return {
     stroke: 'backstroke',
