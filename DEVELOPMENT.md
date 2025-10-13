@@ -2,7 +2,40 @@
 
 ## 📅 최근 업데이트 (2025-10-13)
 
-### 🔬 **과학적 근거 기반 메인 세트 분할 + 시각적 파트 구분 (2025-10-13 최신)**
+### ⚖️ **시간 우선 vs 과학적 최소 반복 균형 시스템 (2025-10-13 최신)**
+
+#### 🎯 **스마트 조정 로직**
+
+**문제:**
+- minReps=3, 계산된 reps=2
+- minReps 적용 → 시간 초과 ❌
+- 계산된 reps 사용 → 과학적 효과 부족 ❌
+
+**해결:**
+```typescript
+if (calculatedReps >= minReps) {
+  // ✅ 둘 다 충족
+  finalReps = calculatedReps;
+} else if (timeWithMinReps <= targetSeconds * 1.05) {
+  // ✅ minReps 사용 (5% 이내 초과는 허용)
+  finalReps = minReps; // 과학적 효과 우선
+} else {
+  // ⚠️ 시간 우선
+  finalReps = calculatedReps; // 시간 초과 방지
+}
+```
+
+**예시:**
+```
+메인 17분, minReps=3, calculatedReps=2
+→ minReps(3) 사용 시: 24분 (41% 초과)
+→ 판단: 시간 우선 → 2회 사용 ✅
+→ 로그: "⚠️ 시간 우선: calculatedReps(2) 사용"
+```
+
+---
+
+### 🔬 **과학적 근거 기반 메인 세트 분할 + 시각적 파트 구분 (2025-10-13)**
 
 #### ✅ **메인 세트 분할 기준 (과학적 근거)**
 
