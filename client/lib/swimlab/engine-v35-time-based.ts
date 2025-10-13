@@ -794,6 +794,39 @@ export function generateTimeBasedProgram(opts: {
       || 90;
   };
   
+  // 🔬 영법별 적합 세트 타입 (과학적 근거)
+  // - 횡영/기본배영: CSS 없음, 재활/회복 목적 → 워밍업/쿨다운/드릴만 적합
+  // - 대회 영법: CSS 있음 → 모든 세트 타입 가능
+  const isStrokeSuitableForSetType = (stroke: Stroke, setType: 'warmup' | 'drill' | 'main' | 'cooldown'): boolean => {
+    const rehabilitationStrokes: Stroke[] = ['sidestroke', 'elementary_backstroke'];
+    
+    if (rehabilitationStrokes.includes(stroke)) {
+      // 횡영/기본배영: 워밍업, 드릴, 쿨다운만 (메인 세트 제외)
+      return setType !== 'main';
+    }
+    
+    // 대회 영법: 모든 세트 타입 가능
+    return true;
+  };
+  
+  // 🎯 세트 타입별 영법 선택 (과학적 배치)
+  const getStrokeForSetType = (setType: 'warmup' | 'drill' | 'main' | 'cooldown', currentIndex: number): Stroke => {
+    // 해당 세트 타입에 적합한 영법만 필터링
+    const suitableStrokes = availableStrokes.filter(s => isStrokeSuitableForSetType(s as Stroke, setType));
+    
+    if (suitableStrokes.length === 0) {
+      // 적합한 영법이 없으면 primaryStroke 사용
+      return primaryStroke;
+    }
+    
+    if (suitableStrokes.length === 1) {
+      return suitableStrokes[0] as Stroke;
+    }
+    
+    // 순환 배치
+    return suitableStrokes[currentIndex % suitableStrokes.length] as Stroke;
+  };
+  
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
@@ -805,7 +838,8 @@ export function generateTimeBasedProgram(opts: {
     primaryStroke,
     availableStrokes, // 🏊 사용 가능한 영법 (질환 시 재활 영법 자동 추가)
     avoidStrokes: opts.strokesAvoid,
-    strokeRotation: availableStrokes.length > 1 ? '세트별 영법 순환' : '단일 영법'
+    strokeRotation: availableStrokes.length > 1 ? '세트별 영법 순환' : '단일 영법',
+    scientificPlacement: '횡영/기본배영 → 워밍업/드릴/쿨다운만 (메인 제외)'
   });
   
   // 🔬 과학적 인자 종합 계산
@@ -901,7 +935,7 @@ export function generateTimeBasedProgram(opts: {
   
   // 3. 워밍업 (레벨별 거리 단위)
   {
-    const warmupStroke = getStrokeForSet(setIndex++);
+    const warmupStroke = getStrokeForSetType('warmup', setIndex++);
     const strokeCss = getCssForStroke(warmupStroke);
     const adjustedStrokeCss = Math.round(strokeCss * finalMultiplier);
     
@@ -981,7 +1015,7 @@ export function generateTimeBasedProgram(opts: {
       // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
       const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
-      const pullStroke = getStrokeForSet(setIndex++);
+      const pullStroke = getStrokeForSetType('drill', setIndex++);
       const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
@@ -1033,7 +1067,7 @@ export function generateTimeBasedProgram(opts: {
       // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
       const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
-      const kickStroke = getStrokeForSet(setIndex++);
+      const kickStroke = getStrokeForSetType('drill', setIndex++);
       const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
@@ -1113,7 +1147,7 @@ export function generateTimeBasedProgram(opts: {
       }
       const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} ${paceDescription}, r${selectedMethod.restSeconds}″`;
       
-      const mainStroke = getStrokeForSet(setIndex++);
+      const mainStroke = getStrokeForSetType('main', setIndex++);
       const finalDesc = desc.replace('[자유형]', `[${getStrokeName(mainStroke)}]`);
       
       sets.push({
@@ -1157,7 +1191,7 @@ export function generateTimeBasedProgram(opts: {
     
     const meters = reps * distPerRep;
     // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
-    const cooldownStroke = getStrokeForSet(setIndex++);
+    const cooldownStroke = getStrokeForSetType('cooldown', setIndex++);
     const desc = `[자유형] ${reps}×${distPerRep}m 쿨다운 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
     sets.push({
