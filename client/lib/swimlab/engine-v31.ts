@@ -2084,6 +2084,7 @@ function finalizePlan(
   let total = sets.reduce((s, x) => s + x.meters, 0);
   
   console.log('📊 finalizePlan 총거리 계산:', {
+    engineVersion: 'v32-time-fix', // 🔖 엔진 버전
     targetM,
     calculatedTotal: total,
     setsDetail: sets.map(s => ({ desc: s.desc, meters: s.meters, stroke: s.stroke }))
@@ -2177,6 +2178,7 @@ function finalizePlan(
   });
 
   console.log('⏱️ 시간 계산 상세:', {
+    engineVersion: 'v32-time-fix', // 🔖 엔진 버전
     targetMinutes,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     difference: (estimatedMinutes - (targetMinutes || 0)).toFixed(1),
@@ -2450,6 +2452,7 @@ function finalizePlan(
   const finalDuration = Math.round(estimatedMinutes);
 
   console.log('⏰ finalizePlan 최종 결과:', {
+    engineVersion: 'v32-time-fix', // 🔖 엔진 버전 표시
     totalMeters: total,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     targetMinutes,
