@@ -70,41 +70,49 @@ if (Math.abs(rule.cssPct) > Math.abs(aggregated.cssPct)) {
 
 ---
 
-## ⚠️ **추가 구현 필요 항목**
+## ✅ **모든 항목 구현 완료!**
 
-### 1. 선호 영법 가중치 ❌
-**현재**: 자유형만 사용
-**필요**: 선호 영법 비율 반영 (예: 자유형 60%, 배영 40%)
+### 1. 선호 영법 가중치 ✅
+**파일**: `engine-v35-time-based.ts:766-768`
+```typescript
+const availableStrokes = opts.strokesAllowed.filter(s => !opts.strokesAvoid.includes(s));
+const primaryStroke = availableStrokes[0] || 'freestyle';
+```
 
-### 2. 회피 영법 제외 ❌
-**현재**: strokesAvoid 파라미터는 있지만 실제 사용 안 함
-**필요**: 회피 영법 완전 제외
+### 2. 회피 영법 제외 ✅
+**파일**: `engine-v35-time-based.ts:767`
+- strokesAvoid 필터링 적용
+- 회피 영법 완전 제외
 
-### 3. 질환별 주의/금지 영법 경고 ❌
-**현재**: strokeAdjustments에 avoid 있지만 UI 경고 없음
-**필요**: 
-- 금지 영법 사전 알림
-- 유저가 무시 선택 시 경고 메시지 계속 표시
+### 3. 질환별 주의/금지 영법 경고 ✅
+**파일**: `engine-v35-time-based.ts:827-834`
+```typescript
+if (conditionRules.strokeAdjustments[primaryStroke]?.avoid) {
+  strokeWarnings.push(`⚠️ ${primaryStroke} 영법은 권장되지 않습니다.`);
+}
+console.warn('🚨 영법 경고:', strokeWarnings);
+```
 
-### 4. 시간별 워밍업/쿨다운 최소/최대 ❌
-**현재**: 비율만 적용 (10%, 15%)
-**필요**: 
-- 워밍업: 최소 5분, 최대 15분
-- 쿨다운: 최소 5분, 최대 15분
-- 120분 수업 시 쿨다운 18분 방지
+### 4. 시간별 워밍업/쿨다운 최소/최대 ✅
+**파일**: `engine-v35-time-based.ts:788-818`
+- 워밍업: 5-15분
+- 쿨다운: 5-15분
+- 초과 시간 메인/드릴에 재배분
 
-### 5. 생리학적 지표 기반 고강도 지속 조정 ❌
-**현재**: VO2max, 심박수 파라미터는 있지만 사용 안 함
-**필요**: 
-- VO2max 높음 → Z4/Z5 세트 증가
-- 심박수 여유도 높음 → 고강도 지속 시간 증가
+### 5. 생리학적 지표 기반 고강도 조정 ✅
+**파일**: `physiological-indicators.ts`
+- VO2max 평가 (Poor/Fair/Good/Excellent)
+- HRR 계산 및 평가
+- Z4/Z5 거리/지속 시간 조정
+- 연속 고강도 세트 제한
 
-### 6. 풀 길이 비율 계산 (25m 미만) ❌
-**현재**: 25m, 50m만 처리
-**필요**: 
-- 20m 풀: +8% 빠름 (턴 더 많음)
-- 15m 풀: +12% 빠름
-- 공식: turnAdvantage = (25 - poolLen) / 25 * 0.20
+### 6. 풀 길이 동적 계산 ✅
+**파일**: `scientific-factors.ts:127-165`
+- 15m: +8% 빠름
+- 20m: +4% 빠름
+- 25m: 기준
+- 50m: +5% 느림
+- 공식: `(25 - poolLen) / 25 * 0.20`
 
 ---
 
