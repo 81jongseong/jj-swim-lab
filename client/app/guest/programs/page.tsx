@@ -20,9 +20,12 @@ export default function GuestProgramsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 임시: 로컬 스토리지에서 프로그램 가져오기
+    // 🗑️ 구버전 캐시 자동 삭제 (엔진 업데이트 시)
+    localStorage.removeItem('guest-daily-program'); // v30 이하 제거
+    
+    // 임시: 로컬 스토리지에서 프로그램 가져오기 (엔진 v31)
     // TODO: 실제 API 호출
-    const savedProgram = localStorage.getItem('guest-daily-program');
+    const savedProgram = localStorage.getItem('guest-daily-program-v31');
     if (savedProgram) {
       const parsed = JSON.parse(savedProgram);
       console.log('📦 로드된 프로그램:', parsed);
