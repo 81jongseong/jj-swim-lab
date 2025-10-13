@@ -795,14 +795,15 @@ export function generateTimeBasedProgram(opts: {
   };
   
   // 🔬 영법별 적합 세트 타입 (과학적 근거)
-  // - 횡영/기본배영: CSS 없음, 재활/회복 목적 → 워밍업/쿨다운/드릴만 적합
+  // - 횡영/기본배영: CSS 없음, 재활/회복 목적 → 워밍업/쿨다운만 적합
+  //   * 드릴 제외 이유: 드릴은 메인 영법의 기술 연습이므로 횡영/기본배영은 부적합
   // - 대회 영법: CSS 있음 → 모든 세트 타입 가능
   const isStrokeSuitableForSetType = (stroke: Stroke, setType: 'warmup' | 'drill' | 'main' | 'cooldown'): boolean => {
     const rehabilitationStrokes: Stroke[] = ['sidestroke', 'elementary_backstroke'];
     
     if (rehabilitationStrokes.includes(stroke)) {
-      // 횡영/기본배영: 워밍업, 드릴, 쿨다운만 (메인 세트 제외)
-      return setType !== 'main';
+      // 횡영/기본배영: 워밍업, 쿨다운만 (드릴, 메인 세트 제외)
+      return setType === 'warmup' || setType === 'cooldown';
     }
     
     // 대회 영법: 모든 세트 타입 가능
@@ -839,7 +840,7 @@ export function generateTimeBasedProgram(opts: {
     availableStrokes, // 🏊 사용 가능한 영법 (질환 시 재활 영법 자동 추가)
     avoidStrokes: opts.strokesAvoid,
     strokeRotation: availableStrokes.length > 1 ? '세트별 영법 순환' : '단일 영법',
-    scientificPlacement: '횡영/기본배영 → 워밍업/드릴/쿨다운만 (메인 제외)'
+    scientificPlacement: '횡영/기본배영 → 워밍업/쿨다운만 (드릴은 메인 영법 기술 연습)'
   });
   
   // 🔬 과학적 인자 종합 계산
