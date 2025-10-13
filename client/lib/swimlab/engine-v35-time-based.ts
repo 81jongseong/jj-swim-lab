@@ -763,9 +763,26 @@ export function generateTimeBasedProgram(opts: {
     tempo_hi: '고강도 템포 (High Intensity) - 스피드와 파워 극대화'
   };
   
-  // 🏊 영법 선택 (선호 영법 가중치 + 회피 영법 제외)
-  const availableStrokes = opts.strokesAllowed.filter(s => !opts.strokesAvoid.includes(s));
+  // 🏊 영법 선택 (선호 영법 가중치 + 회피 영법 제외 + 질환 기반 추천)
+  let availableStrokes = opts.strokesAllowed.filter(s => !opts.strokesAvoid.includes(s));
+  
+  // 🏥 질환이 있으면 횡영/기본배영 자동 추가 (관절 부담 최소)
+  if (opts.conditionIds.length > 0) {
+    if (!availableStrokes.includes('sidestroke')) {
+      availableStrokes.push('sidestroke');
+    }
+    if (!availableStrokes.includes('elementary_backstroke')) {
+      availableStrokes.push('elementary_backstroke');
+    }
+  }
+  
   const primaryStroke: Stroke = availableStrokes.length > 0 ? availableStrokes[0] as Stroke : 'freestyle';
+  
+  // 🎯 세트별 영법 배분 함수 (다양성 확보)
+  const getStrokeForSet = (setIndex: number): Stroke => {
+    if (availableStrokes.length === 1) return primaryStroke;
+    return availableStrokes[setIndex % availableStrokes.length] as Stroke;
+  };
   
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
@@ -776,7 +793,8 @@ export function generateTimeBasedProgram(opts: {
     themeDesc: themeDescriptions[theme],
     primaryStroke,
     availableStrokes,
-    avoidStrokes: opts.strokesAvoid
+    avoidStrokes: opts.strokesAvoid,
+    strokeRotation: availableStrokes.length > 1 ? '세트별 영법 순환' : '단일 영법'
   });
   
   // 🔬 과학적 인자 종합 계산
@@ -886,15 +904,16 @@ export function generateTimeBasedProgram(opts: {
     // 🎯 페이스를 세트 거리 기준으로 표시 (100m 세트 → 100m 페이스)
     const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
+    const warmupStroke = getStrokeForSet(0);
     sets.push({
-      stroke: primaryStroke,
+      stroke: warmupStroke,
       zone: 'Z1',
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
       subtype: 'WARMUP', // 워밍업 파트 표시
       meters,
-      desc: desc.replace('[자유형]', `[${getStrokeName(primaryStroke)}]`),
+      desc: desc.replace('[자유형]', `[${getStrokeName(warmupStroke)}]`),
       whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',
       whyRest: `Z1 기본 r${restSeconds}″. 저강도 회복/환기`,
       whySet: '워밍업으로 체온·가동성 확보, 이후 템포 세트 품질 보장',
