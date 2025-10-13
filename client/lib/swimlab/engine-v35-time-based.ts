@@ -823,11 +823,14 @@ export function generateTimeBasedProgram(opts: {
         || 90;
     }
     
-    // 🔄 CSS 측정 풀 길이가 다르면 변환
+    // 🔄 CSS 측정 풀 길이가 다르면 50m 기준으로 변환
     const cssMeasurementPoolLength = opts.cssMeasurementPoolLength || 25;
     if (cssMeasurementPoolLength !== 50) {
       const convertedCss = convertCSSBetweenPools(baseCss, cssMeasurementPoolLength, 50);
-      console.log(`🔄 CSS 변환 (${stroke}): ${cssMeasurementPoolLength}m 풀 ${baseCss}초 → 50m 기준 ${convertedCss.toFixed(1)}초`);
+      const turnsFrom = Math.max(0, Math.floor(100 / cssMeasurementPoolLength) - 1);
+      const turnsTo = Math.max(0, Math.floor(100 / 50) - 1);
+      const adjustment = (turnsTo - turnsFrom) * 0.4;
+      console.log(`🔄 CSS 변환 (${stroke}): ${cssMeasurementPoolLength}m 풀(${turnsFrom}턴) ${baseCss}초 → 50m 기준(${turnsTo}턴) ${convertedCss.toFixed(1)}초 (조정: ${adjustment > 0 ? '+' : ''}${adjustment.toFixed(1)}초)`);
       return convertedCss;
     }
     

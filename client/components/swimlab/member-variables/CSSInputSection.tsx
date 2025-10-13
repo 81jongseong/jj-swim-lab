@@ -89,7 +89,7 @@ export default function CSSInputSection({
         <label className="block text-sm font-semibold text-blue-900 mb-2">
           🏊 CSS 측정 수영장 길이
         </label>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -112,14 +112,46 @@ export default function CSSInputSection({
             />
             <span className="text-sm text-gray-700">50m 풀</span>
           </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="cssPoolLength"
+              value="custom"
+              checked={cssMeasurementPoolLength !== 25 && cssMeasurementPoolLength !== 50}
+              onChange={() => {}}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700">직접 입력:</span>
+            <input
+              type="number"
+              value={cssMeasurementPoolLength !== 25 && cssMeasurementPoolLength !== 50 ? cssMeasurementPoolLength : ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) || 25;
+                if (val >= 10 && val <= 100) {
+                  onCssMeasurementPoolLengthUpdate?.(val);
+                }
+              }}
+              onFocus={(e) => {
+                if (cssMeasurementPoolLength === 25 || cssMeasurementPoolLength === 50) {
+                  onCssMeasurementPoolLengthUpdate?.(20);
+                }
+              }}
+              placeholder="15-30"
+              className="w-16 px-2 py-1 border border-blue-300 rounded text-sm"
+              min="10"
+              max="100"
+            />
+            <span className="text-xs text-gray-600">m</span>
+          </label>
         </div>
         <p className="text-xs text-blue-700 mt-2">
-          💡 <strong>중요:</strong> CSS를 측정한 수영장 길이를 선택하세요. 
+          💡 <strong>중요:</strong> CSS를 측정한 수영장 길이를 선택하세요.
           {cssMeasurementPoolLength === 25 && ' 25m 풀은 턴이 많아 CSS가 더 빠릅니다.'}
           {cssMeasurementPoolLength === 50 && ' 50m 풀은 턴이 적어 CSS가 더 느립니다.'}
+          {cssMeasurementPoolLength !== 25 && cssMeasurementPoolLength !== 50 && ` ${cssMeasurementPoolLength}m 풀: 100m 당 ${Math.floor(100/cssMeasurementPoolLength)-1}턴`}
         </p>
         <p className="text-xs text-gray-600 mt-1">
-          📚 Psycharakis & Sanders (2008): 턴당 0.3-0.6초 이득
+          📚 Psycharakis & Sanders (2008): 턴당 0.3-0.6초 이득 (평균 0.4초)
         </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
