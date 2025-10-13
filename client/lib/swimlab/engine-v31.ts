@@ -2184,8 +2184,9 @@ function finalizePlan(
   // 건강 상태 기반 거리 조절로 인해 시간이 자동으로 맞춰짐
   // 예: 70% 강도 → 거리 70% + 페이스 143% = 시간 약 100%
 
-  // 🔧 시간 조절: 목표 시간과 예상 시간의 차이가 ±5% 이상이면 조절
-  if (targetMinutes && Math.abs(estimatedMinutes - targetMinutes) > targetMinutes * 0.05) {
+  // 🔧 시간 조절: 목표 시간과 예상 시간의 차이가 ±2분 이상이면 조절
+  // 예: 50분 목표 → 48-52분 허용
+  if (targetMinutes && Math.abs(estimatedMinutes - targetMinutes) > 2) {
     const diff = estimatedMinutes - targetMinutes;
     
     if (diff > 0) {
@@ -2291,16 +2292,159 @@ function finalizePlan(
       });
       
     } else {
-      // ⏰ 시간 부족: 추가 세트는 넣지 않음 (사용자에게 짧은 프로그램 제공)
-      console.log('ℹ️ 예상 시간이 목표보다 짧음:', {
+      // ⏰ 시간 부족: 메인 세트 거리 늘리기
+      // 우선순위: 쿨다운 > 메인 세트 > 워밍업
+      let remainingMinutes = Math.abs(diff);
+      const adjustments: any[] = [];
+      
+      // 1. 쿨다운 늘리기 (최대 10×poolLen까지)
+      const cooldownIdx = sets.findIndex(s => s.desc.includes('쿨다운'));
+      if (cooldownIdx >= 0 && remainingMinutes > 0) {
+        const maxCooldown = poolLen * 10; // 최대 10회 반복
+        const currentMeters = sets[cooldownIdx].meters;
+        const maxAddable = Math.max(0, maxCooldown - currentMeters);
+        
+        if (maxAddable > 0) {
+          const reps = parseReps(sets[cooldownIdx].desc);
+          const distPerRep = currentMeters / reps;
+          const paceMatch = sets[cooldownIdx].desc.match(/@\s*(\d+):(\d+)/);
+          const paceSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+          
+          // 추가해야 할 반복 횟수 계산
+          const repsToAdd = Math.min(
+            Math.ceil((remainingMinutes * 60) / (paceSeconds + sets[cooldownIdx].restSec)),
+            Math.floor(maxAddable / distPerRep)
+          );
+          
+          if (repsToAdd > 0) {
+            const metersAdded = repsToAdd * distPerRep;
+            sets[cooldownIdx].meters += metersAdded;
+            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+            
+            const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[cooldownIdx].restSec) / 60;
+            remainingMinutes -= minutesAdded;
+            total += metersAdded;
+            
+            adjustments.push({
+              section: '쿨다운',
+              repsAdded: repsToAdd,
+              metersAdded,
+              minutesAdded: minutesAdded.toFixed(1)
+            });
+          }
+        }
+      }
+      
+      // 2. 메인 세트 늘리기 (scientificMeta의 maxReps까지)
+      if (remainingMinutes > 1) {
+        // Z2 또는 Z3 세트 중 가장 큰 것 찾기
+        const mainSetIdx = sets.findIndex(s => 
+          (s.zone === 'Z2' || s.zone === 'Z3') && 
+          !s.desc.includes('워밍업') && 
+          !s.desc.includes('쿨다운') &&
+          !s.desc.includes('드릴') &&
+          !s.desc.includes('Catch-Up') &&
+          !s.desc.includes('Side Kick') &&
+          !s.desc.includes('디센딩') &&
+          !s.desc.includes('빌드업') &&
+          !s.desc.includes('피라미드')
+        );
+        
+        if (mainSetIdx >= 0) {
+          const reps = parseReps(sets[mainSetIdx].desc);
+          const distPerRep = sets[mainSetIdx].meters / reps;
+          const paceMatch = sets[mainSetIdx].desc.match(/@\s*(\d+):(\d+)/);
+          const paceSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+          
+          // scientificMeta의 maxReps 확인 (없으면 기본 12회)
+          const maxReps = 12; // TODO: scientificMeta에서 가져오기
+          const maxAddable = Math.max(0, maxReps - reps);
+          
+          if (maxAddable > 0) {
+            const repsToAdd = Math.min(
+              Math.ceil((remainingMinutes * 60) / (paceSeconds + sets[mainSetIdx].restSec)),
+              maxAddable
+            );
+            
+            if (repsToAdd > 0) {
+              const metersAdded = repsToAdd * distPerRep;
+              sets[mainSetIdx].meters += metersAdded;
+              sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+              
+              const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[mainSetIdx].restSec) / 60;
+              remainingMinutes -= minutesAdded;
+              total += metersAdded;
+              
+              adjustments.push({
+                section: '메인',
+                repsAdded: repsToAdd,
+                metersAdded,
+                minutesAdded: minutesAdded.toFixed(1)
+              });
+            }
+          }
+        }
+      }
+      
+      // 3. 워밍업 늘리기 (최대 5×poolLen까지)
+      if (remainingMinutes > 1) {
+        const warmupIdx = sets.findIndex(s => s.desc.includes('워밍업'));
+        if (warmupIdx >= 0) {
+          const maxWarmup = poolLen * 5; // 최대 5회 반복
+          const currentMeters = sets[warmupIdx].meters;
+          const maxAddable = Math.max(0, maxWarmup - currentMeters);
+          
+          if (maxAddable > 0) {
+            const reps = parseReps(sets[warmupIdx].desc);
+            const distPerRep = currentMeters / reps;
+            const paceMatch = sets[warmupIdx].desc.match(/@\s*(\d+):(\d+)/);
+            const paceSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+            
+            const repsToAdd = Math.min(
+              Math.ceil((remainingMinutes * 60) / (paceSeconds + sets[warmupIdx].restSec)),
+              Math.floor(maxAddable / distPerRep)
+            );
+            
+            if (repsToAdd > 0) {
+              const metersAdded = repsToAdd * distPerRep;
+              sets[warmupIdx].meters += metersAdded;
+              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+              
+              const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[warmupIdx].restSec) / 60;
+              remainingMinutes -= minutesAdded;
+              total += metersAdded;
+              
+              adjustments.push({
+                section: '워밍업',
+                repsAdded: repsToAdd,
+                metersAdded,
+                minutesAdded: minutesAdded.toFixed(1)
+              });
+            }
+          }
+        }
+      }
+      
+      console.log('⏰ 시간 부족 조절:', {
         shortfall: Math.abs(diff).toFixed(1),
-        action: '추가 세트 없이 그대로 유지 (사용자에게 유리)'
+        adjustments,
+        remainingShortfall: remainingMinutes.toFixed(1)
+      });
+      
+      // 시간 재계산
+      estimatedMinutes = 0;
+      sets.forEach(s => {
+        const repsMatch = s.desc.match(/^(\d+)×/);
+        const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
+        const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
+        const paceTotalSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
+        estimatedMinutes += (paceTotalSeconds * reps + s.restSec * (reps - 1)) / 60;
       });
     }
   }
 
-  // 최종 시간: targetMinutes가 있으면 그것 사용, 없으면 계산된 시간 사용
-  const finalDuration = targetMinutes || Math.round(estimatedMinutes);
+  // 최종 시간: 계산된 예상 시간 사용 (정직하게 표시)
+  const finalDuration = Math.round(estimatedMinutes);
 
   console.log('⏰ finalizePlan 최종 결과:', {
     totalMeters: total,
