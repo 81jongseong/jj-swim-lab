@@ -2084,7 +2084,7 @@ function finalizePlan(
   let total = sets.reduce((s, x) => s + x.meters, 0);
   
   console.log('📊 finalizePlan 총거리 계산:', {
-    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전
+    engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전
     targetM,
     calculatedTotal: total,
     setsDetail: sets.map(s => ({ desc: s.desc, meters: s.meters, stroke: s.stroke }))
@@ -2135,10 +2135,11 @@ function finalizePlan(
   const timeDetails: any[] = [];
   
   sets.forEach(s => {
-    // 1. 반복 횟수 파싱 (예: "3×100m")
-    const repsMatch = s.desc.match(/^(\d+)×/);
+    // 1. 반복 횟수 파싱 (예: "[자유형] 3×100m")
+    // ⚠️ desc가 "[영법]"로 시작하므로 ^ 사용 불가
+    const repsMatch = s.desc.match(/(\d+)×(\d+)m/);
     const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
-    const distPerRep = s.meters / reps;
+    const distPerRep = repsMatch ? parseInt(repsMatch[2]) : s.meters;
     
     // 2. 페이스 파싱 (예: "@ 2:22" = 페이스 시간)
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
@@ -2191,7 +2192,7 @@ function finalizePlan(
   });
 
   console.log('⏱️ 시간 계산 상세:', {
-    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전
+    engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전
     targetMinutes,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     difference: (estimatedMinutes - (targetMinutes || 0)).toFixed(1),
@@ -2481,7 +2482,7 @@ function finalizePlan(
   const finalDuration = Math.round(estimatedMinutes);
 
   console.log('⏰ finalizePlan 최종 결과:', {
-    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전 표시
+    engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전 표시
     totalMeters: total,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     targetMinutes,

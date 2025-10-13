@@ -618,17 +618,18 @@ export default function HealthInputPage() {
       localStorage.removeItem('guest-daily-program');
       localStorage.removeItem('guest-daily-program-v31');
       localStorage.removeItem('guest-daily-program-v32');
+      localStorage.removeItem('guest-daily-program-v33');
       
       console.log('💾 프로그램 저장:', { 
-        key: 'guest-daily-program-v33', 
+        key: 'guest-daily-program-v34', 
         date: programData.date,
         sets: generatedProgram.sets.length,
         totalMeters: generatedProgram.totalMeters,
         duration: programData.duration
       });
       
-      // 로컬 스토리지에 저장 (엔진 버전 v33 - 거리/시간 계산 완전 수정)
-      localStorage.setItem('guest-daily-program-v33', JSON.stringify(programData));
+      // 로컬 스토리지에 저장 (엔진 버전 v34 - 반복 횟수 파싱 수정)
+      localStorage.setItem('guest-daily-program-v34', JSON.stringify(programData));
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');
