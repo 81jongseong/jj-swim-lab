@@ -540,10 +540,12 @@ function calculateRepsFromTime(
   }
   
   // 반복 횟수 역산: targetSeconds = (swimTime * reps) + (rest * (reps - 1))
-  // targetSeconds = swimTime * reps + rest * reps - rest
-  // targetSeconds + rest = reps * (swimTime + rest)
-  // reps = (targetSeconds + rest) / (swimTime + rest)
-  const calculatedReps = Math.round((targetSeconds + restSeconds) / (swimTimePerRep + restSeconds));
+  // 정리: targetSeconds = reps * swimTime + reps * rest - rest
+  //      targetSeconds = reps * (swimTime + rest) - rest
+  //      targetSeconds + rest = reps * (swimTime + rest)
+  //      reps = (targetSeconds + rest) / (swimTime + rest)
+  const timePerRepWithRest = swimTimePerRep + restSeconds;
+  const calculatedReps = Math.floor((targetSeconds + restSeconds) / timePerRepWithRest);
   
   // 과학적 범위 내로 제한
   const finalReps = Math.max(minReps, Math.min(maxReps, calculatedReps));
