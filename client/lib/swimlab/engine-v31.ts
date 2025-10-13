@@ -1975,7 +1975,7 @@ function applyToSets(
         const originalReps = parseReps(s.desc);
         const newReps = Math.max(1, Math.round(k / (s.meters / originalReps)));
         s.meters = k;
-        s.desc = s.desc.replace(/^(\d+)×/, `${newReps}×`) + ' (Z4 cap 적용)';
+        s.desc = s.desc.replace(/(\d+)×/, `${newReps}×`) + ' (Z4 cap 적용)';
         s.whySet += ` | Z4 총량 ≤${mod.zoneRestrictions.z4MaxMeters}m로 제한`;
         z4Accum += k;
       } else {
@@ -2105,7 +2105,7 @@ function finalizePlan(
         const addReps = Math.ceil((minT - total) / repDist);
         
         sets[mainSetIdx].meters += addReps * repDist;
-        sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/^(\d+)×/, `${originalReps + addReps}×`);
+        sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/(\d+)×/, `${originalReps + addReps}×`);
         total = sets.reduce((s, x) => s + x.meters, 0);
       }
     }
@@ -2116,7 +2116,7 @@ function finalizePlan(
       const idx = sets.findIndex(s => s.meters >= 2 * poolLen);
       if (idx < 0) break;
       sets[idx].meters -= poolLen;
-      sets[idx].desc = sets[idx].desc.replace(/^(\d+)×/, (match) => {
+      sets[idx].desc = sets[idx].desc.replace(/(\d+)×/, (match) => {
         const n = parseInt(match);
         return `${Math.max(1, n - 1)}×`;
       });
@@ -2255,7 +2255,7 @@ function finalizePlan(
           if (repsToReduce > 0) {
             const metersReduced = repsToReduce * distPerRep;
             sets[cooldownIdx].meters -= metersReduced;
-            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, `${reps - repsToReduce}×`);
+            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/(\d+)×/, `${reps - repsToReduce}×`);
             
             const minutesReduced = (repsToReduce * paceSeconds + repsToReduce * sets[cooldownIdx].restSec) / 60;
             remainingMinutes -= minutesReduced;
@@ -2293,7 +2293,7 @@ function finalizePlan(
             if (repsToReduce > 0) {
               const metersReduced = repsToReduce * distPerRep;
               sets[warmupIdx].meters -= metersReduced;
-              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/^(\d+)×/, `${reps - repsToReduce}×`);
+              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/(\d+)×/, `${reps - repsToReduce}×`);
               
               const minutesReduced = (repsToReduce * paceSeconds + repsToReduce * sets[warmupIdx].restSec) / 60;
               remainingMinutes -= minutesReduced;
@@ -2354,7 +2354,7 @@ function finalizePlan(
           if (repsToAdd > 0) {
             const metersAdded = repsToAdd * distPerRep;
             sets[cooldownIdx].meters += metersAdded;
-            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+            sets[cooldownIdx].desc = sets[cooldownIdx].desc.replace(/(\d+)×/, `${reps + repsToAdd}×`);
             
             const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[cooldownIdx].restSec) / 60;
             remainingMinutes -= minutesAdded;
@@ -2404,7 +2404,7 @@ function finalizePlan(
             if (repsToAdd > 0) {
               const metersAdded = repsToAdd * distPerRep;
               sets[mainSetIdx].meters += metersAdded;
-              sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+              sets[mainSetIdx].desc = sets[mainSetIdx].desc.replace(/(\d+)×/, `${reps + repsToAdd}×`);
               
               const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[mainSetIdx].restSec) / 60;
               remainingMinutes -= minutesAdded;
@@ -2443,7 +2443,7 @@ function finalizePlan(
             if (repsToAdd > 0) {
               const metersAdded = repsToAdd * distPerRep;
               sets[warmupIdx].meters += metersAdded;
-              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/^(\d+)×/, `${reps + repsToAdd}×`);
+              sets[warmupIdx].desc = sets[warmupIdx].desc.replace(/(\d+)×/, `${reps + repsToAdd}×`);
               
               const minutesAdded = (repsToAdd * paceSeconds + repsToAdd * sets[warmupIdx].restSec) / 60;
               remainingMinutes -= minutesAdded;
