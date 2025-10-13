@@ -256,6 +256,7 @@ export const LEVEL_IMPROVEMENT_POTENTIAL = {
     paceDecreaseRate: 0.30,    // 페이스 30% 감소 가능
     volumeTolerance: 0.8,      // 거리 80% 수준 (부담 고려)
     techniqueFocus: 0.40,      // 기술 비중 40%
+    highIntensityTolerance: 0.3, // 고강도 30% (낮음)
     scientificBasis: 'Fitts & Posner (1967): Cognitive phase는 급격한 향상'
   },
   intermediate: {
@@ -263,6 +264,7 @@ export const LEVEL_IMPROVEMENT_POTENTIAL = {
     paceDecreaseRate: 0.15,    // 페이스 15% 감소 가능
     volumeTolerance: 1.0,      // 거리 100% (표준)
     techniqueFocus: 0.25,      // 기술 비중 25%
+    highIntensityTolerance: 0.5, // 고강도 50%
     scientificBasis: 'Fitts & Posner (1967): Associative phase는 중간 향상'
   },
   advanced: {
@@ -270,6 +272,7 @@ export const LEVEL_IMPROVEMENT_POTENTIAL = {
     paceDecreaseRate: 0.05,    // 페이스 5% 감소 가능
     volumeTolerance: 1.2,      // 거리 120% (높은 내구력)
     techniqueFocus: 0.15,      // 기술 비중 15%
+    highIntensityTolerance: 0.7, // 고강도 70%
     scientificBasis: 'Ericsson (1993): 전문가는 미세 조정 단계'
   },
   master: {
@@ -277,6 +280,7 @@ export const LEVEL_IMPROVEMENT_POTENTIAL = {
     paceDecreaseRate: 0.03,    // 페이스 3% 감소 가능
     volumeTolerance: 1.3,      // 거리 130% (최대 내구력)
     techniqueFocus: 0.10,      // 기술 비중 10%
+    highIntensityTolerance: 0.9, // 고강도 90%
     scientificBasis: 'Ericsson (1993): 마스터는 유지 중심'
   },
   expert: {
@@ -284,6 +288,7 @@ export const LEVEL_IMPROVEMENT_POTENTIAL = {
     paceDecreaseRate: 0.02,    // 페이스 2% 감소 가능
     volumeTolerance: 1.4,      // 거리 140% (엘리트)
     techniqueFocus: 0.08,      // 기술 비중 8%
+    highIntensityTolerance: 1.0, // 고강도 100%
     scientificBasis: 'Ericsson (1993): 엘리트는 피크 유지'
   }
 } as const;
