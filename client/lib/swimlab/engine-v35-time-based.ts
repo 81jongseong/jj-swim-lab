@@ -948,21 +948,28 @@ export function generateTimeBasedProgram(opts: {
     
     const reps = parseInt(match[1]);
     const distPerRep = parseInt(match[2]);
-    const paceMatch = set.desc.match(/@\s*(\d+):(\d+)/);
+    
+    // 🎯 페이스 파싱: "@ 1:05/50m" 또는 "@ 2:00/100m (6:00/300m)" 형식
+    const paceMatch = set.desc.match(/@\s*(\d+):(\d+)\/(\d+)m/);
     
     if (paceMatch) {
       const paceSeconds = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
-      // 🎯 모든 페이스는 per 100m 기준으로 표기됨
-      const isPer100m = true; // 항상 per 100m
+      const paceDistance = parseInt(paceMatch[3]); // 50m, 100m, 300m 등
       
-      const duration = calculateSetDuration(reps, distPerRep, paceSeconds, set.restSec, isPer100m);
+      // 페이스를 100m 기준으로 환산
+      const pace100m = (paceSeconds / paceDistance) * 100;
+      
+      const duration = calculateSetDuration(reps, distPerRep, pace100m, set.restSec, true);
       totalMinutes += duration;
       totalMeters += set.meters;
       
       console.log(`✅ 세트 ${idx + 1} 검증:`, {
-        desc: set.desc.substring(0, 50),
+        desc: set.desc.substring(0, 60),
         reps,
         distPerRep,
+        paceSeconds,
+        paceDistance,
+        pace100m: pace100m.toFixed(1),
         meters: set.meters,
         duration: duration.toFixed(1) + '분'
       });
