@@ -785,6 +785,15 @@ export function generateTimeBasedProgram(opts: {
     return availableStrokes[setIndex % availableStrokes.length] as Stroke;
   };
   
+  // 🏊 영법별 CSS 가져오기 (폴백: primaryStroke CSS → 첫 번째 영법 CSS → 첫 번째 유효 CSS → 90초)
+  const getCssForStroke = (stroke: Stroke): number => {
+    return opts.css100[stroke] 
+      || opts.css100[primaryStroke] 
+      || opts.css100[availableStrokes[0] as Stroke]
+      || Object.values(opts.css100).find(css => css > 0) 
+      || 90;
+  };
+  
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
@@ -842,7 +851,12 @@ export function generateTimeBasedProgram(opts: {
   
   // 2. 컨디션 기반 페이스 조절
   const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition);
-  const baseCss = opts.css100[primaryStroke] || opts.css100['freestyle'] || 90;
+  
+  // 🎯 CSS 선택: primaryStroke CSS 우선, 없으면 첫 번째 사용 가능 영법, 없으면 기본 90초
+  const baseCss = opts.css100[primaryStroke] 
+    || opts.css100[availableStrokes[0] as Stroke]
+    || Object.values(opts.css100).find(css => css > 0) 
+    || 90;
   
   // 🚨 질환별 영법 경고 시스템
   console.log('🔍 영법 조정 디버그:', {
@@ -887,11 +901,15 @@ export function generateTimeBasedProgram(opts: {
   
   // 3. 워밍업 (레벨별 거리 단위)
   {
+    const warmupStroke = getStrokeForSet(setIndex++);
+    const strokeCss = getCssForStroke(warmupStroke);
+    const adjustedStrokeCss = Math.round(strokeCss * finalMultiplier);
+    
     const targetMin = timeAllocation.warmup;
     const levelGroup = (opts.level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
     const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
     const distPerRep = levelUnits.warmup;
-    const paceSeconds = adjustedCss + 16; // Z1: CSS + 16초
+    const paceSeconds = adjustedStrokeCss + 16; // Z1: CSS + 16초
     const restSeconds = getRestForZone('Z1');
     
     const reps = calculateRepsFromTime(
@@ -905,26 +923,24 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * distPerRep;
-    // 🎯 페이스를 세트 거리 기준으로 표시 (100m 세트 → 100m 페이스)
-    const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
+    const desc = `[${getStrokeName(warmupStroke)}] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
-    const warmupStroke = getStrokeForSet(setIndex++);
     sets.push({
       stroke: warmupStroke,
       zone: 'Z1',
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
-      subtype: 'WARMUP', // 워밍업 파트 표시
+      subtype: 'WARMUP',
       meters,
-      desc: desc.replace('[자유형]', `[${getStrokeName(warmupStroke)}]`),
-      whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',
+      desc,
+      whyPace: `${getStrokeName(warmupStroke)} CSS ${strokeCss}초 기반 Z1 → 호흡·기술 정렬`,
       whyRest: `Z1 기본 r${restSeconds}″. 저강도 회복/환기`,
       whySet: '워밍업으로 체온·가동성 확보, 이후 템포 세트 품질 보장',
       evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
     });
     
-    console.log('✅ 워밍업 생성:', { reps, meters, desc, stroke: getStrokeName(warmupStroke) });
+    console.log('✅ 워밍업 생성:', { stroke: getStrokeName(warmupStroke), css: strokeCss, adjustedCss: adjustedStrokeCss, reps, meters });
   }
   
   // 4. 드릴 (레벨별 거리 단위)
