@@ -716,7 +716,8 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * distPerRep;
-    const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}, r${restSeconds}″`;
+    // 🎯 페이스를 세트 거리 기준으로 표시 (100m 세트 → 100m 페이스)
+    const desc = `[자유형] ${reps}×${distPerRep}m 워밍업 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
@@ -768,9 +769,10 @@ export function generateTimeBasedProgram(opts: {
       );
       
       const meters = reps * distPerRep;
-      const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
+      // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
+      const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
-      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pace100m)}, r${restSeconds}″`;
+      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',
@@ -818,9 +820,10 @@ export function generateTimeBasedProgram(opts: {
       );
       
       const meters = reps * distPerRep;
-      const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
+      // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
+      const pacePerSet = paceSeconds; // 이미 50m 기준 페이스
       const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
-      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pace100m)}, r${restSeconds}″`;
+      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pacePerSet)}/${distPerRep}m, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',
@@ -868,7 +871,9 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * selectedMethod.distPerRep;
-    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} @ ${formatPace(selectedMethod.pace100m)}, r${selectedMethod.restSeconds}″`;
+    // 🎯 페이스를 세트 거리 기준으로 표시
+    const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
+    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} @ ${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m, r${selectedMethod.restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
@@ -906,7 +911,8 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * distPerRep;
-    const desc = `[자유형] ${reps}×${distPerRep}m 쿨다운 @ ${formatPace(paceSeconds)}, r${restSeconds}″`;
+    // 🎯 페이스를 세트 거리 기준으로 표시 (50m 세트 → 50m 페이스)
+    const desc = `[자유형] ${reps}×${distPerRep}m 쿨다운 @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
