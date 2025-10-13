@@ -50,6 +50,51 @@ const SCIENTIFIC_REPS = {
   cooldown: { min: 2, max: 10 }      // 쿨다운: 2-10회 (7-12분)
 };
 
+// 🏊 레벨별 세트 거리 단위 (과학적 근거)
+// 근거: Maglischo (2003) - 수영 능력별 최적 거리
+const LEVEL_DISTANCE_UNITS = {
+  beginner: {
+    warmup: 25,      // 초급: 25m 단위 (기술 미숙, 짧은 거리)
+    drill: 25,
+    main_endurance: 50,  // 최대 50m (지구력 부족)
+    main_tempo: 25,
+    main_sprint: 25,
+    cooldown: 25
+  },
+  intermediate: {
+    warmup: 50,      // 중급: 50-100m 단위
+    drill: 50,
+    main_endurance: 100, // 100-200m (기초 체력)
+    main_tempo: 50,
+    main_sprint: 50,
+    cooldown: 50
+  },
+  advanced: {
+    warmup: 100,     // 고급: 100-200m 단위
+    drill: 50,
+    main_endurance: 200, // 200-400m (높은 지구력)
+    main_tempo: 100,
+    main_sprint: 50,
+    cooldown: 50
+  },
+  master: {
+    warmup: 100,     // 마스터: 100-400m 단위
+    drill: 50,
+    main_endurance: 400, // 400m+ (최대 지구력)
+    main_tempo: 200,
+    main_sprint: 50,
+    cooldown: 50
+  },
+  expert: {
+    warmup: 100,     // 엘리트: 100-500m 단위
+    drill: 50,
+    main_endurance: 500, // 500m+ (엘리트 수준)
+    main_tempo: 200,
+    main_sprint: 50,
+    cooldown: 50
+  }
+} as const;
+
 interface SetItem {
   stroke: Stroke;
   zone: Zone;
@@ -128,7 +173,8 @@ function selectTrainingMethodByGoalAndTheme(
   theme: 'tech_tempo' | 'endurance' | 'tempo_hi',
   baseCss: number,
   targetMinutes: number,
-  splitIndex: number = 0 // 메인 세트 분할 시 인덱스 (0, 1, 2...)
+  splitIndex: number = 0, // 메인 세트 분할 시 인덱스 (0, 1, 2...)
+  level?: string // 레벨별 거리 조정용
 ): {
   methodId: string;
   name: string;
@@ -387,9 +433,25 @@ function selectTrainingMethodByGoalAndTheme(
     method = goalMethods;
   }
   
+  // 🏊 레벨별 거리 조정
+  let distPerRep = method.distPerRep;
+  if (level) {
+    const levelGroup = (level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
+    const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
+    
+    // 테마에 따라 레벨별 거리 적용
+    if (theme === 'endurance') {
+      distPerRep = Math.min(method.distPerRep, levelUnits.main_endurance);
+    } else if (theme === 'tempo_hi') {
+      distPerRep = Math.min(method.distPerRep, levelUnits.main_sprint);
+    } else {
+      distPerRep = Math.min(method.distPerRep, levelUnits.main_tempo);
+    }
+  }
+  
   // 페이스 계산
   const pace100m = Math.round(baseCss * method.paceMultiplier);
-  const paceSeconds = (method.distPerRep / 100) * pace100m; // per set 페이스
+  const paceSeconds = (distPerRep / 100) * pace100m; // per set 페이스
   const restSeconds = getRestForZone(method.restZone);
   
   // whyPace, whyRest, whySet 생성
@@ -401,7 +463,7 @@ function selectTrainingMethodByGoalAndTheme(
     methodId: method.methodId,
     name: method.name,
     zone: method.zone,
-    distPerRep: method.distPerRep,
+    distPerRep, // 레벨별 조정된 거리
     paceSeconds,
     pace100m,
     restSeconds,
@@ -750,10 +812,12 @@ export function generateTimeBasedProgram(opts: {
   
   const sets: SetItem[] = [];
   
-  // 3. 워밍업 (10%)
+  // 3. 워밍업 (레벨별 거리 단위)
   {
     const targetMin = timeAllocation.warmup;
-    const distPerRep = 100; // 100m 단위
+    const levelGroup = (opts.level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
+    const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
+    const distPerRep = levelUnits.warmup;
     const paceSeconds = adjustedCss + 16; // Z1: CSS + 16초
     const restSeconds = getRestForZone('Z1');
     
@@ -789,14 +853,16 @@ export function generateTimeBasedProgram(opts: {
     console.log('✅ 워밍업 생성:', { reps, meters, desc });
   }
   
-  // 4. 드릴 (15%)
+  // 4. 드릴 (레벨별 거리 단위)
   {
     const targetMin = timeAllocation.drill;
     const halfTime = targetMin / 2;
+    const levelGroup = (opts.level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
+    const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
     
     // 4-1. 팔 드릴 (레벨별 자동 선택)
     {
-      const distPerRep = 50;
+      const distPerRep = levelUnits.drill;
       
       // 🎯 레벨별 팔 드릴 선택
       const selectedDrill = selectDrillByLevel('pull', opts.level, opts.goal);
@@ -847,7 +913,7 @@ export function generateTimeBasedProgram(opts: {
     
     // 4-2. 발차기 드릴 (레벨별 자동 선택)
     {
-      const distPerRep = 50;
+      const distPerRep = levelUnits.drill;
       
       // 🎯 레벨별 발차기 드릴 선택
       const selectedDrill = selectDrillByLevel('kick', opts.level, opts.goal);
@@ -921,8 +987,8 @@ export function generateTimeBasedProgram(opts: {
     });
     
     for (let i = 0; i < mainSplits; i++) {
-      // 🎯 목표별 + 테마별 훈련법 자동 선택 (splitIndex로 다양성 확보)
-      const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod, i);
+      // 🎯 목표별 + 테마별 + 레벨별 훈련법 자동 선택
+      const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod, i, opts.level);
       
       console.log(`🎯 메인 훈련법 ${i + 1}/${mainSplits}:`, {
         goal: opts.goal,
@@ -975,10 +1041,12 @@ export function generateTimeBasedProgram(opts: {
     }
   }
   
-  // 6. 쿨다운 (15%)
+  // 6. 쿨다운 (레벨별 거리 단위)
   {
     const targetMin = timeAllocation.cooldown;
-    const distPerRep = 50;
+    const levelGroup = (opts.level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
+    const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
+    const distPerRep = levelUnits.cooldown;
     const paceSeconds = adjustedCss + 16; // Z1
     const restSeconds = getRestForZone('Z1');
     
