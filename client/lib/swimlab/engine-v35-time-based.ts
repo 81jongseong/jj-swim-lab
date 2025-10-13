@@ -76,6 +76,281 @@ interface DayPlan {
 }
 
 /**
+ * 🎯 목표별 훈련법 자동 선택
+ * 
+ * @param goal - 운동 목표 (체력 향상, 실력 향상, 기술 연마, 체중 감량, 재활, 스트레스 해소, 장거리 수영, 스프린트, 생존수영, 인명구조원)
+ * @param baseCss - 기본 CSS (초/100m)
+ * @param targetMinutes - 목표 시간 (분)
+ * @returns 선택된 훈련법 정보
+ */
+function selectTrainingMethodByGoal(
+  goal: string,
+  baseCss: number,
+  targetMinutes: number
+): {
+  methodId: string;
+  name: string;
+  zone: Zone;
+  distPerRep: number;
+  paceSeconds: number;
+  pace100m: number;
+  restSeconds: number;
+  minReps: number;
+  maxReps: number;
+  isPer100m: boolean;
+  equipment: string[];
+  whyPace: string;
+  whyRest: string;
+  whySet: string;
+  evidenceKeys: EvidenceKey[];
+  rationale: string;
+} {
+  // 🎯 목표별 훈련법 매핑
+  const goalToMethod: Record<string, any> = {
+    '체력 향상': {
+      methodId: '25',
+      name: 'LSD(장거리 저강도) 지속 수영',
+      zone: 'Z2' as Zone,
+      distPerRep: 300,
+      paceMultiplier: 1.0, // CSS 그대로
+      restZone: 'Z2',
+      minReps: 3,
+      maxReps: 8,
+      equipment: [],
+      rationale: '기초 체력·심폐 기반 구축, 회복 세션 (ACSM 2018)'
+    },
+    '실력 향상': {
+      methodId: '06',
+      name: '역치 인터벌(Threshold)',
+      zone: 'Z3' as Zone,
+      distPerRep: 200,
+      paceMultiplier: 1.05, // CSS + 5%
+      restZone: 'Z3',
+      minReps: 4,
+      maxReps: 10,
+      equipment: [],
+      rationale: 'CSS/MLSS 유지 능력, 템포 트레이닝 (Wakayoshi 1993)'
+    },
+    '기술 연마': {
+      methodId: '18',
+      name: '스트로크 카운트(최소화)',
+      zone: 'Z2' as Zone,
+      distPerRep: 100,
+      paceMultiplier: 1.15, // CSS + 15% (느리게, 기술 집중)
+      restZone: 'Z2',
+      minReps: 6,
+      maxReps: 12,
+      equipment: [],
+      rationale: '효율성 향상, 스트로크 품질 우선 (Maglischo 2003)'
+    },
+    '체중 감량': {
+      methodId: '25',
+      name: 'LSD(장거리 저강도) 지속 수영',
+      zone: 'Z2' as Zone,
+      distPerRep: 400,
+      paceMultiplier: 1.0,
+      restZone: 'Z2',
+      minReps: 3,
+      maxReps: 6,
+      equipment: [],
+      rationale: '지방 연소 극대화, 장시간 유산소 (ACSM 2018)'
+    },
+    '재활': {
+      methodId: '10',
+      name: '풀 집중(하체 부담↓, 호흡 안정)',
+      zone: 'Z1' as Zone,
+      distPerRep: 100,
+      paceMultiplier: 1.3, // CSS + 30% (매우 느리게)
+      restZone: 'Z1',
+      minReps: 4,
+      maxReps: 10,
+      equipment: ['풀부이'],
+      rationale: '관절 부담 최소화, 상체 중심 운동 (APTA 2016)'
+    },
+    '스트레스 해소': {
+      methodId: '25',
+      name: 'LSD(장거리 저강도) 지속 수영',
+      zone: 'Z1' as Zone,
+      distPerRep: 200,
+      paceMultiplier: 1.2, // CSS + 20% (편안하게)
+      restZone: 'Z1',
+      minReps: 4,
+      maxReps: 10,
+      equipment: [],
+      rationale: '엔돌핀 분비, 명상적 수영 (Peluso & Andrade 2005)'
+    },
+    '장거리 수영': {
+      methodId: '25',
+      name: 'LSD(장거리 저강도) 지속 수영',
+      zone: 'Z2' as Zone,
+      distPerRep: 400,
+      paceMultiplier: 1.0,
+      restZone: 'Z2',
+      minReps: 3,
+      maxReps: 6,
+      equipment: [],
+      rationale: '지구력 극대화, 90분+ 지속 적응 (Costill 1991)'
+    },
+    '스프린트': {
+      methodId: '08',
+      name: '스프린트 반복(폭발력)',
+      zone: 'Z5' as Zone,
+      distPerRep: 50,
+      paceMultiplier: 0.8, // CSS - 20% (빠르게)
+      restZone: 'Z5',
+      minReps: 6,
+      maxReps: 16,
+      equipment: [],
+      rationale: '최고 속도, 신경근 동원력 (Sharp et al. 1986)'
+    },
+    '생존수영': {
+      methodId: '13',
+      name: '스컬링·캐치 품질(손수영)',
+      zone: 'Z1' as Zone,
+      distPerRep: 50,
+      paceMultiplier: 1.5, // CSS + 50% (매우 느리게, 기술 집중)
+      restZone: 'Z1',
+      minReps: 6,
+      maxReps: 12,
+      equipment: [],
+      rationale: '생존 기술 습득, 효율성 극대화 (Langendorfer 1995)'
+    },
+    '인명구조원': {
+      methodId: '06',
+      name: '역치 인터벌(구조 지구력)',
+      zone: 'Z3' as Zone,
+      distPerRep: 200,
+      paceMultiplier: 1.0,
+      restZone: 'Z3',
+      minReps: 4,
+      maxReps: 8,
+      equipment: [],
+      rationale: '구조 상황 지구력, 혼합 강도 (Reilly et al. 2003)'
+    }
+  };
+  
+  const method = goalToMethod[goal] || goalToMethod['체력 향상']; // 기본값: 체력 향상
+  
+  // 페이스 계산
+  const pace100m = Math.round(baseCss * method.paceMultiplier);
+  const paceSeconds = (method.distPerRep / 100) * pace100m; // per set 페이스
+  const restSeconds = getRestForZone(method.restZone);
+  
+  // whyPace, whyRest, whySet 생성
+  const whyPace = `${method.name}: ${method.zone} 강도, CSS ${method.paceMultiplier === 1.0 ? '기준' : (method.paceMultiplier > 1.0 ? `+${((method.paceMultiplier - 1) * 100).toFixed(0)}%` : `-${((1 - method.paceMultiplier) * 100).toFixed(0)}%`)}`;
+  const whyRest = `${method.zone} 기본 r${restSeconds}″. ${method.rationale}`;
+  const whySet = `${method.name}: ${method.rationale}`;
+  
+  return {
+    methodId: method.methodId,
+    name: method.name,
+    zone: method.zone,
+    distPerRep: method.distPerRep,
+    paceSeconds,
+    pace100m,
+    restSeconds,
+    minReps: method.minReps,
+    maxReps: method.maxReps,
+    isPer100m: false, // per set
+    equipment: method.equipment,
+    whyPace,
+    whyRest,
+    whySet,
+    evidenceKeys: ['CSS_MLSS_WAKAYOSHI_1993'] as EvidenceKey[],
+    rationale: method.rationale
+  };
+}
+
+/**
+ * 🎯 레벨별 드릴 자동 선택
+ * 
+ * @param type - 드릴 타입 ('pull' 또는 'kick')
+ * @param level - 회원 레벨 (beginner_1, intermediate_1, advanced_2, etc.)
+ * @param goal - 운동 목표
+ * @returns 선택된 드릴 정보
+ */
+function selectDrillByLevel(
+  type: 'pull' | 'kick',
+  level: string,
+  goal: string
+): {
+  name: string;
+  equipment: string[];
+  rationale: string;
+  paceMultiplier: number;
+} {
+  // 레벨 그룹 추출 (beginner_1 → beginner)
+  const levelGroup = level.split('_')[0];
+  
+  // 🎯 레벨별 + 목표별 드릴 매핑
+  const drillMap: Record<string, Record<string, any>> = {
+    beginner: {
+      pull: {
+        '체력 향상': { name: 'Pull Buoy Steady', equipment: ['풀부이'], rationale: '상체 지구력, 기본 자세 유지', paceMultiplier: 1.3 },
+        '기술 연마': { name: 'Catch-Up', equipment: ['풀부이'], rationale: '타이밍/정렬 교정, 스트로크 리듬', paceMultiplier: 1.4 },
+        default: { name: 'Catch-Up', equipment: ['풀부이'], rationale: '타이밍/정렬 교정', paceMultiplier: 1.4 }
+      },
+      kick: {
+        '체력 향상': { name: 'Flutter Kick', equipment: ['킥보드'], rationale: '하체 지구력 기초', paceMultiplier: 1.5 },
+        '기술 연마': { name: 'Side Kick (Long)', equipment: ['킥보드'], rationale: '발차기 기술, 몸통 정렬', paceMultiplier: 1.6 },
+        default: { name: 'Flutter Kick', equipment: ['킥보드'], rationale: '기본 발차기', paceMultiplier: 1.5 }
+      }
+    },
+    intermediate: {
+      pull: {
+        '체력 향상': { name: 'Pull Buoy Steady', equipment: ['풀부이'], rationale: '상체 근지구력', paceMultiplier: 1.2 },
+        '실력 향상': { name: 'Paddle Pull', equipment: ['패들', '풀부이'], rationale: '추진력·파워 향상', paceMultiplier: 1.1 },
+        '기술 연마': { name: 'Zipper', equipment: ['풀부이'], rationale: '하이 엘보, 회복 궤도', paceMultiplier: 1.3 },
+        default: { name: 'Catch-Up', equipment: ['풀부이'], rationale: '효율성', paceMultiplier: 1.2 }
+      },
+      kick: {
+        '체력 향상': { name: 'Flutter Kick', equipment: ['킥보드'], rationale: '하체 지구력', paceMultiplier: 1.4 },
+        '실력 향상': { name: 'Vertical Kick', equipment: [], rationale: '킥 파워, 체간 안정성', paceMultiplier: 1.3 },
+        default: { name: 'Side Kick (Long)', equipment: ['킥보드'], rationale: '지속력', paceMultiplier: 1.4 }
+      }
+    },
+    advanced: {
+      pull: {
+        '체력 향상': { name: 'Pull Buoy Steady', equipment: ['풀부이'], rationale: '상체 근지구력 극대화', paceMultiplier: 1.1 },
+        '실력 향상': { name: 'Paddle Pull', equipment: ['패들', '풀부이'], rationale: '추진력 극대화', paceMultiplier: 1.0 },
+        '기술 연마': { name: 'Scull', equipment: [], rationale: '물감각·캐치 정확도', paceMultiplier: 1.2 },
+        default: { name: 'Single Arm', equipment: ['풀부이'], rationale: '편측 강화', paceMultiplier: 1.1 }
+      },
+      kick: {
+        '체력 향상': { name: 'Dolphin Kick', equipment: ['킥보드'], rationale: '전신 파워, 코어 강화', paceMultiplier: 1.3 },
+        '실력 향상': { name: 'Vertical Kick', equipment: [], rationale: '킥 폭발력, 체간 안정성', paceMultiplier: 1.2 },
+        default: { name: 'Flutter Kick', equipment: ['킥보드'], rationale: '하체 지구력', paceMultiplier: 1.3 }
+      }
+    },
+    master: {
+      pull: {
+        '실력 향상': { name: 'Paddle Pull', equipment: ['패들', '풀부이'], rationale: '최대 추진력', paceMultiplier: 0.95 },
+        '기술 연마': { name: 'Scull', equipment: [], rationale: '미세 조정, 물감각', paceMultiplier: 1.1 },
+        default: { name: 'Paddle Pull', equipment: ['패들', '풀부이'], rationale: '파워 유지', paceMultiplier: 1.0 }
+      },
+      kick: {
+        '실력 향상': { name: 'Dolphin Kick', equipment: [], rationale: '턴 가속, 브레이크아웃', paceMultiplier: 1.2 },
+        default: { name: 'Vertical Kick', equipment: [], rationale: '폭발력 유지', paceMultiplier: 1.2 }
+      }
+    },
+    expert: {
+      pull: {
+        default: { name: 'Paddle Pull', equipment: ['패들', '풀부이', '밴드'], rationale: '최대 파워, 저항 훈련', paceMultiplier: 0.95 }
+      },
+      kick: {
+        default: { name: 'Dolphin Kick', equipment: [], rationale: '최대 폭발력', paceMultiplier: 1.1 }
+      }
+    }
+  };
+  
+  const levelDrills = drillMap[levelGroup] || drillMap['intermediate'];
+  const typeDrills = levelDrills[type] || levelDrills['pull'];
+  const selectedDrill = typeDrills[goal] || typeDrills['default'];
+  
+  return selectedDrill;
+}
+
+/**
  * 🎯 시간 역산 기반 반복 횟수 계산
  * 
  * @param targetMinutes - 목표 시간 (분)
@@ -323,11 +598,22 @@ export function generateTimeBasedProgram(opts: {
     const targetMin = timeAllocation.drill;
     const halfTime = targetMin / 2;
     
-    // 4-1. 팔 드릴
+    // 4-1. 팔 드릴 (레벨별 자동 선택)
     {
       const distPerRep = 50;
-      const paceSeconds = (adjustedCss * 1.09) / 2; // Z2, 50m 기준 (per set)
+      
+      // 🎯 레벨별 팔 드릴 선택
+      const selectedDrill = selectDrillByLevel('pull', opts.level, opts.goal);
+      const paceSeconds = (adjustedCss * 1.09 * selectedDrill.paceMultiplier) / 2; // 레벨별 페이스 조정
       const restSeconds = getRestForZone('Z2');
+      
+      console.log('🎯 선택된 팔 드릴:', {
+        level: opts.level,
+        goal: opts.goal,
+        drillName: selectedDrill.name,
+        equipment: selectedDrill.equipment,
+        rationale: selectedDrill.rationale
+      });
       
       const reps = calculateRepsFromTime(
         halfTime,
@@ -341,31 +627,43 @@ export function generateTimeBasedProgram(opts: {
       
       const meters = reps * distPerRep;
       const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
-      const desc = `[자유형] ${reps}×${distPerRep}m Catch-Up (풀부이) @ ${formatPace(pace100m)}, r${restSeconds}″`;
+      const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
+      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pace100m)}, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',
         zone: 'Z2',
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
-        equipment: ['풀부이'],
+        equipment: selectedDrill.equipment,
         subtype: '팔',
         meters,
         desc,
         whyPace: 'CSS 기반 Z2(유산소 기초) → 미토콘드리아 밀도↑, 지방 대사 개선',
         whyRest: `Z2 기본 r${restSeconds}″. 기술 유지와 환기 위한 회복`,
-        whySet: 'Catch-Up: 타이밍/정렬. 풀부이로 하체 부양 → 상체 기술 집중',
+        whySet: `${selectedDrill.name}: ${selectedDrill.rationale}`,
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
       console.log('✅ 팔 드릴 생성:', { reps, meters, desc });
     }
     
-    // 4-2. 발차기 드릴
+    // 4-2. 발차기 드릴 (레벨별 자동 선택)
     {
       const distPerRep = 50;
-      const paceSeconds = (adjustedCss * 1.5) / 2; // 발차기는 1.5배 느림 (per set)
+      
+      // 🎯 레벨별 발차기 드릴 선택
+      const selectedDrill = selectDrillByLevel('kick', opts.level, opts.goal);
+      const paceSeconds = (adjustedCss * 1.5 * selectedDrill.paceMultiplier) / 2; // 레벨별 페이스 조정
       const restSeconds = getRestForZone('Z2');
+      
+      console.log('🎯 선택된 발차기 드릴:', {
+        level: opts.level,
+        goal: opts.goal,
+        drillName: selectedDrill.name,
+        equipment: selectedDrill.equipment,
+        rationale: selectedDrill.rationale
+      });
       
       const reps = calculateRepsFromTime(
         halfTime,
@@ -379,20 +677,21 @@ export function generateTimeBasedProgram(opts: {
       
       const meters = reps * distPerRep;
       const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
-      const desc = `[자유형] ${reps}×${distPerRep}m Flutter Kick (킥보드) @ ${formatPace(pace100m)}, r${restSeconds}″`;
+      const equipmentStr = selectedDrill.equipment.length > 0 ? ` (${selectedDrill.equipment.join(', ')})` : '';
+      const desc = `[자유형] ${reps}×${distPerRep}m ${selectedDrill.name}${equipmentStr} @ ${formatPace(pace100m)}, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',
         zone: 'Z2',
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
-        equipment: ['킥보드'],
+        equipment: selectedDrill.equipment,
         subtype: '발차기',
         meters,
         desc,
         whyPace: `발차기는 전신 수영보다 1.5배 느림 (CSS ${formatPace(adjustedCss)} × 1.5)`,
         whyRest: `Z2 기본 r${restSeconds}″. 기술 유지와 환기 위한 회복`,
-        whySet: 'Flutter Kick: 하체 지구력. 킥보드로 상체 지지 → 발차기 기술 집중',
+        whySet: `${selectedDrill.name}: ${selectedDrill.rationale}`,
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
@@ -400,41 +699,48 @@ export function generateTimeBasedProgram(opts: {
     }
   }
   
-  // 5. 메인 세트 (60%)
+  // 5. 메인 세트 (목표별 자동 선택)
   {
     const targetMin = timeAllocation.main;
-    const distPerRep = 300; // 장거리 목표: 300m 단위
-    const paceSeconds = adjustedCss * 3; // 300m = CSS × 3 (per set)
-    const restSeconds = getRestForZone('Z1'); // LSD는 Z1 휴식
+    
+    // 🎯 목표별 훈련법 자동 선택
+    const selectedMethod = selectTrainingMethodByGoal(opts.goal, adjustedCss, targetMin);
+    
+    console.log('🎯 선택된 메인 훈련법:', {
+      goal: opts.goal,
+      methodId: selectedMethod.methodId,
+      methodName: selectedMethod.name,
+      zone: selectedMethod.zone,
+      distPerRep: selectedMethod.distPerRep,
+      rationale: selectedMethod.rationale
+    });
     
     const reps = calculateRepsFromTime(
       targetMin,
-      distPerRep,
-      paceSeconds,
-      restSeconds,
-      SCIENTIFIC_REPS.main_endurance.min,
-      SCIENTIFIC_REPS.main_endurance.max,
-      false // per set (300m 전체 시간)
+      selectedMethod.distPerRep,
+      selectedMethod.paceSeconds,
+      selectedMethod.restSeconds,
+      selectedMethod.minReps,
+      selectedMethod.maxReps,
+      selectedMethod.isPer100m
     );
     
-    const meters = reps * distPerRep;
-    // 페이스를 per 100m 기준으로 표기 (300m @ 6:00 → @ 2:00/100m)
-    const pace100m = adjustedCss; // per 100m 페이스
-    const desc = `[자유형] ${reps}×${distPerRep}m LSD(장거리 저강도) 지속 수영 @ ${formatPace(pace100m)}, r${restSeconds}″`;
+    const meters = reps * selectedMethod.distPerRep;
+    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} @ ${formatPace(selectedMethod.pace100m)}, r${selectedMethod.restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
-      zone: 'Z1',
-      restSec: restSeconds,
-      rpe: getRPEForZone('Z1'),
-      equipment: [],
+      zone: selectedMethod.zone,
+      restSec: selectedMethod.restSeconds,
+      rpe: getRPEForZone(selectedMethod.zone),
+      equipment: selectedMethod.equipment || [],
       meters,
       desc,
-      whyPace: 'LSD(장거리 저강도): 지속 페이스 유지·경제성 향상',
-      whyRest: `Z1 기본 r${restSeconds}″. 장거리 지구력 훈련`,
-      whySet: 'LSD: 지구력·페이스 안정성↑ (300m 거리로 집중도 향상)',
-      methodId: '01',
-      evidenceKeys: ['CSS_MLSS_WAKAYOSHI_1993']
+      whyPace: selectedMethod.whyPace,
+      whyRest: selectedMethod.whyRest,
+      whySet: selectedMethod.whySet,
+      methodId: selectedMethod.methodId,
+      evidenceKeys: selectedMethod.evidenceKeys
     });
     
     console.log('✅ 메인 세트 생성:', { reps, meters, desc });
