@@ -1,5 +1,6 @@
 /**
  * 🏊 JJ Swim Lab - 수영 프로그램 생성 엔진 v3.5 (Time-Based Scientific System)
+ * Updated: 2025-10-13 - Rest calculation fix (reps-1)
  * 
  * 🎯 핵심 개선사항:
  * 1. **시간 역산 시스템**: 거리가 아닌 시간을 기준으로 프로그램 생성
