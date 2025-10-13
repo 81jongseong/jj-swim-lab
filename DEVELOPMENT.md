@@ -88,6 +88,32 @@
 - `client/app/health/input/page.tsx` (v35 엔진 호출)
 - `client/app/guest/programs/page.tsx` (v35 캐시 로드)
 
+#### 🔧 **추가 수정 (2025-10-13 18:30)**
+
+**문제**: 건강 상태 기반 강도 조절(75%)이 페이스에 반영 안 됨
+```javascript
+🏥 페이스 조절: {baseCss: 90, cssPct: 0, adjustedCss: 90}  // ❌
+```
+
+**해결**: `intensityPercent` 파라미터 추가
+```typescript
+// v35 엔진에 추가
+intensityPercent?: number; // 0.75 = 75% 강도
+
+// 페이스 계산 로직
+if (opts.intensityPercent && opts.intensityPercent < 1.0) {
+  paceMultiplier = 1 / opts.intensityPercent;  // 0.75 → 1.33 (33% 느림)
+}
+
+// 예: 75% 강도
+// CSS 90초 × 1.33 = 120초/100m ✅
+```
+
+**결과 예상**:
+- 75% 강도 → 페이스 33% 느림 (90초 → 120초/100m)
+- 같은 시간(50분)에 적은 거리 수영
+- 총 거리: 3000m → **약 2000m**로 감소
+
 ---
 
 ### 🚨 **수영 엔진 v34 - 반복 횟수 파싱 수정 (2025-10-13 최신)**

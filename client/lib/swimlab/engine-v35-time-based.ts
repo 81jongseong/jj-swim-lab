@@ -401,7 +401,7 @@ export function generateTimeBasedProgram(opts: {
   {
     const targetMin = timeAllocation.main;
     const distPerRep = 300; // 장거리 목표: 300m 단위
-    const paceSeconds = adjustedCss * 3; // 300m = CSS × 3
+    const paceSeconds = adjustedCss * 3; // 300m = CSS × 3 (per set)
     const restSeconds = getRestForZone('Z1'); // LSD는 Z1 휴식
     
     const reps = calculateRepsFromTime(
@@ -415,7 +415,9 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * distPerRep;
-    const desc = `[자유형] ${reps}×${distPerRep}m LSD(장거리 저강도) 지속 수영 @ ${formatPace(paceSeconds)}, r${restSeconds}″`;
+    // 페이스를 per 100m 기준으로 표기 (300m @ 6:00 → @ 2:00/100m)
+    const pace100m = adjustedCss; // per 100m 페이스
+    const desc = `[자유형] ${reps}×${distPerRep}m LSD(장거리 저강도) 지속 수영 @ ${formatPace(pace100m)}, r${restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
