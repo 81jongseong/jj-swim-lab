@@ -21,7 +21,7 @@
  */
 
 import { EvidenceKey } from '@/types/evidence';
-import { aggregateConditionRules, type ConditionRuleResult } from '@/lib/swimlab/condition-rules-v4';
+import { aggregateConditionRules } from '@/lib/swimlab/condition-rules-v4';
 import { TRAINING_METHODS } from '@/src/swimlab/data/trainingMethods';
 import { DRILLS } from '@/src/swimlab/data/drills';
 
@@ -228,6 +228,7 @@ export function generateTimeBasedProgram(opts: {
   strokesAvoid: string[];
   conditionIds: string[];
   dayCondition: string;
+  intensityPercent?: number; // 건강 상태 기반 강도 조절 (0.7 = 70%)
 }): DayPlan {
   
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
@@ -249,12 +250,30 @@ export function generateTimeBasedProgram(opts: {
   // 2. 컨디션 기반 페이스 조절
   const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition);
   const baseCss = opts.css100['freestyle'] || 90;
-  const adjustedCss = Math.round(baseCss * (1 + conditionRules.cssPct));
+  
+  // 🏥 건강 상태 기반 페이스 조절
+  // intensityPercent: 0.7 (70% 강도) → paceMultiplier: 1.43 (43% 느리게)
+  // 예: CSS 90초 × 1.43 = 129초/100m
+  let paceMultiplier = 1.0;
+  
+  if (opts.intensityPercent && opts.intensityPercent < 1.0) {
+    // 강도 감소 → 페이스 증가 (느려짐)
+    // 70% 강도 = 0.7 → 1 / 0.7 = 1.43 (43% 느림)
+    paceMultiplier = 1 / opts.intensityPercent;
+  }
+  
+  // 컨디션 규칙과 결합
+  const finalMultiplier = paceMultiplier * (1 + conditionRules.cssPct);
+  const adjustedCss = Math.round(baseCss * finalMultiplier);
   
   console.log('🏥 페이스 조절:', {
     baseCss,
+    intensityPercent: opts.intensityPercent,
+    paceMultiplier: paceMultiplier.toFixed(2),
     cssPct: conditionRules.cssPct,
-    adjustedCss
+    finalMultiplier: finalMultiplier.toFixed(2),
+    adjustedCss,
+    note: opts.intensityPercent ? `${(opts.intensityPercent * 100).toFixed(0)}% 강도 → ${((finalMultiplier - 1) * 100).toFixed(0)}% 느린 페이스` : '정상'
   });
   
   const sets: SetItem[] = [];
@@ -318,7 +337,8 @@ export function generateTimeBasedProgram(opts: {
       );
       
       const meters = reps * distPerRep;
-      const desc = `[자유형] ${reps}×${distPerRep}m Catch-Up (풀부이) @ ${formatPace(paceSeconds * 2)}, r${restSeconds}″`;
+      const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
+      const desc = `[자유형] ${reps}×${distPerRep}m Catch-Up (풀부이) @ ${formatPace(pace100m)}, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',
@@ -355,7 +375,8 @@ export function generateTimeBasedProgram(opts: {
       );
       
       const meters = reps * distPerRep;
-      const desc = `[자유형] ${reps}×${distPerRep}m Flutter Kick (킥보드) @ ${formatPace(paceSeconds * 2)}, r${restSeconds}″`;
+      const pace100m = paceSeconds * 2; // 50m 페이스 → 100m 페이스
+      const desc = `[자유형] ${reps}×${distPerRep}m Flutter Kick (킥보드) @ ${formatPace(pace100m)}, r${restSeconds}″`;
       
       sets.push({
         stroke: 'freestyle',

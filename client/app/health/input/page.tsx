@@ -598,7 +598,8 @@ export default function HealthInputPage() {
         strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
         strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
         conditionIds: healthData.orthopedics as any,
-        dayCondition: dayCondition as any
+        dayCondition: dayCondition as any,
+        intensityPercent: healthAnalysis.baseIntensity / 100 // 🏥 건강 상태 기반 강도 (75 → 0.75)
       });
       
       console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);
