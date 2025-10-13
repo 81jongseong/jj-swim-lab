@@ -116,7 +116,7 @@ export default function TrainingScheduleSection({
             <input
               type="number"
               min="20"
-              max="180"
+              max="240"
               step="5"
               value={sessionDuration}
               onChange={(e) => onUpdate({ sessionDuration: parseInt(e.target.value) || 60 })}
@@ -132,8 +132,10 @@ export default function TrainingScheduleSection({
           </p>
           <p className="text-xs text-gray-600">
             • 버튼 클릭: 일반적인 시간 (30, 50, 60분)<br/>
-            • 직접 입력: 원하는 시간 자유롭게 설정 (20~180분)<br/>
-            • 예시: 45분, 75분, 90분 등<br/>
+            • 직접 입력: 원하는 시간 자유롭게 설정 (20~240분)<br/>
+            • 최소 20분: 워밍업(5분) + 메인(10분) + 쿨다운(5분) 필수<br/>
+            • 최대 240분: 오픈워터/장거리 대비 훈련 가능<br/>
+            • 일반: 45-90분 / 엘리트: 120-180분 / 특수: 240분<br/>
             • 운동 요일은 위에서 별도로 선택합니다
           </p>
         </div>
