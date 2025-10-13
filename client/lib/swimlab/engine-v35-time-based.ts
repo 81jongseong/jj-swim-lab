@@ -76,15 +76,55 @@ interface DayPlan {
 }
 
 /**
- * 🎯 목표별 훈련법 자동 선택
+ * 🎯 테마 자동 선택 (목표 기반)
+ * 
+ * @param goal - 운동 목표
+ * @param weeklyFrequency - 주간 운동 횟수
+ * @returns 테마 (tech_tempo, endurance, tempo_hi)
+ */
+function selectThemeByGoal(goal: string, weeklyFrequency: number): 'tech_tempo' | 'endurance' | 'tempo_hi' {
+  // 🎯 목표별 테마 매핑
+  const goalToTheme: Record<string, 'tech_tempo' | 'endurance' | 'tempo_hi'> = {
+    '체력 향상': 'endurance',      // 지구력 중심
+    '실력 향상': 'tempo_hi',        // 고강도 템포
+    '기술 연마': 'tech_tempo',      // 기술 + 템포
+    '체중 감량': 'endurance',       // 장시간 유산소
+    '재활': 'tech_tempo',           // 낮은 강도 + 기술
+    '스트레스 해소': 'endurance',   // 편안한 지구력
+    '장거리 수영': 'endurance',     // 지구력 극대화
+    '스프린트': 'tempo_hi',         // 고강도 스프린트
+    '생존수영': 'tech_tempo',       // 기술 중심
+    '인명구조원': 'tempo_hi'        // 혼합 고강도
+  };
+  
+  let theme = goalToTheme[goal] || 'endurance'; // 기본값: 지구력
+  
+  // 주간 운동 횟수에 따른 조정
+  if (weeklyFrequency <= 2) {
+    // 주 1-2회: 기술 중심 (체력 쌓기보다 기술 유지)
+    theme = 'tech_tempo';
+  } else if (weeklyFrequency >= 5) {
+    // 주 5회 이상: 고강도 가능
+    if (theme === 'endurance') {
+      theme = 'tempo_hi'; // 지구력 → 템포 전환
+    }
+  }
+  
+  return theme;
+}
+
+/**
+ * 🎯 목표별 + 테마별 훈련법 자동 선택
  * 
  * @param goal - 운동 목표 (체력 향상, 실력 향상, 기술 연마, 체중 감량, 재활, 스트레스 해소, 장거리 수영, 스프린트, 생존수영, 인명구조원)
+ * @param theme - 테마 (tech_tempo, endurance, tempo_hi)
  * @param baseCss - 기본 CSS (초/100m)
  * @param targetMinutes - 목표 시간 (분)
  * @returns 선택된 훈련법 정보
  */
-function selectTrainingMethodByGoal(
+function selectTrainingMethodByGoalAndTheme(
   goal: string,
+  theme: 'tech_tempo' | 'endurance' | 'tempo_hi',
   baseCss: number,
   targetMinutes: number
 ): {
@@ -105,20 +145,59 @@ function selectTrainingMethodByGoal(
   evidenceKeys: EvidenceKey[];
   rationale: string;
 } {
-  // 🎯 목표별 훈련법 매핑
-  const goalToMethod: Record<string, any> = {
-    '체력 향상': {
-      methodId: '25',
-      name: 'LSD(장거리 저강도) 지속 수영',
-      zone: 'Z2' as Zone,
-      distPerRep: 300,
-      paceMultiplier: 1.0, // CSS 그대로
-      restZone: 'Z2',
-      minReps: 3,
-      maxReps: 8,
-      equipment: [],
-      rationale: '기초 체력·심폐 기반 구축, 회복 세션 (ACSM 2018)'
+  // 🎯 테마별 + 목표별 훈련법 매핑
+  const themeMethodMap: Record<string, Record<string, any>> = {
+    tech_tempo: {
+      '체력 향상': {
+        methodId: '06',
+        name: '역치 인터벌(Threshold)',
+        zone: 'Z3' as Zone,
+        distPerRep: 200,
+        paceMultiplier: 1.05,
+        restZone: 'Z3',
+        minReps: 4,
+        maxReps: 10,
+        equipment: [],
+        rationale: 'CSS/MLSS 유지 능력, 기술+템포 조화'
+      },
+      '기술 연마': {
+        methodId: '18',
+        name: '스트로크 카운트(최소화)',
+        zone: 'Z2' as Zone,
+        distPerRep: 100,
+        paceMultiplier: 1.15,
+        restZone: 'Z2',
+        minReps: 6,
+        maxReps: 12,
+        equipment: [],
+        rationale: '효율성 향상, 기술 집중'
+      },
+      default: {
+        methodId: '05',
+        name: '템포 홀드(일정 페이스)',
+        zone: 'Z3' as Zone,
+        distPerRep: 150,
+        paceMultiplier: 1.0,
+        restZone: 'Z3',
+        minReps: 5,
+        maxReps: 10,
+        equipment: [],
+        rationale: '페이스 유지력, 기술 안정성'
+      }
     },
+    endurance: {
+      '체력 향상': {
+        methodId: '25',
+        name: 'LSD(장거리 저강도) 지속 수영',
+        zone: 'Z2' as Zone,
+        distPerRep: 300,
+        paceMultiplier: 1.0,
+        restZone: 'Z2',
+        minReps: 3,
+        maxReps: 8,
+        equipment: [],
+        rationale: '기초 체력·심폐 기반 구축 (ACSM 2018)'
+      },
     '실력 향상': {
       methodId: '06',
       name: '역치 인터벌(Threshold)',
@@ -226,10 +305,63 @@ function selectTrainingMethodByGoal(
       maxReps: 8,
       equipment: [],
       rationale: '구조 상황 지구력, 혼합 강도 (Reilly et al. 2003)'
+    },
+      default: {
+        methodId: '25',
+        name: 'LSD(장거리 저강도) 지속 수영',
+        zone: 'Z2' as Zone,
+        distPerRep: 400,
+        paceMultiplier: 1.0,
+        restZone: 'Z2',
+        minReps: 3,
+        maxReps: 6,
+        equipment: [],
+        rationale: '지구력 극대화, 장시간 지속'
+      }
+    },
+    tempo_hi: {
+      '실력 향상': {
+        methodId: '08',
+        name: '스프린트 반복(폭발력)',
+        zone: 'Z5' as Zone,
+        distPerRep: 50,
+        paceMultiplier: 0.8,
+        restZone: 'Z5',
+        minReps: 6,
+        maxReps: 16,
+        equipment: [],
+        rationale: '최고 속도, 신경근 동원력 (Sharp et al. 1986)'
+      },
+      '스프린트': {
+        methodId: '08',
+        name: '스프린트 반복(폭발력)',
+        zone: 'Z5' as Zone,
+        distPerRep: 50,
+        paceMultiplier: 0.8,
+        restZone: 'Z5',
+        minReps: 6,
+        maxReps: 16,
+        equipment: [],
+        rationale: '최고 속도, 폭발력 극대화'
+      },
+      default: {
+        methodId: '06',
+        name: '역치 인터벌(Threshold)',
+        zone: 'Z4' as Zone,
+        distPerRep: 100,
+        paceMultiplier: 0.95,
+        restZone: 'Z4',
+        minReps: 6,
+        maxReps: 12,
+        equipment: [],
+        rationale: '고강도 템포, VO₂max 향상'
+      }
     }
   };
   
-  const method = goalToMethod[goal] || goalToMethod['체력 향상']; // 기본값: 체력 향상
+  // 테마별 훈련법 선택
+  const themeMethods = themeMethodMap[theme] || themeMethodMap['endurance'];
+  const method = themeMethods[goal] || themeMethods['default']; // 기본값: 테마별 default
   
   // 페이스 계산
   const pace100m = Math.round(baseCss * method.paceMultiplier);
@@ -509,11 +641,21 @@ export function generateTimeBasedProgram(opts: {
   intensityPercent?: number; // 건강 상태 기반 강도 조절 (0.7 = 70%)
 }): DayPlan {
   
+  // 🎯 테마 자동 선택
+  const theme = selectThemeByGoal(opts.goal, opts.weeklyFrequency || 3);
+  const themeDescriptions = {
+    tech_tempo: '기술+템포 (Technique & Tempo) - 효율성과 페이스 조화',
+    endurance: '지구력 (Endurance) - 유산소 기반 체력 강화',
+    tempo_hi: '고강도 템포 (High Intensity) - 스피드와 파워 극대화'
+  };
+  
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
     level: opts.level,
-    weeklyFrequency: opts.weeklyFrequency || 3
+    weeklyFrequency: opts.weeklyFrequency || 3,
+    selectedTheme: theme,
+    themeDesc: themeDescriptions[theme]
   });
   
   // 🔬 과학적 인자 종합 계산
@@ -703,8 +845,8 @@ export function generateTimeBasedProgram(opts: {
   {
     const targetMin = timeAllocation.main;
     
-    // 🎯 목표별 훈련법 자동 선택
-    const selectedMethod = selectTrainingMethodByGoal(opts.goal, adjustedCss, targetMin);
+    // 🎯 목표별 + 테마별 훈련법 자동 선택
+    const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, targetMin);
     
     console.log('🎯 선택된 메인 훈련법:', {
       goal: opts.goal,
@@ -823,8 +965,8 @@ export function generateTimeBasedProgram(opts: {
   
   return {
     date: new Date().toISOString().slice(0, 10),
-    theme: 'endurance',
-    themeDesc: '지구력 (LSD, 풀 부이, 브로큰 사다리) - 체력 기반 확립',
+    theme,
+    themeDesc: themeDescriptions[theme],
     sets,
     totalMeters,
     estimatedMinutes: Math.round(totalMinutes),
