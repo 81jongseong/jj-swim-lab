@@ -725,6 +725,7 @@ export function generateTimeBasedProgram(opts: {
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
+      subtype: 'WARMUP', // 워밍업 파트 표시
       meters,
       desc,
       whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',
@@ -780,7 +781,7 @@ export function generateTimeBasedProgram(opts: {
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
         equipment: selectedDrill.equipment,
-        subtype: '팔',
+        subtype: 'DRILL_PULL', // 드릴 파트 - 팔
         meters,
         desc,
         whyPace: 'CSS 기반 Z2(유산소 기초) → 미토콘드리아 밀도↑, 지방 대사 개선',
@@ -831,7 +832,7 @@ export function generateTimeBasedProgram(opts: {
         restSec: restSeconds,
         rpe: getRPEForZone('Z2'),
         equipment: selectedDrill.equipment,
-        subtype: '발차기',
+        subtype: 'DRILL_KICK', // 드릴 파트 - 발차기
         meters,
         desc,
         whyPace: `발차기는 전신 수영보다 1.5배 느림 (CSS ${formatPace(adjustedCss)} × 1.5)`,
@@ -844,60 +845,82 @@ export function generateTimeBasedProgram(opts: {
     }
   }
   
-  // 5. 메인 세트 (목표별 자동 선택)
+  // 5. 메인 세트 (과학적 근거 기반 분할)
   {
     const targetMin = timeAllocation.main;
     
-    // 🎯 목표별 + 테마별 훈련법 자동 선택
-    const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, targetMin);
-    
-    console.log('🎯 선택된 메인 훈련법:', {
-      goal: opts.goal,
-      methodId: selectedMethod.methodId,
-      methodName: selectedMethod.name,
-      zone: selectedMethod.zone,
-      distPerRep: selectedMethod.distPerRep,
-      rationale: selectedMethod.rationale
-    });
-    
-    const reps = calculateRepsFromTime(
-      targetMin,
-      selectedMethod.distPerRep,
-      selectedMethod.paceSeconds,
-      selectedMethod.restSeconds,
-      selectedMethod.minReps,
-      selectedMethod.maxReps,
-      selectedMethod.isPer100m
-    );
-    
-    const meters = reps * selectedMethod.distPerRep;
-    // 🎯 페이스 표시: 100m보다 긴 세트는 100m 페이스 + 총 소요 시간 표시
-    let paceDescription: string;
-    if (selectedMethod.distPerRep > 100) {
-      const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
-      paceDescription = `@ ${formatPace(selectedMethod.pace100m)}/100m (${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m)`;
-    } else {
-      const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
-      paceDescription = `@ ${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m`;
+    // 🔬 과학적 근거 기반 메인 세트 분할 결정
+    // 근거: Costill et al. (1991) - 최소 10분 이상 지속해야 생리학적 적응
+    let mainSplits = 1;
+    if (targetMin >= 30) {
+      mainSplits = 2; // 30분 이상: 2개로 분할 (각 15분)
+    } else if (targetMin >= 45) {
+      mainSplits = 3; // 45분 이상: 3개로 분할 (각 15분)
     }
-    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} ${paceDescription}, r${selectedMethod.restSeconds}″`;
+    // 10분 미만이면 분할 없음 (효과 없음)
     
-    sets.push({
-      stroke: 'freestyle',
-      zone: selectedMethod.zone,
-      restSec: selectedMethod.restSeconds,
-      rpe: getRPEForZone(selectedMethod.zone),
-      equipment: selectedMethod.equipment || [],
-      meters,
-      desc,
-      whyPace: selectedMethod.whyPace,
-      whyRest: selectedMethod.whyRest,
-      whySet: selectedMethod.whySet,
-      methodId: selectedMethod.methodId,
-      evidenceKeys: selectedMethod.evidenceKeys
+    const timePerMethod = targetMin / mainSplits;
+    
+    console.log('📊 메인 세트 분할 (과학적 근거):', {
+      totalMainTime: targetMin,
+      splits: mainSplits,
+      timePerMethod,
+      rationale: timePerMethod >= 10 ? '✅ 생리학적 적응 충분 (10분+)' : '⚠️ 효과 제한적 (10분 미만)'
     });
     
-    console.log('✅ 메인 세트 생성:', { reps, meters, desc });
+    for (let i = 0; i < mainSplits; i++) {
+      // 🎯 목표별 + 테마별 훈련법 자동 선택
+      const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod);
+      
+      console.log(`🎯 메인 훈련법 ${i + 1}/${mainSplits}:`, {
+        goal: opts.goal,
+        methodId: selectedMethod.methodId,
+        methodName: selectedMethod.name,
+        zone: selectedMethod.zone,
+        distPerRep: selectedMethod.distPerRep,
+        rationale: selectedMethod.rationale
+      });
+      
+      const reps = calculateRepsFromTime(
+        timePerMethod,
+        selectedMethod.distPerRep,
+        selectedMethod.paceSeconds,
+        selectedMethod.restSeconds,
+        selectedMethod.minReps,
+        selectedMethod.maxReps,
+        selectedMethod.isPer100m
+      );
+      
+      const meters = reps * selectedMethod.distPerRep;
+      // 🎯 페이스 표시: 100m보다 긴 세트는 100m 페이스 + 총 소요 시간 표시
+      let paceDescription: string;
+      if (selectedMethod.distPerRep > 100) {
+        const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
+        paceDescription = `@ ${formatPace(selectedMethod.pace100m)}/100m (${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m)`;
+      } else {
+        const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
+        paceDescription = `@ ${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m`;
+      }
+      const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} ${paceDescription}, r${selectedMethod.restSeconds}″`;
+      
+      sets.push({
+        stroke: 'freestyle',
+        zone: selectedMethod.zone,
+        restSec: selectedMethod.restSeconds,
+        rpe: getRPEForZone(selectedMethod.zone),
+        equipment: selectedMethod.equipment || [],
+        subtype: i === 0 ? 'MAIN' : 'MAIN_SUB', // 메인 파트 표시
+        meters,
+        desc,
+        whyPace: selectedMethod.whyPace,
+        whyRest: selectedMethod.whyRest,
+        whySet: selectedMethod.whySet,
+        methodId: selectedMethod.methodId,
+        evidenceKeys: selectedMethod.evidenceKeys
+      });
+      
+      console.log(`✅ 메인 세트 ${i + 1} 생성:`, { reps, meters, desc });
+    }
   }
   
   // 6. 쿨다운 (15%)
@@ -927,6 +950,7 @@ export function generateTimeBasedProgram(opts: {
       restSec: restSeconds,
       rpe: getRPEForZone('Z1'),
       equipment: [],
+      subtype: 'COOLDOWN', // 쿨다운 파트 표시
       meters,
       desc,
       whyPace: 'CSS 기반 Z1(회복) → 호흡·기술 정렬, 젖산 제거 촉진',

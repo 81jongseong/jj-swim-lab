@@ -181,10 +181,38 @@ export default function GuestProgramsPage() {
               {/* 실제 엔진 생성 세트들 */}
               {program.engineOutput?.sets ? (
                 <div className="space-y-4">
-                  {program.engineOutput.sets.map((set: any, idx: number) => (
-                    <div 
-                      key={idx}
-                      className={`border-l-4 rounded-lg p-5 ${
+                  {program.engineOutput.sets.map((set: any, idx: number) => {
+                    // 파트 변경 감지 (헤더 표시용)
+                    const prevSet = idx > 0 ? program.engineOutput.sets[idx - 1] : null;
+                    const isNewPart = !prevSet || 
+                      (set.subtype?.startsWith('WARMUP') && !prevSet.subtype?.startsWith('WARMUP')) ||
+                      (set.subtype?.startsWith('DRILL') && !prevSet.subtype?.startsWith('DRILL')) ||
+                      (set.subtype?.startsWith('MAIN') && !prevSet.subtype?.startsWith('MAIN')) ||
+                      (set.subtype?.startsWith('COOLDOWN') && !prevSet.subtype?.startsWith('COOLDOWN'));
+                    
+                    const partName = set.subtype?.startsWith('WARMUP') ? '🔥 워밍업' :
+                                    set.subtype?.startsWith('DRILL') ? '🏊 드릴 (기술 준비)' :
+                                    set.subtype?.startsWith('MAIN') ? '💪 메인 세트 (핵심 훈련)' :
+                                    set.subtype?.startsWith('COOLDOWN') ? '🧊 쿨다운 (회복)' : null;
+                    
+                    return (
+                      <div key={idx}>
+                        {/* 파트 헤더 */}
+                        {isNewPart && partName && (
+                          <div className="mb-3 mt-6 first:mt-0">
+                            <div className="flex items-center gap-3">
+                              <div className="h-1 flex-1 bg-gradient-to-r from-gray-300 to-transparent rounded"></div>
+                              <h3 className="text-xl font-bold text-gray-900 px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border-2 border-blue-300">
+                                {partName}
+                              </h3>
+                              <div className="h-1 flex-1 bg-gradient-to-l from-gray-300 to-transparent rounded"></div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* 세트 카드 */}
+                        <div 
+                          className={`border-l-4 rounded-lg p-5 ${
                         set.zone === 'Z1' ? 'border-green-500 bg-green-50' :
                         set.zone === 'Z2' ? 'border-blue-500 bg-blue-50' :
                         set.zone === 'Z3' ? 'border-yellow-500 bg-yellow-50' :
@@ -249,7 +277,9 @@ export default function GuestProgramsPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 // 엔진 출력이 없는 경우 기본 프로그램
