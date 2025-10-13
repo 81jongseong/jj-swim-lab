@@ -599,7 +599,8 @@ export default function HealthInputPage() {
         strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
         conditionIds: healthData.orthopedics as any,
         dayCondition: dayCondition as any,
-        intensityPercent: healthAnalysis.baseIntensity / 100 // 🏥 건강 상태 기반 강도 (75 → 0.75)
+        intensityPercent: healthAnalysis.baseIntensity / 100, // 🏥 건강 상태 기반 강도 (75 → 0.75)
+        weeklyFrequency: healthData.swim_profile.daysPerWeek || healthData.swim_profile.trainingDays?.length || 3 // 📊 주간 운동 횟수 (과학적 향상률 반영)
       });
       
       console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);

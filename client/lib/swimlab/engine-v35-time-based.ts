@@ -24,6 +24,7 @@ import { EvidenceKey } from '@/types/evidence';
 import { aggregateConditionRules } from '@/lib/swimlab/condition-rules-v4';
 import { TRAINING_METHODS } from '@/src/swimlab/data/trainingMethods';
 import { DRILLS } from '@/src/swimlab/data/drills';
+import { calculateScientificAdjustments } from '@/lib/swimlab/scientific-factors';
 
 type Stroke = 'freestyle' | 'backstroke' | 'breaststroke' | 'butterfly' | 'elementary_backstroke' | 'sidestroke';
 type Zone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
@@ -229,21 +230,34 @@ export function generateTimeBasedProgram(opts: {
   strokesAvoid: string[];
   conditionIds: string[];
   dayCondition: string;
+  weeklyFrequency?: number; // 주간 운동 횟수 (1-7)
   intensityPercent?: number; // 건강 상태 기반 강도 조절 (0.7 = 70%)
 }): DayPlan {
   
   console.log('🚀 시간 기반 프로그램 생성 시작:', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
-    level: opts.level
+    level: opts.level,
+    weeklyFrequency: opts.weeklyFrequency || 3
   });
   
-  // 1. 시간 배분
+  // 🔬 과학적 인자 종합 계산
+  const scientificAdj = calculateScientificAdjustments({
+    weeklyFrequency: opts.weeklyFrequency || 3,
+    poolLength: opts.poolLen,
+    goal: opts.goal,
+    level: opts.level,
+    intensityPercent: opts.intensityPercent
+  });
+  
+  console.log('🔬 과학적 조정:', scientificAdj.scientificSummary);
+  
+  // 1. 시간 배분 (목표별 맞춤 비율)
   const timeAllocation = {
-    warmup: opts.targetMinutes * TIME_ALLOCATION.WU,
-    drill: opts.targetMinutes * TIME_ALLOCATION.PRE,
-    main: opts.targetMinutes * TIME_ALLOCATION.MAIN,
-    cooldown: opts.targetMinutes * TIME_ALLOCATION.CD
+    warmup: opts.targetMinutes * scientificAdj.timeAllocation.warmup,
+    drill: opts.targetMinutes * scientificAdj.timeAllocation.drill,
+    main: opts.targetMinutes * scientificAdj.timeAllocation.main,
+    cooldown: opts.targetMinutes * scientificAdj.timeAllocation.cooldown
   };
   
   console.log('📊 시간 배분:', timeAllocation);
@@ -252,29 +266,17 @@ export function generateTimeBasedProgram(opts: {
   const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition);
   const baseCss = opts.css100['freestyle'] || 90;
   
-  // 🏥 건강 상태 기반 페이스 조절
-  // intensityPercent: 0.7 (70% 강도) → paceMultiplier: 1.43 (43% 느리게)
-  // 예: CSS 90초 × 1.43 = 129초/100m
-  let paceMultiplier = 1.0;
-  
-  if (opts.intensityPercent && opts.intensityPercent < 1.0) {
-    // 강도 감소 → 페이스 증가 (느려짐)
-    // 70% 강도 = 0.7 → 1 / 0.7 = 1.43 (43% 느림)
-    paceMultiplier = 1 / opts.intensityPercent;
-  }
-  
-  // 컨디션 규칙과 결합
-  const finalMultiplier = paceMultiplier * (1 + conditionRules.cssPct);
+  // 🔬 종합 페이스 조절 (모든 과학적 인자 통합)
+  const finalMultiplier = scientificAdj.finalPaceMultiplier * (1 + conditionRules.cssPct);
   const adjustedCss = Math.round(baseCss * finalMultiplier);
   
-  console.log('🏥 페이스 조절:', {
+  console.log('🏥 최종 페이스 조절:', {
     baseCss,
-    intensityPercent: opts.intensityPercent,
-    paceMultiplier: paceMultiplier.toFixed(2),
-    cssPct: conditionRules.cssPct,
+    scientificMultiplier: scientificAdj.finalPaceMultiplier.toFixed(2),
+    conditionCssPct: conditionRules.cssPct,
     finalMultiplier: finalMultiplier.toFixed(2),
     adjustedCss,
-    note: opts.intensityPercent ? `${(opts.intensityPercent * 100).toFixed(0)}% 강도 → ${((finalMultiplier - 1) * 100).toFixed(0)}% 느린 페이스` : '정상'
+    improvementRate: `${(scientificAdj.improvementRate * 100).toFixed(1)}%/월`
   });
   
   const sets: SetItem[] = [];
