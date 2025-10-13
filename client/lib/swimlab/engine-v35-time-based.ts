@@ -488,7 +488,8 @@ export function generateTimeBasedProgram(opts: {
     
     if (paceMatch) {
       const paceSeconds = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
-      const isPer100m = distPerRep <= 100;
+      // 🎯 모든 페이스는 per 100m 기준으로 표기됨
+      const isPer100m = true; // 항상 per 100m
       
       const duration = calculateSetDuration(reps, distPerRep, paceSeconds, set.restSec, isPer100m);
       totalMinutes += duration;
