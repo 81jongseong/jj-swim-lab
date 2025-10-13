@@ -113,9 +113,9 @@ export default function GuestProgramsPage() {
             <div className="flex items-center space-x-3">
               <Clock className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-xs text-gray-600">운동 시간</p>
+                <p className="text-xs text-gray-600">목표 시간</p>
                 <p className="font-semibold text-gray-900">
-                  {program.engineOutput ? program.engineOutput.totalDuration : program.duration || '60'}분
+                  {program.duration || '60'}분
                 </p>
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function GuestProgramsPage() {
                     <div>
                       <p className="text-xs text-gray-600 mb-1">예상 시간</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {program.engineOutput.totalDuration}분
+                        {program.engineOutput.estimatedMinutes || program.engineOutput.totalDuration}분
                       </p>
                     </div>
                     <div>
