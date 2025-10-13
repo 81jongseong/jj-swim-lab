@@ -1,6 +1,103 @@
 # 🛠️ JJ Swim Lab 개발 문서
 
-## 📅 최근 업데이트 (2025-10-12)
+## 📅 최근 업데이트 (2025-10-13)
+
+### 🎯 **수영 엔진 v31 완벽한 시간 계산 및 조절 시스템 (2025-10-13)**
+
+#### 🔧 **개선 내용**
+- **시간 계산 정확도**: 반복 횟수, 페이스, 휴식을 모두 고려한 정확한 시간 계산
+- **과학적 시간 조절**: 과학적 메타데이터를 존중하면서 목표 시간에 맞춤
+- **상세 로깅**: 세트별 시간 breakdown 제공
+
+#### ✨ **주요 변경사항**
+
+**1. 정확한 시간 계산 (Before: 62분 예상 → 실제 43분)**
+```typescript
+// Before: 페이스 파싱 오류, 휴식 계산 오류
+estimatedMinutes += (s.meters / 100) * pace100m / 60 + (s.restSec / 60);
+// 문제: 반복 횟수 미고려, 페이스 형식 오해, 휴식 중복 계산
+
+// After: 정확한 계산
+const reps = parseReps(s.desc);
+const swimSeconds = paceSeconds * reps;
+const restSeconds = s.restSec * (reps - 1); // 마지막 반복 제외
+const totalMinutes = (swimSeconds + restSeconds) / 60;
+```
+
+**2. 과학적 시간 조절 우선순위**
+```
+1순위: 쿨다운 축소 (최소 2×poolLen 유지)
+   - 예: 5×50m → 2×50m
+   - 과학적 근거: 최소 2회는 회복에 필요
+
+2순위: 워밍업 축소 (최소 2×poolLen 유지)
+   - 예: 3×100m → 2×100m
+   - 과학적 근거: 최소 2회는 준비에 필요
+
+3순위: 메인 세트는 절대 축소 안 함
+   - 과학적 메타데이터의 minReps 보장
+   - 훈련 효과를 위해 필수
+```
+
+**3. 상세 로깅 시스템**
+```javascript
+⏱️ 시간 계산 상세: {
+  targetMinutes: 50,
+  estimatedMinutes: "43.5",
+  difference: "-6.5",
+  breakdown: [
+    { desc: "2×100m 워밍업", swimSec: 284, restSec: 26, totalMin: "5.2" },
+    { desc: "3×300m LSD", swimSec: 954, restSec: 39, totalMin: "16.6" },
+    ...
+  ]
+}
+
+⏰ 시간 초과 조절: {
+  excessMinutes: "7.2",
+  adjustments: [
+    { section: "쿨다운", repsReduced: 3, metersReduced: 150, minutesReduced: "5.8" }
+  ]
+}
+
+⏰ finalizePlan 최종 결과: {
+  totalMeters: 1550,
+  estimatedMinutes: "49.8",
+  targetMinutes: 50,
+  accuracy: "99.6%",
+  setsCount: 6
+}
+```
+
+**4. 과학적 메타데이터 보존**
+- ✅ LSD 최소 3회 유지
+- ✅ 디센딩 최소 3회 유지
+- ✅ 빌드업 최소 3회 유지
+- ✅ 메인 세트의 scientificMeta 존중
+
+#### 📊 **테스트 결과**
+
+**시나리오: 50분 목표, 75% 강도 (과체중)**
+```
+Before:
+- 계산: 62분 (잘못된 계산)
+- 실제: 43분 (정확한 수동 계산)
+- 문제: 쿨다운 5×50m → 1×25m으로 과도하게 축소
+- 결과: 1525m, "50분" 표시 (실제는 안 맞음)
+
+After:
+- 계산: 43.5분 (정확한 계산)
+- 조절: 필요 없음 (이미 목표 이하)
+- 결과: 1700m, 43분 정직하게 표시
+```
+
+#### 🎯 **다음 단계**
+- [ ] UI에 "예상 시간" vs "목표 시간" 명확히 표시
+- [ ] 시간 초과 시 사용자에게 선택권 제공 (거리 유지 vs 시간 맞춤)
+- [ ] 메인 세트 축소 로직 추가 (scientificMeta 존중하며)
+
+---
+
+## 📅 이전 업데이트 (2025-10-12)
 
 ### 🏥 **건강정보 입력 페이지 대폭 개선: 6단계 → 4단계 (2025-10-12)**
 
@@ -8892,6 +8989,60 @@ Route (app)                              Size     First Load JS
   - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
 - swim-program-completions 라우트가 등록되지 않음
   - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 12. 오후 11:32:45)
+
+- 총 검사: 392개
+- 통과: 469개
+- 실패: 13개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
 - 클라이언트 tsconfig.json 파싱 오류
   - 해결: Unexpected token '/', "/**
  * 🔧 "... is not valid JSON
