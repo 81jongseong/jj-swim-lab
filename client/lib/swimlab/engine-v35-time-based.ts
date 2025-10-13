@@ -754,6 +754,7 @@ export function generateTimeBasedProgram(opts: {
   dayCondition: string;
   weeklyFrequency?: number; // 주간 운동 횟수 (1-7)
   intensityPercent?: number; // 건강 상태 기반 강도 조절 (0.7 = 70%)
+  cssMeasurementPoolLength?: number; // CSS 측정 풀 길이 (25 or 50)
 }): DayPlan {
   
   // 🎯 테마 자동 선택
@@ -785,20 +786,52 @@ export function generateTimeBasedProgram(opts: {
     return availableStrokes[setIndex % availableStrokes.length] as Stroke;
   };
   
-  // 🏊 영법별 CSS 가져오기
+  // 🔄 CSS 풀 길이 변환 (Psycharakis & Sanders, 2008)
+  const convertCSSBetweenPools = (
+    css: number,
+    fromPoolLength: number,
+    toPoolLength: number
+  ): number => {
+    // 턴당 0.4초 이득 (Psycharakis & Sanders, 2008: 0.3-0.6초)
+    const TURN_ADVANTAGE = 0.4;
+    
+    // 100m 당 턴 횟수 (마지막 터치는 턴 아님)
+    const turnsInFrom = Math.max(0, Math.floor(100 / fromPoolLength) - 1);
+    const turnsInTo = Math.max(0, Math.floor(100 / toPoolLength) - 1);
+    
+    // 턴 횟수 차이에 따른 시간 조정
+    const turnDifference = turnsInTo - turnsInFrom;
+    const timeAdjustment = turnDifference * TURN_ADVANTAGE;
+    
+    return css + timeAdjustment;
+  };
+  
+  // 🏊 영법별 CSS 가져오기 (풀 길이 변환 적용)
   const getCssForStroke = (stroke: Stroke): number => {
+    let baseCss: number;
+    
     // 🔬 횡영/기본배영: 평영 기반 1.2배 느리게 (과학적 근거: 유사한 동작 패턴)
     if (stroke === 'sidestroke' || stroke === 'elementary_backstroke') {
       const breaststrokeCss = opts.css100['breaststroke'] || 110; // 평영 기본값 110초
-      return Math.round(breaststrokeCss * 1.2); // 20% 느리게
+      baseCss = Math.round(breaststrokeCss * 1.2); // 20% 느리게
+    } else {
+      // 대회 영법: 입력된 CSS 사용
+      baseCss = opts.css100[stroke] 
+        || opts.css100[primaryStroke] 
+        || opts.css100[availableStrokes[0] as Stroke]
+        || Object.values(opts.css100).find(css => css > 0) 
+        || 90;
     }
     
-    // 대회 영법: 입력된 CSS 사용
-    return opts.css100[stroke] 
-      || opts.css100[primaryStroke] 
-      || opts.css100[availableStrokes[0] as Stroke]
-      || Object.values(opts.css100).find(css => css > 0) 
-      || 90;
+    // 🔄 CSS 측정 풀 길이가 다르면 변환
+    const cssMeasurementPoolLength = opts.cssMeasurementPoolLength || 25;
+    if (cssMeasurementPoolLength !== 50) {
+      const convertedCss = convertCSSBetweenPools(baseCss, cssMeasurementPoolLength, 50);
+      console.log(`🔄 CSS 변환 (${stroke}): ${cssMeasurementPoolLength}m 풀 ${baseCss}초 → 50m 기준 ${convertedCss.toFixed(1)}초`);
+      return convertedCss;
+    }
+    
+    return baseCss;
   };
   
   // 🔬 영법별 적합 세트 타입 (과학적 근거)

@@ -71,6 +71,7 @@ interface HealthInput {
       breaststroke: number;
       butterfly: number;
     };
+    cssMeasurementPoolLength?: number; // CSS 측정 풀 길이
     mainStrokes?: string[];
     excludedStrokes?: string[];
     trainingDays?: number[]; // 요일 선택 (0:일 ~ 6:토)
@@ -600,7 +601,8 @@ export default function HealthInputPage() {
         conditionIds: healthData.orthopedics as any,
         dayCondition: dayCondition as any,
         intensityPercent: healthAnalysis.baseIntensity / 100, // 🏥 건강 상태 기반 강도 (75 → 0.75)
-        weeklyFrequency: healthData.swim_profile.daysPerWeek || healthData.swim_profile.trainingDays?.length || 3 // 📊 주간 운동 횟수 (과학적 향상률 반영)
+        weeklyFrequency: healthData.swim_profile.daysPerWeek || healthData.swim_profile.trainingDays?.length || 3, // 📊 주간 운동 횟수 (과학적 향상률 반영)
+        cssMeasurementPoolLength: healthData.swim_profile.cssMeasurementPoolLength || 25 // 🏊 CSS 측정 풀 길이
       });
       
       console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);
@@ -914,6 +916,7 @@ export default function HealthInputPage() {
             {/* CSS - 재사용 컴포넌트 */}
             <CSSInputSection
               css={healthData.swim_profile?.css || { freestyle: 0, backstroke: 0, breaststroke: 0, butterfly: 0 }}
+              cssMeasurementPoolLength={healthData.swim_profile?.cssMeasurementPoolLength || 25}
               strokes={[
                 { id: 'freestyle', label: '자유형', icon: '🏊' },
                 { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
@@ -921,6 +924,7 @@ export default function HealthInputPage() {
                 { id: 'butterfly', label: '접영', icon: '🦋' }
               ]}
               onUpdate={(css) => handleInputChange('swim_profile.css', css)}
+              onCssMeasurementPoolLengthUpdate={(length) => handleInputChange('swim_profile.cssMeasurementPoolLength', length)}
             />
 
             {/* 주간 훈련 일정 - 재사용 컴포넌트 */}
