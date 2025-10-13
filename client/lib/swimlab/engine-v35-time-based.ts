@@ -871,9 +871,16 @@ export function generateTimeBasedProgram(opts: {
     );
     
     const meters = reps * selectedMethod.distPerRep;
-    // 🎯 페이스를 세트 거리 기준으로 표시
-    const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
-    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} @ ${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m, r${selectedMethod.restSeconds}″`;
+    // 🎯 페이스 표시: 100m보다 긴 세트는 100m 페이스 + 총 소요 시간 표시
+    let paceDescription: string;
+    if (selectedMethod.distPerRep > 100) {
+      const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
+      paceDescription = `@ ${formatPace(selectedMethod.pace100m)}/100m (${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m)`;
+    } else {
+      const pacePerSet = (selectedMethod.distPerRep / 100) * selectedMethod.pace100m;
+      paceDescription = `@ ${formatPace(pacePerSet)}/${selectedMethod.distPerRep}m`;
+    }
+    const desc = `[자유형] ${reps}×${selectedMethod.distPerRep}m ${selectedMethod.name} ${paceDescription}, r${selectedMethod.restSeconds}″`;
     
     sets.push({
       stroke: 'freestyle',
