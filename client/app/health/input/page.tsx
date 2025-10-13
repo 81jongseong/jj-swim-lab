@@ -614,12 +614,21 @@ export default function HealthInputPage() {
         healthData: healthData
       };
       
-      // 🗑️ 구버전 캐시 삭제 후 저장
+      // 🗑️ 구버전 캐시 완전 삭제
       localStorage.removeItem('guest-daily-program');
       localStorage.removeItem('guest-daily-program-v31');
+      localStorage.removeItem('guest-daily-program-v32');
       
-      // 로컬 스토리지에 저장 (엔진 버전 v32 - 시간 계산 개선)
-      localStorage.setItem('guest-daily-program-v32', JSON.stringify(programData));
+      console.log('💾 프로그램 저장:', { 
+        key: 'guest-daily-program-v33', 
+        date: startDate,
+        sets: dailyOutput.sets.length,
+        totalMeters: dailyOutput.totalMeters,
+        duration: programData.duration
+      });
+      
+      // 로컬 스토리지에 저장 (엔진 버전 v33 - 거리/시간 계산 완전 수정)
+      localStorage.setItem('guest-daily-program-v33', JSON.stringify(programData));
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');

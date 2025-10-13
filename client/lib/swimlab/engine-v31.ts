@@ -2084,7 +2084,7 @@ function finalizePlan(
   let total = sets.reduce((s, x) => s + x.meters, 0);
   
   console.log('📊 finalizePlan 총거리 계산:', {
-    engineVersion: 'v32-time-fix', // 🔖 엔진 버전
+    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전
     targetM,
     calculatedTotal: total,
     setsDetail: sets.map(s => ({ desc: s.desc, meters: s.meters, stroke: s.stroke }))
@@ -2140,18 +2140,22 @@ function finalizePlan(
     const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
     const distPerRep = s.meters / reps;
     
-    // 2. 페이스 파싱 (예: "@ 2:22" = 2분 22초)
+    // 2. 페이스 파싱 (예: "@ 2:22" = 2분 22초 per 100m)
     const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
     let totalSwimSeconds = 0;
     
     if (paceMatch) {
       const paceMinutes = parseInt(paceMatch[1]);
       const paceSeconds = parseInt(paceMatch[2]);
-      const paceTotalSeconds = paceMinutes * 60 + paceSeconds;
+      const pacePer100m = paceMinutes * 60 + paceSeconds;
       
-      // 페이스가 세트당 시간인지 100m당 시간인지 판단
-      // 예: 100m @ 2:22 → 100m 기준, 50m @ 0:49 → 50m 기준
-      totalSwimSeconds = paceTotalSeconds * reps;
+      // 🎯 우리 엔진의 페이스는 항상 per 100m 기준!
+      // 예: 2×100m @ 2:22 → 각 100m마다 2:22 (142초)
+      //     3×300m @ 5:18 → 각 100m마다 5:18 (318초), 300m는 954초
+      //     2×50m @ 0:49 → 각 100m마다 0:49 (49초), 50m는 24.5초
+      
+      // 총 수영 거리에 대한 시간 계산
+      totalSwimSeconds = (s.meters / 100) * pacePer100m;
     } else {
       // 페이스 정보 없으면 기본 90초/100m 가정
       totalSwimSeconds = (s.meters / 100) * 90;
@@ -2165,20 +2169,20 @@ function finalizePlan(
     estimatedMinutes += setMinutes;
     
     timeDetails.push({
-      desc: s.desc.substring(0, 50),
+      desc: s.desc.substring(0, 60),
       meters: s.meters,
       reps,
       distPerRep,
-      paceStr: paceMatch ? `${paceMatch[1]}:${paceMatch[2]}` : 'N/A',
-      paceSeconds: paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 0,
-      swimSec: totalSwimSeconds,
-      restSec: totalRestSeconds,
+      pacePer100m: paceMatch ? `${paceMatch[1]}:${paceMatch[2]}` : 'N/A',
+      pacePer100mSec: paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 0,
+      totalSwimSec: totalSwimSeconds,
+      totalRestSec: totalRestSeconds,
       totalMin: setMinutes.toFixed(1)
     });
   });
 
   console.log('⏱️ 시간 계산 상세:', {
-    engineVersion: 'v32-time-fix', // 🔖 엔진 버전
+    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전
     targetMinutes,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     difference: (estimatedMinutes - (targetMinutes || 0)).toFixed(1),
@@ -2192,10 +2196,10 @@ function finalizePlan(
       meters: detail.meters,
       reps: detail.reps,
       distPerRep: detail.distPerRep,
-      pace: detail.paceStr,
-      paceSeconds: detail.paceSeconds,
-      swimSec: detail.swimSec,
-      restSec: detail.restSec,
+      pacePer100m: detail.pacePer100m,
+      pacePer100mSec: detail.pacePer100mSec,
+      totalSwimSec: detail.totalSwimSec,
+      totalRestSec: detail.totalRestSec,
       totalMin: detail.totalMin
     });
   });
@@ -2467,7 +2471,7 @@ function finalizePlan(
   const finalDuration = Math.round(estimatedMinutes);
 
   console.log('⏰ finalizePlan 최종 결과:', {
-    engineVersion: 'v32-time-fix', // 🔖 엔진 버전 표시
+    engineVersion: 'v33-pace-calc-fix', // 🔖 엔진 버전 표시
     totalMeters: total,
     estimatedMinutes: estimatedMinutes.toFixed(1),
     targetMinutes,
