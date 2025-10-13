@@ -2465,17 +2465,32 @@ function finalizePlan(
         adjustments,
         remainingShortfall: remainingMinutes.toFixed(1)
       });
-      
-      // 시간 재계산
-      estimatedMinutes = 0;
-      sets.forEach(s => {
-        const repsMatch = s.desc.match(/^(\d+)×/);
-        const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
-        const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
-        const paceTotalSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
-        estimatedMinutes += (paceTotalSeconds * reps + s.restSec * (reps - 1)) / 60;
-      });
     }
+    
+    // 🔄 시간 조절 후 재계산 (정확한 계산 사용)
+    estimatedMinutes = 0;
+    sets.forEach(s => {
+      const repsMatch = s.desc.match(/(\d+)×(\d+)m/);
+      const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
+      const distPerRep = repsMatch ? parseInt(repsMatch[2]) : s.meters;
+      
+      const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
+      if (paceMatch) {
+        const paceTime = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
+        let swimSec = 0;
+        
+        if (distPerRep <= 100) {
+          swimSec = (s.meters / 100) * paceTime;
+        } else {
+          swimSec = paceTime * reps;
+        }
+        
+        const restSec = s.restSec * reps;
+        estimatedMinutes += (swimSec + restSec) / 60;
+      } else {
+        estimatedMinutes += (s.meters / 100) * 90 / 60;
+      }
+    });
   }
 
   // 최종 시간: 계산된 예상 시간 사용 (정직하게 표시)
@@ -2495,6 +2510,15 @@ function finalizePlan(
 }
 
 // ---------- 헬퍼 함수 ----------
+
+/**
+ * desc에서 반복 횟수 파싱
+ * 예: "[자유형] 2×100m 워밍업" → 2
+ */
+function parseReps(desc: string): number {
+  const match = desc.match(/(\d+)×/);
+  return match ? parseInt(match[1]) : 1;
+}
 
 function filler(poolLen: number): SetItem {
   return {
