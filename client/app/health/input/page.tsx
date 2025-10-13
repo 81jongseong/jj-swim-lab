@@ -614,6 +614,10 @@ export default function HealthInputPage() {
         healthData: healthData
       };
       
+      // 🗑️ 구버전 캐시 삭제 후 저장
+      localStorage.removeItem('guest-daily-program');
+      localStorage.removeItem('guest-daily-program-v31');
+      
       // 로컬 스토리지에 저장 (엔진 버전 v32 - 시간 계산 개선)
       localStorage.setItem('guest-daily-program-v32', JSON.stringify(programData));
       
