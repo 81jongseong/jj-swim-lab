@@ -785,8 +785,15 @@ export function generateTimeBasedProgram(opts: {
     return availableStrokes[setIndex % availableStrokes.length] as Stroke;
   };
   
-  // 🏊 영법별 CSS 가져오기 (폴백: primaryStroke CSS → 첫 번째 영법 CSS → 첫 번째 유효 CSS → 90초)
+  // 🏊 영법별 CSS 가져오기
   const getCssForStroke = (stroke: Stroke): number => {
+    // 🔬 횡영/기본배영: 평영 기반 1.2배 느리게 (과학적 근거: 유사한 동작 패턴)
+    if (stroke === 'sidestroke' || stroke === 'elementary_backstroke') {
+      const breaststrokeCss = opts.css100['breaststroke'] || 110; // 평영 기본값 110초
+      return Math.round(breaststrokeCss * 1.2); // 20% 느리게
+    }
+    
+    // 대회 영법: 입력된 CSS 사용
     return opts.css100[stroke] 
       || opts.css100[primaryStroke] 
       || opts.css100[availableStrokes[0] as Stroke]
@@ -981,9 +988,55 @@ export function generateTimeBasedProgram(opts: {
   // 4. 드릴 (레벨별 거리 단위)
   {
     const targetMin = timeAllocation.drill;
-    const halfTime = targetMin / 2;
+    let halfTime = targetMin / 2;
     const levelGroup = (opts.level.split('_')[0]) as keyof typeof LEVEL_DISTANCE_UNITS;
     const levelUnits = LEVEL_DISTANCE_UNITS[levelGroup] || LEVEL_DISTANCE_UNITS.intermediate;
+    
+    // 🏥 질환이 있고 횡영/기본배영이 추가되었지만 주 영법에 없으면 → 강습 필요
+    const needsRehabStrokeLessons = opts.conditionIds.length > 0 
+      && (availableStrokes.includes('sidestroke') || availableStrokes.includes('elementary_backstroke'))
+      && !opts.strokesAllowed.includes('sidestroke')
+      && !opts.strokesAllowed.includes('elementary_backstroke');
+    
+    if (needsRehabStrokeLessons) {
+      // 드릴 시간의 1/3을 강습에 할당
+      const lessonTime = targetMin / 3;
+      halfTime = (targetMin - lessonTime) / 2; // 나머지를 팔/발차기로 분배
+      
+      // 🎓 재활 영법 강습 드릴 추가
+      const lessonStrokes: Stroke[] = [];
+      if (availableStrokes.includes('sidestroke')) lessonStrokes.push('sidestroke');
+      if (availableStrokes.includes('elementary_backstroke')) lessonStrokes.push('elementary_backstroke');
+      
+      lessonStrokes.forEach((lessonStroke) => {
+        const strokeCss = getCssForStroke(lessonStroke);
+        const adjustedStrokeCss = Math.round(strokeCss * finalMultiplier);
+        const distPerRep = 25; // 짧은 거리로 기술 습득
+        const paceSeconds = adjustedStrokeCss + 30; // 매우 느리게 (기술 습득)
+        const restSeconds = 30; // 긴 휴식 (설명 시간)
+        
+        const reps = Math.max(2, Math.floor(lessonTime * 60 / (paceSeconds + restSeconds)));
+        const meters = reps * distPerRep;
+        const desc = `[${getStrokeName(lessonStroke)}] ${reps}×${distPerRep}m 강습 (기초 자세) @ ${formatPace(paceSeconds)}/${distPerRep}m, r${restSeconds}″`;
+        
+        sets.push({
+          stroke: lessonStroke,
+          zone: 'Z1',
+          restSec: restSeconds,
+          rpe: 2,
+          equipment: [],
+          subtype: 'DRILL_LESSON',
+          meters,
+          desc,
+          whyPace: `${getStrokeName(lessonStroke)} 강습: 평영 CSS ${opts.css100['breaststroke'] || 110}초 기반 1.2배 → 기초 자세 습득`,
+          whyRest: `r${restSeconds}″ (강사 설명 및 피드백 시간 포함)`,
+          whySet: `🎓 질환 관리를 위한 ${getStrokeName(lessonStroke)} 기초 강습 - 관절 부담 최소 영법 습득`,
+          evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
+        });
+        
+        console.log(`🎓 재활 영법 강습 추가: ${getStrokeName(lessonStroke)}, ${reps}×${distPerRep}m`);
+      });
+    }
     
     // 4-1. 팔 드릴 (레벨별 자동 선택)
     {

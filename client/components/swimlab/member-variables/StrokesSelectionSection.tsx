@@ -116,6 +116,7 @@ export default function StrokesSelectionSection({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {strokes.map(stroke => {
             const isExcluded = excludedStrokes.includes(stroke.id);
+            const isSelected = mainStrokes.includes(stroke.id);
             const warning = getStrokeWarning(stroke.id);
             const hasWarning = warning !== null;
             
@@ -127,20 +128,25 @@ export default function StrokesSelectionSection({
                 className={`px-4 py-3 border-2 rounded-lg transition-all relative ${
                   isExcluded 
                     ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : mainStrokes.includes(stroke.id)
+                    : isSelected
                     ? hasWarning
-                      ? 'border-yellow-500 bg-yellow-50 text-yellow-700 font-semibold'
+                      ? 'border-yellow-500 bg-yellow-100 text-yellow-800 font-bold shadow-lg ring-2 ring-yellow-400'
                       : 'border-blue-500 bg-blue-50 text-blue-700 font-semibold'
                     : hasWarning
-                    ? 'border-yellow-300 hover:border-yellow-400 bg-yellow-50/30'
+                    ? 'border-yellow-400 hover:border-yellow-500 bg-yellow-50 shadow-md'
                     : 'border-gray-200 hover:border-blue-300'
                 }`}
               >
-                {hasWarning && <div className="absolute -top-2 -right-2 text-xl">⚠️</div>}
+                {hasWarning && <div className="absolute -top-2 -right-2 text-2xl animate-pulse">⚠️</div>}
+                {isSelected && hasWarning && <div className="absolute -top-1 -left-1 text-sm">✓</div>}
                 <div className="text-xl mb-1">{stroke.icon}</div>
-                <div className="text-xs">{stroke.label}</div>
+                <div className={`text-xs ${isSelected && hasWarning ? 'font-bold' : ''}`}>{stroke.label}</div>
                 {isExcluded && <div className="text-xs text-red-600 mt-1">제외됨</div>}
-                {hasWarning && !isExcluded && <div className="text-xs text-yellow-600 mt-1">주의</div>}
+                {hasWarning && !isExcluded && (
+                  <div className={`text-xs mt-1 ${isSelected ? 'text-yellow-800 font-bold' : 'text-yellow-600'}`}>
+                    {isSelected ? '⚠️ 선택됨 (주의)' : '주의 필요'}
+                  </div>
+                )}
               </button>
             );
           })}
