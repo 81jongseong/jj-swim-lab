@@ -783,12 +783,32 @@ export function generateTimeBasedProgram(opts: {
   
   console.log('🔬 과학적 조정:', scientificAdj.scientificSummary);
   
-  // 1. 시간 배분 (목표별 맞춤 비율)
+  // 1. 시간 배분 (목표별 맞춤 비율 + 최소/최대 제한)
+  // 🔬 과학적 근거: ACSM (2018) - 워밍업 최소 5분, 쿨다운 최소 5분
+  const MIN_WARMUP = 5;   // 최소 5분 (체온 상승 필요)
+  const MAX_WARMUP = 15;  // 최대 15분 (과도한 피로 방지)
+  const MIN_COOLDOWN = 5; // 최소 5분 (젖산 제거 필요)
+  const MAX_COOLDOWN = 15; // 최대 15분 (시간 낭비 방지)
+  
+  const rawWarmup = opts.targetMinutes * scientificAdj.timeAllocation.warmup;
+  const rawCooldown = opts.targetMinutes * scientificAdj.timeAllocation.cooldown;
+  
+  const warmup = Math.max(MIN_WARMUP, Math.min(MAX_WARMUP, rawWarmup));
+  const cooldown = Math.max(MIN_COOLDOWN, Math.min(MAX_COOLDOWN, rawCooldown));
+  
+  // 워밍업/쿨다운 조정으로 인한 차이를 메인/드릴에 재배분
+  const warmupDiff = rawWarmup - warmup;
+  const cooldownDiff = rawCooldown - cooldown;
+  const redistributeTime = warmupDiff + cooldownDiff;
+  
+  const rawDrill = opts.targetMinutes * scientificAdj.timeAllocation.drill;
+  const rawMain = opts.targetMinutes * scientificAdj.timeAllocation.main;
+  
   const timeAllocation = {
-    warmup: opts.targetMinutes * scientificAdj.timeAllocation.warmup,
-    drill: opts.targetMinutes * scientificAdj.timeAllocation.drill,
-    main: opts.targetMinutes * scientificAdj.timeAllocation.main,
-    cooldown: opts.targetMinutes * scientificAdj.timeAllocation.cooldown
+    warmup,
+    drill: rawDrill + (redistributeTime * 0.3), // 30%를 드릴에
+    main: rawMain + (redistributeTime * 0.7),   // 70%를 메인에
+    cooldown
   };
   
   console.log('📊 시간 배분:', timeAllocation);

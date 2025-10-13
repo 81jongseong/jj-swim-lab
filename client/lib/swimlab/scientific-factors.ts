@@ -118,21 +118,56 @@ export const WEEKLY_FREQUENCY_IMPACT = {
  *    - 이득: 1.1m/s × 2m(활강) = 2.2초/100m
  *    - 25m 풀(3회 턴) vs 50m 풀(1회 턴): 4.4초 차이
  */
-export const POOL_LENGTH_IMPACT = {
-  25: {
-    paceMultiplier: 1.0,     // 기준 (턴 이점 포함)
-    description: '25m 풀: 턴 횟수 2배, 벽 차기 이점',
-    turnAdvantage: 0.05,     // 5% 빠름 (턴 효과)
-    psychologicalFactor: 1.0,
-    scientificBasis: 'Psycharakis (2008): 턴당 0.3-0.6초 이득'
-  },
-  50: {
-    paceMultiplier: 1.05,    // 5% 느림 (턴 이점 감소)
-    description: '50m 풀: 턴 횟수 절반, 순수 수영력 필요',
-    turnAdvantage: 0.0,      // 턴 이점 없음
-    psychologicalFactor: 1.02, // 심리적 부담 2% (장거리 집중)
-    scientificBasis: 'FINA Records (2015-2020): 50m 풀 평균 1% 느림'
+/**
+ * 🏊 풀 길이별 페이스 조정 (동적 계산)
+ * 
+ * @param poolLength - 수영장 길이 (m)
+ * @returns 페이스 배율
+ */
+export function calculatePoolLengthMultiplier(poolLength: number): {
+  paceMultiplier: number;
+  description: string;
+  turnAdvantage: number;
+  scientificBasis: string;
+} {
+  // 기준: 25m 풀
+  const REFERENCE_POOL = 25;
+  
+  if (poolLength >= 50) {
+    // 50m 이상: 턴 이점 감소
+    return {
+      paceMultiplier: 1.05,
+      description: `${poolLength}m 풀: 턴 횟수 적음, 순수 수영력 필요`,
+      turnAdvantage: 0.0,
+      scientificBasis: 'FINA Records (2015-2020): 50m 풀 평균 1% 느림'
+    };
+  } else if (poolLength === 25) {
+    // 25m: 기준
+    return {
+      paceMultiplier: 1.0,
+      description: '25m 풀: 기준 (턴 이점 포함)',
+      turnAdvantage: 0.05,
+      scientificBasis: 'Psycharakis (2008): 턴당 0.3-0.6초 이득'
+    };
+  } else {
+    // 25m 미만: 턴 이점 증가
+    // 공식: turnAdvantage = (25 - poolLen) / 25 * 0.20
+    const turnAdvantage = ((REFERENCE_POOL - poolLength) / REFERENCE_POOL) * 0.20;
+    const paceMultiplier = 1.0 - turnAdvantage;
+    
+    return {
+      paceMultiplier,
+      description: `${poolLength}m 풀: 턴 횟수 많음, 벽 차기 이점 증가 (${(turnAdvantage * 100).toFixed(1)}% 빠름)`,
+      turnAdvantage,
+      scientificBasis: `Psycharakis (2008): 턴당 0.3-0.6초 이득, ${poolLength}m는 ${Math.round(100 / poolLength)}회/100m 턴`
+    };
   }
+}
+
+// 하위 호환성을 위한 상수 (deprecated)
+export const POOL_LENGTH_IMPACT = {
+  25: calculatePoolLengthMultiplier(25),
+  50: calculatePoolLengthMultiplier(50)
 } as const;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -320,8 +355,8 @@ export function calculateScientificAdjustments(params: {
   // 1. 주간 빈도 영향
   const freqImpact = WEEKLY_FREQUENCY_IMPACT[freq as keyof typeof WEEKLY_FREQUENCY_IMPACT] || WEEKLY_FREQUENCY_IMPACT[3];
   
-  // 2. 수영장 길이 영향
-  const poolImpact = POOL_LENGTH_IMPACT[pool];
+  // 2. 수영장 길이 영향 (동적 계산)
+  const poolImpact = calculatePoolLengthMultiplier(pool);
   
   // 3. 목표별 시간 배분
   const goalAllocation = GOAL_TIME_ALLOCATION[params.goal as keyof typeof GOAL_TIME_ALLOCATION] || GOAL_TIME_ALLOCATION['체력 향상'];
