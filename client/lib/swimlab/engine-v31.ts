@@ -2184,6 +2184,21 @@ function finalizePlan(
     difference: (estimatedMinutes - (targetMinutes || 0)).toFixed(1),
     breakdown: timeDetails
   });
+  
+  // 🔍 각 세트별 상세 정보 출력
+  console.log('🔍 세트별 시간 계산 상세:');
+  timeDetails.forEach((detail, idx) => {
+    console.log(`  ${idx + 1}. ${detail.desc}`, {
+      meters: detail.meters,
+      reps: detail.reps,
+      distPerRep: detail.distPerRep,
+      pace: detail.paceStr,
+      paceSeconds: detail.paceSeconds,
+      swimSec: detail.swimSec,
+      restSec: detail.restSec,
+      totalMin: detail.totalMin
+    });
+  });
 
   // 🏥 시간 부족/초과 확인 (과학적 거리 조절로 인해 거의 발생하지 않음)
   // 건강 상태 기반 거리 조절로 인해 시간이 자동으로 맞춰짐
