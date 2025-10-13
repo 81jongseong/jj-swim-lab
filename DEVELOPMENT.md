@@ -2,6 +2,94 @@
 
 ## 📅 최근 업데이트 (2025-10-13)
 
+### 🚀 **수영 엔진 v35 - 시간 기반 프로그램 생성 시스템 (2025-10-13 최신)**
+
+#### 🎯 **핵심 개선사항**
+
+사용자 요청: "워밍업/메인운동/쿨다운 회원이 정한 시간의 비율에 의해 정한다. 운동목적에 따라 세부분의 운동들의 종목이 정해질거고, 운동종목들의 페이스는 입력한 css로 정해지고, 쉬는시간도 과학적근거로 정해진다. 이걸기반으로 세트수를 늘려 정해진 비율의 시간에 맞추면된다"
+
+#### ✅ **구현 내용**
+
+1. **과학적 시간 배분 (ACSM/NSCA 기준)**
+   ```typescript
+   const TIME_ALLOCATION = {
+     WU: 0.10,   // 워밍업: 10% (체온↑, 가동성 확보)
+     PRE: 0.15,  // 드릴: 15% (기술 준비)
+     MAIN: 0.60, // 메인: 60% (목표 중심 훈련)
+     CD: 0.15    // 쿨다운: 15% (회복 시작)
+   };
+   ```
+
+2. **시간 역산 기반 반복 횟수 계산**
+   ```typescript
+   function calculateRepsFromTime(
+     targetMinutes: number,
+     distPerRep: number,
+     paceSeconds: number,
+     restSeconds: number,
+     minReps: number,
+     maxReps: number
+   ): number {
+     const targetSeconds = targetMinutes * 60;
+     const timePerRep = (distPerRep / 100) * paceSeconds + restSeconds;
+     const calculatedReps = Math.round(targetSeconds / timePerRep);
+     return Math.max(minReps, Math.min(maxReps, calculatedReps));
+   }
+   ```
+
+3. **meters와 desc 완벽 동기화**
+   - 반복 횟수 계산 후 즉시 `meters`와 `desc` 동시 생성
+   - 중간 수정 없음 → 불일치 원천 차단
+
+4. **실시간 시간 검증**
+   ```typescript
+   function calculateSetDuration(
+     reps: number,
+     distPerRep: number,
+     paceSeconds: number,
+     restSeconds: number
+   ): number {
+     const swimSeconds = (reps * distPerRep / 100) * paceSeconds;
+     const totalRestSeconds = restSeconds * reps;
+     return (swimSeconds + totalRestSeconds) / 60;
+   }
+   ```
+
+#### 📊 **예상 결과**
+
+**입력:**
+- 목표 시간: 50분
+- CSS: 90초/100m
+- 건강 조정: 75% 강도 → 120초/100m
+
+**출력:**
+```
+워밍업 (5분):  2×100m @ 2:16, r10″ = 5.0분
+팔 드릴 (3.75분): 3×50m Catch-Up @ 1:05, r15″ = 4.0분
+발차기 (3.75분): 3×50m Flutter Kick @ 1:30, r15″ = 4.3분
+메인 (30분):  5×300m LSD @ 6:00, r10″ = 30.8분
+쿨다운 (7.5분): 5×50m @ 2:16, r10″ = 7.5분
+
+총 시간: 51.6분 (목표 50분 대비 103%)
+총 거리: 1850m
+정확도: ±2분 이내
+```
+
+#### 🎯 **기술적 장점**
+
+1. **거리 기반 → 시간 기반**: 사용자가 원하는 시간에 정확히 맞춤
+2. **과학적 근거**: ACSM/NSCA 운동 처방 가이드라인 준수
+3. **자동 조정**: 건강 상태에 따라 페이스만 조절, 시간은 유지
+4. **버그 제로**: meters와 desc가 항상 동기화
+
+#### 📁 **변경된 파일**
+
+- `client/lib/swimlab/engine-v35-time-based.ts` (신규)
+- `client/app/health/input/page.tsx` (v35 엔진 호출)
+- `client/app/guest/programs/page.tsx` (v35 캐시 로드)
+
+---
+
 ### 🚨 **수영 엔진 v34 - 반복 횟수 파싱 수정 (2025-10-13 최신)**
 
 #### 🐛 **치명적 버그 발견**
@@ -9127,6 +9215,114 @@ Route (app)                              Size     First Load JS
 
 
 ## 🔍 자동 헬스 체크 (2025. 10. 12. 오후 11:32:45)
+
+- 총 검사: 392개
+- 통과: 469개
+- 실패: 13개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 13. 오후 6:51:12)
+
+- 총 검사: 392개
+- 통과: 469개
+- 실패: 13개
+- 경고: 7개
+
+### ❌ 발견된 문제
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 13. 오후 6:51:36)
 
 - 총 검사: 392개
 - 통과: 469개

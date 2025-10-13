@@ -24,12 +24,12 @@ export default function GuestProgramsPage() {
     localStorage.removeItem('guest-daily-program'); // v30 이하 제거
     localStorage.removeItem('guest-daily-program-v31'); // v31 제거 (시간 계산 버그)
     
-    // 임시: 로컬 스토리지에서 프로그램 가져오기 (엔진 v34 - 반복 횟수 파싱 수정)
+    // 임시: 로컬 스토리지에서 프로그램 가져오기 (엔진 v35 - 시간 기반 시스템)
     // TODO: 실제 API 호출
-    const savedProgram = localStorage.getItem('guest-daily-program-v34');
+    const savedProgram = localStorage.getItem('guest-daily-program-v35');
     
     // 🧹 구버전 캐시 자동 정리
-    ['guest-daily-program-v31', 'guest-daily-program-v32', 'guest-daily-program-v33'].forEach(key => {
+    ['guest-daily-program-v31', 'guest-daily-program-v32', 'guest-daily-program-v33', 'guest-daily-program-v34'].forEach(key => {
       if (localStorage.getItem(key)) {
         localStorage.removeItem(key);
       }

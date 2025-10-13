@@ -2319,11 +2319,26 @@ function finalizePlan(
       // 시간 재계산
       estimatedMinutes = 0;
       sets.forEach(s => {
-        const repsMatch = s.desc.match(/^(\d+)×/);
+        const repsMatch = s.desc.match(/(\d+)×(\d+)m/);
         const reps = repsMatch ? parseInt(repsMatch[1]) : 1;
+        const distPerRep = repsMatch ? parseInt(repsMatch[2]) : s.meters;
         const paceMatch = s.desc.match(/@\s*(\d+):(\d+)/);
-        const paceTotalSeconds = paceMatch ? (parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2])) : 90;
-        estimatedMinutes += (paceTotalSeconds * reps + s.restSec * (reps - 1)) / 60;
+        
+        if (paceMatch) {
+          const paceTime = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
+          let swimSec = 0;
+          
+          if (distPerRep <= 100) {
+            swimSec = (s.meters / 100) * paceTime;
+          } else {
+            swimSec = paceTime * reps;
+          }
+          
+          const restSec = s.restSec * reps;
+          estimatedMinutes += (swimSec + restSec) / 60;
+        } else {
+          estimatedMinutes += (s.meters / 100) * 90 / 60;
+        }
       });
       
     } else {

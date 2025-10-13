@@ -37,6 +37,7 @@ import PhysiologicalMetricsSection from '@/components/swimlab/member-variables/P
 import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
 import TrainingScheduleSection from '@/components/swimlab/member-variables/TrainingScheduleSection';
 import { generateWeeklyPlan, type Input as EngineInput } from '@/lib/swimlab/engine-v31';
+import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
 
 // 타입 정의
 interface HealthInput {
@@ -587,18 +588,23 @@ export default function HealthInputPage() {
       
       console.log('🏊 엔진 입력:', engineInput);
       
-      // 4. 실제 엔진으로 프로그램 생성 (주간 플랜이지만 1일만 사용)
-      const weeklyPlan = generateWeeklyPlan(engineInput);
+      // 4. 🎯 시간 기반 프로그램 생성 (v35 엔진 테스트)
+      const generatedProgram = generateTimeBasedProgram({
+        targetMinutes: sessionDuration,
+        css100: strokeCSS,
+        poolLen: (healthData.swim_profile.poolLength || 25) as any,
+        goal: healthData.goals?.primary || '체력 향상',
+        level: healthData.swim_profile.level,
+        strokesAllowed: (healthData.swim_profile.mainStrokes?.length ? healthData.swim_profile.mainStrokes : ['freestyle']) as any,
+        strokesAvoid: (healthData.swim_profile.excludedStrokes || []) as any,
+        conditionIds: healthData.orthopedics as any,
+        dayCondition: dayCondition as any
+      });
       
-      console.log('📦 주간 플랜 전체:', weeklyPlan);
-      console.log('📅 생성된 일수:', weeklyPlan.days.length);
-      
-      const generatedProgram = weeklyPlan.days[0]; // 첫날만 사용 (하루짜리)
-      
-      console.log('✅ 오늘의 프로그램:', generatedProgram);
+      console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);
       console.log('📊 세트 개수:', generatedProgram?.sets?.length || 0);
       console.log('📏 총 거리:', generatedProgram?.totalMeters || 0);
-      console.log('⏱️ 총 시간:', generatedProgram?.totalDuration || 0);
+      console.log('⏱️ 총 시간:', generatedProgram?.estimatedMinutes || 0);
       
       // 5. 프로그램 데이터 저장
       const programData = {
@@ -619,17 +625,18 @@ export default function HealthInputPage() {
       localStorage.removeItem('guest-daily-program-v31');
       localStorage.removeItem('guest-daily-program-v32');
       localStorage.removeItem('guest-daily-program-v33');
+      localStorage.removeItem('guest-daily-program-v34');
       
       console.log('💾 프로그램 저장:', { 
-        key: 'guest-daily-program-v34', 
+        key: 'guest-daily-program-v35', 
         date: programData.date,
         sets: generatedProgram.sets.length,
         totalMeters: generatedProgram.totalMeters,
         duration: programData.duration
       });
       
-      // 로컬 스토리지에 저장 (엔진 버전 v34 - 반복 횟수 파싱 수정)
-      localStorage.setItem('guest-daily-program-v34', JSON.stringify(programData));
+      // 로컬 스토리지에 저장 (엔진 버전 v35 - 시간 기반 시스템)
+      localStorage.setItem('guest-daily-program-v35', JSON.stringify(programData));
       
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');
