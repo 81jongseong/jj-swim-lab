@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
+import { canAccessCommunity, MEMBERSHIP_CONFIGS, type MembershipTier } from '@/types/membership';
 // UI 컴포넌트를 HTML 요소로 교체하여 Element type is invalid 오류 방지
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
 
@@ -66,6 +67,13 @@ export default function CommunityPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  // 🎯 회원 등급 확인 (기본: guest)
+  const membershipTier: MembershipTier = (user?.membershipTier as MembershipTier) || 'guest';
+  const isGuest = membershipTier === 'guest';
+  const canWrite = canAccessCommunity(membershipTier, 'write');
+  const canComment = canAccessCommunity(membershipTier, 'comment');
+  const communityReadLimit = MEMBERSHIP_CONFIGS[membershipTier].features.communityRead;
 
   // 디버깅용
   useEffect(() => {
@@ -639,16 +647,28 @@ export default function CommunityPage() {
                   </Button>
                 </>
               )}
-              <Button
-                onClick={() => {
-                  console.log('글쓰기 버튼 클릭, user:', user);
-                  setIsFormOpen(true);
-                }}
-                variant="primary"
-                size="md"
-              >
-                ✍️ 글쓰기
-              </Button>
+              {canWrite ? (
+                <Button
+                  onClick={() => {
+                    console.log('글쓰기 버튼 클릭, user:', user);
+                    setIsFormOpen(true);
+                  }}
+                  variant="primary"
+                  size="md"
+                >
+                  ✍️ 글쓰기
+                </Button>
+              ) : (
+                <button
+                  onClick={() => {
+                    alert('게시글 작성은 회원 전용 기능입니다.\n무료 회원가입 후 이용해주세요!');
+                    window.location.href = '/auth/signup';
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg hover:bg-gray-400 transition-colors font-medium cursor-pointer"
+                >
+                  🔒 글쓰기 (회원 전용)
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -695,8 +715,10 @@ export default function CommunityPage() {
         </div>
         {/* 선택된 카테고리의 게시글 목록 */}
         <div className="space-y-4">
+          {/* 🎯 게스트는 처음 3개만 표시 */}
           {filteredPosts
             .filter(post => selectedCategory === 'all' || post.category === selectedCategory)
+            .slice(0, communityReadLimit === 'limited' ? 3 : undefined)
             .map((post) => (
               <div key={post._id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200">
                 <div className="p-6">
@@ -838,6 +860,53 @@ export default function CommunityPage() {
                 </div>
               </div>
             ))}
+          
+          {/* 🔒 게스트 회원 전용 콘텐츠 잠금 UI */}
+          {isGuest && filteredPosts.length > 3 && (
+            <>
+              {/* 흐림 처리된 미리보기 */}
+              <div className="relative">
+                <div className="blur-sm pointer-events-none opacity-50">
+                  {filteredPosts
+                    .filter(post => selectedCategory === 'all' || post.category === selectedCategory)
+                    .slice(3, 5)
+                    .map((post) => (
+                      <div key={post._id} className="bg-white rounded-lg shadow mb-4">
+                        <div className="p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
+                          <p className="text-gray-600 text-sm line-clamp-3">{post.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                
+                {/* 중앙 오버레이 */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center p-8 bg-white/95 rounded-2xl shadow-2xl border-2 border-purple-500 max-w-md">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">회원 전용 콘텐츠</h3>
+                    <p className="text-gray-600 mb-6">
+                      더 많은 게시글과 전문가 팁을 보시려면<br/>
+                      무료 회원가입이 필요합니다
+                    </p>
+                    <div className="space-y-3">
+                      <a 
+                        href="/auth/signup"
+                        className="block w-full px-6 py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors"
+                      >
+                        무료 회원가입하고 모든 콘텐츠 보기 →
+                      </a>
+                      <p className="text-xs text-gray-500">
+                        ✅ 전체 게시글 무제한 열람<br/>
+                        ✅ 게시글 작성 및 댓글<br/>
+                        ✅ AI 맞춤 프로그램
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 빈 상태 표시 */}
