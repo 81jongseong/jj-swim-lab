@@ -168,16 +168,19 @@ export default function GuestProgramsPage() {
                         <span><strong>진도 기록 및 분석</strong> (회원 전용)</span>
                       </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="space-y-3">
                       <a 
                         href="/auth/signup"
-                        className="px-6 py-2.5 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors shadow-md"
+                        className="block text-center px-6 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-colors shadow-md"
                       >
-                        무료 회원가입하고 모든 기능 이용 →
+                        회원가입하고 모든 기능 이용하기 →
                       </a>
+                      <p className="text-center text-sm text-purple-700">
+                        ☕ <strong>커피 한 잔 값 ₩4,900/월</strong>로 무제한 AI 프로그램!
+                      </p>
                       <a
                         href="/swimlab/trial"
-                        className="px-6 py-2.5 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                        className="block text-center px-6 py-2 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
                       >
                         다시 체험하기
                       </a>

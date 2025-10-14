@@ -566,16 +566,19 @@ export default function CommunityPage() {
                     <span>게시글 작성 및 댓글 <strong className="text-red-700">(회원 전용)</strong></span>
                   </p>
                 </div>
-                <div className="mt-4 flex gap-3">
+                <div className="space-y-3">
                   <a 
                     href="/auth/signup"
-                    className="px-6 py-2.5 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors shadow-md"
+                    className="block text-center px-6 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-colors shadow-md"
                   >
-                    무료 회원가입하고 모든 기능 이용하기 →
+                    회원가입하고 모든 기능 이용하기 →
                   </a>
+                  <p className="text-center text-sm text-purple-700 font-semibold">
+                    ☕ 커피 한 잔 값 <span className="text-lg">₩4,900/월</span>
+                  </p>
                   <a
                     href="/swimlab/trial"
-                    className="px-6 py-2.5 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                    className="block text-center px-6 py-2 bg-white border-2 border-purple-500 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
                   >
                     AI 프로그램 체험하기
                   </a>
@@ -928,14 +931,17 @@ export default function CommunityPage() {
                     <div className="space-y-3">
                       <a 
                         href="/auth/signup"
-                        className="block w-full px-6 py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-colors"
+                        className="block w-full px-6 py-3 bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-colors shadow-lg"
                       >
-                        무료 회원가입하고 모든 콘텐츠 보기 →
+                        회원가입하고 모든 콘텐츠 보기 →
                       </a>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-center text-sm text-purple-700 font-semibold">
+                        ☕ 커피 한 잔 값 <span className="text-lg">₩4,900/월</span>
+                      </p>
+                      <p className="text-xs text-gray-600 text-center">
                         ✅ 전체 게시글 무제한 열람<br/>
                         ✅ 게시글 작성 및 댓글<br/>
-                        ✅ AI 맞춤 프로그램
+                        ✅ AI 맞춤 프로그램 무제한
                       </p>
                     </div>
                   </div>
