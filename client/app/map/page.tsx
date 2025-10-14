@@ -17,6 +17,7 @@ import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
 import RegionSelector from '@/components/map/RegionSelector';
 import ModernButton from '@/components/map/ModernButton';
+import FilterOptions from '@/components/map/FilterOptions';
 
 // 동적 import로 SSR 문제 방지
 let L: any;
@@ -1155,8 +1156,11 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* 필터 옵션들 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {/* 필터 옵션들 - 컴포넌트화 */}
+          <FilterOptions filters={filters} onFilterChange={setFilters} />
+          
+          {/* 구버전 필터 (임시 숨김) */}
+          <div className="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* 가격 유형 (다중 선택) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">💰 가격 유형</label>
