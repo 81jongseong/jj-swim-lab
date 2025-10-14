@@ -110,7 +110,7 @@ const userMenuStructure = {
     ],
     health: [
       { href: '/health', label: '🏥 건강관리 홈' },
-      { href: '/health/input', label: '📝 건강정보 입력' },
+      { href: '/swimlab/trial', label: '🏊 스윔랩 체험' },
       { href: '/health/program', label: '🏊‍♂️ 운동 프로그램' },
       { href: '/health/history', label: '📋 프로그램 이력' },
       { href: '/health/measurements', label: '📊 측정 데이터' },
@@ -589,7 +589,7 @@ export default function Navigation() {
                       className={`block px-4 py-2 text-sm transition-colors ${
                         pathname === item.href || 
                         (item.href === '/health' && pathname.startsWith('/health')) ||
-                        (item.href === '/health/input' && pathname === '/health/input') ||
+                        (item.href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
                         (item.href === '/health/program' && pathname === '/health/program') ||
                         (item.href === '/health/history' && pathname === '/health/history') ||
                         (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')

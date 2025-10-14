@@ -64,7 +64,7 @@ export default function HealthPage() {
 
       {/* 빠른 액션 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link href="/health/input">
+        <Link href="/swimlab/trial">
           <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium">건강정보 입력</h3>

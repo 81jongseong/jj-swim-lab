@@ -155,7 +155,7 @@ export default function ProgramHistoryPage() {
   });
 
   const handleCreateNew = () => {
-    window.location.href = '/health/input';
+    window.location.href = '/swimlab/trial';
   };
 
   const handleViewProgram = (program: ProgramHistory) => {
@@ -163,7 +163,7 @@ export default function ProgramHistoryPage() {
   };
 
   const handleEditProgram = (program: ProgramHistory) => {
-    window.location.href = `/health/input?programId=${program.id}`;
+    window.location.href = `/swimlab/trial?programId=${program.id}`;
   };
 
   const handleDuplicateProgram = (program: ProgramHistory) => {
