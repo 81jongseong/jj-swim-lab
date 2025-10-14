@@ -13,6 +13,10 @@
 import { useState, useEffect, useRef } from 'react';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
+import MapHeader from '@/components/map/MapHeader';
+import SearchTabs from '@/components/map/SearchTabs';
+import RegionSelector from '@/components/map/RegionSelector';
+import ModernButton from '@/components/map/ModernButton';
 
 // 동적 import로 SSR 문제 방지
 let L: any;
@@ -810,34 +814,8 @@ export default function MapPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full px-2 sm:px-4 lg:px-6 py-4 pt-20">
-        {/* 헤더 - 모던 그라디언트 디자인 */}
-        <div className="mb-6 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-2xl shadow-xl p-8">
-          <div className="text-center">
-            <div className="inline-block p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
-              <div className="text-6xl">🏊‍♂️</div>
-            </div>
-            <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">
-              수영 센터 찾기
-            </h1>
-            <p className="text-lg text-blue-50 mb-4">
-              전국 JJ Swim Lab 제휴 센터를 한눈에!
-            </p>
-            <div className="flex items-center justify-center gap-6 text-white text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">📍</div>
-                <span>실시간 위치 기반</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">⭐</div>
-                <span>리뷰 & 평점</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">🏊</div>
-                <span>프로그램 정보</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 헤더 - 컴포넌트화 */}
+        <MapHeader />
 
 
         {/* 검색 및 필터 패널 - 모던 카드 디자인 */}
@@ -856,44 +834,8 @@ export default function MapPage() {
             </div>
           </div>
           
-          {/* 검색 타입 선택 - 모던 탭 */}
-          <div className="mb-6">
-            <div className="flex gap-3 p-1.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl shadow-inner">
-              <button
-                onClick={() => setSearchType('region')}
-                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
-                  searchType === 'region'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
-                }`}
-              >
-                <div className="text-3xl mb-1">📍</div>
-                <div className="text-sm">지역 선택</div>
-              </button>
-              <button
-                onClick={() => setSearchType('center')}
-                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
-                  searchType === 'center'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
-                }`}
-              >
-                <div className="text-3xl mb-1">🏊</div>
-                <div className="text-sm">센터명</div>
-              </button>
-              <button
-                onClick={() => setSearchType('address')}
-                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
-                  searchType === 'address'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
-                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
-                }`}
-              >
-                <div className="text-3xl mb-1">🏠</div>
-                <div className="text-sm">주소 검색</div>
-              </button>
-            </div>
-          </div>
+          {/* 검색 타입 선택 - 컴포넌트화 */}
+          <SearchTabs activeTab={searchType} onTabChange={setSearchType} />
 
           {/* 센터명 검색 */}
           {searchType === 'center' && (
@@ -916,134 +858,41 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* 지역 선택 */}
+          {/* 지역 선택 - 컴포넌트화 */}
           {searchType === 'region' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">지역 선택</label>
-              {/* 1단계: 시/도 선택 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-600 mb-2">시/도 선택:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {[
-                    { id: '전국', name: '🌏 전국' },
-                    { id: '서울특별시', name: '🏙️ 서울시' },
-                    { id: '경기도', name: '🌳 경기도' },
-                    { id: '인천광역시', name: '🌊 인천시' },
-                    { id: '부산광역시', name: '🌊 부산시' },
-                    { id: '대구광역시', name: '🏔️ 대구시' },
-                    { id: '광주광역시', name: '🌅 광주시' },
-                    { id: '대전광역시', name: '🔬 대전시' },
-                    { id: '울산광역시', name: '🏭 울산시' },
-                    { id: '세종특별자치시', name: '🏛️ 세종시' },
-                    { id: '강원도', name: '⛰️ 강원도' },
-                    { id: '충청북도', name: '🌲 충청북도' },
-                    { id: '충청남도', name: '🌾 충청남도' },
-                    { id: '전라북도', name: '🌾 전라북도' },
-                    { id: '전라남도', name: '🌊 전라남도' },
-                    { id: '경상북도', name: '🏔️ 경상북도' },
-                    { id: '경상남도', name: '🌊 경상남도' },
-                    { id: '제주특별자치도', name: '🏝️ 제주도' }
-                  ].map((sido) => (
-                    <Button
-                      key={sido.id}
-                      onClick={() => {
-                        if (sido.id === '전국') {
-                          setSelectedRegions(new Set(['전국']));
-                          setSelectedSido('');
-                          setShowDistrictSelection(false);
-                        } else {
-                          setSelectedSido(sido.id);
-                          setShowDistrictSelection(true);
-                          setSelectedRegions(new Set());
-                        }
-                      }}
-                      variant={selectedSido === sido.id || (sido.id === '전국' && selectedRegions.has('전국')) ? 'primary' : 'outline'}
-                      size="sm"
-                      className="text-xs"
-                    >
-                      {sido.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2단계: 구/군 선택 */}
-              {showDistrictSelection && selectedSido && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-700">{selectedSido} 구/군 선택:</h4>
-                    <Button
-                      onClick={() => {
-                        setShowDistrictSelection(false);
-                        setSelectedSido('');
-                      }}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      ✕ 닫기
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                    {citiesByProvince[selectedSido]?.map((city) => (
-                      <Button
-                        key={city}
-                        onClick={() => {
-                          const newRegions = new Set(selectedRegions);
-                          if (newRegions.has(city)) {
-                            newRegions.delete(city);
-                          } else {
-                            newRegions.add(city);
-                          }
-                          setSelectedRegions(newRegions);
-                        }}
-                        variant={selectedRegions.has(city) ? 'primary' : 'outline'}
-                        size="sm"
-                        className="text-xs"
-                      >
-                        {city}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 선택된 지역 표시 */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  선택된 지역 ({selectedRegions.size}개):
-                </h4>
-                {selectedRegions.size === 0 ? (
-                  <div className="text-gray-500 text-sm">
-                    지역을 선택해주세요
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(selectedRegions).map((region) => (
-                      <span
-                        key={region}
-                        className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                      >
-                        {region}
-                        <button
-                          onClick={() => {
-                            const newRegions = new Set(selectedRegions);
-                            newRegions.delete(region);
-                            setSelectedRegions(newRegions);
-                            if (newRegions.size === 0) {
-                              setSelectedSido('');
-                              setShowDistrictSelection(false);
-                            }
-                          }}
-                          className="ml-2 text-blue-600 hover:text-blue-800"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <RegionSelector
+              selectedSido={selectedSido}
+              selectedRegions={selectedRegions}
+              showDistrictSelection={showDistrictSelection}
+              onSidoSelect={(sido) => {
+                if (sido === '전국') {
+                  setSelectedRegions(new Set(['전국']));
+                  setSelectedSido('');
+                  setShowDistrictSelection(false);
+                } else {
+                  setSelectedSido(sido);
+                  setShowDistrictSelection(true);
+                  setSelectedRegions(new Set());
+                }
+              }}
+              onDistrictToggle={(district) => {
+                const newRegions = new Set(selectedRegions);
+                if (newRegions.has(district)) {
+                  newRegions.delete(district);
+                  if (newRegions.size === 0) {
+                    setSelectedSido('');
+                    setShowDistrictSelection(false);
+                  }
+                } else {
+                  newRegions.add(district);
+                }
+                setSelectedRegions(newRegions);
+              }}
+              onClose={() => {
+                setShowDistrictSelection(false);
+                setSelectedSido('');
+              }}
+            />
           )}
 
           {/* 주소 검색 */}
