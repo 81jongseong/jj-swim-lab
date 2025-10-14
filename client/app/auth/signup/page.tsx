@@ -174,6 +174,7 @@ export default function SignupPage() {
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="이메일을 입력하세요"
+                autoComplete="off"
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
@@ -192,6 +193,7 @@ export default function SignupPage() {
                     errors.password ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="비밀번호를 입력하세요"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

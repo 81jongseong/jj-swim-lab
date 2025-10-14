@@ -260,9 +260,9 @@ export default function RevenueManagementPage() {
           return {
             date: period,
             value: value > 0 ? value : baseValue // 음수 방지
-          };
-        });
-
+      };
+    });
+    
         // 센터별 색상 지정
         const colors: { [key: string]: string } = {
           '강남센터': '#3b82f6',
@@ -413,8 +413,8 @@ export default function RevenueManagementPage() {
               <div className="text-xs text-gray-500">{value.percentage}%</div>
             </div>
           ))}
-        </div>
-        </div>
+            </div>
+          </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="mb-6">
@@ -551,7 +551,7 @@ export default function RevenueManagementPage() {
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <div>
+          <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">표시 주기</label>
                     <select
                       value={periodUnit}
@@ -564,9 +564,9 @@ export default function RevenueManagementPage() {
                       <option value="half">반기 단위</option>
                       <option value="year">년 단위</option>
                     </select>
-                  </div>
-                </div>
-              </div>
+            </div>
+          </div>
+        </div>
 
               {/* 카테고리 및 지표 선택 */}
               <div className="flex gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
@@ -586,7 +586,7 @@ export default function RevenueManagementPage() {
                     >
                       💰 수익 항목
                     </button>
-                    <button
+          <button
                       onClick={() => {
                         setSelectedCategory('cost');
                         setSelectedMetric('labor');
@@ -598,9 +598,9 @@ export default function RevenueManagementPage() {
                       }`}
                     >
                       💸 비용 항목
-                    </button>
-                  </div>
-                </div>
+          </button>
+        </div>
+      </div>
 
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -628,8 +628,8 @@ export default function RevenueManagementPage() {
                       </>
                     )}
                   </select>
-                </div>
-              </div>
+                      </div>
+                      </div>
 
               {/* 추세 그래프 */}
               <TrendLineChart
@@ -648,7 +648,7 @@ export default function RevenueManagementPage() {
                 }}
                 height="400px"
               />
-            </div>
+        </div>
           </div>
         )}
 
