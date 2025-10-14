@@ -86,7 +86,7 @@ export const MEMBERSHIP_CONFIGS: Record<MembershipTier, MembershipConfig> = {
   basic: {
     tier: 'basic',
     name: '베이직 (자유수영)',
-    price: 9900,
+    price: 4900, // ☕ 커피 한 잔 값
     features: {
       dailyProgram: true,
       weeklyProgram: true,
@@ -116,7 +116,7 @@ export const MEMBERSHIP_CONFIGS: Record<MembershipTier, MembershipConfig> = {
   premium: {
     tier: 'premium',
     name: '프리미엄',
-    price: 19900,
+    price: 9900, // ☕ 커피 두 잔 값
     features: {
       dailyProgram: true,
       weeklyProgram: true,
@@ -146,7 +146,7 @@ export const MEMBERSHIP_CONFIGS: Record<MembershipTier, MembershipConfig> = {
   pro: {
     tier: 'pro',
     name: '프로 (강습 회원)',
-    price: 39900,
+    price: 19900, // ☕ 커피 네 잔 값
     features: {
       dailyProgram: true,
       weeklyProgram: true,
@@ -176,7 +176,7 @@ export const MEMBERSHIP_CONFIGS: Record<MembershipTier, MembershipConfig> = {
   center: {
     tier: 'center',
     name: '센터 패키지',
-    price: 299000, // 30명 기준
+    price: 99000, // 30명 기준 (회원당 ₩3,300)
     features: {
       dailyProgram: true,
       weeklyProgram: true,
