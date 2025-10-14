@@ -5,13 +5,17 @@
  * - 통일된 버튼 디자인
  * - 그라디언트 & 3D 효과
  * - 호버 애니메이션
+ * - 테마 시스템 연동
  * 
  * 🔗 **연동 파일**:
  * - client/app/map/page.tsx
  * - client/components/map/* (모든 지도 관련 컴포넌트)
+ * - client/contexts/ThemeContext.tsx (테마)
  */
 
 'use client';
+
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ModernButtonProps {
   children: React.ReactNode;
@@ -34,6 +38,9 @@ export default function ModernButton({
   icon,
   fullWidth = false
 }: ModernButtonProps) {
+  // 🎨 테마 시스템 사용 (옵션)
+  const theme = useTheme?.(); // useTheme가 없으면 기본 테마 사용
+  
   const baseStyles = `
     rounded-xl font-bold transition-all transform
     hover:scale-105 hover:-translate-y-0.5
@@ -48,15 +55,19 @@ export default function ModernButton({
     lg: 'px-6 py-4 text-base'
   };
 
+  // 🎨 테마 적용 (없으면 기본 파란색)
+  const primaryGradient = theme?.getGradient('primary') || 'from-blue-500 to-cyan-500';
+  const secondaryGradient = theme?.getGradient('secondary') || 'from-purple-500 to-pink-500';
+  
   const variantStyles = {
     primary: `
-      bg-gradient-to-br from-blue-500 to-cyan-500 
+      bg-gradient-to-br ${primaryGradient}
       text-white shadow-lg 
       hover:shadow-xl
       ring-2 ring-blue-300
     `,
     secondary: `
-      bg-gradient-to-br from-purple-500 to-pink-500 
+      bg-gradient-to-br ${secondaryGradient}
       text-white shadow-lg 
       hover:shadow-xl
       ring-2 ring-purple-300

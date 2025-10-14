@@ -76,15 +76,14 @@ const POOL_LANES: FilterOption[] = [
 ];
 
 const POOL_LENGTHS: FilterOption[] = [
-  { value: '20', label: '20m' },
-  { value: '25', label: '25m' },
-  { value: '33', label: '33m' },
-  { value: '50', label: '50m' }
+  { value: '25', label: '25m (단수영장)' },
+  { value: '50', label: '50m (장수영장)' }
 ];
 
 export default function FilterOptions({ filters, onFilterChange }: FilterOptionsProps) {
   const [customLanes, setCustomLanes] = React.useState('');
   const [customLength, setCustomLength] = React.useState('');
+  const [expandedTimeSlot, setExpandedTimeSlot] = React.useState<string | null>(null);
 
   const toggleOption = (filterKey: string, value: string) => {
     const currentValues = filters[filterKey as keyof typeof filters] as string[];
@@ -108,6 +107,16 @@ export default function FilterOptions({ filters, onFilterChange }: FilterOptions
       toggleOption('selectedLengths', customLength);
       setCustomLength('');
     }
+  };
+
+  // 시간대별 세부 시간 생성
+  const getDetailedHours = (timeSlot: string): string[] => {
+    const [start, end] = timeSlot.split('-').map(t => parseInt(t.split(':')[0]));
+    const hours: string[] = [];
+    for (let h = start; h < end; h++) {
+      hours.push(`${h.toString().padStart(2, '0')}:00-${(h + 1).toString().padStart(2, '0')}:00`);
+    }
+    return hours;
   };
 
   return (
@@ -136,29 +145,60 @@ export default function FilterOptions({ filters, onFilterChange }: FilterOptions
         </div>
       </div>
 
-      {/* 선호 시간대 */}
+      {/* 선호 시간대 - 2단계 선택 */}
       <div className="p-5 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl border border-orange-200">
         <label className="block text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
           <span className="text-2xl">🕐</span>
           선호 시간대
         </label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {TIME_SLOTS.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => toggleOption('preferredTimes', option.value)}
-              className={`px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
-                filters.preferredTimes.includes(option.value)
-                  ? 'bg-gradient-to-br from-orange-500 to-yellow-500 text-white shadow-lg ring-2 ring-orange-300'
-                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-orange-400'
-              }`}
-            >
-              <div className="text-lg mb-1">{option.label.split(' ')[0]}</div>
-              <div className="text-xs opacity-90">{option.label.split(' ')[1]}</div>
-            </button>
-          ))}
+        
+        {/* 1단계: 시간대 블록 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {TIME_SLOTS.map((option) => {
+            const isExpanded = expandedTimeSlot === option.value;
+            const hasSelection = getDetailedHours(option.value).some(h => filters.preferredTimes.includes(h));
+            
+            return (
+              <div key={option.value}>
+                <button
+                  onClick={() => setExpandedTimeSlot(isExpanded ? null : option.value)}
+                  className={`w-full px-4 py-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
+                    hasSelection
+                      ? 'bg-gradient-to-br from-orange-500 to-yellow-500 text-white shadow-lg ring-2 ring-orange-300'
+                      : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-orange-400'
+                  }`}
+                >
+                  <div className="text-lg mb-1">{option.label.split(' ')[0]}</div>
+                  <div className="text-xs opacity-90">{option.label.split(' ')[1]}</div>
+                  {isExpanded && <div className="text-xs mt-1">▼ 시간 선택</div>}
+                </button>
+                
+                {/* 2단계: 세부 시간 (1시간 단위) */}
+                {isExpanded && (
+                  <div className="mt-2 p-3 bg-white rounded-lg border-2 border-orange-300 shadow-lg">
+                    <div className="text-xs font-bold text-gray-700 mb-2">1시간 단위 선택:</div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {getDetailedHours(option.value).map((hour) => (
+                        <button
+                          key={hour}
+                          onClick={() => toggleOption('preferredTimes', hour)}
+                          className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                            filters.preferredTimes.includes(hour)
+                              ? 'bg-gradient-to-r from-orange-400 to-yellow-400 text-white'
+                              : 'bg-gray-50 text-gray-700 hover:bg-orange-100'
+                          }`}
+                        >
+                          {hour}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <p className="text-xs text-gray-600 mt-3">💡 자유수영 가능 시간대 또는 강습 선호 시간</p>
+        <p className="text-xs text-gray-600">💡 시간대를 클릭하면 1시간 단위로 세부 선택 가능</p>
       </div>
 
       {/* 선호 요일 */}
@@ -244,7 +284,7 @@ export default function FilterOptions({ filters, onFilterChange }: FilterOptions
           <span className="text-2xl">📏</span>
           수영장 거리 (이상)
         </label>
-        <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {POOL_LENGTHS.map((option) => (
             <button
               key={option.value}
@@ -255,31 +295,35 @@ export default function FilterOptions({ filters, onFilterChange }: FilterOptions
                   : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-green-400'
               }`}
             >
-              {option.label}
+              <div className="text-2xl mb-1">{option.value}m</div>
+              <div className="text-xs opacity-90">{option.label.split(' ')[1]}</div>
             </button>
           ))}
         </div>
         {/* 수동 입력 */}
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={customLength}
-            onChange={(e) => setCustomLength(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addCustomLength()}
-            placeholder="직접 입력 (예: 33)"
-            min="10"
-            max="100"
-            className="flex-1 px-4 py-2 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
-          />
-          <button
-            onClick={addCustomLength}
-            disabled={!customLength}
-            className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-          >
-            추가
-          </button>
+        <div className="p-3 bg-white rounded-lg border-2 border-green-300">
+          <label className="text-xs font-bold text-gray-700 mb-2 block">특수 길이 입력:</label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={customLength}
+              onChange={(e) => setCustomLength(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addCustomLength()}
+              placeholder="예: 20, 33 등"
+              min="10"
+              max="100"
+              className="flex-1 px-4 py-2 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+            />
+            <button
+              onClick={addCustomLength}
+              disabled={!customLength}
+              className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              추가
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">10~100m (어린이 풀, 특수 규격 등)</p>
         </div>
-        <p className="text-xs text-gray-600 mt-2">💡 10~100m까지 입력 가능 (단수영장~장수영장)</p>
       </div>
     </div>
   );
