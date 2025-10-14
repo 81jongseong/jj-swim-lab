@@ -67,10 +67,11 @@ export default function HealthPage() {
         <Link href="/swimlab/trial">
           <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium">건강정보 입력</h3>
+              <h3 className="text-sm font-medium">🏊 스윔랩 체험</h3>
               <Plus className="h-4 w-4 text-gray-500" />
             </div>
-            <div className="text-2xl font-bold">새로 입력</div>
+            <div className="text-2xl font-bold">AI 프로그램 생성</div>
+            <p className="text-xs text-gray-500 mt-2">☕ 커피 한 잔 값 ₩4,900/월</p>
             <p className="text-xs text-gray-500">건강정보를 입력하여 맞춤형 프로그램을 받아보세요</p>
           </div>
         </Link>

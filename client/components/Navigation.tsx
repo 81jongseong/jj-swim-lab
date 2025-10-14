@@ -285,7 +285,7 @@ const userMenuStructure = {
     ],
     experience: [
       { href: '/guest-quiz', label: '🧠 퀴즈 체험' },
-      { href: '/health', label: '🏥 건강체크' },
+      { href: '/swimlab/trial', label: '🏊 스윔랩 체험' },
       { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
     ],
     community: [
