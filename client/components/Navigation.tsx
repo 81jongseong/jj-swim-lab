@@ -102,7 +102,7 @@ import NotificationsBell from './NotificationsBell';
 const userMenuStructure = {
   student: {
     main: [
-      { href: '/landing', label: '🏠 홈' },
+      { href: '/', label: '🏠 홈' },
       { href: '/dashboard', label: '📊 대시보드' },
       { href: '/courses', label: '📚 내 강의' },
       { href: '/bookings', label: '📅 예약 관리' },
@@ -128,7 +128,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     info: [
-      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
@@ -138,7 +138,7 @@ const userMenuStructure = {
   },
   instructor: {
     main: [
-      { href: '/landing', label: '🏠 홈' },
+      { href: '/', label: '🏠 홈' },
       { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
       { href: '/instructor/courses', label: '📚 내 강의 관리' },
       { href: '/instructor/bookings', label: '📅 예약 관리' },
@@ -162,7 +162,7 @@ const userMenuStructure = {
       { href: '/instructor/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     center: [
-      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
     ],
     teaching: [
@@ -187,7 +187,7 @@ const userMenuStructure = {
   },
   centerAdmin: {
     dashboard: [
-      { href: '/landing', label: '🏠 홈' },
+      { href: '/', label: '🏠 홈' },
       { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center-admin/users', label: '👥 센터 회원 관리' },
       { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
@@ -216,7 +216,7 @@ const userMenuStructure = {
       { href: '/center-admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
-      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
@@ -236,7 +236,7 @@ const userMenuStructure = {
   },
   superAdmin: {
     core: [
-      { href: '/landing', label: '🏠 홈' },
+      { href: '/', label: '🏠 홈' },
       { href: '/admin/dashboard', label: '📊 최고관리자 대시보드' },
       { href: '/admin/system-settings', label: '⚙️ 시스템 설정' },
       { href: '/admin/system', label: '📈 시스템 사용 통계' },
@@ -270,7 +270,7 @@ const userMenuStructure = {
       { href: '/quiz', label: '🧠 퀴즈 체험' },
     ],
     community: [
-      { href: '/about', label: '🏊‍♂️ 소개' },
+      { href: '/guide', label: '📖 이용안내' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
@@ -279,7 +279,6 @@ const userMenuStructure = {
   guest: {
     main: [
       { href: '/', label: '🏠 홈' },
-      { href: '/about', label: '🏊‍♂️ 소개' },
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
     ],
@@ -338,8 +337,7 @@ const menuGrouping = {
   guest: [
     { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
-    { groupName: '💬 커뮤니티 & 상점', categories: ['community'] },
-    { groupName: '🔑 로그인/회원가입', categories: ['auth'] }
+    { groupName: '💬 커뮤니티 & 상점', categories: ['community'] }
   ]
 };
 
@@ -616,7 +614,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-[100]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 min-w-0">
           {/* Logo and Brand */}
@@ -658,21 +656,6 @@ export default function Navigation() {
                   </div>
                 </div>
               </>
-            ) : (user?.userType || 'guest') === 'guest' ? (
-              <div className="hidden md:flex items-center space-x-3">
-                <Link
-                  href="/auth/login"
-                  className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
-                >
-                  로그인
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
-                >
-                  회원가입
-                </Link>
-              </div>
             ) : null}
 
             {/* Mobile Menu Button */}

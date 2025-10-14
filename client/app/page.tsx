@@ -1,7 +1,7 @@
 /**
- * @file 홈 페이지 (게스트 랜딩 페이지)
- * @description JJ Swim Lab 메인 홈페이지 - 게스트 사용자를 위한 랜딩 페이지
- * @date 2025-01-13
+ * @file 홈 페이지 (통합 랜딩 페이지)
+ * @description JJ Swim Lab 메인 홈페이지 - 로그인 시 대시보드 리다이렉트, 미로그인 시 랜딩 페이지 표시
+ * @date 2025-10-14
  * @author JJ Swim Lab
  * 
  * @연동되는 데이터:
@@ -14,6 +14,10 @@
  * - components/WaterRippleBackground.tsx (배경 애니메이션)
  * - components/LottiePlayer.tsx (Lottie 애니메이션)
  * - lib/motion.ts (애니메이션 프리셋)
+ * 
+ * @주의사항:
+ * - /landing 페이지는 제거됨 (중복 방지)
+ * - 이용안내는 /guide 페이지에서 별도 관리
  */
 
 'use client';

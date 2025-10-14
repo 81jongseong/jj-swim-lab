@@ -115,6 +115,40 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     default: 'KRW',
   },
+  // 요금 체계 정보 추가
+  pricingInfo: {
+    userType: {
+      type: String,
+      enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+      required: true,
+    },
+    pricingTier: {
+      type: String,
+      enum: ['standard', 'instructor_discount', 'center_managed', 'free'],
+      default: 'standard',
+    },
+    baseAmount: {
+      type: Number,
+      required: true,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+    discountReason: {
+      type: String,
+      default: '',
+    },
+    centerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SwimmingCenter',
+      default: null,
+    },
+    isCenterSponsored: {
+      type: Boolean,
+      default: false,
+    },
+  },
   paymentMethod: {
     type: String,
     enum: ['card', 'cash', 'transfer', 'online'],

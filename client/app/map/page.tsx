@@ -814,7 +814,7 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="w-full px-2 sm:px-4 lg:px-6 py-4 pt-20">
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-4 pt-20 sm:pt-20 md:pt-20">
         {/* 헤더 - 컴포넌트화 */}
         <MapHeader />
 
@@ -1396,7 +1396,7 @@ export default function MapPage() {
               
               <div
                 ref={mapRef}
-                className="w-full rounded-lg border border-gray-200"
+                className="w-full rounded-lg border border-gray-200 relative z-0"
                 style={{ height: '80vh', minHeight: '600px' }}
               />
             </div>
