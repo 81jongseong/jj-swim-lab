@@ -810,45 +810,88 @@ export default function MapPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full px-2 sm:px-4 lg:px-6 py-4 pt-20">
-        {/* 헤더 */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">🗺️ 수영 센터 찾기</h1>
-          <p className="text-sm text-gray-600">가까운 JJ Swim Lab 센터를 찾아보세요 (VWorld 무료 지도)</p>
+        {/* 헤더 - 모던 그라디언트 디자인 */}
+        <div className="mb-6 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-2xl shadow-xl p-8">
+          <div className="text-center">
+            <div className="inline-block p-4 bg-white/20 backdrop-blur-sm rounded-full mb-4">
+              <div className="text-6xl">🏊‍♂️</div>
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">
+              수영 센터 찾기
+            </h1>
+            <p className="text-lg text-blue-50 mb-4">
+              전국 JJ Swim Lab 제휴 센터를 한눈에!
+            </p>
+            <div className="flex items-center justify-center gap-6 text-white text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">📍</div>
+                <span>실시간 위치 기반</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">⭐</div>
+                <span>리뷰 & 평점</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">🏊</div>
+                <span>프로그램 정보</span>
+              </div>
+            </div>
+          </div>
         </div>
 
 
-        {/* 검색 및 필터 패널 */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-          <h3 className="text-base font-semibold text-gray-900 mb-3">🔍 센터 검색 및 필터</h3>
+        {/* 검색 및 필터 패널 - 모던 카드 디자인 */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white text-xl">
+                🔍
+              </div>
+              센터 검색
+            </h3>
+            <div className="px-4 py-2 bg-blue-50 rounded-lg">
+              <span className="text-sm font-semibold text-blue-700">
+                {swimmingCenters.length}개 센터
+              </span>
+            </div>
+          </div>
           
-          {/* 검색 타입 선택 */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">검색 방식</label>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setSearchType('center')}
-                variant={searchType === 'center' ? 'primary' : 'outline'}
-                size="md"
-                className="flex-1"
-              >
-                🏊 센터명 검색
-              </Button>
-              <Button
+          {/* 검색 타입 선택 - 모던 탭 */}
+          <div className="mb-6">
+            <div className="flex gap-3 p-1.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl shadow-inner">
+              <button
                 onClick={() => setSearchType('region')}
-                variant={searchType === 'region' ? 'primary' : 'outline'}
-                size="md"
-                className="flex-1"
+                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                  searchType === 'region'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
+                }`}
               >
-                📍 지역 선택
-              </Button>
-              <Button
+                <div className="text-3xl mb-1">📍</div>
+                <div className="text-sm">지역 선택</div>
+              </button>
+              <button
+                onClick={() => setSearchType('center')}
+                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                  searchType === 'center'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
+                }`}
+              >
+                <div className="text-3xl mb-1">🏊</div>
+                <div className="text-sm">센터명</div>
+              </button>
+              <button
                 onClick={() => setSearchType('address')}
-                variant={searchType === 'address' ? 'primary' : 'outline'}
-                size="md"
-                className="flex-1"
+                className={`flex-1 px-4 py-4 rounded-lg font-semibold transition-all transform hover:scale-105 ${
+                  searchType === 'address'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:text-gray-900 shadow-sm'
+                }`}
               >
-                🔍 주소 검색
-              </Button>
+                <div className="text-3xl mb-1">🏠</div>
+                <div className="text-sm">주소 검색</div>
+              </button>
             </div>
           </div>
 
