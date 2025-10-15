@@ -88,6 +88,7 @@ import bcrypt from 'bcrypt';
 import CenterRegistration from '../models/CenterRegistration';
 import { User } from '../models/User';
 import { CenterInfo } from '../models/CenterInfo';
+import { SwimmingCenter } from '../models/SwimmingCenter';
 import { authMiddleware, requireRole } from '../middleware/auth';
 // import { body, validationResult } from 'express-validator';
 
@@ -287,7 +288,7 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
       });
     }
 
-    // 센터 정보 생성
+    // 🆕 센터 정보 생성 (SwimmingCenter 모델 사용)
     // 운영 시간을 요일별로 변환
     const weekdayOpen = registration.centerInfo.operatingHours?.weekdays?.open || '06:00';
     const weekdayClose = registration.centerInfo.operatingHours?.weekdays?.close || '22:00';
@@ -308,7 +309,78 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
         }
       });
     }
+
+    // 🆕 주소에서 위도/경도 추출 (Daum API에서 받아온 좌표 사용 - 향후 구현)
+    // 현재는 기본 좌표 (서울 중심) 사용, 추후 Geocoding API 연동 필요
+    const latitude = (registration.address as any).latitude || 37.5665; // 서울 기본 좌표
+    const longitude = (registration.address as any).longitude || 126.9780;
     
+    // SwimmingCenter 모델로 저장 (지도에서 조회 가능)
+    const swimmingCenter = new SwimmingCenter({
+      name: registration.centerName,
+      address: `${registration.address.address1} ${registration.address.address2 || ''}`.trim(),
+      location: {
+        type: 'Point',
+        coordinates: [longitude, latitude] // [경도, 위도] 순서 (GeoJSON 표준)
+      },
+      phone: registration.representativePhone,
+      email: registration.representativeEmail,
+      description: registration.centerInfo.description,
+      shortDescription: registration.centerInfo.description.substring(0, 100),
+      facilities: {
+        availablePoolLengths: mainPool ? [mainPool.length] : [25],
+        mainPool: mainPool ? {
+          lanes: mainPool.laneCount || 6,
+          poolLength: mainPool.length || 25,
+          poolDepth: mainPool.depth || 1.5,
+          temperature: 28
+        } : {
+          lanes: 6,
+          poolLength: 25,
+          poolDepth: 1.5,
+          temperature: 28
+        },
+        amenities: {
+          hasSauna: facilityNames.includes('사우나'),
+          hasShower: facilityNames.includes('샤워실') || true,
+          hasLocker: facilityNames.includes('락커룸') || true,
+          hasJacuzzi: facilityNames.includes('체온유지탕(월풀)'),
+          hasSteamRoom: facilityNames.includes('찜질방'),
+          hasFitnessRoom: facilityNames.includes('PT룸'),
+          hasCafeteria: facilityNames.includes('카페'),
+          hasParking: registration.centerInfo.parkingAvailable || false,
+          parkingSpaces: registration.centerInfo.parkingSpaces || 0,
+          additionalFacilities: facilityNames.join(', ')
+        }
+      },
+      businessHours: {
+        monday: `${weekdayOpen}-${weekdayClose}`,
+        tuesday: `${weekdayOpen}-${weekdayClose}`,
+        wednesday: `${weekdayOpen}-${weekdayClose}`,
+        thursday: `${weekdayOpen}-${weekdayClose}`,
+        friday: `${weekdayOpen}-${weekdayClose}`,
+        saturday: `${weekendOpen}-${weekendClose}`,
+        sunday: `${weekendOpen}-${weekendClose}`
+      },
+      contactInfo: {
+        mainNumber: registration.representativePhone,
+        email: registration.representativeEmail,
+        website: '',
+        kakaoChannel: ''
+      },
+      province: registration.address.province || '',
+      city: registration.address.city || '',
+      gu: (registration.address as any).gu || '',
+      dong: (registration.address as any).dong || '',
+      isActive: true,
+      instructors: [],
+      courses: []
+    });
+
+    await swimmingCenter.save();
+    console.log('✅ SwimmingCenter 생성 완료:', swimmingCenter._id);
+
+    // 🆕 CenterInfo도 생성 (기존 호환성 유지)
     const centerInfo = new CenterInfo({
       centerId: `center-${Date.now()}`,
       name: registration.centerName,
@@ -336,6 +408,7 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
     });
 
     await centerInfo.save();
+    console.log('✅ CenterInfo 생성 완료:', centerInfo._id);
 
     // 센터 관리자 계정 생성 (신청 시 입력한 비밀번호 사용)
     const centerAdmin = new User({
@@ -345,11 +418,12 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
       password: registration.password, // 이미 해시화된 비밀번호
       phone: registration.representativePhone,
       userType: 'centerAdmin',
-      centerId: centerInfo._id,
+      centerId: swimmingCenter._id, // 🆕 SwimmingCenter ID로 연결
       centerAdminInfo: {
         centerName: registration.centerName,
         businessNumber: registration.businessNumber,
-        permissions: ['center_management', 'user_management', 'course_management']
+        permissions: ['center_management', 'user_management', 'course_management'],
+        managedCenters: [swimmingCenter._id] // 🆕 관리하는 센터 ID
       },
       isActive: true
     });
@@ -376,11 +450,18 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
       message: '센터 등록이 성공적으로 승인되었습니다.',
       data: {
         registration,
+        swimmingCenter: {
+          id: swimmingCenter._id,
+          name: swimmingCenter.name,
+          address: swimmingCenter.address,
+          location: swimmingCenter.location
+        },
         centerInfo,
         centerAdmin: {
           id: centerAdmin._id,
           email: centerAdmin.email,
-          name: centerAdmin.name
+          name: centerAdmin.name,
+          centerId: swimmingCenter._id
         }
       }
     });

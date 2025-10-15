@@ -102,6 +102,10 @@ export default function MapPage() {
     selectedUsageHistory: [] as string[]
   });
 
+  // 🆕 실제 센터 데이터
+  const [realCenters, setRealCenters] = useState<SwimmingCenter[]>([]);
+  const [centersLoading, setCentersLoading] = useState(false);
+
   // 시/도 목록
   const provinces = [
     '서울특별시', '부산광역시', '대구광역시', '인천광역시', '광주광역시',
@@ -446,8 +450,11 @@ export default function MapPage() {
     '고양시': ['JJ Swim Lab 일산점'],
   };
 
+  // 🆕 샘플 + 실제 센터 병합 (개발 중에는 샘플 데이터도 유지)
+  const allCenters = [...swimmingCenters, ...realCenters];
+
   // 필터링된 센터 목록
-  const filteredCenters = swimmingCenters.filter(center => {
+  const filteredCenters = allCenters.filter(center => {
     // 지역 필터
     if (selectedRegions.size > 0) {
       const selectedRegionList = Array.from(selectedRegions);
@@ -531,6 +538,76 @@ export default function MapPage() {
     
     return true;
   });
+
+  // 🆕 실제 센터 데이터 로드
+  useEffect(() => {
+    const loadCenters = async () => {
+      try {
+        setCentersLoading(true);
+        console.log('🔍 실제 센터 데이터 로딩 중...');
+        
+        const response = await fetch('http://localhost:5000/api/centers/guest');
+        const data = await response.json();
+        
+        console.log('✅ 센터 데이터 로드 완료:', data);
+        
+        // API 데이터를 SwimmingCenter 인터페이스로 변환
+        const transformedCenters: SwimmingCenter[] = (data || []).map((center: any, index: number) => {
+          // location.coordinates는 [lng, lat] 형식 (GeoJSON 표준)
+          const lat = center.location?.coordinates?.[1] || 37.5665;
+          const lng = center.location?.coordinates?.[0] || 126.9780;
+          
+          return {
+            id: center._id || `center-${index}`,
+            name: center.name || '이름 없음',
+            position: { lat, lng },
+            address: center.address || '',
+            phone: center.phone || '',
+            rating: 4.5,
+            courses: ['초급', '중급', '고급'],
+            description: center.description || center.shortDescription || '센터 설명이 없습니다.',
+            schedules: {
+              freeSwimming: ['06:00-09:00', '18:00-21:00'],
+              lessons: []
+            },
+            facilities: center.facilities || [],
+            pricing: {
+              lessons: { min: 40000, max: 80000 },
+              dailyFreeSwimming: { adult: 10000, child: 7000 },
+              monthlyFreeSwimming: { adult: 100000, child: 70000 }
+            },
+            poolInfo: {
+              lanes: center.facilities?.mainPool?.lanes || 6,
+              length: center.facilities?.mainPool?.poolLength || 25,
+              freeSwimmingLanes: center.facilities?.mainPool?.lanes || 6,
+              depth: {
+                shallow: 1.2,
+                deep: 2.0
+              },
+              temperature: center.facilities?.mainPool?.temperature || 28,
+              capacity: 100
+            },
+            usageHistory: {
+              totalUsers: 0,
+              peakUsers: 0,
+              averageUsers: 0,
+              lastUpdated: new Date().toISOString().split('T')[0]
+            }
+          };
+        });
+        
+        setRealCenters(transformedCenters);
+        console.log('✅ 변환된 센터 수:', transformedCenters.length);
+      } catch (error) {
+        console.error('❌ 센터 데이터 로드 실패:', error);
+        setRealCenters([]);
+      } finally {
+        setCentersLoading(false);
+      }
+    };
+
+    loadCenters();
+  }, []);
 
   // Leaflet 라이브러리 로딩
   useEffect(() => {
@@ -647,13 +724,38 @@ export default function MapPage() {
 
     tileLayer.addTo(map);
 
+    console.log('🗺️ VWorld + Leaflet 지도 초기화 완료');
+
     mapInstanceRef.current = map;
     setMapReady(true);
 
-    console.log('🗺️ VWorld + Leaflet 지도 초기화 완료');
+    // 정리 함수
+    return () => {
+      if (map) {
+        console.log('🗑️ 지도 정리 중...');
+        map.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [leafletReady]);
 
-    // 센터 마커 추가
-    swimmingCenters.forEach(center => {
+  // 🆕 필터링된 센터를 지도에 마커로 표시
+  useEffect(() => {
+    if (!mapInstanceRef.current || !L || !mapReady) {
+      console.log('⚠️ 지도 또는 Leaflet이 준비되지 않음');
+      return;
+    }
+
+    // 기존 마커 모두 제거
+    markersRef.current.forEach(marker => {
+      mapInstanceRef.current?.removeLayer(marker);
+    });
+    markersRef.current = [];
+
+    console.log('🎯 필터링된 센터 마커 추가:', filteredCenters.length, '개');
+
+    // 필터링된 센터 마커 추가
+    filteredCenters.forEach(center => {
       // 커스텀 아이콘
       const customIcon = L.divIcon({
         className: 'custom-marker',
@@ -672,7 +774,7 @@ export default function MapPage() {
             cursor: pointer;
           ">
             🏊
-                </div>
+          </div>
         `,
         iconSize: [40, 40],
         iconAnchor: [20, 20]
@@ -681,27 +783,27 @@ export default function MapPage() {
       // 마커 생성
       const marker = L.marker([center.position.lat, center.position.lng], {
         icon: customIcon
-      }).addTo(map);
+      }).addTo(mapInstanceRef.current);
 
       // 팝업 추가
       marker.bindPopup(`
         <div style="padding: 12px; min-width: 250px;">
           <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">
-                          ${center.name}
-                        </h3>
+            ${center.name}
+          </h3>
           <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
-                          ${center.address}
-                        </p>
+            ${center.address}
+          </p>
           <p style="margin: 0 0 6px 0; font-size: 13px; color: #6b7280;">
-                          📞 ${center.phone}
-                        </p>
+            📞 ${center.phone}
+          </p>
           <div style="margin: 0 0 6px 0;">
-                          <span style="color: #f59e0b; font-weight: bold;">⭐ ${center.rating}</span>
-                        </div>
+            <span style="color: #f59e0b; font-weight: bold;">⭐ ${center.rating}</span>
+          </div>
           <p style="margin: 0; font-size: 12px; color: #374151;">
-                          ${center.description}
-                        </p>
-                      </div>
+            ${center.description}
+          </p>
+        </div>
       `);
 
       // 마커 클릭 이벤트
@@ -711,16 +813,7 @@ export default function MapPage() {
 
       markersRef.current.push(marker);
     });
-
-    // 정리 함수
-    return () => {
-      if (map) {
-        console.log('🗑️ 지도 정리 중...');
-        map.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, [leafletReady]);
+  }, [filteredCenters, mapReady, leafletReady]);
 
   // 주소 검색
   const handleSearch = async (addressToSearch?: string) => {
@@ -830,7 +923,7 @@ export default function MapPage() {
             </h3>
             <div className="px-4 py-2 bg-blue-50 rounded-lg">
               <span className="text-sm font-semibold text-blue-700">
-                {swimmingCenters.length}개 센터
+                {centersLoading ? '로딩 중...' : `전체 ${allCenters.length}개 센터 | 필터링됨 ${filteredCenters.length}개`}
               </span>
             </div>
           </div>

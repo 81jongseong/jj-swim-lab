@@ -1,6 +1,102 @@
 # 🛠️ JJ Swim Lab 개발 문서
 
-## 📅 최근 업데이트 (2025-10-14)
+## 📅 최근 업데이트 (2025-10-15)
+
+### 🗺️ **센터 찾기 지도 - 실제 승인된 센터 연동 완료 (2025-10-15)** ⭐
+
+#### ✅ **구현된 기능**
+1. **실제 승인된 센터 데이터 연동**
+   - API: `GET /api/centers/guest` (게스트용, 인증 불필요)
+   - 자동 로딩: 페이지 로드 시 실제 센터 데이터 가져오기
+   - 위치 정보: `location.coordinates[1]=lat, [0]=lng` (GeoJSON 표준)
+   - 샘플 데이터 + 실제 데이터 병합 (개발 중)
+
+2. **필터링된 센터를 지도에 실시간 표시** 🗺️
+   - 필터 적용 시 마커 자동 업데이트
+   - 기존 마커 제거 후 새로운 필터링된 마커만 표시
+   - 지도 + 목록 완전 동기화
+
+3. **목록과 지도 완전 동기화** 🔄
+   - 목록에서 센터 클릭 → 지도 자동 이동 (flyTo)
+   - 지도 마커 클릭 → 우측 상세 정보 표시
+   - 필터링 결과 실시간 반영 (지도 + 목록 동시 업데이트)
+
+4. **통계 표시** 📊
+   - 전체 센터 수: 샘플 + 실제 센터
+   - 필터링된 센터 수: 조건에 맞는 센터만
+   - 로딩 상태 표시: "로딩 중..." → "전체 X개 센터 | 필터링됨 Y개"
+
+5. **🆕 승인 시 SwimmingCenter 자동 생성 (2025-10-15)** 🔥
+   - **문제**: 승인 시 `CenterInfo`만 생성 → 지도에서 조회 불가
+   - **해결**: `SwimmingCenter` 모델로 저장 + `CenterInfo` 병행 생성
+   - **위치 정보**: `location.coordinates = [경도, 위도]` (GeoJSON 표준)
+   - **기본 좌표**: 서울 중심 (37.5665, 126.9780) - 향후 Geocoding API 연동 예정
+   - **시설 정보**: `facilities.mainPool`, `facilities.amenities` 자동 매핑
+   - **센터 관리자**: `centerId = swimmingCenter._id`로 연결
+   - **결과**: 승인 즉시 지도에 표시 가능! ✅
+
+#### 📁 **수정된 파일**
+- `client/app/map/page.tsx`: 실제 센터 데이터 연동, 필터링 마커 표시, 목록 동기화
+- `server/src/routes/centers.ts`: 게스트용 센터 목록 API (`/guest`)
+- **🆕 `server/src/routes/center-registrations.ts`**: 
+  - SwimmingCenter 모델 import 추가
+  - 승인 시 SwimmingCenter 생성 로직 추가
+  - CenterInfo도 병행 생성 (기존 호환성 유지)
+  - centerAdmin.centerId = swimmingCenter._id 연결
+
+#### ✅ **회원 분포 지도 - 실제 위치 정보 저장 구현 완료 (2025-10-15)** 🔥
+
+**문제**: 회원가입 시 주소를 단순 문자열로만 저장 → 회원 분포 지도에 표시 불가
+
+**해결 완료**:
+
+1. **✅ User 모델 수정** (`server/src/models/User.ts`)
+   ```typescript
+   location: {
+     type: { type: String, enum: ['Point'], default: 'Point' },
+     coordinates: { type: [Number], default: undefined } // [경도, 위도]
+   }
+   ```
+   - GeoJSON 표준 형식 사용
+   - MongoDB 지리공간 인덱스 지원
+
+2. **✅ 회원가입 페이지 수정** (`client/app/auth/signup/page.tsx`)
+   - Daum Postcode API 연동 (센터 등록과 동일)
+   - 주소 검색 → 자동 입력
+   - VWorld Geocoding API로 주소 → 위도/경도 자동 변환
+   - `location.coordinates` 자동 저장
+   - UI 개선: 우편번호 + 기본주소 (읽기전용) + 상세주소 (입력)
+
+3. **✅ 회원가입 API 수정** (`server/src/routes/auth.ts`)
+   - `location` 필드 수신 및 저장
+   - 로그 출력: "✅ 위치 정보 저장"
+
+4. **✅ 회원 분포 지도 API 수정** (`server/src/routes/geo-aggregate.ts`)
+   - `location.coordinates` 우선 사용 (신규 회원)
+   - `address` 대체 사용 (기존 회원 호환, 지오코딩)
+   - 실제 User 데이터 조회 및 지오해시 변환
+   - 프라이버시 보호 (k-익명성, 노이즈, 반올림)
+
+**데이터 흐름**:
+```
+회원가입 입력
+  → Daum 주소 검색 (우편번호, 도로명주소)
+  → VWorld Geocoding (주소 → 위도/경도)
+  → User 저장 (address + location.coordinates)
+  → 회원 분포 API 조회 (location.coordinates 우선)
+  → 지오해시 변환 → 프라이버시 보호
+  → 지도 표시 ✅
+```
+
+**영향 범위**:
+- ✅ **센터 찾기 지도**: SwimmingCenter 사용 → 완료!
+- ✅ **회원 분포 지도**: User.location.coordinates 사용 → 완료!
+- ✅ **강사 분포 지도**: User.location.coordinates 사용 → 완료!
+- ✅ **모든 회원 타입**: student, instructor, centerAdmin 모두 지원
+
+---
+
+## 📅 이전 업데이트 (2025-10-14)
 
 ### 🏢 **센터 관리자 자기주도 회원가입 시스템 구현 (2025-10-14)**
 

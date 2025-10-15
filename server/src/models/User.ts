@@ -101,6 +101,10 @@ interface IUser extends mongoose.Document {
   password: string;
   phone: string;
   address: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number]; // [경도, 위도]
+  };
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   level: string;
   centerId?: mongoose.Types.ObjectId;
@@ -293,6 +297,18 @@ const userSchema = new mongoose.Schema({
   address: {
     type: String,
     default: '',
+  },
+  // 🆕 위치 정보 (GeoJSON 형식 - 지도 표시용)
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // [경도, 위도] 순서
+      default: undefined
+    }
   },
   // 4가지 사용자 유형
   userType: {

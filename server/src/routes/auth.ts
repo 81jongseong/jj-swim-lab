@@ -131,7 +131,7 @@ const router: Router = Router();
  */
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { userId, name, email, password, phone, address, userType } = req.body;
+    const { userId, name, email, password, phone, address, userType, location } = req.body;
 
     // 필수 필드 검증
     if (!userId || !name || !email || !password) {
@@ -167,6 +167,15 @@ router.post('/signup', async (req: Request, res: Response) => {
         ? userType
         : 'student'
     };
+
+    // 🆕 위치 정보 추가 (있는 경우)
+    if (location && location.coordinates && location.coordinates.length === 2) {
+      userData.location = {
+        type: 'Point',
+        coordinates: location.coordinates // [경도, 위도]
+      };
+      console.log('✅ 위치 정보 저장:', userData.location);
+    }
 
     // 사용자 타입별 추가 필드
     if (userData.userType === 'instructor') {

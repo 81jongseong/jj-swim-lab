@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -28,6 +28,11 @@ export default function SignupPage() {
     birthDate: '',
     gender: '',
     address: '',
+    postalCode: '', // 🆕 우편번호
+    address1: '', // 🆕 기본 주소
+    address2: '', // 🆕 상세 주소
+    latitude: null as number | null, // 🆕 위도
+    longitude: null as number | null, // 🆕 경도
     
     // 계정 유형별 정보
     accountType: 'student',
@@ -67,6 +72,97 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<any>({});
 
   const totalSteps = 5;
+
+  // 🆕 Daum Postcode API 스크립트 로드
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    script.async = true;
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  // 🆕 주소 → 위도/경도 변환 (VWorld Geocoding API)
+  const getCoordinatesFromAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const key = process.env.NEXT_PUBLIC_VWORLD_KEY;
+      if (!key) {
+        console.warn('⚠️ VWorld API 키가 없습니다. 기본 좌표를 사용합니다.');
+        return null;
+      }
+
+      const url = new URL('https://api.vworld.kr/req/address');
+      url.searchParams.set('service', 'address');
+      url.searchParams.set('request', 'getCoord');
+      url.searchParams.set('version', '2.0');
+      url.searchParams.set('crs', 'EPSG:4326');
+      url.searchParams.set('type', 'ROAD');
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('key', key);
+      url.searchParams.set('address', address);
+
+      const response = await fetch(url.toString());
+      const data = await response.json();
+
+      const point = data?.response?.result?.point;
+      if (!point) {
+        console.warn('⚠️ 주소에서 좌표를 찾을 수 없습니다:', address);
+        return null;
+      }
+
+      return {
+        lng: Number(point.x),
+        lat: Number(point.y)
+      };
+    } catch (error) {
+      console.error('❌ 좌표 변환 오류:', error);
+      return null;
+    }
+  };
+
+  // 🆕 Daum 주소 검색
+  const openAddressSearch = () => {
+    if (!window.daum || !window.daum.Postcode) {
+      alert('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    new window.daum.Postcode({
+      oncomplete: async function(data: any) {
+        const fullAddress = data.roadAddress || data.jibunAddress;
+        
+        // 선택한 주소 정보를 formData에 설정
+        setFormData(prev => ({
+          ...prev,
+          postalCode: data.zonecode,
+          address1: fullAddress,
+          address: fullAddress // 기존 address 필드도 유지
+        }));
+        
+        // 🆕 주소 → 위도/경도 변환
+        const coords = await getCoordinatesFromAddress(fullAddress);
+        if (coords) {
+          console.log('✅ 좌표 변환 성공:', coords);
+          setFormData(prev => ({
+            ...prev,
+            latitude: coords.lat,
+            longitude: coords.lng
+          }));
+        }
+        
+        // 상세주소 입력 필드로 포커스 이동
+        setTimeout(() => {
+          const detailInput = document.getElementById('address2');
+          if (detailInput) {
+            detailInput.focus();
+          }
+        }, 100);
+      }
+    }).open();
+  };
 
   const validateStep = (step: number) => {
     const newErrors: any = {};
@@ -129,11 +225,70 @@ export default function SignupPage() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    if (validateStep(currentStep)) {
-      // 회원가입 처리
-      console.log('회원가입 데이터:', formData);
-      alert('회원가입이 완료되었습니다!');
+  const handleSubmit = async () => {
+    if (!validateStep(currentStep)) {
+      return;
+    }
+
+    try {
+      // 회원가입 API 호출
+      const requestData: any = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        birthDate: formData.birthDate,
+        gender: formData.gender,
+        address: formData.address,
+        userType: formData.accountType
+      };
+
+      // 🆕 위도/경도 추가 (있는 경우)
+      if (formData.latitude && formData.longitude) {
+        requestData.location = {
+          type: 'Point',
+          coordinates: [formData.longitude, formData.latitude] // [경도, 위도] 순서
+        };
+      }
+
+      // 계정 유형별 추가 정보
+      if (formData.accountType === 'student') {
+        requestData.studentInfo = {
+          height: formData.height ? Number(formData.height) : undefined,
+          weight: formData.weight ? Number(formData.weight) : undefined,
+          medicalConditions: formData.medicalHistory,
+          emergencyContact: formData.emergencyContact,
+          emergencyPhone: formData.emergencyPhone
+        };
+      } else if (formData.accountType === 'instructor') {
+        requestData.instructorInfo = {
+          certifications: formData.certifications.split(',').map(c => c.trim()).filter(Boolean),
+          experience: formData.teachingExperience,
+          specialties: formData.specialties.split(',').map(s => s.trim()).filter(Boolean)
+        };
+      }
+
+      console.log('📤 회원가입 요청 데이터:', requestData);
+
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+        window.location.href = '/auth/login';
+      } else {
+        alert(result.message || '회원가입에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ 회원가입 오류:', error);
+      alert('회원가입 중 오류가 발생했습니다.');
     }
   };
 
@@ -306,20 +461,50 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {/* 🆕 Daum 주소 검색 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <MapPin className="w-4 h-4 inline mr-2" />
                 주소 *
               </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.address ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="주소를 입력하세요"
-              />
+              <div className="space-y-2">
+                {/* 우편번호 + 검색 버튼 */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.postalCode}
+                    readOnly
+                    placeholder="우편번호"
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={openAddressSearch}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    🔍 주소 검색
+                  </button>
+                </div>
+                
+                {/* 기본 주소 */}
+                <input
+                  type="text"
+                  value={formData.address1}
+                  readOnly
+                  placeholder="기본 주소 (주소 검색 버튼을 클릭하세요)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
+                
+                {/* 상세 주소 */}
+                <input
+                  id="address2"
+                  type="text"
+                  value={formData.address2}
+                  onChange={(e) => setFormData({ ...formData, address2: e.target.value, address: `${formData.address1} ${e.target.value}` })}
+                  placeholder="상세 주소 (동/호수 등)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
               {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
             </div>
           </div>

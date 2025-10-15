@@ -9,6 +9,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const CenterRegistration_1 = __importDefault(require("../models/CenterRegistration"));
 const User_1 = require("../models/User");
 const CenterInfo_1 = require("../models/CenterInfo");
+const SwimmingCenter_1 = require("../models/SwimmingCenter");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.post('/', async (req, res) => {
@@ -164,15 +165,10 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
                 message: '승인할 수 없는 상태입니다.'
             });
         }
-        const businessHours = {
-            monday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
-            tuesday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
-            wednesday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
-            thursday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
-            friday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
-            saturday: `${registration.centerInfo.operatingHours?.weekends?.open || '08:00'}-${registration.centerInfo.operatingHours?.weekends?.close || '20:00'}`,
-            sunday: `${registration.centerInfo.operatingHours?.weekends?.open || '08:00'}-${registration.centerInfo.operatingHours?.weekends?.close || '20:00'}`
-        };
+        const weekdayOpen = registration.centerInfo.operatingHours?.weekdays?.open || '06:00';
+        const weekdayClose = registration.centerInfo.operatingHours?.weekdays?.close || '22:00';
+        const weekendOpen = registration.centerInfo.operatingHours?.weekends?.open || '08:00';
+        const weekendClose = registration.centerInfo.operatingHours?.weekends?.close || '20:00';
         const mainPool = registration.centerInfo.pools?.find(p => p.type === 'main') || registration.centerInfo.pools?.[0];
         const facilityNames = [];
         if (registration.centerInfo.facilities && Array.isArray(registration.centerInfo.facilities)) {
@@ -185,54 +181,97 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
                 }
             });
         }
-        const centerInfo = new CenterInfo_1.CenterInfo({
+        const latitude = registration.address.latitude || 37.5665;
+        const longitude = registration.address.longitude || 126.9780;
+        const swimmingCenter = new SwimmingCenter_1.SwimmingCenter({
             name: registration.centerName,
-            shortDescription: registration.centerInfo.description.substring(0, 100),
             address: `${registration.address.address1} ${registration.address.address2 || ''}`.trim(),
             location: {
                 type: 'Point',
-                coordinates: [127.0276, 37.4979]
+                coordinates: [longitude, latitude]
             },
             phone: registration.representativePhone,
             email: registration.representativeEmail,
             description: registration.centerInfo.description,
+            shortDescription: registration.centerInfo.description.substring(0, 100),
             facilities: {
                 availablePoolLengths: mainPool ? [mainPool.length] : [25],
-                mainPool: {
-                    lanes: mainPool?.laneCount || 6,
-                    poolLength: mainPool?.length || 25,
-                    poolDepth: mainPool?.depth || 1.2,
+                mainPool: mainPool ? {
+                    lanes: mainPool.laneCount || 6,
+                    poolLength: mainPool.length || 25,
+                    poolDepth: mainPool.depth || 1.5,
+                    temperature: 28
+                } : {
+                    lanes: 6,
+                    poolLength: 25,
+                    poolDepth: 1.5,
                     temperature: 28
                 },
                 amenities: {
-                    hasSauna: facilityNames.includes('남녀 사우나') || facilityNames.includes('사우나'),
+                    hasSauna: facilityNames.includes('사우나'),
                     hasShower: facilityNames.includes('샤워실') || true,
-                    hasLocker: facilityNames.includes('남녀 락커룸') || facilityNames.includes('라커룸') || true,
-                    hasJacuzzi: facilityNames.includes('월풀(자쿠지)') || facilityNames.includes('자쿠지'),
-                    hasSteamRoom: facilityNames.includes('한증막'),
-                    hasFitnessRoom: facilityNames.includes('피트니스'),
-                    hasCafeteria: facilityNames.includes('카페') || facilityNames.includes('휴게실'),
-                    hasParking: registration.centerInfo.parkingAvailable,
-                    parkingSpaces: registration.centerInfo.parkingSpaces || 0,
-                    additionalFacilities: facilityNames.filter(f => !['사우나', '샤워실', '라커룸', '자쿠지', '카페', '휴게실'].some(standard => f.includes(standard))).join(', ')
+                    hasLocker: facilityNames.includes('락커룸') || true,
+                    hasJacuzzi: facilityNames.includes('체온유지탕(월풀)'),
+                    hasSteamRoom: facilityNames.includes('찜질방'),
+                    hasFitnessRoom: facilityNames.includes('PT룸'),
+                    hasCafeteria: facilityNames.includes('카페'),
+                    hasParking: registration.centerInfo.parking?.available || false,
+                    parkingSpaces: registration.centerInfo.parking?.spaces || 0,
+                    additionalFacilities: facilityNames.join(', ')
                 }
             },
-            operatingHours: {
-                monday: { open: businessHours.monday.split('-')[0], close: businessHours.monday.split('-')[1], isOpen: true },
-                tuesday: { open: businessHours.tuesday.split('-')[0], close: businessHours.tuesday.split('-')[1], isOpen: true },
-                wednesday: { open: businessHours.wednesday.split('-')[0], close: businessHours.wednesday.split('-')[1], isOpen: true },
-                thursday: { open: businessHours.thursday.split('-')[0], close: businessHours.thursday.split('-')[1], isOpen: true },
-                friday: { open: businessHours.friday.split('-')[0], close: businessHours.friday.split('-')[1], isOpen: true },
-                saturday: { open: businessHours.saturday.split('-')[0], close: businessHours.saturday.split('-')[1], isOpen: true },
-                sunday: { open: businessHours.sunday.split('-')[0], close: businessHours.sunday.split('-')[1], isOpen: true }
+            businessHours: {
+                monday: `${weekdayOpen}-${weekdayClose}`,
+                tuesday: `${weekdayOpen}-${weekdayClose}`,
+                wednesday: `${weekdayOpen}-${weekdayClose}`,
+                thursday: `${weekdayOpen}-${weekdayClose}`,
+                friday: `${weekdayOpen}-${weekdayClose}`,
+                saturday: `${weekendOpen}-${weekendClose}`,
+                sunday: `${weekendOpen}-${weekendClose}`
             },
-            maxCapacity: registration.centerInfo.capacity,
-            province: registration.address.province,
-            city: registration.address.city,
+            contactInfo: {
+                mainNumber: registration.representativePhone,
+                email: registration.representativeEmail,
+                website: '',
+                kakaoChannel: ''
+            },
+            province: registration.address.province || '',
+            city: registration.address.city || '',
+            gu: registration.address.gu || '',
+            dong: registration.address.dong || '',
+            isActive: true,
+            instructors: [],
+            courses: []
+        });
+        await swimmingCenter.save();
+        console.log('✅ SwimmingCenter 생성 완료:', swimmingCenter._id);
+        const centerInfo = new CenterInfo_1.CenterInfo({
             centerId: `center-${Date.now()}`,
-            isActive: true
+            name: registration.centerName,
+            shortDescription: registration.centerInfo.description.substring(0, 100),
+            address: `${registration.address.address1} ${registration.address.address2 || ''}`.trim(),
+            phone: registration.representativePhone,
+            email: registration.representativeEmail,
+            description: registration.centerInfo.description,
+            businessHours: {
+                monday: `${weekdayOpen}-${weekdayClose}`,
+                tuesday: `${weekdayOpen}-${weekdayClose}`,
+                wednesday: `${weekdayOpen}-${weekdayClose}`,
+                thursday: `${weekdayOpen}-${weekdayClose}`,
+                friday: `${weekdayOpen}-${weekdayClose}`,
+                saturday: `${weekendOpen}-${weekendClose}`,
+                sunday: `${weekendOpen}-${weekendClose}`
+            },
+            facilities: facilityNames.length > 0 ? facilityNames : ['샤워실', '락커룸'],
+            features: mainPool ? [`메인 수영장: ${mainPool.length}m × ${mainPool.width}m × ${mainPool.depth}m (${mainPool.laneCount || 6}레인)`] : [],
+            images: {
+                gallery: []
+            },
+            instructors: [],
+            courses: []
         });
         await centerInfo.save();
+        console.log('✅ CenterInfo 생성 완료:', centerInfo._id);
         const centerAdmin = new User_1.User({
             userId: `admin-${registration.businessNumber}`,
             email: registration.representativeEmail,
@@ -240,11 +279,12 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
             password: registration.password,
             phone: registration.representativePhone,
             userType: 'centerAdmin',
-            centerId: centerInfo._id,
+            centerId: swimmingCenter._id,
             centerAdminInfo: {
                 centerName: registration.centerName,
                 businessNumber: registration.businessNumber,
-                permissions: ['center_management', 'user_management', 'course_management']
+                permissions: ['center_management', 'user_management', 'course_management'],
+                managedCenters: [swimmingCenter._id]
             },
             isActive: true
         });
@@ -266,11 +306,18 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
             message: '센터 등록이 성공적으로 승인되었습니다.',
             data: {
                 registration,
+                swimmingCenter: {
+                    id: swimmingCenter._id,
+                    name: swimmingCenter.name,
+                    address: swimmingCenter.address,
+                    location: swimmingCenter.location
+                },
                 centerInfo,
                 centerAdmin: {
                     id: centerAdmin._id,
                     email: centerAdmin.email,
-                    name: centerAdmin.name
+                    name: centerAdmin.name,
+                    centerId: swimmingCenter._id
                 }
             }
         });

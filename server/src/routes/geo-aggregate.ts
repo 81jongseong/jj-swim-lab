@@ -151,12 +151,15 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       filter.userType = memberType;
     }
 
-    // 주소가 있는 회원만 조회
-    filter.address = { $exists: true, $ne: '' };
+    // 🆕 위치 정보가 있는 회원만 조회 (location.coordinates 우선, address 대체)
+    filter.$or = [
+      { 'location.coordinates': { $exists: true, $ne: [] } },
+      { address: { $exists: true, $ne: '' } }
+    ];
 
     // 회원 데이터 조회
     const users = await User.find(filter)
-      .select('address centerId createdAt userType')
+      .select('address location centerId createdAt userType')
       .lean();
 
     console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);
@@ -173,10 +176,22 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     const h3Map: Map<string, any> = new Map();
 
     for (const userItem of users) {
-      if (!userItem.address) continue;
+      let coords: { lat: number; lng: number } | null = null;
 
-      // 지오코딩 (서버 측에서만 수행)
-      const coords = await geocodeAddress(userItem.address);
+      // 🆕 location.coordinates 우선 사용 (GeoJSON 형식)
+      if (userItem.location && userItem.location.coordinates && userItem.location.coordinates.length === 2) {
+        coords = {
+          lng: userItem.location.coordinates[0],
+          lat: userItem.location.coordinates[1]
+        };
+        console.log('✅ GeoJSON 좌표 사용:', coords);
+      } 
+      // 대체: address에서 지오코딩 (기존 회원 호환)
+      else if (userItem.address) {
+        coords = await geocodeAddress(userItem.address);
+        console.log('⚠️ 주소 → 지오코딩:', userItem.address, coords);
+      }
+
       if (!coords) continue;
 
       // H3 변환
