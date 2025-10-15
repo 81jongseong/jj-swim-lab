@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const CenterRegistration_1 = __importDefault(require("../models/CenterRegistration"));
 const User_1 = require("../models/User");
 const CenterInfo_1 = require("../models/CenterInfo");
@@ -12,8 +13,8 @@ const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.post('/', async (req, res) => {
     try {
-        const { centerName, businessNumber, representativeName, representativeEmail, representativePhone } = req.body;
-        if (!centerName || !businessNumber || !representativeName || !representativeEmail || !representativePhone) {
+        const { centerName, businessNumber, representativeName, representativeEmail, representativePhone, password } = req.body;
+        if (!centerName || !businessNumber || !representativeName || !representativeEmail || !representativePhone || !password) {
             return res.status(400).json({
                 success: false,
                 message: '필수 필드가 누락되었습니다.'
@@ -29,8 +30,19 @@ router.post('/', async (req, res) => {
                 message: '이미 등록된 사업자등록번호입니다.'
             });
         }
+        const existingUser = await User_1.User.findOne({
+            email: registrationData.representativeEmail
+        });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: '이미 사용 중인 이메일입니다.'
+            });
+        }
+        const hashedPassword = await bcrypt_1.default.hash(password, 10);
         const registration = new CenterRegistration_1.default({
             ...registrationData,
+            password: hashedPassword,
             status: 'pending',
             submittedAt: new Date()
         });
@@ -152,30 +164,81 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
                 message: '승인할 수 없는 상태입니다.'
             });
         }
+        const businessHours = {
+            monday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
+            tuesday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
+            wednesday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
+            thursday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
+            friday: `${registration.centerInfo.operatingHours?.weekdays?.open || '06:00'}-${registration.centerInfo.operatingHours?.weekdays?.close || '22:00'}`,
+            saturday: `${registration.centerInfo.operatingHours?.weekends?.open || '08:00'}-${registration.centerInfo.operatingHours?.weekends?.close || '20:00'}`,
+            sunday: `${registration.centerInfo.operatingHours?.weekends?.open || '08:00'}-${registration.centerInfo.operatingHours?.weekends?.close || '20:00'}`
+        };
+        const mainPool = registration.centerInfo.pools?.find(p => p.type === 'main') || registration.centerInfo.pools?.[0];
+        const facilityNames = [];
+        if (registration.centerInfo.facilities && Array.isArray(registration.centerInfo.facilities)) {
+            registration.centerInfo.facilities.forEach((facility) => {
+                if (typeof facility === 'object' && facility.enabled) {
+                    facilityNames.push(facility.name);
+                }
+                else if (typeof facility === 'string') {
+                    facilityNames.push(facility);
+                }
+            });
+        }
         const centerInfo = new CenterInfo_1.CenterInfo({
             name: registration.centerName,
             shortDescription: registration.centerInfo.description.substring(0, 100),
+            address: `${registration.address.address1} ${registration.address.address2 || ''}`.trim(),
+            location: {
+                type: 'Point',
+                coordinates: [127.0276, 37.4979]
+            },
+            phone: registration.representativePhone,
+            email: registration.representativeEmail,
             description: registration.centerInfo.description,
-            address: registration.address,
-            contact: {
-                email: registration.representativeEmail,
-                phone: registration.representativePhone
+            facilities: {
+                availablePoolLengths: mainPool ? [mainPool.length] : [25],
+                mainPool: {
+                    lanes: mainPool?.laneCount || 6,
+                    poolLength: mainPool?.length || 25,
+                    poolDepth: mainPool?.depth || 1.2,
+                    temperature: 28
+                },
+                amenities: {
+                    hasSauna: facilityNames.includes('남녀 사우나') || facilityNames.includes('사우나'),
+                    hasShower: facilityNames.includes('샤워실') || true,
+                    hasLocker: facilityNames.includes('남녀 락커룸') || facilityNames.includes('라커룸') || true,
+                    hasJacuzzi: facilityNames.includes('월풀(자쿠지)') || facilityNames.includes('자쿠지'),
+                    hasSteamRoom: facilityNames.includes('한증막'),
+                    hasFitnessRoom: facilityNames.includes('피트니스'),
+                    hasCafeteria: facilityNames.includes('카페') || facilityNames.includes('휴게실'),
+                    hasParking: registration.centerInfo.parkingAvailable,
+                    parkingSpaces: registration.centerInfo.parkingSpaces || 0,
+                    additionalFacilities: facilityNames.filter(f => !['사우나', '샤워실', '라커룸', '자쿠지', '카페', '휴게실'].some(standard => f.includes(standard))).join(', ')
+                }
             },
-            facilities: registration.centerInfo.facilities,
-            poolInfo: {
-                size: registration.centerInfo.poolSize,
-                capacity: registration.centerInfo.capacity
+            operatingHours: {
+                monday: { open: businessHours.monday.split('-')[0], close: businessHours.monday.split('-')[1], isOpen: true },
+                tuesday: { open: businessHours.tuesday.split('-')[0], close: businessHours.tuesday.split('-')[1], isOpen: true },
+                wednesday: { open: businessHours.wednesday.split('-')[0], close: businessHours.wednesday.split('-')[1], isOpen: true },
+                thursday: { open: businessHours.thursday.split('-')[0], close: businessHours.thursday.split('-')[1], isOpen: true },
+                friday: { open: businessHours.friday.split('-')[0], close: businessHours.friday.split('-')[1], isOpen: true },
+                saturday: { open: businessHours.saturday.split('-')[0], close: businessHours.saturday.split('-')[1], isOpen: true },
+                sunday: { open: businessHours.sunday.split('-')[0], close: businessHours.sunday.split('-')[1], isOpen: true }
             },
-            operatingHours: registration.centerInfo.operatingHours,
-            parkingAvailable: registration.centerInfo.parkingAvailable,
-            status: 'active',
-            centerId: `center-${Date.now()}`
+            maxCapacity: registration.centerInfo.capacity,
+            province: registration.address.province,
+            city: registration.address.city,
+            centerId: `center-${Date.now()}`,
+            isActive: true
         });
         await centerInfo.save();
         const centerAdmin = new User_1.User({
             userId: `admin-${registration.businessNumber}`,
             email: registration.representativeEmail,
             name: registration.representativeName,
+            password: registration.password,
+            phone: registration.representativePhone,
             userType: 'centerAdmin',
             centerId: centerInfo._id,
             centerAdminInfo: {

@@ -10,6 +10,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, BookOpen, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Settings } from 'lucide-react';
+import { StatCard } from '../../../components/StatCard';
+import { Button } from '../../../components/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
 
 interface CenterStats {
   totalMembers: number;
@@ -121,72 +124,56 @@ const CenterAdminDashboard: React.FC = () => {
 
       {/* 주요 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">총 회원</h3>
-            <Users className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalMembers}명</div>
-          <p className="text-xs text-gray-500 mt-1">등록된 회원</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">활성 강사</h3>
-            <Settings className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.activeInstructors}명</div>
-          <p className="text-xs text-gray-500 mt-1">현재 활동 중</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">진행 중인 강의</h3>
-            <BookOpen className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.activeCourses}개</div>
-          <p className="text-xs text-gray-500 mt-1">현재 진행 중</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">월간 수익</h3>
-            <DollarSign className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900">{stats.monthlyRevenue.toLocaleString()}원</div>
-          <p className="text-xs text-gray-500 mt-1">이번 달 수익</p>
-        </div>
+        <StatCard
+          title="총 회원"
+          value={`${stats.totalMembers}명`}
+          icon={<Users className="h-5 w-5" />}
+          color="blue"
+        />
+        <StatCard
+          title="활성 강사"
+          value={`${stats.activeInstructors}명`}
+          icon={<Settings className="h-5 w-5" />}
+          color="green"
+        />
+        <StatCard
+          title="진행 중인 강의"
+          value={`${stats.activeCourses}개`}
+          icon={<BookOpen className="h-5 w-5" />}
+          color="purple"
+        />
+        <StatCard
+          title="월간 수익"
+          value={`${stats.monthlyRevenue.toLocaleString()}원`}
+          icon={<DollarSign className="h-5 w-5" />}
+          color="orange"
+        />
       </div>
 
       {/* 추가 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">승인 대기</h3>
-            <AlertCircle className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">{stats.pendingApprovals}건</div>
-          <p className="text-xs text-gray-500 mt-1">처리 대기 중</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">오늘 예약</h3>
-            <Calendar className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900">{stats.todayBookings}건</div>
-          <p className="text-xs text-gray-500 mt-1">오늘 예정된 수업</p>
-        </div>
+        <StatCard
+          title="승인 대기"
+          value={`${stats.pendingApprovals}건`}
+          icon={<AlertCircle className="h-5 w-5" />}
+          color="red"
+        />
+        <StatCard
+          title="오늘 예약"
+          value={`${stats.todayBookings}건`}
+          icon={<Calendar className="h-5 w-5" />}
+          color="blue"
+        />
       </div>
 
       {/* 센터 현황 및 최근 활동 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">센터 현황</h3>
-            <p className="text-sm text-gray-600">센터의 전반적인 운영 현황을 확인하세요.</p>
-          </div>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>센터 현황</CardTitle>
+            <CardDescription>센터의 전반적인 운영 현황을 확인하세요.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-5 w-5 text-green-600" />
@@ -223,15 +210,15 @@ const CenterAdminDashboard: React.FC = () => {
                 증가
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
-            <p className="text-sm text-gray-600">센터의 최근 활동 내역을 확인하세요.</p>
-          </div>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>최근 활동</CardTitle>
+            <CardDescription>센터의 최근 활동 내역을 확인하세요.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {recentActivities.map((activity) => (
               <div key={activity.id} className="flex items-center space-x-3">
                 <div className={`p-2 rounded-full ${getActivityColor(activity.status)}`}>
@@ -243,47 +230,53 @@ const CenterAdminDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 빠른 액션 */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">빠른 액션</h3>
-          <p className="text-sm text-gray-600">자주 사용하는 기능들에 빠르게 접근하세요.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+      <Card>
+        <CardHeader>
+          <CardTitle>빠른 액션</CardTitle>
+          <CardDescription>자주 사용하는 기능들에 빠르게 접근하세요.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Button 
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
             onClick={() => window.location.href = '/center-admin/users'}
           >
-            <Users className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">회원 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            <Users className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium">회원 관리</span>
+          </Button>
+          <Button 
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
             onClick={() => window.location.href = '/center-admin/instructors'}
           >
-            <Settings className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">강사 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            <Settings className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium">강사 관리</span>
+          </Button>
+          <Button 
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
             onClick={() => window.location.href = '/center-admin/courses'}
           >
-            <BookOpen className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">강의 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            <BookOpen className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium">강의 관리</span>
+          </Button>
+          <Button 
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
             onClick={() => window.location.href = '/center-admin/reports'}
           >
-            <TrendingUp className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">리포트</span>
-          </button>
-        </div>
-      </div>
+            <TrendingUp className="h-6 w-6 mb-2" />
+            <span className="text-sm font-medium">리포트</span>
+          </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

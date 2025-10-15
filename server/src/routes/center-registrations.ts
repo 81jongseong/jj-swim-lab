@@ -84,6 +84,7 @@
 
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 import CenterRegistration from '../models/CenterRegistration';
 import { User } from '../models/User';
 import { CenterInfo } from '../models/CenterInfo';
@@ -105,9 +106,9 @@ interface AuthRequest extends Request {
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     // 기본 입력 검증
-    const { centerName, businessNumber, representativeName, representativeEmail, representativePhone } = req.body;
+    const { centerName, businessNumber, representativeName, representativeEmail, representativePhone, password } = req.body;
     
-    if (!centerName || !businessNumber || !representativeName || !representativeEmail || !representativePhone) {
+    if (!centerName || !businessNumber || !representativeName || !representativeEmail || !representativePhone || !password) {
       return res.status(400).json({
         success: false,
         message: '필수 필드가 누락되었습니다.'
@@ -128,9 +129,25 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // 중복 이메일 확인
+    const existingUser = await User.findOne({
+      email: registrationData.representativeEmail
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 사용 중인 이메일입니다.'
+      });
+    }
+
+    // 비밀번호 해시화
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // 센터 등록 신청 생성
     const registration = new CenterRegistration({
       ...registrationData,
+      password: hashedPassword,
       status: 'pending',
       submittedAt: new Date()
     });
@@ -271,33 +288,62 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
     }
 
     // 센터 정보 생성
+    // 운영 시간을 요일별로 변환
+    const weekdayOpen = registration.centerInfo.operatingHours?.weekdays?.open || '06:00';
+    const weekdayClose = registration.centerInfo.operatingHours?.weekdays?.close || '22:00';
+    const weekendOpen = registration.centerInfo.operatingHours?.weekends?.open || '08:00';
+    const weekendClose = registration.centerInfo.operatingHours?.weekends?.close || '20:00';
+
+    // 수영장 정보 (pools 배열에서 첫번째 메인 풀 사용)
+    const mainPool = registration.centerInfo.pools?.find(p => p.type === 'main') || registration.centerInfo.pools?.[0];
+    
+    // 시설 목록 추출 (enabled된 시설명만)
+    const facilityNames: string[] = [];
+    if (registration.centerInfo.facilities && Array.isArray(registration.centerInfo.facilities)) {
+      registration.centerInfo.facilities.forEach((facility: any) => {
+        if (typeof facility === 'object' && facility.enabled) {
+          facilityNames.push(facility.name);
+        } else if (typeof facility === 'string') {
+          facilityNames.push(facility);
+        }
+      });
+    }
+    
     const centerInfo = new CenterInfo({
+      centerId: `center-${Date.now()}`,
       name: registration.centerName,
       shortDescription: registration.centerInfo.description.substring(0, 100),
+      address: `${registration.address.address1} ${registration.address.address2 || ''}`.trim(),
+      phone: registration.representativePhone,
+      email: registration.representativeEmail,
       description: registration.centerInfo.description,
-      address: registration.address,
-      contact: {
-        email: registration.representativeEmail,
-        phone: registration.representativePhone
+      businessHours: {
+        monday: `${weekdayOpen}-${weekdayClose}`,
+        tuesday: `${weekdayOpen}-${weekdayClose}`,
+        wednesday: `${weekdayOpen}-${weekdayClose}`,
+        thursday: `${weekdayOpen}-${weekdayClose}`,
+        friday: `${weekdayOpen}-${weekdayClose}`,
+        saturday: `${weekendOpen}-${weekendClose}`,
+        sunday: `${weekendOpen}-${weekendClose}`
       },
-      facilities: registration.centerInfo.facilities,
-      poolInfo: {
-        size: registration.centerInfo.poolSize,
-        capacity: registration.centerInfo.capacity
+      facilities: facilityNames.length > 0 ? facilityNames : ['샤워실', '락커룸'],
+      features: mainPool ? [`메인 수영장: ${mainPool.length}m × ${mainPool.width}m × ${mainPool.depth}m (${mainPool.laneCount || 6}레인)`] : [],
+      images: {
+        gallery: []
       },
-      operatingHours: registration.centerInfo.operatingHours,
-      parkingAvailable: registration.centerInfo.parkingAvailable,
-      status: 'active',
-      centerId: `center-${Date.now()}` // 고유한 센터 ID 생성
+      instructors: [],
+      courses: []
     });
 
     await centerInfo.save();
 
-    // 센터 관리자 계정 생성
+    // 센터 관리자 계정 생성 (신청 시 입력한 비밀번호 사용)
     const centerAdmin = new User({
       userId: `admin-${registration.businessNumber}`,
       email: registration.representativeEmail,
       name: registration.representativeName,
+      password: registration.password, // 이미 해시화된 비밀번호
+      phone: registration.representativePhone,
       userType: 'centerAdmin',
       centerId: centerInfo._id,
       centerAdminInfo: {

@@ -117,6 +117,24 @@ function LandingPage() {
         description={landingContent.description}
       />
 
+      {/* 센터 등록 CTA */}
+      <section className="py-12 bg-gradient-to-r from-blue-600 to-cyan-600">
+        <div className="container mx-auto px-6">
+          <div className="text-center text-white">
+            <h2 className="text-3xl font-bold mb-4">🏢 수영센터 운영자이신가요?</h2>
+            <p className="text-lg mb-6 opacity-90">
+              JJ Swim Lab과 함께 스마트한 센터 관리를 시작하세요
+            </p>
+            <a 
+              href="/auth/signup-center-admin"
+              className="inline-block px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              센터 등록 신청하기 →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* 기능 소개 섹션 */}
       <section className="py-20 bg-background">
         <div className="container mx-auto px-6">

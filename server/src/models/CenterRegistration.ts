@@ -93,6 +93,7 @@ export interface ICenterRegistration extends Document {
   representativeName: string; // 대표자명
   representativeEmail: string; // 대표자 이메일
   representativePhone: string; // 대표자 전화번호
+  password: string; // 센터 관리자 비밀번호 (해시화됨)
   
   // 센터 정보
   address: {
@@ -106,18 +107,31 @@ export interface ICenterRegistration extends Document {
   // 센터 상세 정보
   centerInfo: {
     description: string; // 센터 소개
-    facilities: string[]; // 시설 목록
-    poolSize: {
-      length: number; // 길이 (미터)
-      width: number; // 너비 (미터)
-      depth: number; // 깊이 (미터)
-    };
+    pools: {
+      id: string;
+      type: 'main' | 'auxiliary';
+      length: number;
+      width: number;
+      depth: number;
+      laneCount?: number;
+      description?: string;
+    }[]; // 수영장 목록 (다중)
+    facilities: {
+      name: string;
+      enabled: boolean;
+      details?: {
+        count?: number;
+        type?: string;
+        description?: string;
+      };
+    }[]; // 시설 목록 (상세)
     operatingHours: {
       weekdays: { open: string; close: string; };
       weekends: { open: string; close: string; };
     };
     capacity: number; // 수용 인원
     parkingAvailable: boolean; // 주차 가능 여부
+    parkingSpaces?: number; // 주차 가능 대수
   };
   
   // 신청자 정보
@@ -197,6 +211,10 @@ const CenterRegistrationSchema = new Schema<ICenterRegistration>({
     trim: true,
     match: /^01[0-9]-\d{3,4}-\d{4}$/
   },
+  password: {
+    type: String,
+    required: true
+  },
   
   // 센터 정보
   address: {
@@ -239,31 +257,70 @@ const CenterRegistrationSchema = new Schema<ICenterRegistration>({
       trim: true,
       maxlength: 1000
     },
-    facilities: [{
-      type: String,
-      trim: true,
-      maxlength: 100
-    }],
-    poolSize: {
+    pools: [{
+      id: { type: String, required: true },
+      type: { 
+        type: String, 
+        enum: ['main', 'auxiliary'],
+        required: true 
+      },
       length: { 
         type: Number, 
         required: true,
-        min: 10,
+        min: 5,
         max: 100
       },
       width: { 
         type: Number, 
         required: true,
-        min: 5,
+        min: 3,
         max: 50
       },
       depth: { 
         type: Number, 
         required: true,
-        min: 0.5,
+        min: 0.3,
         max: 5
+      },
+      laneCount: {
+        type: Number,
+        min: 1,
+        max: 20
+      },
+      description: {
+        type: String,
+        trim: true,
+        maxlength: 200
       }
-    },
+    }],
+    facilities: [{
+      name: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 100
+      },
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      details: {
+        count: {
+          type: Number,
+          min: 0
+        },
+        type: {
+          type: String,
+          trim: true,
+          maxlength: 50
+        },
+        description: {
+          type: String,
+          trim: true,
+          maxlength: 500
+        }
+      }
+    }],
     operatingHours: {
       weekdays: {
         open: { 
@@ -299,6 +356,11 @@ const CenterRegistrationSchema = new Schema<ICenterRegistration>({
     parkingAvailable: { 
       type: Boolean, 
       default: false
+    },
+    parkingSpaces: {
+      type: Number,
+      min: 0,
+      default: 0
     }
   },
   

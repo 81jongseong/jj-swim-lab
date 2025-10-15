@@ -8,8 +8,24 @@ const Payment_1 = require("../models/Payment");
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
+const pricingService_1 = require("../services/pricingService");
 const mongoose_1 = __importDefault(require("mongoose"));
 const router = (0, express_1.Router)();
+router.get('/pricing/calculate', auth_1.auth, async (req, res) => {
+    try {
+        const { billingPeriod = 'monthly' } = req.query;
+        const pricingResult = await (0, pricingService_1.calculatePricing)(req.user.userId, billingPeriod);
+        return res.json({
+            success: true,
+            message: '요금 계산 완료',
+            data: pricingResult
+        });
+    }
+    catch (error) {
+        console.error('요금 계산 오류:', error);
+        return res.status(500).json({ error: '요금 계산에 실패했습니다.' });
+    }
+});
 router.get('/', auth_1.auth, async (req, res) => {
     try {
         const { status, purpose, startDate, endDate } = req.query;
@@ -62,12 +78,9 @@ router.get('/:id', auth_1.auth, async (req, res) => {
 });
 router.post('/', auth_1.auth, async (req, res) => {
     try {
-        const { amount, paymentMethod, purpose, relatedCourse, relatedBooking, notes } = req.body;
-        if (!amount || !paymentMethod || !purpose) {
+        const { paymentMethod, purpose, relatedCourse, relatedBooking, notes, billingPeriod = 'monthly' } = req.body;
+        if (!paymentMethod || !purpose) {
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
-        }
-        if (amount <= 0) {
-            return res.status(400).json({ error: '유효하지 않은 금액입니다.' });
         }
         if (purpose === 'course' && !relatedCourse) {
             return res.status(400).json({ error: '강습 과정 정보가 필요합니다.' });
@@ -75,10 +88,20 @@ router.post('/', auth_1.auth, async (req, res) => {
         if (purpose === 'booking' && !relatedBooking) {
             return res.status(400).json({ error: '예약 정보가 필요합니다.' });
         }
+        const pricingResult = await (0, pricingService_1.calculatePricing)(req.user.userId, billingPeriod);
         const transactionId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const paymentData = {
             user: req.user.userId,
-            amount,
+            amount: pricingResult.finalAmount,
+            pricingInfo: {
+                userType: pricingResult.userType,
+                pricingTier: pricingResult.pricingTier,
+                baseAmount: pricingResult.baseAmount,
+                discountAmount: pricingResult.discountAmount,
+                discountReason: pricingResult.discountReason,
+                centerId: pricingResult.centerId || null,
+                isCenterSponsored: pricingResult.isCenterSponsored
+            },
             paymentMethod,
             purpose,
             relatedCourse,
@@ -712,6 +735,62 @@ router.get('/instructor/:instructorId/courses', auth_1.auth, async (req, res) =>
     catch (error) {
         console.error('강사별 강습 과정 결제 통계 조회 오류:', error);
         res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
+    }
+});
+router.get('/pricing/policy', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+    try {
+        const policy = (0, pricingService_1.getCurrentPricingPolicy)();
+        return res.json({
+            success: true,
+            message: '요금 정책 조회 완료',
+            data: policy
+        });
+    }
+    catch (error) {
+        console.error('요금 정책 조회 오류:', error);
+        return res.status(500).json({ error: '요금 정책 조회에 실패했습니다.' });
+    }
+});
+router.put('/pricing/policy', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+    try {
+        const newPolicy = req.body;
+        (0, pricingService_1.updatePricingPolicy)(newPolicy);
+        return res.json({
+            success: true,
+            message: '요금 정책이 업데이트되었습니다.',
+            data: (0, pricingService_1.getCurrentPricingPolicy)()
+        });
+    }
+    catch (error) {
+        console.error('요금 정책 업데이트 오류:', error);
+        return res.status(500).json({ error: '요금 정책 업데이트에 실패했습니다.' });
+    }
+});
+router.get('/pricing/discount/:userId', auth_1.auth, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (req.user.userId !== userId &&
+            req.user.userType !== 'centerAdmin' &&
+            req.user.userType !== 'superAdmin') {
+            return res.status(403).json({ error: '접근 권한이 없습니다.' });
+        }
+        const pricingResult = await (0, pricingService_1.calculatePricing)(userId);
+        return res.json({
+            success: true,
+            message: '할인율 조회 완료',
+            data: {
+                userType: pricingResult.userType,
+                pricingTier: pricingResult.pricingTier,
+                discountAmount: pricingResult.discountAmount,
+                discountReason: pricingResult.discountReason,
+                finalAmount: pricingResult.finalAmount,
+                isCenterSponsored: pricingResult.isCenterSponsored
+            }
+        });
+    }
+    catch (error) {
+        console.error('할인율 조회 오류:', error);
+        return res.status(500).json({ error: '할인율 조회에 실패했습니다.' });
     }
 });
 exports.default = router;

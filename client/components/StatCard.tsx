@@ -20,7 +20,7 @@ import React from 'react';
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: string;
+  icon: string | React.ReactNode;
   color: 'blue' | 'green' | 'red' | 'purple' | 'orange' | 'yellow';
   change?: {
     value: number;
@@ -83,7 +83,7 @@ const changeColors = {
   neutral: 'text-gray-600'
 };
 
-export default function StatCard({
+export function StatCard({
   title,
   value,
   icon,
@@ -116,7 +116,11 @@ export default function StatCard({
     >
       <div className="flex items-center">
         <div className={`p-2 ${colors.iconBg} rounded-lg`}>
-          <span className={`text-2xl ${colors.icon}`}>{icon}</span>
+          {typeof icon === 'string' ? (
+            <span className={`text-2xl ${colors.icon}`}>{icon}</span>
+          ) : (
+            <div className={colors.icon}>{icon}</div>
+          )}
         </div>
         <div className="ml-4 flex-1">
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -139,3 +143,5 @@ export default function StatCard({
     </div>
   );
 }
+
+export default StatCard;

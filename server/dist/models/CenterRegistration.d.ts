@@ -29,6 +29,7 @@ export interface ICenterRegistration extends Document {
     representativeName: string;
     representativeEmail: string;
     representativePhone: string;
+    password: string;
     address: {
         postalCode: string;
         address1: string;
@@ -38,12 +39,24 @@ export interface ICenterRegistration extends Document {
     };
     centerInfo: {
         description: string;
-        facilities: string[];
-        poolSize: {
+        pools: {
+            id: string;
+            type: 'main' | 'auxiliary';
             length: number;
             width: number;
             depth: number;
-        };
+            laneCount?: number;
+            description?: string;
+        }[];
+        facilities: {
+            name: string;
+            enabled: boolean;
+            details?: {
+                count?: number;
+                type?: string;
+                description?: string;
+            };
+        }[];
         operatingHours: {
             weekdays: {
                 open: string;
@@ -56,6 +69,7 @@ export interface ICenterRegistration extends Document {
         };
         capacity: number;
         parkingAvailable: boolean;
+        parkingSpaces?: number;
     };
     applicant: {
         name: string;

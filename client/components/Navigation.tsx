@@ -295,6 +295,7 @@ const userMenuStructure = {
     auth: [
       { href: '/auth/login', label: '🔑 로그인' },
       { href: '/auth/signup', label: '📝 회원가입' },
+      { href: '/auth/signup-center-admin', label: '🏢 센터 등록' },
     ]
   }
 };

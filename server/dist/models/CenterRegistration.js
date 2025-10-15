@@ -57,6 +57,10 @@ const CenterRegistrationSchema = new mongoose_1.Schema({
         trim: true,
         match: /^01[0-9]-\d{3,4}-\d{4}$/
     },
+    password: {
+        type: String,
+        required: true
+    },
     address: {
         postalCode: {
             type: String,
@@ -95,31 +99,70 @@ const CenterRegistrationSchema = new mongoose_1.Schema({
             trim: true,
             maxlength: 1000
         },
-        facilities: [{
-                type: String,
-                trim: true,
-                maxlength: 100
+        pools: [{
+                id: { type: String, required: true },
+                type: {
+                    type: String,
+                    enum: ['main', 'auxiliary'],
+                    required: true
+                },
+                length: {
+                    type: Number,
+                    required: true,
+                    min: 5,
+                    max: 100
+                },
+                width: {
+                    type: Number,
+                    required: true,
+                    min: 3,
+                    max: 50
+                },
+                depth: {
+                    type: Number,
+                    required: true,
+                    min: 0.3,
+                    max: 5
+                },
+                laneCount: {
+                    type: Number,
+                    min: 1,
+                    max: 20
+                },
+                description: {
+                    type: String,
+                    trim: true,
+                    maxlength: 200
+                }
             }],
-        poolSize: {
-            length: {
-                type: Number,
-                required: true,
-                min: 10,
-                max: 100
-            },
-            width: {
-                type: Number,
-                required: true,
-                min: 5,
-                max: 50
-            },
-            depth: {
-                type: Number,
-                required: true,
-                min: 0.5,
-                max: 5
-            }
-        },
+        facilities: [{
+                name: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                    maxlength: 100
+                },
+                enabled: {
+                    type: Boolean,
+                    default: false
+                },
+                details: {
+                    count: {
+                        type: Number,
+                        min: 0
+                    },
+                    type: {
+                        type: String,
+                        trim: true,
+                        maxlength: 50
+                    },
+                    description: {
+                        type: String,
+                        trim: true,
+                        maxlength: 500
+                    }
+                }
+            }],
         operatingHours: {
             weekdays: {
                 open: {
@@ -155,6 +198,11 @@ const CenterRegistrationSchema = new mongoose_1.Schema({
         parkingAvailable: {
             type: Boolean,
             default: false
+        },
+        parkingSpaces: {
+            type: Number,
+            min: 0,
+            default: 0
         }
     },
     applicant: {

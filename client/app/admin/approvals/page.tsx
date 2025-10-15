@@ -36,14 +36,36 @@ interface CenterRegistration {
   };
   centerInfo: {
     description: string;
-    facilities: string[];
-    poolSize: {
+    pools?: {
+      id: string;
+      type: 'main' | 'auxiliary';
+      length: number;
+      width: number;
+      depth: number;
+      laneCount?: number;
+      description?: string;
+    }[];
+    facilities?: ({
+      name: string;
+      enabled: boolean;
+      details?: {
+        count?: number;
+        type?: string;
+        description?: string;
+      };
+    } | string)[];
+    poolSize?: {
       length: number;
       width: number;
       depth: number;
     };
+    operatingHours?: {
+      weekdays: { open: string; close: string; };
+      weekends: { open: string; close: string; };
+    };
     capacity: number;
     parkingAvailable: boolean;
+    parkingSpaces?: number;
   };
   applicant: {
     name: string;
@@ -831,10 +853,23 @@ export default function ApprovalsPage() {
                       <p className="text-sm text-gray-900">{selectedCenter.centerInfo.description}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">수영장 크기</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedCenter.centerInfo.poolSize.length}m × {selectedCenter.centerInfo.poolSize.width}m × {selectedCenter.centerInfo.poolSize.depth}m
-                      </p>
+                      <label className="text-sm font-medium text-gray-600">수영장 정보</label>
+                      {selectedCenter.centerInfo.pools && selectedCenter.centerInfo.pools.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedCenter.centerInfo.pools.map((pool: any, idx: number) => (
+                            <p key={idx} className="text-sm text-gray-900">
+                              {pool.type === 'main' ? '메인' : '보조'} 수영장 {idx + 1}: {pool.length}m × {pool.width}m × {pool.depth}m
+                              {pool.laneCount && ` (${pool.laneCount}레인)`}
+                            </p>
+                          ))}
+                        </div>
+                      ) : selectedCenter.centerInfo.poolSize ? (
+                        <p className="text-sm text-gray-900">
+                          {selectedCenter.centerInfo.poolSize.length}m × {selectedCenter.centerInfo.poolSize.width}m × {selectedCenter.centerInfo.poolSize.depth}m
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-500">정보 없음</p>
+                      )}
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600">수용 인원</label>
@@ -847,11 +882,17 @@ export default function ApprovalsPage() {
                     <div>
                       <label className="text-sm font-medium text-gray-600">시설</label>
                       <div className="flex flex-wrap gap-1">
-                        {selectedCenter.centerInfo.facilities.map((facility, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {facility}
-                          </span>
-                        ))}
+                        {selectedCenter.centerInfo.facilities && selectedCenter.centerInfo.facilities.length > 0 ? (
+                          selectedCenter.centerInfo.facilities
+                            .filter((f: any) => typeof f === 'object' ? f.enabled : true)
+                            .map((facility: any, index: number) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                {typeof facility === 'object' ? facility.name : facility}
+                              </span>
+                            ))
+                        ) : (
+                          <span className="text-sm text-gray-500">정보 없음</span>
+                        )}
                       </div>
                     </div>
                   </div>
