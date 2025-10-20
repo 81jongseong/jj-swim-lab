@@ -13,7 +13,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPlan } from '../../../../swim-training-engine/src/engine/swim-plan';
-import type { HealthInput, PlanOutput } from '../../../../swim-training-engine/src/types';
+// HealthInput, PlanOutput 타입은 더 이상 사용되지 않음 (레거시)
+// import type { HealthInput, PlanOutput } from '../../../../swim-training-engine/src/types';
+type HealthInput = any; // 임시 타입
+type PlanOutput = any; // 임시 타입
 
 // 임시 데이터 저장소 (실제로는 MongoDB 사용)
 const healthDataStore = new Map<string, any>();

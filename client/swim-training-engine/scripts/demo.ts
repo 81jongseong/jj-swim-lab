@@ -1,4 +1,6 @@
-import { HealthInput } from '../src/types';
+// HealthInput 타입은 더 이상 export되지 않음 (레거시)
+// import { HealthInput } from '../src/types';
+type HealthInput = any; // 임시 타입
 import { buildPlan } from '../src/engine/swim-plan';
 
 const sample1: HealthInput = {

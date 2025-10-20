@@ -1,4 +1,9 @@
-import { JointConditionGuidance, Stroke, SafetyLevel, MedicalCitation } from '../types';
+// JointConditionGuidance 등의 타입은 더 이상 export되지 않음 (레거시)
+// import { JointConditionGuidance, Stroke, SafetyLevel, MedicalCitation } from '../types';
+import { Stroke } from '../types';
+type SafetyLevel = 'safe' | 'cautious' | 'avoid' | 'medical';
+type MedicalCitation = any; // 임시 타입
+type JointConditionGuidance = any; // 임시 타입
 
 export const EVIDENCE_BASED_SOURCES: Record<string, MedicalCitation> = {
   BARTELS_2016_COCHRANE: {

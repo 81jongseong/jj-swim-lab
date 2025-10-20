@@ -18,17 +18,48 @@ import React, { useMemo, useState } from 'react';
 import { TRAINING_METHODS } from '../data/trainingMethods';
 import { DRILLS } from '../data/drills';
 import { Category, paginate, filterMethods, filterDrills, countAll, type TrainingMethod, type Drill } from '../utils/catalog';
-// buildProgram이 더 이상 export되지 않음 (레거시 코드)
-// 임시 구현들
+// buildProgram 대신 generateWeeklyPlan 사용 (최신 API)
+import { generateWeeklyPlan, type Input as EngineInput } from '../../../lib/swimlab/engine-v31';
+
+// 레거시 buildProgram 호환 래퍼
 const buildProgram = (params: any) => {
-  return {
-    warmup: [],
-    main: [],
-    cooldown: [],
-    totalMeters: params.targetMeters || 0,
-    estimatedMinutes: 60
+  const input: Partial<EngineInput> = {
+    startDate: new Date().toISOString().slice(0, 10),
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    weeklyMinutes: 180,
+    weeklyMeters: params.targetMeters || 3000,
+    poolLen: params.pool || 25,
+    strokesAllowed: [params.stroke || 'freestyle'],
+    strokesAvoid: [],
+    css100: params.cssPer100 ? { [params.stroke]: params.cssPer100 } : {},
+    conditionIds: params.conditionIds || [],
+    dayCondition: 'normal',
+    goal: params.goal || '체력 향상',
+    level: params.skill || 'intermediate'
   };
+  
+  try {
+    const weekPlan = generateWeeklyPlan(input as EngineInput);
+    return {
+      warmup: weekPlan.days[0]?.sets.slice(0, 2) || [],
+      main: weekPlan.days[0]?.sets.slice(2, -1) || [],
+      cooldown: weekPlan.days[0]?.sets.slice(-1) || [],
+      totalMeters: weekPlan.days[0]?.totalMeters || 0,
+      estimatedMinutes: weekPlan.days[0]?.totalDuration || 60
+    };
+  } catch (error) {
+    console.error('프로그램 생성 오류:', error);
+    return {
+      warmup: [],
+      main: [],
+      cooldown: [],
+      totalMeters: params.targetMeters || 0,
+      estimatedMinutes: 60
+    };
+  }
 };
+
+// PR 텍스트 파싱 (기본 구현)
 const parsePRText = (text: string) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
 const estimateCSSFromPRs = (prs: any) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
 const estimateTargetSPL25 = (stroke: string) => 15;
