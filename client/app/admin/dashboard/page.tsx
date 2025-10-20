@@ -218,7 +218,7 @@ export default function AdminDashboard() {
       {/* 성능 모니터링 섹션 */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 성능 모니터링</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300">
             <h3 className="text-lg font-semibold mb-4">📊 성능 모니터링 (임시 비활성화)</h3>
             <p className="text-gray-600">PerformanceMonitor 컴포넌트를 임시로 비활성화했습니다.</p>

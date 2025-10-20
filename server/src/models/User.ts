@@ -114,6 +114,17 @@ interface IUser extends mongoose.Document {
     medicalConditions?: string;
     swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
     currentLevel?: string; // 현재 레벨 추가
+    instructorId?: mongoose.Types.ObjectId; // 담당 강사
+    centerMemo?: string; // 센터 내부 메모 (레거시)
+    centerMemoUpdatedAt?: Date; // 센터 메모 수정 시간 (레거시)
+    centerMemos?: Array<{ // 센터 메모 이력
+      content: string;
+      type: 'info' | 'warning' | 'complaint' | 'special'; // 메모 유형
+      createdBy: mongoose.Types.ObjectId;
+      createdByName: string;
+      createdAt: Date;
+    }>;
+    status?: 'active' | 'inactive' | 'suspended'; // 회원 상태
     enrolledCourses?: mongoose.Types.ObjectId[];
     completedCourses?: mongoose.Types.ObjectId[];
     levelChangeHistory?: Array<{ // 레벨 변경 이력 추가
@@ -331,6 +342,26 @@ const userSchema = new mongoose.Schema({
       enum: ['beginner', 'intermediate', 'advanced', 'expert'],
       default: 'beginner'
     },
+    currentLevel: { type: String },
+    instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    centerMemo: { type: String, default: '' },
+    centerMemoUpdatedAt: { type: Date },
+    centerMemos: [{
+      content: { type: String, required: true },
+      type: { 
+        type: String, 
+        enum: ['info', 'warning', 'complaint', 'special'],
+        default: 'info'
+      },
+      createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      createdByName: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    status: { 
+      type: String, 
+      enum: ['active', 'inactive', 'suspended'],
+      default: 'active'
+    },
     enrolledCourses: [{ type: mongoose.Schema.Types.Mixed, ref: 'Course' }],
     completedCourses: [{ type: mongoose.Schema.Types.Mixed, ref: 'Course' }],
     // 반변경 이력 추가
@@ -342,7 +373,6 @@ const userSchema = new mongoose.Schema({
       reason: { type: String, default: '' },
       changedAt: { type: Date, default: Date.now }
     }],
-    currentLevel: { type: String, default: 'beginner' },
     // 수영 관련 개인 정보
     swimmingProfile: {
       css: {

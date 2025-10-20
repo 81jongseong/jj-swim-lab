@@ -122,6 +122,7 @@ export default function CommunityPage() {
     { value: 'review', label: '후기', icon: '⭐', description: '수강 후기' },
     { value: 'meetup', label: '번개모임', icon: '⚡', description: '즉석 수영 모임' },
     { value: 'event', label: '이벤트', icon: '🎉', description: '대회 & 행사' },
+    { value: 'complaint', label: '민원', icon: '📢', description: '민원 접수 및 관리' },
     { value: 'general', label: '자유', icon: '💬', description: '자유로운 이야기' }
   ];
 

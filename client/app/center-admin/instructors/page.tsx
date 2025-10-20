@@ -1,9 +1,21 @@
+/**
+ * 센터 강사 관리 페이지
+ * 
+ * 연동 컴포넌트:
+ * - client/components/center-admin/InstructorStatsCards.tsx (통계 카드)
+ * - client/components/center-admin/InstructorCard.tsx (강사 카드)
+ * 
+ * 연동 데이터:
+ * - 센터 강사 목록 (향후 API 연동 예정)
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, Star, Calendar, Award, Phone, Mail, Edit, Trash2 } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import InstructorStatsCards from '@/components/center-admin/InstructorStatsCards';
+import InstructorCard from '@/components/center-admin/InstructorCard';
 
 interface Instructor {
   _id: string;
@@ -87,35 +99,15 @@ function CenterInstructorsManagement() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    const statuses: { [key: string]: string } = {
-      'active': '활성',
-      'inactive': '비활성',
-      'pending': '승인대기'
-    };
-    return statuses[status] || status;
+  const handleEditInstructor = (instructor: Instructor) => {
+    console.log('Edit instructor:', instructor);
+    // TODO: 강사 수정 모달 구현
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      'active': 'bg-green-100 text-green-800',
-      'inactive': 'bg-red-100 text-red-800',
-      'pending': 'bg-yellow-100 text-yellow-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${
-          i < Math.floor(rating) 
-            ? 'text-yellow-400 fill-current' 
-            : 'text-gray-300'
-        }`}
-      />
-    ));
+  const handleDeleteInstructor = (instructorId: string) => {
+    if (confirm('정말 이 강사를 삭제하시겠습니까?')) {
+      setInstructors(prev => prev.filter(i => i._id !== instructorId));
+    }
   };
 
   if (isLoading) {
@@ -128,6 +120,7 @@ function CenterInstructorsManagement() {
 
   return (
     <div className="container mx-auto p-6">
+      {/* 페이지 헤더 */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           센터 강사 관리 👨‍🏫
@@ -136,147 +129,28 @@ function CenterInstructorsManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 강사</p>
-              <p className="text-2xl font-bold text-gray-900">{instructors.length}명</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Star className="w-8 h-8 text-yellow-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">평균 평점</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {instructors.length > 0 
-                  ? (instructors.reduce((sum, i) => sum + i.rating, 0) / instructors.length).toFixed(1)
-                  : '0.0'
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 수업</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {instructors.reduce((sum, i) => sum + i.totalClasses, 0)}회
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Award className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 학생</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {instructors.reduce((sum, i) => sum + i.totalStudents, 0)}명
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <InstructorStatsCards instructors={instructors} />
 
-      {/* 강사 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* 강사 목록 - 반응형 카드 뷰 (최소 2열) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {instructors.map((instructor) => (
-          <div key={instructor._id} className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{instructor.name}</h3>
-                    <p className="text-sm text-gray-500">{instructor.experience}년 경력</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(instructor.status)}`}>
-                  {getStatusLabel(instructor.status)}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-600">{instructor.email}</span>
-                </div>
-                {instructor.phone && (
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-600">{instructor.phone}</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center">
-                  <div className="flex mr-2">
-                    {renderStars(instructor.rating)}
-                  </div>
-                  <span className="text-sm text-gray-600">({instructor.rating})</span>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">전문분야</p>
-                  <div className="flex flex-wrap gap-1">
-                    {instructor.specialties.map((specialty, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">자격증</p>
-                  <div className="space-y-1">
-                    {instructor.certifications.map((cert, index) => (
-                      <span
-                        key={index}
-                        className="block text-xs text-gray-600"
-                      >
-                        • {cert}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
-                    <p className="text-xs text-gray-500">담당 학생</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
-                    <p className="text-xs text-gray-500">진행 수업</p>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2 pt-3 border-t">
-                  <button className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center">
-                    <Edit className="w-4 h-4 mr-1" />
-                    수정
-                  </button>
-                  <button className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center">
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    삭제
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <InstructorCard
+            key={instructor._id}
+            instructor={instructor}
+            onEdit={handleEditInstructor}
+            onDelete={handleDeleteInstructor}
+          />
         ))}
       </div>
+
+      {/* 강사 없음 안내 */}
+      {instructors.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <div className="text-6xl mb-4">👨‍🏫</div>
+          <p className="text-gray-500 text-lg">등록된 강사가 없습니다.</p>
+          <p className="text-gray-400 text-sm mt-2">강사를 추가하여 센터 운영을 시작하세요.</p>
+        </div>
+      )}
     </div>
   );
 }

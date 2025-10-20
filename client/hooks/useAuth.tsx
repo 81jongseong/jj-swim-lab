@@ -415,7 +415,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 사용자 상태 초기화
     setUser(null);
     
-    // 로그아웃 완료 - 자동 리다이렉트 제거 (페이지에서 처리)
+    // 게스트 홈 페이지(랜딩 페이지)로 리다이렉트
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const register = async (userData: any) => {

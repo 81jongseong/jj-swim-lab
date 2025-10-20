@@ -73,6 +73,7 @@ const ai_exercise_recommendations_1 = __importDefault(require("./routes/ai-exerc
 const orders_1 = __importDefault(require("./routes/orders"));
 const center_registrations_1 = __importDefault(require("./routes/center-registrations"));
 const center_management_1 = __importDefault(require("./routes/center-management"));
+const center_members_1 = __importDefault(require("./routes/center-members"));
 const health_config_1 = __importDefault(require("./routes/health-config"));
 const center_introduction_1 = __importDefault(require("./routes/center-introduction"));
 const swim_training_methods_1 = __importDefault(require("./routes/swim-training-methods"));
@@ -138,6 +139,7 @@ require("./models/SwimmingStyle");
 require("./models/LearningProgress");
 require("./models/Recommendation");
 require("./models/LessonPlan");
+require("./models/LessonTicket");
 require("./models/StudentGoal");
 require("./models/Notification");
 require("./models/UserActivity");
@@ -170,6 +172,7 @@ setTimeout(() => {
     console.log('   - InstructorEvaluationCriteria 모델:', mongoose_1.default.models.InstructorEvaluationCriteria ? '✅ 등록됨' : '❌ 미등록');
     console.log('   - InstructorEvaluationResult 모델:', mongoose_1.default.models.InstructorEvaluationResult ? '✅ 등록됨' : '❌ 미등록');
     console.log('   - LessonPlanTemplate 모델:', mongoose_1.default.models.LessonPlanTemplate ? '✅ 등록됨' : '❌ 미등록');
+    console.log('   - LessonTicket 모델:', mongoose_1.default.models.LessonTicket ? '✅ 등록됨' : '❌ 미등록');
     console.log('   - Membership 모델:', mongoose_1.default.models.Membership ? '✅ 등록됨' : '❌ 미등록');
     console.log('   - Notice 모델:', mongoose_1.default.models.Notice ? '✅ 등록됨' : '❌ 미등록');
     console.log('   - Payment 모델:', mongoose_1.default.models.Payment ? '✅ 등록됨' : '❌ 미등록');
@@ -330,6 +333,7 @@ app.use('/api/ai/exercise-recommendations', ai_exercise_recommendations_1.defaul
 app.use('/api/shop/orders', orders_1.default);
 app.use('/api/center-registrations', center_registrations_1.default);
 app.use('/api/center-management', center_management_1.default);
+app.use('/api/center-members', center_members_1.default);
 app.use('/api/health-config', health_config_1.default);
 app.use('/api/center-introduction', center_introduction_1.default);
 app.use('/api/exercise', exercise_1.default);

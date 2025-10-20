@@ -12,7 +12,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { Users, BookOpen, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Settings } from 'lucide-react';
 import { StatCard } from '../../../components/StatCard';
 import { Button } from '../../../components/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
 
 interface CenterStats {
   totalMembers: number;
@@ -123,29 +123,29 @@ const CenterAdminDashboard: React.FC = () => {
       </div>
 
       {/* 주요 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
         <StatCard
           title="총 회원"
           value={`${stats.totalMembers}명`}
-          icon={<Users className="h-5 w-5" />}
+          icon="👥"
           color="blue"
         />
         <StatCard
           title="활성 강사"
           value={`${stats.activeInstructors}명`}
-          icon={<Settings className="h-5 w-5" />}
+          icon="👨‍🏫"
           color="green"
         />
         <StatCard
           title="진행 중인 강의"
           value={`${stats.activeCourses}개`}
-          icon={<BookOpen className="h-5 w-5" />}
+          icon="📚"
           color="purple"
         />
         <StatCard
           title="월간 수익"
           value={`${stats.monthlyRevenue.toLocaleString()}원`}
-          icon={<DollarSign className="h-5 w-5" />}
+          icon="💰"
           color="orange"
         />
       </div>
@@ -167,7 +167,7 @@ const CenterAdminDashboard: React.FC = () => {
       </div>
 
       {/* 센터 현황 및 최근 활동 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader>
             <CardTitle>센터 현황</CardTitle>

@@ -70,9 +70,12 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         if (memberType) {
             filter.userType = memberType;
         }
-        filter.address = { $exists: true, $ne: '' };
+        filter.$or = [
+            { 'location.coordinates': { $exists: true, $ne: [] } },
+            { address: { $exists: true, $ne: '' } }
+        ];
         const users = await User_1.User.find(filter)
-            .select('address centerId createdAt userType')
+            .select('address location centerId createdAt userType')
             .lean();
         console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);
         const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
@@ -82,9 +85,18 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         const centerMap = new Map(centers.map(c => [c._id.toString(), c.name]));
         const h3Map = new Map();
         for (const userItem of users) {
-            if (!userItem.address)
-                continue;
-            const coords = await geocodeAddress(userItem.address);
+            let coords = null;
+            if (userItem.location && userItem.location.coordinates && userItem.location.coordinates.length === 2) {
+                coords = {
+                    lng: userItem.location.coordinates[0],
+                    lat: userItem.location.coordinates[1]
+                };
+                console.log('✅ GeoJSON 좌표 사용:', coords);
+            }
+            else if (userItem.address) {
+                coords = await geocodeAddress(userItem.address);
+                console.log('⚠️ 주소 → 지오코딩:', userItem.address, coords);
+            }
             if (!coords)
                 continue;
             const h3Index = toH3(coords.lat, coords.lng, 8);

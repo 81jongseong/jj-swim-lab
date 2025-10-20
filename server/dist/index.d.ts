@@ -21,6 +21,7 @@ import './models/SwimmingStyle';
 import './models/LearningProgress';
 import './models/Recommendation';
 import './models/LessonPlan';
+import './models/LessonTicket';
 import './models/StudentGoal';
 import './models/Notification';
 import './models/UserActivity';

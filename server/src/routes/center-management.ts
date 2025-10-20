@@ -84,6 +84,7 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Center } from '../models/Center';
+import { SwimmingCenter } from '../models/SwimmingCenter';
 import { User } from '../models/User';
 import CenterRegistration from '../models/CenterRegistration';
 import { authMiddleware, requireRole } from '../middleware/auth';
@@ -124,66 +125,87 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'admin']), async (req
     // 페이지네이션
     const skip = (Number(page) - 1) * Number(limit);
     
-    // 🔍 센터 정보 조회 (완전 단순화 - 오류 방지 우선)
+    // 🔍 센터 정보 조회 (SwimmingCenter 모델 사용)
     let centers = [];
     let total = 0;
     
     try {
       console.log('🔍 센터 조회 시작...');
       
-      // 프론트엔드가 기대하는 구조에 맞는 더미 데이터
-      centers = [
-        {
-          _id: 'dummy-center-1',
-          name: 'JJ 수영센터 샘플점',
-          shortDescription: '최고의 시설과 전문 강사진을 갖춘 프리미엄 수영센터',
-          description: 'JJ 수영센터 샘플점은 최신 시설과 전문 강사진을 갖춘 프리미엄 수영센터입니다. 초보자부터 전문가까지 모든 수준의 수영 교육을 제공합니다.',
-          status: 'active',
-          grade: 'gold',  // 🏆 센터 등급 추가
-          address: {
-            address1: '서울시 강남구 샘플로 123',
-            address2: '샘플빌딩 2층',
-            city: '서울시',
-            province: '강남구',
-            postalCode: '06234'
+      // SwimmingCenter에서 실제 데이터 조회
+      const swimmingCenters = await SwimmingCenter.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(Number(limit))
+        .lean();
+      
+      total = await SwimmingCenter.countDocuments(filter);
+      
+      console.log(`✅ SwimmingCenter ${swimmingCenters.length}개 조회 완료`);
+      
+      // 프론트엔드가 기대하는 구조로 변환
+      centers = swimmingCenters.map((sc: any) => ({
+        _id: sc._id,
+        name: sc.name,
+        shortDescription: sc.shortDescription || sc.description?.substring(0, 100) || '',
+        description: sc.description || '',
+        status: sc.isActive ? 'active' : 'inactive',
+        grade: sc.grade || 'silver',
+        address: {
+          address1: sc.address || '',
+          address2: '',
+          city: sc.city || '',
+          province: sc.province || '',
+          postalCode: sc.postalCode || ''
+        },
+        contact: {
+          email: sc.email || sc.contactInfo?.email || '',
+          phone: sc.phone || sc.contactInfo?.mainNumber || ''
+        },
+        capacity: sc.currentCapacity || 100,
+        facilities: sc.facilities?.amenities ? 
+          Object.entries(sc.facilities.amenities)
+            .filter(([key, value]) => value === true && key.startsWith('has'))
+            .map(([key]) => {
+              if (key === 'hasSauna') return '사우나';
+              if (key === 'hasShower') return '샤워실';
+              if (key === 'hasLocker') return '락커룸';
+              if (key === 'hasParking') return '주차장';
+              if (key === 'hasJacuzzi') return '자쿠지';
+              if (key === 'hasSteamRoom') return '스팀룸';
+              if (key === 'hasFitnessRoom') return '헬스장';
+              if (key === 'hasCafeteria') return '카페';
+              return key;
+            })
+          : [],
+        operatingHours: sc.operatingHours || sc.businessHours || {},
+        poolInfo: sc.facilities?.mainPool ? {
+          size: {
+            length: sc.facilities.mainPool.poolLength || 25,
+            width: sc.facilities.mainPool.poolWidth || 12,
+            depth: sc.facilities.mainPool.poolDepth || 1.5
           },
-          contact: {
-            email: 'sample@jjswim.com',
-            phone: '02-1234-5678'
-          },
-          capacity: 100,
-          facilities: ['25m 수영장', '샤워실', '락커룸', '주차장', '카페', '사우나'],
-          operatingHours: {
-            weekdays: { open: '06:00', close: '22:00' },
-            weekends: { open: '08:00', close: '20:00' }
-          },
-          poolInfo: {
-            size: {
-              length: 25,
-              width: 12,
-              depth: 1.8
-            },
-            capacity: 100
-          },
-          parkingAvailable: true,
-          images: {
-            mainImage: '/images/centers/sample-main.jpg',
-            facilityImages: ['/images/centers/sample-pool.jpg', '/images/centers/sample-locker.jpg']
-          },
-          // 🏆 센터 성과 지표
-          performance: {
-            memberCount: 245,
-            instructorCount: 8,
-            monthlyRevenue: 3500000,
-            customerSatisfaction: 4.4,
-            safetyRecord: 0, // 사고 건수
-            operatingMonths: 28
-          },
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-      total = 1;
+          capacity: 100
+        } : {
+          size: { length: 25, width: 12, depth: 1.5 },
+          capacity: 100
+        },
+        parkingAvailable: sc.facilities?.amenities?.hasParking || false,
+        images: sc.images || {
+          mainImage: '',
+          facilityImages: []
+        },
+        performance: {
+          memberCount: sc.memberCount || 0,
+          instructorCount: sc.instructors?.length || 0,
+          monthlyRevenue: 0,
+          customerSatisfaction: sc.rating || 0,
+          safetyRecord: 0,
+          operatingMonths: 0
+        },
+        createdAt: sc.createdAt || new Date(),
+        updatedAt: sc.updatedAt || new Date()
+      }));
       
       console.log(`📊 더미 센터 데이터 반환: ${centers.length}개`);
       

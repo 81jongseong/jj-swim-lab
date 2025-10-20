@@ -184,6 +184,7 @@ import aiExerciseRecommendationsRoutes from './routes/ai-exercise-recommendation
 import ordersRoutes from './routes/orders';
 import centerRegistrationRoutes from './routes/center-registrations';
 import centerManagementRoutes from './routes/center-management';
+import centerMembersRoutes from './routes/center-members';
 // 새로운 건강정보 및 센터 소개 라우트
 import healthConfigRoutes from './routes/health-config';
 import centerIntroductionRoutes from './routes/center-introduction';
@@ -258,6 +259,7 @@ import './models/SwimmingStyle';
 import './models/LearningProgress';
 import './models/Recommendation';
 import './models/LessonPlan';
+import './models/LessonTicket';
 import './models/StudentGoal';
 import './models/Notification';
 import './models/UserActivity';
@@ -295,6 +297,7 @@ setTimeout(() => {
   console.log('   - InstructorEvaluationCriteria 모델:', mongoose.models.InstructorEvaluationCriteria ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - InstructorEvaluationResult 모델:', mongoose.models.InstructorEvaluationResult ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - LessonPlanTemplate 모델:', mongoose.models.LessonPlanTemplate ? '✅ 등록됨' : '❌ 미등록');
+  console.log('   - LessonTicket 모델:', mongoose.models.LessonTicket ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - Membership 모델:', mongoose.models.Membership ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - Notice 모델:', mongoose.models.Notice ? '✅ 등록됨' : '❌ 미등록');
   console.log('   - Payment 모델:', mongoose.models.Payment ? '✅ 등록됨' : '❌ 미등록');
@@ -496,6 +499,7 @@ app.use('/api/ai/exercise-recommendations', aiExerciseRecommendationsRoutes);
 app.use('/api/shop/orders', ordersRoutes);
 app.use('/api/center-registrations', centerRegistrationRoutes);
 app.use('/api/center-management', centerManagementRoutes);
+app.use('/api/center-members', centerMembersRoutes);
 // 새로운 건강정보 및 센터 소개 API 라우트
 app.use('/api/health-config', healthConfigRoutes);
 app.use('/api/center-introduction', centerIntroductionRoutes);

@@ -105,6 +105,128 @@ export default function MapPage() {
   // 🆕 실제 센터 데이터
   const [realCenters, setRealCenters] = useState<SwimmingCenter[]>([]);
   const [centersLoading, setCentersLoading] = useState(false);
+  
+  // 🆕 정렬 옵션
+  const [sortBy, setSortBy] = useState<'name' | 'distance' | 'rating' | 'price'>('name');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [distanceUnit, setDistanceUnit] = useState<'km' | 'm'>('km');
+  const [sortAnimation, setSortAnimation] = useState(false);
+
+  // localStorage에서 정렬 설정 불러오기
+  useEffect(() => {
+    const savedSortBy = localStorage.getItem('mapSortBy');
+    const savedDistanceUnit = localStorage.getItem('distanceUnit');
+    const savedUserLocation = localStorage.getItem('userLocation');
+    
+    if (savedSortBy) {
+      setSortBy(savedSortBy as 'name' | 'distance' | 'rating' | 'price');
+    }
+    if (savedDistanceUnit) {
+      setDistanceUnit(savedDistanceUnit as 'km' | 'm');
+    }
+    if (savedUserLocation) {
+      try {
+        const location = JSON.parse(savedUserLocation);
+        setUserLocation(location);
+      } catch (e) {
+        console.error('Failed to parse saved user location:', e);
+      }
+    }
+  }, []);
+
+  // 정렬 설정 변경 시 localStorage에 저장
+  useEffect(() => {
+    localStorage.setItem('mapSortBy', sortBy);
+  }, [sortBy]);
+
+  useEffect(() => {
+    localStorage.setItem('distanceUnit', distanceUnit);
+  }, [distanceUnit]);
+
+  useEffect(() => {
+    if (userLocation) {
+      localStorage.setItem('userLocation', JSON.stringify(userLocation));
+    }
+  }, [userLocation]);
+
+  // 거리 계산 함수 (Haversine formula)
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // 지구 반지름 (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // 거리 (km)
+  };
+
+  // 거리 표시 함수 (단위 변환 포함)
+  const formatDistance = (distanceKm: number): string => {
+    if (distanceUnit === 'm') {
+      const meters = distanceKm * 1000;
+      if (meters < 1000) {
+        return `${Math.round(meters)}m`;
+      }
+      return `${(meters / 1000).toFixed(1)}km`;
+    }
+    return `${distanceKm.toFixed(1)}km`;
+  };
+
+  // 내 위치 가져오기
+  const getMyLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          setSortBy('distance');
+          
+          // 지도를 내 위치로 이동
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo([latitude, longitude], 13, { duration: 1.5 });
+            
+            // 내 위치 마커 추가
+            if (L) {
+              const myLocationIcon = L.divIcon({
+                className: 'my-location-marker',
+                html: `
+                  <div style="
+                    width: 40px;
+                    height: 40px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border: 3px solid white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                  ">
+                    📍
+                  </div>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+              });
+
+              L.marker([latitude, longitude], { icon: myLocationIcon })
+                .addTo(mapInstanceRef.current)
+                .bindPopup('<strong>내 위치</strong>')
+                .openPopup();
+            }
+          }
+        },
+        (error) => {
+          console.error('위치 정보를 가져올 수 없습니다:', error);
+          alert('위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.');
+        }
+      );
+    } else {
+      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+    }
+  };
 
   // 시/도 목록
   const provinces = [
@@ -539,6 +661,35 @@ export default function MapPage() {
     return true;
   });
 
+  // 🆕 정렬된 센터 목록
+  const sortedCenters = [...filteredCenters].sort((a, b) => {
+    if (sortBy === 'name') {
+      // 가나다순 정렬
+      return a.name.localeCompare(b.name, 'ko-KR');
+    } else if (sortBy === 'distance' && userLocation) {
+      // 거리순 정렬
+      const distA = calculateDistance(userLocation.lat, userLocation.lng, a.position.lat, a.position.lng);
+      const distB = calculateDistance(userLocation.lat, userLocation.lng, b.position.lat, b.position.lng);
+      return distA - distB;
+    } else if (sortBy === 'rating') {
+      // 평점순 정렬 (높은 순)
+      return b.rating - a.rating;
+    } else if (sortBy === 'price') {
+      // 가격순 정렬 (낮은 순)
+      return a.pricing.lessons.min - b.pricing.lessons.min;
+    }
+    return 0;
+  });
+
+  // 정렬 변경 시 애니메이션 트리거
+  useEffect(() => {
+    setSortAnimation(true);
+    const timer = setTimeout(() => {
+      setSortAnimation(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [sortBy]);
+
   // 🆕 실제 센터 데이터 로드
   useEffect(() => {
     const loadCenters = async () => {
@@ -752,10 +903,10 @@ export default function MapPage() {
     });
     markersRef.current = [];
 
-    console.log('🎯 필터링된 센터 마커 추가:', filteredCenters.length, '개');
+    console.log('🎯 필터링된 센터 마커 추가:', sortedCenters.length, '개');
 
-    // 필터링된 센터 마커 추가
-    filteredCenters.forEach(center => {
+    // 정렬된 센터 마커 추가
+    sortedCenters.forEach(center => {
       // 커스텀 아이콘
       const customIcon = L.divIcon({
         className: 'custom-marker',
@@ -813,7 +964,7 @@ export default function MapPage() {
 
       markersRef.current.push(marker);
     });
-  }, [filteredCenters, mapReady, leafletReady]);
+  }, [sortedCenters, mapReady, leafletReady]);
 
   // 주소 검색
   const handleSearch = async (addressToSearch?: string) => {
@@ -1669,13 +1820,77 @@ export default function MapPage() {
 
             {/* 필터링된 센터 목록 */}
             <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">
-                📊 검색된 센터 ({filteredCenters.length}개)
-              </h3>
-              <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
-                {filteredCenters.map((center) => (
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-semibold text-gray-900">
+                    📊 검색된 센터 ({filteredCenters.length}개)
+                  </h3>
+                  {sortBy === 'distance' && userLocation && (
+                    <button
+                      onClick={() => setDistanceUnit(distanceUnit === 'km' ? 'm' : 'km')}
+                      className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all"
+                      title="거리 단위 변경"
+                    >
+                      {distanceUnit === 'km' ? 'km ⟷ m' : 'm ⟷ km'}
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSortBy('name')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      sortBy === 'name'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    🔤 가나다순
+                  </button>
+                  <button
+                    onClick={getMyLocation}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      sortBy === 'distance'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    📍 가까운 순
+                  </button>
+                  <button
+                    onClick={() => setSortBy('rating')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      sortBy === 'rating'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    ⭐ 평점순
+                  </button>
+                  <button
+                    onClick={() => setSortBy('price')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      sortBy === 'price'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    💰 가격순
+                  </button>
+                </div>
+              </div>
+              <div className={`space-y-2 max-h-80 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${sortAnimation ? 'opacity-50' : 'opacity-100'}`}>
+                {sortedCenters.map((center, index) => {
+                  const distance = userLocation 
+                    ? calculateDistance(userLocation.lat, userLocation.lng, center.position.lat, center.position.lng)
+                    : null;
+                  
+                  return (
                   <div 
                     key={center.id}
+                    style={{ 
+                      animationDelay: sortAnimation ? `${index * 30}ms` : '0ms',
+                      animation: sortAnimation ? 'slideIn 0.3s ease-out' : 'none'
+                    }}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedCenter?.id === center.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -1701,6 +1916,14 @@ export default function MapPage() {
                           <span className="text-yellow-500 text-sm">⭐</span>
                           <span className="text-gray-700 text-xs font-semibold">{center.rating}</span>
                           <span className="text-gray-500 text-xs">/ 5.0</span>
+                          {distance && (
+                            <>
+                              <span className="text-gray-400">|</span>
+                              <span className="text-blue-600 text-xs font-semibold">
+                                📍 {formatDistance(distance)}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
@@ -1713,7 +1936,8 @@ export default function MapPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

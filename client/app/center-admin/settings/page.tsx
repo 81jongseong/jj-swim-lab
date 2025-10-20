@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings, Save, Upload, MapPin, Phone, Mail, Clock, Users } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import LevelManagement from '@/components/center-admin/LevelManagement';
 
 interface CenterSettings {
   name: string;
@@ -25,6 +26,12 @@ interface CenterSettings {
     duration: string;
     features: string[];
   }>;
+  customLevels: Array<{
+    id: string;
+    name: string;
+    description: string;
+    order: number;
+  }>; // 센터별 커스텀 급수 체계
 }
 
 function CenterSettingsManagement() {
@@ -43,7 +50,8 @@ function CenterSettingsManagement() {
     maxCapacity: 0,
     poolSize: '',
     waterTemperature: 28,
-    membershipTypes: []
+    membershipTypes: [],
+    customLevels: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -85,6 +93,13 @@ function CenterSettingsManagement() {
             duration: '1개월',
             features: ['무제한 수영', '모든 시설 이용', '개인 레슨 1회']
           }
+        ],
+        customLevels: [
+          { id: 'level1', name: '입문', description: '수영을 처음 시작하는 단계', order: 1 },
+          { id: 'level2', name: '초급', description: '기본 영법을 배우는 단계', order: 2 },
+          { id: 'level3', name: '중급', description: '영법을 다듬는 단계', order: 3 },
+          { id: 'level4', name: '상급', description: '고급 기술을 익히는 단계', order: 4 },
+          { id: 'level5', name: '마스터', description: '전문가 수준', order: 5 }
         ]
       };
       setSettings(tempSettings);
@@ -389,6 +404,12 @@ function CenterSettingsManagement() {
           </div>
         </div>
       </div>
+
+      {/* 급수 관리 */}
+      <LevelManagement
+        levels={settings.customLevels}
+        onLevelsChange={(newLevels) => setSettings(prev => ({ ...prev, customLevels: newLevels }))}
+      />
 
       {/* 저장 버튼 */}
       <div className="mt-8 flex justify-end">

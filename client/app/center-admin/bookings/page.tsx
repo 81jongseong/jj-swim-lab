@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
-import Button from '../../../components/ui/button';
+import { Button } from '../../../components/Button';
 import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
 
 const CenterAdmin예약관리Page: React.FC = () => {

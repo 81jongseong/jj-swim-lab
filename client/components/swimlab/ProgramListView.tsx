@@ -1938,13 +1938,13 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
               )}
               
               <div className="flex gap-2 justify-end">
-                <Button
-                  onClick={() => setIsEditing(false)}
-                  variant="secondary"
-                  size="md"
-                >
-                  취소
-                </Button>
+              <Button
+                onClick={() => setIsEditing(false)}
+                variant="secondary"
+                size="md"
+              >
+                취소
+              </Button>
               <Button
                 onClick={async () => {
                   try {

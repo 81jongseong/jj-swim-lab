@@ -241,7 +241,7 @@ function ChecklistTemplates() {
       </div>
 
       {/* 템플릿 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredTemplates.map((template) => (
           <div key={template._id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-6">

@@ -30,6 +30,10 @@ interface IUser extends mongoose.Document {
     password: string;
     phone: string;
     address: string;
+    location?: {
+        type: 'Point';
+        coordinates: [number, number];
+    };
     userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
     level: string;
     centerId?: mongoose.Types.ObjectId;
@@ -39,6 +43,17 @@ interface IUser extends mongoose.Document {
         medicalConditions?: string;
         swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
         currentLevel?: string;
+        instructorId?: mongoose.Types.ObjectId;
+        centerMemo?: string;
+        centerMemoUpdatedAt?: Date;
+        centerMemos?: Array<{
+            content: string;
+            type: 'info' | 'warning' | 'complaint' | 'special';
+            createdBy: mongoose.Types.ObjectId;
+            createdByName: string;
+            createdAt: Date;
+        }>;
+        status?: 'active' | 'inactive' | 'suspended';
         enrolledCourses?: mongoose.Types.ObjectId[];
         completedCourses?: mongoose.Types.ObjectId[];
         levelChangeHistory?: Array<{

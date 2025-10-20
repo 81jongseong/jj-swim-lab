@@ -128,7 +128,7 @@ export default function HealthInputPage() {
       mentalHealth: false
     },
     orthopedics: [],
-    swim_profile: {
+    swim_profile: { 
       level: 'beginner_1',
       grade: '초급',
       css: { freestyle: 0, backstroke: 0, breaststroke: 0, butterfly: 0 },
@@ -224,7 +224,7 @@ export default function HealthInputPage() {
           if (!updated.orthopedics.includes('hypertension-elevated')) {
             updated.orthopedics = [...updated.orthopedics.filter(id => !id.startsWith('hypertension')), 'hypertension-elevated'];
           }
-        } else {
+      } else {
           updated.conditions.hypertension = 'none';
           updated.orthopedics = updated.orthopedics.filter(id => !id.startsWith('hypertension'));
         }
@@ -664,7 +664,7 @@ export default function HealthInputPage() {
         return (
           <div className="space-y-8">
             {/* 기본 정보 */}
-            <div>
+              <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2" />
                 기본 정보
@@ -672,14 +672,14 @@ export default function HealthInputPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">나이</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.demographics.age}
-                    onChange={(e) => handleInputChange('demographics.age', parseInt(e.target.value))}
-                  />
-                </div>
-                <div>
+                  onChange={(e) => handleInputChange('demographics.age', parseInt(e.target.value))}
+                />
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -689,30 +689,30 @@ export default function HealthInputPage() {
                     <option value="male">남성</option>
                     <option value="female">여성</option>
                   </select>
-                </div>
-                <div>
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">키 (cm)</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.anthropometrics.height_cm}
-                    onChange={(e) => handleInputChange('anthropometrics.height_cm', parseInt(e.target.value))}
-                  />
-                </div>
-                <div>
+                  onChange={(e) => handleInputChange('anthropometrics.height_cm', parseInt(e.target.value))}
+                />
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">몸무게 (kg)</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.anthropometrics.weight_kg}
-                    onChange={(e) => handleInputChange('anthropometrics.weight_kg', parseInt(e.target.value))}
-                  />
-                </div>
+                  onChange={(e) => handleInputChange('anthropometrics.weight_kg', parseInt(e.target.value))}
+                />
               </div>
             </div>
+                </div>
 
             {/* 건강검진 */}
-            <div>
+              <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Heart className="h-5 w-5 mr-2" />
                 건강검진 <span className="ml-2 text-sm font-normal text-gray-500">(선택사항)</span>
@@ -720,45 +720,45 @@ export default function HealthInputPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">수축기 혈압 (mmHg)</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.rest_bp.sbp}
                     onChange={(e) => handleInputChange('vitals.rest_bp.sbp', parseInt(e.target.value))}
                     placeholder="120"
-                  />
-                </div>
-                <div>
+                />
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">이완기 혈압 (mmHg)</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.rest_bp.dbp}
                     onChange={(e) => handleInputChange('vitals.rest_bp.dbp', parseInt(e.target.value))}
                     placeholder="80"
-                  />
-                </div>
-                <div>
+                />
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">공복 혈당 (mg/dL)</label>
-                  <input
-                    type="number"
+                <input
+                  type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.bloodSugar || ''}
                     onChange={(e) => handleInputChange('vitals.bloodSugar', parseInt(e.target.value) || 0)}
                     placeholder="100"
-                  />
-                </div>
+                />
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">총 콜레스테롤 (mg/dL)</label>
-                  <input
+                <input
                     type="number"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.totalCholesterol || ''}
                     onChange={(e) => handleInputChange('vitals.totalCholesterol', parseInt(e.target.value) || 0)}
                     placeholder="200"
                   />
-                </div>
               </div>
+            </div>
 
               {/* 자동 진단 결과 */}
               {(healthData.conditions.obesity !== 'none' || healthData.conditions.hypertension !== 'none' || 
@@ -766,7 +766,7 @@ export default function HealthInputPage() {
                 <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <div className="flex items-start space-x-2">
                     <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                    <div className="text-sm text-yellow-800">
+              <div className="text-sm text-yellow-800">
                       <p className="font-semibold mb-2">✨ 자동 진단 결과</p>
                       <ul className="list-disc list-inside space-y-1">
                         {healthData.conditions.obesity === 'severe' && <li>고도비만 (BMI ≥30)</li>}
@@ -776,9 +776,9 @@ export default function HealthInputPage() {
                         {healthData.conditions.diabetes && <li>당뇨 의심 (공복혈당 ≥126)</li>}
                         {healthData.conditions.dyslipidemia && <li>고지혈증 의심 (TC ≥240 or LDL ≥160)</li>}
                       </ul>
-                    </div>
-                  </div>
-                </div>
+              </div>
+            </div>
+          </div>
               )}
             </div>
 
@@ -788,7 +788,7 @@ export default function HealthInputPage() {
                 <Activity className="h-5 w-5 mr-2" />
                 질환/상황 <span className="ml-2 text-sm font-normal text-gray-500">(선택사항)</span>
               </h3>
-              <button
+                    <button
                 type="button"
                 onClick={() => setShowConditionsDrawer(true)}
                 className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium flex items-center justify-between shadow-md"
@@ -796,10 +796,10 @@ export default function HealthInputPage() {
                 <span className="flex items-center space-x-2">
                   <span>🏥</span>
                   <span>질환/특수상황 선택하기</span>
-                </span>
+                            </span>
                 <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
                   {healthData.orthopedics.length > 0 ? `${healthData.orthopedics.length}개 선택됨` : '선택 안함'}
-                </span>
+                            </span>
               </button>
 
               {/* 선택된 질환 목록 */}
@@ -823,11 +823,11 @@ export default function HealthInputPage() {
                         >
                           ×
                         </button>
-                      </div>
+                </div>
                     );
                   })}
-                </div>
-              )}
+              </div>
+            )}
             </div>
           </div>
         );
@@ -865,13 +865,13 @@ export default function HealthInputPage() {
                       <div>
                         <div className="font-medium">{level.title}</div>
                         <div className="text-sm opacity-80">{level.desc}</div>
-                      </div>
-                    </div>
+                  </div>
+              </div>
                   </button>
                 ))}
-              </div>
-            </div>
-
+                </div>
+                    </div>
+                    
             {/* 운동 목표 */}
             <div className="border rounded-lg p-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -893,8 +893,8 @@ export default function HealthInputPage() {
                     {goal}
                   </button>
                 ))}
+                    </div>
               </div>
-            </div>
 
             {/* 선호/회피 영법 - 재사용 컴포넌트 */}
             <StrokesSelectionSection
@@ -959,8 +959,8 @@ export default function HealthInputPage() {
                 ✅ <strong>필수 항목:</strong> 수영 급수, 운동 목표<br/>
                 💡 <strong>선택 항목:</strong> CSS, 선호/회피 영법, 주간 일정, 생리학적 지표<br/>
                 <span className="text-xs">※ 선택 항목은 더 정확한 프로그램 생성을 위해 입력을 권장합니다</span>
-              </p>
-            </div>
+                    </p>
+                  </div>
           </div>
         );
 
@@ -991,9 +991,9 @@ export default function HealthInputPage() {
                       'bg-green-100 text-green-700'
                     }`}>
                       {bmi >= 30 ? '고도비만' : bmi >= 25 ? '경도비만' : bmi >= 23 ? '과체중' : '정상'}
+                  </div>
                     </div>
                   </div>
-                </div>
 
                 {/* 혈압 */}
                 <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
@@ -1015,9 +1015,9 @@ export default function HealthInputPage() {
                       {healthData.vitals.rest_bp.sbp === 0 && healthData.vitals.rest_bp.dbp === 0 ? '미입력' :
                        healthData.vitals.rest_bp.sbp >= 140 || healthData.vitals.rest_bp.dbp >= 90 ? '고혈압 2기' :
                        healthData.vitals.rest_bp.sbp >= 130 || healthData.vitals.rest_bp.dbp >= 80 ? '고혈압 1기' : '정상'}
+                  </div>
                     </div>
                   </div>
-                </div>
 
                 {/* 혈당 */}
                 <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
@@ -1037,19 +1037,19 @@ export default function HealthInputPage() {
                       {healthData.vitals.bloodSugar === 0 ? '미입력' :
                        healthData.vitals.bloodSugar >= 126 ? '당뇨 의심' :
                        healthData.vitals.bloodSugar >= 100 ? '전단계' : '정상'}
-                    </div>
                   </div>
-                </div>
+              </div>
+            </div>
 
                 {/* 콜레스테롤 */}
                 <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+              <div>
                       <p className="text-sm text-gray-600">총 콜레스테롤</p>
                       <p className="text-2xl font-bold text-gray-900">
                         {healthData.vitals.totalCholesterol === 0 ? '미입력' : `${healthData.vitals.totalCholesterol} mg/dL`}
-                      </p>
-                    </div>
+                </p>
+              </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
                       healthData.vitals.totalCholesterol === 0 ? 'bg-gray-100 text-gray-700' :
                       healthData.vitals.totalCholesterol >= 240 ? 'bg-red-100 text-red-700' :
@@ -1059,27 +1059,27 @@ export default function HealthInputPage() {
                       {healthData.vitals.totalCholesterol === 0 ? '미입력' :
                        healthData.vitals.totalCholesterol >= 240 ? '고지혈증' :
                        healthData.vitals.totalCholesterol >= 200 ? '경계선' : '정상'}
-                    </div>
-                  </div>
                 </div>
+              </div>
+              </div>
 
                 {/* 질환 개수 */}
                 <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+              <div>
                       <p className="text-sm text-gray-600">선택된 질환/상황</p>
                       <p className="text-3xl font-bold text-gray-900">
                         {healthData.orthopedics.length === 0 ? '선택 안함' : `${healthData.orthopedics.length}개`}
-                      </p>
-                    </div>
+                </p>
+              </div>
                     <div className="text-4xl">
                       {healthData.orthopedics.length === 0 ? '✅' : '🏥'}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
-
+                      </div>
+                      </div>
+                      </div>
+                    </div>
+                    
             {/* 전체 운동 강도 요약 */}
             <div className="bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-300 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
@@ -1090,9 +1090,9 @@ export default function HealthInputPage() {
                 <div className="text-right">
                   <p className="text-5xl font-black text-purple-600">{baseIntensity}%</p>
                   <p className="text-sm text-gray-600">정상 대비</p>
-                </div>
               </div>
-              
+            </div>
+
               {/* 복합 질환 표시 */}
               {conditions.length > 0 && (
                 <div className="mb-4 p-4 bg-white/70 rounded-lg">
@@ -1103,14 +1103,14 @@ export default function HealthInputPage() {
                         {condition}
                       </span>
                     ))}
-                  </div>
+            </div>
                   <p className="text-xs text-gray-600 mt-3">
                     ℹ️ 복합 질환이 있는 경우, 가장 낮은 강도를 적용합니다. 
                     {conditions.length >= 2 && `(${conditions.join(', ')} 중 가장 낮은 ${baseIntensity}% 적용)`}
-                  </p>
-                </div>
-              )}
-              
+                </p>
+              </div>
+            )}
+
               <p className="text-sm text-gray-700 font-medium">
                 {baseIntensity === 100 ? (
                   <>✅ 건강 상태가 양호합니다. 일반적인 운동 강도로 진행하세요.</>
@@ -1122,8 +1122,8 @@ export default function HealthInputPage() {
                   <>🚨 많은 주의가 필요합니다. 의사 상담 후 매우 낮은 강도로 시작하세요.</>
                 )}
               </p>
-            </div>
-
+              </div>
+              
             {/* 맞춤 운동 강도 권장 (상세) */}
             {recommendations.length > 0 && (
               <div>
@@ -1160,13 +1160,13 @@ export default function HealthInputPage() {
                               <div>
                                 <p className="text-xs font-semibold text-gray-600 mb-1">💪 권장 강도</p>
                                 <p className="text-lg font-bold text-purple-600">{rec.intensity}</p>
-                              </div>
-                              <div>
+                  </div>
+                                    <div>
                                 <p className="text-xs font-semibold text-gray-600 mb-1">⏱️ 권장 운동량</p>
                                 <p className="text-lg font-bold text-blue-600">{rec.duration}</p>
-                              </div>
-                            </div>
-                          </div>
+                                    </div>
+                                    </div>
+                                  </div>
 
                           {/* 피해야 할 것 */}
                           <div className="mb-4">
@@ -1179,10 +1179,10 @@ export default function HealthInputPage() {
                                 </li>
                               ))}
                             </ul>
-                          </div>
+            </div>
 
                           {/* 권장사항 */}
-                          <div className="mb-4">
+              <div className="mb-4">
                             <p className="text-sm font-bold text-green-700 mb-2">✅ 권장 동작/훈련</p>
                             <ul className="space-y-1">
                               {rec.recommend.map((item: string, i: number) => (
@@ -1192,7 +1192,7 @@ export default function HealthInputPage() {
                                 </li>
                               ))}
                             </ul>
-                          </div>
+              </div>
 
                           {/* 상세 설명 */}
                           <div className={`bg-white/50 rounded-lg p-3 text-sm ${
@@ -1202,13 +1202,13 @@ export default function HealthInputPage() {
                           }`}>
                             <p className="font-semibold mb-1">📚 전문가 조언</p>
                             <p>{rec.detail}</p>
-                          </div>
-                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                  </div>
+                ))}
               </div>
+            </div>
             )}
 
             {/* 체험 프로그램 생성 안내 */}
@@ -1222,8 +1222,8 @@ export default function HealthInputPage() {
                 </p>
                 <p className="text-gray-700">
                   <strong className="text-purple-600">맞춤형 수영 프로그램</strong>을 자동으로 생성해드립니다.
-                </p>
-              </div>
+                  </p>
+                </div>
 
               <div className="bg-white/70 border border-purple-200 rounded-lg p-5 mb-6">
                 <p className="text-sm text-gray-800 mb-3 font-semibold">📝 프로그램에 포함될 내용:</p>
@@ -1245,7 +1245,7 @@ export default function HealthInputPage() {
                     <span><strong>마무리 운동</strong> - 쿨다운 및 회복</span>
                   </li>
                 </ul>
-              </div>
+                </div>
 
               <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
                 <div className="flex items-start space-x-2">
@@ -1254,9 +1254,9 @@ export default function HealthInputPage() {
                     <p className="font-semibold mb-1">💡 체험 프로그램 안내</p>
                     <p>• 하루짜리 프로그램으로 간단히 체험해보세요</p>
                     <p>• 정회원 가입 시 주간/월간 프로그램과 대회 준비 프로그램을 이용하실 수 있습니다</p>
-                  </div>
-                </div>
               </div>
+            </div>
+          </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -1275,8 +1275,8 @@ export default function HealthInputPage() {
                 >
                   나중에 하기
                 </button>
+                  </div>
               </div>
-            </div>
           </div>
         );
 
@@ -1304,7 +1304,7 @@ export default function HealthInputPage() {
               >
                 {/* 아이콘 + 번호 */}
                 <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl border-3 transition-all shadow-md ${
-                  currentStep >= step.id 
+                currentStep >= step.id 
                     ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-blue-200' 
                     : 'bg-white border-gray-300 text-gray-500 hover:border-blue-300'
                 }`}>
@@ -1315,8 +1315,8 @@ export default function HealthInputPage() {
                       <span className="text-2xl">{step.icon}</span>
                       <span className="text-xs font-semibold">{step.id}</span>
                     </div>
-                  )}
-                </div>
+                )}
+              </div>
                 
                 {/* 제목 */}
                 <div className={`mt-3 text-center max-w-[120px] transition-all ${
@@ -1330,7 +1330,7 @@ export default function HealthInputPage() {
                   <p className="text-xs text-gray-500 mt-1 leading-tight">
                     {step.description}
                   </p>
-                </div>
+              </div>
               </div>
               
               {/* 연결선 */}
@@ -1346,20 +1346,20 @@ export default function HealthInputPage() {
 
       {/* 콘텐츠 */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        {renderStepContent()}
+          {renderStepContent()}
       </div>
 
       {/* 버튼 - Step 3에서는 숨김 (자체 버튼 사용) */}
       {currentStep !== 3 && (
         <div className="flex justify-between">
-          <button
+        <button
             onClick={() => handleStepChange(Math.max(1, currentStep - 1))}
-            disabled={currentStep === 1}
+          disabled={currentStep === 1}
             className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            이전
-          </button>
-
+        >
+          이전
+        </button>
+        
           <button
             onClick={() => handleStepChange(currentStep + 1)}
             disabled={!isStepValid(currentStep)}

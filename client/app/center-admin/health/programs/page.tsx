@@ -258,8 +258,8 @@ function HealthProgramsPage() {
         </div>
       </div>
 
-      {/* 프로그램 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* 프로그램 목록 - 반응형 카드 뷰 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {programs.map((program) => (
           <div key={program._id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-6">

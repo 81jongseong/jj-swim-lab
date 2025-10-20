@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const SwimmingCenter_1 = require("../models/SwimmingCenter");
-const Center_1 = require("../models/Center");
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
@@ -332,23 +331,31 @@ router.get('/student-dashboard-stats', auth_1.authMiddleware, (0, auth_1.require
         });
     }
 });
-router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['centeradmin', 'centerAdmin']), async (req, res) => {
     try {
+        console.log('🔍 센터 정보 조회 요청 - 사용자:', req.user?._id, '타입:', req.user?.userType);
         if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
+            console.error('❌ 유효하지 않은 사용자 ID:', req.user._id);
             return res.status(400).json({
                 success: false,
                 message: '유효하지 않은 사용자 ID입니다.'
             });
         }
-        const centerAdmin = await User_1.User.findById(req.user._id).populate('centerAdminInfo.managedCenters');
-        if (!centerAdmin?.centerAdminInfo?.managedCenters) {
+        const centerAdmin = await User_1.User.findById(req.user._id);
+        console.log('👤 센터 관리자 조회:', centerAdmin?.email, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
+        if (!centerAdmin?.centerAdminInfo?.managedCenters || centerAdmin.centerAdminInfo.managedCenters.length === 0) {
+            console.error('❌ 관리하는 센터가 없음');
             return res.status(404).json({
                 success: false,
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const center = await Center_1.Center.findById(centerAdmin.centerAdminInfo.managedCenters[0]);
+        const centerId = centerAdmin.centerAdminInfo.managedCenters[0];
+        console.log('🏢 센터 ID로 조회 시도:', centerId);
+        const center = await SwimmingCenter_1.SwimmingCenter.findById(centerId);
+        console.log('🏢 센터 조회 결과:', center ? `${center.name} 찾음` : '센터 없음');
         if (!center) {
+            console.error('❌ 센터 정보를 찾을 수 없음');
             return res.status(404).json({
                 success: false,
                 message: '센터 정보를 찾을 수 없습니다.'
@@ -361,14 +368,14 @@ router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         });
     }
     catch (error) {
-        console.error('센터 정보 조회 오류:', error);
+        console.error('❌ 센터 정보 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 정보 조회에 실패했습니다.'
         });
     }
 });
-router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['centeradmin', 'centerAdmin']), async (req, res) => {
     try {
         const centerAdmin = await User_1.User.findById(req.user._id);
         if (!centerAdmin?.centerAdminInfo?.managedCenters) {
@@ -1212,7 +1219,7 @@ router.get('/my-center/courses', auth_1.authMiddleware, (0, auth_1.requireRole)(
 });
 router.get('/guest', async (req, res) => {
     try {
-        const centers = await SwimmingCenter_1.SwimmingCenter.find({ isActive: true }, 'name region district address phone email website').lean();
+        const centers = await SwimmingCenter_1.SwimmingCenter.find({ isActive: true }, 'name region district address phone email website location description facilities province city gu dong').lean();
         res.json(centers);
     }
     catch (error) {
@@ -1220,6 +1227,67 @@ router.get('/guest', async (req, res) => {
         res.status(500).json({
             error: '센터 목록을 불러올 수 없습니다.',
             message: error instanceof Error ? error.message : '알 수 없는 오류'
+        });
+    }
+});
+router.post('/fix-center-admin-link', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
+    try {
+        const { centerAdminEmail, centerId } = req.body;
+        console.log('🔧 센터 관리자 연결 수정 요청:', { centerAdminEmail, centerId });
+        const centerAdmin = await User_1.User.findOne({ email: centerAdminEmail });
+        if (!centerAdmin) {
+            return res.status(404).json({
+                success: false,
+                message: '센터 관리자를 찾을 수 없습니다.'
+            });
+        }
+        const center = await SwimmingCenter_1.SwimmingCenter.findById(centerId);
+        if (!center) {
+            return res.status(404).json({
+                success: false,
+                message: '센터를 찾을 수 없습니다.'
+            });
+        }
+        if (!centerAdmin.centerAdminInfo) {
+            centerAdmin.centerAdminInfo = {
+                managedCenters: [],
+                adminLevel: 'director',
+                permissions: {
+                    canManageUsers: true,
+                    canManageCourses: true,
+                    canManageBookings: true,
+                    canManagePayments: true,
+                    canManageNotices: true,
+                    canViewReports: true
+                }
+            };
+        }
+        centerAdmin.centerId = center._id;
+        if (!centerAdmin.centerAdminInfo.managedCenters) {
+            centerAdmin.centerAdminInfo.managedCenters = [];
+        }
+        const alreadyManaged = centerAdmin.centerAdminInfo.managedCenters.some((id) => id.toString() === center._id.toString());
+        if (!alreadyManaged) {
+            centerAdmin.centerAdminInfo.managedCenters.push(center._id);
+        }
+        await centerAdmin.save();
+        console.log('✅ 센터 관리자 연결 수정 완료');
+        res.json({
+            success: true,
+            message: '센터 관리자 연결이 수정되었습니다.',
+            data: {
+                centerAdminEmail: centerAdmin.email,
+                centerId: center._id,
+                centerName: center.name,
+                managedCenters: centerAdmin.centerAdminInfo.managedCenters
+            }
+        });
+    }
+    catch (error) {
+        console.error('❌ 센터 관리자 연결 수정 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 관리자 연결 수정에 실패했습니다.'
         });
     }
 });

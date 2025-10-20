@@ -347,10 +347,14 @@ class ApiClient {
           console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
           
-          // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-            window.location.href = '/auth/login';
+          // 현재 페이지가 인증 관련 페이지나 홈이 아닌 경우에만 리다이렉트
+          if (typeof window !== 'undefined' && 
+              !window.location.pathname.includes('/auth/') && 
+              window.location.pathname !== '/') {
+            window.location.href = '/';
           }
         }
         

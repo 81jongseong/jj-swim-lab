@@ -31,7 +31,7 @@ const LoginLog_1 = require("../models/LoginLog");
 const router = (0, express_1.Router)();
 router.post('/signup', async (req, res) => {
     try {
-        const { userId, name, email, password, phone, address, userType } = req.body;
+        const { userId, name, email, password, phone, address, userType, location } = req.body;
         if (!userId || !name || !email || !password) {
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
         }
@@ -56,6 +56,13 @@ router.post('/signup', async (req, res) => {
                 ? userType
                 : 'student'
         };
+        if (location && location.coordinates && location.coordinates.length === 2) {
+            userData.location = {
+                type: 'Point',
+                coordinates: location.coordinates
+            };
+            console.log('✅ 위치 정보 저장:', userData.location);
+        }
         if (userData.userType === 'instructor') {
             userData.experience = req.body.experience || '';
             userData.certifications = req.body.certifications || [];

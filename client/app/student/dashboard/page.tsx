@@ -178,7 +178,7 @@ const StudentDashboard: React.FC = () => {
       </div>
 
       {/* 진행률 및 목표 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">수영 기술 진행률</h3>
@@ -241,7 +241,7 @@ const StudentDashboard: React.FC = () => {
       </div>
 
       {/* 다음 수업 및 업적 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">다음 수업</h3>

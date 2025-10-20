@@ -739,7 +739,33 @@ export default function ApprovalsPage() {
                         📋 상세보기
                       </Button>
                     )}
-                    {approval.status === 'pending' && (
+                    {/* 센터 등록은 모든 상태에서 변경 가능 */}
+                    {approval.type === 'center_registration' && (
+                      <>
+                        {approval.status !== 'approved' && (
+                          <Button
+                            onClick={() => handleApproval(approval.id, 'approve')}
+                            variant="success"
+                            size="sm"
+                            fullWidth
+                          >
+                            {approval.status === 'rejected' ? '🔄 승인으로 변경' : '✅ 승인'}
+                          </Button>
+                        )}
+                        {approval.status !== 'rejected' && (
+                          <Button
+                            onClick={() => handleApproval(approval.id, 'reject')}
+                            variant="danger"
+                            size="sm"
+                            fullWidth
+                          >
+                            {approval.status === 'approved' ? '🔄 거부로 변경' : '❌ 거부'}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {/* 다른 타입은 pending일 때만 */}
+                    {approval.type !== 'center_registration' && approval.status === 'pending' && (
                       <>
                         <Button
                           onClick={() => handleApproval(approval.id, 'approve')}
@@ -759,7 +785,7 @@ export default function ApprovalsPage() {
                         </Button>
                       </>
                     )}
-                    {approval.status !== 'pending' && approval.type !== 'center_registration' && (
+                    {approval.type !== 'center_registration' && approval.status !== 'pending' && (
                       <div className="flex-1 text-center text-xs text-gray-500 py-2">
                         {approval.status === 'approved' ? '✅ 승인 완료' : '❌ 거부 완료'}
                       </div>
