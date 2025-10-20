@@ -66,8 +66,8 @@ function StudentLevelsManagement() {
     // instructorInfo 상세 정보 출력
     if (user.instructorInfo) {
       console.log('🔍 instructorInfo 상세:', {
-        centerId: user.instructorInfo.centerId,
-        hasCenterId: !!user.instructorInfo.centerId
+        assignedCenters: user.instructorInfo.assignedCenters,
+        hasAssignedCenters: !!user.instructorInfo.assignedCenters?.length
       });
     }
     
@@ -77,8 +77,8 @@ function StudentLevelsManagement() {
       return centerId;
     }
     
-    if (user.userType === 'instructor' && user.instructorInfo?.centerId) {
-      const centerId = user.instructorInfo.centerId;
+    if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters?.length) {
+      const centerId = user.instructorInfo.assignedCenters[0];
       console.log('✅ instructor에서 센터 ID 찾음:', centerId);
       return centerId;
     }

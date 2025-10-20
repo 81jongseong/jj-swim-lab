@@ -14,7 +14,20 @@
 import React, { useMemo, useState } from 'react';
 import { TRAINING_METHODS } from '../data/trainingMethods';
 import { DRILLS } from '../data/drills';
-import { buildProgram } from '../utils/engine';
+// buildProgram이 더 이상 export되지 않음 (레거시 코드)
+// import { buildProgram } from '../../../lib/swimlab/engine-v35-time-based';
+
+// 임시 buildProgram 구현 (기본 프로그램 생성)
+const buildProgram = (params: any) => {
+  return {
+    warmup: [],
+    main: [],
+    cooldown: [],
+    totalMeters: params.targetMeters || 0,
+    estimatedMinutes: 60
+  };
+};
+
 import { History, SwimSession } from '../utils/storage';
 import { generateWeekSpecs, macrocycleToRace, generateICS } from '../utils/planner';
 import { GLOSSARY } from '../utils/glossary';

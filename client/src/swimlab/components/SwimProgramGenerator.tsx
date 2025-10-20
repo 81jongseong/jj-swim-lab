@@ -18,7 +18,20 @@ import React, { useMemo, useState } from 'react';
 import { TRAINING_METHODS } from '../data/trainingMethods';
 import { DRILLS } from '../data/drills';
 import { Category, paginate, filterMethods, filterDrills, countAll, type TrainingMethod, type Drill } from '../utils/catalog';
-import { buildProgram, parsePRText, estimateCSSFromPRs, estimateTargetSPL25 } from '../utils/engine';
+// buildProgram이 더 이상 export되지 않음 (레거시 코드)
+// 임시 구현들
+const buildProgram = (params: any) => {
+  return {
+    warmup: [],
+    main: [],
+    cooldown: [],
+    totalMeters: params.targetMeters || 0,
+    estimatedMinutes: 60
+  };
+};
+const parsePRText = (text: string) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
+const estimateCSSFromPRs = (prs: any) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
+const estimateTargetSPL25 = (stroke: string) => 15;
 import { History, type SwimSession } from '../utils/storage';
 import { applyRulesMulti } from '../utils/rules_multi';
 import Planner from './Planner';

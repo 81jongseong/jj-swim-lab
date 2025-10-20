@@ -107,6 +107,7 @@ interface ApprovalItem {
   status: 'pending' | 'approved' | 'rejected';
   priority: 'low' | 'medium' | 'high';
   centerRegistration?: CenterRegistration;
+  instructorName?: string; // 강사 승인 시 사용
 }
 
 export default function ApprovalsPage() {

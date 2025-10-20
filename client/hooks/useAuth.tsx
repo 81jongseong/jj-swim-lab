@@ -95,6 +95,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 
 export interface User {
   _id: string;
+  id?: string; // userId와 동일 (일부 컴포넌트에서 사용)
   userId: string;
   name: string;
   email: string;
@@ -233,6 +234,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...userData,
+        id: userData.id || userData.userId || userData._id, // id 속성 확인 및 추가
         accessPermissions: userData.accessPermissions || {
           dashboard: true,
           courses: true,
@@ -297,6 +299,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // accessPermissions가 없으면 기본값 설정
         const userWithDefaults = {
           ...userData,
+          id: userData.id || userData.userId || userData._id, // id 속성 확인 및 추가
           accessPermissions: userData.accessPermissions || {
             dashboard: true,
             courses: true,
@@ -374,6 +377,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...data.user,
+        id: data.user.userId || data.user._id, // id 속성 추가 (타입 호환성)
         accessPermissions: data.user.accessPermissions || {
           dashboard: true,
           courses: true,
@@ -443,6 +447,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...data.user,
+        id: data.user.userId || data.user._id, // id 속성 추가 (타입 호환성)
         accessPermissions: data.user.accessPermissions || {
           dashboard: true,
           courses: true,

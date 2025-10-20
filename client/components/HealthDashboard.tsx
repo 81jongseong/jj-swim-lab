@@ -23,7 +23,8 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp, Target, Activity, Calendar, Heart, Weight, Zap } from 'lucide-react';
+import { TrendingUp, Target, Activity, Calendar, Heart, Scale, Zap } from 'lucide-react';
+// Weight는 lucide-react에 없음, Scale 사용
 
 interface HealthData {
   riskLevel: 'low' | 'medium' | 'high';

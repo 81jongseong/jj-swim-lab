@@ -1,6 +1,6 @@
 'use client';
 
-import Badge from '../ui/badge';
+import { Badge } from '../ui/badge';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ExternalLink, AlertCircle } from 'lucide-react';

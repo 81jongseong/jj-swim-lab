@@ -53,10 +53,14 @@ function SuperAdminNoticesManagement() {
     content: '',
     category: 'general' as Notice['category'],
     priority: 'medium' as Notice['priority'],
+    type: 'general' as any, // 레거시 호환성
+    status: 'draft' as any, // 레거시 호환성  
     isPublished: false,
     targetUserTypes: [] as string[],
     targetCenters: [] as string[],
+    targetRegions: [] as string[],
     tags: [] as string[],
+    sendToAll: false,
     isPinned: false,
     allowComments: true,
     isVisibleToGuest: false,
