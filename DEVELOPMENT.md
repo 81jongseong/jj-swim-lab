@@ -2,6 +2,169 @@
 
 ## 📅 최근 업데이트 (2025-10-20)
 
+### 🎨 **센터 회원 관리 페이지 완전 개선 (2025-10-20 23:30)** ⭐⭐⭐
+
+#### 📋 **문제 상황**
+1. **메모 기능 문제**
+   - 메모 저장은 성공하지만 목록에서 표시 안됨
+   - 메모 수정/삭제 기능 없음
+   - 메모 이력 관리 불가능
+   - 페이지 전체 새로고침으로 성능 저하
+
+2. **필터 기능 부족**
+   - 강사별 필터 작동 안함
+   - 레벨별 필터 없음
+   - 메모 유무로 필터링 불가능
+   - 필터 UI가 지저분함
+
+3. **UI/UX 문제**
+   - 카드가 한 줄로만 표시 (반응형 아님)
+   - 메모 모달 배경이 투명
+   - 필터 옵션이 한 줄에 나열되어 복잡함
+
+#### 🔧 **해결 과정**
+
+**1단계: 메모 데이터 조회 문제 해결**
+- **문제**: `lean()` 메서드가 nested 필드를 제대로 변환하지 않음
+- **해결**: `toObject()`로 변경
+```typescript
+// 이전
+const members = await User.find(query).lean();
+
+// 수정
+const membersRaw = await User.find(query);
+const members = membersRaw.map(m => m.toObject());
+```
+
+**2단계: 메모 이력 시스템 구현**
+- **User 모델 확장**:
+  ```typescript
+  studentInfo: {
+    centerMemos: [{
+      content: String,
+      type: 'info' | 'warning' | 'complaint' | 'special',
+      createdBy: ObjectId,
+      createdByName: String,
+      createdAt: Date
+    }]
+  }
+  ```
+- **API 구현**:
+  - `POST /api/center-members/:id/memo` - 메모 추가 ($push)
+  - `DELETE /api/center-members/:id/memo/:memoId` - 메모 삭제 ($pull)
+- **실시간 업데이트**: 전체 페이지 새로고침 대신 state만 업데이트
+
+**3단계: 필터 시스템 개선**
+- **5가지 필터 추가**:
+  1. 📊 회원 상태 (활성/비활성/정지)
+  2. 👨‍🏫 담당 강사 (DB에서 실제 강사 목록 조회)
+  3. 🎯 수영 레벨 (studentInfo.currentLevel 기준)
+  4. 📝 메모 유무 (centerMemos 배열 확인)
+  5. 🔍 검색 (이름/이메일/전화번호)
+- **UI 개선**: 지역 선택창 스타일로 라벨과 함께 표시
+- **활성 필터 표시**: 컬러 태그로 선택된 필터 시각화
+
+**4단계: 반응형 카드 레이아웃**
+- **그리드 시스템**:
+  ```css
+  grid-cols-1 md:grid-cols-2 xl:grid-cols-3
+  ```
+  - 모바일: 1열
+  - 태블릿: 2열  
+  - 데스크톱: 3열
+- **컴팩트 디자인**: 카드 높이 최소화, 정보 압축
+
+**5단계: 담당 강사 정보 연동**
+- **문제**: `instructorId`만 저장되어 이름 표시 안됨
+- **해결**: User 컬렉션에서 강사 정보 populate
+```typescript
+if (member.studentInfo?.instructorId) {
+  const instructor = await User.findById(member.studentInfo.instructorId)
+    .select('name email').lean();
+  assignedInstructor = instructor;
+}
+```
+
+#### ✅ **해결 완료**
+
+**서버 측:**
+- ✅ `server/src/models/User.ts` - centerMemos 배열 스키마 추가
+- ✅ `server/src/routes/center-members.ts` - 메모 추가/삭제 API 구현
+- ✅ 담당 강사 정보 populate
+- ✅ toObject()로 올바른 데이터 변환
+- ✅ 상세 디버깅 로그 추가
+
+**클라이언트 측:**
+- ✅ `client/app/center-admin/users/page.tsx` - 완전히 재구성
+- ✅ 5가지 필터 시스템 구현
+- ✅ 메모 이력 타임라인 UI
+- ✅ 반응형 그리드 레이아웃 (1/2/3열)
+- ✅ Modal 컴포넌트 사용 (배경 투명 문제 해결)
+- ✅ 실시간 state 업데이트 (새로고침 없이)
+
+#### 🎯 **최종 기능**
+
+1. **필터링**
+   - 5가지 필터 조합 가능
+   - 활성 필터 태그로 시각화
+   - 개별/전체 초기화
+
+2. **메모 이력 관리**
+   - 4가지 유형: ℹ️ 일반, ⚠️ 경고, 📢 민원, ⭐ 특이
+   - 타임라인 형태 표시 (최신순)
+   - 작성자/작성 시간 자동 기록
+   - 개별 메모 삭제 가능
+   - 카드에 최근 2개 미리보기
+
+3. **성능 최적화**
+   - 메모 추가/삭제 시 전체 목록 새로고침 안함
+   - selectedMember state만 업데이트
+   - members 배열 map으로 효율적 업데이트
+
+#### 📊 **데이터 흐름**
+```
+메모 추가
+  └─> POST /api/center-members/:id/memo
+        └─> $push studentInfo.centerMemos
+              └─> 응답으로 업데이트된 centerMemos 반환
+                    └─> selectedMember state 업데이트
+                          └─> members 배열 map으로 업데이트
+                                └─> 카드 UI 즉시 반영
+
+메모 삭제
+  └─> DELETE /api/center-members/:id/memo/:memoId
+        └─> $pull studentInfo.centerMemos
+              └─> 동일한 실시간 업데이트 프로세스
+```
+
+#### 🚨 **알려진 이슈**
+
+**TypeScript 빌드 오류 (프로덕션 빌드 시)**
+- **상태**: ⚠️ 해결 필요 (개발 서버는 정상 작동)
+- **영향 범위**: 프로덕션 빌드 (`npm run build`)
+- **주요 오류 패턴**:
+  1. `badge.tsx`, `input.tsx` 모듈 인식 문제 (~50건)
+     - 원인: 일부 파일에서 잘못된 import 방식 사용
+     - 예: `import Badge from 'ui/badge'` (잘못) vs `import { Badge } from 'ui/badge'` (올바름)
+  2. `User.id` 속성 없음 (~20건)
+     - 원인: User 타입에 `id` 속성이 없고 `_id`만 있음
+     - 해결: `user._id` 사용 또는 타입에 `id` 추가
+  3. `Notice` 타입 불일치 (~30건)
+     - 원인: Notice 인터페이스가 여러 곳에서 다르게 정의됨
+     - 해결: 통일된 Notice 타입 정의 필요
+  4. `swimlab` 관련 모듈 찾을 수 없음 (~40건)
+     - 원인: `../utils/engine` 경로 문제
+     - 해결: 정확한 경로로 수정 필요
+  5. 기타 타입 불일치 (~60건)
+- **총 오류 수**: ~200건
+- **해결 계획**: 패턴별로 일괄 수정 예정
+- **우선순위**: 낮음 (개발 환경 정상 작동 중)
+- **참고**: 센터 회원 관리 페이지(`center-admin/users`)는 TypeScript 오류 없음 ✅
+
+---
+
+## 📅 최근 업데이트 (2025-10-20)
+
 ### 🎫 **센터 회원 관리 시스템 구축 (2025-10-20)** ⭐
 
 #### ✅ **구현된 기능**
