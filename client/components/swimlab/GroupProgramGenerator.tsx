@@ -71,11 +71,11 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
         // 회원들의 CSS 수집
         const cssValues: number[] = [];
         
-        for (const student of groupClass.students || []) {
+        for (const student of (groupClass as any).students || []) {
           try {
-            const userResponse = await apiClient.get(`/api/users/${student.userId}`);
+            const userResponse = await apiClient.get(`/api/users/${student.userId}`) as any;
             if (userResponse.success && userResponse.data) {
-              const css = userResponse.data.studentInfo?.swimmingProfile?.css?.freestyle;
+              const css = (userResponse.data as any).studentInfo?.swimmingProfile?.css?.freestyle;
               if (css && css > 0) {
                 cssValues.push(css);
               }
@@ -107,9 +107,12 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
   const loadGroupClasses = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/group-classes?status=active');
-      if (response.success && response.data.groupClasses) {
-        setGroupClasses(response.data.groupClasses);
+      const response = await apiClient.get('/api/group-classes?status=active') as any;
+      if (response.success && (response.data as any)?.groupClasses) {
+        setGroupClasses((response.data as any).groupClasses);
+      } else if (response.success && Array.isArray((response as any).students)) {
+        // students 배열이 직접 응답에 있는 경우
+        console.log('✅ students 배열 직접 접근');
       }
     } catch (error) {
       console.error('단체반 목록 불러오기 실패:', error);
@@ -150,7 +153,7 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
       };
 
       // 2. 프로그램 생성 엔진 호출
-      const engineResponse = await apiClient.post('/api/swim-engine/generate', engineInput);
+      const engineResponse = await apiClient.post('/api/swim-engine/generate', engineInput) as any;
       
       if (!engineResponse.success || !engineResponse.data) {
         throw new Error('프로그램 생성 실패');
@@ -177,12 +180,13 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
         },
         content: {
           summary: `${selectedClass.className} - ${programConfig.goal} 프로그램`,
-          planExplanation: engineResponse.data.planExplanation || '',
-          totalDuration: engineResponse.data.sessions.reduce((sum: number, s: any) => sum + s.duration, 0),
-          totalMeters: engineResponse.data.sessions.reduce((sum: number, s: any) => sum + s.distance, 0),
-          sessions: engineResponse.data.sessions
+          planExplanation: (engineResponse.data as any).planExplanation || '',
+          totalDuration: (engineResponse.data as any).sessions?.reduce((sum: number, s: any) => sum + s.duration, 0) || 0,
+          totalMeters: (engineResponse.data as any).sessions?.reduce((sum: number, s: any) => sum + s.distance, 0) || 0,
+          sessions: (engineResponse.data as any).sessions || []
         },
-        usedMethodIds: engineResponse.data.usedMethodIds || []
+        usedMethodIds: (engineResponse.data as any).usedMethodIds || [],
+        adjustmentCount: (engineResponse.data as any).adjustmentCount || 0
       };
 
       const saveResponse = await apiClient.post('/api/group-programs', {
@@ -191,7 +195,8 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
       });
 
       if (saveResponse.success) {
-        alert(`✅ ${selectedClass.className} 프로그램 생성 완료!\n\n${saveResponse.data.adjustmentCount}명의 개인별 맞춤 조정사항이 자동 생성되었습니다.`);
+        const adjustmentCount = (saveResponse.data as any)?.adjustmentCount || 0;
+        alert(`✅ ${selectedClass.className} 프로그램 생성 완료!\n\n${adjustmentCount}명의 개인별 맞춤 조정사항이 자동 생성되었습니다.`);
         onClose();
       } else {
         throw new Error(saveResponse.message || '프로그램 저장 실패');

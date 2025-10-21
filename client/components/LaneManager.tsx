@@ -273,7 +273,7 @@ export default function LaneManager({
                   사용가능 ({selectedLanes.length})
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="destructive"
                   size="sm"
                   onClick={() => bulkChangeLaneStatus('maintenance')}
                 >

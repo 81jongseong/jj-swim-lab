@@ -80,7 +80,11 @@ function InstructorsManagement() {
           totalClasses: 30
         }
       ];
-      setInstructors(tempInstructors);
+      // ⭐ 가나다순 정렬
+      const sortedInstructors = tempInstructors.sort((a, b) => 
+        a.name.localeCompare(b.name, 'ko-KR')
+      );
+      setInstructors(sortedInstructors);
     } catch (error) {
       console.error('강사 목록 로드 실패:', error);
     } finally {

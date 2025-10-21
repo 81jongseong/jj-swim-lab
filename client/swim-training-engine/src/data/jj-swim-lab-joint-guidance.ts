@@ -1,10 +1,56 @@
-// JointConditionGuidance 등의 타입은 더 이상 export되지 않음 (레거시)
-// import { JointConditionGuidance, Stroke, SafetyLevel, MedicalCitation } from '../types';
-import { Stroke } from '../types';
-type SafetyLevel = 'safe' | 'cautious' | 'avoid' | 'medical';
-type MedicalCitation = any; // 임시 타입
-type JointConditionGuidance = any; // 임시 타입
+import type { Stroke } from '../types';
 
+// 안전도 레벨
+export type SafetyLevel = 'safe' | 'caution' | 'avoid' | 'medical';
+
+// 의료 문헌 인용
+export interface MedicalCitation {
+  id: string;
+  citation: string;
+  link: string;
+  level: 'SR/MA' | 'RCT' | 'Cohort' | 'Case' | 'Expert';
+  keyFindings: string;
+}
+
+// 영법별 가이드
+export interface StrokeGuidance {
+  level: SafetyLevel;
+  reason: string;
+  allowedMovements: string[];
+  prohibitedMovements: string[];
+  modifications: string[];
+  alternatives: Stroke[];
+  medicalEvidence: MedicalCitation[];
+  detailedExplanation: string;
+}
+
+// 관절질환 가이드
+export interface JointConditionGuidance {
+  conditionId: string;
+  conditionName: string;
+  category: 'spine' | 'shoulder' | 'knee' | 'hip' | 'ankle' | 'wrist' | 'elbow' | 'muscle' | 'joint' | 'tendon' | 'foot' | 'chest' | 'neck' | 'back';
+  severity: 'mild' | 'moderate' | 'severe';
+  description: string;
+  swimmingGuidance: {
+    freestyle?: StrokeGuidance;
+    backstroke?: StrokeGuidance;
+    breaststroke?: StrokeGuidance;
+    butterfly?: StrokeGuidance;
+    elementary_backstroke?: StrokeGuidance;
+    sidestroke?: StrokeGuidance;
+    [key: string]: StrokeGuidance | undefined; // 유연한 타입 허용
+  };
+  exerciseRestrictions: {
+    intensityReduction: number; // % 감소
+    durationLimit: number; // 분
+    frequencyLimit: number; // 주당 횟수
+    contraindicatedExercises: string[];
+    recommendedExercises: string[];
+    medicalEvidence?: MedicalCitation[]; // 의료 근거
+  };
+}
+
+// 의료 문헌 데이터베이스
 export const EVIDENCE_BASED_SOURCES: Record<string, MedicalCitation> = {
   BARTELS_2016_COCHRANE: {
     id: 'BARTELS_2016_COCHRANE',

@@ -233,7 +233,11 @@ export default function InstructorHealthStudents() {
           })
         );
 
-        setStudents(healthDetails);
+        // ⭐ 가나다순 정렬
+        const sortedStudents = healthDetails.sort((a, b) => 
+          a.name.localeCompare(b.name, 'ko-KR')
+        );
+        setStudents(sortedStudents);
       } else {
         setError('학생 목록을 불러오는데 실패했습니다.');
       }

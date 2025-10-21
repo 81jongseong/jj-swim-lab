@@ -20,6 +20,8 @@ export type SavedProgram = {
   athleteName: string;
   athleteId?: string;
   athleteLevel?: string;
+  groupClassName?: string; // 단체반 이름
+  groupClassId?: string; // 단체반 ID
   programScope?: 'individual' | 'group';
   programType: 'weekly' | 'race';
   createdAt: string;
@@ -29,16 +31,22 @@ export type SavedProgram = {
   params: {
     startDate: string;
     daysPerWeek: number;
-    weeklyMeters: number;
+    weeklyMeters?: number; // 선택적
+    sessionDuration?: number; // 세션 시간
+    selectedDays?: string[]; // 선택된 요일들
     pool: 25 | 50;
     stroke: 'FR' | 'BK' | 'BR' | 'FL';
-    skill: 'Beginner' | 'Intermediate' | 'Advanced';
-    cssPer100: number;
-    heightCm: number;
+    mainStrokes?: string[]; // 주요 영법들
+    excludedStrokes?: string[]; // 제외할 영법들
+    skill?: 'Beginner' | 'Intermediate' | 'Advanced'; // 선택적
+    cssPer100: number | Record<string, number>; // CSS per 100m (단일 값 또는 영법별)
+    strokeCSS?: Record<string, number>; // 영법별 CSS
+    heightCm?: number; // 선택적
     conditionIds: string[];
     goal?: string; // 훈련 목표 추가 (기술 연마, 체력 향상, 실력 향상, 체중 감량)
     raceDate?: string;
     taperWeeks?: number;
+    intensityMultiplier?: number; // 강도 조절 (레이스 플랜용)
   };
   
   // 생성된 프로그램 내용
@@ -46,10 +54,24 @@ export type SavedProgram = {
     summary: string;
     planExplanation?: string; // 주간 계획 설명 추가
     totalMeters: number;
+    totalDuration?: number; // 총 소요 시간
+    phases?: any[]; // 레이스 프로그램용 페이즈
     sessions: Array<{
       day: string;
+      date?: string; // 날짜 정보
       themeDesc?: string; // 테마 설명 추가
       sets: string[];
+      blocks?: any[]; // 세부 블록 정보
+      completion?: number | { // 완료율 (number 또는 객체)
+        completionRate: number;
+        feeling?: 'easy' | 'moderate' | 'hard' | 'very_hard';
+        notes?: string;
+        inputAt?: string;
+      };
+      dayCondition?: string | any; // 일일 컨디션 (string 또는 객체)
+      duration?: number; // 소요 시간
+      distance?: number; // 거리
+      intensity?: number; // 강도
     }>;
   };
 };

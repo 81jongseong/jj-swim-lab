@@ -17,7 +17,7 @@ import React from 'react';
 import Button from './Button';
 
 interface Template {
-  _id: string;
+  _id?: string;
   templateName: string;
   description: string;
   category: string;
@@ -26,7 +26,10 @@ interface Template {
   totalSessions: number;
   sessionDuration: number;
   stages: any[];
+  specialStages?: any[];
   isPublic: boolean;
+  usageCount?: number;
+  rating?: number;
 }
 
 interface TemplateCardProps {

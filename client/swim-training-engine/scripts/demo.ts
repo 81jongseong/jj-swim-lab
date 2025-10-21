@@ -1,11 +1,8 @@
-// HealthInput 타입은 더 이상 export되지 않음 (레거시)
-// import { HealthInput } from '../src/types';
-type HealthInput = any; // 임시 타입
-import { buildPlan } from '../src/engine/swim-plan';
+import { buildPlan, type HealthInput } from '../src/engine/swim-plan';
 
 const sample1: HealthInput = {
   demographics: { age: 45, sex: 'M' },
-  anthropometrics: { height_cm: 175, weight_kg: 85, bmi: 27.8 },
+  anthropometrics: { height_cm: 175, weight_kg: 85 },
   vitals: { rest_hr: 72, rest_bp: { sbp: 145, dbp: 90 }, on_beta_blocker: false },
   labs: { tc: 220, ldl: 140, hdl: 45, tg: 180 },
   conditions: {
@@ -23,7 +20,7 @@ const sample1: HealthInput = {
 
 const sample2: HealthInput = {
   demographics: { age: 35, sex: 'F' },
-  anthropometrics: { height_cm: 165, weight_kg: 60, bmi: 22.0 },
+  anthropometrics: { height_cm: 165, weight_kg: 60 },
   vitals: { rest_hr: 65, rest_bp: { sbp: 120, dbp: 80 }, on_beta_blocker: false },
   conditions: {
     obesity: 'normal',
@@ -40,7 +37,7 @@ const sample2: HealthInput = {
 
 const sample3: HealthInput = {
   demographics: { age: 55, sex: 'M' },
-  anthropometrics: { height_cm: 180, weight_kg: 90, bmi: 27.8 },
+  anthropometrics: { height_cm: 180, weight_kg: 90 },
   vitals: { rest_hr: 68, rest_bp: { sbp: 130, dbp: 85 }, on_beta_blocker: true },
   conditions: {
     obesity: 'overweight',

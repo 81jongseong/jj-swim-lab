@@ -23,7 +23,7 @@ export type SwimSession = {
   conditionIds?: string;
   cssPer100?: number;
   targetSPL25?: number;
-  plan: SessionPlan;       // buildProgram 결과 스냅샷
+  plan: SessionPlan | any;       // buildProgram 결과 스냅샷 (유연한 타입)
   completed?: boolean;
   memo?: string;
   // RPE 추적

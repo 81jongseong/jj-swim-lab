@@ -93,12 +93,12 @@ const UserActivityDashboard: React.FC = () => {
         fetch('/api/user-activities/top-actions/overview?limit=10', { headers }).catch(() => ({ ok: false }))
       ]);
 
-      if (trendsRes.ok) {
+      if (trendsRes.ok && 'json' in trendsRes) {
         const trendsData = await trendsRes.json();
         setTrends(trendsData.data.trends);
       }
 
-      if (topActionsRes.ok) {
+      if (topActionsRes.ok && 'json' in topActionsRes) {
         const topActionsData = await topActionsRes.json();
         setTopActions(topActionsData.data.actions);
       }
@@ -110,12 +110,12 @@ const UserActivityDashboard: React.FC = () => {
           fetch(`/api/user-activities/${selectedUser}?page=1&limit=50`, { headers }).catch(() => ({ ok: false }))
         ]);
 
-        if (statsRes.ok) {
+        if (statsRes.ok && 'json' in statsRes) {
           const statsData = await statsRes.json();
           setStats(statsData.data.stats);
         }
 
-        if (activitiesRes.ok) {
+        if (activitiesRes.ok && 'json' in activitiesRes) {
           const activitiesData = await activitiesRes.json();
           setActivities(activitiesData.data.activities);
         }
@@ -141,7 +141,7 @@ const UserActivityDashboard: React.FC = () => {
         }
       }).catch(() => ({ ok: false }));
 
-      if (response.ok) {
+      if (response.ok && 'json' in response) {
         const data = await response.json();
         setActivities(data.data.activities);
       }

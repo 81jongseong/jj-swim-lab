@@ -11,31 +11,31 @@
  * - /swim-training-engine/src/types.ts
  * - /swim-training-engine/src/engine/health-policy.ts
  */
-// 수영 실력별 페이스 기준 (초/100m)
+// 수영 실력별 페이스 기준 (초/100m) - 더 현실적인 페이스로 조정
 export const PACE_STANDARDS = {
     beginner: {
-        freestyle: 120, // 2분/100m
-        backstroke: 130, // 2분10초/100m
-        breaststroke: 140, // 2분20초/100m
-        butterfly: 200, // 3분20초/100m (초급자는 접영 권장 안함)
-        elementary_backstroke: 150, // 2분30초/100m
-        sidestroke: 160 // 2분40초/100m
+        freestyle: 180, // 3분/100m (더 현실적)
+        backstroke: 200, // 3분20초/100m
+        breaststroke: 220, // 3분40초/100m
+        butterfly: 300, // 5분/100m (초급자는 접영 권장 안함)
+        elementary_backstroke: 240, // 4분/100m
+        sidestroke: 260 // 4분20초/100m
     },
     intermediate: {
-        freestyle: 90, // 1분30초/100m
-        backstroke: 100, // 1분40초/100m
-        breaststroke: 110, // 1분50초/100m
-        butterfly: 150, // 2분30초/100m
-        elementary_backstroke: 120, // 2분/100m
-        sidestroke: 130 // 2분10초/100m
+        freestyle: 120, // 2분/100m
+        backstroke: 140, // 2분20초/100m
+        breaststroke: 160, // 2분40초/100m
+        butterfly: 200, // 3분20초/100m
+        elementary_backstroke: 180, // 3분/100m
+        sidestroke: 200 // 3분20초/100m
     },
     advanced: {
-        freestyle: 70, // 1분10초/100m
-        backstroke: 80, // 1분20초/100m
-        breaststroke: 90, // 1분30초/100m
-        butterfly: 120, // 2분/100m
-        elementary_backstroke: 100, // 1분40초/100m
-        sidestroke: 110 // 1분50초/100m
+        freestyle: 90, // 1분30초/100m
+        backstroke: 110, // 1분50초/100m
+        breaststroke: 130, // 2분10초/100m
+        butterfly: 150, // 2분30초/100m
+        elementary_backstroke: 120, // 2분/100m
+        sidestroke: 140 // 2분20초/100m
     }
 };
 // 급수별 운동 강도 조정 계수
@@ -46,22 +46,22 @@ export const GRADE_ADJUSTMENT = {
     '4급': { intensity: 0.7, duration: 0.7, pace: 1.3 },
     '5급': { intensity: 0.6, duration: 0.6, pace: 1.4 }
 };
-// 거리별 권장 시간 (미터)
+// 거리별 권장 시간 (미터) - 더 현실적인 거리와 시간으로 조정
 export const DISTANCE_RECOMMENDATIONS = {
     beginner: {
-        short: { distance: 200, duration: 15 }, // 200m, 15분
-        medium: { distance: 400, duration: 25 }, // 400m, 25분
-        long: { distance: 600, duration: 35 } // 600m, 35분
+        short: { distance: 200, duration: 20 }, // 200m, 20분
+        medium: { distance: 400, duration: 35 }, // 400m, 35분
+        long: { distance: 600, duration: 50 } // 600m, 50분
     },
     intermediate: {
-        short: { distance: 400, duration: 20 }, // 400m, 20분
-        medium: { distance: 800, duration: 35 }, // 800m, 35분
-        long: { distance: 1200, duration: 50 } // 1200m, 50분
+        short: { distance: 400, duration: 30 }, // 400m, 30분
+        medium: { distance: 800, duration: 50 }, // 800m, 50분
+        long: { distance: 1200, duration: 75 } // 1200m, 75분
     },
     advanced: {
-        short: { distance: 800, duration: 25 }, // 800m, 25분
-        medium: { distance: 1500, duration: 45 }, // 1500m, 45분
-        long: { distance: 2000, duration: 60 } // 2000m, 60분
+        short: { distance: 800, duration: 40 }, // 800m, 40분
+        medium: { distance: 1500, duration: 60 }, // 1500m, 60분
+        long: { distance: 2000, duration: 80 } // 2000m, 80분
     }
 };
 export function calculateExercisePrescription(swimLevel, targetDuration, availableStrokes, intensityReduction = 0, grade = '3급', poolDistance = 25) {
@@ -69,8 +69,8 @@ export function calculateExercisePrescription(swimLevel, targetDuration, availab
     const gradeAdjustment = GRADE_ADJUSTMENT[grade] || GRADE_ADJUSTMENT['3급'];
     // 강도 감소 적용
     const adjustedIntensity = Math.max(0.3, 1 - (intensityReduction / 100));
-    // 조정된 운동 시간 계산
-    const adjustedDuration = Math.round(targetDuration * gradeAdjustment.duration * adjustedIntensity);
+    // 조정된 운동 시간 계산 (최대 50분으로 제한)
+    const adjustedDuration = Math.min(50, Math.round(targetDuration * gradeAdjustment.duration * adjustedIntensity));
     // 페이스 기준 가져오기
     const paceStandards = PACE_STANDARDS[swimLevel];
     // 영법별 분배 계산
@@ -81,16 +81,17 @@ export function calculateExercisePrescription(swimLevel, targetDuration, availab
     availableStrokes.forEach(stroke => {
         const pace = paceStandards[stroke] * gradeAdjustment.pace;
         const strokeDuration = adjustedDuration / strokeCount;
-        const strokeDistance = Math.round((strokeDuration * 60) / pace * 100); // 분을 초로 변환 후 거리 계산
-        // 수영장 거리에 맞게 조정 (50m 또는 100m 단위로 조정)
+        // 더 정확한 거리 계산: (시간(분) * 60초) / (페이스(초/100m) * 100m)
+        const strokeDistance = Math.round((strokeDuration * 60) / (pace / 100));
+        // 수영장 거리에 맞게 조정 (25m 또는 50m 단위로 조정)
         let adjustedStrokeDistance;
         if (poolDistance === 25) {
-            // 25m 수영장은 25m 단위로 조정
-            adjustedStrokeDistance = Math.round(strokeDistance / 25) * 25;
+            // 25m 수영장은 25m 단위로 조정 (최소 25m)
+            adjustedStrokeDistance = Math.max(25, Math.round(strokeDistance / 25) * 25);
         }
         else if (poolDistance === 50) {
-            // 50m 수영장은 50m 단위로 조정
-            adjustedStrokeDistance = Math.round(strokeDistance / 50) * 50;
+            // 50m 수영장은 50m 단위로 조정 (최소 50m)
+            adjustedStrokeDistance = Math.max(50, Math.round(strokeDistance / 50) * 50);
         }
         else {
             // 기타 수영장은 50m 단위로 조정 (최소 50m)

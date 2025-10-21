@@ -38,7 +38,7 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
-import type { PlanOutput } from '../../swim-training-engine/src/types';
+import type { PlanOutput } from '@/swim-training-engine/src/types';
 
 interface ProgramHistory {
   id: string;

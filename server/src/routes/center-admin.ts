@@ -205,10 +205,18 @@ router.get('/users', authMiddleware, requireCenterAdmin, async (req: AuthRequest
  */
 router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('📋 센터 강사 목록 조회 요청');
     const centerAdmin = await User.findById(req.user._id);
     const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
 
+    console.log('👤 센터 관리자:', {
+      name: centerAdmin?.name,
+      email: centerAdmin?.email,
+      centerId: centerId?.toString()
+    });
+
     if (!centerId) {
+      console.error('❌ 센터 ID 없음');
       return res.status(400).json({
         success: false,
         message: '관리하는 센터가 없습니다.'
@@ -224,6 +232,8 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
       isActive: true
     };
 
+    console.log('🔍 검색 조건:', query);
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -238,6 +248,12 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
       .sort({ createdAt: -1 });
 
     const total = await User.countDocuments(query);
+
+    console.log('📊 조회 결과:', {
+      강사수: instructors.length,
+      총계: total,
+      강사목록: instructors.map(i => ({ name: i.name, id: i._id.toString() }))
+    });
 
     res.json({
       success: true,
@@ -257,6 +273,123 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * 👨‍🏫 센터 강사 정보 수정
+ * PUT /api/center-admin/instructors/:instructorId
+ */
+router.put('/instructors/:instructorId', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    console.log('📝 강사 정보 수정 요청:', {
+      instructorId,
+      userId: req.user._id,
+      bodyKeys: Object.keys(req.body)
+    });
+
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    console.log('🏢 센터 관리자:', {
+      name: centerAdmin?.name,
+      centerId: centerId?.toString()
+    });
+
+    if (!centerId) {
+      console.error('❌ 센터 ID 없음');
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    // 강사 존재 여부 및 권한 확인
+    const instructor = await User.findOne({
+      _id: instructorId,
+      userType: 'instructor',
+      'instructorInfo.assignedCenters': centerId
+    });
+
+    console.log('👨‍🏫 강사 검색 결과:', instructor ? `${instructor.name} 찾음` : '찾지 못함');
+
+    if (!instructor) {
+      console.error('❌ 강사 없음 또는 권한 없음');
+      return res.status(404).json({
+        success: false,
+        message: '해당 강사를 찾을 수 없거나 권한이 없습니다.'
+      });
+    }
+
+    // 업데이트 가능한 필드만 추출
+    const {
+      phone,
+      instructorInfo
+    } = req.body;
+
+    // 업데이트 데이터 구성
+    const updateData: any = {};
+
+    if (phone !== undefined) {
+      updateData.phone = phone;
+    }
+
+    if (instructorInfo) {
+      // 강사 정보 업데이트
+      if (instructorInfo.instructorLevel) {
+        updateData['instructorInfo.instructorLevel'] = instructorInfo.instructorLevel;
+      }
+      if (instructorInfo.maxStudents !== undefined) {
+        updateData['instructorInfo.maxStudents'] = instructorInfo.maxStudents;
+      }
+      if (instructorInfo.workSchedule) {
+        updateData['instructorInfo.workSchedule'] = instructorInfo.workSchedule;
+      }
+      if (instructorInfo.salaryInfo) {
+        updateData['instructorInfo.salaryInfo'] = instructorInfo.salaryInfo;
+      }
+      if (instructorInfo.memo !== undefined) {
+        updateData['instructorInfo.memo'] = instructorInfo.memo;
+      }
+      if (instructorInfo.hiredAt) {
+        updateData['instructorInfo.hiredAt'] = new Date(instructorInfo.hiredAt);
+      }
+      if (instructorInfo.contractType) {
+        updateData['instructorInfo.contractType'] = instructorInfo.contractType;
+      }
+      if (instructorInfo.specialties) {
+        updateData['instructorInfo.specialties'] = instructorInfo.specialties;
+      }
+      if (instructorInfo.certifications) {
+        updateData['instructorInfo.certifications'] = instructorInfo.certifications;
+      }
+    }
+
+    console.log('📊 업데이트 데이터:', updateData);
+
+    // 강사 정보 업데이트
+    const updatedInstructor = await User.findByIdAndUpdate(
+      instructorId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    console.log('✅ 강사 정보 업데이트 성공:', updatedInstructor?.name);
+
+    res.json({
+      success: true,
+      message: '강사 정보가 성공적으로 수정되었습니다!',
+      data: updatedInstructor
+    });
+  } catch (error: any) {
+    console.error('❌ 강사 정보 수정 오류:', error.message);
+    console.error('📋 에러 상세:', error);
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      error: error.message
     });
   }
 });

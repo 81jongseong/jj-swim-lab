@@ -52,6 +52,7 @@ export interface CenterData {
   centerId: string;
   totalApprox: number;
   trend3m: number; // 최근 3개월 매출 추세
+  h3?: string; // H3 헥사곤 인덱스
   centers: Array<{
     centerId: string;
     countApprox: number;

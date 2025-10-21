@@ -76,13 +76,35 @@ const CenterAdminDashboard: React.FC = () => {
   useEffect(() => {
     const loadCenterData = async () => {
       try {
-        // 실제 API 호출 로직
-        console.log('센터 데이터 로드 중...');
+        console.log('📊 센터 데이터 로드 중...');
         
-        // 임시 데이터 설정
+        // 실제 API로 강사 수 조회
+        let activeInstructorsCount = 8; // 기본값
+        
+        try {
+          const instructorsResponse = await fetch('http://localhost:5000/api/center-admin/instructors', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (instructorsResponse.ok) {
+            const instructorsData = await instructorsResponse.json();
+            console.log('📡 강사 API 응답:', instructorsData);
+            if (instructorsData.success) {
+              const instructors = instructorsData.data?.instructors || [];
+              activeInstructorsCount = instructors.filter((i: any) => i.isActive).length;
+              console.log('✅ 실제 활성 강사 수:', activeInstructorsCount, '명');
+            }
+          }
+        } catch (apiError) {
+          console.warn('⚠️ 강사 API 호출 실패, 기본값 사용:', apiError);
+        }
+        
+        // 통계 설정 (강사 수는 실제 DB 데이터)
         setStats({
           totalMembers: 150,
-          activeInstructors: 8,
+          activeInstructors: activeInstructorsCount,
           activeCourses: 25,
           monthlyRevenue: 5000000,
           pendingApprovals: 3,

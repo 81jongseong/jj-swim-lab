@@ -1,4 +1,83 @@
-import { HealthInput, PlanOutput, SessionPlan, Stroke } from '../types';
+import type { SessionPlan, Stroke, WeekPlan, HealthFlags, TimeAvailability, PaceInputs, Goal } from '../types';
+
+// 건강정보 입력 타입 (확장)
+export interface HealthInput {
+  demographics: {
+    age: number;
+    sex: 'M' | 'F';
+  };
+  anthropometrics?: {
+    height_cm: number;
+    weight_kg: number;
+  };
+  vitals?: {
+    rest_hr?: number;
+    rest_bp?: { sbp: number; dbp: number };
+    on_beta_blocker?: boolean;
+    bloodSugar?: number;
+    totalCholesterol?: number;
+  };
+  conditions?: {
+    hypertension?: string;
+    obesity?: string;
+    dyslipidemia?: boolean;
+    diabetes?: boolean;
+    heartDisease?: boolean;
+    respiratoryDisease?: boolean;
+  };
+  orthopedics?: string[]; // 관절질환 ID 배열
+  health?: HealthFlags; // 레거시 호환
+  pace?: PaceInputs;
+  avail?: TimeAvailability;
+  goal?: Goal;
+  stroke?: Stroke;
+  technique?: any;
+  specialConditions?: any;
+  swimLevel?: string;
+  grade?: string;
+  poolDistance?: number;
+  swim_profile?: any; // 수영 프로필
+  labs?: any; // 실험실 검사 결과 (tc, ldl, hdl, tg 등)
+  symptoms_flags?: string[]; // 증상 플래그
+  adherence_last_week?: number; // 지난 주 준수율
+  goals?: string[]; // 목표들
+}
+
+// 프로그램 출력 타입
+export interface PlanOutput {
+  microcycle_week: number;
+  weekly_target_min: number;
+  weekly_target_distance: number;
+  medical_clearance_required: boolean;
+  sessions: SessionPlan[] | Array<{
+    day: string;
+    sessionType?: string;
+    intensity: number;
+    exercises?: Array<{
+      stroke: string;
+      distance: number;
+      sets: number;
+      rest: number | [number, number];
+    }>;
+    focus?: string[];
+    stroke_plan?: any[];
+    constraints?: string[];
+    intensity_cues?: any;
+    stop_rules?: any;
+  }>;
+  strength_days?: number;
+  next_week_adjustment?: 'maintain' | 'increase' | 'decrease' | 'progress_+5%' | 'progress_+10%' | 'deload_-10%' | 'deload_-20%';
+  pacing_guidance?: string;
+  progression_plan?: 'maintain' | 'increase' | 'decrease' | 'progress_+5%' | 'progress_+10%' | 'deload_-10%' | 'deload_-20%';
+  notes: string[];
+  exercisePrescription?: {
+    totalDuration: number;
+    totalDistance: number;
+    averagePace: number;
+    intensity: number;
+    grade: string;
+  };
+}
 import { medicalClearanceNeeded, weeklyDoseMinutes, levelSessionRange, rpePrimary, hrSecondary, BP_STOP_RULE } from './health-policy';
 import { allJointConditions } from '../data/jj-swim-lab-joint-guidance';
 import { specialConditionsData, generateSpecialConditionPlan } from '../data/special-conditions';
@@ -169,7 +248,11 @@ export function buildPlan(i:HealthInput): PlanOutput {
     const averagePace = totalDistance > 0 ? Math.round((totalDuration * 60) / (totalDistance / 100)) : 0;
     
     sessions.push({
+      dayIndex: d,
       day: daysOfWeek[d],
+      totalMeters: totalDistance,
+      sets: [], // 임시 빈 배열
+      safetyBadges: constraints.slice(0, 5),
       focus: i.goals,
       stroke_plan: strokePlan,
       constraints: Array.from(new Set(constraints)).slice(0,8),
@@ -182,7 +265,7 @@ export function buildPlan(i:HealthInput): PlanOutput {
       totalDuration: totalDuration,
       averagePace: averagePace,
       intensity: exercisePrescription.intensity
-    });
+    } as any);
   }
 
   // 다음 주 조정 결정

@@ -23,7 +23,7 @@ export type Band = 'B' | 'BB' | 'A' | 'AA' | 'AAA' | 'AAAA' | 'NA';
 export interface AgeGroup {
   min: number;
   max: number;
-  label: string;
+  label?: string;
 }
 
 export interface TimeStandard {

@@ -37,7 +37,9 @@ export default function CSSConverter({ onCSSChange }: CSSConverterProps) {
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-5 w-5 text-blue-600" />
         <h4 className="font-semibold text-blue-800">CSS(임계수영속도) 계산기</h4>
-        <Info className="h-4 w-4 text-blue-500" title="CSS는 Critical Swim Speed의 약자로, 지속 가능한 최대 수영 속도를 의미합니다" />
+        <div title="CSS는 Critical Swim Speed의 약자로, 지속 가능한 최대 수영 속도를 의미합니다">
+          <Info className="h-4 w-4 text-blue-500" />
+        </div>
       </div>
       
       <div className="space-y-3">

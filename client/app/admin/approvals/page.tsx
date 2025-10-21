@@ -98,11 +98,11 @@ interface CenterRegistration {
 
 interface ApprovalItem {
   id: string;
-  type: 'center_registration';
+  type: 'center_registration' | 'instructor_registration' | 'course_enrollment' | 'payment_approval' | 'schedule_change' | 'refund_request';
   title: string;
   description: string;
   requesterName: string;
-  requesterType: 'centerAdmin';
+  requesterType: 'centerAdmin' | 'instructor' | 'student' | 'superAdmin';
   requestDate: string;
   status: 'pending' | 'approved' | 'rejected';
   priority: 'low' | 'medium' | 'high';

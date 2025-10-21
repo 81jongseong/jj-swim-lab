@@ -60,6 +60,7 @@ export interface JointConditionGuidance {
     frequencyLimit: number;     // 주당 세션 수
     contraindicatedExercises: string[];
     recommendedExercises: string[];
+    medicalEvidence?: MedicalCitation[]; // 의료 근거
   };
 }
 

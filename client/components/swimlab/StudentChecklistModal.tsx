@@ -73,7 +73,7 @@ export default function StudentChecklistModal({
       if (methodsResponse.success && methodsResponse.data) {
         const methods = Array.isArray(methodsResponse.data)
           ? methodsResponse.data
-          : methodsResponse.data.teachingMethods || [];
+          : (methodsResponse.data as any).teachingMethods || [];
         setTeachingMethods(methods.sort((a: any, b: any) => a.order - b.order));
 
         // 첫 번째 강습법 자동 선택
@@ -85,7 +85,7 @@ export default function StudentChecklistModal({
       // 2. 학생의 진행 상황 조회
       const progressResponse = await apiClient.get(`/api/teaching-progress/${studentId}`);
       if (progressResponse.success && progressResponse.data) {
-        setProgress(progressResponse.data.progress || []);
+        setProgress((progressResponse.data as any).progress || []);
       }
 
     } catch (error) {

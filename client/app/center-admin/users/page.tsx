@@ -356,7 +356,7 @@ function CenterUsersManagement() {
                   <p className="text-2xl font-bold text-green-600">{stats.activeMembers}명</p>
                 </div>
                 <UserIcon className="h-10 w-10 text-green-500" />
-              </div>
+            </div>
             </CardContent>
           </Card>
           
@@ -366,9 +366,9 @@ function CenterUsersManagement() {
                 <div>
                   <p className="text-sm text-gray-600">이번 달 신규</p>
                   <p className="text-2xl font-bold text-purple-600">{stats.newMembersThisMonth}명</p>
-                </div>
+          </div>
                 <Calendar className="h-10 w-10 text-purple-500" />
-              </div>
+        </div>
             </CardContent>
           </Card>
           
@@ -378,9 +378,9 @@ function CenterUsersManagement() {
                 <div>
                   <p className="text-sm text-gray-600">만료 임박</p>
                   <p className="text-2xl font-bold text-orange-600">{stats.expiringTicketsCount}개</p>
-                </div>
+            </div>
                 <AlertCircle className="h-10 w-10 text-orange-500" />
-              </div>
+          </div>
               <p className="text-xs text-gray-500 mt-2">7일 이내 만료</p>
             </CardContent>
           </Card>
@@ -414,24 +414,24 @@ function CenterUsersManagement() {
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                         <Ticket className="h-5 w-5 text-orange-600" />
-                      </div>
+            </div>
                       <div>
                         <p className="font-semibold text-gray-900">{member.name}</p>
                         <p className="text-sm text-gray-600">{expiringTicket.name}</p>
-                      </div>
-                    </div>
+          </div>
+        </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-orange-600">
                         {daysLeft}일 남음
                       </p>
                       <p className="text-xs text-gray-500">
                         남은 횟수: {expiringTicket.remainingSessions}회
-                      </p>
-                    </div>
-                  </div>
+              </p>
+            </div>
+          </div>
                 );
               })}
-            </div>
+        </div>
           </CardContent>
         </Card>
       )}
@@ -460,9 +460,9 @@ function CenterUsersManagement() {
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 📊 회원 상태
               </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
               >
                 <option value="">전체 상태</option>
@@ -507,7 +507,7 @@ function CenterUsersManagement() {
                     {level}
                   </option>
                 ))}
-              </select>
+            </select>
             </div>
             
             {/* 메모 필터 */}
@@ -515,7 +515,7 @@ function CenterUsersManagement() {
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 📝 메모 유무
               </label>
-              <select
+            <select
                 value={memoFilter}
                 onChange={(e) => setMemoFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
@@ -523,8 +523,8 @@ function CenterUsersManagement() {
                 <option value="">전체</option>
                 <option value="with">✅ 메모 있음</option>
                 <option value="without">❌ 메모 없음</option>
-              </select>
-            </div>
+            </select>
+          </div>
             
             {/* 새로고침 버튼 */}
             <div>
@@ -538,9 +538,9 @@ function CenterUsersManagement() {
               >
                 새로고침
               </Button>
-            </div>
-          </div>
-          
+        </div>
+      </div>
+
           {/* 활성 필터 표시 */}
           {(statusFilter || instructorFilter || levelFilter || memoFilter || searchTerm) && (
             <div className="mt-4 flex flex-wrap gap-2 items-center">
@@ -612,7 +612,7 @@ function CenterUsersManagement() {
               >
                 전체 초기화
               </button>
-            </div>
+        </div>
           )}
         </CardContent>
       </Card>
@@ -721,7 +721,7 @@ function CenterUsersManagement() {
                         <p className="text-xs font-semibold text-yellow-800">📝 메모 이력</p>
                         <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
                           {member.centerMemos.length}개
-                        </span>
+                    </span>
                       </div>
                       {member.centerMemos.slice(0, 2).map((memo, idx) => (
                         <div key={idx} className="mb-1.5 last:mb-0">
@@ -736,7 +736,7 @@ function CenterUsersManagement() {
                                memo.type === 'complaint' ? '📢' :
                                memo.type === 'special' ? '⭐' :
                                'ℹ️'}
-                            </span>
+                    </span>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs text-gray-700 line-clamp-1">{memo.content}</p>
                               <p className="text-[10px] text-gray-500">
@@ -784,8 +784,8 @@ function CenterUsersManagement() {
                     >
                       ✅ 활성
                     </Button>
-                  )}
-                </div>
+                        )}
+                      </div>
               </CardContent>
             </Card>
           ))}
@@ -884,10 +884,10 @@ function CenterUsersManagement() {
             >
               ➕ 메모 추가
             </Button>
-          </div>
+                      </div>
           
           {/* 메모 이력 타임라인 */}
-          <div>
+                      <div>
             <h4 className="text-sm font-semibold text-gray-900 mb-3">
               📋 메모 이력 ({selectedMember?.centerMemos?.length || 0}개)
             </h4>
@@ -913,7 +913,7 @@ function CenterUsersManagement() {
                           {new Date(memoItem.createdAt).toLocaleString('ko-KR')}
                         </span>
                       </div>
-                      <button
+                      <button 
                         onClick={() => handleMemoDelete(memoItem._id)}
                         className="text-red-500 hover:text-red-700 text-xs px-2 py-1 rounded hover:bg-red-50"
                       >
@@ -929,10 +929,10 @@ function CenterUsersManagement() {
               <div className="text-center py-8 text-gray-400">
                 <p className="text-sm">아직 메모가 없습니다.</p>
                 <p className="text-xs">위에서 새 메모를 추가해보세요.</p>
-              </div>
+        </div>
             )}
-          </div>
-          
+      </div>
+
           {/* 닫기 버튼 */}
           <div className="flex gap-2 pt-4 border-t border-gray-200">
             <Button

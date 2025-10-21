@@ -139,7 +139,7 @@ export default function HealthOverviewPage() {
       console.log('📊 회원 API 응답:', usersResponse);
       
       if (usersResponse) {
-        const users = usersResponse.users || usersResponse;
+        const users = (usersResponse as any).users || usersResponse;
         if (Array.isArray(users)) {
           setUsers(users);
           console.log(`✅ ${users.length}명의 회원 데이터 로드 완료`);
@@ -157,13 +157,13 @@ export default function HealthOverviewPage() {
       const centersResponse = await apiClient.get('/api/centers');
       console.log('📊 센터 API 응답:', centersResponse);
       
-      if (centersResponse?.data?.centers) {
-        const centersData = centersResponse.data.centers;
+      if ((centersResponse as any)?.data?.centers) {
+        const centersData = (centersResponse as any).data.centers;
         setCenters(centersData);
         console.log(`✅ ${centersData.length}개의 센터 데이터 로드 완료`);
-      } else if (centersResponse?.centers) {
-        setCenters(centersResponse.centers);
-        console.log(`✅ ${centersResponse.centers.length}개의 센터 데이터 로드 완료`);
+      } else if ((centersResponse as any)?.centers) {
+        setCenters((centersResponse as any).centers);
+        console.log(`✅ ${(centersResponse as any).centers.length}개의 센터 데이터 로드 완료`);
       } else {
         console.warn('센터 데이터 응답 없음');
         setCenters([]);

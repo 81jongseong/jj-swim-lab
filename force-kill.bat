@@ -1,32 +1,110 @@
 @echo off
+REM ========================================
+REM JJ Swim Lab - Force Kill Script
+REM ========================================
+REM Force kill all Node.js processes
+REM Use when: Server not responding or port conflicts
+REM ========================================
+
 chcp 65001 >nul
-echo 강제 종료 실행 중...
+title JJ Swim Lab - Force Kill
+color 0C
+
+echo ========================================
+echo   JJ Swim Lab - Force Kill
+echo ========================================
 echo.
 
-echo Node.js 프로세스 종료...
-taskkill /f /im node.exe 2>nul
-if %errorlevel% equ 0 (
-    echo ✅ Node.js 프로세스 종료 완료
+echo Stopping all Node.js processes...
+echo.
+
+REM ========================================
+REM Check Node.js processes
+REM ========================================
+tasklist | findstr /i "node.exe" >nul 2>&1
+if not errorlevel 1 (
+    echo Processes to kill:
+    tasklist | findstr /i "node.exe"
+    echo.
+    
+    echo Killing processes...
+    taskkill /f /im node.exe >nul 2>&1
+    
+    timeout /t 2 /nobreak >nul
+    
+    REM Verify termination
+    tasklist | findstr /i "node.exe" >nul 2>&1
+    if errorlevel 1 (
+        echo [OK] All Node.js processes terminated!
+    ) else (
+        echo [WARN] Some processes may remain
+        echo        Check Task Manager to kill manually
+    )
 ) else (
-    echo ℹ️ 실행 중인 Node.js 프로세스가 없습니다
+    echo [OK] No Node.js processes running
 )
 
 echo.
-echo Next.js 프로세스 종료...
-taskkill /f /im next.exe 2>nul
-if %errorlevel% equ 0 (
-    echo ✅ Next.js 프로세스 종료 완료
+
+REM ========================================
+REM Check Next.js processes
+REM ========================================
+echo Checking Next.js processes...
+tasklist | findstr /i "next.exe" >nul 2>&1
+if not errorlevel 1 (
+    taskkill /f /im next.exe >nul 2>&1
+    echo [OK] Next.js processes terminated
 ) else (
-    echo ℹ️ 실행 중인 Next.js 프로세스가 없습니다
+    echo [OK] No Next.js processes
 )
 
 echo.
-echo 포트 확인...
-netstat -ano | findstr :3000
-netstat -ano | findstr :5000
+
+REM ========================================
+REM Port Check
+REM ========================================
+echo Checking ports...
+echo.
+
+echo [Port 3000 - Client]
+netstat -ano | findstr ":3000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo [WARN] Still in use:
+    netstat -ano | findstr ":3000" | findstr "LISTENING"
+    echo.
+    echo To manually kill:
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000" ^| findstr "LISTENING"') do (
+        echo    taskkill /F /PID %%a
+    )
+) else (
+    echo [OK] Port 3000 available
+)
 
 echo.
-echo 강제 종료 완료!
-echo 아무 키나 누르면 창이 닫힙니다.
-pause >nul
 
+echo [Port 5000 - Server]
+netstat -ano | findstr ":5000" | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo [WARN] Still in use:
+    netstat -ano | findstr ":5000" | findstr "LISTENING"
+    echo.
+    echo To manually kill:
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5000" ^| findstr "LISTENING"') do (
+        echo    taskkill /F /PID %%a
+    )
+) else (
+    echo [OK] Port 5000 available
+)
+
+echo.
+echo ========================================
+echo   Force Kill Complete!
+echo ========================================
+echo.
+echo To restart servers:
+echo   start-server.bat
+echo.
+echo ========================================
+echo.
+
+pause

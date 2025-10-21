@@ -26,6 +26,8 @@ interface Notice {
   isVisibleToGuest: boolean;
   expiresAt?: Date;
   attachments?: { filename: string; url: string; size: number; type: string; }[];
+  type?: string; // 레거시 호환성
+  status?: string; // 레거시 호환성
 }
 
 interface Center {
@@ -270,12 +272,18 @@ function SuperAdminNoticesManagement() {
     setFormData({
       title: '',
       content: '',
-      type: 'general',
+      category: 'general',
       priority: 'medium',
-      status: 'draft',
+      type: 'general' as any,
+      status: 'draft' as any,
+      isPublished: false,
       targetUserTypes: [],
       targetRegions: [],
       targetCenters: [],
+      tags: [],
+      isPinned: false,
+      allowComments: true,
+      isVisibleToGuest: false,
       sendToAll: false,
       sendToAllUserTypes: false
     });
@@ -291,12 +299,17 @@ function SuperAdminNoticesManagement() {
       content: notice.content,
       category: notice.category,
       priority: notice.priority,
+      type: notice.type || 'general' as any,
+      status: notice.status || (notice.isPublished ? 'published' : 'draft') as any,
       isPublished: notice.isPublished,
       targetUserTypes: notice.targetUserTypes,
+      targetRegions: notice.targetCenters || [],
       targetCenters: notice.targetCenters,
       tags: notice.tags || [],
       isPinned: notice.isPinned || false,
       allowComments: notice.allowComments || true,
+      isVisibleToGuest: notice.isVisibleToGuest || false,
+      sendToAll: false,
       sendToAllUserTypes: notice.targetUserTypes.length === 4
     });
     setShowModal(true);

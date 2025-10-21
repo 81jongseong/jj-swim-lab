@@ -36,6 +36,7 @@ import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
 import CourseFilterButtons from '@/components/center-admin/CourseFilterButtons';
 import CourseTable from '@/components/center-admin/CourseTable';
+import CourseCard from '@/components/center-admin/CourseCard';
 import CourseFormModal from '@/components/center-admin/CourseFormModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 
@@ -69,11 +70,7 @@ function CoursesManagement() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar'); // 캘린더/리스트 뷰 토글
-  const [instructors, setInstructors] = useState([
-    { _id: '1', name: '김강사' },
-    { _id: '2', name: '이코치' },
-    { _id: '3', name: '박트레이너' }
-  ]);
+  const [instructors, setInstructors] = useState<{ _id: string; name: string; userId?: string }[]>([]);
   const [customLevels, setCustomLevels] = useState([
     { id: 'level1', name: '입문', description: '수영을 처음 시작하는 단계', order: 1 },
     { id: 'level2', name: '초급', description: '기본 영법을 배우는 단계', order: 2 },
@@ -85,6 +82,7 @@ function CoursesManagement() {
   useEffect(() => {
     if (user) {
       loadCourses();
+      loadInstructors();
     }
   }, [user]);
 
@@ -101,13 +99,20 @@ function CoursesManagement() {
       const data = await response.json();
       console.log('📚 로드된 강습 과정:', data);
       
-      // 🔍 원본 schedule 구조 확인
-      console.log('🔍 원본 schedule 샘플 (처음 3개):');
-      data.data.slice(0, 3).forEach((course: any, idx: number) => {
-        console.log(`  ${idx + 1}. ${course.name}:`, {
-          schedule: course.schedule,
-          scheduleLength: course.schedule?.length
-        });
+      // 🔍 원본 schedule 구조 확인 (전체)
+      console.log('🔍 원본 schedule 전체 확인:');
+      data.data.forEach((course: any, idx: number) => {
+        console.log(`\n  ${idx + 1}. ${course.name}:`);
+        console.log('     Schedule:', JSON.stringify(course.schedule, null, 2));
+        
+        // 배영 중급반 특별 확인
+        if (course.name.includes('배영')) {
+          console.warn('⚠️ 배영 중급반 상세:', {
+            name: course.name,
+            schedule: course.schedule,
+            scheduleCount: course.schedule?.length
+          });
+        }
       });
       
       // 영어 요일 → 한글 요일 변환
@@ -191,9 +196,16 @@ function CoursesManagement() {
       console.log('📋 강습 과정 목록:');
       coursesData.forEach((course, index) => {
         const days = course.schedule.map(s => s.dayOfWeek).filter(d => d).join(', ');
-        console.log(`  ${index + 1}. ${course.name} (${days || '⚠️ 요일 미설정'}) - ${course.duration}분`);
+        const hasSaturday = days.includes('토');
+        console.log(`  ${index + 1}. ${course.name} (${days || '⚠️ 요일 미설정'}) ${hasSaturday ? '🌟 토요일!' : ''} - ${course.duration}분 - ${course.level}`);
       });
       console.log(`\n💡 "월,수,금" 반은 1개 과정으로 카운트됩니다!`);
+      
+      // 토요일 강좌 통계
+      const saturdayCourses = coursesData.filter(c => 
+        c.schedule.some(s => s.dayOfWeek.includes('토'))
+      );
+      console.log(`🌟 토요일 강좌: ${saturdayCourses.length}개`, saturdayCourses.map(c => c.name));
       
       // ⚠️ 요일이 없는 과정 확인
       const coursesWithoutSchedule = coursesData.filter(c => 
@@ -357,6 +369,46 @@ function CoursesManagement() {
     return statuses[status] || status;
   };
 
+  // 강사 목록 로드
+  const loadInstructors = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/center-users?userType=instructor&limit=100', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('❌ 강사 목록 로드 실패');
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('👨‍🏫 로드된 강사 목록:', data);
+      
+      // 강사 데이터 변환 (_id와 name만 필요)
+      const rawInstructors = data.data?.users || data.users || data.data || data || [];
+      const instructorList = rawInstructors
+        .map((instructor: any) => ({
+          _id: instructor._id,
+          name: instructor.name || instructor.userId || '이름 없음',
+          userId: instructor.userId
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'ko-KR')); // ⭐ 가나다순 정렬
+      
+      setInstructors(instructorList);
+      console.log('✅ 강사 목록 설정 완료 (가나다순 정렬):', instructorList.length, '명');
+      
+      if (instructorList.length === 0) {
+        console.warn('⚠️ 강사가 없습니다. 강사를 먼저 등록해주세요!');
+      }
+      
+    } catch (error) {
+      console.error('💥 강사 목록 로드 오류:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       'active': 'bg-green-100 text-green-800',
@@ -374,6 +426,20 @@ function CoursesManagement() {
     if (hour >= 12 && hour < 18) return 'afternoon'; // 오후 12:00-17:59
     if (hour >= 18 && hour < 22) return 'evening'; // 저녁 18:00-21:59
     return 'other';
+  };
+
+  // 레벨 ID → 레벨 이름 변환 함수
+  const getLevelName = (levelId: string): string => {
+    const level = customLevels.find(l => l.id === levelId);
+    if (level) return level.name;
+    
+    // 기존 레벨 처리
+    const defaultLevels: { [key: string]: string } = {
+      'beginner': '초급',
+      'intermediate': '중급',
+      'advanced': '고급'
+    };
+    return defaultLevels[levelId] || levelId;
   };
 
   // 모든 과정의 태그 수집 (중복 제거)
@@ -531,6 +597,11 @@ function CoursesManagement() {
       if (editingCourse && editingCourse._id) {
         // ✅ 수정 - PUT 요청
         console.log('✏️ 강습 과정 수정:', courseData);
+        console.log('👨‍🏫 선택된 강사:', {
+          instructorId: courseData.instructorId,
+          instructorName: courseData.instructorName
+        });
+        console.log('🏷️ 태그:', courseData.tags);
         
         const response = await fetch(`http://localhost:5000/api/courses/${editingCourse._id}`, {
           method: 'PUT',
@@ -545,6 +616,7 @@ function CoursesManagement() {
             duration: courseData.duration,
             price: courseData.price,
             maxStudents: courseData.maxStudents,
+            instructorId: courseData.instructorId, // ⭐ 강사 ID 추가
             schedule: scheduleForDB,
             tags: courseData.tags
           })
@@ -581,6 +653,7 @@ function CoursesManagement() {
         
         console.log('📤 서버로 전송할 데이터:', requestBody);
         console.log('📅 schedule (변환됨):', scheduleForDB);
+        console.log('🏷️ 태그:', courseData.tags);
         
         const response = await fetch('http://localhost:5000/api/courses', {
           method: 'POST',
@@ -687,7 +760,7 @@ function CoursesManagement() {
           </button>
         </div>
         <button 
-          onClick={handleAddCourse}
+          onClick={() => handleAddCourse()}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -717,19 +790,37 @@ function CoursesManagement() {
             allTags={allTags}
           />
 
-          {/* 과정 목록 - 추가 버튼 */}
-          <div className="flex justify-between items-center mb-4">
+          {/* 과정 목록 헤더 */}
+          <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
               강습 과정 목록 ({filteredCourses.length}개)
             </h3>
           </div>
 
-          {/* 과정 테이블 */}
-          <CourseTable
-            courses={filteredCourses}
-            onEdit={handleEditCourse}
-            onDelete={handleDeleteCourse}
-          />
+          {/* 과정 카드 그리드 - 반응형 */}
+          {filteredCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCourses.map((course) => (
+                <CourseCard
+                  key={course._id}
+                  course={course}
+                  levelName={getLevelName(course.level)}
+                  onEdit={handleEditCourse}
+                  onDelete={handleDeleteCourse}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-500 text-lg">표시할 강습 과정이 없습니다.</p>
+              <button
+                onClick={() => handleAddCourse()}
+                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                첫 과정 추가하기
+              </button>
+            </div>
+          )}
         </>
       )}
 

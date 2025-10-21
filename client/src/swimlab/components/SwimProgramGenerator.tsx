@@ -14,7 +14,7 @@
  */
 
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { TRAINING_METHODS } from '../data/trainingMethods';
 import { DRILLS } from '../data/drills';
 import { Category, paginate, filterMethods, filterDrills, countAll, type TrainingMethod, type Drill } from '../utils/catalog';
@@ -40,12 +40,18 @@ const buildProgram = (params: any) => {
   
   try {
     const weekPlan = generateWeeklyPlan(input as EngineInput);
+    const firstDay = weekPlan.days[0] || { sets: [], totalMeters: 0, totalDuration: 60, notes: [] };
     return {
-      warmup: weekPlan.days[0]?.sets.slice(0, 2) || [],
-      main: weekPlan.days[0]?.sets.slice(2, -1) || [],
-      cooldown: weekPlan.days[0]?.sets.slice(-1) || [],
-      totalMeters: weekPlan.days[0]?.totalMeters || 0,
-      estimatedMinutes: weekPlan.days[0]?.totalDuration || 60
+      warmup: firstDay.sets.slice(0, 2) || [],
+      main: firstDay.sets.slice(2, -1) || [],
+      cooldown: firstDay.sets.slice(-1) || [],
+      WU: firstDay.sets.slice(0, 2) || [],
+      PRE: [],
+      MAIN: firstDay.sets.slice(2, -1) || [],
+      CD: firstDay.sets.slice(-1) || [],
+      totalMeters: firstDay.totalMeters || 0,
+      estimatedMinutes: firstDay.totalDuration || 60,
+      notes: firstDay.notes || []
     };
   } catch (error) {
     console.error('프로그램 생성 오류:', error);
@@ -53,8 +59,13 @@ const buildProgram = (params: any) => {
       warmup: [],
       main: [],
       cooldown: [],
+      WU: [],
+      PRE: [],
+      MAIN: [],
+      CD: [],
       totalMeters: params.targetMeters || 0,
-      estimatedMinutes: 60
+      estimatedMinutes: 60,
+      notes: []
     };
   }
 };
@@ -62,7 +73,30 @@ const buildProgram = (params: any) => {
 // PR 텍스트 파싱 (기본 구현)
 const parsePRText = (text: string) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
 const estimateCSSFromPRs = (prs: any) => ({ FR: 0, BK: 0, BR: 0, FL: 0 });
-const estimateTargetSPL25 = (stroke: string) => 15;
+const estimateTargetSPL25 = (params: any) => {
+  // params가 문자열이면 기본값 반환
+  if (typeof params === 'string') return 15;
+  
+  // params가 객체이면 영법에 따른 SPL 계산
+  const { stroke, heightCm, skill } = params || {};
+  let baseSPL = 18;
+  
+  // 영법별 기본 SPL
+  if (stroke === 'FR') baseSPL = 18;
+  else if (stroke === 'BK') baseSPL = 20;
+  else if (stroke === 'BR') baseSPL = 12;
+  else if (stroke === 'FL') baseSPL = 15;
+  
+  // 키에 따른 조정
+  if (heightCm && heightCm > 180) baseSPL -= 1;
+  else if (heightCm && heightCm < 160) baseSPL += 1;
+  
+  // 숙련도에 따른 조정
+  if (skill === 'Advanced') baseSPL -= 2;
+  else if (skill === 'Beginner') baseSPL += 2;
+  
+  return baseSPL;
+};
 import { History, type SwimSession } from '../utils/storage';
 import { applyRulesMulti } from '../utils/rules_multi';
 import Planner from './Planner';
@@ -310,8 +344,10 @@ export default function SwimProgramGenerator({ initialConditions = [] }: SwimPro
                   className="border rounded px-3 py-1"
                   onClick={()=>{
                     const prs = parsePRText(prText);
-                    const css = estimateCSSFromPRs(prs);
-                    if (css) setCss100(Math.round(css));
+                    const cssObject = estimateCSSFromPRs(prs);
+                    // 현재 선택된 영법의 CSS 값 사용
+                    const cssValue = cssObject[stroke] || cssObject.FR || 90;
+                    if (cssValue) setCss100(Math.round(cssValue));
                   }}
                 >CSS 추정값 반영</button>
                 <span className="text-xs opacity-70">200/400 또는 100/200 기록이 있을 때 정확도가 높다.</span>

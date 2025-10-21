@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { countAll, filterDrills, filterMethods, filterConditions } from '../../src/swimlab/utils/catalog';
+import { countAll, filterDrills, filterMethods } from '../../src/swimlab/utils/catalog';
 import { DRILLS } from '../../src/swimlab/data/drills';
 import { TRAINING_METHODS } from '../../src/swimlab/data/trainingMethods';
 import { MSK_28_IDS } from '../../src/swimlab/data/conditions_msk28_index';
@@ -54,18 +54,22 @@ export default function DataValidatorPage() {
 
     // 카운트 함수 검증
     try {
-      const counts = countAll();
-      testResults.push(`✅ 카운트 함수 동작: drills=${counts.drills}, methods=${counts.methods}, strokeGuides=${counts.strokeGuides}, MSK=${counts.conditionsMSK28}/${counts.msk28Target}`);
+      const counts = countAll({
+        methods: TRAINING_METHODS,
+        drills: DRILLS,
+        conditionsCount: CONDITIONS.length
+      });
+      testResults.push(`✅ 카운트 함수 동작: drills=${counts.drills}, methods=${counts.methods}, conditions=${counts.conditions}, MSK=${MSK_28_IDS.length}/28`);
     } catch(e: any){ 
       testResults.push('❌ 카운트 함수 실패: ' + e.message); 
     }
 
     // 필터 검증
     try {
-      const frDrills = filterDrills({ stroke:'freestyle' });
-      const techMethods = filterMethods({ tag:'technique' });
+      const frDrills = filterDrills(DRILLS, { tag: 'freestyle' });
+      const techMethods = filterMethods(TRAINING_METHODS, { category: 'Technique' });
       if (frDrills.length > 0 && techMethods.length > 0) {
-        testResults.push(`✅ 필터 동작: 자유형 드릴 ${frDrills.length}개, 기술 훈련법 ${techMethods.length}개`);
+        testResults.push(`✅ 필터 동작: freestyle 태그 드릴 ${frDrills.length}개, Technique 훈련법 ${techMethods.length}개`);
       } else {
         testResults.push('❌ 필터 결과 없음');
       }

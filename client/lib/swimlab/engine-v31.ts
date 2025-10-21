@@ -312,6 +312,32 @@ function selectDrill(type: 'pull' | 'kick' | 'combo', theme: DayPlan['theme'], g
         { id: 'D15', name: 'Side Kick (Relaxed)', why: '흐름·여유', purpose: '측면 킥(여유) → 긴장 해소·몰입' },
         { id: 'D16', name: 'Dolphin (Flow)', why: '전신 흐름', purpose: '흐르는 돌핀 → 전신 조화·스트레스↓' }
       ]
+    },
+    combo: {
+      '기술 연마': [
+        { id: 'D01', name: 'Catch-Up', why: '타이밍·조화', purpose: '전신 협응·리듬 교정' },
+        { id: 'D05', name: 'Scull', why: '물감각', purpose: '스컬링으로 전체 조화 향상' }
+      ],
+      '실력 향상': [
+        { id: 'D06', name: 'Single Arm', why: '편측 강화', purpose: '좌우 균형·전신 협응' },
+        { id: 'D36', name: 'Paddle Pull', why: '파워', purpose: '패들로 전체 출력 향상' }
+      ],
+      '체력 향상': [
+        { id: 'D01', name: 'Catch-Up', why: '효율성', purpose: '전신 지구력 향상' },
+        { id: 'D05', name: 'Scull', why: '지속력', purpose: '전신 지속 능력 강화' }
+      ],
+      '체중 감량': [
+        { id: 'D01', name: 'Catch-Up', why: '칼로리', purpose: '전신 에너지 소비' },
+        { id: 'D06', name: 'Single Arm', why: '근력', purpose: '전신 근육 동원' }
+      ],
+      '재활': [
+        { id: 'D05', name: 'Scull (Gentle)', why: '저부하', purpose: '부드러운 전신 회복' },
+        { id: 'D01', name: 'Catch-Up (Slow)', why: '안전', purpose: '느린 템포로 재활' }
+      ],
+      '스트레스 해소': [
+        { id: 'D05', name: 'Scull', why: '명상', purpose: '물 느끼며 안정' },
+        { id: 'D01', name: 'Catch-Up', why: '리듬', purpose: '흐르는 리듬으로 이완' }
+      ]
     }
   };
   
@@ -525,10 +551,12 @@ export type SetItem = {
   rpe?: number;        // RPE 추가
   equipment?: string[]; // 장비 추가
   subtype?: string;    // 팔/발차기/콤비네이션
+  methodId?: string;   // 훈련법 ID (이력 추적용)
+  drillId?: string;    // 드릴 ID (이력 추적용)
   
   // 🔬 설명가능성 (Explainability)
   whyPace: string;     // "CSS 기반 Z3(역치) → MLSS 근사, Wakayoshi 1992/1993"
-  whyRest: string;     // "Z3 기본 r20″ + 염소 민감 +10″ → r30″ (PCr/젖산동역학)"
+  whyRest: string;     // "Z3 기본 r20″" + 염소 민감 +10″ → r30″ (PCr/젖산동역학)"
   whySet: string;      // "템포 유지력 강화, 기술 무너지지 않는 거리/반복"
   evidenceKeys: EvidenceKey[]; // 과학적 근거 키
 };
@@ -1026,7 +1054,8 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
       goal: i.goal || '체력 향상',
       weekHistory: weekMethodHistory,
       dayIndex: idx, // 요일 인덱스 전달
-      level: i.level // 회원 레벨 전달
+      level: i.level, // 회원 레벨 전달
+      conditionIds: i.conditionIds // 컨디션 ID 전달
     });
 
     // v4 규칙 사용 (28가지 관절질환 + 카테고리별 차등 + 건강 상태 기반 과학적 강도 조절)
@@ -1404,7 +1433,8 @@ function buildDayPlan(opts: {
   goal: string,
   weekHistory?: string[],
   dayIndex?: number, // 요일 인덱스 (체계적 변화용)
-  level?: string // 회원 레벨
+  level?: string, // 회원 레벨
+  conditionIds?: ConditionId[] // 컨디션 ID 목록
 }) {
   // 블록 비율
   const quota = { WU: 0.10, PRE: 0.15, MAIN: 0.60, CD: 0.15 };

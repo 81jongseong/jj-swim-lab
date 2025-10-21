@@ -28,6 +28,10 @@ interface Center {
   name: string;
   region: string;
   district: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 export default function NewsPage() {

@@ -20,13 +20,14 @@ import React from 'react';
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: string | React.ReactNode;
+  icon?: string | React.ReactNode;
   color: 'blue' | 'green' | 'red' | 'purple' | 'orange' | 'yellow';
   change?: {
     value: number;
     type: 'increase' | 'decrease' | 'neutral';
   };
   subtitle?: string;
+  description?: string;
   className?: string;
   onClick?: () => void;
   href?: string;
@@ -90,6 +91,7 @@ export function StatCard({
   color,
   change,
   subtitle,
+  description,
   className = '',
   onClick,
   href
@@ -129,6 +131,9 @@ export function StatCard({
           </p>
           {subtitle && (
             <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          )}
+          {description && (
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
           )}
           {change && (
             <div className="flex items-center mt-1">

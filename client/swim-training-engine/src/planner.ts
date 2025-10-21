@@ -36,7 +36,7 @@ export function buildWeek(input: UserInput): WeekPlan {
   const { demographics, health, technique, pace, avail, goal, stroke } = input;
   
   // 기준 페이스 계산
-  const basePace = resolveBasePace(pace, demographics.sex);
+  const basePace = resolveBasePace(pace);
   const zonePaces = zonePace(basePace);
   
   // 안전 제한 적용
@@ -46,7 +46,7 @@ export function buildWeek(input: UserInput): WeekPlan {
   const totalMeters = calculateTotalMeters(avail, goal);
   
   // 존별 거리 분배
-  const zoneDist = calculateZoneDistribution(totalMeters, goal);
+  const zoneDist = calculateZoneDistribution(totalMeters, zonePaces);
   
   // 세션 수 계산
   const sessions = avail.daysPerWeek;
@@ -310,8 +310,8 @@ function createZoneSet(
   stroke: Stroke, 
   description: string
 ): SessionSet {
-  const paceNote = formatPaceNote(basePace, zone, zonePaces);
-  const restSec = calculateRestTime(50, zone);
+  const paceNote = formatPaceNote(basePace, zone);
+  const restSec = calculateRestTime(zone, 50);
   
   // 거리에 따른 세트 구성
   let reps: number;
@@ -423,9 +423,9 @@ function createTechniqueSet(meters: number, stroke: Stroke, technique: any): Ses
 /**
  * 하이폭식 세트 생성 (안전 범위 내)
  */
-function createHypoxicSet(meters: number, stroke: Stroke, safetyCaps: any): SessionSet {
+function createHypoxicSet(meters: number, stroke: Stroke, safetyCaps: any, zonePaces: Record<string, [number, number]>): SessionSet {
   if (safetyCaps.restrictedDrills.includes('hypoxic_3_5_7')) {
-    return createZoneSet('Z2', meters, {}, 0, stroke, '지속 수영');
+    return createZoneSet('Z2', meters, zonePaces as any, 0, stroke, '지속 수영');
   }
   
   const reps = Math.ceil(meters / 50);

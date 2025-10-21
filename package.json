@@ -11,6 +11,7 @@
     "dev:skip-check": "cd client && npm run dev",
     "demo": "ts-node --esm scripts/demo.ts",
     "test": "jest",
+    "test:all": "echo 'Running all tests...' && npm test",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist",
     "lint": "echo 'Linting skipped'",

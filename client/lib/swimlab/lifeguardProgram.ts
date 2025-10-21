@@ -25,7 +25,7 @@ export interface LifeguardSession {
 }
 
 export interface LifeguardActivity {
-  type: 'swim' | 'rescue' | 'theory' | 'cpr' | 'scenario';
+  type: 'swim' | 'rescue' | 'theory' | 'cpr' | 'scenario' | 'evaluation';
   name: string;
   sets?: string;
   description: string;

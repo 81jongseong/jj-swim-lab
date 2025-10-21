@@ -51,7 +51,7 @@ const InstructorStudentsPage: React.FC = () => {
   // 샘플 데이터 (실제로는 API에서 가져옴)
   useEffect(() => {
     // 실제로는 API 호출
-    setMembers([
+    const sampleMembers = [
       {
         id: '1',
         name: '김수영',
@@ -88,7 +88,12 @@ const InstructorStudentsPage: React.FC = () => {
         medicalHistory: '발목 염좌 회복 중',
         lastUpdated: '2025-01-18'
       }
-    ]);
+    ];
+    // ⭐ 가나다순 정렬
+    const sortedMembers = sampleMembers.sort((a, b) => 
+      a.name.localeCompare(b.name, 'ko-KR')
+    );
+    setMembers(sortedMembers);
     setLoading(false);
   }, []);
 

@@ -48,7 +48,14 @@ export default function QuizManagementPage() {
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number>(-1);
-  const [questionForm, setQuestionForm] = useState({
+  const [questionForm, setQuestionForm] = useState<{
+    type: string;
+    question: string;
+    options: string[];
+    correctAnswer: number | string;
+    explanation: string;
+    points: number;
+  }>({
     type: 'multiple-choice',
     question: '',
     options: ['', '', '', ''],

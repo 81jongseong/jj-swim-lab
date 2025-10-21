@@ -105,9 +105,9 @@ function StudentLevelsManagement() {
         setCenterLevels({
           centerId: 'all-centers',
           levels: defaultLevels,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        } as any);
         setEditingLevels([...defaultLevels]);
         setIsLoading(false);
         return;
@@ -131,9 +131,9 @@ function StudentLevelsManagement() {
         setCenterLevels({
           centerId,
           levels: defaultLevels,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        } as any);
         setEditingLevels([...defaultLevels]);
       }
     } catch (error) {
@@ -158,20 +158,20 @@ function StudentLevelsManagement() {
         setCenterLevels({
           ...centerLevels,
           levels: [...editingLevels],
-          updatedAt: new Date()
-        });
+          updatedAt: new Date().toISOString()
+        } as any);
         setIsEditing(false);
         console.log('✅ superAdmin 센터 레벨 저장 완료');
         return;
       }
       
-      await updateCenterLevels(centerLevels.centerId, editingLevels);
+      await updateCenterLevels(centerLevels.centerId, { levels: editingLevels });
       
       setCenterLevels({
         ...centerLevels,
         levels: [...editingLevels],
-        updatedAt: new Date()
-      });
+        updatedAt: new Date().toISOString()
+      } as any);
       
       setIsEditing(false);
       console.log('✅ 센터 레벨 저장 완료');

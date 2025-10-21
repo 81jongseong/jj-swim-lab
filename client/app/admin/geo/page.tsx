@@ -237,7 +237,7 @@ export default function GeoDistributionPage() {
   // 색상 팔레트 함수
   const getColorFromCount = (count: number): [number, number, number, number] => {
     // 7단계 색상 팔레트 (연한 파랑 → 진한 빨강)
-    const colorStops = [
+    const colorStops: [number, [number, number, number, number]][] = [
       [0, [240, 248, 255, 180]],      // 연한 파랑
       [10, [173, 216, 230, 180]],     // 하늘색
       [20, [135, 206, 250, 180]],     // 하늘 파랑
@@ -254,8 +254,8 @@ export default function GeoDistributionPage() {
       const [stop1, color1] = colorStops[i];
       const [stop2, color2] = colorStops[i + 1];
       
-      if (normalizedCount >= stop1 / 60 && normalizedCount <= stop2 / 60) {
-        const ratio = (normalizedCount - stop1 / 60) / ((stop2 - stop1) / 60);
+      if (normalizedCount >= (stop1 as number) / 60 && normalizedCount <= (stop2 as number) / 60) {
+        const ratio = (normalizedCount - (stop1 as number) / 60) / (((stop2 as number) - (stop1 as number)) / 60);
         
         return [
           Math.round(color1[0] + (color2[0] - color1[0]) * ratio),

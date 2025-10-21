@@ -217,9 +217,9 @@ export default function BulkMemberVariablesModal({
     const fetchCenterPoolLengths = async () => {
       try {
         const firstMember = members[0];
-        if (firstMember?.studentInfo?.centerId) {
-          const response = await apiClient.get(`/api/centers/${firstMember.studentInfo.centerId}`);
-          const poolLengths = response.data?.facilities?.availablePoolLengths || [25];
+        if ((firstMember as any)?.studentInfo?.centerId) {
+          const response = await apiClient.get(`/api/centers/${(firstMember as any).studentInfo.centerId}`) as any;
+          const poolLengths = (response.data as any)?.facilities?.availablePoolLengths || [25];
           setAvailablePoolLengths(poolLengths);
         }
       } catch (error) {

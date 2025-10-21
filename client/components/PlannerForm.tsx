@@ -15,6 +15,8 @@ interface SwimInput {
   sessionMinutes: number;
   cssPace: number;
   stroke: 'FR' | 'BK' | 'BR' | 'FL' | 'IM';
+  age?: number;
+  sex?: 'M' | 'F';
   health: {
     hypertension: boolean;
     obesity: boolean;
@@ -26,7 +28,7 @@ interface SwimInput {
   };
 }
 
-export default function PlannerForm() {
+export default function PlannerForm({ onPlanGenerated }: { onPlanGenerated?: (plan: any) => void }) {
   const [input, setInput] = useState<SwimInput>({
     goal: 'endurance',
     poolLength: 25,
@@ -52,6 +54,10 @@ export default function PlannerForm() {
     setLoading(true);
     try {
       const swimInput = {
+        demographics: {
+          age: input.age || 30,
+          sex: (input.sex || 'M') as 'M' | 'F'
+        },
         goal: input.goal,
         avail: {
           pool: input.poolLength,
@@ -66,8 +72,11 @@ export default function PlannerForm() {
         stroke: input.stroke
       };
 
-      const weekPlan = buildWeek(swimInput);
+      const weekPlan = buildWeek(swimInput as any);
       setPlan(weekPlan);
+      if (onPlanGenerated) {
+        onPlanGenerated(weekPlan);
+      }
     } catch (error) {
       console.error('Plan generation failed:', error);
     } finally {

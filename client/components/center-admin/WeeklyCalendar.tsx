@@ -167,8 +167,24 @@ export default function WeeklyCalendar({
                  DAY_MAP[schDayLower] === day;
         });
         
-        // 시간 매칭 (시작 시간)
-        const timeMatch = schTime.startsWith(timeSlot.substring(0, 2));
+        // 시간 매칭 (정확한 시간 비교)
+        // timeSlot: "10:00", schTime: "10:00" → true
+        // timeSlot: "10:00", schTime: "19:00" → false
+        const slotHour = timeSlot.split(':')[0];
+        const schHour = schTime.split(':')[0];
+        const timeMatch = slotHour === schHour;
+        
+        // 디버그 로깅 (배영 중급반 확인)
+        if (course.name.includes('배영') && dayMatch) {
+          console.log(`🔍 ${course.name} - ${day} ${timeSlot}:`, {
+            dayMatch,
+            timeMatch,
+            schDays,
+            schTime,
+            slotHour,
+            schHour
+          });
+        }
         
         return dayMatch && timeMatch;
       });

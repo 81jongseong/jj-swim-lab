@@ -20,9 +20,17 @@ interface ChartData {
 }
 
 interface SimpleBarChartProps {
-  data: ChartData[];
-  xKey: string;
-  yKey: string;
+  // 기존 모드 (차트 데이터 배열)
+  data?: ChartData[];
+  xKey?: string;
+  yKey?: string;
+  
+  // 단일 바 모드
+  label?: string;
+  value?: number;
+  maxValue?: number;
+  
+  // 공통 옵션
   color?: string;
   maxHeight?: number;
   showValues?: boolean;
@@ -34,12 +42,42 @@ export default function SimpleBarChart({
   data,
   xKey,
   yKey,
+  label,
+  value,
+  maxValue,
   color = '#3B82F6',
   maxHeight = 300,
   showValues = true,
   horizontal = false,
   className = ""
 }: SimpleBarChartProps) {
+  // 단일 바 모드
+  if (label !== undefined && value !== undefined && maxValue !== undefined) {
+    const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+    return (
+      <div className={`space-y-2 ${className}`}>
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">{label}</span>
+          {showValues && (
+            <span className="text-sm font-bold text-gray-800">
+              {value.toLocaleString()}원
+            </span>
+          )}
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            className="h-3 rounded-full transition-all duration-500"
+            style={{
+              width: `${percentage}%`,
+              backgroundColor: color
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  // 차트 데이터 모드
   if (!data || data.length === 0) {
     return (
       <div className={`flex items-center justify-center h-64 text-gray-500 ${className}`}>
@@ -49,9 +87,9 @@ export default function SimpleBarChart({
   }
 
   // 최대값 계산
-  const maxValue = Math.max(...data.map(item => Number(item[yKey]) || 0));
-  const minValue = Math.min(...data.map(item => Number(item[yKey]) || 0));
-  const range = maxValue - minValue || 1;
+  const dataMaxValue = Math.max(...data.map(item => Number(item[yKey!]) || 0));
+  const minValue = Math.min(...data.map(item => Number(item[yKey!]) || 0));
+  const range = dataMaxValue - minValue || 1;
 
   if (horizontal) {
     return (
@@ -98,7 +136,7 @@ export default function SimpleBarChart({
     <div className={`space-y-4 ${className}`}>
       <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
         <div>최소: {minValue.toLocaleString()}</div>
-        <div className="text-right">최대: {maxValue.toLocaleString()}</div>
+        <div className="text-right">최대: {dataMaxValue.toLocaleString()}</div>
       </div>
       
       <div 

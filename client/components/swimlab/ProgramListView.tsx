@@ -93,16 +93,16 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       // 훈련법 로드
       const methodsRes = await apiClient.get('/api/swim-training-methods?isActive=true');
       console.log('📊 훈련법 응답:', methodsRes);
-      setTrainingMethods(methodsRes.data || methodsRes || []);
+      setTrainingMethods(Array.isArray(methodsRes) ? methodsRes : ((methodsRes as any).data || []));
       
       // 드릴 로드
       const drillsRes = await apiClient.get('/api/swim-drills?isActive=true');
       console.log('🎯 드릴 응답:', drillsRes);
-      setDrills(drillsRes.data || drillsRes || []);
+      setDrills(Array.isArray(drillsRes) ? drillsRes : ((drillsRes as any).data || []));
       
       console.log('✅ 훈련법/드릴 로드 완료:', {
-        trainingMethods: (methodsRes.data || methodsRes)?.length || 0,
-        drills: (drillsRes.data || drillsRes)?.length || 0
+        trainingMethods: Array.isArray(methodsRes) ? methodsRes.length : ((methodsRes as any).data?.length || 0),
+        drills: Array.isArray(drillsRes) ? drillsRes.length : ((drillsRes as any).data?.length || 0)
       });
     } catch (error) {
       console.error('❌ 훈련법/드릴 로드 오류:', error);
@@ -122,14 +122,14 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       // 선택된 회원이 있으면 해당 회원의 프로그램만 가져오기
       if (selectedAthleteId) {
         console.log(`📥 회원 ${selectedAthleteId}의 프로그램 로드 중...`);
-        const response = await apiClient.get(`/api/swim-programs/athlete/${selectedAthleteId}?limit=50`);
+        const response = await apiClient.get(`/api/swim-programs/athlete/${selectedAthleteId}?limit=50`) as any;
         // API 응답 구조: { count: 3, programs: [...] }
         serverPrograms = response.programs || response.data?.programs || [];
         console.log(`✅ ${serverPrograms.length}개 프로그램 로드됨`, serverPrograms);
       } else {
         // 회원 선택 안 했을 때는 모든 프로그램 조회
         console.log('📥 모든 프로그램 로드 중...');
-        const response = await apiClient.get(`/api/swim-programs/all?limit=100`);
+        const response = await apiClient.get(`/api/swim-programs/all?limit=100`) as any;
         serverPrograms = response.programs || response.data?.programs || [];
         console.log(`✅ 전체 ${serverPrograms.length}개 프로그램 로드됨`);
       }
@@ -338,9 +338,9 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       );
 
       console.log('🔍 서버 응답 구조:', {
-        'response.data': response.data,
-        'response.data.data': response.data?.data,
-        'response.data.data.completionRate': response.data?.data?.completionRate,
+        'response.data': (response as any).data,
+        'response.data.data': (response as any).data?.data,
+        'response.data.data.completionRate': (response as any).data?.data?.completionRate,
         'data.simpleCompletion?.overallRate': data.simpleCompletion?.overallRate,
         'data.detailedCompletion': data.detailedCompletion
       });
@@ -358,7 +358,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       } else if (data.simpleCompletion) {
         completionRate = data.simpleCompletion.overallRate;
       } else {
-        completionRate = response.data?.data?.completionRate || 0;
+        completionRate = (response as any).data?.data?.completionRate || 0;
       }
 
       console.log('✅ 최종 완료율:', completionRate);
@@ -372,7 +372,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
         const updatedProgram = { ...selectedProgram };
         if (updatedProgram.content && updatedProgram.content.sessions) {
           if (!updatedProgram.content.sessions[completionSessionIdx].completion) {
-            updatedProgram.content.sessions[completionSessionIdx].completion = {};
+              updatedProgram.content.sessions[completionSessionIdx].completion = 0 // 기본값 0;
           }
           updatedProgram.content.sessions[completionSessionIdx].completion = {
             completionRate,
@@ -1966,37 +1966,37 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                         params: editedProgram.params
                       });
                       console.log('✅ 서버에 프로그램 저장 완료:', editedProgram.id);
-                      console.log('📊 저장 응답:', saveResponse.data?.content?.sessions?.[0]?.blocks?.[3]?.description);
+                      console.log('📊 저장 응답:', (saveResponse as any).data?.content?.sessions?.[0]?.blocks?.[3]?.description);
                     }
                     
                     // UI 업데이트 - 서버에서 다시 로드하고 수정된 프로그램 찾기
                     await loadProgramsFromServer();
                     
                     // 서버에서 수정된 프로그램을 직접 조회
-                    const updatedProgramResponse = await apiClient.get(`/api/swim-programs/${editedProgram.id}`);
+                    const updatedProgramResponse = await apiClient.get(`/api/swim-programs/${editedProgram.id}`) as any;
                     console.log('📥 수정된 프로그램 다시 로드:', updatedProgramResponse);
                     
                     // selectedProgram을 서버에서 가져온 최신 데이터로 교체
-                    const serverData = updatedProgramResponse.data || updatedProgramResponse;
+                    const serverData = (updatedProgramResponse as any).data || updatedProgramResponse;
                     if (serverData) {
                       console.log('🔍 서버 데이터 상세:', {
-                        content: serverData.content,
-                        sessions: serverData.content?.sessions,
-                        phases: serverData.content?.phases
+                        content: (serverData as any).content,
+                        sessions: (serverData as any).content?.sessions,
+                        phases: (serverData as any).content?.phases
                       });
                       
                       const freshProgram = {
-                        id: serverData._id,
-                        athleteId: serverData.athleteId,
-                        athleteName: serverData.athleteName,
-                        groupClassId: serverData.groupClassId,
-                        groupClassName: serverData.groupClassName,
-                        programType: serverData.programType,
-                        programScope: serverData.programScope,
-                        params: serverData.params,
-                        content: serverData.content,
-                        createdAt: serverData.createdAt
-                      };
+                        id: (serverData as any)._id,
+                        athleteId: (serverData as any).athleteId,
+                        athleteName: (serverData as any).athleteName,
+                        groupClassId: (serverData as any).groupClassId,
+                        groupClassName: (serverData as any).groupClassName,
+                        programType: (serverData as any).programType,
+                        programScope: (serverData as any).programScope,
+                        params: (serverData as any).params,
+                        content: (serverData as any).content,
+                        createdAt: (serverData as any).createdAt
+                      } as SavedProgram;
                       
                       console.log('🔄 freshProgram 생성:', freshProgram);
                       console.log('🔍 freshProgram.content.sessions[0]:', freshProgram.content?.sessions?.[0]);

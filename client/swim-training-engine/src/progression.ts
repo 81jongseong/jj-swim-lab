@@ -74,10 +74,10 @@ function adjustUserInput(userInput: UserInput, adjustmentFactor: number): UserIn
   
   // 페이스 조정 (RPE 기반)
   if (userInput.pace.cssSecPer100) {
+    // adjustPaceByRPE는 pace.ts에서 2개 인자만 받음
     adjustedInput.pace.cssSecPer100 = adjustPaceByRPE(
       userInput.pace.cssSecPer100,
-      6, // 목표 RPE
-      7  // 실제 RPE (예시)
+      7  // 실제 RPE
     );
   }
   

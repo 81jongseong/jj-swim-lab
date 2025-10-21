@@ -66,7 +66,8 @@ function NoticesManagement() {
           authorName: '관리자',
           createdAt: new Date('2024-01-20'),
           publishedAt: new Date('2024-01-20'),
-          views: 156
+          views: 156,
+          isVisibleToGuest: false
         },
         {
           _id: '2',
@@ -82,7 +83,8 @@ function NoticesManagement() {
           authorName: '관리자',
           createdAt: new Date('2024-01-18'),
           publishedAt: new Date('2024-01-18'),
-          views: 89
+          views: 89,
+          isVisibleToGuest: false
         },
         {
           _id: '3',
@@ -98,7 +100,8 @@ function NoticesManagement() {
           authorName: '관리자',
           createdAt: new Date('2024-01-15'),
           publishedAt: new Date('2024-01-15'),
-          views: 234
+          views: 234,
+          isVisibleToGuest: true
         }
       ];
       setNotices(tempNotices);
@@ -174,7 +177,8 @@ function NoticesManagement() {
       priority: 'medium',
       status: 'draft',
       targetUserTypes: [],
-      targetRegions: []
+      targetRegions: [],
+      isVisibleToGuest: false
     });
     setShowModal(true);
   };
@@ -188,7 +192,8 @@ function NoticesManagement() {
       priority: notice.priority,
       status: notice.status,
       targetUserTypes: notice.targetUserTypes,
-      targetRegions: notice.targetRegions
+      targetRegions: notice.targetRegions,
+      isVisibleToGuest: notice.isVisibleToGuest
     });
     setShowModal(true);
   };

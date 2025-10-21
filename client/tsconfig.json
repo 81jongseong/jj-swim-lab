@@ -78,7 +78,7 @@
 
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -91,6 +91,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": false,
+    "downlevelIteration": true,
+    "forceConsistentCasingInFileNames": true,
     "plugins": [
       {
         "name": "next"

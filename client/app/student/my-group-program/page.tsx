@@ -52,13 +52,13 @@ export default function MyGroupProgramPage() {
       console.log('🔍 내 프로그램 조회 시작...');
       
       // 통합 API 호출
-      const response = await apiClient.get('/api/my-programs');
+      const response = await apiClient.get('/api/my-programs') as any;
       
-      if (response.success && response.data.programs) {
+      if (response.success && response.data?.programs) {
         const progs = response.data.programs;
         console.log(`✅ 총 ${progs.length}개 프로그램 조회 완료`);
-        console.log(`  - 개인 PT: ${response.data.individual}개`);
-        console.log(`  - 단체반: ${response.data.group}개`);
+        console.log(`  - 개인 PT: ${response.data.individual || 0}개`);
+        console.log(`  - 단체반: ${response.data.group || 0}개`);
         
         setPrograms(progs);
 

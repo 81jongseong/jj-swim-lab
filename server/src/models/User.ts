@@ -214,6 +214,36 @@ interface IUser extends mongoose.Document {
     assignedCenters?: mongoose.Types.ObjectId[];
     maxStudents?: number;
     currentStudents?: number;
+    // 🆕 근무 정보
+    workSchedule?: {
+      daysOfWeek?: number[]; // 0=일요일, 1=월요일, ... 6=토요일
+      timeSlots?: string[]; // ["09:00-13:00", "14:00-18:00"]
+    };
+    // 🆕 급여 정보 (민감정보 - 센터관리자/최고관리자만)
+    salaryInfo?: {
+      type?: 'monthly' | 'hourly' | 'per-class'; // 월급제, 시급제, 회당
+      amount?: number; // 금액
+      currency?: string; // 통화 (KRW)
+      incentive?: number; // 인센티브 (%)
+    };
+    // 🆕 센터 메모 (내부 전용)
+    memo?: string;
+    // 🆕 채용 정보
+    hiredAt?: Date; // 현재 센터 입사일
+    contractType?: 'full-time' | 'part-time' | 'contract' | 'freelance'; // 계약 형태
+    // 🆕 이직 이력 (이전 센터 경력)
+    employmentHistory?: Array<{
+      centerId?: mongoose.Types.ObjectId;
+      centerName?: string;
+      startDate?: Date;
+      endDate?: Date;
+      position?: string; // 직책
+      rating?: number; // 해당 센터에서의 평점
+      totalClasses?: number; // 진행한 수업 수
+      totalStudents?: number; // 담당했던 학생 수
+      leaveReason?: string; // 퇴사 사유
+      memo?: string; // 특이사항
+    }>;
   };
   centerAdminInfo?: {
     managedCenters?: mongoose.Types.ObjectId[];
@@ -446,6 +476,44 @@ const userSchema = new mongoose.Schema({
     assignedInstructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     maxStudents: { type: Number, default: 20 },
     currentStudents: { type: Number, default: 0 },
+    // 🆕 근무 정보
+    workSchedule: {
+      daysOfWeek: [{ type: Number, min: 0, max: 6 }], // 0=일요일, 6=토요일
+      timeSlots: [{ type: String }] // ["09:00-13:00", "14:00-18:00"]
+    },
+    // 🆕 급여 정보 (민감정보)
+    salaryInfo: {
+      type: { 
+        type: String, 
+        enum: ['monthly', 'hourly', 'per-class'],
+        default: 'monthly'
+      },
+      amount: { type: Number, default: 0 },
+      currency: { type: String, default: 'KRW' },
+      incentive: { type: Number, default: 0 } // %
+    },
+    // 🆕 센터 메모
+    memo: { type: String, default: '' },
+    // 🆕 채용 정보
+    hiredAt: { type: Date }, // 현재 센터 입사일
+    contractType: { 
+      type: String, 
+      enum: ['full-time', 'part-time', 'contract', 'freelance'],
+      default: 'full-time'
+    },
+    // 🆕 이직 이력
+    employmentHistory: [{
+      centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'SwimmingCenter' },
+      centerName: { type: String, required: true },
+      startDate: { type: Date, required: true },
+      endDate: { type: Date, required: true },
+      position: { type: String, default: '강사' },
+      rating: { type: Number, min: 0, max: 5, default: 0 },
+      totalClasses: { type: Number, default: 0 },
+      totalStudents: { type: Number, default: 0 },
+      leaveReason: { type: String, default: '' },
+      memo: { type: String, default: '' }
+    }]
   },
   // 센터 관리자 전용 필드
   centerAdminInfo: {

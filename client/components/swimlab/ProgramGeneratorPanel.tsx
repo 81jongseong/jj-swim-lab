@@ -24,8 +24,31 @@ import { apiClient } from '@/utils/api';
 import { TRAINING_METHODS } from '@/src/swimlab/data/trainingMethods';
 import { DRILLS } from '@/src/swimlab/data/drills';
 import { getMergedMethods, getMergedDrills } from '@/lib/swimlab/utils/customData';
-import { generateAdvancedProgram, type SessionBlock } from '@/lib/swimlab/advanced-program-generator';
+// import { generateAdvancedProgram, type SessionBlock } from '@/lib/swimlab/advanced-program-generator';
 import { generateWeeklyPlan, type Input as EngineInput, type DayPlan, type SetItem } from '@/lib/swimlab/engine-v31';
+
+// SessionBlock 타입 정의 (advanced-program-generator에서 가져올 수 없으므로 여기에 정의)
+type SessionBlock = {
+  type: string;
+  stroke: any;
+  strokeName: string;
+  totalDistance: number;
+  duration: number;
+  pace: number;
+  rpe: number;
+  restSec: number;
+  equipment: string[];
+  description: string;
+  desc: string;
+  whyPace: string;
+  whyRest: string;
+  whySet: string;
+  evidenceKeys: any[];
+  method?: string; // 훈련법 ID
+  methodDetails?: any; // 훈련법 상세
+  drill?: string; // 드릴 ID
+  drillDetails?: any; // 드릴 상세
+};
 import { analyzeProgress } from '@/lib/swimlab/progressAnalyzer';
 // import { buildProgram } from '@/src/swimlab/utils/engine';
 
@@ -153,8 +176,8 @@ export default function ProgramGeneratorPanel({
           // 📚 최근 3주 훈련법 이력 조회 (MongoDB)
           let weekHistory: string[] = [];
           try {
-            const historyResponse = await apiClient.get(`/swim-programs/athlete/${athlete.id}/history`);
-            weekHistory = historyResponse.data.weekHistory || [];
+            const historyResponse = await apiClient.get(`/swim-programs/athlete/${athlete.id}/history`) as any;
+            weekHistory = (historyResponse.data as any)?.weekHistory || [];
             console.log(`📚 ${athlete.name}의 최근 3주 이력:`, weekHistory);
           } catch (error) {
             console.warn('이력 조회 실패, 기본값 사용:', error);
@@ -278,7 +301,7 @@ export default function ProgramGeneratorPanel({
           const sets: string[] = [];
           sessions.forEach(session => {
             sets.push(`📅 ${session.day} (${session.totalDuration}분, ${session.totalDistance}m)`);
-            session.blocks.forEach(block => {
+            session.blocks.forEach((block: any) => {
               if (block.method) {
                 sets.push(`  • ${block.type}: ${block.description}`);
                 sets.push(`    💡 ${block.method}: ${block.methodDetails}`);
@@ -348,16 +371,17 @@ export default function ProgramGeneratorPanel({
                   day: s.day,
                   date: s.date, // 실제 날짜 추가
                   themeDesc: s.themeDesc, // 테마 설명 추가
+                  sets: s.blocks?.map((b: any) => b.description || '').filter(Boolean) || [], // blocks에서 sets 생성
                   duration: s.totalDuration,
                   distance: s.totalDistance,
-                  intensity: s.intensity.toString(),
+                  intensity: s.intensity,
                   blocks: s.blocks
                 }))
               },
               usedMethodIds: usedMethodIds
             });
             
-            console.log(`✅ ${athlete.name}의 프로그램이 MongoDB에 저장되었습니다.`, response.data.programId);
+            console.log(`✅ ${athlete.name}의 프로그램이 MongoDB에 저장되었습니다.`, (response.data as any)?.programId || 'ID 없음');
           } catch (error) {
             console.error('MongoDB 저장 실패, localStorage로 폴백:', error);
             // 폴백: localStorage에 저장
@@ -372,11 +396,11 @@ export default function ProgramGeneratorPanel({
                 daysPerWeek: selectedDays.length,
                 selectedDays,
                 sessionDuration,
-                pool,
-                stroke: activeStrokes.join(', '),
+                pool: pool as 25 | 50,
+                stroke: activeStrokes[0] as 'FR' | 'BK' | 'BR' | 'FL',
                 cssPer100: Object.fromEntries(
                   Object.entries(strokeCSS).filter(([_, css]) => css > 0)
-                ),
+                ) as any,
                 conditionIds: athlete.conditionIds || [],
                 mainStrokes: activeStrokes,
                 excludedStrokes,
@@ -390,6 +414,7 @@ export default function ProgramGeneratorPanel({
                   day: s.day,
                   date: s.date, // 실제 날짜 추가
                   themeDesc: s.themeDesc, // 테마 설명 추가
+                  sets: s.blocks?.map((b: any) => b.description || '').filter(Boolean) || [], // blocks에서 sets 생성
                   duration: s.totalDuration,
                   distance: s.totalDistance,
                   intensity: s.intensity,
@@ -416,8 +441,8 @@ export default function ProgramGeneratorPanel({
           const mainStrokes = timeBasedSettings?.mainStrokes || [stroke];
           const excludedStrokes = timeBasedSettings?.excludedStrokes || [];
           const strokeCSS = timeBasedSettings?.strokeCSS || { [stroke]: cssPer100 || 90 };
-          const condition = timeBasedSettings?.condition || '';
-          const hasPain = timeBasedSettings?.hasPain || false;
+          const condition = (timeBasedSettings as any)?.condition || '';
+          const hasPain = (timeBasedSettings as any)?.hasPain || false;
           
           // 컨디션과 통증에 따른 강도 조정
           const conditionAdjustments = getConditionBasedAdjustments(athlete.conditionIds || []);
@@ -444,20 +469,19 @@ export default function ProgramGeneratorPanel({
             createdAt: new Date().toISOString(),
             params: {
               startDate,
+              daysPerWeek: selectedDays.length || 3, // 필수 필드 추가
               raceDate,
               taperWeeks,
               sessionDuration,
-              pool,
-              stroke: mainStrokes.join(', '), // 복수 영법
+              pool: pool as 25 | 50,
+              stroke: mainStrokes[0] as 'FR' | 'BK' | 'BR' | 'FL',
               cssPer100: Object.fromEntries(
                 Object.entries(strokeCSS).filter(([_, css]) => css > 0)
-              ), // 입력한 영법의 CSS만 저장
+              ) as any, // 입력한 영법의 CSS만 저장
               conditionIds: athlete.conditionIds || [],
               intensityMultiplier: finalIntensity,
               mainStrokes,
-              excludedStrokes,
-              condition,
-              hasPain
+              excludedStrokes
             },
             content: {
               summary: `${athlete.name}의 시간 기반 레이스 플랜 - ${raceDate} 대회 대비 (테이퍼 ${taperWeeks}주)`,
@@ -466,6 +490,7 @@ export default function ProgramGeneratorPanel({
               sessions: [
                 {
                   day: '1-6주차 (베이스 빌딩)',
+                  sets: [], // 필수 필드
                   duration: adjustedSessionDuration,
                   distance: Math.floor((adjustedSessionDuration * 60) / (cssPer100 || 90) * 100),
                   intensity: Math.round(finalIntensity * 100),
@@ -486,6 +511,7 @@ export default function ProgramGeneratorPanel({
                 },
                 {
                   day: '테이퍼 주',
+                  sets: [], // 필수 필드
                   duration: Math.round(adjustedSessionDuration * 0.6),
                   distance: Math.floor((Math.round(adjustedSessionDuration * 0.6) * 60) / (cssPer100 || 90) * 100),
                   intensity: Math.round(finalIntensity * 60),

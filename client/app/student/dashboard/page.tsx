@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { BookOpen, Calendar, TrendingUp, Award, Clock, Star, Target, Activity } from 'lucide-react';
 
@@ -39,6 +40,7 @@ interface UpcomingClass {
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<StudentStats>({
     enrolledCourses: 0,
     completedSessions: 0,

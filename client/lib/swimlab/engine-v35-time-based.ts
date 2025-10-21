@@ -752,6 +752,7 @@ export function generateTimeBasedProgram(opts: {
   strokesAvoid: string[];
   conditionIds: string[];
   dayCondition: string;
+  hasPain?: boolean; // 통증 여부
   weeklyFrequency?: number; // 주간 운동 횟수 (1-7)
   intensityPercent?: number; // 건강 상태 기반 강도 조절 (0.7 = 70%)
   cssMeasurementPoolLength?: number; // CSS 측정 풀 길이 (25 or 50)
@@ -928,7 +929,7 @@ export function generateTimeBasedProgram(opts: {
   console.log('📊 시간 배분:', timeAllocation);
   
   // 2. 컨디션 기반 페이스 조절
-  const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition);
+  const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition, opts.hasPain || false, opts.intensityPercent);
   
   // 🎯 CSS 선택: primaryStroke CSS 우선, 없으면 첫 번째 사용 가능 영법, 없으면 기본 90초
   const baseCss = opts.css100[primaryStroke] 

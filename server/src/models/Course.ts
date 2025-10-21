@@ -115,7 +115,7 @@ const courseSchema = new mongoose.Schema({
   },
   level: {
     type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
+    // ⭐ enum 제거 - 커스텀 레벨(level1, level2 등) 허용
     required: true,
   },
   duration: {
@@ -210,6 +210,10 @@ const courseSchema = new mongoose.Schema({
       notes: { type: String, default: '' }
     }
   }],
+  // 과정 태그 (필터링/검색용)
+  tags: [{
+    type: String
+  }]
 }, { 
   timestamps: true 
 });

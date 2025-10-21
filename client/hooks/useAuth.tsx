@@ -102,6 +102,9 @@ export interface User {
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
   level: string;
   centerId?: string;
+  membershipTier?: string; // 멤버십 등급
+  role?: string; // 역할 정보
+  groupClassName?: string; // 그룹 클래스 이름
   studentInfo?: {
     age?: number;
     emergencyContact?: string;
@@ -109,6 +112,9 @@ export interface User {
     swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
     enrolledCourses?: string[];
     completedCourses?: string[];
+    currentLevel?: string; // 현재 레벨
+    healthProfile?: any; // 건강 프로필
+    swimmingProfile?: any; // 수영 프로필
   };
   instructorInfo?: {
     experience?: string;

@@ -501,7 +501,8 @@ export default function CenterManagement() {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
-                  setRegionFilter('all');
+                  setSelectedRegions([]);
+                  setSelectedDistricts([]);
                   setGradeFilter('all');
                   setCurrentPage(1);
                 }}
@@ -542,7 +543,8 @@ export default function CenterManagement() {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
-                  setRegionFilter('all');
+                  setSelectedRegions([]);
+                  setSelectedDistricts([]);
                   setGradeFilter('all');
                   setCurrentPage(1);
                 }}
@@ -716,18 +718,16 @@ export default function CenterManagement() {
                 {/* 카드 푸터 */}
                 <div className="px-6 py-4 bg-gray-50 rounded-b-lg">
                   <div className="flex gap-2 mb-2">
-                    <Button
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedCenter(center);
                         setShowModal(true);
                       }}
-                      variant="primary"
-                      size="sm"
-                      fullWidth
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
                     >
                       📋 상세보기
-                    </Button>
+                    </button>
                     <div className="flex-1">
                       <select
                         onChange={(e) => {

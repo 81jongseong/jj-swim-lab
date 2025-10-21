@@ -179,6 +179,45 @@ export default function AdminCoursesPage() {
     { value: 'sunday', label: '일요일' }
   ];
 
+  // 지역/센터 필터 상태
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+
+  // 지역 데이터 (예시)
+  const regionData: Record<string, string[]> = {
+    '서울특별시': ['강남구', '강북구', '송파구', '서초구'],
+    '경기도': ['수원시', '성남시', '용인시', '고양시'],
+    '부산광역시': ['해운대구', '부산진구', '동래구']
+  };
+
+  // 센터 데이터 (예시)
+  const centerData: Record<string, string[]> = {
+    '강남구': ['강남수영센터', '역삼수영장'],
+    '강북구': ['강북수영센터'],
+    '송파구': ['송파스포츠센터'],
+    '수원시': ['수원시민수영장'],
+    '성남시': ['성남수영센터']
+  };
+
+  // 지역구 토글 핸들러
+  const handleDistrictToggle = (district: string) => {
+    if (selectedDistricts.includes(district)) {
+      setSelectedDistricts(selectedDistricts.filter(d => d !== district));
+    } else {
+      setSelectedDistricts([...selectedDistricts, district]);
+    }
+  };
+
+  // 센터 토글 핸들러
+  const handleCenterToggle = (center: string) => {
+    if (selectedCenters.includes(center)) {
+      setSelectedCenters(selectedCenters.filter(c => c !== center));
+    } else {
+      setSelectedCenters([...selectedCenters, center]);
+    }
+  };
+
   useEffect(() => {
     // 강습 과정 데이터 로드
     const loadCourses = async () => {

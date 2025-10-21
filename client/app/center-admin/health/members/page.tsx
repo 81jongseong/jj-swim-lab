@@ -91,10 +91,14 @@ function HealthMembersPage() {
           bloodPressure: { systolic: 130, diastolic: 85 },
           bmi: 26.8,
           fitnessGoals: ['혈압 관리', '체중 감량'],
-          restrictions: ['고혈압', '당뇨 전단계']
-        }
-      ];
-      setMembers(tempMembers);
+        restrictions: ['고혈압', '당뇨 전단계']
+      }
+    ];
+    // ⭐ 가나다순 정렬
+    const sortedMembers = tempMembers.sort((a, b) => 
+      a.name.localeCompare(b.name, 'ko-KR')
+    );
+    setMembers(sortedMembers);
     } catch (error) {
       console.error('건강 회원 데이터 로드 실패:', error);
     } finally {

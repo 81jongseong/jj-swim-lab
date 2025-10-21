@@ -89,7 +89,8 @@ export function buildPlan(i) {
     const weeklyMin = weeklyDoseMinutes(i);
     const [minPer, maxPer] = levelSessionRange(i.swim_profile.level);
     const days = (i.conditions.hypertension !== 'normal') ? 5 : 4;
-    const perSession = Math.min(maxPer, Math.ceil(weeklyMin / days));
+    // 세션당 시간을 사용자 입력값으로 설정 (최대 50분)
+    const perSession = Math.min(50, i.swim_profile.sessionMinutes || 50);
     // 특수 상황 처리
     const specialConditionsResult = handleSpecialConditions(i);
     const strokes = specialConditionsResult.strokes.length > 0 ?
@@ -110,13 +111,15 @@ export function buildPlan(i) {
     }
     // 특수 상황에 따른 강도 조정
     const adjustedWeeklyMin = Math.round(weeklyMin * (1 - specialConditionsResult.intensityReduction / 100));
-    const adjustedPerSession = Math.min(maxPer, Math.ceil(adjustedWeeklyMin / days));
+    const adjustedPerSession = Math.min(50, perSession * (1 - specialConditionsResult.intensityReduction / 100));
     const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const sessions = [];
     // 운동량 계산 시스템으로 전체 운동량 계산
-    const exercisePrescription = calculateExercisePrescription(i.swim_profile.level, adjustedWeeklyMin, strokes, specialConditionsResult.intensityReduction, i.swim_profile.grade || '3급', i.swim_profile.poolDistance || 25);
+    const exercisePrescription = calculateExercisePrescription(i.swim_profile.level, adjustedPerSession, // 세션당 시간 사용
+    strokes, specialConditionsResult.intensityReduction, i.swim_profile.grade || '3급', i.swim_profile.poolDistance || 25);
     for (let d = 0; d < days; d++) {
-        const strokePlan = generateStrokePlan(strokes, adjustedPerSession, i.swim_profile.level, i.swim_profile.grade || '3급', specialConditionsResult.intensityReduction, i.swim_profile.poolDistance || 25);
+        const strokePlan = generateStrokePlan(strokes, adjustedPerSession, // 세션당 시간 사용
+        i.swim_profile.level, i.swim_profile.grade || '3급', specialConditionsResult.intensityReduction, i.swim_profile.poolDistance || 25);
         // 세션별 총 거리와 시간 계산
         const totalDistance = strokePlan.reduce((sum, block) => sum + (block.distance || 0), 0);
         const totalDuration = strokePlan.reduce((sum, block) => sum + (block.duration || 0), 0);
@@ -174,16 +177,16 @@ export function buildPlan(i) {
         }] : sessions;
     return {
         microcycle_week: 1,
-        weekly_target_min: clearance ? 60 : adjustedWeeklyMin,
-        weekly_target_distance: clearance ? 400 : exercisePrescription.totalDistance,
+        weekly_target_min: clearance ? 60 : (adjustedPerSession * days), // 세션당 시간 × 운동일수
+        weekly_target_distance: clearance ? 400 : (exercisePrescription.totalDistance * days), // 세션당 거리 × 운동일수
         medical_clearance_required: clearance,
         sessions: finalSessions,
         strength_days: 2,
         next_week_adjustment: next,
         notes,
         exercisePrescription: {
-            totalDuration: clearance ? 60 : exercisePrescription.totalDuration,
-            totalDistance: clearance ? 400 : exercisePrescription.totalDistance,
+            totalDuration: clearance ? 60 : (adjustedPerSession * days), // 세션당 시간 × 운동일수
+            totalDistance: clearance ? 400 : (exercisePrescription.totalDistance * days), // 세션당 거리 × 운동일수
             averagePace: exercisePrescription.pace,
             intensity: exercisePrescription.intensity,
             grade: i.swim_profile.grade || '3급'

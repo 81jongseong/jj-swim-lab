@@ -29,6 +29,16 @@ export type ProgressAnalysis = {
     performanceConsistency: string;
     readinessFactors: string[];
   };
+  suggestions?: Array<{
+    message: string;
+    confidence: number;
+    reasons?: string[];
+  }>;
+  metrics?: {
+    cssImprovement: number;
+    avgCompletionRate: number;
+    totalPrograms: number;
+  };
 };
 
 /**

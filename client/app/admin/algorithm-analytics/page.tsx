@@ -96,7 +96,7 @@ export default function SystemAnalyticsPage() {
       
       if (usersResponse) {
         // usersResponse.users가 배열이면 직접 사용
-        const users = usersResponse.users || usersResponse;
+        const users = (usersResponse as any).users || usersResponse;
         console.log('🔍 추출된 users:', users);
         
         if (Array.isArray(users)) {
@@ -114,8 +114,8 @@ export default function SystemAnalyticsPage() {
       // 사용자 활동 로드 (있으면)
       try {
         const activitiesResponse = await apiClient.get('/api/user-activities');
-        if (activitiesResponse && activitiesResponse.data && activitiesResponse.data.success) {
-          setActivities(activitiesResponse.data.activities || []);
+        if (activitiesResponse && (activitiesResponse as any).data && (activitiesResponse as any).data.success) {
+          setActivities((activitiesResponse as any).data.activities || []);
         }
       } catch (err) {
         console.log('사용자 활동 데이터 없음 (선택사항)');

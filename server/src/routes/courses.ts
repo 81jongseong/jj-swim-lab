@@ -193,7 +193,7 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       userType: req.user?.userType
     });
 
-    const { name, description, level, duration, price, maxStudents, schedule, instructorId } = req.body;
+    const { name, description, level, duration, price, maxStudents, schedule, instructorId, tags } = req.body;
 
     // 필수 필드 검증 (description은 선택사항)
     if (!name || !level || !duration || price === undefined || !maxStudents) {
@@ -258,9 +258,11 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
         ? instructorId
         : req.user.userId,
       schedule: schedule || [],
+      tags: tags || []  // ⭐ 태그 추가
     };
 
     console.log('💾 저장할 데이터:', courseData);
+    console.log('🏷️ 태그:', tags);
 
     const course = new Course(courseData);
     await course.save();
@@ -291,28 +293,52 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
 // 강습 과정 수정 (강사/관리자만)
 router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('📝 강습 과정 수정 요청:', {
+      courseId: req.params.id,
+      body: req.body,
+      instructorId: req.body.instructorId,
+      tags: req.body.tags
+    });
+
     const course = await Course.findById(req.params.id);
     
     if (!course) {
       return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
     }
 
-    // 강사 본인의 과정만 수정 가능 (관리자는 모든 과정 수정 가능)
+    // 강사 본인의 과정만 수정 가능 (센터관리자/슈퍼관리자는 모든 과정 수정 가능)
     const user = await User.findById(req.user.userId);
-    if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
+    const isSuperAdmin = user?.userType === 'superAdmin';
+    const isCenterAdmin = user?.userType === 'centerAdmin';
+    const isOwnCourse = course.instructor.toString() === String(req.user.userId);
+    
+    console.log('🔐 권한 확인:', {
+      userType: user?.userType,
+      isSuperAdmin,
+      isCenterAdmin,
+      isOwnCourse,
+      courseInstructor: course.instructor.toString(),
+      currentUser: req.user.userId
+    });
+    
+    if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
+      console.error('❌ 권한 없음:', { userType: user?.userType, userId: req.user.userId });
       return res.status(403).json({ error: '수정 권한이 없습니다.' });
     }
+    
+    console.log('✅ 권한 확인 통과');
 
     // 기본적인 데이터 검증
-    const { name, description, level, duration, price, maxStudents } = req.body;
+    const { name, description, level, duration, price, maxStudents, instructorId } = req.body;
     if (name && typeof name !== 'string') {
       return res.status(400).json({ error: '강습 과정명은 문자열이어야 합니다.' });
     }
     if (description && typeof description !== 'string') {
       return res.status(400).json({ error: '강습 과정 설명은 문자열이어야 합니다.' });
     }
-    if (level && !['beginner', 'intermediate', 'advanced'].includes(level)) {
-      return res.status(400).json({ error: '유효하지 않은 레벨입니다.' });
+    // ⭐ 커스텀 레벨 허용 (level2, level3 등)
+    if (level && typeof level !== 'string') {
+      return res.status(400).json({ error: '레벨은 문자열이어야 합니다.' });
     }
     if (duration && (typeof duration !== 'number' || duration <= 0)) {
       return res.status(400).json({ error: '강습 시간은 양수여야 합니다.' });
@@ -324,11 +350,35 @@ router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest
       return res.status(400).json({ error: '최대 수강생 수는 양수여야 합니다.' });
     }
 
+    // instructorId → instructor 필드명 변환
+    const updateData: any = { ...req.body };
+    if (updateData.instructorId) {
+      updateData.instructor = updateData.instructorId;
+      delete updateData.instructorId;
+      console.log('👨‍🏫 강사 ID 변환:', {
+        원본: req.body.instructorId,
+        변환: updateData.instructor
+      });
+    }
+    
+    // tags가 undefined일 경우 빈 배열로 처리
+    if (!updateData.tags) {
+      updateData.tags = [];
+    }
+    console.log('🏷️ 태그 처리:', updateData.tags);
+
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true }
     ).populate('instructor', 'name userId');
+
+    console.log('✅ 강습 과정 수정 완료:', {
+      courseId: updatedCourse?._id,
+      courseName: updatedCourse?.name,
+      instructor: updatedCourse?.instructor,
+      tags: updatedCourse?.tags
+    });
 
     return res.json({
       success: true,
@@ -336,8 +386,15 @@ router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest
       data: updatedCourse
     });
   } catch (error) {
-    console.error('강습 과정 수정 오류:', error);
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    console.error('💥 강습 과정 수정 오류:', error);
+    if (error instanceof Error) {
+      console.error('💥 에러 메시지:', error.message);
+      console.error('💥 에러 스택:', error.stack);
+    }
+    return res.status(500).json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
@@ -350,13 +407,26 @@ router.delete('/:id', authenticateToken, requireInstructor, async (req: AuthRequ
       return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
     }
 
-    // 강사 본인의 과정만 삭제 가능 (관리자는 모든 과정 삭제 가능)
+    // 강사 본인의 과정만 삭제 가능 (센터관리자/슈퍼관리자는 모든 과정 삭제 가능)
     const user = await User.findById(req.user.userId);
-    if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
+    const isSuperAdmin = user?.userType === 'superAdmin';
+    const isCenterAdmin = user?.userType === 'centerAdmin';
+    const isOwnCourse = course.instructor.toString() === String(req.user.userId);
+    
+    console.log('🔐 삭제 권한 확인:', {
+      userType: user?.userType,
+      isSuperAdmin,
+      isCenterAdmin,
+      isOwnCourse
+    });
+    
+    if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
+      console.error('❌ 삭제 권한 없음:', { userType: user?.userType, userId: req.user.userId });
       return res.status(403).json({ error: '삭제 권한이 없습니다.' });
     }
 
     await Course.findByIdAndDelete(req.params.id);
+    console.log('✅ 강습 과정 삭제 완료:', req.params.id);
 
     return res.json({ success: true, message: '강습 과정이 삭제되었습니다.' });
   } catch (error) {

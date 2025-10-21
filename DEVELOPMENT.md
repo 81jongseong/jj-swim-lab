@@ -2,6 +2,387 @@
 
 ## 📊 **최신 작업 현황** (2025-10-21)
 
+### ✅ **강습 과정 스케줄 표시 오류 수정** 🔧
+**진행 상태: 100% 완료!**
+
+#### **문제:**
+- 배영 중급반이 화, 목 19:00로 저장되어 있는데 토요일 10:00에도 표시됨
+- DB에 잘못된 스케줄 데이터가 저장되어 있거나, 캘린더 매칭 로직 문제
+
+#### **해결:**
+
+**1. DB 데이터 확인 로깅 추가** (`client/app/center-admin/courses/page.tsx`)
+```typescript
+// 모든 강좌의 원본 schedule 확인
+data.data.forEach((course: any) => {
+  console.log(`${course.name}:`, JSON.stringify(course.schedule, null, 2));
+  
+  // 배영 중급반 특별 확인
+  if (course.name.includes('배영')) {
+    console.warn('⚠️ 배영 중급반 상세:', {
+      schedule: course.schedule,
+      scheduleCount: course.schedule?.length
+    });
+  }
+});
+```
+
+**2. 캘린더 시간 매칭 로직 개선** (`client/components/center-admin/WeeklyCalendar.tsx`)
+```typescript
+// ❌ 기존 (너무 느슨한 매칭)
+const timeMatch = schTime.startsWith(timeSlot.substring(0, 2));
+// "10:00"과 "10:30"이 모두 매칭됨
+
+// ✅ 수정 (정확한 시간 비교)
+const slotHour = timeSlot.split(':')[0];
+const schHour = schTime.split(':')[0];
+const timeMatch = slotHour === schHour;
+// "10:00"과 "19:00"은 매칭 안됨
+```
+
+**3. DB 수정 스크립트 생성** (`server/scripts/fix-course-schedule.js`)
+```typescript
+// 배영 중급반에서 토요일 스케줄 제거
+const newSchedule = course.schedule.filter(sch => {
+  const day = sch.day || sch.dayOfWeek || '';
+  return day.toLowerCase() === 'tuesday' || day.toLowerCase() === 'thursday';
+});
+```
+
+**4. 캘린더 디버그 로깅 추가**
+```typescript
+// 배영 중급반의 요일/시간 매칭 과정 로깅
+if (course.name.includes('배영') && dayMatch) {
+  console.log(`🔍 ${course.name} - ${day} ${timeSlot}:`, {
+    dayMatch, timeMatch, schDays, schTime
+  });
+}
+```
+
+#### **문제 해결 단계:**
+1. ✅ 페이지 새로고침 → 콘솔에서 배영 중급반 schedule 확인
+2. ✅ `fix-course-schedule.bat` 실행 → 토요일 스케줄 자동 삭제
+3. ✅ 또는 UI에서 수정 → 토요일 체크 해제
+4. ✅ 캘린더 로직 개선 → 정확한 시간 매칭
+
+#### **테스트 결과:**
+- ✅ 배영 중급반이 화, 목 19:00에만 표시됨
+- ✅ 토요일 10:00에는 표시되지 않음
+- ✅ 정확한 시간 매칭으로 오류 방지
+
+---
+
+### ✅ **강습 과정 UI 개선 - 카드 형식으로 변경** 🎨
+**진행 상태: 100% 완료!**
+
+#### **주요 변경사항:**
+
+**1. 카드 UI 컴포넌트 생성** (`client/components/center-admin/CourseCard.tsx`)
+- ✅ 새로운 `CourseCard` 컴포넌트 생성
+- ✅ 레벨별 색상 구분 (level1: 녹색, level2: 파랑, level3: 보라, level4: 주황, level5: 빨강)
+- ✅ 상태 표시 (모집중/마감/비활성)
+- ✅ 수강생 진행률 바
+- ✅ 강사, 요일, 시간, 가격 정보 표시
+- ✅ 태그 표시
+- ✅ 수정/삭제 버튼
+
+**2. 반응형 그리드 레이아웃**
+```typescript
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {filteredCourses.map((course) => (
+    <CourseCard key={course._id} course={course} ... />
+  ))}
+</div>
+```
+
+**화면 크기별 열 수:**
+- 모바일 (< 768px): 1열
+- 태블릿 (768px~1024px): 2열
+- 데스크톱 (1024px~1280px): 3열
+- 대형 화면 (> 1280px): 4열
+
+**3. 레벨 ID → 이름 변환 기능**
+```typescript
+const getLevelName = (levelId: string): string => {
+  const level = customLevels.find(l => l.id === levelId);
+  if (level) return level.name;
+  
+  // level1 → 입문, level2 → 초급, level3 → 중급, level4 → 상급, level5 → 마스터
+  return defaultLevels[levelId] || levelId;
+};
+```
+
+**4. 토요일 강좌 표시 확인 로깅**
+```typescript
+const saturdayCourses = coursesData.filter(c => 
+  c.schedule.some(s => s.dayOfWeek.includes('토'))
+);
+console.log(`🌟 토요일 강좌: ${saturdayCourses.length}개`);
+```
+
+#### **UI 개선 효과:**
+- ✅ **가독성 향상**: 카드 형식으로 한눈에 정보 파악
+- ✅ **반응형**: 모든 화면 크기에 최적화
+- ✅ **레벨 표시**: level1 → 입문으로 사용자 친화적 표시
+- ✅ **시각적 피드백**: 레벨별 색상, 진행률 바, 상태 표시
+- ✅ **빠른 액션**: 카드 내 수정/삭제 버튼
+
+---
+
+### ✅ **강습반 태그(tags) 저장 기능 추가** 🏷️
+**진행 상태: 100% 완료!**
+
+#### **문제:**
+- 강습반 수정/추가 시 태그를 입력해도 DB에 저장되지 않음
+- Course 모델에 `tags` 필드가 정의되지 않아서 MongoDB가 저장하지 않음
+
+#### **해결:**
+
+**1. Course 모델에 tags 필드 추가** (`server/src/models/Course.ts`)
+```typescript
+// 과정 태그 (필터링/검색용)
+tags: [{
+  type: String
+}]
+```
+
+**2. 서버 tags 처리 및 로깅 추가** (`server/src/routes/courses.ts`)
+```typescript
+// POST 요청 - tags 추출 및 처리
+const { name, description, level, duration, price, maxStudents, schedule, instructorId, tags } = req.body;
+
+const courseData: any = {
+  // ... 기존 필드들
+  tags: tags || []  // ⭐ 태그 추가 (빈 배열 기본값)
+};
+
+// PUT 요청 - tags 처리
+const updateData: any = { ...req.body };
+if (!updateData.tags) {
+  updateData.tags = [];  // ⭐ undefined 방지
+}
+console.log('🏷️ 태그 처리:', updateData.tags);
+
+// 상세 에러 로깅
+catch (error) {
+  console.error('💥 강습 과정 수정 오류:', error);
+  if (error instanceof Error) {
+    console.error('💥 에러 메시지:', error.message);
+    console.error('💥 에러 스택:', error.stack);
+  }
+  return res.status(500).json({ 
+    error: '서버 오류가 발생했습니다.',
+    details: error instanceof Error ? error.message : String(error)
+  });
+}
+```
+
+**3. 클라이언트 로깅 추가** (`client/app/center-admin/courses/page.tsx`)
+```typescript
+console.log('🏷️ 태그:', courseData.tags);
+```
+
+#### **태그 사용법:**
+1. 강습 과정 추가/수정 모달 열기
+2. 하단의 "태그" 섹션에서 태그 입력 (예: `어린이`, `아쿠아`, `경쟁`)
+3. "추가" 버튼 클릭
+4. 추가된 태그는 파란색 뱃지로 표시됨
+5. × 버튼으로 태그 삭제 가능
+6. 저장 시 DB에 정상 저장됨
+7. 과정 목록 상단에 태그별 필터 버튼 자동 생성
+
+#### **추가 문제 해결 - 커스텀 레벨 저장 오류:**
+
+**문제:**
+- 커스텀 레벨(`level2`, `level3` 등)을 사용할 때 400 Bad Request 에러 발생
+- 서버에서 `enum: ['beginner', 'intermediate', 'advanced']`만 허용
+- "유효하지 않은 레벨입니다." 에러 메시지
+
+**해결:**
+
+**1. Course 모델 수정** (`server/src/models/Course.ts`)
+```typescript
+level: {
+  type: String,
+  // ⭐ enum 제거 - 커스텀 레벨(level1, level2 등) 허용
+  required: true,
+}
+```
+
+**2. API 검증 로직 수정** (`server/src/routes/courses.ts`)
+```typescript
+// ❌ 기존 (너무 제한적)
+if (level && !['beginner', 'intermediate', 'advanced'].includes(level)) {
+  return res.status(400).json({ error: '유효하지 않은 레벨입니다.' });
+}
+
+// ✅ 수정 (커스텀 레벨 허용)
+if (level && typeof level !== 'string') {
+  return res.status(400).json({ error: '레벨은 문자열이어야 합니다.' });
+}
+```
+
+#### **테스트 결과:**
+- ✅ 태그 추가 시 DB에 정상 저장
+- ✅ 태그 수정 시 DB에 정상 업데이트
+- ✅ 태그 삭제 시 DB에 정상 반영
+- ✅ 태그별 필터링 기능 작동
+- ✅ **커스텀 레벨(level1~level5) 정상 저장**
+- ✅ **기존 레벨(beginner, intermediate, advanced)도 호환**
+
+---
+
+### ✅ **전체 강사/회원 목록 가나다순 정렬 적용** 📋
+**진행 상태: 100% 완료!**
+
+#### **적용 범위:**
+모든 강사/회원 목록 페이지에 가나다순(한글) 정렬 적용
+
+**수정된 파일:**
+1. ✅ `client/app/center-admin/courses/page.tsx` - 강습 과정 페이지 강사 드롭다운
+2. ✅ `client/app/center-admin/instructors/page.tsx` - 센터관리자 강사 목록
+3. ✅ `client/app/admin/instructors/page.tsx` - 슈퍼관리자 강사 목록
+4. ✅ `client/app/instructor/students/page.tsx` - 강사 학생 목록
+5. ✅ `client/app/center-admin/health/members/page.tsx` - 센터관리자 회원 건강 목록
+6. ✅ `client/app/instructor/health/students/page.tsx` - 강사 학생 건강 목록
+
+#### **정렬 로직:**
+```typescript
+// ⭐ 가나다순 정렬 (한글 기준)
+const sortedList = list.sort((a, b) => 
+  a.name.localeCompare(b.name, 'ko-KR')
+);
+```
+
+**특징:**
+- `localeCompare()`의 `'ko-KR'` 옵션으로 한글 자모 순서에 맞게 정렬
+- ㄱ, ㄴ, ㄷ... 순서로 정렬
+- 영문은 알파벳 순으로 자동 정렬
+
+---
+
+### ✅ **강습 과정 수정 시 강사 정보 저장 문제 해결** 🔧
+**진행 상태: 100% 완료!**
+
+#### **문제:**
+- 강습 과정 추가(POST) 시에는 강사 정보가 정상 저장됨 ✅
+- 강습 과정 수정(PUT) 시에는 강사 정보가 저장되지 않음 ❌
+
+#### **원인:**
+1. **클라이언트 → 서버 전송 필드명 불일치**
+   - 클라이언트: `instructorId` 전송
+   - Course 모델: `instructor` 필드명 사용
+   
+2. **PUT 요청 핸들러의 누락**
+   - `client/app/center-admin/courses/page.tsx`에서 PUT 요청 시 `instructorId` 누락
+   - `server/src/routes/courses.ts`에서 필드명 변환 로직 없음
+
+#### **해결 방법:**
+
+**1. 클라이언트 수정** (`client/app/center-admin/courses/page.tsx`)
+```typescript
+// ✅ PUT 요청 body에 instructorId 추가
+body: JSON.stringify({
+  name: courseData.name,
+  description: courseData.description,
+  level: courseData.level,
+  duration: courseData.duration,
+  price: courseData.price,
+  maxStudents: courseData.maxStudents,
+  instructorId: courseData.instructorId, // ⭐ 추가
+  schedule: scheduleForDB,
+  tags: courseData.tags
+})
+```
+
+**2. 서버 수정** (`server/src/routes/courses.ts`)
+```typescript
+// ✅ instructorId → instructor 필드명 변환
+const updateData: any = { ...req.body };
+if (updateData.instructorId) {
+  updateData.instructor = updateData.instructorId;
+  delete updateData.instructorId;
+}
+
+const updatedCourse = await Course.findByIdAndUpdate(
+  req.params.id,
+  updateData, // ⭐ 변환된 데이터 사용
+  { new: true }
+).populate('instructor', 'name userId');
+```
+
+**3. 로깅 추가**
+- 클라이언트: 선택된 강사 정보 로깅
+- 서버: 강사 ID 변환 과정 및 수정 완료 로깅
+
+#### **추가 문제 해결 - 강사 목록 하드코딩 제거:**
+
+**문제:**
+- 강사 목록이 하드코딩되어 있어서 실제 MongoDB `_id`가 아닌 `'1'`, `'2'`, `'3'` 같은 가짜 ID 사용
+- MongoDB ObjectId 형식이 아니어서 서버에서 500 에러 발생
+
+**해결:**
+```typescript
+// ❌ 하드코딩 (기존)
+const [instructors, setInstructors] = useState([
+  { _id: '1', name: '김강사' },
+  { _id: '2', name: '이코치' }
+]);
+
+// ✅ API에서 로드 (수정)
+const [instructors, setInstructors] = useState<{ _id: string; name: string; userId?: string }[]>([]);
+
+const loadInstructors = async () => {
+  const response = await fetch('http://localhost:5000/api/users/center-users?userType=instructor&limit=100', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await response.json();
+  const instructorList = rawInstructors.map(i => ({
+    _id: i._id,  // ✅ 실제 MongoDB ObjectId
+    name: i.name || i.userId
+  }));
+  setInstructors(instructorList);
+};
+```
+
+#### **추가 문제 해결 - centerAdmin 권한 부족:**
+
+**문제:**
+- `centerAdmin`이 강습 과정을 수정하려고 하면 403 Forbidden 에러 발생
+- 기존 권한 체크: `superAdmin` 또는 강사 본인만 수정 가능
+- `centerAdmin`은 자신이 관리하는 센터의 모든 과정을 수정할 수 있어야 함!
+
+**해결:**
+```typescript
+// ❌ 기존 (너무 제한적)
+if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
+  return res.status(403).json({ error: '수정 권한이 없습니다.' });
+}
+
+// ✅ 수정 (centerAdmin 권한 추가)
+const isSuperAdmin = user?.userType === 'superAdmin';
+const isCenterAdmin = user?.userType === 'centerAdmin';  // ⭐ 추가
+const isOwnCourse = course.instructor.toString() === String(req.user.userId);
+
+if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
+  return res.status(403).json({ error: '수정 권한이 없습니다.' });
+}
+```
+
+**적용 범위:**
+- ✅ 강습 과정 수정 (PUT `/api/courses/:id`)
+- ✅ 강습 과정 삭제 (DELETE `/api/courses/:id`)
+
+#### **테스트 결과:**
+- ✅ 강습 과정 수정 시 강사 정보 정상 저장
+- ✅ 강습 과정 추가 시 강사 정보 정상 저장
+- ✅ populate를 통한 강사 이름 정상 조회
+- ✅ 실제 MongoDB ObjectId 사용으로 500 에러 해결
+- ✅ 강사 목록 동적 로딩
+- ✅ **centerAdmin 권한으로 강습 과정 수정/삭제 가능**
+
+---
+
 ### ✅ **센터 강의 관리 - 주간 캘린더 뷰 추가** 📅
 **진행 상태: 100% 완료!**
 

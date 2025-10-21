@@ -23,9 +23,12 @@ interface User {
   name: string;
   email: string;
   userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+  groupClassName?: string; // 단체반 이름
+  groupClassId?: string; // 단체반 ID
   studentInfo?: {
     age?: number;
     swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    currentLevel?: string; // 현재 레벨
     healthProfile?: {
       height?: number;
       weight?: number;
@@ -93,14 +96,14 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
       console.log('🔍 회원 불러오기 시작...');
       
       // 단체반 회원 포함하여 전체 회원 불러오기
-      const allUsersResponse = await apiClient.get('/api/users/center-users?limit=100&includeGroupStudents=true');
+      const allUsersResponse = await apiClient.get('/api/users/center-users?limit=100&includeGroupStudents=true') as any;
       
       console.log('📡 API 응답:', allUsersResponse);
       
       if (allUsersResponse.success && allUsersResponse.data) {
         let allUsers = Array.isArray(allUsersResponse.data) 
           ? allUsersResponse.data 
-          : allUsersResponse.data.users || [];
+          : (allUsersResponse.data as any).users || [];
         
         console.log(`✅ 총 ${allUsers.length}명의 회원 조회됨`);
         
@@ -115,9 +118,9 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
         
         // 단체반 정보 가져오기
         try {
-          const groupClassesResponse = await apiClient.get('/api/group-classes?status=active');
-          if (groupClassesResponse.success && groupClassesResponse.data.groupClasses) {
-            const groupClassesData = groupClassesResponse.data.groupClasses;
+          const groupClassesResponse = await apiClient.get('/api/group-classes?status=active') as any;
+          if (groupClassesResponse.success && (groupClassesResponse.data as any)?.groupClasses) {
+            const groupClassesData = (groupClassesResponse.data as any).groupClasses;
             
             console.log(`📚 ${groupClassesData.length}개 단체반 정보 조회됨`);
             

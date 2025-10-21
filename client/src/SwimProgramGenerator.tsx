@@ -123,10 +123,10 @@ const SAFETY_RULES: Record<string, { restBonus: number; zoneCap?: Zone; strokeAv
   "어깨충돌증후군": { restBonus: 5, zoneCap: "Z4", strokeAvoid: { butterfly: true }, notes: ["패들 제한", "평영 권장"] },
   "무릎관절염": { restBonus: 5, zoneCap: "Z4", strokeAvoid: { breaststroke: true }, notes: ["평영킥 회피", "자유형 권장"] },
   "발목염좌": { restBonus: 5, zoneCap: "Z4", strokeAvoid: { breaststroke: true, butterfly: true }, notes: ["핀 제한", "돌핀킥 회피"] },
-  "고혈압": { restBonus: 0, notes: ["EN1-EN3 중심", "무호흡 스프린트 금지"] },
-  "당뇨": { restBonus: 0, notes: ["저혈당 대처", "발상태 점검"] },
-  "천식": { restBonus: 0, notes: ["준비운동 필수", "SABA 사전사용"] },
-  "임신": { restBonus: 0, notes: ["과열 방지", "미끄럼 주의"] },
+  "고혈압": { restBonus: 0, strokeAvoid: {}, notes: ["EN1-EN3 중심", "무호흡 스프린트 금지"] },
+  "당뇨": { restBonus: 0, strokeAvoid: {}, notes: ["저혈당 대처", "발상태 점검"] },
+  "천식": { restBonus: 0, strokeAvoid: {}, notes: ["준비운동 필수", "SABA 사전사용"] },
+  "임신": { restBonus: 0, strokeAvoid: {}, notes: ["과열 방지", "미끄럼 주의"] },
 };
 
 // ========================= 드릴 추천 데이터 =========================

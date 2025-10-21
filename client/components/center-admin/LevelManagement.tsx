@@ -131,7 +131,7 @@ export default function LevelManagement({ levels, onLevelsChange }: LevelManagem
             onClick={() => {
               setIsAdding(true);
               setEditingId(null);
-              setNewLevel({ name: '', description: '' });
+              setNewLevel({ name: '', description: '', color: '#3b82f6', mappedToAdminLevel: 'beginner' });
             }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
@@ -220,7 +220,7 @@ export default function LevelManagement({ levels, onLevelsChange }: LevelManagem
                 onClick={() => {
                   setIsAdding(false);
                   setEditingId(null);
-                  setNewLevel({ name: '', description: '' });
+                  setNewLevel({ name: '', description: '', color: '#3b82f6', mappedToAdminLevel: 'beginner' });
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >

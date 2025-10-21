@@ -58,6 +58,13 @@ export function calculateZoneDistribution(totalMeters: number, zones: Record<Zon
   return distribution;
 }
 
+// 페이스 포맷 함수 (초 → mm:ss 형식)
+export function formatPace(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
 export function formatPaceNote(pace: number, zone: Zone): string {
   const formattedPace = formatPace(pace);
   return `@ ${formattedPace} (${zone})`;

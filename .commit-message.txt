@@ -1,0 +1,44 @@
+feat: Complete center course management system with DB integration
+
+Features:
+- Weekly calendar view (responsive: mobile vertical / desktop horizontal)
+- Dynamic color system (12 color palette, hash-based auto assignment)
+- Auto-calculate end time (start time + duration)
+- Remove duration restrictions (30/60min -> 10min+, 5min steps)
+- Improved day selection UI (button-based toggle)
+- Custom level system integration
+
+DB Integration:
+- MongoDB persistent storage (POST/PUT/DELETE API)
+- Auto Korean-English day conversion
+- Multiple days grouping (Mon,Wed,Fri -> 1 course)
+- Real-time statistics cards
+
+Permissions & Automation:
+- Add centerAdmin permission to courses API
+- Support managedCenters field (singular -> plural)
+- Auto-set centerId for centerAdmin/instructor
+- Auto-generate classInfo defaults
+- Center assignment script (assign-center-to-admin.js)
+- Clean empty schedules script (clean-empty-schedules.js)
+
+Bug Fixes:
+- Schedule field mismatch (day vs dayOfWeek)
+- 403 Forbidden (missing centerAdmin)
+- 404 Not Found (empty _id in PUT)
+- 400 Bad Request (description required -> optional)
+- NaN warnings (undefined price/duration/maxStudents)
+- Missing centerId (managedCenter vs managedCenters)
+- Deleted 9 courses with empty schedules
+
+Files:
+- client/app/center-admin/courses/page.tsx
+- client/components/center-admin/CourseFormModal.tsx
+- client/components/center-admin/WeeklyCalendar.tsx
+- server/src/routes/courses.ts
+- server/scripts/assign-center-to-admin.js
+- server/scripts/clean-empty-schedules.js
+- assign-center-to-admin.bat
+- clean-courses.bat
+- DEVELOPMENT.md
+

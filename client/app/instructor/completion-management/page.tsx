@@ -68,7 +68,7 @@ export default function InstructorCompletionManagementPage() {
     try {
       setLoading(true);
       const response = await apiClient.get(`/api/swim-programs/instructors/${user?._id}/incomplete-sessions`);
-      setIncompleteSessions(response.data.data.incompleteSessions || []);
+      setIncompleteSessions((response as any).data?.data?.incompleteSessions || []);
     } catch (error) {
       console.error('미입력 세션 조회 실패:', error);
     } finally {
@@ -78,10 +78,8 @@ export default function InstructorCompletionManagementPage() {
 
   const fetchGroupClasses = async () => {
     try {
-      const response = await apiClient.get('/api/group-classes', {
-        params: { instructorId: user?._id, status: 'active' }
-      });
-      setGroupClasses(response.data.data.groupClasses || []);
+      const response = await apiClient.get(`/api/group-classes?instructorId=${user?._id}&status=active`);
+      setGroupClasses((response as any).data?.data?.groupClasses || []);
     } catch (error) {
       console.error('단체반 조회 실패:', error);
     }
