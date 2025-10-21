@@ -124,12 +124,19 @@ const router: Router = Router();
 
 import { auth as authenticateToken } from '../middleware/auth';
 
-// 강사 권한 확인
+/**
+ * 강사/센터관리자 권한 확인 미들웨어
+ * 
+ * 허용되는 사용자 타입:
+ * - instructor: 강사 (자신의 강습 과정 관리)
+ * - centerAdmin: 센터 관리자 (관리하는 센터의 강습 과정 관리)
+ * - superAdmin: 최고 관리자 (모든 강습 과정 관리)
+ */
 const requireInstructor = async (req: AuthRequest, res: Response, next: Function) => {
   try {
     const user = await User.findById(req.user.userId);
-    if (!user || (user.userType !== 'instructor' && user.userType !== 'superAdmin')) {
-      return res.status(403).json({ error: '강사 권한이 필요합니다.' });
+    if (!user || (user.userType !== 'instructor' && user.userType !== 'centerAdmin' && user.userType !== 'superAdmin')) {
+      return res.status(403).json({ error: '강사 또는 센터 관리자 권한이 필요합니다.' });
     }
     return next();
   } catch (error) {
@@ -177,15 +184,65 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// 강습 과정 생성 (강사/관리자만)
+// 강습 과정 생성 (강사/센터관리자/관리자만)
 router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, res: Response) => {
   try {
+    console.log('📥 강습 과정 생성 요청:', {
+      body: req.body,
+      userId: req.user?.userId,
+      userType: req.user?.userType
+    });
+
     const { name, description, level, duration, price, maxStudents, schedule, instructorId } = req.body;
 
-    // 필수 필드 검증
-    if (!name || !description || !level || !duration || !price || !maxStudents) {
+    // 필수 필드 검증 (description은 선택사항)
+    if (!name || !level || !duration || price === undefined || !maxStudents) {
+      console.error('❌ 필수 필드 누락:', { name, level, duration, price, maxStudents });
       return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
     }
+
+    // 사용자 정보 조회
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      console.error('❌ 사용자를 찾을 수 없음:', req.user.userId);
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+
+    console.log('👤 사용자 정보:', {
+      userType: user.userType,
+      managedCenters: user.centerAdminInfo?.managedCenters,
+      assignedCenters: user.instructorInfo?.assignedCenters
+    });
+
+    // centerId 자동 설정
+    let centerId = req.body.centerId;
+    if (!centerId) {
+      // 센터 관리자: managedCenters에서 첫 번째 센터 가져오기
+      if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
+        centerId = user.centerAdminInfo.managedCenters[0];
+      }
+      // 강사: assignedCenters에서 첫 번째 센터 가져오기
+      else if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters && user.instructorInfo.assignedCenters.length > 0) {
+        centerId = user.instructorInfo.assignedCenters[0];
+      }
+    }
+
+    console.log('🏢 centerId:', centerId);
+
+    if (!centerId) {
+      console.error('❌ centerId를 찾을 수 없음');
+      return res.status(400).json({ error: '센터 ID가 필요합니다. 센터 관리자는 관리하는 센터가 있어야 합니다.' });
+    }
+
+    // classInfo 기본값 설정
+    const classInfo = req.body.classInfo || {
+      className: name, // 과정명을 클래스명으로 사용
+      classType: 'regular',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 3개월 후
+      maxCapacity: maxStudents,
+      currentEnrollment: 0
+    };
 
     const courseData: any = {
       name,
@@ -194,15 +251,21 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       duration,
       price,
       maxStudents,
+      centerId,
+      classInfo,
       // 총관리자는 강사를 지정할 수 있게 허용
-      instructor: instructorId && instructorId !== '' && (await User.findById(req.user.userId))?.userType === 'superAdmin'
+      instructor: instructorId && instructorId !== '' && user.userType === 'superAdmin'
         ? instructorId
         : req.user.userId,
       schedule: schedule || [],
     };
 
+    console.log('💾 저장할 데이터:', courseData);
+
     const course = new Course(courseData);
     await course.save();
+
+    console.log('✅ 저장 성공:', course._id);
 
     const populatedCourse = await Course.findById(course._id)
       .populate('instructor', 'name userId');
@@ -213,8 +276,15 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       data: populatedCourse
     });
   } catch (error) {
-    console.error('강습 과정 생성 오류:', error);
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    console.error('💥 강습 과정 생성 오류:', error);
+    if (error instanceof Error) {
+      console.error('💥 에러 메시지:', error.message);
+      console.error('💥 에러 스택:', error.stack);
+    }
+    return res.status(500).json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 

@@ -1,24 +1,46 @@
 /**
- * 센터 과정 관리 페이지
+ * 🏊‍♂️ JJ Swim Lab - 센터 과정 관리 페이지
  * 
- * 연동 컴포넌트:
+ * 📋 **페이지 목적**
+ * - 센터의 강습 과정을 생성, 수정, 삭제, 조회
+ * - 캘린더 뷰 / 리스트 뷰 전환
+ * - 급수별 동적 색상 시스템
+ * - MongoDB와 실시간 연동
+ * 
+ * 🗄️ **데이터 연동**
+ * - GET /api/courses - 강습 과정 목록 조회 (MongoDB)
+ * - POST /api/courses - 강습 과정 추가 (DB 저장)
+ * - PUT /api/courses/:id - 강습 과정 수정 (DB 업데이트)
+ * - DELETE /api/courses/:id - 강습 과정 삭제 (DB 삭제)
+ * 
+ * 🔄 **연동 컴포넌트**
  * - client/components/center-admin/CourseFilterButtons.tsx
  * - client/components/center-admin/CourseTable.tsx
+ * - client/components/center-admin/CourseFormModal.tsx
+ * - client/components/center-admin/WeeklyCalendar.tsx
  * - client/components/StatCard.tsx
+ * 
+ * ⚠️ **개발 시 주의사항**
+ * 1. 모든 CRUD 작업 후 loadCourses() 호출로 동기화
+ * 2. API 응답 데이터를 Course 타입으로 변환 필요
+ * 3. 인증 토큰 필요 (localStorage 'token')
+ * 4. 에러 처리 및 사용자 피드백 필수
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, List } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
 import CourseFilterButtons from '@/components/center-admin/CourseFilterButtons';
 import CourseTable from '@/components/center-admin/CourseTable';
 import CourseFormModal from '@/components/center-admin/CourseFormModal';
+import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 
-interface Course {
+// Course 타입을 CourseTable과 동일하게 통일
+type Course = {
   _id: string;
   name: string;
   description: string;
@@ -32,7 +54,7 @@ interface Course {
   schedule: {
     dayOfWeek: string;
     startTime: string;
-    endTime: string;
+    endTime?: string; // CourseTable과 동일하게 optional
   }[];
   status: 'active' | 'inactive' | 'full';
   createdAt: Date;
@@ -46,6 +68,7 @@ function CoursesManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar'); // 캘린더/리스트 뷰 토글
   const [instructors, setInstructors] = useState([
     { _id: '1', name: '김강사' },
     { _id: '2', name: '이코치' },
@@ -68,8 +91,125 @@ function CoursesManagement() {
   const loadCourses = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempCourses: Course[] = [
+      
+      // ✅ API 호출로 실제 DB 데이터 가져오기
+      const response = await fetch('http://localhost:5000/api/courses');
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      
+      const data = await response.json();
+      console.log('📚 로드된 강습 과정:', data);
+      
+      // 🔍 원본 schedule 구조 확인
+      console.log('🔍 원본 schedule 샘플 (처음 3개):');
+      data.data.slice(0, 3).forEach((course: any, idx: number) => {
+        console.log(`  ${idx + 1}. ${course.name}:`, {
+          schedule: course.schedule,
+          scheduleLength: course.schedule?.length
+        });
+      });
+      
+      // 영어 요일 → 한글 요일 변환
+      const dayMap: { [key: string]: string } = {
+        'monday': '월',
+        'tuesday': '화',
+        'wednesday': '수',
+        'thursday': '목',
+        'friday': '금',
+        'saturday': '토',
+        'sunday': '일'
+      };
+      
+      // API 응답 데이터를 Course 타입에 맞게 변환
+      const coursesData: Course[] = (data.data || []).map((course: any) => {
+        // schedule 필드 안전하게 처리 & 영어 → 한글 변환
+        let schedule = [];
+        if (Array.isArray(course.schedule) && course.schedule.length > 0) {
+          // 같은 시간대의 요일들을 그룹화 (예: monday 16:00, wednesday 16:00 → "월,수")
+          const timeSlotMap: { [key: string]: string[] } = {};
+          
+          course.schedule.forEach((sch: any) => {
+            const dayEnglish = sch.day || sch.dayOfWeek || '';
+            const dayKorean = dayMap[dayEnglish.toLowerCase()] || dayEnglish;
+            const startTime = sch.startTime || '09:00';
+            const endTime = sch.endTime || '';
+            
+            // 시간대를 키로 사용 (startTime-endTime)
+            const timeKey = `${startTime}-${endTime}`;
+            
+            if (!timeSlotMap[timeKey]) {
+              timeSlotMap[timeKey] = [];
+            }
+            
+            if (dayKorean && !timeSlotMap[timeKey].includes(dayKorean)) {
+              timeSlotMap[timeKey].push(dayKorean);
+            }
+          });
+          
+          // 그룹화된 데이터를 schedule 배열로 변환
+          schedule = Object.entries(timeSlotMap).map(([timeKey, days]) => {
+            const [startTime, endTime] = timeKey.split('-');
+            return {
+              dayOfWeek: days.join(','), // 쉼표로 구분
+              startTime,
+              endTime
+            };
+          });
+        }
+        
+        return {
+          _id: course._id,
+          name: course.name || '제목 없음',
+          description: course.description || '',
+          level: course.level || 'beginner',
+          duration: course.duration || 60,
+          maxStudents: course.maxStudents || 10,
+          currentStudents: course.enrolledStudents?.filter((e: any) => e.status === 'active').length || 0,
+          instructorId: course.instructor?._id || course.instructor,
+          instructorName: course.instructor?.name || '강사 미배정',
+          price: course.price || 0,
+          schedule: schedule,
+          status: course.isActive === false ? 'inactive' : 
+                  (course.enrolledStudents?.filter((e: any) => e.status === 'active').length >= course.maxStudents ? 'full' : 'active'),
+          createdAt: new Date(course.createdAt),
+          tags: course.tags || []
+        };
+      });
+      
+      setCourses(coursesData);
+      
+      // 📊 통계 정보 출력
+      console.log('📊 강습 과정 통계:', {
+        총과정: coursesData.length,
+        총학생: coursesData.reduce((sum, c) => sum + c.currentStudents, 0),
+        평균수업시간: coursesData.length > 0 ? Math.round(coursesData.reduce((sum, c) => sum + c.duration, 0) / coursesData.length) : 0,
+        활성과정: coursesData.filter(c => c.status === 'active').length
+      });
+      
+      // 📋 각 과정별 상세 정보
+      console.log('📋 강습 과정 목록:');
+      coursesData.forEach((course, index) => {
+        const days = course.schedule.map(s => s.dayOfWeek).filter(d => d).join(', ');
+        console.log(`  ${index + 1}. ${course.name} (${days || '⚠️ 요일 미설정'}) - ${course.duration}분`);
+      });
+      console.log(`\n💡 "월,수,금" 반은 1개 과정으로 카운트됩니다!`);
+      
+      // ⚠️ 요일이 없는 과정 확인
+      const coursesWithoutSchedule = coursesData.filter(c => 
+        !c.schedule || c.schedule.length === 0 || !c.schedule.some(s => s.dayOfWeek)
+      );
+      if (coursesWithoutSchedule.length > 0) {
+        console.warn(`⚠️ 요일이 설정되지 않은 과정: ${coursesWithoutSchedule.length}개`);
+        coursesWithoutSchedule.forEach(c => {
+          console.warn(`   - ${c.name} (ID: ${c._id})`);
+        });
+      }
+      
+      // ✅ 임시 데이터 (DB에 데이터가 없을 경우 표시용)
+      if (coursesData.length === 0) {
+        console.log('⚠️ DB에 강습 과정이 없습니다. 임시 데이터 표시');
+        const tempCourses: Course[] = [
         {
           _id: '1',
           name: '초급 자유형 클래스',
@@ -181,9 +321,10 @@ function CoursesManagement() {
           tags: ['fitness']
         }
       ];
-      setCourses(tempCourses);
+        setCourses(tempCourses);
+      }
     } catch (error) {
-      console.error('강습 과정 로드 실패:', error);
+      console.error('💥 강습 과정 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -276,10 +417,43 @@ function CoursesManagement() {
     return timeCategory === activeFilter;
   });
 
-  // 과정 추가 핸들러
-  const handleAddCourse = () => {
-    setEditingCourse(null);
+  // 과정 추가 핸들러 (옵션: 요일/시간 지정)
+  const handleAddCourse = (day?: string, time?: string) => {
+    // 빈 슬롯 클릭 시: 선택한 요일/시간으로 초기화된 Course 객체 생성
+    if (day && time) {
+      const endTime = calculateEndTime(time, 60); // 기본 60분
+      // _id를 null로 설정하여 추가 모드로 인식
+      setEditingCourse({
+        _id: null as any, // null = 추가 모드
+        name: '',
+        description: '',
+        level: 'beginner',
+        duration: 60,
+        maxStudents: 20,
+        currentStudents: 0,
+        instructorId: '',
+        instructorName: '',
+        price: 50000,
+        schedule: [{ dayOfWeek: day, startTime: time, endTime }],
+        status: 'active',
+        createdAt: new Date(),
+        tags: []
+      } as Course);
+    } else {
+      setEditingCourse(null);
+    }
     setIsModalOpen(true);
+  };
+  
+  // 종료 시간 자동 계산 함수
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   };
 
   // 과정 수정 핸들러
@@ -289,27 +463,152 @@ function CoursesManagement() {
   };
 
   // 과정 삭제 핸들러
-  const handleDeleteCourse = (courseId: string) => {
-    if (confirm('정말 이 과정을 삭제하시겠습니까?')) {
+  const handleDeleteCourse = async (courseId: string) => {
+    if (!confirm('정말 이 과정을 삭제하시겠습니까?')) {
+      return;
+    }
+    
+    try {
+      console.log('🗑️ 강습 과정 삭제:', courseId);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+      
+      // 로컬 상태 업데이트
       setCourses(prev => prev.filter(c => c._id !== courseId));
+      alert('✅ 강습 과정이 삭제되었습니다.');
+      
+    } catch (error) {
+      console.error('💥 강습 과정 삭제 실패:', error);
+      alert('❌ 강습 과정 삭제에 실패했습니다.');
     }
   };
 
   // 과정 저장 핸들러
-  const handleSaveCourse = (courseData: Course) => {
-    if (editingCourse) {
-      // 수정
-      setCourses(prev => prev.map(c => 
-        c._id === editingCourse._id ? { ...courseData, _id: editingCourse._id } : c
-      ));
-    } else {
-      // 추가
-      const newCourse = {
-        ...courseData,
-        _id: `course-${Date.now()}`,
-        createdAt: new Date()
+  const handleSaveCourse = async (courseData: Course) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // 한글 요일 → 영어 요일 변환 (DB 스키마에 맞게)
+      const dayMapReverse: { [key: string]: string } = {
+        '월': 'monday',
+        '화': 'tuesday',
+        '수': 'wednesday',
+        '목': 'thursday',
+        '금': 'friday',
+        '토': 'saturday',
+        '일': 'sunday'
       };
-      setCourses(prev => [...prev, newCourse]);
+      
+      // schedule 변환 (dayOfWeek → day)
+      // "월,수,금" → 3개의 별도 schedule 항목으로 분리
+      const scheduleForDB: any[] = [];
+      (courseData.schedule || []).forEach(sch => {
+        // 쉼표로 구분된 요일 처리 (예: "월,수,금" → ["월", "수", "금"])
+        const days = sch.dayOfWeek.split(',').map(d => d.trim());
+        
+        // 각 요일별로 별도의 schedule 항목 생성
+        days.forEach(dayKorean => {
+          const dayEnglish = dayMapReverse[dayKorean] || dayKorean;
+          
+          scheduleForDB.push({
+            day: dayEnglish,
+            startTime: sch.startTime,
+            endTime: sch.endTime
+          });
+        });
+      });
+      
+      if (editingCourse && editingCourse._id) {
+        // ✅ 수정 - PUT 요청
+        console.log('✏️ 강습 과정 수정:', courseData);
+        
+        const response = await fetch(`http://localhost:5000/api/courses/${editingCourse._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: courseData.name,
+            description: courseData.description,
+            level: courseData.level,
+            duration: courseData.duration,
+            price: courseData.price,
+            maxStudents: courseData.maxStudents,
+            schedule: scheduleForDB,
+            tags: courseData.tags
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('❌ 서버 응답 에러:', errorData);
+          throw new Error(errorData.error || errorData.details || 'Failed to update course');
+        }
+        
+        const data = await response.json();
+        console.log('✅ 수정 완료:', data);
+        
+        // 전체 목록 새로고침
+        await loadCourses();
+        alert('✅ 강습 과정이 수정되었습니다.');
+        
+      } else {
+        // ✅ 추가 - POST 요청
+        console.log('➕ 강습 과정 추가:', courseData);
+        
+        const requestBody = {
+          name: courseData.name,
+          description: courseData.description || '강습 과정 설명',
+          level: courseData.level,
+          duration: courseData.duration,
+          price: courseData.price,
+          maxStudents: courseData.maxStudents,
+          instructorId: courseData.instructorId,
+          schedule: scheduleForDB,
+          tags: courseData.tags
+        };
+        
+        console.log('📤 서버로 전송할 데이터:', requestBody);
+        console.log('📅 schedule (변환됨):', scheduleForDB);
+        
+        const response = await fetch('http://localhost:5000/api/courses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('❌ 서버 응답 에러:', errorData);
+          throw new Error(errorData.error || errorData.details || 'Failed to create course');
+        }
+        
+        const data = await response.json();
+        console.log('✅ 추가 완료:', data);
+        
+        // 전체 목록 새로고침
+        await loadCourses();
+        alert('✅ 강습 과정이 추가되었습니다.');
+      }
+      
+    } catch (error) {
+      console.error('💥 강습 과정 저장 실패:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      alert(`❌ 강습 과정 저장에 실패했습니다.\n\n${errorMessage}`);
     }
   };
 
@@ -361,18 +660,32 @@ function CoursesManagement() {
         />
       </div>
 
-      {/* 필터 버튼 - 동적 태그 포함 */}
-      <CourseFilterButtons
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        allTags={allTags}
-      />
-
-      {/* 과정 목록 - 추가 버튼 */}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
-          강습 과정 목록 ({filteredCourses.length}개)
-        </h3>
+      {/* 뷰 모드 토글 & 추가 버튼 */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              viewMode === 'calendar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            캘린더 뷰
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <List className="w-4 h-4 mr-2" />
+            리스트 뷰
+          </button>
+        </div>
         <button 
           onClick={handleAddCourse}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
@@ -382,12 +695,43 @@ function CoursesManagement() {
         </button>
       </div>
 
-      {/* 과정 테이블 */}
-      <CourseTable
-        courses={filteredCourses}
-        onEdit={handleEditCourse}
-        onDelete={handleDeleteCourse}
-      />
+      {/* 캘린더 뷰 */}
+      {viewMode === 'calendar' && (
+        <WeeklyCalendar
+          courses={filteredCourses}
+          onCourseClick={handleEditCourse}
+          onEmptySlotClick={(day, time) => {
+            console.log('빈 슬롯 클릭:', day, time);
+            handleAddCourse(day, time); // 선택한 요일/시간 전달 ✅
+          }}
+        />
+      )}
+
+      {/* 리스트 뷰 */}
+      {viewMode === 'list' && (
+        <>
+          {/* 필터 버튼 - 동적 태그 포함 */}
+          <CourseFilterButtons
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            allTags={allTags}
+          />
+
+          {/* 과정 목록 - 추가 버튼 */}
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              강습 과정 목록 ({filteredCourses.length}개)
+            </h3>
+          </div>
+
+          {/* 과정 테이블 */}
+          <CourseTable
+            courses={filteredCourses}
+            onEdit={handleEditCourse}
+            onDelete={handleDeleteCourse}
+          />
+        </>
+      )}
 
       {/* 과정 추가/수정 모달 */}
       <CourseFormModal

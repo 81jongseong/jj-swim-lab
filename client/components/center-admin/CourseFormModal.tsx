@@ -22,9 +22,10 @@ interface Course {
   schedule: {
     dayOfWeek: string;
     startTime: string;
-    endTime: string;
+    endTime?: string; // optional로 변경
   }[];
   status: 'active' | 'inactive' | 'full';
+  createdAt?: Date; // 추가
   tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
 }
 
@@ -63,11 +64,43 @@ export default function CourseFormModal({
   const [newTag, setNewTag] = useState('');
   const [newLevelInput, setNewLevelInput] = useState('');
   const [showLevelInput, setShowLevelInput] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+  const DAYS_OF_WEEK = ['월', '화', '수', '목', '금', '토', '일'];
 
   useEffect(() => {
-    if (course) {
-      setFormData(course);
+    if (course && course._id) {
+      // 수정 모드: 기존 데이터 로드
+      setFormData({
+        ...course,
+        price: course.price || 50000, // NaN 방지
+        duration: course.duration || 60,
+        maxStudents: course.maxStudents || 20
+      });
+      // 요일 초기화 (쉼표로 구분된 문자열 → 배열)
+      const days = course.schedule?.[0]?.dayOfWeek?.split(',').map(d => d.trim()) || ['월'];
+      setSelectedDays(days);
+    } else if (course && !course._id) {
+      // 추가 모드 (초기값 있음): 빈 슬롯 클릭 시
+      setFormData({
+        name: '',
+        description: '',
+        level: 'beginner',
+        duration: course.duration || 60,
+        maxStudents: course.maxStudents || 20,
+        currentStudents: 0,
+        instructorId: course.instructorId || '',
+        instructorName: '',
+        price: course.price || 50000,
+        schedule: course.schedule || [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
+        status: 'active',
+        tags: course.tags || []
+      });
+      // 요일 초기화
+      const days = course.schedule?.[0]?.dayOfWeek?.split(',').map(d => d.trim()) || ['월'];
+      setSelectedDays(days);
     } else {
+      // 추가 모드 (초기값 없음): [새 과정 추가] 버튼 클릭 시
       setFormData({
         name: '',
         description: '',
@@ -79,10 +112,72 @@ export default function CourseFormModal({
         instructorName: '',
         price: 50000,
         schedule: [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
-        status: 'active'
+        status: 'active',
+        tags: []
       });
+      setSelectedDays(['월']);
     }
   }, [course, isOpen]);
+
+  // 요일 선택 토글
+  const toggleDay = (day: string) => {
+    const newDays = selectedDays.includes(day)
+      ? selectedDays.filter(d => d !== day)
+      : [...selectedDays, day];
+    
+    setSelectedDays(newDays);
+    
+    // schedule 업데이트 (요일을 쉼표로 구분하여 저장)
+    setFormData({
+      ...formData,
+      schedule: [{
+        ...formData.schedule?.[0],
+        dayOfWeek: newDays.join(',')
+      } as any]
+    });
+  };
+
+  // 종료 시간 자동 계산
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    if (!startTime) return '';
+    
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  };
+
+  // 시작 시간 변경 시 종료 시간 자동 계산
+  const handleStartTimeChange = (startTime: string) => {
+    const endTime = calculateEndTime(startTime, formData.duration || 60);
+    
+    setFormData({
+      ...formData,
+      schedule: [{
+        ...formData.schedule?.[0],
+        startTime,
+        endTime
+      } as any]
+    });
+  };
+
+  // 수업 시간(분) 변경 시 종료 시간 재계산
+  const handleDurationChange = (duration: number) => {
+    const startTime = formData.schedule?.[0]?.startTime || '09:00';
+    const endTime = calculateEndTime(startTime, duration);
+    
+    setFormData({
+      ...formData,
+      duration,
+      schedule: [{
+        ...formData.schedule?.[0],
+        endTime
+      } as any]
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,11 +336,15 @@ export default function CourseFormModal({
                 type="number"
                 required
                 value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                onChange={(e) => handleDurationChange(parseInt(e.target.value) || 60)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="30"
-                step="30"
+                min="10"
+                step="5"
+                placeholder="예: 60, 90, 120"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                💡 입력 시 종료 시간이 자동 계산됩니다
+              </p>
             </div>
           </div>
 
@@ -313,47 +412,62 @@ export default function CourseFormModal({
           {/* 일정 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              수업 일정
+              수업 일정 *
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              <input
-                type="text"
-                value={formData.schedule?.[0]?.dayOfWeek || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  schedule: [{
-                    ...formData.schedule?.[0],
-                    dayOfWeek: e.target.value
-                  } as any]
-                })}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="요일 (예: 월,수,금)"
-              />
-              <input
-                type="time"
-                value={formData.schedule?.[0]?.startTime || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  schedule: [{
-                    ...formData.schedule?.[0],
-                    startTime: e.target.value
-                  } as any]
-                })}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="time"
-                value={formData.schedule?.[0]?.endTime || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  schedule: [{
-                    ...formData.schedule?.[0],
-                    endTime: e.target.value
-                  } as any]
-                })}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+            
+            {/* 요일 선택 (버튼) */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">수업 요일 (복수 선택 가능)</p>
+              <div className="flex gap-2">
+                {DAYS_OF_WEEK.map(day => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedDays.includes(day)
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                선택된 요일: {selectedDays.length > 0 ? selectedDays.join(', ') : '없음'}
+              </p>
             </div>
+
+            {/* 시간 설정 */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">시작 시간 *</label>
+                <input
+                  type="time"
+                  required
+                  value={formData.schedule?.[0]?.startTime || ''}
+                  onChange={(e) => handleStartTimeChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">
+                  종료 시간 
+                  <span className="ml-1 text-blue-600">(자동 계산)</span>
+                </label>
+                <input
+                  type="time"
+                  value={formData.schedule?.[0]?.endTime || ''}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                  title="시작 시간과 수업 시간(분)을 기반으로 자동 계산됩니다"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">
+              ⏰ 종료 시간은 시작 시간 + 수업 시간으로 자동 계산됩니다
+            </p>
           </div>
 
           {/* 과정 태그 */}

@@ -22,8 +22,11 @@ interface Course {
   schedule: {
     dayOfWeek: string;
     startTime: string;
-  };
-  status: 'active' | 'inactive';
+    endTime?: string;
+  }[];
+  status: 'active' | 'inactive' | 'full';
+  createdAt: Date;
+  tags?: string[];
 }
 
 interface CourseTableProps {

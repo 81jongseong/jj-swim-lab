@@ -21,6 +21,15 @@ interface Instructor {
   joinedAt: Date;
   totalStudents: number;
   totalClasses: number;
+  instructorInfo?: {
+    experience?: string;
+    specialties?: string[];
+    certifications?: string[];
+    instructorLevel?: string;
+    currentStudents?: number;
+    totalStudents?: number;
+    totalClasses?: number;
+  };
 }
 
 interface InstructorCardProps {
@@ -78,11 +87,13 @@ export default function InstructorCard({
             </div>
             <div className="ml-3">
               <h3 className="text-base font-semibold text-gray-900">{instructor.name}</h3>
-              <p className="text-xs text-gray-500">{instructor.experience}년 경력</p>
+              <p className="text-xs text-gray-500">
+                {instructor.experience || instructor.instructorInfo?.experience || '경력 미입력'}
+              </p>
             </div>
           </div>
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(instructor.status)}`}>
-            {getStatusLabel(instructor.status)}
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(instructor.status || 'active')}`}>
+            {getStatusLabel(instructor.status || 'active')}
           </span>
         </div>
 
@@ -104,16 +115,16 @@ export default function InstructorCard({
           {/* 평점 */}
           <div className="flex items-center">
             <div className="flex mr-2">
-              {renderStars(instructor.rating)}
+              {renderStars(instructor.rating || 0)}
             </div>
-            <span className="text-sm text-gray-600">({instructor.rating})</span>
+            <span className="text-sm text-gray-600">({(instructor.rating || 0).toFixed(1)})</span>
           </div>
 
           {/* 전문분야 */}
           <div>
             <p className="text-xs font-medium text-gray-700 mb-1">전문분야</p>
             <div className="flex flex-wrap gap-1">
-              {instructor.specialties.slice(0, 3).map((specialty, index) => (
+              {(instructor.specialties || instructor.instructorInfo?.specialties || []).slice(0, 3).map((specialty, index) => (
                 <span
                   key={index}
                   className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded"
@@ -121,9 +132,9 @@ export default function InstructorCard({
                   {specialty}
                 </span>
               ))}
-              {instructor.specialties.length > 3 && (
+              {(instructor.specialties || instructor.instructorInfo?.specialties || []).length > 3 && (
                 <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                  +{instructor.specialties.length - 3}
+                  +{(instructor.specialties || instructor.instructorInfo?.specialties || []).length - 3}
                 </span>
               )}
             </div>
@@ -133,7 +144,7 @@ export default function InstructorCard({
           <div>
             <p className="text-xs font-medium text-gray-700 mb-1">자격증</p>
             <div className="space-y-0.5">
-              {instructor.certifications.slice(0, 2).map((cert, index) => (
+              {(instructor.certifications || instructor.instructorInfo?.certifications || []).slice(0, 2).map((cert, index) => (
                 <span
                   key={index}
                   className="block text-xs text-gray-600"
@@ -141,9 +152,9 @@ export default function InstructorCard({
                   • {cert}
                 </span>
               ))}
-              {instructor.certifications.length > 2 && (
+              {(instructor.certifications || instructor.instructorInfo?.certifications || []).length > 2 && (
                 <span className="block text-xs text-gray-500">
-                  • +{instructor.certifications.length - 2}개 더보기
+                  • +{(instructor.certifications || instructor.instructorInfo?.certifications || []).length - 2}개 더보기
                 </span>
               )}
             </div>
@@ -152,11 +163,15 @@ export default function InstructorCard({
           {/* 통계 */}
           <div className="grid grid-cols-2 gap-3 pt-2 border-t">
             <div className="text-center">
-              <p className="text-base font-semibold text-gray-900">{instructor.totalStudents}</p>
+              <p className="text-base font-semibold text-gray-900">
+                {instructor.totalStudents || instructor.instructorInfo?.currentStudents || 0}
+              </p>
               <p className="text-xs text-gray-500">담당 학생</p>
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold text-gray-900">{instructor.totalClasses}</p>
+              <p className="text-base font-semibold text-gray-900">
+                {instructor.totalClasses || 0}
+              </p>
               <p className="text-xs text-gray-500">진행 수업</p>
             </div>
           </div>
