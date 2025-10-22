@@ -179,6 +179,22 @@ const courseSchema = new mongoose.Schema({
       required: true,
     },
   }],
+  // ⭐ 레인 정보 (수영장 레인 배정)
+  poolType: {
+    type: String,
+    enum: ['mainPool', 'kidsPool', 'auxiliaryPool'],
+    default: 'mainPool'
+  },
+  lanes: [{
+    type: Number,
+    min: 1,
+    max: 10
+  }],
+  laneInfo: {
+    assignedLanes: [{ type: Number }], // 배정된 레인 번호들 (예: [1, 2, 3])
+    maxLanes: { type: Number, default: 1 }, // 최대 사용 레인 수
+    laneNotes: { type: String, default: '' } // 레인 관련 메모
+  },
   isActive: {
     type: Boolean,
     default: true,

@@ -387,13 +387,14 @@ function CoursesManagement() {
       const data = await response.json();
       console.log('👨‍🏫 로드된 강사 목록:', data);
       
-      // 강사 데이터 변환 (_id와 name만 필요)
+      // 강사 데이터 변환 (_id, name, instructorType 포함)
       const rawInstructors = data.data?.users || data.users || data.data || data || [];
       const instructorList = rawInstructors
         .map((instructor: any) => ({
           _id: instructor._id,
           name: instructor.name || instructor.userId || '이름 없음',
-          userId: instructor.userId
+          userId: instructor.userId,
+          instructorType: instructor.instructorInfo?.instructorType || 'instructor' // ⭐ 강사 종류
         }))
         .sort((a, b) => a.name.localeCompare(b.name, 'ko-KR')); // ⭐ 가나다순 정렬
       

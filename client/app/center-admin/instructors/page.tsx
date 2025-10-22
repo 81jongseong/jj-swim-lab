@@ -45,6 +45,7 @@ interface Instructor {
   totalStudents: number;
   totalClasses: number;
   instructorInfo?: {
+    instructorType?: 'instructor' | 'lifeguard'; // ⭐ 강사 종류
     instructorLevel?: string;
     maxStudents?: number;
     workSchedule?: {
@@ -70,6 +71,7 @@ function CenterInstructorsManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [instructorTypeFilter, setInstructorTypeFilter] = useState<'all' | 'instructor' | 'lifeguard'>('all'); // ⭐ 강사 종류 필터
 
   useEffect(() => {
     if (user) {
@@ -299,6 +301,12 @@ function CenterInstructorsManagement() {
     }
   };
 
+  // ⭐ 강사 종류별 필터링
+  const filteredInstructors = instructors.filter(instructor => {
+    if (instructorTypeFilter === 'all') return true;
+    return instructor.instructorInfo?.instructorType === instructorTypeFilter;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -320,9 +328,43 @@ function CenterInstructorsManagement() {
       {/* 통계 카드 */}
       <InstructorStatsCards instructors={instructors} />
 
+      {/* 강사 종류 필터 */}
+      <div className="mb-6 flex gap-3">
+        <button
+          onClick={() => setInstructorTypeFilter('all')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            instructorTypeFilter === 'all'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          전체 ({instructors.length})
+        </button>
+        <button
+          onClick={() => setInstructorTypeFilter('instructor')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            instructorTypeFilter === 'instructor'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          🏊 강습 강사 ({instructors.filter(i => i.instructorInfo?.instructorType === 'instructor' || !i.instructorInfo?.instructorType).length})
+        </button>
+        <button
+          onClick={() => setInstructorTypeFilter('lifeguard')}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            instructorTypeFilter === 'lifeguard'
+              ? 'bg-red-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          🛟 안전 요원 ({instructors.filter(i => i.instructorInfo?.instructorType === 'lifeguard').length})
+        </button>
+      </div>
+
       {/* 강사 목록 - 반응형 카드 뷰 (최소 2열) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {instructors.map((instructor) => (
+        {filteredInstructors.map((instructor) => (
           <InstructorCard
             key={instructor._id}
             instructor={instructor}
@@ -331,6 +373,16 @@ function CenterInstructorsManagement() {
           />
         ))}
       </div>
+
+      {/* 필터링된 강사 없음 안내 */}
+      {filteredInstructors.length === 0 && instructors.length > 0 && (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <div className="text-6xl mb-4">🔍</div>
+          <p className="text-gray-500 text-lg">
+            {instructorTypeFilter === 'instructor' ? '강습 강사가' : '안전 요원이'} 없습니다.
+          </p>
+        </div>
+      )}
 
       {/* 강사 없음 안내 */}
       {instructors.length === 0 && (

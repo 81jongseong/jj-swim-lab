@@ -207,6 +207,7 @@ interface IUser extends mongoose.Document {
     };
   };
   instructorInfo?: {
+    instructorType?: 'instructor' | 'lifeguard'; // ⭐ 강사 종류 (강습 강사 / 안전 요원)
     experience?: string;
     certifications?: string[];
     specialties?: string[];
@@ -464,6 +465,11 @@ const userSchema = new mongoose.Schema({
   },
   // 강사 전용 필드
   instructorInfo: {
+    instructorType: {
+      type: String,
+      enum: ['instructor', 'lifeguard'], // ⭐ 강습 강사 / 안전 요원
+      default: 'instructor'
+    },
     experience: { type: String, default: '' },
     certifications: [{ type: String }],
     specialties: [{ type: String }],

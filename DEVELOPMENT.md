@@ -2,6 +2,124 @@
 
 ## 📊 **최신 작업 현황** (2025-10-21)
 
+### ✅ **강사 종류 구분 및 풀/레인 배정 시스템 구축** 🏊🛟
+**진행 상태: 100% 완료!**
+
+#### **주요 기능:**
+
+**1. 강사 종류 구분 시스템**
+- ✅ User 모델에 `instructorType` 필드 추가 (`instructor` / `lifeguard`)
+  - `instructor`: 강습 강사 (수영 지도)
+  - `lifeguard`: 안전 요원 (수상 안전 관리)
+
+**2. 센터별 풀 구성 관리 시스템** ⭐ NEW
+- ✅ SwimmingCenter 모델에 `poolConfiguration` 필드 추가
+  - `mainPool`: 메인 풀 (이름, 레인 수, 수심, 크기)
+  - `kidsPool`: 유아 풀 (이름, 레인 수, 수심, 크기)
+  - `auxiliaryPool`: 보조 풀 (이름, 레인 수, 수심, 크기)
+- ✅ 센터별로 보유한 풀과 레인 수가 다름
+- ✅ 유아풀/보조풀이 없으면 0으로 설정 (UI에 표시 안 됨)
+
+**3. 레인 배정 시스템 (동적)**
+- ✅ Course 모델에 `poolType`, `lanes`, `laneInfo` 필드 추가
+- ✅ 강습 과정마다 어느 풀의 어느 레인을 사용하는지 지정 가능
+- ✅ 선택된 풀의 레인 수만큼만 UI에 표시 (센터 설정에 따라 동적)
+
+**4. 강습 과정 모달 UI 개선** (동적)
+- ✅ 강사 선택 시 종류별 필터 (전체/강습 강사/안전 요원)
+- ✅ **풀 선택 버튼** (메인풀/유아풀/보조풀) - 센터에 있는 풀만 표시
+- ✅ **레인 선택 UI** - 선택된 풀의 레인 수만큼만 버튼 표시
+  - 예: 메인풀 6레인 → 1~6레인 버튼만 표시
+  - 예: 유아풀 3레인 → 1~3레인 버튼만 표시
+- ✅ 선택된 풀과 레인 실시간 표시 (예: "메인풀의 1, 2레인 (2개)")
+- ✅ 여러 레인 동시 선택 가능
+
+**4. 강사 관리 페이지 필터**
+- ✅ 강사 종류별 필터 버튼 (전체/강습 강사/안전 요원)
+- ✅ 각 필터별 카운트 표시
+- ✅ InstructorCard에 강사 종류 뱃지 표시
+
+**5. UI 표시 개선**
+- ✅ CourseCard에 풀 타입 및 레인 정보 표시 (예: "메인풀 1, 2레인")
+- ✅ WeeklyCalendar에 풀 타입 및 레인 정보 표시
+- ✅ 강사 카드에 종류 뱃지 (🏊 강습 / 🛟 안전요원)
+- ✅ 풀 타입별 아이콘 (🏊 메인풀 / 👶 유아풀 / 🏊‍♀️ 보조풀)
+
+**6. 데이터베이스 자동 업데이트**
+- ✅ 기존 강사에 instructorType 자동 설정 (4명 업데이트)
+- ✅ 기존 강습 과정에 레인 자동 배정 (4개 과정 업데이트)
+  - 초급: 1-2레인
+  - 중급: 3-4레인
+  - 고급: 5-6레인
+- ✅ **전체 센터에 풀 구성 정보 추가 (24개 센터 업데이트)**
+  - 메인 풀: 6레인 (모든 센터)
+  - 유아 풀: 3레인 (모든 센터)
+  - 보조 풀: 0레인 (없음)
+
+#### **센터별 풀 구성 예시:**
+```typescript
+poolConfiguration: {
+  mainPool: {
+    name: '메인 풀',
+    lanes: 6,
+    depth: '1.2m~1.8m',
+    size: '25m x 15m'
+  },
+  kidsPool: {
+    name: '유아 풀',
+    lanes: 3,  // 0이면 UI에 표시 안 됨
+    depth: '0.6m~0.9m',
+    size: '10m x 5m'
+  },
+  auxiliaryPool: {
+    name: '보조 풀',
+    lanes: 0,  // 없음
+    depth: '1.0m~1.5m',
+    size: '15m x 8m'
+  }
+}
+```
+
+#### **구현 파일:**
+**모델:**
+- `server/src/models/User.ts` - instructorType 필드 추가
+- `server/src/models/Course.ts` - poolType, lanes, laneInfo 필드 추가
+- `server/src/models/Center.ts` - poolConfiguration 필드 추가
+
+**클라이언트:**
+- `client/components/center-admin/CourseFormModal.tsx` - 강사 필터, 풀 선택, 레인 선택 UI
+- `client/components/center-admin/CourseCard.tsx` - 풀/레인 정보 표시
+- `client/components/center-admin/WeeklyCalendar.tsx` - 풀/레인 정보 표시
+- `client/components/center-admin/InstructorCard.tsx` - 강사 종류 뱃지
+- `client/app/center-admin/instructors/page.tsx` - 강사 종류 필터
+- `client/app/center-admin/courses/page.tsx` - instructorType 로드
+
+**스크립트:**
+- `server/scripts/add-instructor-types.js` - 강사 종류 자동 설정
+- `server/scripts/add-lane-data.js` - 레인 자동 배정
+- `server/scripts/add-pool-config.js` - 센터 풀 구성 추가
+
+#### **동작 흐름:**
+1. 강습 과정 모달 열기
+2. 센터 정보 API 호출 (`/api/center-admin/center-info`)
+3. 센터의 풀 구성 정보 로드
+4. 보유한 풀만 버튼으로 표시 (lanes > 0인 풀만)
+5. 풀 선택 시 해당 풀의 레인 수만큼 버튼 생성
+6. 레인 선택 및 저장 (poolType + lanes)
+
+#### **API 엔드포인트:**
+- ✅ `GET /api/center-admin/center-info` - 센터 정보 및 풀 구성 조회
+
+#### **테스트 결과:**
+- ✅ 강사 종류별 필터링 작동
+- ✅ **풀 선택 및 레인 동적 표시** (센터 설정에 따라)
+- ✅ 레인 선택 및 저장 작동
+- ✅ 카드/캘린더에 풀/레인 정보 표시
+- ✅ 기존 데이터 마이그레이션 완료 (강사 4명, 과정 4개, 센터 24개)
+- ✅ API 로딩 상태 및 에러 처리
+
+---
+
 ### ✅ **강습 과정 스케줄 표시 오류 수정** 🔧
 **진행 상태: 100% 완료!**
 

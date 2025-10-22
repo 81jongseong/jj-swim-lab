@@ -12,6 +12,27 @@ export interface ICenter extends Document {
   capacity: number;
   status: 'active' | 'inactive' | 'maintenance';
   facilities: string[];
+  // ⭐ 풀 구성 정보
+  poolConfiguration?: {
+    mainPool?: {
+      name: string; // 예: "메인 풀", "25m 풀"
+      lanes: number; // 레인 수
+      depth: string; // 수심 (예: "1.2m~1.8m")
+      size: string; // 크기 (예: "25m x 15m")
+    };
+    kidsPool?: {
+      name: string; // 예: "유아 풀", "어린이 풀"
+      lanes: number; // 레인 수 (보통 2~4개)
+      depth: string; // 수심 (예: "0.8m~1.0m")
+      size: string; // 크기
+    };
+    auxiliaryPool?: {
+      name: string; // 예: "보조 풀", "재활 풀"
+      lanes: number; // 레인 수
+      depth: string; // 수심
+      size: string; // 크기
+    };
+  };
   operatingHours: {
     open: string;
     close: string;
@@ -128,6 +149,27 @@ const centerSchema = new Schema<ICenter>({
     type: String,
     trim: true
   }],
+  // ⭐ 풀 구성 정보
+  poolConfiguration: {
+    mainPool: {
+      name: { type: String, default: '메인 풀' },
+      lanes: { type: Number, default: 6 },
+      depth: { type: String, default: '1.2m~1.8m' },
+      size: { type: String, default: '25m x 15m' }
+    },
+    kidsPool: {
+      name: { type: String, default: '유아 풀' },
+      lanes: { type: Number, default: 0 }, // 0이면 없음
+      depth: { type: String, default: '0.8m~1.0m' },
+      size: { type: String, default: '10m x 5m' }
+    },
+    auxiliaryPool: {
+      name: { type: String, default: '보조 풀' },
+      lanes: { type: Number, default: 0 }, // 0이면 없음
+      depth: { type: String, default: '1.0m~1.5m' },
+      size: { type: String, default: '15m x 8m' }
+    }
+  },
   operatingHours: {
     open: {
       type: String,

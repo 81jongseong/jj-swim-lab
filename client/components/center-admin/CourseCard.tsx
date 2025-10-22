@@ -27,6 +27,13 @@ interface Course {
   status: 'active' | 'inactive' | 'full';
   createdAt: Date;
   tags?: string[];
+  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool'; // ⭐ 풀 타입
+  lanes?: number[];
+  laneInfo?: {
+    assignedLanes?: number[];
+    maxLanes?: number;
+    laneNotes?: string;
+  };
 }
 
 interface CourseCardProps {
@@ -151,6 +158,20 @@ export default function CourseCard({ course, levelName, onEdit, onDelete }: Cour
             {course.price.toLocaleString()}원
           </span>
         </div>
+
+        {/* 레인 정보 */}
+        {((course.laneInfo?.assignedLanes && course.laneInfo.assignedLanes.length > 0) || 
+          (course.lanes && course.lanes.length > 0)) && (
+          <div className="flex items-center gap-2 text-sm text-gray-700">
+            <span className="text-gray-500">
+              {course.poolType === 'kidsPool' ? '👶' : course.poolType === 'auxiliaryPool' ? '🏊‍♀️' : '🏊'}
+            </span>
+            <span className="font-medium text-blue-600">
+              {course.poolType === 'kidsPool' ? '유아풀 ' : course.poolType === 'auxiliaryPool' ? '보조풀 ' : '메인풀 '}
+              {(course.laneInfo?.assignedLanes || course.lanes || []).join(', ')}레인
+            </span>
+          </div>
+        )}
 
         {/* 태그 */}
         {course.tags && course.tags.length > 0 && (

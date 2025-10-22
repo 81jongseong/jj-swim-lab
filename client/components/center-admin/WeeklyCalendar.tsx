@@ -58,6 +58,12 @@ interface Course {
   schedule: CourseSchedule[];
   status: 'active' | 'inactive' | 'full';
   tags?: string[];
+  lanes?: number[];
+  laneInfo?: {
+    assignedLanes?: number[];
+    maxLanes?: number;
+    laneNotes?: string;
+  };
 }
 
 interface WeeklyCalendarProps {
@@ -291,6 +297,16 @@ export default function WeeklyCalendar({
                               <Users className="w-3 h-3 mr-1" />
                               <span>{course.currentStudents}/{course.maxStudents}명</span>
                             </div>
+                            {/* 레인 정보 */}
+                            {((course.laneInfo?.assignedLanes && course.laneInfo.assignedLanes.length > 0) || 
+                              (course.lanes && course.lanes.length > 0)) && (
+                              <div className="flex items-center text-xs text-blue-600 mt-1">
+                                <span className="mr-1">🏊</span>
+                                <span className="font-medium">
+                                  {(course.laneInfo?.assignedLanes || course.lanes || []).join(',')}레인
+                                </span>
+                              </div>
+                            )}
                             {course.status === 'full' && (
                               <div className="text-xs bg-red-500 text-white px-1 py-0.5 rounded mt-1 inline-block">
                                 마감

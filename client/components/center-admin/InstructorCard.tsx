@@ -22,6 +22,7 @@ interface Instructor {
   totalStudents: number;
   totalClasses: number;
   instructorInfo?: {
+    instructorType?: 'instructor' | 'lifeguard'; // ⭐ 강사 종류
     experience?: string;
     specialties?: string[];
     certifications?: string[];
@@ -86,7 +87,19 @@ export default function InstructorCard({
               <span className="text-white text-lg">👨‍🏫</span>
             </div>
             <div className="ml-3">
-              <h3 className="text-base font-semibold text-gray-900">{instructor.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-900">{instructor.name}</h3>
+                {/* 강사 종류 뱃지 */}
+                {instructor.instructorInfo?.instructorType === 'lifeguard' ? (
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                    🛟 안전요원
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                    🏊 강습
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">
                 {instructor.experience || instructor.instructorInfo?.experience || '경력 미입력'}
               </p>

@@ -27,6 +27,13 @@ interface Course {
   status: 'active' | 'inactive' | 'full';
   createdAt?: Date; // 추가
   tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
+  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool'; // ⭐ 풀 타입
+  lanes?: number[]; // ⭐ 레인 번호 배열 (예: [1, 2, 3])
+  laneInfo?: {
+    assignedLanes?: number[];
+    maxLanes?: number;
+    laneNotes?: string;
+  };
 }
 
 interface CourseFormModalProps {
@@ -34,7 +41,7 @@ interface CourseFormModalProps {
   onClose: () => void;
   onSave: (course: Course) => void;
   course?: Course | null;
-  instructors?: { _id: string; name: string }[];
+  instructors?: { _id: string; name: string; userId?: string; instructorType?: 'instructor' | 'lifeguard' }[];
   customLevels?: Array<{ id: string; name: string; description: string; order: number }>;
 }
 
@@ -58,15 +65,78 @@ export default function CourseFormModal({
     price: 50000,
     schedule: [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
     status: 'active',
-    tags: []
+    tags: [],
+    lanes: [], // ⭐ 레인 정보
+    laneInfo: {
+      assignedLanes: [],
+      maxLanes: 1,
+      laneNotes: ''
+    }
   });
 
   const [newTag, setNewTag] = useState('');
   const [newLevelInput, setNewLevelInput] = useState('');
   const [showLevelInput, setShowLevelInput] = useState(false);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedLanes, setSelectedLanes] = useState<number[]>([]); // ⭐ 선택된 레인들
+  const [instructorTypeFilter, setInstructorTypeFilter] = useState<'all' | 'instructor' | 'lifeguard'>('all'); // ⭐ 강사 종류 필터
+  const [selectedPoolType, setSelectedPoolType] = useState<'mainPool' | 'kidsPool' | 'auxiliaryPool'>('mainPool'); // ⭐ 선택된 풀
+  const [poolConfig, setPoolConfig] = useState<any>(null); // ⭐ 센터 풀 구성 정보
 
   const DAYS_OF_WEEK = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 센터 풀 구성 정보 로드
+  useEffect(() => {
+    const loadPoolConfig = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/center-admin/center-info', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🏊 센터 정보 응답:', data);
+          console.log('🏊 센터 풀 구성 정보:', data.data?.poolConfiguration);
+          
+          const poolConf = data.data?.poolConfiguration || {
+            mainPool: { name: '메인 풀', lanes: 6 },
+            kidsPool: { name: '유아 풀', lanes: 3 },
+            auxiliaryPool: { name: '보조 풀', lanes: 0 }
+          };
+          
+          setPoolConfig(poolConf);
+          console.log('✅ 풀 구성 설정 완료:', poolConf);
+        } else {
+          console.error('❌ API 응답 에러:', response.status);
+          // 기본값 설정
+          const defaultConfig = {
+            mainPool: { name: '메인 풀', lanes: 6 },
+            kidsPool: { name: '유아 풀', lanes: 3 },
+            auxiliaryPool: { name: '보조 풀', lanes: 0 }
+          };
+          setPoolConfig(defaultConfig);
+          console.log('⚠️ 기본값 사용:', defaultConfig);
+        }
+      } catch (error) {
+        console.error('💥 센터 정보 로드 실패:', error);
+        // 기본값 설정
+        const defaultConfig = {
+          mainPool: { name: '메인 풀', lanes: 6 },
+          kidsPool: { name: '유아 풀', lanes: 3 },
+          auxiliaryPool: { name: '보조 풀', lanes: 0 }
+        };
+        setPoolConfig(defaultConfig);
+        console.log('⚠️ 에러 발생 - 기본값 사용:', defaultConfig);
+      }
+    };
+    
+    if (isOpen) {
+      loadPoolConfig();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (course && course._id) {
@@ -80,6 +150,12 @@ export default function CourseFormModal({
       // 요일 초기화 (쉼표로 구분된 문자열 → 배열)
       const days = course.schedule?.[0]?.dayOfWeek?.split(',').map(d => d.trim()) || ['월'];
       setSelectedDays(days);
+      // 레인 및 풀 타입 초기화
+      const lanes = course.laneInfo?.assignedLanes || course.lanes || [];
+      setSelectedLanes(lanes);
+      if (course.poolType) {
+        setSelectedPoolType(course.poolType);
+      }
     } else if (course && !course._id) {
       // 추가 모드 (초기값 있음): 빈 슬롯 클릭 시
       setFormData({
@@ -99,6 +175,7 @@ export default function CourseFormModal({
       // 요일 초기화
       const days = course.schedule?.[0]?.dayOfWeek?.split(',').map(d => d.trim()) || ['월'];
       setSelectedDays(days);
+      setSelectedLanes([]); // 레인 초기화
     } else {
       // 추가 모드 (초기값 없음): [새 과정 추가] 버튼 클릭 시
       setFormData({
@@ -113,9 +190,16 @@ export default function CourseFormModal({
         price: 50000,
         schedule: [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
         status: 'active',
-        tags: []
+        tags: [],
+        lanes: [],
+        laneInfo: {
+          assignedLanes: [],
+          maxLanes: 1,
+          laneNotes: ''
+        }
       });
       setSelectedDays(['월']);
+      setSelectedLanes([]); // 레인 초기화
     }
   }, [course, isOpen]);
 
@@ -134,6 +218,27 @@ export default function CourseFormModal({
         ...formData.schedule?.[0],
         dayOfWeek: newDays.join(',')
       } as any]
+    });
+  };
+
+  // 레인 선택 토글
+  const toggleLane = (laneNumber: number) => {
+    const newLanes = selectedLanes.includes(laneNumber)
+      ? selectedLanes.filter(l => l !== laneNumber)
+      : [...selectedLanes, laneNumber].sort((a, b) => a - b);
+    
+    setSelectedLanes(newLanes);
+    
+    // formData 업데이트 (poolType도 함께 저장)
+    setFormData({
+      ...formData,
+      poolType: selectedPoolType, // ⭐ 풀 타입 저장
+      lanes: newLanes,
+      laneInfo: {
+        ...formData.laneInfo,
+        assignedLanes: newLanes,
+        maxLanes: newLanes.length
+      }
     });
   };
 
@@ -322,7 +427,9 @@ export default function CourseFormModal({
               
               {formData.level && !showLevelInput && (
                 <p className="text-xs text-blue-600 mt-1">
-                  선택된 급수: <strong>{formData.level}</strong>
+                  선택된 급수: <strong>
+                    {customLevels.find(l => l.id === formData.level)?.name || formData.level}
+                  </strong>
                 </p>
               )}
             </div>
@@ -384,9 +491,47 @@ export default function CourseFormModal({
 
           {/* 강사 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               담당 강사 *
             </label>
+            
+            {/* 강사 종류 필터 */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => setInstructorTypeFilter('all')}
+                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                  instructorTypeFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                onClick={() => setInstructorTypeFilter('instructor')}
+                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                  instructorTypeFilter === 'instructor'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🏊 강습 강사
+              </button>
+              <button
+                type="button"
+                onClick={() => setInstructorTypeFilter('lifeguard')}
+                className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                  instructorTypeFilter === 'lifeguard'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🛟 안전 요원
+              </button>
+            </div>
+            
             <select
               required
               value={formData.instructorId}
@@ -401,7 +546,12 @@ export default function CourseFormModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">강사를 선택하세요</option>
-              {instructors.map((instructor) => (
+              {instructors
+                .filter(instructor => {
+                  if (instructorTypeFilter === 'all') return true;
+                  return instructor.instructorType === instructorTypeFilter;
+                })
+                .map((instructor) => (
                 <option key={instructor._id} value={instructor._id}>
                   {instructor.name}
                 </option>
@@ -542,6 +692,116 @@ export default function CourseFormModal({
             
             <p className="text-xs text-gray-500 mt-2">
               💡 태그를 추가하면 과정 목록 상단에 필터 버튼이 자동 생성됩니다.
+            </p>
+          </div>
+
+          {/* 레인 배정 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🏊 풀 및 레인 배정
+            </label>
+            
+            {/* 풀 선택 */}
+            {poolConfig ? (
+              <div className="mb-4 space-y-2">
+                <p className="text-xs text-gray-600 mb-2">풀 선택:</p>
+                <div className="flex gap-2">
+                  {poolConfig.mainPool && poolConfig.mainPool.lanes > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPoolType('mainPool');
+                        setSelectedLanes([]); // 레인 초기화
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedPoolType === 'mainPool'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🏊 {poolConfig.mainPool.name} ({poolConfig.mainPool.lanes}레인)
+                    </button>
+                  )}
+                  {poolConfig.kidsPool && poolConfig.kidsPool.lanes > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPoolType('kidsPool');
+                        setSelectedLanes([]); // 레인 초기화
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedPoolType === 'kidsPool'
+                          ? 'bg-green-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      👶 {poolConfig.kidsPool.name} ({poolConfig.kidsPool.lanes}레인)
+                    </button>
+                  )}
+                  {poolConfig.auxiliaryPool && poolConfig.auxiliaryPool.lanes > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPoolType('auxiliaryPool');
+                        setSelectedLanes([]); // 레인 초기화
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedPoolType === 'auxiliaryPool'
+                          ? 'bg-purple-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🏊‍♀️ {poolConfig.auxiliaryPool.name} ({poolConfig.auxiliaryPool.lanes}레인)
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                ⏳ 센터 풀 정보 로딩 중...
+              </div>
+            )}
+            
+            {/* 레인 선택 - 선택된 풀의 레인 수만큼만 표시 */}
+            {poolConfig && poolConfig[selectedPoolType] && poolConfig[selectedPoolType].lanes > 0 ? (
+              <>
+                <p className="text-xs text-gray-600 mb-2">레인 선택:</p>
+                <div className="grid grid-cols-5 gap-2 mb-3">
+                  {Array.from({ length: poolConfig[selectedPoolType].lanes }, (_, i) => i + 1).map((laneNum) => (
+                    <button
+                      key={laneNum}
+                      type="button"
+                      onClick={() => toggleLane(laneNum)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedLanes.includes(laneNum)
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {laneNum}레인
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : poolConfig ? (
+              <div className="p-3 bg-yellow-50 rounded-lg text-sm text-yellow-800">
+                ⚠️ 선택된 풀({poolConfig[selectedPoolType]?.name || selectedPoolType})에 레인이 없습니다.
+              </div>
+            ) : null}
+
+            {/* 선택된 레인 표시 */}
+            {selectedLanes.length > 0 && (
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  ✅ <span className="font-semibold">
+                    {poolConfig && poolConfig[selectedPoolType] && poolConfig[selectedPoolType].name}
+                  </span>의 <span className="font-semibold">{selectedLanes.join(', ')}레인</span> ({selectedLanes.length}개)
+                </p>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 mt-2">
+              💡 풀을 선택하고 레인을 배정하세요. 유아풀이나 보조풀이 있는 경우 센터 시설 관리에서 설정할 수 있습니다.
             </p>
           </div>
 

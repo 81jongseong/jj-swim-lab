@@ -14,6 +14,7 @@ import { Payment } from '../models/Payment';
 import { Notice } from '../models/Notice';
 import { Review } from '../models/Review';
 import { Report } from '../models/Report';
+import { SwimmingCenter } from '../models/SwimmingCenter'; // ⭐ SwimmingCenter 추가
 
 interface AuthRequest extends Request {
   user?: any;
@@ -119,6 +120,51 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
   } catch (error) {
     console.error('센터 관리자 대시보드 조회 오류:', error);
     res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * 🏊 센터 정보 조회 (풀 구성 포함)
+ * GET /api/center-admin/center-info
+ */
+router.get('/center-info', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    // 센터 정보 조회
+    const center = await SwimmingCenter.findById(centerId);
+    
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '센터를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('🏊 센터 정보 조회:', {
+      centerName: center.name,
+      poolConfiguration: center.poolConfiguration
+    });
+
+    return res.json({
+      success: true,
+      message: '센터 정보 조회 성공!',
+      data: center
+    });
+  } catch (error) {
+    console.error('센터 정보 조회 오류:', error);
+    return res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
     });
