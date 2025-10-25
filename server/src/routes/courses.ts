@@ -456,6 +456,29 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
       };
     }
     console.log('🏊 레인 정보 처리:', updateData.laneInfo);
+    
+    // maxLanes가 변경되면 assignedLanes를 maxLanes 수만큼 자동 조정
+    if (updateData.laneInfo.maxLanes !== undefined && updateData.laneInfo.maxLanes > 0) {
+      const currentMaxLanes = course.laneInfo?.maxLanes || 1;
+      const newMaxLanes = updateData.laneInfo.maxLanes;
+      
+      // maxLanes가 변경된 경우에만 assignedLanes 조정
+      if (newMaxLanes !== currentMaxLanes) {
+        // 기존 assignedLanes를 기반으로 새로운 assignedLanes 생성
+        const currentAssignedLanes = updateData.laneInfo.assignedLanes || course.laneInfo?.assignedLanes || [1];
+        const newAssignedLanes = Array.from({ length: newMaxLanes }, (_, i) => i + 1);
+        
+        updateData.laneInfo.assignedLanes = newAssignedLanes;
+        updateData.laneInfo.laneNotes = `최대 레인 수 변경으로 레인 조정됨 (${currentMaxLanes} → ${newMaxLanes})`;
+        
+        console.log('🏊 maxLanes 변경으로 assignedLanes 자동 조정:', {
+          currentMaxLanes,
+          newMaxLanes,
+          beforeAssignedLanes: currentAssignedLanes,
+          afterAssignedLanes: newAssignedLanes
+        });
+      }
+    }
 
     console.log('💾 업데이트할 updateData:');
     console.log('  - lanes:', updateData.lanes);
