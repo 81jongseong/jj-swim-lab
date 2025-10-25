@@ -2,6 +2,65 @@
 
 ## 📊 **최신 작업 현황** (2025-10-24)
 
+### ✅ **레인 자동 조정 기능 구현** 🏊‍♂️
+**진행 상태: 100% 완료!**
+
+#### **주요 기능:**
+
+**1. 강습 과정 관리 - 레인 설정 UI**
+- ✅ `CourseFormModal.tsx`에 `maxLanes`와 `minLanes` 설정 UI 추가
+- ✅ `maxLanes`: 개인레슨 예약 시 자동으로 줄어들 수 있는 최대 레인 수
+- ✅ `minLanes`: 항상 유지되어야 하는 최소 레인 수
+- ✅ 예시 설명 추가: "최대 3레인, 최소 1레인 설정 시..."
+
+**2. 레인 자동 조정 로직 개선**
+- ✅ `LaneAllocationService.adjustLanesForPersonalLesson()` 메서드 개선
+  - 개인레슨 신청 시 강습 과정의 레인을 `minLanes`까지 감소
+  - `maxLanes - rentalCount`로 동적 조정 (최소값은 `minLanes` 유지)
+  - `personalLessonAdjustment.isEnabled` 필수 조건 제거 (자동으로 모든 강습에 적용)
+- ✅ `restoreLanesAfterPersonalLessonCancellation()` 메서드 개선
+  - 개인레슨 취소 시 레인 수를 `minLanes + restoreCount`로 복원
+  - 최대값은 `maxLanes`를 초과하지 않음
+
+**3. 데이터 모델**
+- ✅ `Course` 모델의 `laneInfo` 스키마에 `maxLanes`, `minLanes` 필드 포함
+- ✅ 기본값: `maxLanes: 1`, `minLanes: 1`
+
+#### **동작 예시:**
+```
+강습 과정 설정: maxLanes: 3, minLanes: 1
+
+[일반 강습]
+- 초급반: 3레인 사용
+
+[개인레슨 1개 예약]
+- 초급반: 2레인으로 자동 조정
+
+[개인레슨 2개 예약]
+- 초급반: 1레인으로 자동 조정 (minLanes 유지)
+
+[개인레슨 3개 예약]
+- 초급반: 1레인 유지 (minLanes 유지)
+
+[개인레슨 취소]
+- 초급반: 레인 수가 점진적으로 복원됨
+```
+
+#### **구현 파일:**
+**서버:**
+- `server/src/services/laneAllocationService.ts` - 레인 자동 조정 로직
+- `server/src/models/Course.ts` - `laneInfo` 스키마
+
+**클라이언트:**
+- `client/components/center-admin/CourseFormModal.tsx` - 레인 설정 UI
+
+#### **참고:**
+- 개인레슨 신청/취소 시 자동으로 강습 과정의 레인이 조정됨
+- 강습 과정 생성 시 반드시 `maxLanes`와 `minLanes`를 설정해야 함
+- 기존 강습 과정의 경우 기본값(1, 1)으로 설정됨
+
+---
+
 ### ✅ **프로젝트 안정성 확보 및 회원 배정 기능 복구** 🔧
 **진행 상태: 100% 완료!**
 
@@ -6242,26 +6301,26 @@ if (Array.isArray(data.data) && data.data.length > 0) {
  
  -   ? ����? ? ? ׬ �? ? ? y�f�  ? ? ? ��c�  ? ̬Ю  ? ��m�  ? ��$�  ? ����
  
- ## ?�� ?�류 ?�결 기록 (2025. 10. 25. ?�전 9:00:00)
+ ## ?�� ?�류 ?�결 기록 (2025. 10. 25. ?�전 9:00:00)
 
-### ???�원 배정 모달 ?�벨 ?�시 문제 최종 ?�결 ?��
-**진행 ?�태: 100% ?�료!**
+### ???�원 배정 모달 ?�벨 ?�시 문제 최종 ?�결 ?��
+**진행 ?�태: 100% ?�료!**
 
 #### **문제:**
-- ?�원 배정 모달?�서 모든 ?�원???�벨??"?�벨 미설???�로 ?�시??
-- ?�이?�베?�스?�는 ?�바�??�벨???�?�되???�음 (초급, 중급, 고급, ?�체)
-- ?�버 API?�서 `currentLevel`???�바르게 반환?��? ?�음
+- ?�원 배정 모달?�서 모든 ?�원???�벨??"?�벨 미설???�로 ?�시??
+- ?�이?�베?�스?�는 ?�바�??�벨???�?�되???�음 (초급, 중급, 고급, ?�체)
+- ?�버 API?�서 `currentLevel`???�바르게 반환?��? ?�음
 
-#### **?�인 분석:**
-1. **?�이?�베?�스 ?�벨 변??*: ?�어 ?�벨(`level1`, `beginner` ?????�국?�로 변?�되지 ?�음
-2. **?�버 API 로직**: `currentLevel` 계산 로직?�서 `studentInfo.level` ?�선?�위 문제
-3. **과정 ?�벨 매핑**: `assignedCourses`??`courseLevel`???�함?��? ?�음
+#### **?�인 분석:**
+1. **?�이?�베?�스 ?�벨 변??*: ?�어 ?�벨(`level1`, `beginner` ?????�국?�로 변?�되지 ?�음
+2. **?�버 API 로직**: `currentLevel` 계산 로직?�서 `studentInfo.level` ?�선?�위 문제
+3. **과정 ?�벨 매핑**: `assignedCourses`??`courseLevel`???�함?��? ?�음
 
-#### **?�결 방법:**
+#### **?�결 방법:**
 
-**1. ?�이?�베?�스 ?�벨 변??* (`server/convert-course-levels-to-korean-final.js`)
+**1. ?�이?�베?�스 ?�벨 변??* (`server/convert-course-levels-to-korean-final.js`)
 ```javascript
-// ?�어 ?�벨???�국?�로 변??
+// ?�어 ?�벨???�국?�로 변??
 const levelMapping = {
   'level1': '초급',
   'level2': '중급', 
@@ -6269,33 +6328,33 @@ const levelMapping = {
   'beginner': '초급',
   'intermediate': '중급',
   'advanced': '고급',
-  'all': '?�체'
+  'all': '?�체'
 };
 ```
 
-**2. ?�버 API 로직 개선** (`server/src/routes/center-admin.ts`)
+**2. ?�버 API 로직 개선** (`server/src/routes/center-admin.ts`)
 ```typescript
 // currentLevel 계산 로직 개선
 currentLevel: (() => {
-  // 1. 먼�? studentInfo.level ?�인
+  // 1. 먼�? studentInfo.level ?�인
   let level = member.studentInfo?.level;
   
-  // 2. studentInfo.level???�으�??�강 중인 과정???�벨 ?�용
+  // 2. studentInfo.level???�으�??�강 중인 과정???�벨 ?�용
   if (!level && courseDetails.length > 0) {
     level = courseDetails[0].courseLevel;
   }
   
-  return level || '?�벨 미설??;
+  return level || '?�벨 미설??;
 })(),
 ```
 
-**3. 과정 ?�벨 매핑 추�?**
+**3. 과정 ?�벨 매핑 추�?**
 ```typescript
-// courseDetails??courseLevel ?�함
+// courseDetails??courseLevel ?�함
 return {
   courseId: course._id,
   courseName: course.name,
-  courseLevel: course.level, // 과정 ?�벨 추�?
+  courseLevel: course.level, // 과정 ?�벨 추�?
   instructorName: instructor?.name || '미배??,
   enrollmentDate: new Date(),
   status: 'active'
@@ -6303,21 +6362,21 @@ return {
 ```
 
 #### **결과:**
-- ??김철수: `level: '초급'` ?�상 ?�시
-- ???�영?? `level: '중급'` ?�상 ?�시  
-- ??박�??? `level: '고급'` ?�상 ?�시
-- ???�수�? `level: '?�체'` ?�상 ?�시
-- ??최동?? `level: '중급'` ?�상 ?�시
-- ???�원 배정 모달?�서 ?�바�??�벨 ?�시
-- ???�버 로그?�서 ?�벨 ?�보 ?�상 ?�인
+- ??김철수: `level: '초급'` ?�상 ?�시
+- ???�영?? `level: '중급'` ?�상 ?�시  
+- ??박�??? `level: '고급'` ?�상 ?�시
+- ???�수�? `level: '?�체'` ?�상 ?�시
+- ??최동?? `level: '중급'` ?�상 ?�시
+- ???�원 배정 모달?�서 ?�바�??�벨 ?�시
+- ???�버 로그?�서 ?�벨 ?�보 ?�상 ?�인
 
-#### **?�정???�일:**
+#### **?�정???�일:**
 - `server/src/routes/center-admin.ts`: currentLevel 계산 로직 개선
-- `server/convert-course-levels-to-korean-final.js`: ?�이?�베?�스 ?�벨 변???�크립트
-- `server/src/models/LoginLog.ts`: center-admin enum 추�?
-- `server/src/middleware/role.ts`: center-admin 권한 추�?
+- `server/convert-course-levels-to-korean-final.js`: ?�이?�베?�스 ?�벨 변???�크립트
+- `server/src/models/LoginLog.ts`: center-admin enum 추�?
+- `server/src/middleware/role.ts`: center-admin 권한 추�?
 
-#### **?�스??결과:**
-- ?�버 로그?�서 모든 ?�원???�벨???�바르게 ?�시??
-- ?�원 배정 모달?�서 ?�벨 ?�보 ?�상 ?�시
-- API ?�답?�서 currentLevel ?�드 ?�상 반환
+#### **?�스??결과:**
+- ?�버 로그?�서 모든 ?�원???�벨???�바르게 ?�시??
+- ?�원 배정 모달?�서 ?�벨 ?�보 ?�상 ?�시
+- API ?�답?�서 currentLevel ?�드 ?�상 반환

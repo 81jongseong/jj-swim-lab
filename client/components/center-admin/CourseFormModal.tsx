@@ -34,6 +34,7 @@ interface Course {
   laneInfo?: {
     assignedLanes?: number[];
     maxLanes?: number;
+    minLanes?: number; // 최소 레인 수 추가
     laneNotes?: string;
   };
   courseType?: 'group' | 'personal'; // ⭐ 과정 타입 (단체/개인)
@@ -98,6 +99,7 @@ export default function CourseFormModal({
     laneInfo: {
       assignedLanes: [],
       maxLanes: 1,
+      minLanes: 1, // 최소 레인 수 기본값 추가
       laneNotes: ''
     },
     courseType: 'group', // ⭐ 기본값: 단체
@@ -1425,12 +1427,90 @@ export default function CourseFormModal({
 
             {/* 선택된 레인 표시 */}
             {selectedLanes.length > 0 && (
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 mb-4">
                 <p className="text-sm text-blue-800">
                   ✅ <span className="font-semibold">
                     {poolConfig && poolConfig[selectedPoolType] && poolConfig[selectedPoolType].name}
                   </span>의 <span className="font-semibold">{selectedLanes.join(', ')}레인</span> ({selectedLanes.length}개)
                 </p>
+              </div>
+            )}
+
+            {/* 필요 레인 수 설정 */}
+            {selectedLanes.length > 0 && (
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 space-y-3">
+                <p className="text-sm font-medium text-yellow-800">
+                  ⚙️ 레인 자동 조정 설정
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* 최대 레인 수 */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      최대 레인 수 *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={selectedLanes.length}
+                      value={formData.laneInfo?.maxLanes || selectedLanes.length}
+                      onChange={(e) => {
+                        const maxLanes = parseInt(e.target.value) || 1;
+                        setFormData({
+                          ...formData,
+                          laneInfo: {
+                            ...formData.laneInfo,
+                            maxLanes: Math.min(maxLanes, selectedLanes.length),
+                            assignedLanes: selectedLanes
+                          }
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      개인레슨 예약 시 자동으로 줄어들 수 있는 최대 레인 수
+                    </p>
+                  </div>
+
+                  {/* 최소 레인 수 */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      최소 레인 수 *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={formData.laneInfo?.maxLanes || selectedLanes.length}
+                      value={formData.laneInfo?.minLanes || 1}
+                      onChange={(e) => {
+                        const minLanes = parseInt(e.target.value) || 1;
+                        setFormData({
+                          ...formData,
+                          laneInfo: {
+                            ...formData.laneInfo,
+                            minLanes: Math.min(minLanes, formData.laneInfo?.maxLanes || selectedLanes.length)
+                          }
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      항상 유지되어야 하는 최소 레인 수
+                    </p>
+                  </div>
+                </div>
+
+                {/* 예시 설명 */}
+                <div className="p-3 bg-white rounded-lg border border-yellow-300">
+                  <p className="text-xs text-gray-700">
+                    💡 <span className="font-semibold">예시:</span> 최대 3레인, 최소 1레인 설정 시
+                  </p>
+                  <ul className="text-xs text-gray-600 mt-1 list-disc list-inside space-y-1">
+                    <li>일반 강습: 3레인 사용</li>
+                    <li>개인레슨 1개 예약: 2레인 사용 (자동 조정)</li>
+                    <li>개인레슨 2개 예약: 1레인 사용 (자동 조정)</li>
+                    <li>개인레슨 3개 예약: 1레인 유지 (최소값)</li>
+                  </ul>
+                </div>
               </div>
             )}
 

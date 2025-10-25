@@ -1,9 +1,9 @@
 export declare class LaneAllocationService {
-    static adjustLanesForPersonalLesson(personalLessonData: any): Promise<{
+    static adjustLanesForPersonalLesson(personalLessonData: any, rentalCount?: number): Promise<{
         success: boolean;
         adjustedCourses: number;
     }>;
-    static restoreLanesAfterPersonalLessonCancellation(personalLessonId: string): Promise<{
+    static restoreLanesAfterPersonalLessonCancellation(personalLessonId: string, restoreCount?: number): Promise<{
         success: boolean;
         restoredCourses: number;
     }>;

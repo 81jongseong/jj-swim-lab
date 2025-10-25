@@ -1539,7 +1539,9 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         members.forEach((member, index) => {
             console.log(`${index + 1}. ${member.name}:`, {
                 level: member.studentInfo?.level,
-                studentInfo: member.studentInfo
+                studentInfo: member.studentInfo,
+                _doc: member._doc,
+                toObject: member.toObject ? member.toObject() : 'N/A'
             });
         });
         const membersWithCourses = await Promise.all(members.map(async (member) => {
@@ -1547,12 +1549,19 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 centerId: centerId,
                 'enrolledStudents.student': member._id,
                 isPersonalLesson: { $ne: true }
-            }).select('name instructorId');
+            }).select('name instructorId level');
             const courseDetails = await Promise.all(assignedCourses.map(async (course) => {
                 const instructor = await User_1.User.findById(course.instructorId).select('name');
+                console.log(`🔍 ${member.name}의 과정 ${course.name} 레벨 확인:`, {
+                    courseId: course._id,
+                    courseName: course.name,
+                    courseLevel: course.level,
+                    instructorId: course.instructorId
+                });
                 return {
                     courseId: course._id,
                     courseName: course.name,
+                    courseLevel: course.level,
                     instructorName: instructor?.name || '미배정',
                     enrollmentDate: new Date(),
                     status: 'active'
@@ -1575,7 +1584,29 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 lastLessonDate: null,
                 centerMemo: member.studentInfo?.centerMemo || '',
                 centerMemos: member.studentInfo?.centerMemos || [],
-                currentLevel: member.studentInfo?.level || '레벨 미설정',
+                currentLevel: (() => {
+                    let level = member.studentInfo?.level;
+                    if (!level && courseDetails.length > 0) {
+                        const enrolledCourse = courseDetails[0];
+                        if (enrolledCourse.courseLevel) {
+                            level = enrolledCourse.courseLevel;
+                        }
+                    }
+                    if (!level && courseDetails.length > 0) {
+                        const course = courseDetails[0];
+                        if (course.courseLevel) {
+                            level = course.courseLevel;
+                        }
+                    }
+                    console.log(`🔍 ${member.name} 레벨 확인:`, {
+                        studentInfoLevel: member.studentInfo?.level,
+                        enrolledCoursesCount: courseDetails.length,
+                        courseLevel: courseDetails.length > 0 ? courseDetails[0].courseLevel : 'none',
+                        courseName: courseDetails.length > 0 ? courseDetails[0].courseName : 'none',
+                        finalLevel: level
+                    });
+                    return level || '레벨 미설정';
+                })(),
                 studentInfo: {
                     level: member.studentInfo?.level || '레벨 미설정',
                     emergencyContact: member.studentInfo?.emergencyContact || '',

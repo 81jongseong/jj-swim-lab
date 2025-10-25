@@ -5,7 +5,7 @@ const Course_1 = require("../models/Course");
 const PersonalLesson_1 = require("../models/PersonalLesson");
 const LaneRental_1 = require("../models/LaneRental");
 class LaneAllocationService {
-    static async adjustLanesForPersonalLesson(personalLessonData) {
+    static async adjustLanesForPersonalLesson(personalLessonData, rentalCount = 1) {
         try {
             const { date, time, centerId } = personalLessonData;
             const conflictingCourses = await Course_1.Course.find({
@@ -13,21 +13,20 @@ class LaneAllocationService {
                 'schedule.date': date,
                 'schedule.startTime': { $lte: time },
                 'schedule.endTime': { $gte: time },
-                status: 'active',
-                'personalLessonAdjustment.isEnabled': true
+                status: 'active'
             });
             console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
             for (const course of conflictingCourses) {
-                if (course.personalLessonAdjustment?.isEnabled) {
-                    const originalLanes = [...course.laneInfo.assignedLanes];
-                    const minLanes = course.laneInfo.minLanes || 1;
-                    const adjustedLanes = originalLanes.slice(0, minLanes);
-                    await Course_1.Course.findByIdAndUpdate(course._id, {
-                        'laneInfo.assignedLanes': adjustedLanes,
-                        'laneInfo.laneNotes': `개인레슨으로 인해 레인 조정됨 (${originalLanes.length} → ${adjustedLanes.length})`
-                    });
-                    console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${originalLanes.length} → ${adjustedLanes.length}`);
-                }
+                const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
+                const minLanes = course.laneInfo.minLanes || 1;
+                const originalLanes = course.laneInfo.assignedLanes || [];
+                const adjustedLaneCount = Math.max(minLanes, maxLanes - rentalCount);
+                const adjustedLanes = originalLanes.slice(0, adjustedLaneCount);
+                await Course_1.Course.findByIdAndUpdate(course._id, {
+                    'laneInfo.assignedLanes': adjustedLanes,
+                    'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${maxLanes} → ${adjustedLaneCount})`
+                });
+                console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${maxLanes} → ${adjustedLaneCount} 레인`);
             }
             return { success: true, adjustedCourses: conflictingCourses.length };
         }
@@ -36,11 +35,13 @@ class LaneAllocationService {
             throw error;
         }
     }
-    static async restoreLanesAfterPersonalLessonCancellation(personalLessonId) {
+    static async restoreLanesAfterPersonalLessonCancellation(personalLessonId, restoreCount = 1) {
         try {
             const personalLesson = await PersonalLesson_1.PersonalLesson.findById(personalLessonId);
-            if (!personalLesson)
+            if (!personalLesson) {
+                console.log('❌ 개인레슨을 찾을 수 없습니다:', personalLessonId);
                 return;
+            }
             const { date, time, centerId } = personalLesson;
             const courses = await Course_1.Course.find({
                 centerId,
@@ -49,14 +50,17 @@ class LaneAllocationService {
                 'schedule.endTime': { $gte: time },
                 status: 'active'
             });
+            console.log(`🔍 개인레슨 취소 영향 강습과정: ${courses.length}개`);
             for (const course of courses) {
                 const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
-                const restoredLanes = Array.from({ length: maxLanes }, (_, i) => i + 1);
+                const currentLanes = course.laneInfo.assignedLanes || [];
+                const restoredLaneCount = Math.min(maxLanes, currentLanes.length + restoreCount);
+                const restoredLanes = Array.from({ length: restoredLaneCount }, (_, i) => i + 1);
                 await Course_1.Course.findByIdAndUpdate(course._id, {
                     'laneInfo.assignedLanes': restoredLanes,
-                    'laneInfo.laneNotes': '개인레슨 취소로 레인 복원됨'
+                    'laneInfo.laneNotes': `개인레슨 취소로 레인 복원됨 (${currentLanes.length} → ${restoredLaneCount})`
                 });
-                console.log(`✅ 강습과정 ${course.name} 레인 복원 완료: ${restoredLanes.length}개`);
+                console.log(`✅ 강습과정 ${course.name} 레인 복원 완료: ${currentLanes.length} → ${restoredLaneCount} 레인`);
             }
             return { success: true, restoredCourses: courses.length };
         }
