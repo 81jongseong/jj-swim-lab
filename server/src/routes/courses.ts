@@ -229,19 +229,28 @@ router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRe
     let centerId = req.body.centerId;
     if (!centerId) {
       // 센터 관리자: managedCenters에서 첫 번째 센터 가져오기
-      if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
+      if (['centerAdmin', 'center-admin'].includes(user.userType) && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
         centerId = user.centerAdminInfo.managedCenters[0];
       }
       // 강사: assignedCenters에서 첫 번째 센터 가져오기
       else if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters && user.instructorInfo.assignedCenters.length > 0) {
         centerId = user.instructorInfo.assignedCenters[0];
       }
+      // center-admin 사용자는 centerId 필드에서 가져오기
+      else if (['centerAdmin', 'center-admin'].includes(user.userType) && user.centerId) {
+        centerId = user.centerId;
+      }
     }
 
-    console.log('🏢 centerId:', centerId);
+    console.log('🏢 centerId:', centerId, 'userType:', user.userType, 'hasCenterId:', !!user.centerId, 'hasManagedCenters:', !!user.centerAdminInfo?.managedCenters);
 
     if (!centerId) {
-      console.error('❌ centerId를 찾을 수 없음');
+      console.error('❌ centerId를 찾을 수 없음 - 사용자 정보:', {
+        userType: user.userType,
+        centerId: user.centerId,
+        managedCenters: user.centerAdminInfo?.managedCenters,
+        assignedCenters: user.instructorInfo?.assignedCenters
+      });
       return res.status(400).json({ error: '센터 ID가 필요합니다. 센터 관리자는 관리하는 센터가 있어야 합니다.' });
     }
 
