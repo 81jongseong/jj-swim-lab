@@ -110,6 +110,16 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
       status: 'pending'
     });
 
+    // 개인레슨 카운트
+    const totalPersonalLessons = await PersonalLesson.countDocuments({
+      centerId
+    });
+
+    const activePersonalLessons = await PersonalLesson.countDocuments({
+      centerId,
+      status: { $in: ['pending', 'confirmed', 'in_progress'] }
+    });
+
     res.json({
       success: true,
       message: '센터 관리자 대시보드 데이터 조회 성공!',
@@ -120,6 +130,8 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
         monthlyRevenue: monthlyRevenue[0]?.total || 0,
         todayBookings,
         pendingApprovals,
+        personalLessons: totalPersonalLessons, // 추가
+        activePersonalLessons: activePersonalLessons, // 추가
         monthlyGrowth: 12.5, // 실제 계산 로직 필요
         averageRating: 4.7 // 실제 계산 로직 필요
       }
