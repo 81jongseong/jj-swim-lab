@@ -879,7 +879,7 @@ function CoursesManagement() {
           icon="⏸️"
           title="비활성"
           value={`${courses.filter(c => c.status === 'inactive' && !c.isPersonalLesson).length}개`}
-          color="gray"
+          color="red"
         />
         <StatCard
           icon="🔒"
@@ -900,13 +900,13 @@ function CoursesManagement() {
             ? Math.round(courses.reduce((sum, course) => sum + course.duration, 0) / courses.length)
             : 0
           }분`}
-          color="indigo"
+          color="blue"
         />
         <StatCard
           icon="👤"
           title="개인레슨"
           value={`${courses.filter(course => course.isPersonalLesson).length}개`}
-          color="pink"
+          color="yellow"
         />
       </div>
 
