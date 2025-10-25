@@ -19,26 +19,49 @@ export class LaneAllocationService {
     try {
       const { date, time, centerId } = personalLessonData;
       
-      // 해당 시간대에 진행되는 강습과정들 찾기
-      const conflictingCourses = await Course.find({
+      // 날짜에서 요일 추출 (0=일요일, 1=월요일, ...)
+      const lessonDate = new Date(date);
+      const dayOfWeek = lessonDate.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+      
+      console.log(`🔍 개인레슨 레인 조정 시작: ${dayName} ${time}, centerId: ${centerId}`);
+      
+      // 해당 시간대에 진행되는 강습과정들 찾기 (요일 기반)
+      const allCourses = await Course.find({
         centerId,
-        'schedule.date': date,
-        'schedule.startTime': { $lte: time },
-        'schedule.endTime': { $gte: time },
-        status: 'active'
+        isActive: true
+      });
+      
+      console.log(`📚 센터의 전체 강습 과정: ${allCourses.length}개`);
+      
+      const conflictingCourses = allCourses.filter((course: any) => {
+        if (!course.schedule || !course.schedule.length) return false;
+        
+        // 강습 과정의 해당 요일 스케줄 확인
+        return course.schedule.some((schedule: any) => {
+          const matchesDay = schedule.day === dayName;
+          const matchesTime = schedule.startTime <= time && schedule.endTime >= time;
+          
+          if (matchesDay && matchesTime) {
+            console.log(`  ✓ ${course.name} - ${schedule.day} ${schedule.startTime}-${schedule.endTime}`);
+          }
+          
+          return matchesDay && matchesTime;
+        });
       });
 
       console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
 
       // 각 강습과정의 레인을 조정
       for (const course of conflictingCourses) {
-        const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
+        const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
         const minLanes = course.laneInfo.minLanes || 1;
-        const originalLanes = course.laneInfo.assignedLanes || [];
+        const originalLanes = course.laneInfo.assignedLanes || [1];
         
         // 개인레슨 수만큼 레인 감소 (최소 레인 수는 유지)
         const adjustedLaneCount = Math.max(minLanes, maxLanes - rentalCount);
-        const adjustedLanes = originalLanes.slice(0, adjustedLaneCount);
+        const adjustedLanes = Array.from({ length: adjustedLaneCount }, (_, i) => i + 1);
         
         await Course.findByIdAndUpdate(course._id, {
           'laneInfo.assignedLanes': adjustedLanes,
@@ -69,22 +92,37 @@ export class LaneAllocationService {
       }
 
       const { date, time, centerId } = personalLesson;
+      
+      // 날짜에서 요일 추출
+      const lessonDate = new Date(date);
+      const dayOfWeek = lessonDate.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+      
+      console.log(`🔍 개인레슨 취소 레인 복원 시작: ${dayName} ${time}`);
 
-      // 해당 시간대에 진행되는 강습과정들 찾기
-      const courses = await Course.find({
+      // 해당 시간대에 진행되는 강습과정들 찾기 (요일 기반)
+      const allCourses = await Course.find({
         centerId,
-        'schedule.date': date,
-        'schedule.startTime': { $lte: time },
-        'schedule.endTime': { $gte: time },
-        status: 'active'
+        isActive: true
+      });
+      
+      const courses = allCourses.filter((course: any) => {
+        if (!course.schedule || !course.schedule.length) return false;
+        
+        return course.schedule.some((schedule: any) => {
+          return schedule.day === dayName && 
+                 schedule.startTime <= time && 
+                 schedule.endTime >= time;
+        });
       });
 
       console.log(`🔍 개인레슨 취소 영향 강습과정: ${courses.length}개`);
 
       // 각 강습과정의 레인을 원래대로 복원
       for (const course of courses) {
-        const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
-        const currentLanes = course.laneInfo.assignedLanes || [];
+        const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
+        const currentLanes = course.laneInfo.assignedLanes || [1];
         
         // 현재 레인 수에서 복원 수만큼 증가 (최대 레인 수를 초과하지 않음)
         const restoredLaneCount = Math.min(maxLanes, currentLanes.length + restoreCount);

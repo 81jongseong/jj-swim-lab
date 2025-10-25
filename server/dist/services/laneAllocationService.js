@@ -8,20 +8,35 @@ class LaneAllocationService {
     static async adjustLanesForPersonalLesson(personalLessonData, rentalCount = 1) {
         try {
             const { date, time, centerId } = personalLessonData;
-            const conflictingCourses = await Course_1.Course.find({
+            const lessonDate = new Date(date);
+            const dayOfWeek = lessonDate.getDay();
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayName = dayNames[dayOfWeek];
+            console.log(`🔍 개인레슨 레인 조정 시작: ${dayName} ${time}, centerId: ${centerId}`);
+            const allCourses = await Course_1.Course.find({
                 centerId,
-                'schedule.date': date,
-                'schedule.startTime': { $lte: time },
-                'schedule.endTime': { $gte: time },
-                status: 'active'
+                isActive: true
+            });
+            console.log(`📚 센터의 전체 강습 과정: ${allCourses.length}개`);
+            const conflictingCourses = allCourses.filter((course) => {
+                if (!course.schedule || !course.schedule.length)
+                    return false;
+                return course.schedule.some((schedule) => {
+                    const matchesDay = schedule.day === dayName;
+                    const matchesTime = schedule.startTime <= time && schedule.endTime >= time;
+                    if (matchesDay && matchesTime) {
+                        console.log(`  ✓ ${course.name} - ${schedule.day} ${schedule.startTime}-${schedule.endTime}`);
+                    }
+                    return matchesDay && matchesTime;
+                });
             });
             console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
             for (const course of conflictingCourses) {
-                const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
+                const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
                 const minLanes = course.laneInfo.minLanes || 1;
-                const originalLanes = course.laneInfo.assignedLanes || [];
+                const originalLanes = course.laneInfo.assignedLanes || [1];
                 const adjustedLaneCount = Math.max(minLanes, maxLanes - rentalCount);
-                const adjustedLanes = originalLanes.slice(0, adjustedLaneCount);
+                const adjustedLanes = Array.from({ length: adjustedLaneCount }, (_, i) => i + 1);
                 await Course_1.Course.findByIdAndUpdate(course._id, {
                     'laneInfo.assignedLanes': adjustedLanes,
                     'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${maxLanes} → ${adjustedLaneCount})`
@@ -43,17 +58,28 @@ class LaneAllocationService {
                 return;
             }
             const { date, time, centerId } = personalLesson;
-            const courses = await Course_1.Course.find({
+            const lessonDate = new Date(date);
+            const dayOfWeek = lessonDate.getDay();
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayName = dayNames[dayOfWeek];
+            console.log(`🔍 개인레슨 취소 레인 복원 시작: ${dayName} ${time}`);
+            const allCourses = await Course_1.Course.find({
                 centerId,
-                'schedule.date': date,
-                'schedule.startTime': { $lte: time },
-                'schedule.endTime': { $gte: time },
-                status: 'active'
+                isActive: true
+            });
+            const courses = allCourses.filter((course) => {
+                if (!course.schedule || !course.schedule.length)
+                    return false;
+                return course.schedule.some((schedule) => {
+                    return schedule.day === dayName &&
+                        schedule.startTime <= time &&
+                        schedule.endTime >= time;
+                });
             });
             console.log(`🔍 개인레슨 취소 영향 강습과정: ${courses.length}개`);
             for (const course of courses) {
-                const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes.length;
-                const currentLanes = course.laneInfo.assignedLanes || [];
+                const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
+                const currentLanes = course.laneInfo.assignedLanes || [1];
                 const restoredLaneCount = Math.min(maxLanes, currentLanes.length + restoreCount);
                 const restoredLanes = Array.from({ length: restoredLaneCount }, (_, i) => i + 1);
                 await Course_1.Course.findByIdAndUpdate(course._id, {
