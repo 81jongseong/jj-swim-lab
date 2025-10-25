@@ -44,6 +44,7 @@ import { User } from '../models/User';
 import { SwimmingCenter } from '../models/SwimmingCenter';
 import { authMiddleware } from '../middleware/auth';
 import { requireCenterAdmin } from '../middleware/role';
+import { LaneAllocationService } from '../services/laneAllocationService';
 
 const router = express.Router();
 
@@ -512,6 +513,19 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
 
     // 강사별 예약 수 증가
     await updateInstructorBookingCount(instructorId, startTime, endTime, 1);
+
+    // 레인 자동 조정 (개인레슨 신청 시 다른 수업의 레인을 밀어냄)
+    try {
+      const adjustmentResult = await LaneAllocationService.adjustLanesForPersonalLesson({
+        date: scheduledDate,
+        time: startTime,
+        centerId: user.centerId
+      });
+      console.log('✅ 레인 자동 조정 완료:', adjustmentResult);
+    } catch (adjustmentError) {
+      console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
+      // 레인 조정 실패해도 개인레슨 신청은 진행됨
+    }
 
     res.json({
       success: true,
