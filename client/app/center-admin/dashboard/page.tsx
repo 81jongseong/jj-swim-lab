@@ -21,6 +21,8 @@ interface CenterStats {
   monthlyRevenue: number;
   pendingApprovals: number;
   todayBookings: number;
+  personalLessons?: number;
+  activePersonalLessons?: number;
 }
 
 interface RecentActivity {
@@ -39,7 +41,9 @@ const CenterAdminDashboard: React.FC = () => {
     activeCourses: 0,
     monthlyRevenue: 0,
     pendingApprovals: 0,
-    todayBookings: 0
+    todayBookings: 0,
+    personalLessons: 0,
+    activePersonalLessons: 0
   });
 
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([
@@ -78,38 +82,29 @@ const CenterAdminDashboard: React.FC = () => {
       try {
         console.log('📊 센터 데이터 로드 중...');
         
-        // 실제 API로 강사 수 조회
-        let activeInstructorsCount = 8; // 기본값
-        
-        try {
-          const instructorsResponse = await fetch('http://localhost:5000/api/center-admin/instructors', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          
-          if (instructorsResponse.ok) {
-            const instructorsData = await instructorsResponse.json();
-            console.log('📡 강사 API 응답:', instructorsData);
-            if (instructorsData.success) {
-              const instructors = instructorsData.data?.instructors || [];
-              activeInstructorsCount = instructors.filter((i: any) => i.isActive).length;
-              console.log('✅ 실제 활성 강사 수:', activeInstructorsCount, '명');
-            }
+        // 대시보드 API 호출
+        const dashboardResponse = await fetch('http://localhost:5000/api/center-admin/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        } catch (apiError) {
-          console.warn('⚠️ 강사 API 호출 실패, 기본값 사용:', apiError);
-        }
-        
-        // 통계 설정 (강사 수는 실제 DB 데이터)
-        setStats({
-          totalMembers: 150,
-          activeInstructors: activeInstructorsCount,
-          activeCourses: 25,
-          monthlyRevenue: 5000000,
-          pendingApprovals: 3,
-          todayBookings: 45
         });
+        
+        if (dashboardResponse.ok) {
+          const dashboardData = await dashboardResponse.json();
+          console.log('📡 대시보드 API 응답:', dashboardData);
+          if (dashboardData.success && dashboardData.data) {
+            setStats({
+              totalMembers: dashboardData.data.totalMembers || 0,
+              activeInstructors: dashboardData.data.activeInstructors || 0,
+              activeCourses: dashboardData.data.activeCourses || 0,
+              monthlyRevenue: dashboardData.data.monthlyRevenue || 0,
+              pendingApprovals: dashboardData.data.pendingApprovals || 0,
+              todayBookings: dashboardData.data.todayBookings || 0,
+              personalLessons: dashboardData.data.personalLessons || 0, // 추가
+              activePersonalLessons: dashboardData.data.activePersonalLessons || 0 // 추가
+            });
+          }
+        }
       } catch (error) {
         console.error('센터 데이터 로드 실패:', error);
       }
@@ -173,7 +168,7 @@ const CenterAdminDashboard: React.FC = () => {
       </div>
 
       {/* 추가 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="승인 대기"
           value={`${stats.pendingApprovals}건`}
@@ -185,6 +180,12 @@ const CenterAdminDashboard: React.FC = () => {
           value={`${stats.todayBookings}건`}
           icon={<Calendar className="h-5 w-5" />}
           color="blue"
+        />
+        <StatCard
+          title="개인레슨"
+          value={`${stats.personalLessons || 0}개`}
+          icon="👤"
+          color="yellow"
         />
       </div>
 

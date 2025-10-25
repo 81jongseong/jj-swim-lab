@@ -67,6 +67,12 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // 사용 가능한 레인 찾기
+    const availableLanes = await LaneAllocationService.findAvailableLanes(date, time, centerId, duration);
+    const assignedLane = availableLanes.availableLanes[0] || 1; // 첫 번째 사용 가능한 레인
+    
+    console.log(`🔍 개인레슨 레인 배정: ${assignedLane}번 레인`);
+
     // 개인레슨 생성
     const personalLesson = new PersonalLesson({
       studentId: userId,
@@ -78,12 +84,13 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       skillLevel,
       goals,
       notes,
-      status: 'pending'
+      status: 'pending',
+      assignedLane
     });
 
     await personalLesson.save();
 
-    // 레인 자동 조정 (필요시)
+    // 레인 자동 조정 (필요시) - 강습과정의 레인 재배정
     await LaneAllocationService.adjustLanesForPersonalLesson({
       date,
       time,

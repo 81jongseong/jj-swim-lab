@@ -68,23 +68,38 @@ export class LaneAllocationService {
 
       console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
 
-      // 각 강습과정의 레인을 조정
+      // 개인레슨을 위한 레인 추천 (충돌 없는 레인)
+      const usedLanes = new Set<number>();
+      conflictingCourses.forEach((course: any) => {
+        (course.laneInfo?.assignedLanes || []).forEach((lane: number) => usedLanes.add(lane));
+      });
+      
+      // 사용 가능한 레인 찾기 (총 6개 레인 중에서)
+      const availableLanes = Array.from({ length: 6 }, (_, i) => i + 1).filter(lane => !usedLanes.has(lane));
+      
+      console.log(`🔍 사용 중인 레인:`, Array.from(usedLanes));
+      console.log(`🔍 사용 가능한 레인:`, availableLanes);
+
+      // 각 강습과정의 레인을 조정 - 충돌 방지
       for (const course of conflictingCourses) {
         const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
         const minLanes = course.laneInfo.minLanes || 1;
         const currentLanes = course.laneInfo.assignedLanes || [1];
-        const currentLaneCount = currentLanes.length;
         
-        // 현재 레인 수에서 개인레슨 수만큼 감소 (최소 레인 수는 유지)
-        const adjustedLaneCount = Math.max(minLanes, currentLaneCount - rentalCount);
-        const adjustedLanes = Array.from({ length: adjustedLaneCount }, (_, i) => i + 1);
+        // 사용 가능한 레인 중에서 선택 (충돌 방지)
+        const adjustedLanes = availableLanes.slice(0, maxLanes);
+        
+        // 최소 레인 수 만족 확인
+        if (adjustedLanes.length < minLanes) {
+          console.log(`⚠️ 경고: ${course.name}의 최소 레인 수(${minLanes})를 만족하지 못함 (사용 가능: ${adjustedLanes.length})`);
+        }
         
         await Course.findByIdAndUpdate(course._id, {
-          'laneInfo.assignedLanes': adjustedLanes,
-          'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${currentLaneCount} → ${adjustedLaneCount})`
+          'laneInfo.assignedLanes': adjustedLanes.length > 0 ? adjustedLanes : currentLanes,
+          'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 - 충돌 방지 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
         });
 
-        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${currentLaneCount} → ${adjustedLaneCount} 레인 (max:${maxLanes}, min:${minLanes})`);
+        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: [${currentLanes.join(',')}] → [${adjustedLanes.join(',')}] (max:${maxLanes}, min:${minLanes})`);
       }
 
       return { success: true, adjustedCourses: conflictingCourses.length };
