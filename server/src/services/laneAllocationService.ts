@@ -53,7 +53,16 @@ export class LaneAllocationService {
       console.log(`🔍 사용 중인 레인:`, Array.from(usedLanes));
       console.log(`🔍 사용 가능한 레인:`, availableLanes);
     
-      // 각 강습과정의 레인을 조정 - 충돌 방지
+      // 개인레슨에 사용할 레인 우선 배정 (항상 1레인 우선 사용)
+      const personalLessonLane = 1;
+      usedLanes.add(personalLessonLane);
+      
+      // 사용 가능한 레인 재계산
+      const remainingAvailableLanes = Array.from({ length: 6 }, (_, i) => i + 1).filter(lane => !usedLanes.has(lane));
+      
+      console.log(`🔍 개인레슨 ${personalLessonLane}레인 배정 후 사용 가능한 레인:`, remainingAvailableLanes);
+
+      // 각 강습과정의 레인을 조정 - 개인레슨을 피해서 밀어냄
       for (const course of conflictingCourses) {
         const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
         const minLanes = course.laneInfo?.minLanes || 1;
@@ -63,19 +72,29 @@ export class LaneAllocationService {
           maxLanes,
           minLanes,
           currentLanes,
-          availableLanes
+          availableLanes: remainingAvailableLanes
         });
 
-        // 사용 가능한 레인 중에서 선택 (충돌 방지)
-        const adjustedLanes = availableLanes.slice(0, maxLanes);
+        // 현재 레인이 1레인과 겹치는지 확인
+        const hasLane1 = currentLanes.includes(1);
+        
+        let adjustedLanes: number[];
+        if (hasLane1) {
+          // 1레인이 포함되어 있으면 개인레슨을 피해 다른 레인으로 밀어냄
+          // 충돌하지 않는 레인 중에서 선택
+          adjustedLanes = remainingAvailableLanes.slice(0, maxLanes);
+        } else {
+          // 1레인이 없으면 그대로 유지
+          adjustedLanes = currentLanes;
+        }
         
         console.log(`📊 레인 조정 계산 결과:`, {
           courseName: course.name,
+          hasLane1,
           maxLanes,
           minLanes,
           currentLanes: currentLanes.join(','),
-          adjustedLanes: adjustedLanes.join(','),
-          availableLanes: availableLanes.join(',')
+          adjustedLanes: adjustedLanes.join(',')
         });
 
         // 최소 레인 수 만족 확인
@@ -85,7 +104,7 @@ export class LaneAllocationService {
         
         const updateData = {
           'laneInfo.assignedLanes': adjustedLanes.length > 0 ? adjustedLanes : currentLanes,
-          'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 - 충돌 방지 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
+          'laneInfo.laneNotes': `개인레슨으로 인해 레인 조정됨 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
         };
         
         console.log(`💾 업데이트할 데이터:`, {
@@ -101,7 +120,13 @@ export class LaneAllocationService {
         console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: [${currentLanes.join(',')}] → [${adjustedLanes.join(',')}] (max:${maxLanes}, min:${minLanes})`);
         console.log(`✅ DB 확인 - 업데이트된 레인: [${updatedCourse?.laneInfo?.assignedLanes?.join(',')}]`);
       }
-      return { success: true, adjustedCourses: conflictingCourses.length };
+      
+      return { 
+        success: true, 
+        adjustedCourses: conflictingCourses.length,
+        personalLessonLane,
+        adjustedCoursesList: conflictingCourses.map(c => ({ name: c.name, lanes: c.laneInfo?.assignedLanes }))
+      };
     } catch (error) {
       console.error('❌ 레인 자동 조정 실패:', error);
       throw error;
