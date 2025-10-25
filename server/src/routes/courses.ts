@@ -125,26 +125,6 @@ const router: Router = Router();
 
 import { auth as authenticateToken } from '../middleware/auth';
 
-/**
- * 강사/센터관리자 권한 확인 미들웨어
- * 
- * 허용되는 사용자 타입:
- * - instructor: 강사 (자신의 강습 과정 관리)
- * - centerAdmin: 센터 관리자 (관리하는 센터의 강습 과정 관리)
- * - superAdmin: 최고 관리자 (모든 강습 과정 관리)
- */
-const requireInstructor = async (req: AuthRequest, res: Response, next: Function) => {
-  try {
-    const user = await User.findById(req.user.userId);
-    if (!user || (user.userType !== 'instructor' && user.userType !== 'centerAdmin' && user.userType !== 'superAdmin')) {
-      return res.status(403).json({ error: '강사 또는 센터 관리자 권한이 필요합니다.' });
-    }
-    return next();
-  } catch (error) {
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
-  }
-};
-
 // 모든 강습 과정 조회
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -198,7 +178,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // 강습 과정 생성 (강사/센터관리자/관리자만)
-router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, res: Response) => {
+router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRequest, res: Response) => {
   try {
     console.log('📥 강습 과정 생성 요청:', {
       body: req.body,
