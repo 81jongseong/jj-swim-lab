@@ -860,14 +860,14 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
       });
     }
 
-    // 모든 강습 과정의 레인 정리 및 검증 (페이지 로드 시 호출)
-    try {
-      const { LaneAllocationService } = await import('../services/laneAllocationService');
-      const organizeResult = await LaneAllocationService.organizeAllCourseLanes(centerId.toString());
-      console.log('🔄 레인 정리 결과:', organizeResult);
-    } catch (organizeError) {
-      console.error('⚠️ 레인 정리 실패 (무시하고 계속 진행):', organizeError);
-    }
+    // 모든 강습 과정의 레인 정리 및 검증 (일시 비활성화 - 레인 충돌 해결 중)
+    // try {
+    //   const { LaneAllocationService } = await import('../services/laneAllocationService');
+    //   const organizeResult = await LaneAllocationService.organizeAllCourseLanes(centerId.toString());
+    //   console.log('🔄 레인 정리 결과:', organizeResult);
+    // } catch (organizeError) {
+    //   console.error('⚠️ 레인 정리 실패 (무시하고 계속 진행):', organizeError);
+    // }
 
     // 센터의 강습 과정 조회 (강사 정보 포함)
     const courses = await Course.find({
