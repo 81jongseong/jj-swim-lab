@@ -456,58 +456,6 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
       };
     }
     console.log('🏊 레인 정보 처리:', updateData.laneInfo);
-    
-    // assignedLanes와 maxLanes 검증
-    const assignedLanes = updateData.laneInfo?.assignedLanes || updateData.lanes || course.laneInfo?.assignedLanes || [];
-    const maxLanes = updateData.laneInfo?.maxLanes;
-    const minLanes = updateData.laneInfo?.minLanes;
-    
-    // minLanes와 maxLanes 검증
-    if (minLanes !== undefined && maxLanes !== undefined && minLanes > maxLanes) {
-      console.error('❌ 검증 실패: 최소 레인 수가 최대 레인 수보다 큼', {
-        minLanes,
-        maxLanes
-      });
-      return res.status(400).json({ 
-        error: `최대 레인 수(${maxLanes})는 최소 레인 수(${minLanes}) 이상이어야 합니다.` 
-      });
-    }
-    
-    // assignedLanes가 있고 maxLanes도 설정되어 있는 경우 검증
-    if (assignedLanes.length > 0 && maxLanes !== undefined && maxLanes > 0) {
-      if (assignedLanes.length > maxLanes) {
-        console.error('❌ 검증 실패: 할당된 레인 수가 최대 레인 수를 초과함', {
-          assignedLanes: assignedLanes.length,
-          maxLanes: maxLanes
-        });
-        return res.status(400).json({ 
-          error: `최대 레인 수(${maxLanes})는 할당된 레인 수(${assignedLanes.length}) 이상이어야 합니다.` 
-        });
-      }
-    }
-    
-    // maxLanes가 변경되면 assignedLanes를 maxLanes 수만큼 자동 조정
-    if (updateData.laneInfo.maxLanes !== undefined && updateData.laneInfo.maxLanes > 0) {
-      const currentMaxLanes = course.laneInfo?.maxLanes || 1;
-      const newMaxLanes = updateData.laneInfo.maxLanes;
-      
-      // maxLanes가 변경된 경우에만 assignedLanes 조정
-      if (newMaxLanes !== currentMaxLanes) {
-        // 기존 assignedLanes를 기반으로 새로운 assignedLanes 생성
-        const currentAssignedLanes = updateData.laneInfo.assignedLanes || course.laneInfo?.assignedLanes || [1];
-        const newAssignedLanes = Array.from({ length: newMaxLanes }, (_, i) => i + 1);
-        
-        updateData.laneInfo.assignedLanes = newAssignedLanes;
-        updateData.laneInfo.laneNotes = `최대 레인 수 변경으로 레인 조정됨 (${currentMaxLanes} → ${newMaxLanes})`;
-        
-        console.log('🏊 maxLanes 변경으로 assignedLanes 자동 조정:', {
-          currentMaxLanes,
-          newMaxLanes,
-          beforeAssignedLanes: currentAssignedLanes,
-          afterAssignedLanes: newAssignedLanes
-        });
-      }
-    }
 
     console.log('💾 업데이트할 updateData:');
     console.log('  - lanes:', updateData.lanes);

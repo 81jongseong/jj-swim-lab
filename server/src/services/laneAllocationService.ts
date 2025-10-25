@@ -282,6 +282,87 @@ export class LaneAllocationService {
       throw error;
     }
   }
+
+  /**
+   * 모든 강습 과정의 레인 정리 및 검증
+   * (강습 과정 목록 조회 시 호출)
+   */
+  static async organizeAllCourseLanes(centerId: string) {
+    try {
+      console.log('🔄 모든 강습 과정 레인 정리 시작...');
+      
+      // 센터의 모든 활성 강습과정 가져오기
+      const allCourses = await Course.find({
+        centerId,
+        isActive: true
+      });
+
+      console.log(`📊 총 ${allCourses.length}개의 강습과정 검토`);
+
+      let adjustedCount = 0;
+      let errorCount = 0;
+
+      for (const course of allCourses) {
+        try {
+          const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
+          const minLanes = course.laneInfo?.minLanes || 1;
+          const currentLanes = course.laneInfo?.assignedLanes || [];
+
+          console.log(`🔍 ${course.name} 검토:`, {
+            maxLanes,
+            minLanes,
+            currentLanes: currentLanes.join(',')
+          });
+
+          // 검증: minLanes <= maxLanes
+          if (minLanes > maxLanes) {
+            console.error(`❌ ${course.name}: minLanes(${minLanes}) > maxLanes(${maxLanes}) - maxLanes로 수정`);
+            await Course.findByIdAndUpdate(course._id, {
+              'laneInfo.maxLanes': minLanes
+            });
+          }
+
+          // 검증: assignedLanes.length <= maxLanes
+          if (currentLanes.length > maxLanes) {
+            console.warn(`⚠️ ${course.name}: assignedLanes(${currentLanes.length}) > maxLanes(${maxLanes}) - 축소`);
+            const adjustedLanes = Array.from({ length: maxLanes }, (_, i) => i + 1);
+            await Course.findByIdAndUpdate(course._id, {
+              'laneInfo.assignedLanes': adjustedLanes,
+              'laneInfo.laneNotes': `레인 수 검증으로 조정됨 (${currentLanes.length} → ${maxLanes})`
+            });
+            adjustedCount++;
+          }
+
+          // 검증: assignedLanes.length < minLanes
+          if (currentLanes.length < minLanes) {
+            console.warn(`⚠️ ${course.name}: assignedLanes(${currentLanes.length}) < minLanes(${minLanes}) - 확장`);
+            const adjustedLanes = Array.from({ length: minLanes }, (_, i) => i + 1);
+            await Course.findByIdAndUpdate(course._id, {
+              'laneInfo.assignedLanes': adjustedLanes,
+              'laneInfo.laneNotes': `최소 레인 수 확보로 조정됨 (${currentLanes.length} → ${minLanes})`
+            });
+            adjustedCount++;
+          }
+
+        } catch (error) {
+          console.error(`❌ ${course.name} 레인 정리 실패:`, error);
+          errorCount++;
+        }
+      }
+
+      console.log(`✅ 레인 정리 완료: ${adjustedCount}개 조정, ${errorCount}개 오류`);
+
+      return {
+        success: true,
+        adjustedCount,
+        errorCount,
+        totalCourses: allCourses.length
+      };
+    } catch (error) {
+      console.error('❌ 모든 강습 과정 레인 정리 실패:', error);
+      throw error;
+    }
+  }
 }
 
 
