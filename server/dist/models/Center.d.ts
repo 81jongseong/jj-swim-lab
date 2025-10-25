@@ -35,10 +35,55 @@ export interface ICenter extends Document {
     capacity: number;
     status: 'active' | 'inactive' | 'maintenance';
     facilities: string[];
+    poolConfiguration?: {
+        mainPool?: {
+            name: string;
+            lanes: number;
+            depth: string;
+            size: string;
+        };
+        kidsPool?: {
+            name: string;
+            lanes: number;
+            depth: string;
+            size: string;
+        };
+        auxiliaryPool?: {
+            name: string;
+            lanes: number;
+            depth: string;
+            size: string;
+        };
+    };
     operatingHours: {
         open: string;
         close: string;
         days: string[];
+    };
+    availabilitySettings: {
+        personalLesson: {
+            enabled: boolean;
+            availableDays: string[];
+            availableTimes: Array<{
+                startTime: string;
+                endTime: string;
+                maxDuration: number;
+            }>;
+            advanceBookingDays: number;
+            cancellationPolicy: string;
+        };
+        laneRental: {
+            enabled: boolean;
+            availableDays: string[];
+            availableTimes: Array<{
+                startTime: string;
+                endTime: string;
+                maxDuration: number;
+            }>;
+            availableLanes: number[];
+            advanceBookingDays: number;
+            cancellationPolicy: string;
+        };
     };
     introduction: {
         shortDescription: string;

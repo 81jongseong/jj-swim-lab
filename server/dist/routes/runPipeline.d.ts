@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+declare const router: import("express-serve-static-core").Router;
 export interface PipelineRequest {
     videoPath: string;
     fbxPath: string;
@@ -26,10 +27,5 @@ export interface PipelineResult {
 export declare function runPipeline(req: Request, res: Response): Promise<void>;
 export declare function checkPipelineStatus(req: Request, res: Response): Promise<void>;
 export declare function downloadPipelineResult(req: Request, res: Response): Promise<void>;
-declare const _default: {
-    runPipeline: typeof runPipeline;
-    checkPipelineStatus: typeof checkPipelineStatus;
-    downloadPipelineResult: typeof downloadPipelineResult;
-};
-export default _default;
+export default router;
 //# sourceMappingURL=runPipeline.d.ts.map

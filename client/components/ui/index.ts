@@ -99,7 +99,7 @@ export { default as BarChart } from './barchart';
 export { default as LoadingSpinner } from './loadingspinner';
 export { ThemeProvider, useTheme } from './themeprovider';
 export { Input } from './input';
-export { Badge } from './badge';
+export { Badge } from './Badge';
 export { default as Modal } from './modal';
 export { Button } from './button';
 

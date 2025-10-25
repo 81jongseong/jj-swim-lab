@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           progress: true,
           evaluations: true,
           reports: true,
-          userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin',
+          userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin' || userData.userType === 'center-admin',
           systemSettings: userData.userType === 'superAdmin',
           aiConfigManagement: userData.userType === 'superAdmin'
         }
@@ -315,7 +315,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             progress: true,
             evaluations: true,
             reports: true,
-            userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin',
+            userManagement: userData.userType === 'superAdmin' || userData.userType === 'centerAdmin' || userData.userType === 'center-admin',
             systemSettings: userData.userType === 'superAdmin',
             aiConfigManagement: userData.userType === 'superAdmin'
           }
@@ -351,15 +351,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       
-      console.log('🔍 로그인 시도:', { userId: email, password: '***' });
+      console.log('🔍 로그인 시도:', { email: email, password: '***' });
       
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // userId로 로그인 (서버 스키마와 일치)
-        body: JSON.stringify({ userId: email, password }),
+        // email로 로그인 (서버에서 userId와 email 모두 지원)
+        body: JSON.stringify({ email: email, password }),
       });
       
       console.log('📡 서버 응답 상태:', response.status, response.statusText);

@@ -33,7 +33,7 @@ const LoginLogSchema = new mongoose_1.Schema({
     },
     userType: {
         type: String,
-        enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+        enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
         required: true
     },
     loginTime: {

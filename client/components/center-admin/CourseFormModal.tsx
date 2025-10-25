@@ -12,7 +12,7 @@ interface Course {
   _id?: string;
   name: string;
   description: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: '초급' | '중급' | '고급' | string;
   duration: number;
   maxStudents: number;
   currentStudents: number;
@@ -27,12 +27,38 @@ interface Course {
   status: 'active' | 'inactive' | 'full';
   createdAt?: Date; // 추가
   tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
+  startDate?: Date; // 수업 시작일
+  endDate?: Date; // 수업 종료일 (만료일)
   poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool'; // ⭐ 풀 타입
   lanes?: number[]; // ⭐ 레인 번호 배열 (예: [1, 2, 3])
   laneInfo?: {
     assignedLanes?: number[];
     maxLanes?: number;
     laneNotes?: string;
+  };
+  courseType?: 'group' | 'personal'; // ⭐ 과정 타입 (단체/개인)
+  isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
+  personalLessonSettings?: {
+    timeSlots: Array<{
+      id: string;
+      startTime: string;
+      endTime: string;
+      isActive: boolean;
+    }>;
+    lessonTypes: Array<{
+      id?: string;
+      type: '1:1' | '1:2' | '1:3' | '1:4' | '1:5';
+      maxStudents: number;
+      pricePerSession: number;
+      monthlyPrice?: number;
+    }>;
+    frequencyOptions: Array<{
+      id?: string;
+      type: 'weekly' | 'monthly';
+      sessions: number;
+      price: number;
+      expirationDays?: number;
+    }>;
   };
 }
 
@@ -43,6 +69,7 @@ interface CourseFormModalProps {
   course?: Course | null;
   instructors?: { _id: string; name: string; userId?: string; instructorType?: 'instructor' | 'lifeguard' }[];
   customLevels?: Array<{ id: string; name: string; description: string; order: number }>;
+  onAssignMembers?: (course: Course) => void; // 회원 배정 함수 추가
 }
 
 export default function CourseFormModal({
@@ -50,13 +77,14 @@ export default function CourseFormModal({
   onClose,
   onSave,
   course,
-  instructors = [],
-  customLevels = []
+  instructors: propInstructors = [],
+  customLevels = [],
+  onAssignMembers
 }: CourseFormModalProps) {
   const [formData, setFormData] = useState<Partial<Course>>({
     name: '',
     description: '',
-    level: 'beginner',
+    level: '초급',
     duration: 60,
     maxStudents: 20,
     currentStudents: 0,
@@ -71,8 +99,15 @@ export default function CourseFormModal({
       assignedLanes: [],
       maxLanes: 1,
       laneNotes: ''
-    }
+    },
+    courseType: 'group', // ⭐ 기본값: 단체
+    isPersonalLesson: false, // ⭐ 기본값: 개인레슨 아님
+    startDate: new Date(), // 수업 시작일 (오늘 날짜)
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)) // 수업 종료일 (한 달 후)
   });
+
+  // ⭐ 직접 입력한 급수들을 로컬 상태로 관리
+  const [customInputLevels, setCustomInputLevels] = useState<string[]>([]);
 
   const [newTag, setNewTag] = useState('');
   const [newLevelInput, setNewLevelInput] = useState('');
@@ -82,8 +117,50 @@ export default function CourseFormModal({
   const [instructorTypeFilter, setInstructorTypeFilter] = useState<'all' | 'instructor' | 'lifeguard'>('all'); // ⭐ 강사 종류 필터
   const [selectedPoolType, setSelectedPoolType] = useState<'mainPool' | 'kidsPool' | 'auxiliaryPool'>('mainPool'); // ⭐ 선택된 풀
   const [poolConfig, setPoolConfig] = useState<any>(null); // ⭐ 센터 풀 구성 정보
+  const [instructors, setInstructors] = useState<any[]>([]); // ⭐ 강사 목록
+  const [loadingInstructors, setLoadingInstructors] = useState(false); // ⭐ 강사 로딩 상태
 
   const DAYS_OF_WEEK = ['월', '화', '수', '목', '금', '토', '일'];
+
+  // 강사 목록 로드
+  useEffect(() => {
+    const loadInstructors = async () => {
+      try {
+        setLoadingInstructors(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/center-admin/instructors', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const instructorList = data.data?.instructors || data.data || [];
+            setInstructors(Array.isArray(instructorList) ? instructorList : []);
+          }
+        }
+      } catch (error) {
+        console.error('강사 목록 로드 오류:', error);
+        // API 호출 실패 시 props로 받은 강사 목록 사용
+        if (Array.isArray(propInstructors) && propInstructors.length > 0) {
+          setInstructors(propInstructors);
+        }
+      } finally {
+        setLoadingInstructors(false);
+      }
+    };
+
+    if (isOpen) {
+      // props로 받은 강사 목록이 있으면 먼저 설정
+      if (Array.isArray(propInstructors) && propInstructors.length > 0) {
+        setInstructors(propInstructors);
+      }
+      // API로 최신 강사 목록 로드
+      loadInstructors();
+    }
+  }, [isOpen, propInstructors]);
 
   // 센터 풀 구성 정보 로드
   useEffect(() => {
@@ -98,8 +175,6 @@ export default function CourseFormModal({
         
         if (response.ok) {
           const data = await response.json();
-          console.log('🏊 센터 정보 응답:', data);
-          console.log('🏊 센터 풀 구성 정보:', data.data?.poolConfiguration);
           
           const poolConf = data.data?.poolConfiguration || {
             mainPool: { name: '메인 풀', lanes: 6 },
@@ -108,7 +183,6 @@ export default function CourseFormModal({
           };
           
           setPoolConfig(poolConf);
-          console.log('✅ 풀 구성 설정 완료:', poolConf);
         } else {
           console.error('❌ API 응답 에러:', response.status);
           // 기본값 설정
@@ -118,7 +192,6 @@ export default function CourseFormModal({
             auxiliaryPool: { name: '보조 풀', lanes: 0 }
           };
           setPoolConfig(defaultConfig);
-          console.log('⚠️ 기본값 사용:', defaultConfig);
         }
       } catch (error) {
         console.error('💥 센터 정보 로드 실패:', error);
@@ -129,7 +202,6 @@ export default function CourseFormModal({
           auxiliaryPool: { name: '보조 풀', lanes: 0 }
         };
         setPoolConfig(defaultConfig);
-        console.log('⚠️ 에러 발생 - 기본값 사용:', defaultConfig);
       }
     };
     
@@ -141,11 +213,20 @@ export default function CourseFormModal({
   useEffect(() => {
     if (course && course._id) {
       // 수정 모드: 기존 데이터 로드
+      const startTime = course.schedule?.[0]?.startTime || '09:00';
+      const duration = course.duration || 60;
+      const endTime = calculateEndTime(startTime, duration);
+      
       setFormData({
         ...course,
         price: course.price || 50000, // NaN 방지
-        duration: course.duration || 60,
-        maxStudents: course.maxStudents || 20
+        duration: duration,
+        maxStudents: course.maxStudents || 20,
+        schedule: [{
+          ...course.schedule?.[0],
+          startTime: startTime,
+          endTime: endTime
+        }]
       });
       // 요일 초기화 (쉼표로 구분된 문자열 → 배열)
       const days = course.schedule?.[0]?.dayOfWeek?.split(',').map(d => d.trim()) || ['월'];
@@ -158,17 +239,21 @@ export default function CourseFormModal({
       }
     } else if (course && !course._id) {
       // 추가 모드 (초기값 있음): 빈 슬롯 클릭 시
+      const startTime = '09:00';
+      const duration = course.duration || 60;
+      const endTime = calculateEndTime(startTime, duration);
+      
       setFormData({
         name: '',
         description: '',
-        level: 'beginner',
-        duration: course.duration || 60,
+        level: '초급',
+        duration: duration,
         maxStudents: course.maxStudents || 20,
         currentStudents: 0,
         instructorId: course.instructorId || '',
         instructorName: '',
         price: course.price || 50000,
-        schedule: course.schedule || [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
+        schedule: [{ dayOfWeek: '월', startTime: startTime, endTime: endTime }],
         status: 'active',
         tags: course.tags || []
       });
@@ -178,17 +263,21 @@ export default function CourseFormModal({
       setSelectedLanes([]); // 레인 초기화
     } else {
       // 추가 모드 (초기값 없음): [새 과정 추가] 버튼 클릭 시
+      const startTime = '09:00';
+      const duration = 60;
+      const endTime = calculateEndTime(startTime, duration);
+      
       setFormData({
         name: '',
         description: '',
-        level: 'beginner',
-        duration: 60,
+        level: '초급',
+        duration: duration,
         maxStudents: 20,
         currentStudents: 0,
         instructorId: '',
         instructorName: '',
         price: 50000,
-        schedule: [{ dayOfWeek: '월', startTime: '09:00', endTime: '10:00' }],
+        schedule: [{ dayOfWeek: '월', startTime: startTime, endTime: endTime }],
         status: 'active',
         tags: [],
         lanes: [],
@@ -232,7 +321,7 @@ export default function CourseFormModal({
     // formData 업데이트 (poolType도 함께 저장)
     setFormData({
       ...formData,
-      poolType: selectedPoolType, // ⭐ 풀 타입 저장
+      poolType: formData.poolType || selectedPoolType, // ⭐ formData의 poolType 우선 사용
       lanes: newLanes,
       laneInfo: {
         ...formData.laneInfo,
@@ -286,7 +375,20 @@ export default function CourseFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as Course);
+    
+    
+    // 강사 정보 설정
+    const selectedInstructor = Array.isArray(instructors) ? instructors.find(i => i._id === formData.instructorId) : null;
+    const finalFormData = {
+      ...formData,
+      instructorName: selectedInstructor?.name || formData.instructorName,
+      instructorId: formData.instructorId,
+      startDate: formData.startDate || new Date(),
+      endDate: formData.endDate || new Date(new Date().setMonth(new Date().getMonth() + 1))
+    };
+    
+    
+    onSave(finalFormData as Course);
     onClose();
   };
 
@@ -310,6 +412,57 @@ export default function CourseFormModal({
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* 과정 타입 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              과정 타입 *
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="courseType"
+                  value="group"
+                  checked={formData.courseType === 'group'}
+                  onChange={(e) => {
+                    const courseType = e.target.value as 'group' | 'personal';
+                    setFormData({
+                      ...formData,
+                      courseType,
+                      isPersonalLesson: courseType === 'personal',
+                      maxStudents: courseType === 'personal' ? 1 : 20,
+                      currentStudents: courseType === 'personal' ? 0 : formData.currentStudents,
+                      name: courseType === 'personal' ? '개인 레슨' : formData.name
+                    });
+                  }}
+                  className="mr-2"
+                />
+                <span className="text-sm">단체 수업</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="courseType"
+                  value="personal"
+                  checked={formData.courseType === 'personal'}
+                  onChange={(e) => {
+                    const courseType = e.target.value as 'group' | 'personal';
+                    setFormData({
+                      ...formData,
+                      courseType,
+                      isPersonalLesson: courseType === 'personal',
+                      maxStudents: courseType === 'personal' ? 1 : 20,
+                      currentStudents: courseType === 'personal' ? 0 : formData.currentStudents,
+                      name: courseType === 'personal' ? '개인 레슨' : formData.name
+                    });
+                  }}
+                  className="mr-2"
+                />
+                <span className="text-sm">개인 레슨</span>
+              </label>
+            </div>
+          </div>
+
           {/* 과정명 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -320,9 +473,17 @@ export default function CourseFormModal({
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="예: 초급 자유형 클래스"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                formData.isPersonalLesson ? 'bg-gray-50 cursor-not-allowed' : ''
+              }`}
+              placeholder={formData.isPersonalLesson ? '개인 레슨' : '예: 초급 자유형 클래스'}
+              disabled={formData.isPersonalLesson}
             />
+            {formData.isPersonalLesson && (
+              <p className="text-xs text-blue-600 mt-1">
+                💡 개인레슨은 자동으로 '개인 레슨'으로 설정됩니다.
+              </p>
+            )}
           </div>
 
           {/* 설명 */}
@@ -344,10 +505,14 @@ export default function CourseFormModal({
             {/* 급수/레벨 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                급수/레벨 *
+                급수/레벨 {formData.isPersonalLesson ? '' : '*'}
               </label>
               
-              {!showLevelInput ? (
+              {formData.isPersonalLesson ? (
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  개인레슨은 급수 선택 불필요
+                </div>
+              ) : !showLevelInput ? (
                 <div className="space-y-2">
                   <select
                     required
@@ -371,11 +536,17 @@ export default function CourseFormModal({
                       ))
                     ) : (
                       <>
-                        <option value="beginner">초급</option>
-                        <option value="intermediate">중급</option>
-                        <option value="advanced">고급</option>
+                        <option value="초급">초급</option>
+                        <option value="중급">중급</option>
+                        <option value="고급">고급</option>
                       </>
                     )}
+                    {/* ⭐ 직접 입력한 급수들 표시 */}
+                    {customInputLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {level} (직접 입력)
+                      </option>
+                    ))}
                     <option value="__custom__">➕ 직접 입력...</option>
                   </select>
                 </div>
@@ -389,7 +560,12 @@ export default function CourseFormModal({
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (newLevelInput.trim()) {
-                          setFormData({ ...formData, level: newLevelInput.trim() as any });
+                          const newLevel = newLevelInput.trim();
+                          // ⭐ 직접 입력한 급수를 customInputLevels에 추가
+                          if (!customInputLevels.includes(newLevel)) {
+                            setCustomInputLevels([...customInputLevels, newLevel]);
+                          }
+                          setFormData({ ...formData, level: newLevel as any });
                           setShowLevelInput(false);
                           setNewLevelInput('');
                         }
@@ -403,7 +579,12 @@ export default function CourseFormModal({
                     type="button"
                     onClick={() => {
                       if (newLevelInput.trim()) {
-                        setFormData({ ...formData, level: newLevelInput.trim() as any });
+                        const newLevel = newLevelInput.trim();
+                        // ⭐ 직접 입력한 급수를 customInputLevels에 추가
+                        if (!customInputLevels.includes(newLevel)) {
+                          setCustomInputLevels([...customInputLevels, newLevel]);
+                        }
+                        setFormData({ ...formData, level: newLevel as any });
                         setShowLevelInput(false);
                         setNewLevelInput('');
                       }
@@ -425,7 +606,7 @@ export default function CourseFormModal({
                 </div>
               )}
               
-              {formData.level && !showLevelInput && (
+              {!formData.isPersonalLesson && formData.level && !showLevelInput && (
                 <p className="text-xs text-blue-600 mt-1">
                   선택된 급수: <strong>
                     {customLevels.find(l => l.id === formData.level)?.name || formData.level}
@@ -433,6 +614,45 @@ export default function CourseFormModal({
                 </p>
               )}
             </div>
+
+            {/* 수업 기간 (단체반만) */}
+            {!formData.isPersonalLesson && (
+              <div className="col-span-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      수업 시작일 *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        startDate: new Date(e.target.value) 
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      수업 종료일 (만료일) *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        endDate: new Date(e.target.value) 
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  ※ 수업 기간은 학생의 수강 만료일로 사용됩니다.
+                </p>
+              </div>
+            )}
 
             {/* 수업시간 */}
             <div>
@@ -475,24 +695,286 @@ export default function CourseFormModal({
             {/* 가격 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                가격 (원) *
+                {formData.isPersonalLesson ? '개인레슨 가격 설정' : '가격 (원) *'}
               </label>
-              <input
-                type="number"
-                required
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="0"
-                step="1000"
-              />
+              {formData.isPersonalLesson ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">개인레슨은 다양한 형태와 가격 체계를 지원합니다.</p>
+                  
+                  {/* 레슨 타입별 가격 설정 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-gray-700">레슨 타입별 가격</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newLessonTypes = formData.personalLessonSettings?.lessonTypes || [];
+                          const newLessonType = {
+                            id: `lesson_${Date.now()}`,
+                            type: '1:1' as '1:1' | '1:2' | '1:3' | '1:4' | '1:5',
+                            maxStudents: 1,
+                            pricePerSession: 80000
+                          };
+                          setFormData({
+                            ...formData,
+                            personalLessonSettings: {
+                              ...formData.personalLessonSettings,
+                              lessonTypes: [...newLessonTypes, newLessonType]
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                      >
+                        + 추가
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {(formData.personalLessonSettings?.lessonTypes || []).map((lessonType, index) => (
+                        <div key={lessonType.id || index} className="flex items-center gap-3 p-2 border rounded-lg">
+                          <select
+                            value={lessonType.type}
+                            onChange={(e) => {
+                              const newLessonTypes = [...(formData.personalLessonSettings?.lessonTypes || [])];
+                              newLessonTypes[index] = {
+                                ...lessonType,
+                                type: e.target.value as '1:1' | '1:2' | '1:3' | '1:4' | '1:5',
+                                maxStudents: parseInt(e.target.value.split(':')[1])
+                              };
+                              setFormData({
+                                ...formData,
+                                personalLessonSettings: {
+                                  ...formData.personalLessonSettings,
+                                  lessonTypes: newLessonTypes
+                                }
+                              });
+                            }}
+                            className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+                          >
+                            <option value="1:1">1:1</option>
+                            <option value="1:2">1:2</option>
+                            <option value="1:3">1:3</option>
+                            <option value="1:4">1:4</option>
+                            <option value="1:5">1:5</option>
+                          </select>
+                          <input
+                            type="number"
+                            value={lessonType.pricePerSession || ''}
+                            onChange={(e) => {
+                              const newLessonTypes = [...(formData.personalLessonSettings?.lessonTypes || [])];
+                              newLessonTypes[index] = {
+                                ...lessonType,
+                                pricePerSession: parseInt(e.target.value) || 0
+                              };
+                              setFormData({
+                                ...formData,
+                                personalLessonSettings: {
+                                  ...formData.personalLessonSettings,
+                                  lessonTypes: newLessonTypes
+                                }
+                              });
+                            }}
+                            placeholder="가격 입력"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            min="0"
+                            step="1000"
+                          />
+                          <span className="text-sm text-gray-500">원/회</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newLessonTypes = (formData.personalLessonSettings?.lessonTypes || []).filter((_, i) => i !== index);
+                              setFormData({
+                                ...formData,
+                                personalLessonSettings: {
+                                  ...formData.personalLessonSettings,
+                                  lessonTypes: newLessonTypes
+                                }
+                              });
+                            }}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {(!formData.personalLessonSettings?.lessonTypes || formData.personalLessonSettings.lessonTypes.length === 0) && (
+                        <div className="text-center py-2 text-gray-500 text-sm">
+                          '+ 추가' 버튼을 클릭하여 레슨 타입을 추가하세요.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 주간/월간 패키지 설정 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-gray-700">패키지 옵션</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFrequencyOptions = formData.personalLessonSettings?.frequencyOptions || [];
+                          const newFrequencyOption = {
+                            id: `package_${Date.now()}`,
+                            type: 'weekly' as 'weekly' | 'monthly',
+                            sessions: 4,
+                            price: 300000,
+                            expirationDays: 30
+                          };
+                          setFormData({
+                            ...formData,
+                            personalLessonSettings: {
+                              ...formData.personalLessonSettings,
+                              frequencyOptions: [...newFrequencyOptions, newFrequencyOption]
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                      >
+                        + 추가
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {(formData.personalLessonSettings?.frequencyOptions || []).map((packageOption, index) => (
+                        <div key={packageOption.id || index} className="p-2 border rounded-lg space-y-2">
+                          <div className="flex items-center gap-3">
+                            <select
+                              value={packageOption.type}
+                              onChange={(e) => {
+                                const newFrequencyOptions = [...(formData.personalLessonSettings?.frequencyOptions || [])];
+                                newFrequencyOptions[index] = {
+                                  ...packageOption,
+                                  type: e.target.value as 'weekly' | 'monthly'
+                                };
+                                setFormData({
+                                  ...formData,
+                                  personalLessonSettings: {
+                                    ...formData.personalLessonSettings,
+                                    frequencyOptions: newFrequencyOptions
+                                  }
+                                });
+                              }}
+                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                            >
+                              <option value="weekly">주간</option>
+                              <option value="monthly">월간</option>
+                            </select>
+                            <input
+                              type="number"
+                              value={packageOption.sessions || ''}
+                              onChange={(e) => {
+                                const newFrequencyOptions = [...(formData.personalLessonSettings?.frequencyOptions || [])];
+                                newFrequencyOptions[index] = {
+                                  ...packageOption,
+                                  sessions: parseInt(e.target.value) || 0
+                                };
+                                setFormData({
+                                  ...formData,
+                                  personalLessonSettings: {
+                                    ...formData.personalLessonSettings,
+                                    frequencyOptions: newFrequencyOptions
+                                  }
+                                });
+                              }}
+                              placeholder="횟수"
+                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                              min="1"
+                            />
+                            <span className="text-sm text-gray-500">회</span>
+                            <input
+                              type="number"
+                              value={packageOption.price || ''}
+                              onChange={(e) => {
+                                const newFrequencyOptions = [...(formData.personalLessonSettings?.frequencyOptions || [])];
+                                newFrequencyOptions[index] = {
+                                  ...packageOption,
+                                  price: parseInt(e.target.value) || 0
+                                };
+                                setFormData({
+                                  ...formData,
+                                  personalLessonSettings: {
+                                    ...formData.personalLessonSettings,
+                                    frequencyOptions: newFrequencyOptions
+                                  }
+                                });
+                              }}
+                              placeholder="가격"
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                              min="0"
+                              step="1000"
+                            />
+                            <span className="text-sm text-gray-500">원</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newFrequencyOptions = (formData.personalLessonSettings?.frequencyOptions || []).filter((_, i) => i !== index);
+                                setFormData({
+                                  ...formData,
+                                  personalLessonSettings: {
+                                    ...formData.personalLessonSettings,
+                                    frequencyOptions: newFrequencyOptions
+                                  }
+                                });
+                              }}
+                              className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs text-gray-600">사용기한:</label>
+                            <input
+                              type="number"
+                              value={packageOption.expirationDays || ''}
+                              onChange={(e) => {
+                                const newFrequencyOptions = [...(formData.personalLessonSettings?.frequencyOptions || [])];
+                                newFrequencyOptions[index] = {
+                                  ...packageOption,
+                                  expirationDays: parseInt(e.target.value) || 0
+                                };
+                                setFormData({
+                                  ...formData,
+                                  personalLessonSettings: {
+                                    ...formData.personalLessonSettings,
+                                    frequencyOptions: newFrequencyOptions
+                                  }
+                                });
+                              }}
+                              placeholder="30"
+                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                              min="1"
+                            />
+                            <span className="text-xs text-gray-500">일</span>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(!formData.personalLessonSettings?.frequencyOptions || formData.personalLessonSettings.frequencyOptions.length === 0) && (
+                        <div className="text-center py-2 text-gray-500 text-sm">
+                          '+ 추가' 버튼을 클릭하여 패키지 옵션을 추가하세요.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <input
+                  type="number"
+                  required
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  min="0"
+                  step="1000"
+                />
+              )}
             </div>
           </div>
 
           {/* 강사 선택 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              담당 강사 *
+              {formData.isPersonalLesson ? '개인레슨 담당 강사 (선택사항)' : '담당 강사 *'}
             </label>
             
             {/* 강사 종류 필터 */}
@@ -533,10 +1015,10 @@ export default function CourseFormModal({
             </div>
             
             <select
-              required
+              required={!formData.isPersonalLesson}
               value={formData.instructorId}
               onChange={(e) => {
-                const instructor = instructors.find(i => i._id === e.target.value);
+                const instructor = Array.isArray(instructors) ? instructors.find(i => i._id === e.target.value) : null;
                 setFormData({ 
                   ...formData, 
                   instructorId: e.target.value,
@@ -544,19 +1026,30 @@ export default function CourseFormModal({
                 });
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loadingInstructors}
             >
-              <option value="">강사를 선택하세요</option>
-              {instructors
+              <option value="">
+                {loadingInstructors ? '강사 목록 로딩 중...' : 
+                 formData.isPersonalLesson ? '강사 미배정 (나중에 배정)' : '강사를 선택하세요'}
+              </option>
+              {Array.isArray(instructors) ? instructors
                 .filter(instructor => {
                   if (instructorTypeFilter === 'all') return true;
-                  return instructor.instructorType === instructorTypeFilter;
+                  return instructor.instructorInfo?.specialties?.includes(instructorTypeFilter) || 
+                         instructor.userType === instructorTypeFilter;
                 })
                 .map((instructor) => (
                 <option key={instructor._id} value={instructor._id}>
                   {instructor.name}
                 </option>
-              ))}
+              )) : []}
             </select>
+            
+            {formData.isPersonalLesson && (
+              <p className="text-xs text-blue-600 mt-1">
+                💡 개인레슨은 강사 미배정 상태로 저장 가능하며, 회원 신청 후 관리자가 강사를 배정할 수 있습니다.
+              </p>
+            )}
           </div>
 
           {/* 일정 */}
@@ -567,7 +1060,9 @@ export default function CourseFormModal({
             
             {/* 요일 선택 (버튼) */}
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">수업 요일 (복수 선택 가능)</p>
+              <p className="text-sm text-gray-600 mb-2">
+                {formData.isPersonalLesson ? '개인레슨 가능 요일 (모든 요일 선택 가능)' : '수업 요일 (복수 선택 가능)'}
+              </p>
               <div className="flex gap-2">
                 {DAYS_OF_WEEK.map(day => (
                   <button
@@ -587,36 +1082,142 @@ export default function CourseFormModal({
               <p className="text-xs text-gray-500 mt-1">
                 선택된 요일: {selectedDays.length > 0 ? selectedDays.join(', ') : '없음'}
               </p>
+              {formData.isPersonalLesson && (
+                <p className="text-xs text-blue-600 mt-1">
+                  💡 개인레슨은 모든 요일에서 가능하며, 회원이 원하는 요일/시간을 선택할 수 있습니다.
+                </p>
+              )}
             </div>
 
             {/* 시간 설정 */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">시작 시간 *</label>
-                <input
-                  type="time"
-                  required
-                  value={formData.schedule?.[0]?.startTime || ''}
-                  onChange={(e) => handleStartTimeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+            {formData.isPersonalLesson ? (
+              /* 개인레슨: 시간대 추가 기능 (한 시간 단위) */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">
+                    개인레슨 가능 시간대 (한 시간 단위)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newTimeSlots = formData.personalLessonSettings?.timeSlots || [];
+                      const newSlot = {
+                        id: `slot_${Date.now()}`,
+                        startTime: '06:00',
+                        endTime: '07:00', // 강습시간(60분) 자동 계산
+                        isActive: true
+                      };
+                      setFormData({
+                        ...formData,
+                        personalLessonSettings: {
+                          ...formData.personalLessonSettings,
+                          timeSlots: [...newTimeSlots, newSlot]
+                        }
+                      });
+                    }}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                  >
+                    + 시간대 추가
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  {(formData.personalLessonSettings?.timeSlots || []).map((slot, index) => (
+                    <div key={slot.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">시작시간:</label>
+                        <input
+                          type="time"
+                          value={slot.startTime}
+                          onChange={(e) => {
+                            const startTime = e.target.value;
+                            // 강습시간(60분)을 더해서 종료시간 계산
+                            const startHour = parseInt(startTime.split(':')[0]);
+                            const startMinute = parseInt(startTime.split(':')[1]);
+                            const endHour = startHour + 1;
+                            const endTime = `${endHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+                            
+                            const newTimeSlots = [...(formData.personalLessonSettings?.timeSlots || [])];
+                            newTimeSlots[index] = { ...slot, startTime, endTime };
+                            setFormData({
+                              ...formData,
+                              personalLessonSettings: {
+                                ...formData.personalLessonSettings,
+                                timeSlots: newTimeSlots
+                              }
+                            });
+                          }}
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                        />
+                        <span className="text-gray-500">~</span>
+                        <input
+                          type="time"
+                          value={slot.endTime}
+                          readOnly
+                          className="px-2 py-1 border border-gray-300 rounded text-sm bg-gray-50 text-gray-600"
+                        />
+                        <span className="text-xs text-gray-500">(자동계산)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newTimeSlots = (formData.personalLessonSettings?.timeSlots || []).filter((_, i) => i !== index);
+                          setFormData({
+                            ...formData,
+                            personalLessonSettings: {
+                              ...formData.personalLessonSettings,
+                              timeSlots: newTimeSlots
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {(!formData.personalLessonSettings?.timeSlots || formData.personalLessonSettings.timeSlots.length === 0) && (
+                    <div className="text-center py-4 text-gray-500">
+                      <p className="text-sm">아직 설정된 시간대가 없습니다.</p>
+                      <p className="text-xs mt-1">'+ 시간대 추가' 버튼을 클릭하여 시간대를 추가하세요.</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">
-                  종료 시간 
-                  <span className="ml-1 text-blue-600">(자동 계산)</span>
-                </label>
-                <input
-                  type="time"
-                  value={formData.schedule?.[0]?.endTime || ''}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                  title="시작 시간과 수업 시간(분)을 기반으로 자동 계산됩니다"
-                />
+            ) : (
+              /* 단체 수업: 고정 시간 */
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">시작 시간 *</label>
+                  <input
+                    type="time"
+                    required
+                    value={formData.schedule?.[0]?.startTime || ''}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    종료 시간 
+                    <span className="ml-1 text-blue-600">(자동 계산)</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={formData.schedule?.[0]?.endTime || ''}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    title="시작 시간과 수업 시간(분)을 기반으로 자동 계산됩니다"
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <p className="text-xs text-blue-600 mt-1">
-              ⏰ 종료 시간은 시작 시간 + 수업 시간으로 자동 계산됩니다
+              {formData.isPersonalLesson 
+                ? '⏰ 개인레슨은 설정된 시간 범위 내에서 회원이 원하는 시간을 선택할 수 있습니다.'
+                : '⏰ 종료 시간은 시작 시간 + 수업 시간으로 자동 계산됩니다'
+              }
             </p>
           </div>
 
@@ -712,6 +1313,17 @@ export default function CourseFormModal({
                       onClick={() => {
                         setSelectedPoolType('mainPool');
                         setSelectedLanes([]); // 레인 초기화
+                        // formData도 함께 업데이트
+                        setFormData({
+                          ...formData,
+                          poolType: 'mainPool',
+                          lanes: [],
+                          laneInfo: {
+                            ...formData.laneInfo,
+                            assignedLanes: [],
+                            maxLanes: 0
+                          }
+                        });
                       }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         selectedPoolType === 'mainPool'
@@ -728,6 +1340,17 @@ export default function CourseFormModal({
                       onClick={() => {
                         setSelectedPoolType('kidsPool');
                         setSelectedLanes([]); // 레인 초기화
+                        // formData도 함께 업데이트
+                        setFormData({
+                          ...formData,
+                          poolType: 'kidsPool',
+                          lanes: [],
+                          laneInfo: {
+                            ...formData.laneInfo,
+                            assignedLanes: [],
+                            maxLanes: 0
+                          }
+                        });
                       }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         selectedPoolType === 'kidsPool'
@@ -744,6 +1367,17 @@ export default function CourseFormModal({
                       onClick={() => {
                         setSelectedPoolType('auxiliaryPool');
                         setSelectedLanes([]); // 레인 초기화
+                        // formData도 함께 업데이트
+                        setFormData({
+                          ...formData,
+                          poolType: 'auxiliaryPool',
+                          lanes: [],
+                          laneInfo: {
+                            ...formData.laneInfo,
+                            assignedLanes: [],
+                            maxLanes: 0
+                          }
+                        });
                       }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         selectedPoolType === 'auxiliaryPool'
@@ -820,6 +1454,65 @@ export default function CourseFormModal({
               <option value="full">정원마감</option>
             </select>
           </div>
+
+          {/* 학생 배정 섹션 (과정이 생성된 후에만 표시) */}
+          {course && !formData.isPersonalLesson && (
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">학생 배정</h3>
+              
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-800">
+                      현재 배정된 학생: <span className="font-semibold">{course.currentStudents || 0}명</span>
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      최대 정원: {formData.maxStudents}명
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('🎯 CourseFormModal 회원 배정 버튼 클릭:', course);
+                      if (onAssignMembers && course) {
+                        onAssignMembers(course);
+                      } else {
+                        console.error('❌ onAssignMembers 함수가 전달되지 않았습니다.');
+                        alert('회원 배정 기능을 사용할 수 없습니다. 페이지를 새로고침해주세요.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                  >
+                    학생 배정
+                  </button>
+                </div>
+              </div>
+
+              {/* 배정된 학생 목록 */}
+              {course.enrolledStudents && course.enrolledStudents.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">배정된 학생 목록</h4>
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {course.enrolledStudents.map((student: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{student.studentName || `학생 ${index + 1}`}</p>
+                          <p className="text-xs text-gray-500">
+                            배정일: {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : '미설정'}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {student.status === 'active' ? '활성' : student.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 버튼 */}
           <div className="flex space-x-3 pt-4 border-t">

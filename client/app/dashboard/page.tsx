@@ -153,7 +153,16 @@ export default function MemberDashboard() {
     const load = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/centers/student-dashboard-stats', {
+        
+        // 사용자 타입에 따라 다른 API 엔드포인트 사용
+        let apiEndpoint = 'http://localhost:5000/api/centers/student-dashboard-stats';
+        
+        // center-admin인 경우 센터 관리자 전용 API 사용
+        if (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') {
+          apiEndpoint = 'http://localhost:5000/api/center-admin/bookings/dashboard';
+        }
+        
+        const response = await fetch(apiEndpoint, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -246,7 +255,7 @@ export default function MemberDashboard() {
       }
     };
     load();
-  }, []);
+  }, [user]);
 
   if (loading || !stats) {
     return (

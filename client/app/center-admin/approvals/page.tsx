@@ -288,9 +288,15 @@ export default function CenterApprovalsPage() {
   const approvedCount = approvals.filter(item => item.status === 'approved').length;
   const rejectedCount = approvals.filter(item => item.status === 'rejected').length;
 
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+
   // 로딩 중이거나 권한이 없는 경우
   if (loading) return <div className="flex justify-center items-center h-64">로딩 중...</div>;
-  if (!user || user.userType !== 'centerAdmin') {
+  if (!isCenterAdmin) {
     return <div className="text-center py-8 text-red-600">접근 권한이 없습니다.</div>;
   }
 

@@ -60,7 +60,13 @@ export default function CenterLessonPlansPage() {
   };
 
   useEffect(() => {
-    if (user?.userType === 'centerAdmin') {
+    // center@swim.com 계정도 센터 관리자로 인식
+    const isCenterAdmin = user && (
+      ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+      user.email === 'center@swim.com'
+    );
+    
+    if (isCenterAdmin) {
       setIsLoading(true);
       Promise.all([loadTemplates(), loadMyPlans()]).finally(() => {
         setIsLoading(false);
@@ -79,7 +85,13 @@ export default function CenterLessonPlansPage() {
     );
   }
 
-  if (!user || user.userType !== 'centerAdmin') {
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+
+  if (!isCenterAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

@@ -105,7 +105,7 @@ interface IUser extends mongoose.Document {
     type: 'Point';
     coordinates: [number, number]; // [경도, 위도]
   };
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+  userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
   level: string;
   centerId?: mongoose.Types.ObjectId;
   studentInfo?: {
@@ -245,6 +245,32 @@ interface IUser extends mongoose.Document {
       leaveReason?: string; // 퇴사 사유
       memo?: string; // 특이사항
     }>;
+    // 🆕 개인강습 관련 정보
+    personalLessonSettings?: {
+      isPersonalLessonEnabled?: boolean; // 개인강습 활성화 여부
+      lessonTypes?: Array<{
+        type: '1:1' | '1:2' | '1:3' | '1:4' | '1:5';
+        maxStudents: number;
+        pricePerSession: number;
+        monthlyPrice?: number;
+      }>;
+      frequencyOptions?: Array<{
+        type: 'weekly' | 'monthly';
+        sessions: number;
+        price: number;
+        expirationDays?: number;
+      }>;
+      availability?: {
+        timeSlots?: Array<{
+          dayOfWeek: number; // 0=일요일, 1=월요일, ... 6=토요일
+          startTime: string; // "06:00"
+          endTime: string; // "22:00"
+          isActive: boolean;
+        }>;
+        maxDailyLessons?: number; // 하루 최대 레슨 수
+        bufferTime?: number; // 레슨 간 휴식 시간 (분)
+      };
+    };
   };
   centerAdminInfo?: {
     managedCenters?: mongoose.Types.ObjectId[];
@@ -355,7 +381,7 @@ const userSchema = new mongoose.Schema({
   // 4가지 사용자 유형
   userType: {
     type: String,
-    enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+    enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
     default: 'student',
   },
   // 레벨 시스템 (각 사용자 유형별로 다른 레벨 체계)

@@ -16,7 +16,6 @@ const courseSchema = new mongoose_1.default.Schema({
     },
     level: {
         type: String,
-        enum: ['beginner', 'intermediate', 'advanced'],
         required: true,
     },
     duration: {
@@ -35,6 +34,13 @@ const courseSchema = new mongoose_1.default.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+    },
+    instructorId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'User',
+    },
+    instructorName: {
+        type: String,
     },
     centerId: {
         type: mongoose_1.default.Schema.Types.ObjectId,
@@ -78,9 +84,43 @@ const courseSchema = new mongoose_1.default.Schema({
                 required: true,
             },
         }],
+    poolType: {
+        type: String,
+        enum: ['mainPool', 'kidsPool', 'auxiliaryPool'],
+        default: 'mainPool'
+    },
+    lanes: [{
+            type: Number,
+            min: 1,
+            max: 10
+        }],
+    laneInfo: {
+        assignedLanes: [{ type: Number }],
+        maxLanes: { type: Number, default: 1 },
+        minLanes: { type: Number, default: 1 },
+        laneNotes: { type: String, default: '' }
+    },
+    personalLessonAdjustment: {
+        isEnabled: { type: Boolean, default: false },
+        reducedLanes: { type: Number, default: 1 },
+        adjustmentTime: { type: Number, default: 60 },
+        notes: { type: String, default: '' }
+    },
     isActive: {
         type: Boolean,
         default: true,
+    },
+    startDate: {
+        type: Date,
+        default: Date.now
+    },
+    endDate: {
+        type: Date,
+        default: function () {
+            const date = new Date();
+            date.setMonth(date.getMonth() + 1);
+            return date;
+        }
     },
     enrolledStudents: [{
             student: {
@@ -109,6 +149,9 @@ const courseSchema = new mongoose_1.default.Schema({
                 notes: { type: String, default: '' }
             }
         }],
+    tags: [{
+            type: String
+        }]
 }, {
     timestamps: true
 });

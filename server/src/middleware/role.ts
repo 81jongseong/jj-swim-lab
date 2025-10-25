@@ -65,7 +65,7 @@ export const requireSuperAdmin = roleMiddleware(['superAdmin']);
 /**
  * 센터 관리자 권한 확인 미들웨어
  */
-export const requireCenterAdmin = roleMiddleware(['centerAdmin']);
+export const requireCenterAdmin = roleMiddleware(['centerAdmin', 'center-admin']);
 
 /**
  * 강사 권한 확인 미들웨어
@@ -85,7 +85,7 @@ export const requireAdmin = roleMiddleware(['superAdmin', 'centerAdmin']);
 /**
  * 강사 또는 관리자 권한 확인 미들웨어
  */
-export const requireInstructorOrAdmin = roleMiddleware(['instructor', 'superAdmin', 'centerAdmin']);
+export const requireInstructorOrAdmin = roleMiddleware(['instructor', 'superAdmin', 'centerAdmin', 'center-admin']);
 
 /**
  * 로그인된 사용자 권한 확인 미들웨어

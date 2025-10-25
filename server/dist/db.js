@@ -7,6 +7,9 @@ exports.suggestIndexes = exports.checkDatabaseHealth = exports.getDBStats = expo
 const mongoose_1 = __importDefault(require("mongoose"));
 const logger_1 = require("./utils/logger");
 const MONGODB_URI = 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+if (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('localhost')) {
+    throw new Error('❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.');
+}
 console.log('🔍 db.ts에서 환경 변수 확인:');
 console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '❌ 설정되지 않음');
 console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');

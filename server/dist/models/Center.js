@@ -79,6 +79,26 @@ const centerSchema = new mongoose_1.Schema({
             type: String,
             trim: true
         }],
+    poolConfiguration: {
+        mainPool: {
+            name: { type: String, default: '메인 풀' },
+            lanes: { type: Number, default: 6 },
+            depth: { type: String, default: '1.2m~1.8m' },
+            size: { type: String, default: '25m x 15m' }
+        },
+        kidsPool: {
+            name: { type: String, default: '유아 풀' },
+            lanes: { type: Number, default: 0 },
+            depth: { type: String, default: '0.8m~1.0m' },
+            size: { type: String, default: '10m x 5m' }
+        },
+        auxiliaryPool: {
+            name: { type: String, default: '보조 풀' },
+            lanes: { type: Number, default: 0 },
+            depth: { type: String, default: '1.0m~1.5m' },
+            size: { type: String, default: '15m x 8m' }
+        }
+    },
     operatingHours: {
         open: {
             type: String,
@@ -93,6 +113,39 @@ const centerSchema = new mongoose_1.Schema({
                 enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
                 default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
             }]
+    },
+    availabilitySettings: {
+        personalLesson: {
+            enabled: { type: Boolean, default: true },
+            availableDays: [{
+                    type: String,
+                    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                    default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                }],
+            availableTimes: [{
+                    startTime: { type: String, default: '09:00' },
+                    endTime: { type: String, default: '18:00' },
+                    maxDuration: { type: Number, default: 120 }
+                }],
+            advanceBookingDays: { type: Number, default: 7 },
+            cancellationPolicy: { type: String, default: '24시간 전 취소 가능' }
+        },
+        laneRental: {
+            enabled: { type: Boolean, default: true },
+            availableDays: [{
+                    type: String,
+                    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                    default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                }],
+            availableTimes: [{
+                    startTime: { type: String, default: '06:00' },
+                    endTime: { type: String, default: '22:00' },
+                    maxDuration: { type: Number, default: 180 }
+                }],
+            availableLanes: [{ type: Number, min: 1, max: 10 }],
+            advanceBookingDays: { type: Number, default: 14 },
+            cancellationPolicy: { type: String, default: '12시간 전 취소 가능' }
+        }
     },
     introduction: {
         shortDescription: { type: String, default: '' },

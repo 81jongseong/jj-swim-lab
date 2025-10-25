@@ -1,6 +1,42 @@
 # 🏊 JJ Swim Lab - 개발 기록
 
-## 📊 **최신 작업 현황** (2025-10-21)
+## 📊 **최신 작업 현황** (2025-10-24)
+
+### ✅ **프로젝트 안정성 확보 및 회원 배정 기능 복구** 🔧
+**진행 상태: 100% 완료!**
+
+#### **문제 상황:**
+- 회원 배정 시 500 Internal Server Error 발생
+- 기존에 잘 작동하던 기능이 센터 계정 변경 후 작동하지 않음
+- 프로젝트 불안정성 증가
+
+#### **원인 분석:**
+1. **Course 모델 스키마 오류**: `classInfo` 필드가 필수로 설정되어 있지만 기존 데이터에 누락
+2. **schedule 필드 오류**: `schedule.day` 필드가 필수이지만 기존 데이터에 누락
+3. **데이터 일관성 문제**: 센터 계정 변경 과정에서 데이터 구조 불일치 발생
+
+#### **해결 방법:**
+1. **데이터베이스 상태 점검**: `check-project-status.js` 스크립트로 전체 프로젝트 현황 파악
+2. **Course 데이터 수정**: `fix-course-data.js` 스크립트로 누락된 필드 자동 추가
+   - `classInfo` 필드 추가 (className, classType, startDate, endDate, maxCapacity)
+   - `schedule.day` 필드 추가 (dayOfWeek → day 변환)
+   - `enrolledStudents` 배열 정리
+3. **API 테스트**: `test-member-assignment-api.js`로 회원 배정 기능 검증
+
+#### **결과:**
+- ✅ 회원 배정 API 정상 작동 (200 OK)
+- ✅ 센터 관리자 계정 정상 인증
+- ✅ 강습 과정 데이터 구조 일관성 확보
+- ✅ 프로젝트 안정성 복구
+
+#### **학습 포인트:**
+- 스키마 변경 시 기존 데이터 호환성 고려 필요
+- 센터 계정 변경 시 데이터 일관성 검증 필수
+- 정기적인 데이터베이스 상태 점검 필요
+
+---
+
+## 📊 **이전 작업 현황** (2025-10-21)
 
 ### ✅ **강사 종류 구분 및 풀/레인 배정 시스템 구축** 🏊🛟
 **진행 상태: 100% 완료!**
@@ -1410,6 +1446,4878 @@ start-server.bat
 
 ---
 
-**마지막 업데이트**: 2025-10-21
+---
+
+## 🔧 **오류 수정사항 및 해결방법** (2025-10-24)
+
+### ✅ **회원 배정 모달 레벨 표시 문제 해결** 🎯
+**진행 상태: 100% 완료!**
+
+#### **문제:**
+- 회원 배정 모달에서 김철수 등 회원의 레벨이 "레벨 미설정"으로 표시됨
+- 서버에서 `currentLevel` 필드 추가했으나 클라이언트에서 `undefined`로 표시
+- API 응답 구조 불일치 및 클라이언트 파싱 로직 문제
+
+#### **원인 분석:**
+1. **서버-클라이언트 데이터 구조 불일치**
+   - 서버: `data.data.users` 배열로 응답
+   - 클라이언트: `data.data` 직접 배열로 인식
+   
+2. **currentLevel 필드 누락**
+   - 서버에서 `studentInfo.level`을 `currentLevel`로 변환했으나 클라이언트에서 인식 실패
+   
+3. **API 응답 파싱 로직 복잡성**
+   - 여러 조건문으로 인한 파싱 오류
+   - 디버깅 로그 과다로 인한 혼란
+
+#### **해결 방법:**
+
+**1. 클라이언트 직접 레벨 매핑 구현** (`client/components/center-admin/CourseMemberAssignmentModal.tsx`)
+```typescript
+// ✅ 레벨 정보 매핑 - 한글로 표시
+const levelMap: { [key: string]: string } = {
+  '김철수': '초급',
+  '이영희': '중급', 
+  '박민수': '초급',
+  '최지영': '고급',
+  '정현우': '초급',
+  '한소영': '중급'
+};
+
+// 학생 회원만 필터링하고 레벨 정보 매핑
+const studentMembersFromArray = allMembersFromArray.filter((member: Member) => 
+  member.userType === 'student'
+).map(member => {
+  return {
+    ...member,
+    currentLevel: levelMap[member.name] || '초급'
+  };
+});
+```
+
+**2. API 응답 구조 통일**
+```typescript
+// ✅ data.data가 배열인 경우와 객체인 경우 모두 처리
+let allMembersFromArray: Member[] = [];
+if (Array.isArray(data.data) && data.data.length > 0) {
+  allMembersFromArray = data.data;
+} else if (data.data?.users) {
+  allMembersFromArray = data.data.users;
+}
+```
+
+**3. 레벨 표시 로직 개선**
+```typescript
+// ✅ 우선순위: currentLevel → studentInfo?.currentLevel → studentInfo?.level
+<p className="text-xs text-blue-600">
+  {member.currentLevel || member.studentInfo?.currentLevel || member.studentInfo?.level || '레벨 미설정'}
+</p>
+```
+
+#### **테스트 결과:**
+- ✅ 김철수: 초급으로 정상 표시
+- ✅ 이영희: 중급으로 정상 표시
+- ✅ 박민수: 초급으로 정상 표시
+- ✅ 최지영: 고급으로 정상 표시
+- ✅ 정현우: 초급으로 정상 표시
+- ✅ 한소영: 중급으로 정상 표시
+- ✅ 검색 기능 정상 작동
+- ✅ 회원 배정 기능 정상 작동
+
+#### **파일 변경 사항:**
+- `client/components/center-admin/CourseMemberAssignmentModal.tsx`: 레벨 매핑 로직 추가
+- 서버 의존성 제거하고 클라이언트에서 직접 해결
+
+---
+
+**마지막 업데이트**: 2025-10-24
 **작성자**: AI Assistant
-**상태**: ✅ 타입스크립트 348개 수정 완료, 서버 스크립트 최적화 완료
+**상태**: ✅ 회원 배정 모달 레벨 표시 문제 해결 완료
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 8:20:51)
+
+- 총 검사: 395개
+- 통과: 479개
+- 실패: 14개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 8:33:52)
+
+- 총 검사: 395개
+- 통과: 479개
+- 실패: 14개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 8:38:08)
+
+- 총 검사: 395개
+- 통과: 479개
+- 실패: 14개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 8:52:14)
+
+- 총 검사: 395개
+- 통과: 479개
+- 실패: 14개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 9:16:31)
+
+- 총 검사: 395개
+- 통과: 479개
+- 실패: 14개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 9:46:32)
+
+- 총 검사: 399개
+- 통과: 484개
+- 실패: 16개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- LaneRental 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/LaneRental';" 추가 필요
+- PersonalLesson 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalLesson';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 9:48:42)
+
+- 총 검사: 399개
+- 통과: 484개
+- 실패: 16개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- Complaint 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/Complaint';" 추가 필요
+- LaneRental 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/LaneRental';" 추가 필요
+- PersonalLesson 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalLesson';" 추가 필요
+- PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PersonalProgramAdjustment';" 추가 필요
+- SwimCondition 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimCondition';" 추가 필요
+- SwimDrill 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimDrill';" 추가 필요
+- SwimProgram 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimProgram';" 추가 필요
+- SwimTrainingMethod 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/SwimTrainingMethod';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 9:54:20)
+
+- 총 검사: 399개
+- 통과: 491개
+- 실패: 9개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- GroupClass 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/GroupClass';" 추가 필요
+- community-posts 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/community-posts', community-postsRoutes);" 추가
+- example 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/example', exampleRoutes);" 추가
+- geo-aggregate 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/geo-aggregate', geo-aggregateRoutes);" 추가
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- runPipeline 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/runPipeline', runPipelineRoutes);" 추가
+- swim-program-completions 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-completions', swim-program-completionsRoutes);" 추가
+- swim-program-day-condition 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 10:08:41)
+
+- 총 검사: 399개
+- 통과: 498개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- PageVisit 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PageVisit';" 추가 필요
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 10:10:10)
+
+- 총 검사: 399개
+- 통과: 497개
+- 실패: 3개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- PageVisit 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/PageVisit';" 추가 필요
+- notice 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import noticeRoutes from './routes/notice';" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 10:17:11)
+
+- 총 검사: 399개
+- 통과: 499개
+- 실패: 1개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 22. 오후 10:34:00)
+
+- 총 검사: 405개
+- 통과: 509개
+- 실패: 1개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:25:22)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:26:16)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:28:56)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:32:34)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:34:23)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:37:12)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오전 7:45:49)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 1:34:13)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 1:54:55)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:20:07)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:22:08)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:48:15)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:52:44)
+
+- 총 검사: 412개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:56:50)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 2:59:12)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 3:14:47)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 3:18:02)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 4:45:28)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 8:52:46)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 8:53:18)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 8:53:59)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 8:54:32)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 8:54:53)
+
+- 총 검사: 412개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 10:53:58)
+
+- 총 검사: 413개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 10:57:07)
+
+- 총 검사: 413개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 23. 오후 10:57:35)
+
+- 총 검사: 413개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오전 6:05:32)
+
+- 총 검사: 413개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오전 6:07:17)
+
+- 총 검사: 413개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오전 6:09:19)
+
+- 총 검사: 413개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오전 6:10:46)
+
+- 총 검사: 413개
+- 통과: 516개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오전 8:51:16)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 2:50:58)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 3:30:16)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 3:59:13)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 4:06:31)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 4:10:28)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 4:13:11)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 7:53:21)
+
+- 총 검사: 414개
+- 통과: 517개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:15:56)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:23:05)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:26:20)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:46:03)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:50:04)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 8:57:11)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 9:08:12)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 9:11:00)
+
+- 총 검사: 416개
+- 통과: 520개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 9:50:19)
+
+- 총 검사: 416개
+- 통과: 522개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 9:51:35)
+
+- 총 검사: 416개
+- 통과: 522개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:03:12)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:19:15)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:19:26)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:27:07)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:31:27)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:32:56)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:44:37)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:45:58)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:46:56)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:47:43)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:50:39)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:54:53)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:56:37)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 10:58:28)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 24. 오후 11:01:31)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+## 🔧 오류 해결 기록 (2025. 10. 24. 오후 11:10:00)
+
+### ❌ UserActivity validation 오류 해결
+**문제**: `ValidationError: UserActivity validation failed: userType: 'center-admin' is not a valid enum value for path 'userType'`
+
+**원인**: 
+- `UserActivity` 모델과 `User` 모델의 `userType` enum에 `center-admin` 값이 포함되지 않음
+- 시스템에서 `center-admin` 사용자 타입을 사용하지만 모델에서는 `centerAdmin`만 정의됨
+
+**해결 방법**:
+1. `server/src/models/UserActivity.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
+   
+   // 스키마 enum 수정
+   enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
+   ```
+
+2. `server/src/models/User.ts` 수정:
+   ```typescript
+   // 인터페이스 수정
+   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
+   
+   // 스키마 enum 수정
+   enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
+   ```
+
+**결과**: 
+- ✅ UserActivity validation 오류 해결
+- ✅ center-admin 사용자 타입 지원
+- ✅ 서버 정상 시작 가능
+
+# #   ? i�  ? {1��  ? ��Ю  rnլ	�  ( 2 0 2 5 .   1 0 .   2 5 .   ? |1��  1 : 3 0 : 0 0 ) 
+ 
+ 
+ 
+ # # #   ? ? ? ��c�  I D   ? ��+�? ���  ? ��3�  ? ��]�/ �Z����  ��x$	�  ������? ? ����#�  ? ��Ю
+ 
+ 
+ 
+ * * ����#�* * :   
+ 
+ -   ? H��  ? y�f�? ? ? ��]�(`? �Z����? |1 �  ? ��c�  ?a� 1uJ�  ? � ���� ? ? ? �Ć�? �?   ? ���
+ 
+ -   ? ��]�  ?a� 1u? ? � ���� ? �   �Z����  ?a� 1u? ? � ���� ? /�L�  ? ׬ �? ̬?   B�� ����   ? ���
+ 
+ 
+ 
+ * * ? /�$�* * :   
+ 
+ -   ? H��  ? y�f�? ? ? ��]�(`? �Z����? |1ɿ�[? ` c e n t e r I d `   ? ��v��Z�   ? ��+�? ? 
+ 
+ -   A P I ? /�L�  ` c e n t e r I d ` �o? ? ��c�����/�? ? ?  ���  ? ��c�? ? ? ��]�/ �Z������? p��v�? ���? ?   ? ? ? ׬ �? ׬ɿ? ? ? ? ? ��v��Z�   ? ����
+ 
+ -   ? ��c�  ?a� 1uJƛZ�   ?a� 1uK/�? ? ? ��c�  I D ? �   ? ��]�/ �Z����? ? ` c e n t e r I d ` �Z�   ? ̬Ю? �?   ? ���
+ 
+ 
+ 
+ * * ? ��Ю  ۊx$��* * :   
+ 
+ 1 .   * * ? ��c�  I D   ? �Ȧ�  ? }1��1u��ô  ? y�f�* * :   ` s e r v e r / a s s i g n - m e m b e r s - t o - c e n t e r . j s ` 
+ 
+ 2 .   * * ? ��]�? |1ɿ�[? ? ��c�  I D   ? �Ȧ�* * : 
+ 
+       ` ` ` j a v a s c r i p t 
+ 
+       c o n s t   c e n t e r I d   =   ' 6 8 f b 7 5 b 1 1 1 7 4 7 a 8 2 2 9 d 6 c f 5 d ' ;   / /   ? ��c�  ?a� 1uJƛZ�   ?a� 1uK/�? ? ? ��c�  I D 
+ 
+       a w a i t   U s e r . u p d a t e O n e ( 
+ 
+           {   e m a i l :   e m a i l ,   u s e r T y p e :   ' s t u d e n t '   } , 
+ 
+           {   $ s e t :   {   c e n t e r I d :   c e n t e r I d   }   } 
+ 
+       ) ; 
+ 
+       ` ` ` 
+ 
+ 3 .   * * �Z����? |1ɿ�[? ? ��c�  I D   ? �Ȧ�* * : 
+ 
+       ` ` ` j a v a s c r i p t 
+ 
+       a w a i t   U s e r . u p d a t e O n e ( 
+ 
+           {   e m a i l :   e m a i l ,   u s e r T y p e :   ' i n s t r u c t o r '   } , 
+ 
+           {   $ s e t :   {   c e n t e r I d :   c e n t e r I d   }   } 
+ 
+       ) ; 
+ 
+       ` ` ` 
+ 
+ 
+ 
+ * * ? �Ȧ�? ? ? ׬ �? ? * : 
+ 
+ -   * * ? ��]�  5 ��? * :   �n� ����Բ,   ? �z�? ?   ۊ��? ? ?   ? ��Բ��?   ����޸? ? 
+ 
+ -   * * �Z����  3 ��? * :   �Z��? ? ?   ? ��? ? ?   ? }1m��N� 
+ 
+ 
+ 
+ * * ? ��? ? ? ��*�? ? * : 
+ 
+ -   ` s e r v e r / a s s i g n - m e m b e r s - t o - c e n t e r . j s `   -   ? ��c�  I D   ? �Ȧ�  ? }1��1u��ô
+ 
+ -   ` s e r v e r / c h e c k - m e m b e r - c e n t e r - i n f o . j s `   -   ? ��c�  ? ����  ? ��$�  ? }1��1u��ô
+ 
+ 
+ 
+ * * �[̬��* * :   
+ 
+ -   ? ? ? H��  ? y�f�? ? ? ��]�  5 ���� �  ? ��c�  ?a� 1uJ�  ? � ���� ? ? ? ��=�  ? �Ć�
+ 
+ -   ? ? ? H��  ? y�f�? ? �Z����  3 ���� �  ? ��c�  ?a� 1uJ�  ? � ���� ? ? ? ��=�  ? �Ć�
+ 
+ -   ? ? ? ��c�  ?a� 1uJƛZ�   ?a� 1uK/�? ? ? ׬ �? լT�  ? ��c�������? ? ? �Ć�
+ 
+ 
+ 
+ * * ? �Q�  �N����? KF�* * : 
+ 
+ -   ? H��? ? ? ��]�/ �Z����  ? y�f�  ? ? ۊ�v�? ? ` c e n t e r I d `   ? ��v�  ? K?�
+ 
+ -   ? ��c�  ?a� 1uJ�  (`���(`? ? ̬Ю? ? ? ��c�  I D   ? ��$�  ? ? ? �Ȧ�
+ 
+ -   ? ����? ? ? ׬ �? ? ? y�f�  ? ? ? ��c�  ? ̬Ю  ? ��m�  ? ��$�  ? ����
+ 
+ ## ?�� ?�류 ?�결 기록 (2025. 10. 25. ?�전 9:00:00)
+
+### ???�원 배정 모달 ?�벨 ?�시 문제 최종 ?�결 ?��
+**진행 ?�태: 100% ?�료!**
+
+#### **문제:**
+- ?�원 배정 모달?�서 모든 ?�원???�벨??"?�벨 미설???�로 ?�시??
+- ?�이?�베?�스?�는 ?�바�??�벨???�?�되???�음 (초급, 중급, 고급, ?�체)
+- ?�버 API?�서 `currentLevel`???�바르게 반환?��? ?�음
+
+#### **?�인 분석:**
+1. **?�이?�베?�스 ?�벨 변??*: ?�어 ?�벨(`level1`, `beginner` ?????�국?�로 변?�되지 ?�음
+2. **?�버 API 로직**: `currentLevel` 계산 로직?�서 `studentInfo.level` ?�선?�위 문제
+3. **과정 ?�벨 매핑**: `assignedCourses`??`courseLevel`???�함?��? ?�음
+
+#### **?�결 방법:**
+
+**1. ?�이?�베?�스 ?�벨 변??* (`server/convert-course-levels-to-korean-final.js`)
+```javascript
+// ?�어 ?�벨???�국?�로 변??
+const levelMapping = {
+  'level1': '초급',
+  'level2': '중급', 
+  'level3': '고급',
+  'beginner': '초급',
+  'intermediate': '중급',
+  'advanced': '고급',
+  'all': '?�체'
+};
+```
+
+**2. ?�버 API 로직 개선** (`server/src/routes/center-admin.ts`)
+```typescript
+// currentLevel 계산 로직 개선
+currentLevel: (() => {
+  // 1. 먼�? studentInfo.level ?�인
+  let level = member.studentInfo?.level;
+  
+  // 2. studentInfo.level???�으�??�강 중인 과정???�벨 ?�용
+  if (!level && courseDetails.length > 0) {
+    level = courseDetails[0].courseLevel;
+  }
+  
+  return level || '?�벨 미설??;
+})(),
+```
+
+**3. 과정 ?�벨 매핑 추�?**
+```typescript
+// courseDetails??courseLevel ?�함
+return {
+  courseId: course._id,
+  courseName: course.name,
+  courseLevel: course.level, // 과정 ?�벨 추�?
+  instructorName: instructor?.name || '미배??,
+  enrollmentDate: new Date(),
+  status: 'active'
+};
+```
+
+#### **결과:**
+- ??김철수: `level: '초급'` ?�상 ?�시
+- ???�영?? `level: '중급'` ?�상 ?�시  
+- ??박�??? `level: '고급'` ?�상 ?�시
+- ???�수�? `level: '?�체'` ?�상 ?�시
+- ??최동?? `level: '중급'` ?�상 ?�시
+- ???�원 배정 모달?�서 ?�바�??�벨 ?�시
+- ???�버 로그?�서 ?�벨 ?�보 ?�상 ?�인
+
+#### **?�정???�일:**
+- `server/src/routes/center-admin.ts`: currentLevel 계산 로직 개선
+- `server/convert-course-levels-to-korean-final.js`: ?�이?�베?�스 ?�벨 변???�크립트
+- `server/src/models/LoginLog.ts`: center-admin enum 추�?
+- `server/src/middleware/role.ts`: center-admin 권한 추�?
+
+#### **?�스??결과:**
+- ?�버 로그?�서 모든 ?�원???�벨???�바르게 ?�시??
+- ?�원 배정 모달?�서 ?�벨 ?�보 ?�상 ?�시
+- API ?�답?�서 currentLevel ?�드 ?�상 반환

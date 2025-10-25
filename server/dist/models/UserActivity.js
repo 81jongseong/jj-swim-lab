@@ -33,7 +33,7 @@ const userActivitySchema = new mongoose_1.Schema({
     },
     userType: {
         type: String,
-        enum: ['superAdmin', 'centerAdmin', 'instructor', 'student', 'guest'],
+        enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
         required: true,
         index: true
     },

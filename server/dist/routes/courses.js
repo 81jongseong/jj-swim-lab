@@ -8,13 +8,14 @@ const Course_1 = require("../models/Course");
 const User_1 = require("../models/User");
 const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
+const role_1 = require("../middleware/role");
 const router = (0, express_1.Router)();
 const auth_2 = require("../middleware/auth");
 const requireInstructor = async (req, res, next) => {
     try {
         const user = await User_1.User.findById(req.user.userId);
-        if (!user || (user.userType !== 'instructor' && user.userType !== 'superAdmin')) {
-            return res.status(403).json({ error: '강사 권한이 필요합니다.' });
+        if (!user || (user.userType !== 'instructor' && user.userType !== 'centerAdmin' && user.userType !== 'superAdmin')) {
+            return res.status(403).json({ error: '강사 또는 센터 관리자 권한이 필요합니다.' });
         }
         return next();
     }
@@ -36,6 +37,16 @@ router.get('/', async (req, res) => {
             .populate('instructor', 'name userId')
             .populate('enrolledStudents.student', 'name userId')
             .sort({ createdAt: -1 });
+        console.log('📚 강습 과정 조회 응답:', {
+            totalCourses: courses.length,
+            coursesWithLaneInfo: courses.filter(c => c.poolType || c.lanes || c.laneInfo).length,
+            sampleCourse: courses[0] ? {
+                name: courses[0].name,
+                poolType: courses[0].poolType,
+                lanes: courses[0].lanes,
+                laneInfo: courses[0].laneInfo
+            } : null
+        });
         return res.json({ success: true, message: '강습 과정 조회 성공!', data: courses });
     }
     catch (error) {
@@ -60,9 +71,57 @@ router.get('/:id', async (req, res) => {
 });
 router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
     try {
-        const { name, description, level, duration, price, maxStudents, schedule, instructorId } = req.body;
-        if (!name || !description || !level || !duration || !price || !maxStudents) {
+        console.log('📥 강습 과정 생성 요청:', {
+            body: req.body,
+            userId: req.user?.userId,
+            userType: req.user?.userType
+        });
+        const { name, description, level, duration, price, maxStudents, schedule, instructorId, instructorName, tags, poolType, lanes, laneInfo, courseType, isPersonalLesson, startDate, endDate } = req.body;
+        if (!name || !level || !duration || price === undefined || !maxStudents) {
+            console.error('❌ 필수 필드 누락:', { name, level, duration, price, maxStudents });
             return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
+        }
+        const user = await User_1.User.findById(req.user.userId);
+        if (!user) {
+            console.error('❌ 사용자를 찾을 수 없음:', req.user.userId);
+            return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+        }
+        console.log('👤 사용자 정보:', {
+            userType: user.userType,
+            managedCenters: user.centerAdminInfo?.managedCenters,
+            assignedCenters: user.instructorInfo?.assignedCenters
+        });
+        let centerId = req.body.centerId;
+        if (!centerId) {
+            if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
+                centerId = user.centerAdminInfo.managedCenters[0];
+            }
+            else if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters && user.instructorInfo.assignedCenters.length > 0) {
+                centerId = user.instructorInfo.assignedCenters[0];
+            }
+        }
+        console.log('🏢 centerId:', centerId);
+        if (!centerId) {
+            console.error('❌ centerId를 찾을 수 없음');
+            return res.status(400).json({ error: '센터 ID가 필요합니다. 센터 관리자는 관리하는 센터가 있어야 합니다.' });
+        }
+        const classInfo = req.body.classInfo || {
+            className: name,
+            classType: 'regular',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            maxCapacity: maxStudents,
+            currentEnrollment: 0
+        };
+        let finalInstructorName = instructorName;
+        if (!finalInstructorName && instructorId) {
+            try {
+                const instructor = await User_1.User.findById(instructorId).select('name');
+                finalInstructorName = instructor?.name || '';
+            }
+            catch (error) {
+                console.error('강사 이름 조회 실패:', error);
+            }
         }
         const courseData = {
             name,
@@ -71,15 +130,36 @@ router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
             duration,
             price,
             maxStudents,
-            instructor: instructorId && instructorId !== '' && (await User_1.User.findById(req.user.userId))?.userType === 'superAdmin'
-                ? instructorId
-                : req.user.userId,
+            centerId,
+            classInfo,
+            instructor: instructorId || req.user.userId,
+            instructorId: instructorId || req.user.userId,
+            instructorName: finalInstructorName,
             schedule: schedule || [],
+            tags: tags || [],
+            poolType: poolType || 'mainPool',
+            lanes: lanes || [],
+            laneInfo: laneInfo || {},
+            courseType: courseType || 'group',
+            isPersonalLesson: isPersonalLesson || false,
+            startDate: startDate || new Date(),
+            endDate: endDate || new Date(new Date().setMonth(new Date().getMonth() + 1))
         };
+        console.log('📚 강습 과정 생성 데이터:', courseData);
+        console.log('💾 저장할 데이터:', courseData);
+        console.log('🏷️ 태그:', tags);
         const course = new Course_1.Course(courseData);
         await course.save();
+        console.log('✅ 저장 성공:', course._id);
         const populatedCourse = await Course_1.Course.findById(course._id)
             .populate('instructor', 'name userId');
+        console.log('📋 생성된 강습 과정 정보:', {
+            id: populatedCourse?._id,
+            name: populatedCourse?.name,
+            instructor: populatedCourse?.instructor,
+            instructorId: populatedCourse?.instructorId,
+            instructorName: populatedCourse?.instructorName
+        });
         return res.status(201).json({
             success: true,
             message: '강습 과정이 생성되었습니다.',
@@ -87,29 +167,58 @@ router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습 과정 생성 오류:', error);
-        return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+        console.error('💥 강습 과정 생성 오류:', error);
+        if (error instanceof Error) {
+            console.error('💥 에러 메시지:', error.message);
+            console.error('💥 에러 스택:', error.stack);
+        }
+        return res.status(500).json({
+            error: '서버 오류가 발생했습니다.',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 });
-router.put('/:id', auth_2.auth, requireInstructor, async (req, res) => {
+router.put('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res) => {
     try {
+        console.log('📝 강습 과정 수정 요청:', {
+            courseId: req.params.id,
+            body: req.body,
+            instructorId: req.body.instructorId,
+            tags: req.body.tags,
+            poolType: req.body.poolType,
+            lanes: req.body.lanes,
+            laneInfo: req.body.laneInfo
+        });
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
         const user = await User_1.User.findById(req.user.userId);
-        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
+        const isSuperAdmin = user?.userType === 'superAdmin';
+        const isCenterAdmin = user?.userType === 'centerAdmin' || user?.userType === 'center-admin';
+        const isOwnCourse = course.instructor ? course.instructor.toString() === String(req.user.userId) : false;
+        console.log('🔐 권한 확인:', {
+            userType: user?.userType,
+            isSuperAdmin,
+            isCenterAdmin,
+            isOwnCourse,
+            courseInstructor: course.instructor ? course.instructor.toString() : 'undefined',
+            currentUser: req.user.userId
+        });
+        if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
+            console.error('❌ 권한 없음:', { userType: user?.userType, userId: req.user.userId });
             return res.status(403).json({ error: '수정 권한이 없습니다.' });
         }
-        const { name, description, level, duration, price, maxStudents } = req.body;
+        console.log('✅ 권한 확인 통과');
+        const { name, description, level, duration, price, maxStudents, instructorId } = req.body;
         if (name && typeof name !== 'string') {
             return res.status(400).json({ error: '강습 과정명은 문자열이어야 합니다.' });
         }
         if (description && typeof description !== 'string') {
             return res.status(400).json({ error: '강습 과정 설명은 문자열이어야 합니다.' });
         }
-        if (level && !['beginner', 'intermediate', 'advanced'].includes(level)) {
-            return res.status(400).json({ error: '유효하지 않은 레벨입니다.' });
+        if (level && typeof level !== 'string') {
+            return res.status(400).json({ error: '레벨은 문자열이어야 합니다.' });
         }
         if (duration && (typeof duration !== 'number' || duration <= 0)) {
             return res.status(400).json({ error: '강습 시간은 양수여야 합니다.' });
@@ -120,7 +229,64 @@ router.put('/:id', auth_2.auth, requireInstructor, async (req, res) => {
         if (maxStudents && (typeof maxStudents !== 'number' || maxStudents <= 0)) {
             return res.status(400).json({ error: '최대 수강생 수는 양수여야 합니다.' });
         }
-        const updatedCourse = await Course_1.Course.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('instructor', 'name userId');
+        const updateData = { ...req.body };
+        if (updateData.instructorId) {
+            updateData.instructor = updateData.instructorId;
+            updateData.instructorId = updateData.instructorId;
+            let instructorName = updateData.instructorName;
+            if (!instructorName) {
+                try {
+                    const instructor = await User_1.User.findById(updateData.instructorId).select('name');
+                    instructorName = instructor?.name || '';
+                    updateData.instructorName = instructorName;
+                }
+                catch (error) {
+                    console.error('강사 이름 조회 실패:', error);
+                }
+            }
+            console.log('👨‍🏫 강사 정보 업데이트:', {
+                원본: req.body.instructorId,
+                instructorId: updateData.instructorId,
+                instructor: updateData.instructor,
+                instructorName: updateData.instructorName
+            });
+        }
+        if (!updateData.tags) {
+            updateData.tags = [];
+        }
+        console.log('🏷️ 태그 처리:', updateData.tags);
+        if (!updateData.lanes) {
+            updateData.lanes = [];
+        }
+        console.log('🏊 레인 처리:', updateData.lanes);
+        if (!updateData.laneInfo) {
+            updateData.laneInfo = {
+                assignedLanes: [],
+                maxLanes: 0,
+                minLanes: 0
+            };
+        }
+        console.log('🏊 레인 정보 처리:', updateData.laneInfo);
+        console.log('💾 업데이트할 데이터:', updateData);
+        const updatedCourse = await Course_1.Course.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('instructor', 'name userId');
+        console.log('🔍 업데이트 후 강습 과정:', {
+            _id: updatedCourse?._id,
+            name: updatedCourse?.name,
+            instructor: updatedCourse?.instructor,
+            instructorId: updatedCourse?.instructorId,
+            instructorName: updatedCourse?.instructorName
+        });
+        console.log('✅ 강습 과정 수정 완료:', {
+            courseId: updatedCourse?._id,
+            courseName: updatedCourse?.name,
+            instructor: updatedCourse?.instructor,
+            instructorId: updatedCourse?.instructorId,
+            instructorName: updatedCourse?.instructorName,
+            tags: updatedCourse?.tags,
+            poolType: updatedCourse?.poolType,
+            lanes: updatedCourse?.lanes,
+            laneInfo: updatedCourse?.laneInfo
+        });
         return res.json({
             success: true,
             message: '강습 과정이 수정되었습니다.',
@@ -128,8 +294,15 @@ router.put('/:id', auth_2.auth, requireInstructor, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습 과정 수정 오류:', error);
-        return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+        console.error('💥 강습 과정 수정 오류:', error);
+        if (error instanceof Error) {
+            console.error('💥 에러 메시지:', error.message);
+            console.error('💥 에러 스택:', error.stack);
+        }
+        return res.status(500).json({
+            error: '서버 오류가 발생했습니다.',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 });
 router.delete('/:id', auth_2.auth, requireInstructor, async (req, res) => {
@@ -139,10 +312,21 @@ router.delete('/:id', auth_2.auth, requireInstructor, async (req, res) => {
             return res.status(404).json({ error: '강습 과정을 찾을 수 없습니다.' });
         }
         const user = await User_1.User.findById(req.user.userId);
-        if (user?.userType !== 'superAdmin' && course.instructor.toString() !== String(req.user.userId)) {
+        const isSuperAdmin = user?.userType === 'superAdmin';
+        const isCenterAdmin = user?.userType === 'centerAdmin';
+        const isOwnCourse = course.instructor.toString() === String(req.user.userId);
+        console.log('🔐 삭제 권한 확인:', {
+            userType: user?.userType,
+            isSuperAdmin,
+            isCenterAdmin,
+            isOwnCourse
+        });
+        if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
+            console.error('❌ 삭제 권한 없음:', { userType: user?.userType, userId: req.user.userId });
             return res.status(403).json({ error: '삭제 권한이 없습니다.' });
         }
         await Course_1.Course.findByIdAndDelete(req.params.id);
+        console.log('✅ 강습 과정 삭제 완료:', req.params.id);
         return res.json({ success: true, message: '강습 과정이 삭제되었습니다.' });
     }
     catch (error) {

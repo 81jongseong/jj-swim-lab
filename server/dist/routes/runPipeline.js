@@ -4,9 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.downloadPipelineResult = exports.checkPipelineStatus = exports.runPipeline = void 0;
+const express_1 = require("express");
 const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
 const spawnProc_1 = __importDefault(require("../utils/spawnProc"));
+const router = (0, express_1.Router)();
 async function runPipeline(req, res) {
     try {
         const { videoPath, fbxPath, outputDir, maxFrames = 300, startFrame = 1, endFrame = 300 } = req.body;
@@ -207,9 +209,8 @@ async function downloadPipelineResult(req, res) {
     }
 }
 exports.downloadPipelineResult = downloadPipelineResult;
-exports.default = {
-    runPipeline,
-    checkPipelineStatus,
-    downloadPipelineResult
-};
+router.post('/run', runPipeline);
+router.get('/status/:jobId', checkPipelineStatus);
+router.get('/download/:jobId', downloadPipelineResult);
+exports.default = router;
 //# sourceMappingURL=runPipeline.js.map

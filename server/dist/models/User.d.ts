@@ -34,7 +34,7 @@ interface IUser extends mongoose.Document {
         type: 'Point';
         coordinates: [number, number];
     };
-    userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+    userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
     level: string;
     centerId?: mongoose.Types.ObjectId;
     studentInfo?: {
@@ -132,6 +132,7 @@ interface IUser extends mongoose.Document {
         };
     };
     instructorInfo?: {
+        instructorType?: 'instructor' | 'lifeguard';
         experience?: string;
         certifications?: string[];
         specialties?: string[];
@@ -139,6 +140,56 @@ interface IUser extends mongoose.Document {
         assignedCenters?: mongoose.Types.ObjectId[];
         maxStudents?: number;
         currentStudents?: number;
+        workSchedule?: {
+            daysOfWeek?: number[];
+            timeSlots?: string[];
+        };
+        salaryInfo?: {
+            type?: 'monthly' | 'hourly' | 'per-class';
+            amount?: number;
+            currency?: string;
+            incentive?: number;
+        };
+        memo?: string;
+        hiredAt?: Date;
+        contractType?: 'full-time' | 'part-time' | 'contract' | 'freelance';
+        employmentHistory?: Array<{
+            centerId?: mongoose.Types.ObjectId;
+            centerName?: string;
+            startDate?: Date;
+            endDate?: Date;
+            position?: string;
+            rating?: number;
+            totalClasses?: number;
+            totalStudents?: number;
+            leaveReason?: string;
+            memo?: string;
+        }>;
+        personalLessonSettings?: {
+            isPersonalLessonEnabled?: boolean;
+            lessonTypes?: Array<{
+                type: '1:1' | '1:2' | '1:3' | '1:4' | '1:5';
+                maxStudents: number;
+                pricePerSession: number;
+                monthlyPrice?: number;
+            }>;
+            frequencyOptions?: Array<{
+                type: 'weekly' | 'monthly';
+                sessions: number;
+                price: number;
+                expirationDays?: number;
+            }>;
+            availability?: {
+                timeSlots?: Array<{
+                    dayOfWeek: number;
+                    startTime: string;
+                    endTime: string;
+                    isActive: boolean;
+                }>;
+                maxDailyLessons?: number;
+                bufferTime?: number;
+            };
+        };
     };
     centerAdminInfo?: {
         managedCenters?: mongoose.Types.ObjectId[];

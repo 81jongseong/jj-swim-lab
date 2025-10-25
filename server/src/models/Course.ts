@@ -135,6 +135,13 @@ const courseSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  instructorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  instructorName: {
+    type: String,
+  },
   centerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Center',
@@ -193,11 +200,32 @@ const courseSchema = new mongoose.Schema({
   laneInfo: {
     assignedLanes: [{ type: Number }], // 배정된 레인 번호들 (예: [1, 2, 3])
     maxLanes: { type: Number, default: 1 }, // 최대 사용 레인 수
+    minLanes: { type: Number, default: 1 }, // 최소 사용 레인 수 (개인레슨 시 조정용)
     laneNotes: { type: String, default: '' } // 레인 관련 메모
+  },
+  // 개인레슨 자동 레인 조정 설정
+  personalLessonAdjustment: {
+    isEnabled: { type: Boolean, default: false }, // 개인레슨 시 레인 자동 조정 여부
+    reducedLanes: { type: Number, default: 1 }, // 개인레슨 시 줄어드는 레인 수
+    adjustmentTime: { type: Number, default: 60 }, // 조정 시간 (분)
+    notes: { type: String, default: '' } // 조정 관련 메모
   },
   isActive: {
     type: Boolean,
     default: true,
+  },
+  // 수업 기간
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
+  endDate: {
+    type: Date,
+    default: function() {
+      const date = new Date();
+      date.setMonth(date.getMonth() + 1);
+      return date;
+    }
   },
   enrolledStudents: [{
     student: {

@@ -191,7 +191,8 @@ export default function InstructorEditModal({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await onSave({
+      
+      const saveData = {
         phone: formData.phone,
         instructorInfo: {
           instructorLevel: formData.instructorLevel,
@@ -204,11 +205,17 @@ export default function InstructorEditModal({
           specialties: formData.specialties,
           certifications: formData.certifications
         }
-      } as any);
+      };
+      
+      console.log('🔥 InstructorEditModal 저장 데이터:', saveData);
+      console.log('🔥 현재 폼 데이터:', formData);
+      
+      await onSave(saveData as any);
       onClose();
     } catch (error) {
-      console.error('강사 정보 저장 실패:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      console.error('❌ 강사 정보 저장 실패:', error);
+      console.error('📋 에러 상세:', error);
+      alert(`저장 중 오류가 발생했습니다: ${error.message || error}`);
     } finally {
       setIsSaving(false);
     }

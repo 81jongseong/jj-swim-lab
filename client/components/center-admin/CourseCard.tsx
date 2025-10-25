@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Clock, Users, Calendar, DollarSign, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Users, Calendar, DollarSign, Edit2, Trash2, UserPlus } from 'lucide-react';
 
 interface Course {
   _id: string;
@@ -41,9 +41,22 @@ interface CourseCardProps {
   levelName: string; // level1 → 입문 변환된 이름
   onEdit: (course: Course) => void;
   onDelete: (courseId: string) => void;
+  onAssignMembers?: (course: Course) => void;
 }
 
-export default function CourseCard({ course, levelName, onEdit, onDelete }: CourseCardProps) {
+export default function CourseCard({ course, levelName, onEdit, onDelete, onAssignMembers }: CourseCardProps) {
+  // 🔍 CourseCard 전체 데이터 디버깅
+  console.log(`🔍 CourseCard [${course.name}] 전체 데이터:`, course);
+  console.log(`🔍 CourseCard [${course.name}] onAssignMembers 함수:`, onAssignMembers);
+  console.log(`🔍 CourseCard [${course.name}] onAssignMembers 타입:`, typeof onAssignMembers);
+  console.log(`🔍 CourseCard [${course.name}] onAssignMembers 존재 여부:`, !!onAssignMembers);
+  console.log(`🔍 CourseCard [${course.name}] 레인 정보:`, {
+    poolType: course.poolType,
+    lanes: course.lanes,
+    laneInfo: course.laneInfo,
+    hasLaneData: !!(course.poolType || course.lanes || course.laneInfo)
+  });
+
   // 레벨별 색상
   const getLevelColor = (level: string) => {
     const colors: { [key: string]: string } = {
@@ -98,6 +111,20 @@ export default function CourseCard({ course, levelName, onEdit, onDelete }: Cour
               title="수정"
             >
               <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                console.log('🎯 CourseCard 회원 배정 버튼 클릭:', course);
+                if (onAssignMembers) {
+                  onAssignMembers(course);
+                } else {
+                  console.error('❌ onAssignMembers 함수가 전달되지 않았습니다.');
+                }
+              }}
+              className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600"
+              title="회원 배정"
+            >
+              <UserPlus className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(course._id)}

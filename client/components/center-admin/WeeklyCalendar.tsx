@@ -58,16 +58,21 @@ interface Course {
   schedule: CourseSchedule[];
   status: 'active' | 'inactive' | 'full';
   tags?: string[];
+  // ⭐ 레인 정보 추가
+  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool';
   lanes?: number[];
   laneInfo?: {
     assignedLanes?: number[];
     maxLanes?: number;
     laneNotes?: string;
   };
+  courseType?: 'group' | 'personal';
+  isPersonalLesson?: boolean;
 }
 
 interface WeeklyCalendarProps {
   courses: Course[];
+  schedules?: any[]; // 확정된 스케줄 데이터
   onCourseClick?: (course: Course) => void;
   onEmptySlotClick?: (day: string, time: string) => void;
 }
@@ -122,31 +127,90 @@ const COLOR_PALETTE = [
  *     "커스텀 급수1" → 항상 같은 색상
  */
 const getLevelColor = (level: string): string => {
-  // 문자열을 숫자로 변환 (간단한 해시)
+  // 특정 급수들에 대해 명시적으로 다른 색상 할당
+  const levelColorMap: { [key: string]: number } = {
+    '기초': 0,           // 파란색
+    '자유형 기초반': 1,   // 초록색
+    '배영 중급반': 2,     // 보라색
+    '평영 고급반': 3,     // 핑크색
+    'level1': 0,         // 파란색
+    'level2': 1,         // 초록색
+    'level3': 2,         // 보라색
+    'beginner': 0,       // 파란색
+    'intermediate': 2,    // 보라색
+    'advanced': 3,       // 핑크색
+  };
+  
+  // 명시적으로 정의된 급수가 있으면 해당 색상 사용
+  if (levelColorMap[level] !== undefined) {
+    const index = levelColorMap[level];
+    return COLOR_PALETTE[index];
+  }
+  
+  // ⭐ 직접 입력한 급수들에 대해 고유한 색상 할당
+  // 더 나은 해시 함수 사용 (문자열 길이와 내용을 모두 고려)
   let hash = 0;
   for (let i = 0; i < level.length; i++) {
-    hash = level.charCodeAt(i) + ((hash << 5) - hash);
+    hash = ((hash << 5) - hash) + level.charCodeAt(i) + i; // 위치 정보도 포함
     hash = hash & hash; // 32bit integer로 변환
   }
   
-  // 해시를 색상 팔레트 인덱스로 변환 (0~11)
+  // 해시에 문자열 길이도 추가하여 더 나은 분산
+  hash = hash + level.length * 1000;
+  
   const index = Math.abs(hash) % COLOR_PALETTE.length;
   
   return COLOR_PALETTE[index];
 };
 
-export default function WeeklyCalendar({ 
-  courses, 
+export default function WeeklyCalendar({
+  courses,
+  schedules = [],
   onCourseClick,
-  onEmptySlotClick 
+  onEmptySlotClick
 }: WeeklyCalendarProps) {
+
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  // 특정 시간대, 요일에 해당하는 강습들 찾기
+  // 레인 충돌 감지 및 재배치 로직
+  const detectLaneConflicts = (courses: Course[]): Course[] => {
+    const conflicts: { [lane: number]: Course[] } = {};
+    
+    // 레인별로 강습들을 그룹화
+    courses.forEach(course => {
+      const lanes = course.lanes || course.laneInfo?.assignedLanes || [];
+      lanes.forEach(lane => {
+        if (!conflicts[lane]) conflicts[lane] = [];
+        conflicts[lane].push(course);
+      });
+    });
+    
+    // 충돌이 있는 레인들을 재배치
+    Object.entries(conflicts).forEach(([lane, conflictingCourses]) => {
+      if (conflictingCourses.length > 1) {
+        
+        // 개인레슨이 있으면 다른 강습들을 재배치
+        const personalLessons = conflictingCourses.filter(c => c.isPersonalLesson);
+        const groupLessons = conflictingCourses.filter(c => !c.isPersonalLesson);
+        
+        if (personalLessons.length > 0) {
+          // 개인레슨이 레인을 차지하고, 단체 수업을 재배치
+          groupLessons.forEach((course, index) => {
+            const newLanes = [parseInt(lane) + index + 1]; // 다음 레인으로 이동
+            course.lanes = newLanes;
+          });
+        }
+      }
+    });
+    
+    return courses;
+  };
+
+  // 특정 시간대, 요일에 해당하는 강습들 찾기 (레인 순서대로 정렬)
   const getCoursesForSlot = (day: string, timeSlot: string): Course[] => {
     const dayEnglish = DAY_MAP[day]?.toLowerCase();
     
-    return courses.filter(course => {
+    const filteredCourses = courses.filter(course => {
       // schedule이 없거나 비어있으면 스킵
       if (!course.schedule || course.schedule.length === 0) {
         return false;
@@ -180,20 +244,43 @@ export default function WeeklyCalendar({
         const schHour = schTime.split(':')[0];
         const timeMatch = slotHour === schHour;
         
-        // 디버그 로깅 (배영 중급반 확인)
-        if (course.name.includes('배영') && dayMatch) {
-          console.log(`🔍 ${course.name} - ${day} ${timeSlot}:`, {
-            dayMatch,
-            timeMatch,
-            schDays,
-            schTime,
-            slotHour,
-            schHour
-          });
-        }
         
         return dayMatch && timeMatch;
       });
+    });
+
+    // 레인 충돌 감지 및 재배치
+    const resolvedCourses = detectLaneConflicts(filteredCourses);
+
+    // ⭐ 레인 순서대로 정렬
+    return resolvedCourses.sort((a, b) => {
+      // 레인 정보가 있는 경우 레인 번호로 정렬
+      const aLanes = a.laneInfo?.assignedLanes || a.lanes || [];
+      const bLanes = b.laneInfo?.assignedLanes || b.lanes || [];
+      
+      // 첫 번째 레인 번호로 비교
+      const aFirstLane = aLanes.length > 0 ? aLanes[0] : 999;
+      const bFirstLane = bLanes.length > 0 ? bLanes[0] : 999;
+      
+      return aFirstLane - bFirstLane;
+    });
+  };
+
+  // 확정된 스케줄을 가져오는 함수
+  const getSchedulesForSlot = (day: string, timeSlot: string): any[] => {
+    const dayEnglish = DAY_MAP[day]?.toLowerCase();
+    
+    return schedules.filter(schedule => {
+      // 요일 매칭
+      const dayMatch = schedule.dayOfWeek === dayEnglish || 
+                      schedule.dayOfWeek === day ||
+                      schedule.dayOfWeek?.toLowerCase() === dayEnglish;
+      
+      // 시간 매칭
+      const timeMatch = schedule.startTime === timeSlot ||
+                       schedule.startTime?.split(':')[0] === timeSlot.split(':')[0];
+      
+      return dayMatch && timeMatch;
     });
   };
 
@@ -249,7 +336,8 @@ export default function WeeklyCalendar({
               {/* 요일별 셀 */}
               {DAYS_OF_WEEK.map(day => {
                 const coursesInSlot = getCoursesForSlot(day, timeSlot);
-                const isEmpty = coursesInSlot.length === 0;
+                const schedulesInSlot = getSchedulesForSlot(day, timeSlot);
+                const isEmpty = coursesInSlot.length === 0 && schedulesInSlot.length === 0;
 
                 return (
                   <div
@@ -262,19 +350,42 @@ export default function WeeklyCalendar({
                     onClick={() => handleSlotClick(day, timeSlot, coursesInSlot)}
                   >
                     {isEmpty ? (
-                      // 빈 슬롯
-                      <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <span className="text-xs text-gray-400">+ 추가</span>
+                      // 빈 슬롯 - 자유수영 가능 표시
+                      <div className="h-full flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <div className="text-xs text-green-600 font-medium mb-1">💧 자유수영</div>
+                        <div className="text-xs text-gray-400">+ 개인레슨</div>
                       </div>
                     ) : (
-                      // 강습 표시 (여러 개 가능)
+                      // 강습 및 스케줄 표시 (여러 개 가능)
                       // 반응형: 모바일/태블릿(세로 스택) / 데스크톱(가로 스크롤)
                       <div className={`
-                        ${coursesInSlot.length > 1 
+                        ${(coursesInSlot.length + schedulesInSlot.length) > 1 
                           ? 'flex flex-col lg:flex-row gap-1 overflow-y-auto lg:overflow-y-visible lg:overflow-x-auto max-h-[200px] lg:max-h-none' 
                           : ''
                         }
                       `}>
+                        {/* 확정된 스케줄 표시 */}
+                        {schedulesInSlot.map(schedule => (
+                          <div
+                            key={`schedule-${schedule._id}`}
+                            className="p-2 rounded border-l-4 bg-blue-50 border-blue-400 cursor-pointer hover:shadow-md transition-shadow"
+                          >
+                            <div className="text-xs font-semibold mb-1 truncate text-blue-800" title={schedule.title}>
+                              📅 {schedule.title}
+                            </div>
+                            <div className="text-xs text-blue-600">
+                              {schedule.type === 'operating_hours' && '운영시간'}
+                              {schedule.type === 'instructor_schedule' && `강사: ${schedule.instructorName || '미배정'}`}
+                              {schedule.type === 'group_class' && `단체수업: ${schedule.maxStudents || 0}명`}
+                              {schedule.type === 'maintenance' && '점검/정비'}
+                            </div>
+                            {schedule.notes && (
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {schedule.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                         {coursesInSlot.map(course => (
                           <div
                             key={course._id}
@@ -297,6 +408,13 @@ export default function WeeklyCalendar({
                               <Users className="w-3 h-3 mr-1" />
                               <span>{course.currentStudents}/{course.maxStudents}명</span>
                             </div>
+                            {/* 개인레슨 표시 */}
+                            {course.isPersonalLesson && (
+                              <div className="flex items-center text-xs text-purple-600 mt-1">
+                                <span className="mr-1">👤</span>
+                                <span>개인레슨</span>
+                              </div>
+                            )}
                             {/* 레인 정보 */}
                             {((course.laneInfo?.assignedLanes && course.laneInfo.assignedLanes.length > 0) || 
                               (course.lanes && course.lanes.length > 0)) && (

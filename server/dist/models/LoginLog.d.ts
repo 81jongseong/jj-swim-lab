@@ -25,7 +25,7 @@
 import mongoose, { Document } from 'mongoose';
 export interface ILoginLog extends Document {
     userId: mongoose.Types.ObjectId;
-    userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+    userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
     loginTime: Date;
     logoutTime?: Date;
     ipAddress: string;

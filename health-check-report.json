@@ -1,59 +1,15 @@
 {
-  "timestamp": "2025-10-13T10:35:06.030Z",
+  "timestamp": "2025-10-24T14:01:31.761Z",
   "stats": {
-    "totalChecks": 392,
-    "passed": 469,
-    "failed": 13,
-    "warnings": 7
+    "totalChecks": 418,
+    "passed": 526,
+    "failed": 2,
+    "warnings": 4
   },
   "errors": [
     {
-      "message": "PersonalProgramAdjustment 모델이 index.ts에서 import되지 않음",
-      "solution": "server/src/index.ts에 \"import './models/PersonalProgramAdjustment';\" 추가 필요"
-    },
-    {
-      "message": "SwimCondition 모델이 index.ts에서 import되지 않음",
-      "solution": "server/src/index.ts에 \"import './models/SwimCondition';\" 추가 필요"
-    },
-    {
-      "message": "SwimDrill 모델이 index.ts에서 import되지 않음",
-      "solution": "server/src/index.ts에 \"import './models/SwimDrill';\" 추가 필요"
-    },
-    {
-      "message": "SwimProgram 모델이 index.ts에서 import되지 않음",
-      "solution": "server/src/index.ts에 \"import './models/SwimProgram';\" 추가 필요"
-    },
-    {
-      "message": "SwimTrainingMethod 모델이 index.ts에서 import되지 않음",
-      "solution": "server/src/index.ts에 \"import './models/SwimTrainingMethod';\" 추가 필요"
-    },
-    {
-      "message": "community-posts 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/community-posts', community-postsRoutes);\" 추가"
-    },
-    {
-      "message": "example 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/example', exampleRoutes);\" 추가"
-    },
-    {
-      "message": "geo-aggregate 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/geo-aggregate', geo-aggregateRoutes);\" 추가"
-    },
-    {
-      "message": "notice 라우트가 import되지 않음",
-      "solution": "server/src/index.ts에 \"import noticeRoutes from './routes/notice';\" 추가"
-    },
-    {
-      "message": "runPipeline 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/runPipeline', runPipelineRoutes);\" 추가"
-    },
-    {
-      "message": "swim-program-completions 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/swim-program-completions', swim-program-completionsRoutes);\" 추가"
-    },
-    {
-      "message": "swim-program-day-condition 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/swim-program-day-condition', swim-program-day-conditionRoutes);\" 추가"
+      "message": "center-admin-instructor-stats 라우트가 등록되지 않음",
+      "solution": "server/src/index.ts에 \"app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);\" 추가"
     },
     {
       "message": "클라이언트 tsconfig.json 파싱 오류",
@@ -67,18 +23,6 @@
     },
     {
       "message": "클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/placeholder/800/400의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/placeholder/400/300의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/placeholder/100/100의 라우트 등록이 확인되지 않음",
       "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
     },
     {

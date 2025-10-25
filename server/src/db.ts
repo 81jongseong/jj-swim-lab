@@ -94,9 +94,14 @@ import { logInfo, logError, logDatabase } from './utils/logger';
 import { optimizeConnectionPool } from './utils/performance';
 
 
-// MongoDB Atlas URI 강제 설정 (개발용 간단 연결 문자열)
-// 환경변수 무시하고 직접 설정
+// MongoDB Atlas URI 강제 설정 (Atlas만 사용)
+// 로컬 MongoDB 사용 완전 차단
 const MONGODB_URI = 'mongodb+srv://jjswim:qkxm1010@jjswim-cluster.t5e3a9y.mongodb.net/jj-swim-lab?retryWrites=true&w=majority';
+
+// 로컬 MongoDB 연결 시도 차단
+if (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('localhost')) {
+  throw new Error('❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.');
+}
 
 // 환경 변수 디버깅
 console.log('🔍 db.ts에서 환경 변수 확인:');

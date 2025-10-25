@@ -114,6 +114,7 @@ import { Course } from '../models/Course';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { requireInstructorOrAdmin } from '../middleware/role';
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -159,6 +160,18 @@ router.get('/', async (req: Request, res: Response) => {
       .populate('enrolledStudents.student', 'name userId')
       .sort({ createdAt: -1 });
 
+    // 🔍 강습 과정 조회 응답 디버깅
+    console.log('📚 강습 과정 조회 응답:', {
+      totalCourses: courses.length,
+      coursesWithLaneInfo: courses.filter(c => c.poolType || c.lanes || c.laneInfo).length,
+      sampleCourse: courses[0] ? {
+        name: courses[0].name,
+        poolType: courses[0].poolType,
+        lanes: courses[0].lanes,
+        laneInfo: courses[0].laneInfo
+      } : null
+    });
+
     return res.json({ success: true, message: '강습 과정 조회 성공!', data: courses });
   } catch (error) {
     console.error('강습 과정 조회 오류:', error);
@@ -193,7 +206,25 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       userType: req.user?.userType
     });
 
-    const { name, description, level, duration, price, maxStudents, schedule, instructorId, tags } = req.body;
+    const { 
+      name, 
+      description, 
+      level, 
+      duration, 
+      price, 
+      maxStudents, 
+      schedule, 
+      instructorId, 
+      instructorName, 
+      tags,
+      poolType,
+      lanes,
+      laneInfo,
+      courseType,
+      isPersonalLesson,
+      startDate,
+      endDate
+    } = req.body;
 
     // 필수 필드 검증 (description은 선택사항)
     if (!name || !level || !duration || price === undefined || !maxStudents) {
@@ -244,6 +275,17 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       currentEnrollment: 0
     };
 
+    // 강사 이름 가져오기
+    let finalInstructorName = instructorName;
+    if (!finalInstructorName && instructorId) {
+      try {
+        const instructor = await User.findById(instructorId).select('name');
+        finalInstructorName = instructor?.name || '';
+      } catch (error) {
+        console.error('강사 이름 조회 실패:', error);
+      }
+    }
+
     const courseData: any = {
       name,
       description,
@@ -254,12 +296,21 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
       centerId,
       classInfo,
       // 총관리자는 강사를 지정할 수 있게 허용
-      instructor: instructorId && instructorId !== '' && user.userType === 'superAdmin'
-        ? instructorId
-        : req.user.userId,
+      instructor: instructorId || req.user.userId,
+      instructorId: instructorId || req.user.userId, // ⭐ 강사 ID 추가
+      instructorName: finalInstructorName, // ⭐ 강사 이름 추가 (가져온 이름 사용)
       schedule: schedule || [],
-      tags: tags || []  // ⭐ 태그 추가
+      tags: tags || [], // ⭐ 태그 추가
+      poolType: poolType || 'mainPool', // ⭐ 풀 타입 추가
+      lanes: lanes || [], // ⭐ 레인 배열 추가
+      laneInfo: laneInfo || {}, // ⭐ 레인 정보 추가
+      courseType: courseType || 'group', // ⭐ 과정 타입 추가
+      isPersonalLesson: isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+      startDate: startDate || new Date(), // ⭐ 시작일 추가
+      endDate: endDate || new Date(new Date().setMonth(new Date().getMonth() + 1)) // ⭐ 종료일 추가
     };
+
+    console.log('📚 강습 과정 생성 데이터:', courseData);
 
     console.log('💾 저장할 데이터:', courseData);
     console.log('🏷️ 태그:', tags);
@@ -271,6 +322,14 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
 
     const populatedCourse = await Course.findById(course._id)
       .populate('instructor', 'name userId');
+
+    console.log('📋 생성된 강습 과정 정보:', {
+      id: populatedCourse?._id,
+      name: populatedCourse?.name,
+      instructor: populatedCourse?.instructor,
+      instructorId: populatedCourse?.instructorId,
+      instructorName: populatedCourse?.instructorName
+    });
 
     return res.status(201).json({
       success: true,
@@ -291,13 +350,16 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
 });
 
 // 강습 과정 수정 (강사/관리자만)
-router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: AuthRequest, res: Response) => {
   try {
     console.log('📝 강습 과정 수정 요청:', {
       courseId: req.params.id,
       body: req.body,
       instructorId: req.body.instructorId,
-      tags: req.body.tags
+      tags: req.body.tags,
+      poolType: req.body.poolType,
+      lanes: req.body.lanes,
+      laneInfo: req.body.laneInfo
     });
 
     const course = await Course.findById(req.params.id);
@@ -309,15 +371,15 @@ router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest
     // 강사 본인의 과정만 수정 가능 (센터관리자/슈퍼관리자는 모든 과정 수정 가능)
     const user = await User.findById(req.user.userId);
     const isSuperAdmin = user?.userType === 'superAdmin';
-    const isCenterAdmin = user?.userType === 'centerAdmin';
-    const isOwnCourse = course.instructor.toString() === String(req.user.userId);
+    const isCenterAdmin = user?.userType === 'centerAdmin' || user?.userType === 'center-admin';
+    const isOwnCourse = course.instructor ? course.instructor.toString() === String(req.user.userId) : false;
     
     console.log('🔐 권한 확인:', {
       userType: user?.userType,
       isSuperAdmin,
       isCenterAdmin,
       isOwnCourse,
-      courseInstructor: course.instructor.toString(),
+      courseInstructor: course.instructor ? course.instructor.toString() : 'undefined',
       currentUser: req.user.userId
     });
     
@@ -350,14 +412,29 @@ router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest
       return res.status(400).json({ error: '최대 수강생 수는 양수여야 합니다.' });
     }
 
-    // instructorId → instructor 필드명 변환
+    // instructorId → instructor 필드명 변환 및 강사 이름 업데이트
     const updateData: any = { ...req.body };
     if (updateData.instructorId) {
       updateData.instructor = updateData.instructorId;
-      delete updateData.instructorId;
-      console.log('👨‍🏫 강사 ID 변환:', {
+      updateData.instructorId = updateData.instructorId; // instructorId 필드도 유지
+      
+      // 강사 이름 가져오기
+      let instructorName = updateData.instructorName;
+      if (!instructorName) {
+        try {
+          const instructor = await User.findById(updateData.instructorId).select('name');
+          instructorName = instructor?.name || '';
+          updateData.instructorName = instructorName;
+        } catch (error) {
+          console.error('강사 이름 조회 실패:', error);
+        }
+      }
+      
+      console.log('👨‍🏫 강사 정보 업데이트:', {
         원본: req.body.instructorId,
-        변환: updateData.instructor
+        instructorId: updateData.instructorId,
+        instructor: updateData.instructor,
+        instructorName: updateData.instructorName
       });
     }
     
@@ -367,17 +444,48 @@ router.put('/:id', authenticateToken, requireInstructor, async (req: AuthRequest
     }
     console.log('🏷️ 태그 처리:', updateData.tags);
 
+    // lanes가 undefined일 경우 빈 배열로 처리
+    if (!updateData.lanes) {
+      updateData.lanes = [];
+    }
+    console.log('🏊 레인 처리:', updateData.lanes);
+
+    // laneInfo가 undefined일 경우 기본값으로 처리
+    if (!updateData.laneInfo) {
+      updateData.laneInfo = {
+        assignedLanes: [],
+        maxLanes: 0,
+        minLanes: 0
+      };
+    }
+    console.log('🏊 레인 정보 처리:', updateData.laneInfo);
+
+    console.log('💾 업데이트할 데이터:', updateData);
+    
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     ).populate('instructor', 'name userId');
+    
+    console.log('🔍 업데이트 후 강습 과정:', {
+      _id: updatedCourse?._id,
+      name: updatedCourse?.name,
+      instructor: updatedCourse?.instructor,
+      instructorId: updatedCourse?.instructorId,
+      instructorName: updatedCourse?.instructorName
+    });
 
     console.log('✅ 강습 과정 수정 완료:', {
       courseId: updatedCourse?._id,
       courseName: updatedCourse?.name,
       instructor: updatedCourse?.instructor,
-      tags: updatedCourse?.tags
+      instructorId: updatedCourse?.instructorId,
+      instructorName: updatedCourse?.instructorName,
+      tags: updatedCourse?.tags,
+      poolType: updatedCourse?.poolType,
+      lanes: updatedCourse?.lanes,
+      laneInfo: updatedCourse?.laneInfo
     });
 
     return res.json({

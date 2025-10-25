@@ -165,9 +165,17 @@ function CenterIntroductionPage() {
 
   // 권한 확인
   useEffect(() => {
-    if (user && !['centerAdmin', 'superAdmin'].includes(user.userType)) {
+    // center@swim.com 계정도 센터 관리자로 인식
+    const isCenterAdmin = user && (
+      ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+      user.email === 'center@swim.com'
+    );
+    
+    if (user && !isCenterAdmin) {
       alert('센터 관리자만 접근할 수 있습니다.');
-      window.location.href = '/dashboard';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   }, [user]);
 
@@ -223,7 +231,13 @@ function CenterIntroductionPage() {
 
   // 초기 로드
   useEffect(() => {
-    if (!loading && user && ['centerAdmin', 'superAdmin'].includes(user.userType)) {
+    // center@swim.com 계정도 센터 관리자로 인식
+    const isCenterAdmin = user && (
+      ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+      user.email === 'center@swim.com'
+    );
+    
+    if (!loading && isCenterAdmin) {
       loadCenterInfo();
     }
   }, [user, loading, loadCenterInfo]);

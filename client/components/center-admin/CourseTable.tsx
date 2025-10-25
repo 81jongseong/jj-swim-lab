@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Users } from 'lucide-react';
 
 interface Course {
   _id: string;
@@ -33,6 +33,7 @@ interface CourseTableProps {
   courses: Course[];
   onEdit: (course: Course) => void;
   onDelete: (courseId: string) => void;
+  onAssignMembers: (course: Course) => void;
 }
 
 const getLevelLabel = (level: string): string => {
@@ -63,7 +64,7 @@ const getStatusColor = (status: string): string => {
     : 'bg-red-100 text-red-800';
 };
 
-export default function CourseTable({ courses, onEdit, onDelete }: CourseTableProps) {
+export default function CourseTable({ courses, onEdit, onDelete, onAssignMembers }: CourseTableProps) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
@@ -183,6 +184,13 @@ export default function CourseTable({ courses, onEdit, onDelete }: CourseTablePr
                       title="수정"
                     >
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => onAssignMembers(course)}
+                      className="text-green-600 hover:text-green-900"
+                      title="회원 배정"
+                    >
+                      <Users className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => onDelete(course._id)}

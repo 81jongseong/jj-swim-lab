@@ -39,6 +39,9 @@ import CourseTable from '@/components/center-admin/CourseTable';
 import CourseCard from '@/components/center-admin/CourseCard';
 import CourseFormModal from '@/components/center-admin/CourseFormModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
+import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
+import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
+import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
 
 // Course 타입을 CourseTable과 동일하게 통일
 type Course = {
@@ -60,15 +63,45 @@ type Course = {
   status: 'active' | 'inactive' | 'full';
   createdAt: Date;
   tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
+  // ⭐ 레인 정보 추가
+  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool';
+  lanes?: number[];
+  laneInfo?: {
+    assignedLanes?: number[];
+    maxLanes?: number;
+    laneNotes?: string;
+  };
+  courseType?: 'group' | 'personal';
+  isPersonalLesson?: boolean;
 }
 
 function CoursesManagement() {
   const { user } = useAuth();
+  
+  // 권한 확인 - 페이지 렌더링 전에 체크
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+  
+  if (!isCenterAdmin) {
+    // 권한이 없는 사용자는 게스트 버전의 화면으로 리다이렉트
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+    return null;
+  }
+  
+  // === 강의 관리 상태 ===
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [showMemberAssignmentModal, setShowMemberAssignmentModal] = useState(false);
+  const [assignmentCourse, setAssignmentCourse] = useState<Course | null>(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [schedules, setSchedules] = useState<any[]>([]); // 확정된 스케줄 데이터
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar'); // 캘린더/리스트 뷰 토글
   const [instructors, setInstructors] = useState<{ _id: string; name: string; userId?: string }[]>([]);
   const [customLevels, setCustomLevels] = useState([
@@ -79,10 +112,29 @@ function CoursesManagement() {
     { id: 'level5', name: '마스터', description: '전문가 수준', order: 5 }
   ]);
 
+  // === PT 관리 상태 ===
+  const [showStudentManagement, setShowStudentManagement] = useState(false);
+  const [showLessonProgress, setShowLessonProgress] = useState(false);
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>('');
+
+  // PT 관리 핸들러 함수들
+  const handleManageStudents = (instructorId: string) => {
+    setSelectedInstructorId(instructorId);
+    setShowStudentManagement(true);
+  };
+
+  const handleManageLessons = (instructorId: string, date: string) => {
+    setSelectedInstructorId(instructorId);
+    setSelectedDate(date);
+    setShowLessonProgress(true);
+  };
+
   useEffect(() => {
     if (user) {
       loadCourses();
       loadInstructors();
+      loadSchedules();
     }
   }, [user]);
 
@@ -90,30 +142,36 @@ function CoursesManagement() {
     try {
       setIsLoading(true);
       
-      // ✅ API 호출로 실제 DB 데이터 가져오기
-      const response = await fetch('http://localhost:5000/api/courses');
+      // ✅ 센터 관리자용 API 호출
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
+        throw new Error('토큰이 없습니다. 로그인이 필요합니다.');
+      }
+      
+      // 토큰 디코딩해서 내용 확인
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+        }
+      } catch (e) {
+        console.error('❌ 토큰 디코딩 실패:', e);
+      }
+      
+      const response = await fetch('http://localhost:5000/api/center-admin/courses', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch courses');
       }
       
       const data = await response.json();
-      console.log('📚 로드된 강습 과정:', data);
-      
-      // 🔍 원본 schedule 구조 확인 (전체)
-      console.log('🔍 원본 schedule 전체 확인:');
-      data.data.forEach((course: any, idx: number) => {
-        console.log(`\n  ${idx + 1}. ${course.name}:`);
-        console.log('     Schedule:', JSON.stringify(course.schedule, null, 2));
-        
-        // 배영 중급반 특별 확인
-        if (course.name.includes('배영')) {
-          console.warn('⚠️ 배영 중급반 상세:', {
-            name: course.name,
-            schedule: course.schedule,
-            scheduleCount: course.schedule?.length
-          });
-        }
-      });
+      console.log('📡 강습 과정 목록 API 응답:', data);
       
       // 영어 요일 → 한글 요일 변환
       const dayMap: { [key: string]: string } = {
@@ -128,6 +186,13 @@ function CoursesManagement() {
       
       // API 응답 데이터를 Course 타입에 맞게 변환
       const coursesData: Course[] = (data.data || []).map((course: any) => {
+        console.log('🔄 강습 과정 변환 전:', {
+          _id: course._id,
+          name: course.name,
+          instructorId: course.instructorId,
+          instructorName: course.instructorName,
+          instructor: course.instructor
+        });
         // schedule 필드 안전하게 처리 & 영어 → 한글 변환
         let schedule = [];
         if (Array.isArray(course.schedule) && course.schedule.length > 0) {
@@ -163,7 +228,7 @@ function CoursesManagement() {
           });
         }
         
-        return {
+        const transformedCourse = {
           _id: course._id,
           name: course.name || '제목 없음',
           description: course.description || '',
@@ -171,52 +236,33 @@ function CoursesManagement() {
           duration: course.duration || 60,
           maxStudents: course.maxStudents || 10,
           currentStudents: course.enrolledStudents?.filter((e: any) => e.status === 'active').length || 0,
-          instructorId: course.instructor?._id || course.instructor,
-          instructorName: course.instructor?.name || '강사 미배정',
+          instructorId: course.instructorId || course.instructor?._id || course.instructor,
+          instructorName: course.instructorName || course.instructor?.name || '강사 미배정',
           price: course.price || 0,
           schedule: schedule,
           status: course.isActive === false ? 'inactive' : 
                   (course.enrolledStudents?.filter((e: any) => e.status === 'active').length >= course.maxStudents ? 'full' : 'active'),
           createdAt: new Date(course.createdAt),
-          tags: course.tags || []
+          tags: course.tags || [],
+          // ⭐ 레인 정보 추가
+          poolType: course.poolType,
+          lanes: course.lanes,
+          laneInfo: course.laneInfo
         };
+        
+        console.log('✅ 강습 과정 변환 후:', {
+          _id: transformedCourse._id,
+          name: transformedCourse.name,
+          instructorId: transformedCourse.instructorId,
+          instructorName: transformedCourse.instructorName
+        });
+        
+        return transformedCourse;
       });
       
       setCourses(coursesData);
       
       // 📊 통계 정보 출력
-      console.log('📊 강습 과정 통계:', {
-        총과정: coursesData.length,
-        총학생: coursesData.reduce((sum, c) => sum + c.currentStudents, 0),
-        평균수업시간: coursesData.length > 0 ? Math.round(coursesData.reduce((sum, c) => sum + c.duration, 0) / coursesData.length) : 0,
-        활성과정: coursesData.filter(c => c.status === 'active').length
-      });
-      
-      // 📋 각 과정별 상세 정보
-      console.log('📋 강습 과정 목록:');
-      coursesData.forEach((course, index) => {
-        const days = course.schedule.map(s => s.dayOfWeek).filter(d => d).join(', ');
-        const hasSaturday = days.includes('토');
-        console.log(`  ${index + 1}. ${course.name} (${days || '⚠️ 요일 미설정'}) ${hasSaturday ? '🌟 토요일!' : ''} - ${course.duration}분 - ${course.level}`);
-      });
-      console.log(`\n💡 "월,수,금" 반은 1개 과정으로 카운트됩니다!`);
-      
-      // 토요일 강좌 통계
-      const saturdayCourses = coursesData.filter(c => 
-        c.schedule.some(s => s.dayOfWeek.includes('토'))
-      );
-      console.log(`🌟 토요일 강좌: ${saturdayCourses.length}개`, saturdayCourses.map(c => c.name));
-      
-      // ⚠️ 요일이 없는 과정 확인
-      const coursesWithoutSchedule = coursesData.filter(c => 
-        !c.schedule || c.schedule.length === 0 || !c.schedule.some(s => s.dayOfWeek)
-      );
-      if (coursesWithoutSchedule.length > 0) {
-        console.warn(`⚠️ 요일이 설정되지 않은 과정: ${coursesWithoutSchedule.length}개`);
-        coursesWithoutSchedule.forEach(c => {
-          console.warn(`   - ${c.name} (ID: ${c._id})`);
-        });
-      }
       
       // ✅ 임시 데이터 (DB에 데이터가 없을 경우 표시용)
       if (coursesData.length === 0) {
@@ -372,23 +418,39 @@ function CoursesManagement() {
   // 강사 목록 로드
   const loadInstructors = async () => {
     try {
+      console.log('👨‍🏫 강사 목록 로드 시작');
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/users/center-users?userType=instructor&limit=100', {
+      
+      if (!token) {
+        console.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
+        return;
+      }
+      
+      const response = await fetch('http://localhost:5000/api/center-admin/instructors', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
-        console.error('❌ 강사 목록 로드 실패');
+        console.error('❌ 강사 목록 로드 실패:', response.status, response.statusText);
         return;
       }
       
       const data = await response.json();
-      console.log('👨‍🏫 로드된 강사 목록:', data);
+      console.log('👨‍🏫 강사 목록 API 응답:', data);
       
       // 강사 데이터 변환 (_id, name, instructorType 포함)
-      const rawInstructors = data.data?.users || data.users || data.data || data || [];
+      const rawInstructors = data.data?.instructors || data.instructors || data.data || data || [];
+      console.log('👨‍🏫 원본 강사 데이터:', rawInstructors);
+      
+      // rawInstructors가 배열인지 확인
+      if (!Array.isArray(rawInstructors)) {
+        console.error('❌ 강사 데이터가 배열이 아닙니다:', rawInstructors);
+        setInstructors([]);
+        return;
+      }
+      
       const instructorList = rawInstructors
         .map((instructor: any) => ({
           _id: instructor._id,
@@ -398,15 +460,37 @@ function CoursesManagement() {
         }))
         .sort((a, b) => a.name.localeCompare(b.name, 'ko-KR')); // ⭐ 가나다순 정렬
       
+      console.log('👨‍🏫 변환된 강사 목록:', instructorList);
       setInstructors(instructorList);
-      console.log('✅ 강사 목록 설정 완료 (가나다순 정렬):', instructorList.length, '명');
-      
-      if (instructorList.length === 0) {
-        console.warn('⚠️ 강사가 없습니다. 강사를 먼저 등록해주세요!');
-      }
       
     } catch (error) {
       console.error('💥 강사 목록 로드 오류:', error);
+    }
+  };
+
+  // 확정된 스케줄 로드
+  const loadSchedules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/center-admin/schedules', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('❌ 스케줄 로드 실패');
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        // 확정된 스케줄만 필터링
+        const confirmedSchedules = data.data.filter((schedule: any) => schedule.status === 'confirmed');
+        setSchedules(confirmedSchedules);
+      }
+    } catch (error) {
+      console.error('💥 스케줄 로드 오류:', error);
     }
   };
 
@@ -470,7 +554,7 @@ function CoursesManagement() {
       }))
   ];
 
-  // 필터링된 과정 목록
+  // 필터링된 과정 목록 (레인 순서대로 정렬)
   const filteredCourses = courses.filter(course => {
     if (activeFilter === 'all') return true;
     
@@ -482,6 +566,16 @@ function CoursesManagement() {
     // 시간대 필터
     const timeCategory = getTimeCategory(course.schedule[0]?.startTime || '');
     return timeCategory === activeFilter;
+  }).sort((a, b) => {
+    // ⭐ 레인 순서대로 정렬
+    const aLanes = a.laneInfo?.assignedLanes || a.lanes || [];
+    const bLanes = b.laneInfo?.assignedLanes || b.lanes || [];
+    
+    // 첫 번째 레인 번호로 비교
+    const aFirstLane = aLanes.length > 0 ? aLanes[0] : 999;
+    const bFirstLane = bLanes.length > 0 ? bLanes[0] : 999;
+    
+    return aFirstLane - bFirstLane;
   });
 
   // 과정 추가 핸들러 (옵션: 요일/시간 지정)
@@ -560,6 +654,66 @@ function CoursesManagement() {
     }
   };
 
+  // 회원 배정 모달 열기
+  const handleOpenMemberAssignment = (course: Course) => {
+    console.log('🎯 handleOpenMemberAssignment 호출됨:', course);
+    setAssignmentCourse(course);
+    setShowMemberAssignmentModal(true);
+    console.log('🎯 회원 배정 모달 상태 업데이트:', {
+      assignmentCourse: course,
+      showMemberAssignmentModal: true
+    });
+  };
+
+  // 회원 배정 실행
+  const handleAssignMembers = async (memberIds: string[]) => {
+    if (!assignmentCourse) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      console.log('📝 회원 배정 시작:', {
+        memberIds: memberIds,
+        courseId: assignmentCourse._id,
+        courseName: assignmentCourse.name
+      });
+      
+      // 각 회원을 순차적으로 배정
+      for (const memberId of memberIds) {
+        console.log(`📝 회원 ${memberId} 배정 중...`);
+        
+        const response = await fetch(`http://localhost:5000/api/center-admin/members/${memberId}/course`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ courseId: assignmentCourse._id })
+        });
+
+        console.log(`📝 회원 ${memberId} 배정 응답:`, {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error(`❌ 회원 ${memberId} 배정 실패:`, errorData);
+          throw new Error(errorData.message || '회원 배정에 실패했습니다.');
+        }
+        
+        console.log(`✅ 회원 ${memberId} 배정 성공`);
+      }
+
+      alert(`${memberIds.length}명의 회원이 성공적으로 배정되었습니다.`);
+      loadCourses(); // 강습 과정 목록 새로고침
+    } catch (error) {
+      console.error('회원 배정 오류:', error);
+      alert(`회원 배정 중 오류가 발생했습니다: ${error.message}`);
+    }
+  };
+
   // 과정 저장 핸들러
   const handleSaveCourse = async (courseData: Course) => {
     try {
@@ -597,12 +751,6 @@ function CoursesManagement() {
       
       if (editingCourse && editingCourse._id) {
         // ✅ 수정 - PUT 요청
-        console.log('✏️ 강습 과정 수정:', courseData);
-        console.log('👨‍🏫 선택된 강사:', {
-          instructorId: courseData.instructorId,
-          instructorName: courseData.instructorName
-        });
-        console.log('🏷️ 태그:', courseData.tags);
         
         const response = await fetch(`http://localhost:5000/api/courses/${editingCourse._id}`, {
           method: 'PUT',
@@ -619,7 +767,10 @@ function CoursesManagement() {
             maxStudents: courseData.maxStudents,
             instructorId: courseData.instructorId, // ⭐ 강사 ID 추가
             schedule: scheduleForDB,
-            tags: courseData.tags
+            tags: courseData.tags,
+            poolType: courseData.poolType, // ⭐ 풀 타입 추가
+            lanes: courseData.lanes, // ⭐ 레인 배열 추가
+            laneInfo: courseData.laneInfo // ⭐ 레인 정보 추가
           })
         });
         
@@ -630,7 +781,6 @@ function CoursesManagement() {
         }
         
         const data = await response.json();
-        console.log('✅ 수정 완료:', data);
         
         // 전체 목록 새로고침
         await loadCourses();
@@ -638,8 +788,6 @@ function CoursesManagement() {
         
       } else {
         // ✅ 추가 - POST 요청
-        console.log('➕ 강습 과정 추가:', courseData);
-        
         const requestBody = {
           name: courseData.name,
           description: courseData.description || '강습 과정 설명',
@@ -648,13 +796,19 @@ function CoursesManagement() {
           price: courseData.price,
           maxStudents: courseData.maxStudents,
           instructorId: courseData.instructorId,
+          instructorName: courseData.instructorName, // ⭐ 강사 이름 추가
           schedule: scheduleForDB,
-          tags: courseData.tags
+          tags: courseData.tags,
+          poolType: courseData.poolType, // ⭐ 풀 타입 추가
+          lanes: courseData.lanes, // ⭐ 레인 배열 추가
+          laneInfo: courseData.laneInfo, // ⭐ 레인 정보 추가
+          courseType: courseData.courseType || 'group', // ⭐ 과정 타입 추가
+          isPersonalLesson: courseData.isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+          startDate: courseData.startDate, // ⭐ 시작일 추가
+          endDate: courseData.endDate // ⭐ 종료일 추가
         };
         
-        console.log('📤 서버로 전송할 데이터:', requestBody);
-        console.log('📅 schedule (변환됨):', scheduleForDB);
-        console.log('🏷️ 태그:', courseData.tags);
+        console.log('📡 강습 과정 생성 요청:', requestBody);
         
         const response = await fetch('http://localhost:5000/api/courses', {
           method: 'POST',
@@ -664,6 +818,8 @@ function CoursesManagement() {
           },
           body: JSON.stringify(requestBody)
         });
+        
+        console.log('📡 응답 상태:', response.status);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -704,11 +860,11 @@ function CoursesManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6 mb-8">
         <StatCard
           icon="📚"
           title="총 과정"
-          value={`${courses.length}개`}
+          value={`${courses.filter(c => !c.isPersonalLesson).length}개`}
           color="blue"
         />
         <StatCard
@@ -729,8 +885,14 @@ function CoursesManagement() {
         <StatCard
           icon="⭐"
           title="활성 과정"
-          value={`${courses.filter(course => course.status === 'active').length}개`}
+          value={`${courses.filter(course => course.status === 'active' && !course.isPersonalLesson).length}개`}
           color="yellow"
+        />
+        <StatCard
+          icon="👤"
+          title="개인레슨"
+          value={`${courses.filter(course => course.isPersonalLesson).length}개`}
+          color="purple"
         />
       </div>
 
@@ -773,6 +935,7 @@ function CoursesManagement() {
       {viewMode === 'calendar' && (
         <WeeklyCalendar
           courses={filteredCourses}
+          schedules={schedules} // 확정된 스케줄 데이터 전달
           onCourseClick={handleEditCourse}
           onEmptySlotClick={(day, time) => {
             console.log('빈 슬롯 클릭:', day, time);
@@ -799,7 +962,15 @@ function CoursesManagement() {
           </div>
 
           {/* 과정 카드 그리드 - 반응형 */}
-          {filteredCourses.length > 0 ? (
+          {(() => {
+            console.log('🔍 filteredCourses 확인:', {
+              filteredCoursesLength: filteredCourses.length,
+              filteredCourses: filteredCourses,
+              coursesLength: courses.length,
+              courses: courses
+            });
+            return filteredCourses.length > 0;
+          })() ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredCourses.map((course) => (
                 <CourseCard
@@ -808,6 +979,7 @@ function CoursesManagement() {
                   levelName={getLevelName(course.level)}
                   onEdit={handleEditCourse}
                   onDelete={handleDeleteCourse}
+                  onAssignMembers={handleOpenMemberAssignment}
                 />
               ))}
             </div>
@@ -836,7 +1008,40 @@ function CoursesManagement() {
         course={editingCourse}
         instructors={instructors}
         customLevels={allLevels}
+        onAssignMembers={handleOpenMemberAssignment}
       />
+
+      {/* 회원 배정 모달 */}
+      <CourseMemberAssignmentModal
+        isOpen={showMemberAssignmentModal}
+        onClose={() => {
+          setShowMemberAssignmentModal(false);
+          setAssignmentCourse(null);
+        }}
+        course={assignmentCourse}
+        onAssignMembers={handleAssignMembers}
+      />
+
+      {/* PT 관리 컴포넌트들 */}
+      {showStudentManagement && (
+        <InstructorStudentManagement
+          instructorId={selectedInstructorId}
+          onClose={() => setShowStudentManagement(false)}
+          onManageLessons={handleManageLessons}
+        />
+      )}
+
+      {showLessonProgress && (
+        <PTLessonProgress
+          instructorId={selectedInstructorId}
+          selectedDate={selectedDate}
+          onClose={() => setShowLessonProgress(false)}
+          onBack={() => {
+            setShowLessonProgress(false);
+            setShowStudentManagement(true);
+          }}
+        />
+      )}
     </div>
   );
 }

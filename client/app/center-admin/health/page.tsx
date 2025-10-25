@@ -122,7 +122,13 @@ export default function CenterAdminHealthPage() {
       return;
     }
     
-    if (!user || user.userType !== 'centerAdmin') {
+    // center@swim.com 계정도 센터 관리자로 인식
+    const isCenterAdmin = user && (
+      ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+      user.email === 'center@swim.com'
+    );
+    
+    if (!isCenterAdmin) {
       console.error('🚫 센터관리자 권한이 필요합니다.');
       return;
     }
@@ -262,8 +268,14 @@ export default function CenterAdminHealthPage() {
     { id: 'programs' as const, label: '🏊‍♂️ 프로그램', icon: '🏊‍♂️' }
   ];
 
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+
   // 권한이 없는 경우 접근 거부
-  if (!loading && (!user || user.userType !== 'centerAdmin')) {
+  if (!loading && !isCenterAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

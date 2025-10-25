@@ -35,11 +35,11 @@ const requireRole = (role) => {
 };
 exports.requireRole = requireRole;
 exports.requireSuperAdmin = (0, exports.roleMiddleware)(['superAdmin']);
-exports.requireCenterAdmin = (0, exports.roleMiddleware)(['centerAdmin']);
+exports.requireCenterAdmin = (0, exports.roleMiddleware)(['centerAdmin', 'center-admin']);
 exports.requireInstructor = (0, exports.roleMiddleware)(['instructor']);
 exports.requireStudent = (0, exports.roleMiddleware)(['student']);
 exports.requireAdmin = (0, exports.roleMiddleware)(['superAdmin', 'centerAdmin']);
-exports.requireInstructorOrAdmin = (0, exports.roleMiddleware)(['instructor', 'superAdmin', 'centerAdmin']);
+exports.requireInstructorOrAdmin = (0, exports.roleMiddleware)(['instructor', 'superAdmin', 'centerAdmin', 'center-admin']);
 const requireAuthenticated = (req, res, next) => {
     if (!req.user) {
         return res.status(401).json({

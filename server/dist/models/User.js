@@ -46,7 +46,7 @@ const userSchema = new mongoose_1.default.Schema({
     },
     userType: {
         type: String,
-        enum: ['student', 'instructor', 'centerAdmin', 'superAdmin'],
+        enum: ['student', 'instructor', 'centerAdmin', 'center-admin', 'superAdmin'],
         default: 'student',
     },
     level: {
@@ -147,6 +147,11 @@ const userSchema = new mongoose_1.default.Schema({
         }
     },
     instructorInfo: {
+        instructorType: {
+            type: String,
+            enum: ['instructor', 'lifeguard'],
+            default: 'instructor'
+        },
         experience: { type: String, default: '' },
         certifications: [{ type: String }],
         specialties: [{ type: String }],
@@ -159,6 +164,39 @@ const userSchema = new mongoose_1.default.Schema({
         assignedInstructor: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
         maxStudents: { type: Number, default: 20 },
         currentStudents: { type: Number, default: 0 },
+        workSchedule: {
+            daysOfWeek: [{ type: Number, min: 0, max: 6 }],
+            timeSlots: [{ type: String }]
+        },
+        salaryInfo: {
+            type: {
+                type: String,
+                enum: ['monthly', 'hourly', 'per-class'],
+                default: 'monthly'
+            },
+            amount: { type: Number, default: 0 },
+            currency: { type: String, default: 'KRW' },
+            incentive: { type: Number, default: 0 }
+        },
+        memo: { type: String, default: '' },
+        hiredAt: { type: Date },
+        contractType: {
+            type: String,
+            enum: ['full-time', 'part-time', 'contract', 'freelance'],
+            default: 'full-time'
+        },
+        employmentHistory: [{
+                centerId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'SwimmingCenter' },
+                centerName: { type: String, required: true },
+                startDate: { type: Date, required: true },
+                endDate: { type: Date, required: true },
+                position: { type: String, default: '강사' },
+                rating: { type: Number, min: 0, max: 5, default: 0 },
+                totalClasses: { type: Number, default: 0 },
+                totalStudents: { type: Number, default: 0 },
+                leaveReason: { type: String, default: '' },
+                memo: { type: String, default: '' }
+            }]
     },
     centerAdminInfo: {
         managedCenters: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Center' }],

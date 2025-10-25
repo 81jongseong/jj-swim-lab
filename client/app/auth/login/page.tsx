@@ -96,7 +96,7 @@ import { useAuth } from '../../../hooks/useAuth';
 
 export default function LoginPage() {
   const [form, setForm] = useState({
-    userId: '',
+    email: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +113,7 @@ export default function LoginPage() {
     
     try {
       // useAuth 훅의 login 함수 사용
-      await login(form.userId, form.password);
+      await login(form.email, form.password);
       
       // 로그인 성공 후 사용자 타입에 따라 적절한 페이지로 이동
       console.log('로그인 성공');
@@ -126,6 +126,7 @@ export default function LoginPage() {
             window.location.href = '/admin/dashboard';
             break;
           case 'centerAdmin':
+          case 'center-admin':
             window.location.href = '/center-admin/dashboard';
             break;
           case 'instructor':
@@ -159,18 +160,18 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">
-                아이디
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                이메일
               </label>
               <input
-                type="text"
-                id="userId"
-                name="userId"
+                type="email"
+                id="email"
+                name="email"
                 required
-                value={form.userId}
+                value={form.email}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="아이디를 입력하세요"
+                placeholder="이메일을 입력하세요"
               />
             </div>
 

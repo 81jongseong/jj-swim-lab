@@ -1,7 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import SpawnProc from '../utils/spawnProc';
+
+const router = Router();
 
 export interface PipelineRequest {
   videoPath: string;
@@ -300,8 +302,9 @@ export async function downloadPipelineResult(req: Request, res: Response): Promi
   }
 }
 
-export default {
-  runPipeline,
-  checkPipelineStatus,
-  downloadPipelineResult
-};
+// 라우트 등록
+router.post('/run', runPipeline);
+router.get('/status/:jobId', checkPipelineStatus);
+router.get('/download/:jobId', downloadPipelineResult);
+
+export default router;

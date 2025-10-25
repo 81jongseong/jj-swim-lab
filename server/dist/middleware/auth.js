@@ -47,7 +47,14 @@ exports.verifyToken = verifyToken;
 const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
+        console.log('🔍 Authorization 헤더 확인:', {
+            hasAuthHeader: !!authHeader,
+            authHeader: authHeader ? authHeader.substring(0, 50) + '...' : 'none',
+            endpoint: req.originalUrl,
+            method: req.method
+        });
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log('❌ Authorization 헤더 없음 또는 Bearer 형식 아님');
             return res.status(401).json({
                 error: '인증이 필요합니다.',
                 message: 'Bearer 토큰을 제공해주세요.',
@@ -58,7 +65,8 @@ const authMiddleware = async (req, res, next) => {
             tokenLength: token.length,
             tokenStart: token.substring(0, 20) + '...',
             secretLength: JWT_SECRET.length,
-            endpoint: req.originalUrl
+            endpoint: req.originalUrl,
+            method: req.method
         });
         const decoded = await (0, exports.verifyToken)(token, JWT_SECRET);
         console.log('🔍 JWT 토큰 디코딩 결과:', {
@@ -192,7 +200,7 @@ const requireCenterAdmin = (req, res, next) => {
             message: '로그인해주세요.',
         });
     }
-    if (!['admin', 'center_admin'].includes(user.userType)) {
+    if (!['admin', 'center_admin', 'centerAdmin'].includes(user.userType)) {
         console.warn('센터 관리자 권한 없는 접근 시도:', {
             userId: user.id,
             userType: user.userType,

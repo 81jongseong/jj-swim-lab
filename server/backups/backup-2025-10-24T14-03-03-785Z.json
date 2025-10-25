@@ -1,0 +1,1126 @@
+{
+  "timestamp": "2025-10-24T14:03:03.786Z",
+  "version": "1.0.0",
+  "collections": {
+    "users": [
+      {
+        "_id": "68fa9a99c5b9b092b4957a7b",
+        "name": "김철수",
+        "email": "kim.student@example.com",
+        "phone": "010-1111-2222",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "beginner",
+          "emergencyContact": "010-1111-2223",
+          "medicalInfo": "없음",
+          "swimmingExperience": "초보자",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "자유형 배우기"
+          ],
+          "centerMemo": "메모메모",
+          "centerMemos": [
+            {
+              "content": "메모",
+              "type": "info",
+              "createdBy": "68ef52011b4f8cb0795fd1c6",
+              "createdByName": "정종성",
+              "createdAt": "2025-10-24T03:13:55.833Z",
+              "_id": "68faeef34e1136d878a4af05"
+            },
+            {
+              "content": "메모메모",
+              "type": "info",
+              "createdBy": "68ef52011b4f8cb0795fd1c6",
+              "createdByName": "정종성",
+              "createdAt": "2025-10-24T04:26:36.886Z",
+              "_id": "68fafffc4e1136d878a4afc0"
+            }
+          ],
+          "completedCourses": [],
+          "enrolledCourses": [],
+          "levelChangeHistory": [],
+          "medicalConditions": "",
+          "status": "active",
+          "swimmingLevel": "beginner",
+          "swimmingProfile": {
+            "conditionIds": [],
+            "excludedStrokes": [],
+            "lastRacePlan": {
+              "raceEvents": []
+            },
+            "mainStrokes": [],
+            "pendingChanges": {
+              "excludedStrokes": [],
+              "mainStrokes": [],
+              "preferredStrokes": [],
+              "trainingDays": []
+            },
+            "poolLength": 25,
+            "preferredStrokes": [],
+            "sessionDuration": 60,
+            "sessionsPerWeek": 3,
+            "trainingDays": []
+          }
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 4,
+        "updatedAt": "2025-10-24T10:58:13.444Z",
+        "accessPermissions": {
+          "bookings": true,
+          "courses": true,
+          "dashboard": true,
+          "evaluations": true,
+          "notices": true,
+          "payments": true,
+          "progress": true,
+          "reports": false,
+          "systemSettings": false,
+          "userManagement": false
+        },
+        "address": "",
+        "centerAdminInfo": {
+          "adminLevel": "assistant",
+          "managedCenters": [],
+          "permissions": {
+            "canManageBookings": true,
+            "canManageCourses": true,
+            "canManageNotices": true,
+            "canManagePayments": true,
+            "canManageUsers": false,
+            "canViewReports": true
+          }
+        },
+        "featureSequence": {
+          "availableSteps": [],
+          "completedSteps": [],
+          "currentStep": "dashboard"
+        },
+        "instructorInfo": {
+          "assignedCenters": [],
+          "certifications": [],
+          "contractType": "full-time",
+          "currentStudents": 0,
+          "employmentHistory": [],
+          "experience": "",
+          "instructorLevel": "junior",
+          "instructorType": "instructor",
+          "maxStudents": 20,
+          "memo": "",
+          "salaryInfo": {
+            "amount": 0,
+            "currency": "KRW",
+            "incentive": 0,
+            "type": "monthly"
+          },
+          "specialties": [],
+          "workSchedule": {
+            "daysOfWeek": [],
+            "timeSlots": []
+          }
+        },
+        "isActive": true,
+        "level": "beginner",
+        "location": {
+          "type": "Point"
+        },
+        "statusHistory": [],
+        "superAdminInfo": {
+          "adminLevel": "admin",
+          "systemPermissions": {
+            "canManageAllCenters": true,
+            "canManageAllUsers": true,
+            "canManageSkillTemplates": true,
+            "canManageSystemSettings": true,
+            "canViewAllReports": true
+          }
+        }
+      },
+      {
+        "_id": "68fa9a99c5b9b092b4957a7c",
+        "name": "이영희",
+        "email": "lee.student@example.com",
+        "phone": "010-2222-3333",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "beginner",
+          "emergencyContact": "010-2222-3334",
+          "medicalInfo": "없음",
+          "swimmingExperience": "초보자",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "자유형 배우기"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9a99c5b9b092b4957a7d",
+        "name": "박민수",
+        "email": "park.student@example.com",
+        "phone": "010-3333-4444",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "intermediate",
+          "emergencyContact": "010-3333-4445",
+          "medicalInfo": "무릎 부상 이력",
+          "swimmingExperience": "1년",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "배영 완성하기"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9a99c5b9b092b4957a7e",
+        "name": "최지영",
+        "email": "choi.student@example.com",
+        "phone": "010-4444-5555",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "intermediate",
+          "emergencyContact": "010-4444-5556",
+          "medicalInfo": "없음",
+          "swimmingExperience": "1년",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "배영 완성하기"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9a99c5b9b092b4957a7f",
+        "name": "정현우",
+        "email": "jung.student@example.com",
+        "phone": "010-5555-6666",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "advanced",
+          "emergencyContact": "010-5555-6667",
+          "medicalInfo": "없음",
+          "swimmingExperience": "3년",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "접영 마스터하기"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9a99c5b9b092b4957a80",
+        "name": "한소영",
+        "email": "han.student@example.com",
+        "phone": "010-6666-7777",
+        "userType": "student",
+        "centerId": "68f10983ccca24669078e1b4",
+        "studentInfo": {
+          "level": "advanced",
+          "emergencyContact": "010-6666-7778",
+          "medicalInfo": "없음",
+          "swimmingExperience": "3년",
+          "preferredTimes": [
+            "저녁"
+          ],
+          "goals": [
+            "접영 마스터하기"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9ac9763b25724e74ff48",
+        "name": "김수영",
+        "email": "kim.instructor@example.com",
+        "phone": "010-1234-5678",
+        "userType": "instructor",
+        "centerId": "68f10983ccca24669078e1b4",
+        "instructorInfo": {
+          "instructorLevel": "master",
+          "maxStudents": 20,
+          "workSchedule": {
+            "daysOfWeek": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "timeSlots": [
+              "09:00-18:00"
+            ]
+          },
+          "salaryInfo": {
+            "type": "monthly",
+            "amount": 3500000,
+            "currency": "KRW",
+            "incentive": 10
+          },
+          "memo": "테스트 업데이트 - 2025. 10. 24. 오후 3:54:26",
+          "hiredAt": "2025-10-24T05:53:11.477Z",
+          "contractType": "full-time",
+          "specialties": [
+            "자유형",
+            "배영"
+          ],
+          "certifications": [
+            "수영지도사 1급",
+            "생존수영지도사"
+          ]
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9ac9763b25724e74ff49",
+        "name": "박수영",
+        "email": "park.instructor@example.com",
+        "phone": "010-3333-4444",
+        "userType": "instructor",
+        "centerId": "68f10983ccca24669078e1b4",
+        "instructorInfo": {
+          "experience": 3,
+          "specialties": [
+            "평영",
+            "접영",
+            "단체반"
+          ],
+          "certifications": [
+            "수영지도사 2급"
+          ],
+          "rating": 4.6,
+          "assignedCenters": [
+            "68f10983ccca24669078e1b4"
+          ],
+          "maxStudents": 8,
+          "lessonTypes": [
+            "group",
+            "personal"
+          ],
+          "skillLevels": [
+            "beginner",
+            "intermediate",
+            "advanced"
+          ],
+          "price": 45000,
+          "currentBookings": 0,
+          "pricingType": "per_session",
+          "singleSessionPrice": 45000,
+          "packageOptions": [
+            {
+              "name": "5회 패키지",
+              "sessions": 5,
+              "price": 202500,
+              "discount": 10
+            },
+            {
+              "name": "10회 패키지",
+              "sessions": 10,
+              "price": 360000,
+              "discount": 20
+            }
+          ],
+          "expirationDays": 30,
+          "lessonDuration": 60,
+          "bufferTime": 15,
+          "weeklySchedule": {
+            "monday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "tuesday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "wednesday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "thursday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "friday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "saturday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "20:00"
+            },
+            "sunday": {
+              "available": false,
+              "startTime": "",
+              "endTime": ""
+            }
+          }
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fa9ac9763b25724e74ff4a",
+        "name": "이수영",
+        "email": "lee.instructor@example.com",
+        "phone": "010-5555-6666",
+        "userType": "instructor",
+        "centerId": "68f10983ccca24669078e1b4",
+        "instructorInfo": {
+          "experience": 7,
+          "specialties": [
+            "자유형",
+            "배영",
+            "접영",
+            "개인레슨"
+          ],
+          "certifications": [
+            "수영지도사 1급",
+            "생존수영지도사",
+            "수상안전지도사"
+          ],
+          "rating": 4.9,
+          "assignedCenters": [
+            "68f10983ccca24669078e1b4"
+          ],
+          "maxStudents": 12,
+          "lessonTypes": [
+            "group",
+            "personal"
+          ],
+          "skillLevels": [
+            "beginner",
+            "intermediate",
+            "advanced"
+          ],
+          "price": 60000,
+          "currentBookings": 0,
+          "pricingType": "per_session",
+          "singleSessionPrice": 60000,
+          "packageOptions": [
+            {
+              "name": "5회 패키지",
+              "sessions": 5,
+              "price": 270000,
+              "discount": 10
+            },
+            {
+              "name": "10회 패키지",
+              "sessions": 10,
+              "price": 480000,
+              "discount": 20
+            }
+          ],
+          "expirationDays": 30,
+          "lessonDuration": 60,
+          "bufferTime": 15,
+          "weeklySchedule": {
+            "monday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "tuesday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "wednesday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "thursday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "friday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "22:00"
+            },
+            "saturday": {
+              "available": true,
+              "startTime": "09:00",
+              "endTime": "20:00"
+            },
+            "sunday": {
+              "available": false,
+              "startTime": "",
+              "endTime": ""
+            }
+          }
+        },
+        "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "__v": 0
+      },
+      {
+        "_id": "68fb7efd56b41a057beef8c4",
+        "name": "센터 관리자",
+        "email": "admin@jjswimlab.com",
+        "password": "$2a$10$SE8aPoF0zD37IqPdfDwvou9bcNYGFZOAaO.vFBEGVBQdc3nltd16q",
+        "userType": "centerAdmin",
+        "centerId": "68f10983ccca24669078e1b4",
+        "accessPermissions": {
+          "dashboard": true,
+          "courses": true,
+          "bookings": true,
+          "payments": true,
+          "notices": true,
+          "progress": true,
+          "evaluations": true,
+          "reports": true,
+          "userManagement": true,
+          "systemSettings": false,
+          "aiConfigManagement": false
+        },
+        "isActive": true
+      },
+      {
+        "_id": "68fb7f41fd45f5e7bfdcda56",
+        "name": "센터 관리자",
+        "email": "center-admin@jjswimlab.com",
+        "password": "$2a$10$fL81eezklOde4nGjG8RAb.RkVo3k4YlCnUiojih8GjgJK10gY.rwa",
+        "phone": "010-1234-5678",
+        "userType": "center-admin",
+        "centerAdminInfo": {
+          "managedCenters": [
+            "68fb75b111747a8229d6cf5d"
+          ],
+          "permissions": [
+            "read",
+            "write",
+            "delete"
+          ],
+          "role": "admin"
+        },
+        "isActive": true,
+        "emailVerified": true,
+        "createdAt": "2025-10-24T13:29:37.306Z",
+        "updatedAt": "2025-10-24T13:29:37.306Z",
+        "__v": 0
+      }
+    ],
+    "centers": [
+      {
+        "_id": "68f10983ccca24669078e1b4",
+        "name": "JJ 수영장 강남점",
+        "address": "서울시 강남구 테헤란로 123",
+        "phone": "02-1234-5678",
+        "email": "info@jjswim.com",
+        "managerId": "68ef52011b4f8cb0795fd1c6",
+        "poolConfiguration": {
+          "mainPool": {
+            "name": "메인 풀",
+            "lanes": 6,
+            "depth": "1.2m~1.8m",
+            "size": "25m x 15m"
+          },
+          "kidsPool": {
+            "name": "유아 풀",
+            "lanes": 2,
+            "depth": "0.8m~1.0m",
+            "size": "10m x 5m"
+          },
+          "auxiliaryPool": {
+            "name": "보조 풀",
+            "lanes": 0,
+            "depth": "1.0m~1.5m",
+            "size": "15m x 8m"
+          }
+        },
+        "operatingHours": {
+          "open": "09:00",
+          "close": "22:00",
+          "days": [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday"
+          ]
+        },
+        "status": "active",
+        "__v": 0
+      },
+      {
+        "_id": "68fb75b111747a8229d6cf5d",
+        "name": "JJ Swim Center",
+        "address": "서울시 강남구 테헤란로 123",
+        "phone": "02-1234-5678",
+        "email": "center@swim.com",
+        "managerId": "68fb75b111747a8229d6cf5c",
+        "instructors": [],
+        "students": [],
+        "courses": [],
+        "capacity": 100,
+        "status": "active",
+        "facilities": [
+          "25m 풀",
+          "유아풀",
+          "샤워실",
+          "락커룸"
+        ],
+        "poolConfiguration": {
+          "mainPool": {
+            "name": "메인 풀",
+            "lanes": 6,
+            "depth": "1.2m~1.8m",
+            "size": "25m x 15m"
+          },
+          "kidsPool": {
+            "name": "유아 풀",
+            "lanes": 2,
+            "depth": "0.8m~1.0m",
+            "size": "10m x 5m"
+          },
+          "auxiliaryPool": {
+            "name": "보조 풀",
+            "lanes": 0,
+            "depth": "1.0m~1.5m",
+            "size": "15m x 8m"
+          }
+        },
+        "operatingHours": {
+          "open": "06:00",
+          "close": "22:00",
+          "days": [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday"
+          ]
+        },
+        "introduction": {
+          "pricing": {
+            "membershipFees": [],
+            "lessonFees": []
+          },
+          "visibility": {
+            "isPublic": true,
+            "showToMembers": true,
+            "showToInstructors": true,
+            "lastUpdated": "2025-10-24T12:48:49.074Z"
+          },
+          "shortDescription": "",
+          "fullDescription": "",
+          "features": [],
+          "certifications": [],
+          "images": [],
+          "achievements": [],
+          "specialPrograms": [],
+          "targetAudience": [],
+          "philosophy": "",
+          "history": "",
+          "staff": []
+        },
+        "createdAt": "2025-10-24T12:48:49.078Z",
+        "updatedAt": "2025-10-24T12:48:49.078Z",
+        "__v": 0
+      }
+    ],
+    "courses": [
+      {
+        "_id": "68fa9b24153831493da11f97",
+        "name": "초급",
+        "description": "자유형 기초를 배우는 초급자 대상 반입니다. 자유형의 기본 자세와 호흡법을 익히고, 안전한 수영을 배웁니다.",
+        "level": "beginner",
+        "duration": 60,
+        "maxStudents": 15,
+        "currentStudents": 2,
+        "price": 80000,
+        "instructor": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "classInfo": {
+          "className": "초급 자유형 기초반 A",
+          "classType": "regular",
+          "startDate": "2025-10-23T21:16:20.612Z",
+          "endDate": "2025-11-22T21:16:20.612Z",
+          "maxCapacity": 8,
+          "currentEnrollment": 0
+        },
+        "isPersonalLesson": false,
+        "courseType": "group",
+        "startDate": "2025-10-23T21:16:20.612Z",
+        "endDate": "2025-11-22T21:16:20.612Z",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68fb60e8652212de9911c355"
+          },
+          {
+            "day": "wednesday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68fb60e8652212de9911c356"
+          },
+          {
+            "day": "friday",
+            "startTime": "19:00",
+            "endTime": "20:00",
+            "_id": "68fb60e8652212de9911c357"
+          }
+        ],
+        "lanes": [
+          1,
+          2
+        ],
+        "poolType": "mainPool",
+        "enrolledStudents": [
+          {
+            "progress": {
+              "percentage": 0,
+              "notes": "",
+              "completedSteps": [],
+              "lastUpdated": "2025-10-24T10:58:02.992Z"
+            },
+            "student": "68fa9a99c5b9b092b4957a7b",
+            "status": "active",
+            "_id": "68fb5bbac9396e6c8a9a5920",
+            "enrolledAt": "2025-10-24T10:58:02.992Z"
+          },
+          {
+            "student": "68fa9a99c5b9b092b4957a7c",
+            "status": "active",
+            "progress": {
+              "percentage": 0,
+              "notes": "",
+              "completedSteps": [],
+              "lastUpdated": "2025-10-24T11:16:49.400Z"
+            },
+            "_id": "68fb6021652212de9911c1ca",
+            "enrolledAt": "2025-10-24T11:16:49.400Z"
+          }
+        ],
+        "createdAt": "2025-10-23T21:16:20.612Z",
+        "updatedAt": "2025-10-24T11:20:08.331Z",
+        "__v": 3,
+        "tags": [],
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "isActive": true,
+        "laneInfo": {
+          "assignedLanes": [],
+          "laneNotes": "",
+          "maxLanes": 1
+        },
+        "teachingMethods": []
+      },
+      {
+        "_id": "68fa9b24153831493da11f98",
+        "name": "중급 배영 완성반",
+        "description": "배영을 완성하는 중급자 대상 반입니다. 배영의 정확한 자세와 스트로크를 익히고, 지속적인 수영 능력을 기릅니다.",
+        "level": "intermediate",
+        "duration": 60,
+        "maxStudents": 6,
+        "currentStudents": 2,
+        "price": 90000,
+        "instructor": "68fa9ac9763b25724e74ff49",
+        "instructorName": "박수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "classInfo": {
+          "className": "중급 배영 완성반 A",
+          "classType": "regular",
+          "startDate": "2025-10-23T21:16:20.613Z",
+          "endDate": "2025-11-22T21:16:20.613Z",
+          "maxCapacity": 6,
+          "currentEnrollment": 0
+        },
+        "isPersonalLesson": false,
+        "courseType": "group",
+        "startDate": "2025-10-23T21:16:20.613Z",
+        "endDate": "2025-11-22T21:16:20.613Z",
+        "schedule": [
+          {
+            "day": "tuesday",
+            "startTime": "20:00",
+            "endTime": "21:00"
+          },
+          {
+            "day": "thursday",
+            "startTime": "20:00",
+            "endTime": "21:00"
+          }
+        ],
+        "lanes": [
+          3,
+          4
+        ],
+        "poolType": "mainPool",
+        "enrolledStudents": [
+          "68fa9a99c5b9b092b4957a7d",
+          "68fa9a99c5b9b092b4957a7e"
+        ],
+        "createdAt": "2025-10-23T21:16:20.613Z",
+        "updatedAt": "2025-10-23T21:16:20.613Z",
+        "__v": 1,
+        "instructorId": "68fa9ac9763b25724e74ff49"
+      },
+      {
+        "_id": "68fa9b24153831493da11f99",
+        "name": "고급 접영 마스터반",
+        "description": "접영을 마스터하는 고급자 대상 반입니다. 접영의 고급 기술과 스피드를 익히고, 경쟁 수영을 준비합니다.",
+        "level": "advanced",
+        "duration": 60,
+        "maxStudents": 4,
+        "currentStudents": 2,
+        "price": 100000,
+        "instructor": "68fa9ac9763b25724e74ff4a",
+        "instructorName": "이수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "classInfo": {
+          "className": "고급 접영 마스터반 A",
+          "classType": "regular",
+          "startDate": "2025-10-23T21:16:20.613Z",
+          "endDate": "2025-11-22T21:16:20.613Z",
+          "maxCapacity": 4,
+          "currentEnrollment": 0
+        },
+        "isPersonalLesson": false,
+        "courseType": "group",
+        "startDate": "2025-10-23T21:16:20.613Z",
+        "endDate": "2025-11-22T21:16:20.613Z",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "21:00",
+            "endTime": "22:00"
+          },
+          {
+            "day": "wednesday",
+            "startTime": "21:00",
+            "endTime": "22:00"
+          },
+          {
+            "day": "friday",
+            "startTime": "21:00",
+            "endTime": "22:00"
+          }
+        ],
+        "lanes": [
+          5,
+          6
+        ],
+        "poolType": "mainPool",
+        "enrolledStudents": [
+          "68fa9a99c5b9b092b4957a7f",
+          "68fa9a99c5b9b092b4957a80"
+        ],
+        "createdAt": "2025-10-23T21:16:20.613Z",
+        "updatedAt": "2025-10-23T21:16:20.613Z",
+        "__v": 1,
+        "instructorId": "68fa9ac9763b25724e74ff4a"
+      },
+      {
+        "_id": "68fb24ce93a6078f2bc6697b",
+        "name": "개인 레슨",
+        "description": "강습 과정 설명",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 1,
+        "instructor": "68fa9ac9763b25724e74ff48",
+        "centerId": "68f10983ccca24669078e1b4",
+        "classInfo": {
+          "className": "개인 레슨",
+          "classType": "regular",
+          "startDate": "2025-10-24T07:03:42.758Z",
+          "endDate": "2026-01-22T07:03:42.758Z",
+          "maxCapacity": 1,
+          "currentEnrollment": 0
+        },
+        "schedule": [
+          {
+            "day": "tuesday",
+            "startTime": "07:00",
+            "endTime": "08:00",
+            "_id": "68fb592cc7061fc03632d8ba"
+          },
+          {
+            "day": "thursday",
+            "startTime": "07:00",
+            "endTime": "08:00",
+            "_id": "68fb592cc7061fc03632d8bb"
+          }
+        ],
+        "poolType": "mainPool",
+        "lanes": [
+          1
+        ],
+        "laneInfo": {
+          "assignedLanes": [
+            1
+          ],
+          "maxLanes": 1,
+          "laneNotes": ""
+        },
+        "isActive": true,
+        "startDate": "2025-10-24T07:03:42.674Z",
+        "endDate": "2025-11-24T07:03:42.674Z",
+        "tags": [],
+        "teachingMethods": [],
+        "enrolledStudents": [],
+        "createdAt": "2025-10-24T07:03:42.762Z",
+        "updatedAt": "2025-10-24T10:47:08.817Z",
+        "__v": 0,
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영"
+      },
+      {
+        "_id": "68fb2737e65bb2b1c22e8398",
+        "name": "테스트 강습 과정",
+        "description": "강사 정보가 포함된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructor": "68fa9ac9763b25724e74ff48",
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb288c0189e603306877ad",
+        "name": "API 테스트 강습 과정",
+        "description": "API를 통해 생성된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructor": "68fa9ac9763b25724e74ff48",
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb348836466b156792f334",
+        "name": "강사 배정 테스트 강습 과정",
+        "description": "강사 배정이 제대로 되는지 테스트하는 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructor": "68fa9ac9763b25724e74ff48",
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb350234101ff8c329b3ac",
+        "name": "API 테스트 강습 과정",
+        "description": "API를 통해 생성된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb3521e767b141cb05d185",
+        "name": "API 테스트 강습 과정",
+        "description": "API를 통해 생성된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb35308218a451181da2a1",
+        "name": "API 테스트 강습 과정",
+        "description": "API를 통해 생성된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      },
+      {
+        "_id": "68fb450e30977a4755d1e9d4",
+        "name": "API 테스트 강습 과정",
+        "description": "API를 통해 생성된 테스트 강습 과정입니다.",
+        "level": "beginner",
+        "duration": 60,
+        "price": 50000,
+        "maxStudents": 10,
+        "instructorId": "68fa9ac9763b25724e74ff48",
+        "instructorName": "김수영",
+        "centerId": "68f10983ccca24669078e1b4",
+        "schedule": [
+          {
+            "day": "monday",
+            "startTime": "19:00",
+            "endTime": "20:00"
+          }
+        ],
+        "isActive": true,
+        "__v": 0
+      }
+    ],
+    "bookings": [
+      {
+        "_id": "68c58a124eb2ae4d54db20bd",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "date": "2025-09-18T15:13:22.862Z",
+        "startTime": "19:00",
+        "endTime": "20:00",
+        "laneNumber": 2,
+        "purpose": "lesson",
+        "status": "confirmed",
+        "notes": "정기 수업 예약",
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "course": "68c58a124eb2ae4d54db20af",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.863Z",
+        "updatedAt": "2025-09-14T03:14:49.087Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20bc",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "date": "2025-09-15T15:13:22.862Z",
+        "startTime": "19:00",
+        "endTime": "20:00",
+        "laneNumber": 1,
+        "purpose": "lesson",
+        "status": "confirmed",
+        "notes": "정기 수업 예약",
+        "instructor": "68c58a124eb2ae4d54db20a8",
+        "course": "68c58a124eb2ae4d54db20ab",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.863Z",
+        "updatedAt": "2025-09-14T03:14:49.087Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      }
+    ],
+    "payments": [
+      {
+        "_id": "68c58a124eb2ae4d54db20ba",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "amount": 90000,
+        "currency": "KRW",
+        "paymentMethod": "transfer",
+        "status": "completed",
+        "purpose": "course",
+        "relatedCourse": "68c58a124eb2ae4d54db20af",
+        "transactionId": "TXN_1757776402818_002",
+        "notes": "배영 중급반 수강료",
+        "processedAt": "2025-09-10T15:13:22.818Z",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.819Z",
+        "updatedAt": "2025-09-14T03:14:49.215Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      },
+      {
+        "_id": "68c58a124eb2ae4d54db20b9",
+        "user": "68c58a124eb2ae4d54db20a9",
+        "amount": 80000,
+        "currency": "KRW",
+        "paymentMethod": "card",
+        "status": "completed",
+        "purpose": "course",
+        "relatedCourse": "68c58a124eb2ae4d54db20ab",
+        "transactionId": "TXN_1757776402818_001",
+        "notes": "자유형 기초반 수강료",
+        "processedAt": "2025-09-06T15:13:22.818Z",
+        "__v": 0,
+        "createdAt": "2025-09-13T15:13:22.819Z",
+        "updatedAt": "2025-09-14T03:14:49.215Z",
+        "centerId": "68c58a122bac3caedf19c146"
+      }
+    ]
+  }
+}

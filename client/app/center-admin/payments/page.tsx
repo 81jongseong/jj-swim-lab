@@ -27,6 +27,21 @@ function PaymentsManagement() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 권한 확인 - 페이지 렌더링 전에 체크
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+  
+  if (!isCenterAdmin) {
+    // 권한이 없는 사용자는 게스트 버전의 화면으로 리다이렉트
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+    return null;
+  }
+
   useEffect(() => {
     if (user) {
       loadPayments();

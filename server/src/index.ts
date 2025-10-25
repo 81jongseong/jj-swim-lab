@@ -138,6 +138,9 @@ import { runSeedData } from './utils/seedData';
 import centerLevelsRoutes from './routes/center-levels';
 import exampleRoutes from './routes/example';
 import runPipelineRoutes from './routes/runPipeline';
+import centerAdminInstructorStatsRoutes from './routes/center-admin-instructor-stats';
+import personalLessonRoutes from './routes/personal-lessons';
+import laneRentalRoutes from './routes/lane-rentals';
 import authRoutes from './routes/auth';
 import dashboardRoutes from './routes/dashboard';
 import userRoutes from './routes/users';
@@ -172,6 +175,7 @@ import revenueRoutes from './routes/revenue';
 import approvalRoutes from './routes/approvals';
 // 사용자 유형별 라우트
 import centerAdminRoutes from './routes/center-admin';
+import memberBulkImportRoutes from './routes/member-bulk-import';
 import studentRoutes from './routes/student';
 // AI 라우트들 정상화
 import aiRoutes from './routes/ai';
@@ -227,6 +231,9 @@ import teachingProgressRoutes from './routes/teaching-progress';
 import groupProgramsRoutes from './routes/group-programs';
 import unifiedProgramRoutes from './routes/unified-program';
 import myProgramsRoutes from './routes/my-programs';
+// import noticeRoutes from './routes/notice'; // ⭐ 중복 제거
+import availabilityRoutes from './routes/availability'; // ⭐ 추가
+import centerScheduleRoutes from './routes/center-schedule'; // ⭐ 추가
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -268,9 +275,17 @@ import './models/HealthConfig';
 import './models/AdminReport';
 import './models/SystemConfig';
 import './models/LoginLog';
-import './models/PageVisit';
-
-console.log('📦 모든 모델 import 완료!');
+import './models/PersonalLesson'; // ⭐ 추가
+import './models/LaneRental'; // ⭐ 추가
+import './models/Complaint'; // ⭐ 추가
+import './models/PersonalProgramAdjustment'; // ⭐ 추가
+import './models/SwimCondition'; // ⭐ 추가
+import './models/SwimDrill'; // ⭐ 추가
+import './models/SwimProgram'; // ⭐ 추가
+import './models/SwimTrainingMethod'; // ⭐ 추가
+import './models/GroupClass'; // ⭐ 추가
+import './models/PageVisit'; // ⭐ 추가
+import './models/CenterSchedule'; // ⭐ 추가
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -452,6 +467,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/availability', availabilityRoutes); // ⭐ 추가
+app.use('/api/center-schedule', centerScheduleRoutes); // ⭐ 추가
 app.use('/api/centers', centerRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -487,6 +504,10 @@ app.use('/api/revenue', revenueRoutes);
 app.use('/api/approvals', approvalRoutes);
 // 사용자 유형별 API 라우트
 app.use('/api/center-admin', centerAdminRoutes);
+app.use('/api/center-admin', centerAdminInstructorStatsRoutes);
+app.use('/api/personal-lessons', personalLessonRoutes);
+app.use('/api/lane-rentals', laneRentalRoutes);
+app.use('/api/member-bulk-import', memberBulkImportRoutes);
 app.use('/api/student', studentRoutes);
 // AI 라우트들 정상화
 app.use('/api/ai', aiRoutes);
@@ -537,6 +558,13 @@ app.use('/api/teaching-progress', teachingProgressRoutes); // 강습법 체크�
 app.use('/api/group-programs', groupProgramsRoutes); // 단체반 프로그램 라우트
 app.use('/api/unified-program', unifiedProgramRoutes); // 통합 프로그램 생성 라우트
 app.use('/api/my-programs', myProgramsRoutes); // 내 프로그램 조회 라우트 (회원용)
+app.use('/api/community-posts', communityPostsRoutes); // ⭐ 추가
+app.use('/api/example', exampleRoutes); // ⭐ 추가
+app.use('/api/geo-aggregate', geoAggregateRoutes); // ⭐ 추가
+app.use('/api/notice', noticeRoutes); // ⭐ 추가
+app.use('/api/runPipeline', runPipelineRoutes); // ⭐ 추가
+app.use('/api/swim-program-completions', swimProgramCompletionsRoutes); // ⭐ 추가
+app.use('/api/swim-program-day-condition', swimProgramDayConditionRoutes); // ⭐ 추가
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
@@ -661,5 +689,12 @@ import './models/StudentProgress';
 import './models/SwimmingCenter';
 import './models/TeachingMethod';
 import './models/Video';
-import './models/GroupClass';
+import './models/PersonalLesson';
+import './models/LaneRental';
+import './models/Complaint';
+import './models/PersonalProgramAdjustment';
+import './models/SwimCondition';
+import './models/SwimDrill';
+import './models/SwimProgram';
+import './models/SwimTrainingMethod';
 export { app };

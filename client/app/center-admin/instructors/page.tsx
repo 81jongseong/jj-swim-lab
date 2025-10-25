@@ -17,6 +17,9 @@ import withAuth from '@/components/withAuth';
 import InstructorStatsCards from '@/components/center-admin/InstructorStatsCards';
 import InstructorCard from '@/components/center-admin/InstructorCard';
 import InstructorEditModal from '@/components/center-admin/InstructorEditModal';
+import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
+import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
+import PersonalLessonSettingsModal from '@/components/center-admin/PersonalLessonSettingsModal';
 import apiClient from '@/utils/api';
 
 interface EmploymentHistory {
@@ -69,9 +72,29 @@ function CenterInstructorsManagement() {
   const { user } = useAuth();
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 권한 확인 - 페이지 렌더링 전에 체크
+  // center@swim.com 계정도 센터 관리자로 인식
+  const isCenterAdmin = user && (
+    ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
+    user.email === 'center@swim.com'
+  );
+  
+  if (!isCenterAdmin) {
+    // 권한이 없는 사용자는 게스트 버전의 화면으로 리다이렉트
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+    return null;
+  }
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [instructorTypeFilter, setInstructorTypeFilter] = useState<'all' | 'instructor' | 'lifeguard'>('all'); // ⭐ 강사 종류 필터
+  const [showStudentManagement, setShowStudentManagement] = useState(false);
+  const [showLessonProgress, setShowLessonProgress] = useState(false);
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [instructorStats, setInstructorStats] = useState<{[key: string]: any}>({});
 
   useEffect(() => {
     if (user) {
@@ -79,9 +102,19 @@ function CenterInstructorsManagement() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (instructors.length > 0) {
+      loadInstructorStats();
+    }
+  }, [instructors]);
+
   const loadInstructors = async () => {
     try {
       setIsLoading(true);
+      
+      // 현재 로그인한 사용자 정보 확인
+      console.log('🔍 현재 로그인한 사용자:', user);
+      console.log('🔍 사용자 센터 ID:', user?.centerId);
       
       // 실제 API 연동
       const response = await apiClient.get('/api/center-admin/instructors');
@@ -247,6 +280,27 @@ function CenterInstructorsManagement() {
     }
   };
 
+  const loadInstructorStats = async () => {
+    try {
+      console.log('📊 강사 통계 로드 시작...');
+      const response = await apiClient.get('/api/center-admin/instructors/stats');
+      console.log('📊 강사 통계 API 응답:', response);
+      
+      if (response.success) {
+        const statsMap: {[key: string]: any} = {};
+        response.data.forEach((stat: any) => {
+          statsMap[stat.instructorId] = stat;
+        });
+        setInstructorStats(statsMap);
+        console.log('📊 강사 통계 로드 완료:', statsMap);
+      } else {
+        console.error('📊 강사 통계 API 실패:', response.message);
+      }
+    } catch (error) {
+      console.error('강사 통계 로드 실패:', error);
+    }
+  };
+
   const handleEditInstructor = (instructor: Instructor) => {
     setSelectedInstructor(instructor);
     setShowEditModal(true);
@@ -256,8 +310,11 @@ function CenterInstructorsManagement() {
     if (!selectedInstructor) return;
 
     try {
-      console.log('💾 강사 정보 저장 시작:', selectedInstructor._id);
-      console.log('📋 업데이트 데이터:', updatedData);
+      console.log('🔥 강사 정보 저장 시작:', {
+        instructorId: selectedInstructor._id,
+        instructorName: selectedInstructor.name,
+        updatedData: updatedData
+      });
 
       const response = await apiClient.put(
         `/api/center-admin/instructors/${selectedInstructor._id}`,
@@ -300,6 +357,18 @@ function CenterInstructorsManagement() {
       setInstructors(prev => prev.filter(i => i._id !== instructorId));
     }
   };
+
+  const handleManageStudents = (instructorId: string) => {
+    setSelectedInstructorId(instructorId);
+    setShowStudentManagement(true);
+  };
+
+  const handleManageLessons = (instructorId: string) => {
+    setSelectedInstructorId(instructorId);
+    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setShowLessonProgress(true);
+  };
+
 
   // ⭐ 강사 종류별 필터링
   const filteredInstructors = instructors.filter(instructor => {
@@ -365,12 +434,15 @@ function CenterInstructorsManagement() {
       {/* 강사 목록 - 반응형 카드 뷰 (최소 2열) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredInstructors.map((instructor) => (
-          <InstructorCard
-            key={instructor._id}
-            instructor={instructor}
-            onEdit={handleEditInstructor}
-            onDelete={handleDeleteInstructor}
-          />
+                <InstructorCard
+                  key={instructor._id}
+                  instructor={instructor}
+                  stats={instructorStats[instructor._id]}
+                  onEdit={handleEditInstructor}
+                  onDelete={handleDeleteInstructor}
+                  onManageStudents={handleManageStudents}
+                  onManageLessons={handleManageLessons}
+                />
         ))}
       </div>
 
@@ -404,6 +476,31 @@ function CenterInstructorsManagement() {
           onSave={handleSaveInstructor}
         />
       )}
+
+      {/* 수강생 관리 모달 */}
+      {showStudentManagement && (
+        <InstructorStudentManagement
+          instructorId={selectedInstructorId}
+          onClose={() => {
+            setShowStudentManagement(false);
+            setSelectedInstructorId('');
+          }}
+        />
+      )}
+
+      {/* 수업 관리 모달 */}
+      {showLessonProgress && (
+        <PTLessonProgress
+          instructorId={selectedInstructorId}
+          selectedDate={selectedDate}
+          onClose={() => {
+            setShowLessonProgress(false);
+            setSelectedInstructorId('');
+            setSelectedDate('');
+          }}
+        />
+      )}
+
     </div>
   );
 }

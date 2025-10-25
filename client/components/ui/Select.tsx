@@ -8,12 +8,9 @@ import { cn } from "../../lib/utils"
 
 const Select = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
-    className?: string;
-  }
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Root
-    ref={ref}
     className={cn("isolate", className)}
     {...props}
   />

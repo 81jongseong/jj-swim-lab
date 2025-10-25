@@ -59,7 +59,7 @@ export default function CourseMemberAssignmentModal({
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/center-admin/members', {
+      const response = await fetch(`http://localhost:5000/api/center-admin/members?courseId=${course._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -76,8 +76,8 @@ export default function CourseMemberAssignmentModal({
           usersLength: data.data?.users?.length || 0
         });
         
-        // API 응답에서 회원 목록 추출 - data.data.users 사용
-        const allMembers = data.data?.users || [];
+        // API 응답에서 회원 목록 추출 - data.data가 배열
+        const allMembers = Array.isArray(data.data) ? data.data : [];
         console.log('📊 추출된 회원 목록:', allMembers);
         console.log('📊 API 응답 구조:', {
           success: data.success,
@@ -99,23 +99,13 @@ export default function CourseMemberAssignmentModal({
             console.log('🔍 첫 번째 회원의 currentLevel 필드:', allMembersFromArray[0].currentLevel);
           }
           
-          // 학생 회원만 필터링하고 레벨 정보 매핑
+          // 학생 회원만 필터링하고 실제 레벨 정보 사용
           const studentMembersFromArray = allMembersFromArray.filter((member: Member) => 
             member.userType === 'student'
           ).map((member: Member) => {
-            // 레벨 정보 매핑 - 한글로 표시
-            const levelMap: { [key: string]: string } = {
-              '김철수': '초급',
-              '이영희': '중급', 
-              '박민수': '초급',
-              '최지영': '고급',
-              '정현우': '초급',
-              '한소영': '중급'
-            };
-            
             return {
               ...member,
-              currentLevel: levelMap[member.name] || '초급'
+              currentLevel: member.currentLevel || member.studentInfo?.level || '레벨 미설정'
             };
           });
           
@@ -128,16 +118,21 @@ export default function CourseMemberAssignmentModal({
           return;
         }
         
-        // 만약 data.data가 객체이고 users 배열을 가지고 있다면
-        if (data.data && data.data.users && Array.isArray(data.data.users)) {
-          console.log('📊 data.data.users가 배열입니다. 사용합니다.');
-          const allMembersFromUsers = data.data.users;
+        // 만약 data.data가 배열이라면
+        if (Array.isArray(data.data)) {
+          console.log('📊 data.data가 배열입니다. 사용합니다.');
+          const allMembersFromUsers = data.data;
           console.log('📊 users에서 추출된 회원 목록:', allMembersFromUsers);
           
-          // 학생 회원만 필터링
+          // 학생 회원만 필터링하고 실제 레벨 정보 사용
           const studentMembersFromUsers = allMembersFromUsers.filter((member: Member) => 
             member.userType === 'student'
-          );
+          ).map((member: Member) => {
+            return {
+              ...member,
+              currentLevel: member.currentLevel || member.studentInfo?.level || '레벨 미설정'
+            };
+          });
           
           console.log('👥 users에서 학생 회원 목록:', studentMembersFromUsers.length, '명');
           if (studentMembersFromUsers.length > 0) {
@@ -148,10 +143,15 @@ export default function CourseMemberAssignmentModal({
           return;
         }
         
-        // 학생 회원만 필터링
+        // 학생 회원만 필터링하고 실제 레벨 정보 사용
         const studentMembers = allMembers.filter((member: Member) => 
           member.userType === 'student'
-        );
+        ).map((member: Member) => {
+          return {
+            ...member,
+            currentLevel: member.studentInfo?.level || member.currentLevel || '레벨 미설정'
+          };
+        });
         
         console.log('👥 학생 회원 목록:', studentMembers.length, '명');
         if (studentMembers.length > 0) {
@@ -180,19 +180,27 @@ export default function CourseMemberAssignmentModal({
 
   // 체크박스 토글
   const toggleMemberSelection = (memberId: string) => {
-    setSelectedMembers(prev => 
-      prev.includes(memberId) 
+    console.log('🔄 회원 선택 토글:', memberId);
+    console.log('🔄 현재 선택된 회원들:', selectedMembers);
+    
+    setSelectedMembers(prev => {
+      const newSelection = prev.includes(memberId) 
         ? prev.filter(id => id !== memberId)
-        : [...prev, memberId]
-    );
+        : [...prev, memberId];
+      
+      console.log('🔄 새로운 선택된 회원들:', newSelection);
+      return newSelection;
+    });
   };
 
   // 전체 선택/해제
   const toggleAllMembers = () => {
-    if (selectedMembers.length === filteredMembers.length) {
+    const availableMembers = filteredMembers.filter(member => !member.isEnrolledInSpecificCourse);
+    
+    if (selectedMembers.length === availableMembers.length) {
       setSelectedMembers([]);
     } else {
-      setSelectedMembers(filteredMembers.map(member => member._id));
+      setSelectedMembers(availableMembers.map(member => member._id));
     }
   };
 
@@ -224,9 +232,7 @@ export default function CourseMemberAssignmentModal({
         member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.phone?.includes(searchTerm) ||
-        member.currentLevel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.studentInfo?.currentLevel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.studentInfo?.level?.toLowerCase().includes(searchTerm.toLowerCase())
+        member.currentLevel?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredMembers(filtered);
     }
@@ -234,9 +240,11 @@ export default function CourseMemberAssignmentModal({
 
   useEffect(() => {
     if (isOpen && course) {
-      loadMembers();
+      console.log('📋 모달 열림 - 강습 과정:', course.name);
+      console.log('📋 선택된 회원 초기화');
       setSelectedMembers([]);
       setSearchTerm(''); // 검색어 초기화
+      loadMembers();
     }
   }, [isOpen, course]);
 
@@ -244,7 +252,7 @@ export default function CourseMemberAssignmentModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold flex items-center">
             <Users className="w-5 h-5 mr-2" />
@@ -258,7 +266,8 @@ export default function CourseMemberAssignmentModal({
           </button>
         </div>
 
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+        <div className="flex-1 overflow-y-auto">
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-blue-800">
@@ -324,7 +333,7 @@ export default function CourseMemberAssignmentModal({
               </Button>
             </div>
 
-            <div className="overflow-y-auto max-h-96 border rounded-lg">
+            <div className="overflow-y-auto max-h-[50vh] border rounded-lg">
               {filteredMembers.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -343,48 +352,71 @@ export default function CourseMemberAssignmentModal({
                 </div>
               ) : (
                 <div className="space-y-2 p-4">
-                  {filteredMembers.map((member) => (
+                  {filteredMembers.map((member) => {
+                    const isSelected = selectedMembers.includes(member._id);
+                    const isAlreadyEnrolled = member.isEnrolledInSpecificCourse;
+                    console.log(`📋 회원 ${member.name} 렌더링 - 선택됨: ${isSelected}, 이미 배정됨: ${isAlreadyEnrolled}`);
+                    
+                    return (
                     <div
                       key={member._id}
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedMembers.includes(member._id)
+                      className={`flex items-center p-3 border rounded-lg transition-colors ${
+                        isAlreadyEnrolled
+                          ? 'bg-gray-100 border-gray-300 opacity-75'
+                          : isSelected
                           ? 'bg-blue-50 border-blue-200'
                           : 'bg-white border-gray-200 hover:bg-gray-50'
                       }`}
-                      onClick={() => toggleMemberSelection(member._id)}
                     >
                       <input
                         type="checkbox"
-                        checked={selectedMembers.includes(member._id)}
-                        onChange={() => toggleMemberSelection(member._id)}
-                        className="mr-3 h-4 w-4 text-blue-600"
+                        checked={isSelected}
+                        disabled={isAlreadyEnrolled}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          console.log('🔘 체크박스 클릭:', member.name, member._id);
+                          toggleMemberSelection(member._id);
+                        }}
+                        className={`mr-3 h-4 w-4 text-blue-600 ${
+                          isAlreadyEnrolled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                        }`}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium">{member.name}</p>
+                            <p className={`font-medium ${isAlreadyEnrolled ? 'text-gray-500' : ''}`}>
+                              {member.name}
+                              {isAlreadyEnrolled && <span className="ml-2 text-xs text-gray-500">(이미 배정됨)</span>}
+                            </p>
                             <p className="text-sm text-gray-500">{member.email}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-gray-600">{member.phone}</p>
                             <p className="text-xs text-blue-600">
-                              {member.currentLevel || member.studentInfo?.currentLevel || member.studentInfo?.level || '레벨 미설정'}
+                              {member.currentLevel || '레벨 미설정'}
                             </p>
                           </div>
                         </div>
                       </div>
-                      {selectedMembers.includes(member._id) && (
+                      {isSelected && !isAlreadyEnrolled && (
                         <CheckCircle className="w-5 h-5 text-blue-600 ml-2" />
                       )}
+                      {isAlreadyEnrolled && (
+                        <div className="w-5 h-5 ml-2 flex items-center justify-center">
+                          <span className="text-xs text-gray-500">✓</span>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           </>
         )}
+        </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-end gap-2 mt-6 flex-shrink-0">
           <Button
             onClick={onClose}
             variant="outline"

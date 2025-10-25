@@ -6,7 +6,7 @@
  * =============================================================================
  * 🔗 **직접 의존성**:
  *   - ../middleware/auth.ts (인증 미들웨어, requireRole 함수)
- *   - ../models/SwimmingCenter.ts (수영 센터 데이터 모델)
+ *   - ../models/Center.ts (수영 센터 데이터 모델)
  *   - ../models/User.ts (사용자 데이터 모델)
  *   - ../models/Course.ts (강습 과정 데이터 모델)
  *   - ../models/Booking.ts (예약 데이터 모델)
@@ -19,7 +19,7 @@
  *   - client/components/center/ 센터 관련 컴포넌트들
  * 
  * 🔗 **데이터베이스 연동**:
- *   - SwimmingCenter 컬렉션 (수영 센터 정보)
+ *   - Center 컬렉션 (수영 센터 정보)
  *   - User 컬렉션 (센터 관리자 및 사용자 정보)
  *   - Course 컬렉션 (센터별 강습 과정)
  *   - Booking 컬렉션 (센터별 예약 정보)
@@ -65,7 +65,6 @@
 
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
-import { SwimmingCenter } from '../models/SwimmingCenter';
 import { Center } from '../models/Center';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
@@ -89,7 +88,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instr
   try {
     console.log('🔍 센터 목록 조회 요청:', req.user?.userType);
     
-    const centers = await SwimmingCenter.find({ isActive: true })
+    const centers = await Center.find({ isActive: true })
       .select('name location contactInfo facilities province city gu dong createdAt')
       .sort({ createdAt: -1 });
     
@@ -507,20 +506,21 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     const centerAdmin = await User.findById(req.user._id);
-    console.log('👤 센터 관리자 조회:', centerAdmin?.email, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
+    console.log('👤 센터 관리자 조회:', centerAdmin?.email, 'centerId:', centerAdmin?.centerId, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
     
-    if (!centerAdmin?.centerAdminInfo?.managedCenters || centerAdmin.centerAdminInfo.managedCenters.length === 0) {
+    // centerId 필드 또는 centerAdminInfo.managedCenters에서 센터 ID 가져오기
+    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    
+    if (!centerId) {
       console.error('❌ 관리하는 센터가 없음');
       return res.status(404).json({
         success: false,
         message: '관리하는 센터가 없습니다.'
       });
     }
-
-    const centerId = centerAdmin.centerAdminInfo.managedCenters[0];
     console.log('🏢 센터 ID로 조회 시도:', centerId);
     
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     console.log('🏢 센터 조회 결과:', center ? `${center.name} 찾음` : '센터 없음');
 
     if (!center) {
@@ -557,7 +557,7 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     const centerId = centerAdmin.centerAdminInfo.managedCenters[0];
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     
     if (!center) {
       return res.status(404).json({
@@ -662,7 +662,7 @@ router.post('/instructors', authMiddleware, requireRole(['centerAdmin']), async 
     await instructor.save();
 
     // 센터에 강사 정보 추가
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (center) {
       center.instructors = center.instructors || [];
       center.instructors.push(instructor._id as mongoose.Types.ObjectId);
@@ -856,7 +856,7 @@ router.delete('/instructors/:id', authMiddleware, requireRole(['centerAdmin']), 
     }
 
     // 센터에서 강사 정보 제거
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (center) {
       center.instructors = center.instructors?.filter(
         (instructorId: mongoose.Types.ObjectId) => instructorId.toString() !== id
@@ -893,7 +893,7 @@ router.get('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       });
     }
 
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (!center) {
       return res.status(404).json({
         success: false,
@@ -952,7 +952,7 @@ router.put('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       guide
     } = req.body;
 
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (!center) {
       return res.status(404).json({
         success: false,
@@ -1044,7 +1044,7 @@ router.get('/dashboard', authMiddleware, requireRole(['centerAdmin']), async (re
         activeBookings,
         recentPayments
       },
-      centerInfo: await SwimmingCenter.findById(centerId).select('name address currentCapacity maxCapacity')
+      centerInfo: await Center.findById(centerId).select('name address currentCapacity maxCapacity')
     };
 
     res.json({
@@ -1076,7 +1076,7 @@ router.put('/operating-hours', authMiddleware, requireRole(['centerAdmin']), asy
       });
     }
 
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (!center) {
       return res.status(404).json({
         success: false,
@@ -1116,7 +1116,7 @@ router.put('/facilities', authMiddleware, requireRole(['centerAdmin']), async (r
       });
     }
 
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (!center) {
       return res.status(404).json({
         success: false,
@@ -1260,7 +1260,7 @@ router.get('/analytics', authMiddleware, requireRole(['centerAdmin']), async (re
     ]);
 
     // 수용 인원 활용률
-    const capacityUtilization = await SwimmingCenter.findById(centerId).select('currentCapacity maxCapacity');
+    const capacityUtilization = await Center.findById(centerId).select('currentCapacity maxCapacity');
 
     const analyticsData = {
       revenue: {
@@ -1443,8 +1443,8 @@ router.get('/my-center/stats', authMiddleware, requireRole(['centerAdmin']), asy
       totalInstructors,
       totalCourses,
       totalBookings,
-      centerCapacity: (await SwimmingCenter.findById(centerId))?.maxCapacity || 0,
-      utilizationRate: totalStudents / ((await SwimmingCenter.findById(centerId))?.maxCapacity || 1) * 100
+      centerCapacity: (await Center.findById(centerId))?.maxCapacity || 0,
+      utilizationRate: totalStudents / ((await Center.findById(centerId))?.maxCapacity || 1) * 100
     };
 
     res.json({
@@ -1530,7 +1530,7 @@ router.get('/my-center/courses', authMiddleware, requireRole(['centerAdmin']), a
  */
 router.get('/guest', async (req, res) => {
   try {
-    const centers = await SwimmingCenter.find(
+    const centers = await Center.find(
       { isActive: true }, 
       'name region district address phone email website location description facilities province city gu dong'
     ).lean();
@@ -1562,7 +1562,7 @@ router.post('/fix-center-admin-link', authMiddleware, requireRole(['superAdmin']
     }
 
     // 센터 찾기
-    const center = await SwimmingCenter.findById(centerId);
+    const center = await Center.findById(centerId);
     if (!center) {
       return res.status(404).json({
         success: false,
@@ -1621,6 +1621,64 @@ router.post('/fix-center-admin-link', authMiddleware, requireRole(['superAdmin']
     res.status(500).json({
       success: false,
       message: '센터 관리자 연결 수정에 실패했습니다.'
+    });
+  }
+});
+
+/**
+ * 📅 센터 가능시간 설정 조회
+ * GET /api/centers/availability
+ */
+router.get('/availability', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    const center = await Center.findById(centerId);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '센터를 찾을 수 없습니다.'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '센터 가능시간 설정 조회 성공!',
+      data: center.availabilitySettings || {
+        personalLesson: {
+          enabled: true,
+          availableDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+          availableTimes: [
+            { startTime: '09:00', endTime: '18:00', maxDuration: 120 }
+          ],
+          advanceBookingDays: 7,
+          cancellationPolicy: '24시간 전 취소 가능'
+        },
+        laneRental: {
+          enabled: true,
+          availableDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+          availableTimes: [
+            { startTime: '06:00', endTime: '22:00', maxDuration: 180 }
+          ],
+          availableLanes: [1, 2, 3, 4, 5, 6],
+          advanceBookingDays: 14,
+          cancellationPolicy: '12시간 전 취소 가능'
+        }
+      }
+    });
+  } catch (error) {
+    console.error('센터 가능시간 설정 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.'
     });
   }
 });

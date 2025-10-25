@@ -8,7 +8,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 // 사용자 활동 인터페이스
 export interface IUserActivity extends Document {
   userId: mongoose.Types.ObjectId;
-  userType: 'superAdmin' | 'centerAdmin' | 'instructor' | 'student' | 'guest';
+  userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
   action: string;
   resource: string;
   resourceId?: string;
@@ -38,7 +38,7 @@ const userActivitySchema = new Schema<IUserActivity>({
   },
   userType: {
     type: String,
-    enum: ['superAdmin', 'centerAdmin', 'instructor', 'student', 'guest'],
+    enum: ['superAdmin', 'centerAdmin', 'center-admin', 'instructor', 'student', 'guest'],
     required: true,
     index: true
   },

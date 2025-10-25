@@ -38,6 +38,32 @@ export interface ICenter extends Document {
     close: string;
     days: string[];
   };
+  // 센터 가능시간 설정 (개인레슨, 레인대여용)
+  availabilitySettings: {
+    personalLesson: {
+      enabled: boolean;
+      availableDays: string[]; // ['monday', 'tuesday', ...]
+      availableTimes: Array<{
+        startTime: string; // "09:00"
+        endTime: string;   // "18:00"
+        maxDuration: number; // 최대 시간 (분)
+      }>;
+      advanceBookingDays: number; // 예약 가능 일수
+      cancellationPolicy: string;
+    };
+    laneRental: {
+      enabled: boolean;
+      availableDays: string[]; // ['monday', 'tuesday', ...]
+      availableTimes: Array<{
+        startTime: string; // "06:00"
+        endTime: string;   // "22:00"
+        maxDuration: number; // 최대 시간 (분)
+      }>;
+      availableLanes: number[]; // 대여 가능한 레인 번호들 [1, 2, 3, 4, 5, 6]
+      advanceBookingDays: number; // 예약 가능 일수
+      cancellationPolicy: string;
+    };
+  };
   // 센터 소개 정보 추가
   introduction: {
     shortDescription: string; // 간단한 설명 (검색 시 표시)
@@ -184,6 +210,40 @@ const centerSchema = new Schema<ICenter>({
       enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
       default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }]
+  },
+  // 센터 가능시간 설정 (개인레슨, 레인대여용)
+  availabilitySettings: {
+    personalLesson: {
+      enabled: { type: Boolean, default: true },
+      availableDays: [{
+        type: String,
+        enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      }],
+      availableTimes: [{
+        startTime: { type: String, default: '09:00' },
+        endTime: { type: String, default: '18:00' },
+        maxDuration: { type: Number, default: 120 }
+      }],
+      advanceBookingDays: { type: Number, default: 7 },
+      cancellationPolicy: { type: String, default: '24시간 전 취소 가능' }
+    },
+    laneRental: {
+      enabled: { type: Boolean, default: true },
+      availableDays: [{
+        type: String,
+        enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      }],
+      availableTimes: [{
+        startTime: { type: String, default: '06:00' },
+        endTime: { type: String, default: '22:00' },
+        maxDuration: { type: Number, default: 180 }
+      }],
+      availableLanes: [{ type: Number, min: 1, max: 10 }],
+      advanceBookingDays: { type: Number, default: 14 },
+      cancellationPolicy: { type: String, default: '12시간 전 취소 가능' }
+    }
   },
   // 센터 소개 정보 스키마 추가
   introduction: {

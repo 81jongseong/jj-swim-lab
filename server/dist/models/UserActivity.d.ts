@@ -25,7 +25,7 @@
 import mongoose, { Document } from 'mongoose';
 export interface IUserActivity extends Document {
     userId: mongoose.Types.ObjectId;
-    userType: 'superAdmin' | 'centerAdmin' | 'instructor' | 'student' | 'guest';
+    userType: 'superAdmin' | 'centerAdmin' | 'center-admin' | 'instructor' | 'student' | 'guest';
     action: string;
     resource: string;
     resourceId?: string;

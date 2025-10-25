@@ -99,9 +99,14 @@ export default function withAuth<P>(Wrapped: ComponentType<P>, options: Options 
     }
     
     // 사용자 타입 확인
-    if (options.requireTypes && options.requireTypes.length > 0 && !options.requireTypes.includes(user.userType)) {
-      if (typeof window !== 'undefined') window.location.href = '/';
-      return null;
+    if (options.requireTypes && options.requireTypes.length > 0) {
+      // center-admin을 centerAdmin으로 매핑
+      const userType = user.userType === 'center-admin' ? 'centerAdmin' : user.userType;
+      
+      if (!options.requireTypes.includes(userType)) {
+        if (typeof window !== 'undefined') window.location.href = '/';
+        return null;
+      }
     }
     
     // 권한 확인 (accessPermissions가 undefined일 수 있음)

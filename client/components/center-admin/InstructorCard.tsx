@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Users, Mail, Phone, Star, Edit, Trash2 } from 'lucide-react';
+import { Users, Mail, Phone, Star, Edit, Trash2, User } from 'lucide-react';
 
 interface Instructor {
   _id: string;
@@ -35,8 +35,19 @@ interface Instructor {
 
 interface InstructorCardProps {
   instructor: Instructor;
+  stats?: {
+    totalStudents: number;
+    groupStudents: number;
+    personalStudents: number;
+    totalLessons: number;
+    groupCourses: number;
+    activePersonalLessons: number;
+    completedPersonalLessons: number;
+  };
   onEdit?: (instructor: Instructor) => void;
   onDelete?: (instructorId: string) => void;
+  onManageStudents?: (instructorId: string) => void;
+  onManageLessons?: (instructorId: string) => void;
 }
 
 // 상태 라벨 및 색상 유틸리티 함수
@@ -74,8 +85,11 @@ const renderStars = (rating: number) => {
 
 export default function InstructorCard({ 
   instructor, 
+  stats,
   onEdit, 
-  onDelete 
+  onDelete,
+  onManageStudents, 
+  onManageLessons
 }: InstructorCardProps) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
@@ -177,30 +191,54 @@ export default function InstructorCard({
           <div className="grid grid-cols-2 gap-3 pt-2 border-t">
             <div className="text-center">
               <p className="text-base font-semibold text-gray-900">
-                {instructor.totalStudents || instructor.instructorInfo?.currentStudents || 0}
+                {stats?.totalStudents || instructor.totalStudents || instructor.instructorInfo?.currentStudents || 0}
               </p>
               <p className="text-xs text-gray-500">담당 학생</p>
+              {stats && (
+                <div className="text-xs text-gray-400 mt-1">
+                  단체 {stats.groupStudents}명 | 개인 {stats.personalStudents}명
+                </div>
+              )}
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-gray-900">
-                {instructor.totalClasses || 0}
+                {stats?.totalLessons || instructor.totalClasses || 0}
               </p>
               <p className="text-xs text-gray-500">진행 수업</p>
+              {stats && (
+                <div className="text-xs text-gray-400 mt-1">
+                  단체반 {stats.groupCourses}개 | 개인레슨 {stats.activePersonalLessons + stats.completedPersonalLessons}개
+                </div>
+              )}
             </div>
           </div>
 
           {/* 액션 버튼 */}
-          <div className="flex space-x-2 pt-2 border-t">
+          <div className="grid grid-cols-2 gap-2 pt-3 border-t">
+            <button 
+              onClick={() => onManageStudents?.(instructor._id)}
+              className="px-2 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center"
+            >
+              <Users className="w-3 h-3 mr-1" />
+              수강생 관리
+            </button>
+            <button 
+              onClick={() => onManageLessons?.(instructor._id)}
+              className="px-2 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
+            >
+              <Star className="w-3 h-3 mr-1" />
+              수업 관리
+            </button>
             <button 
               onClick={() => onEdit?.(instructor)}
-              className="flex-1 px-2 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
+              className="px-2 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
             >
               <Edit className="w-3 h-3 mr-1" />
-              수정
+              정보 수정
             </button>
             <button 
               onClick={() => onDelete?.(instructor._id)}
-              className="flex-1 px-2 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center"
+              className="px-2 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center justify-center"
             >
               <Trash2 className="w-3 h-3 mr-1" />
               삭제
