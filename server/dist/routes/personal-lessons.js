@@ -35,6 +35,9 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 conflicts
             });
         }
+        const availableLanes = await laneAllocationService_1.LaneAllocationService.findAvailableLanes(date, time, centerId, duration);
+        const assignedLane = availableLanes.availableLanes[0] || 1;
+        console.log(`🔍 개인레슨 레인 배정: ${assignedLane}번 레인`);
         const personalLesson = new PersonalLesson_1.PersonalLesson({
             studentId: userId,
             centerId,
@@ -45,7 +48,8 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
             skillLevel,
             goals,
             notes,
-            status: 'pending'
+            status: 'pending',
+            assignedLane
         });
         await personalLesson.save();
         await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({

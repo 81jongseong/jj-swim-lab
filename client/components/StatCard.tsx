@@ -21,7 +21,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon?: string | React.ReactNode;
-  color: 'blue' | 'green' | 'red' | 'purple' | 'orange' | 'yellow';
+  color: 'blue' | 'green' | 'red' | 'purple' | 'orange' | 'yellow' | 'indigo';
   change?: {
     value: number;
     type: 'increase' | 'decrease' | 'neutral';
@@ -69,6 +69,12 @@ const colorClasses = {
     iconBg: 'bg-yellow-100',
     text: 'text-yellow-600',
     icon: 'text-yellow-600'
+  },
+  indigo: {
+    bg: 'bg-indigo-50',
+    iconBg: 'bg-indigo-100',
+    text: 'text-indigo-600',
+    icon: 'text-indigo-600'
   }
 };
 

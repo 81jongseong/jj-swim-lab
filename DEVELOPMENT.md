@@ -1,65 +1,78 @@
 # 🏊 JJ Swim Lab - 개발 기록
 
-## 📊 **최신 작업 현황** (2025-10-24)
+## 📊 **최신 작업 현황** (2025-10-25)
 
-### ✅ **레인 자동 조정 기능 구현** 🏊‍♂️
+### ✅ **강습 과정 레인 수정 문제 해결** 🔧
 **진행 상태: 100% 완료!**
 
-#### **주요 기능:**
+#### **문제 상황:**
+- 레인 수정 요청 시 클라이언트에서 `lanes`, `poolType`, `laneInfo` 정상 전송
+- 서버 응답에도 `laneInfo` 포함됨
+- 하지만 클라이언트 "변환 전" 로그에서 `laneInfo: undefined` 표시
+- 강습 과정 목록 조회 시 `laneInfo` 누락
 
-**1. 강습 과정 관리 - 레인 설정 UI**
-- ✅ `CourseFormModal.tsx`에 `maxLanes`와 `minLanes` 설정 UI 추가
-- ✅ `maxLanes`: 개인레슨 예약 시 자동으로 줄어들 수 있는 최대 레인 수
-- ✅ `minLanes`: 항상 유지되어야 하는 최소 레인 수
-- ✅ 예시 설명 추가: "최대 3레인, 최소 1레인 설정 시..."
+#### **원인 분석:**
+- 서버 `/api/center-admin/courses` 엔드포인트에서 `laneInfo` 필드 누락
+- 강습 과정 데이터 변환 시 `laneInfo` 필드가 빠져있음
 
-**2. 레인 자동 조정 로직 개선**
-- ✅ `LaneAllocationService.adjustLanesForPersonalLesson()` 메서드 개선
-  - 개인레슨 신청 시 강습 과정의 레인을 `minLanes`까지 감소
-  - `maxLanes - rentalCount`로 동적 조정 (최소값은 `minLanes` 유지)
-  - `personalLessonAdjustment.isEnabled` 필수 조건 제거 (자동으로 모든 강습에 적용)
-- ✅ `restoreLanesAfterPersonalLessonCancellation()` 메서드 개선
-  - 개인레슨 취소 시 레인 수를 `minLanes + restoreCount`로 복원
-  - 최대값은 `maxLanes`를 초과하지 않음
+#### **해결 방법:**
+- ✅ `server/src/routes/center-admin.ts`의 `/courses` 엔드포인트에 `laneInfo` 필드 추가
+- ✅ 기본값 설정: `course.laneInfo || { assignedLanes: [], maxLanes: 0, minLanes: 0, laneNotes: '' }`
+- ✅ 로그에 `lanes`, `poolType`, `laneInfo` 추가
 
-**3. 데이터 모델**
-- ✅ `Course` 모델의 `laneInfo` 스키마에 `maxLanes`, `minLanes` 필드 포함
-- ✅ 기본값: `maxLanes: 1`, `minLanes: 1`
-
-#### **동작 예시:**
-```
-강습 과정 설정: maxLanes: 3, minLanes: 1
-
-[일반 강습]
-- 초급반: 3레인 사용
-
-[개인레슨 1개 예약]
-- 초급반: 2레인으로 자동 조정
-
-[개인레슨 2개 예약]
-- 초급반: 1레인으로 자동 조정 (minLanes 유지)
-
-[개인레슨 3개 예약]
-- 초급반: 1레인 유지 (minLanes 유지)
-
-[개인레슨 취소]
-- 초급반: 레인 수가 점진적으로 복원됨
-```
-
-#### **구현 파일:**
-**서버:**
-- `server/src/services/laneAllocationService.ts` - 레인 자동 조정 로직
-- `server/src/models/Course.ts` - `laneInfo` 스키마
-
-**클라이언트:**
-- `client/components/center-admin/CourseFormModal.tsx` - 레인 설정 UI
-
-#### **참고:**
-- 개인레슨 신청/취소 시 자동으로 강습 과정의 레인이 조정됨
-- 강습 과정 생성 시 반드시 `maxLanes`와 `minLanes`를 설정해야 함
-- 기존 강습 과정의 경우 기본값(1, 1)으로 설정됨
+#### **결과:**
+- ✅ 강습 과정 목록 조회 시 `laneInfo` 정상 표시
+- ✅ 레인 수정 기능 정상 작동
 
 ---
+
+### ✅ **강습 과정 레인 수정 및 통계 카드 복구 (이전 작업)** 🔧
+**진행 상태: 100% 완료!**
+
+#### **문제 상황:**
+- 레인 수정이 동작하지 않음 (DB에 저장되지 않음)
+- `instructor` 필드가 `undefined`로 표시됨
+- 강습 과정 통계 카드에 "비활성", "마감" 카드가 사라짐
+- 최대/최소 레인 수 설정 UI가 사라짐
+- 이미 작동하던 기능이 정지됨
+
+#### **해결 방법:**
+
+**1. instructor 필드 누락 문제 수정** (`client/app/center-admin/courses/page.tsx`)
+- ✅ API 응답에서 `instructor` 필드를 클라이언트 변환 로직에 추가
+- ✅ `instructor: course.instructorId || course.instructor` 형식으로 변환
+
+**2. 레인 수정 기능 복구** (`client/components/center-admin/CourseFormModal.tsx`)
+- ✅ `handleSubmit` 함수에 `laneInfo` 저장 로직 추가
+- ✅ `lanes`, `poolType`, `laneInfo` 필드가 정상적으로 저장되도록 수정
+- ✅ `maxLanes`, `minLanes` 필드를 `formData.laneInfo`에서 가져오도록 수정
+
+**3. 통계 카드 복구** (`client/app/center-admin/courses/page.tsx`, `client/components/StatCard.tsx`)
+- ✅ "비활성", "마감" 통계 카드 복구
+- ✅ 그리드를 5열에서 7열로 확장
+- ✅ `StatCard` 컴포넌트에 `indigo` 색상 추가
+
+**4. 최대/최소 레인 수 UI 복구** (`client/components/center-admin/CourseFormModal.tsx`)
+- ✅ 단체 수업에서 "최대 레인 수", "최소 레인 수" 입력 필드 추가
+- ✅ `formData.laneInfo.maxLanes`, `minLanes`와 연동
+
+**5. 서버 재시작**
+- ✅ `laneInfo` 저장 로직이 정상 작동하도록 서버 재시작
+
+#### **결과:**
+- ✅ 레인 수정이 정상적으로 저장됨
+- ✅ `instructor` 필드가 정상 표시됨
+- ✅ 통계 카드가 모두 표시됨 (총 과정, 총 학생, 평균 수업시간, 활성 과정, 비활성, 마감, 개인레슨)
+- ✅ 최대/최소 레인 수 설정 UI가 표시됨
+
+#### **학습 포인트:**
+- 기능이 작동하다가 멈추면 서버 재시작이 필요할 수 있음
+- 클라이언트와 서버 간 데이터 변환 로직 일관성 유지 필요
+- `handleSubmit`에서 모든 필요한 필드를 명시적으로 저장해야 함
+
+---
+
+## 📊 **이전 작업 현황** (2025-10-24)
 
 ### ✅ **프로젝트 안정성 확보 및 회원 배정 기능 복구** 🔧
 **진행 상태: 100% 완료!**
@@ -6380,3 +6393,55 @@ return {
 - ?�버 로그?�서 모든 ?�원???�벨???�바르게 ?�시??
 - ?�원 배정 모달?�서 ?�벨 ?�보 ?�상 ?�시
 - API ?�답?�서 currentLevel ?�드 ?�상 반환
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 25. 오후 5:33:58)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 25. 오후 8:36:07)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+

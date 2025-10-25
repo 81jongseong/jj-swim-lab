@@ -1,1 +1,1 @@
-{"version":3,"file":"courses.d.ts","sourceRoot":"","sources":["../../src/routes/courses.ts"],"names":[],"mappings":"AA+GA,OAAO,EAAE,MAAM,EAAqB,MAAM,SAAS,CAAC;AAYpD,QAAA,MAAM,MAAM,EAAE,MAAiB,CAAC;AAu2DhC,eAAe,MAAM,CAAC"}
+{"version":3,"file":"courses.d.ts","sourceRoot":"","sources":["../../src/routes/courses.ts"],"names":[],"mappings":"AA+GA,OAAO,EAAE,MAAM,EAAqB,MAAM,SAAS,CAAC;AAYpD,QAAA,MAAM,MAAM,EAAE,MAAiB,CAAC;AAq1DhC,eAAe,MAAM,CAAC"}

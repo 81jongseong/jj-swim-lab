@@ -8,10 +8,23 @@ class LaneAllocationService {
     static async adjustLanesForPersonalLesson(personalLessonData, rentalCount = 1) {
         try {
             const { date, time, centerId } = personalLessonData;
+            console.log(`🔍 개인레슨 레인 조정 시작 - 입력 데이터:`, {
+                date,
+                time,
+                centerId,
+                dateType: typeof date,
+                dateValue: date
+            });
             const lessonDate = new Date(date);
             const dayOfWeek = lessonDate.getDay();
             const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
             const dayName = dayNames[dayOfWeek];
+            console.log(`📅 날짜 파싱 결과:`, {
+                originalDate: date,
+                parsedDate: lessonDate,
+                dayOfWeek,
+                dayName
+            });
             console.log(`🔍 개인레슨 레인 조정 시작: ${dayName} ${time}, centerId: ${centerId}`);
             const allCourses = await Course_1.Course.find({
                 centerId,
@@ -31,17 +44,26 @@ class LaneAllocationService {
                 });
             });
             console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
+            const usedLanes = new Set();
+            conflictingCourses.forEach((course) => {
+                (course.laneInfo?.assignedLanes || []).forEach((lane) => usedLanes.add(lane));
+            });
+            const availableLanes = Array.from({ length: 6 }, (_, i) => i + 1).filter(lane => !usedLanes.has(lane));
+            console.log(`🔍 사용 중인 레인:`, Array.from(usedLanes));
+            console.log(`🔍 사용 가능한 레인:`, availableLanes);
             for (const course of conflictingCourses) {
                 const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
                 const minLanes = course.laneInfo.minLanes || 1;
-                const originalLanes = course.laneInfo.assignedLanes || [1];
-                const adjustedLaneCount = Math.max(minLanes, maxLanes - rentalCount);
-                const adjustedLanes = Array.from({ length: adjustedLaneCount }, (_, i) => i + 1);
+                const currentLanes = course.laneInfo.assignedLanes || [1];
+                const adjustedLanes = availableLanes.slice(0, maxLanes);
+                if (adjustedLanes.length < minLanes) {
+                    console.log(`⚠️ 경고: ${course.name}의 최소 레인 수(${minLanes})를 만족하지 못함 (사용 가능: ${adjustedLanes.length})`);
+                }
                 await Course_1.Course.findByIdAndUpdate(course._id, {
-                    'laneInfo.assignedLanes': adjustedLanes,
-                    'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${maxLanes} → ${adjustedLaneCount})`
+                    'laneInfo.assignedLanes': adjustedLanes.length > 0 ? adjustedLanes : currentLanes,
+                    'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 - 충돌 방지 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
                 });
-                console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${maxLanes} → ${adjustedLaneCount} 레인`);
+                console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: [${currentLanes.join(',')}] → [${adjustedLanes.join(',')}] (max:${maxLanes}, min:${minLanes})`);
             }
             return { success: true, adjustedCourses: conflictingCourses.length };
         }

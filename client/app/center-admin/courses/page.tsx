@@ -191,7 +191,10 @@ function CoursesManagement() {
           name: course.name,
           instructorId: course.instructorId,
           instructorName: course.instructorName,
-          instructor: course.instructor
+          instructor: course.instructor,
+          lanes: course.lanes,
+          poolType: course.poolType,
+          laneInfo: course.laneInfo
         });
         // schedule 필드 안전하게 처리 & 영어 → 한글 변환
         let schedule = [];
@@ -228,6 +231,9 @@ function CoursesManagement() {
           });
         }
         
+        // 개인레슨 여부 확인
+        const isPersonalLesson = course.isPersonalLesson || course.courseType === 'personal' || course.name?.includes('개인');
+        
         const transformedCourse = {
           _id: course._id,
           name: course.name || '제목 없음',
@@ -236,8 +242,9 @@ function CoursesManagement() {
           duration: course.duration || 60,
           maxStudents: course.maxStudents || 10,
           currentStudents: course.enrolledStudents?.filter((e: any) => e.status === 'active').length || 0,
-          instructorId: course.instructorId || course.instructor?._id || course.instructor,
-          instructorName: course.instructorName || course.instructor?.name || '강사 미배정',
+          instructorId: course.instructorId?._id || course.instructorId || course.instructor?._id || course.instructor,
+          instructorName: course.instructorId?.name || course.instructorName || course.instructor?.name || '강사 미배정',
+          instructor: course.instructorId || course.instructor, // ⭐ instructor 필드 추가
           price: course.price || 0,
           schedule: schedule,
           status: course.isActive === false ? 'inactive' : 
@@ -249,14 +256,17 @@ function CoursesManagement() {
           lanes: course.lanes,
           laneInfo: course.laneInfo,
           // ⭐ 개인레슨 여부 추가
-          isPersonalLesson: course.isPersonalLesson || course.courseType === 'personal' || false
+          isPersonalLesson: isPersonalLesson
         };
         
         console.log('✅ 강습 과정 변환 후:', {
           _id: transformedCourse._id,
           name: transformedCourse.name,
           instructorId: transformedCourse.instructorId,
-          instructorName: transformedCourse.instructorName
+          instructorName: transformedCourse.instructorName,
+          lanes: transformedCourse.lanes,
+          poolType: transformedCourse.poolType,
+          laneInfo: transformedCourse.laneInfo
         });
         
         return transformedCourse;
@@ -753,6 +763,27 @@ function CoursesManagement() {
       
       if (editingCourse && editingCourse._id) {
         // ✅ 수정 - PUT 요청
+        const updateData = {
+          name: courseData.name,
+          description: courseData.description,
+          level: courseData.level,
+          duration: courseData.duration,
+          price: courseData.price,
+          maxStudents: courseData.maxStudents,
+          instructorId: courseData.instructorId, // ⭐ 강사 ID 추가
+          schedule: scheduleForDB,
+          tags: courseData.tags,
+          poolType: courseData.poolType, // ⭐ 풀 타입 추가
+          lanes: courseData.lanes, // ⭐ 레인 배열 추가
+          laneInfo: courseData.laneInfo // ⭐ 레인 정보 추가
+        };
+        
+        console.log('🎯 강습 과정 수정 요청 시작');
+        console.log('📋 courseData:', courseData);
+        console.log('🏊 courseData.lanes:', courseData.lanes);
+        console.log('🏊 courseData.poolType:', courseData.poolType);
+        console.log('🏊 courseData.laneInfo:', courseData.laneInfo);
+        console.log('🚀 전송할 updateData:', updateData);
         
         const response = await fetch(`http://localhost:5000/api/courses/${editingCourse._id}`, {
           method: 'PUT',
@@ -760,20 +791,7 @@ function CoursesManagement() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            name: courseData.name,
-            description: courseData.description,
-            level: courseData.level,
-            duration: courseData.duration,
-            price: courseData.price,
-            maxStudents: courseData.maxStudents,
-            instructorId: courseData.instructorId, // ⭐ 강사 ID 추가
-            schedule: scheduleForDB,
-            tags: courseData.tags,
-            poolType: courseData.poolType, // ⭐ 풀 타입 추가
-            lanes: courseData.lanes, // ⭐ 레인 배열 추가
-            laneInfo: courseData.laneInfo // ⭐ 레인 정보 추가
-          })
+          body: JSON.stringify(updateData)
         });
         
         if (!response.ok) {
@@ -783,6 +801,8 @@ function CoursesManagement() {
         }
         
         const data = await response.json();
+        console.log('✅ 수정 완료 응답:', data);
+        console.log('🏊 응답의 laneInfo:', data.data?.laneInfo || data.course?.laneInfo);
         
         // 전체 목록 새로고침
         await loadCourses();
@@ -862,7 +882,7 @@ function CoursesManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-7 gap-3 md:gap-6 mb-8">
+          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-7 gap-3 md:gap-6 mb-8">
         <StatCard
           icon="📚"
           title="총 과정"
@@ -870,43 +890,43 @@ function CoursesManagement() {
           color="blue"
         />
         <StatCard
-          icon="✅"
-          title="활성"
-          value={`${courses.filter(c => c.status === 'active' && !c.isPersonalLesson).length}개`}
+          icon="👥"
+          title="총 학생"
+          value={`${courses.filter(c => !c.isPersonalLesson).reduce((sum, course) => sum + course.currentStudents, 0)}명`}
           color="green"
+        />
+        <StatCard
+          icon="⏱️"
+          title="평균 수업시간"
+          value={`${courses.filter(c => !c.isPersonalLesson).length > 0 
+            ? Math.round(courses.filter(c => !c.isPersonalLesson).reduce((sum, course) => sum + course.duration, 0) / courses.filter(c => !c.isPersonalLesson).length)
+            : 0
+          }분`}
+          color="purple"
+        />
+        <StatCard
+          icon="⭐"
+          title="활성 과정"
+          value={`${courses.filter(course => course.status === 'active' && !course.isPersonalLesson).length}개`}
+          color="yellow"
         />
         <StatCard
           icon="⏸️"
           title="비활성"
-          value={`${courses.filter(c => c.status === 'inactive' && !c.isPersonalLesson).length}개`}
+          value={`${courses.filter(course => course.status === 'inactive' && !course.isPersonalLesson).length}개`}
           color="red"
         />
         <StatCard
           icon="🔒"
           title="마감"
-          value={`${courses.filter(c => c.status === 'full' && !c.isPersonalLesson).length}개`}
-          color="orange"
-        />
-        <StatCard
-          icon="👥"
-          title="총 학생"
-          value={`${courses.reduce((sum, course) => sum + course.currentStudents, 0)}명`}
-          color="purple"
-        />
-        <StatCard
-          icon="⏱️"
-          title="평균 수업시간"
-          value={`${courses.length > 0 
-            ? Math.round(courses.reduce((sum, course) => sum + course.duration, 0) / courses.length)
-            : 0
-          }분`}
-          color="blue"
+          value={`${courses.filter(course => course.status === 'full' && !course.isPersonalLesson).length}개`}
+          color="indigo"
         />
         <StatCard
           icon="👤"
           title="개인레슨"
           value={`${courses.filter(course => course.isPersonalLesson).length}개`}
-          color="yellow"
+          color="orange"
         />
       </div>
 

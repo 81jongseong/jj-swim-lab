@@ -85,6 +85,11 @@ const personalLessonSchema = new mongoose_1.Schema({
         type: String,
         enum: ['pending', 'completed', 'failed'],
         default: 'pending'
+    },
+    assignedLane: {
+        type: Number,
+        min: 1,
+        max: 10
     }
 }, {
     timestamps: true

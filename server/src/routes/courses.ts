@@ -352,15 +352,12 @@ router.post('/', authenticateToken, requireInstructor, async (req: AuthRequest, 
 // 강습 과정 수정 (강사/관리자만)
 router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    console.log('📝 강습 과정 수정 요청:', {
-      courseId: req.params.id,
-      body: req.body,
-      instructorId: req.body.instructorId,
-      tags: req.body.tags,
-      poolType: req.body.poolType,
-      lanes: req.body.lanes,
-      laneInfo: req.body.laneInfo
-    });
+    console.log('📝 강습 과정 수정 요청 시작');
+    console.log('📋 courseId:', req.params.id);
+    console.log('🏊 body.lanes:', req.body.lanes);
+    console.log('🏊 body.poolType:', req.body.poolType);
+    console.log('🏊 body.laneInfo:', req.body.laneInfo);
+    console.log('📦 전체 body:', req.body);
 
     const course = await Course.findById(req.params.id);
     
@@ -460,13 +457,22 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
     }
     console.log('🏊 레인 정보 처리:', updateData.laneInfo);
 
-    console.log('💾 업데이트할 데이터:', updateData);
+    console.log('💾 업데이트할 updateData:');
+    console.log('  - lanes:', updateData.lanes);
+    console.log('  - poolType:', updateData.poolType);
+    console.log('  - laneInfo:', updateData.laneInfo);
+    console.log('💾 전체 updateData:', updateData);
     
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     ).populate('instructor', 'name userId');
+    
+    console.log('✅ DB 업데이트 완료');
+    console.log('🏊 업데이트된 lanes:', updatedCourse?.lanes);
+    console.log('🏊 업데이트된 poolType:', updatedCourse?.poolType);
+    console.log('🏊 업데이트된 laneInfo:', updatedCourse?.laneInfo);
     
     console.log('🔍 업데이트 후 강습 과정:', {
       _id: updatedCourse?._id,

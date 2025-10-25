@@ -38,6 +38,7 @@ export interface IPersonalLesson extends Document {
     price: number;
     specialRequests?: string;
     paymentStatus: 'pending' | 'completed' | 'failed';
+    assignedLane?: number;
     createdAt: Date;
     updatedAt: Date;
 }

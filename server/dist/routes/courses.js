@@ -11,18 +11,6 @@ const auth_1 = require("../middleware/auth");
 const role_1 = require("../middleware/role");
 const router = (0, express_1.Router)();
 const auth_2 = require("../middleware/auth");
-const requireInstructor = async (req, res, next) => {
-    try {
-        const user = await User_1.User.findById(req.user.userId);
-        if (!user || (user.userType !== 'instructor' && user.userType !== 'centerAdmin' && user.userType !== 'superAdmin')) {
-            return res.status(403).json({ error: '강사 또는 센터 관리자 권한이 필요합니다.' });
-        }
-        return next();
-    }
-    catch (error) {
-        return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
-    }
-};
 router.get('/', async (req, res) => {
     try {
         const { level, instructor, isActive } = req.query;
@@ -69,7 +57,7 @@ router.get('/:id', async (req, res) => {
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
+router.post('/', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res) => {
     try {
         console.log('📥 강습 과정 생성 요청:', {
             body: req.body,
@@ -93,7 +81,7 @@ router.post('/', auth_2.auth, requireInstructor, async (req, res) => {
         });
         let centerId = req.body.centerId;
         if (!centerId) {
-            if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
+            if (['centerAdmin', 'center-admin'].includes(user.userType) && user.centerAdminInfo?.managedCenters && user.centerAdminInfo.managedCenters.length > 0) {
                 centerId = user.centerAdminInfo.managedCenters[0];
             }
             else if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters && user.instructorInfo.assignedCenters.length > 0) {
@@ -305,7 +293,7 @@ router.put('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res
         });
     }
 });
-router.delete('/:id', auth_2.auth, requireInstructor, async (req, res) => {
+router.delete('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res) => {
     try {
         const course = await Course_1.Course.findById(req.params.id);
         if (!course) {
@@ -313,7 +301,7 @@ router.delete('/:id', auth_2.auth, requireInstructor, async (req, res) => {
         }
         const user = await User_1.User.findById(req.user.userId);
         const isSuperAdmin = user?.userType === 'superAdmin';
-        const isCenterAdmin = user?.userType === 'centerAdmin';
+        const isCenterAdmin = ['centerAdmin', 'center-admin'].includes(user?.userType || '');
         const isOwnCourse = course.instructor.toString() === String(req.user.userId);
         console.log('🔐 삭제 권한 확인:', {
             userType: user?.userType,

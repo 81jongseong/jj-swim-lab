@@ -110,16 +110,6 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
       status: 'pending'
     });
 
-    // 개인레슨 카운트
-    const totalPersonalLessons = await PersonalLesson.countDocuments({
-      centerId
-    });
-
-    const activePersonalLessons = await PersonalLesson.countDocuments({
-      centerId,
-      status: { $in: ['pending', 'confirmed', 'in_progress'] }
-    });
-
     res.json({
       success: true,
       message: '센터 관리자 대시보드 데이터 조회 성공!',
@@ -130,8 +120,6 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
         monthlyRevenue: monthlyRevenue[0]?.total || 0,
         todayBookings,
         pendingApprovals,
-        personalLessons: totalPersonalLessons, // 추가
-        activePersonalLessons: activePersonalLessons, // 추가
         monthlyGrowth: 12.5, // 실제 계산 로직 필요
         averageRating: 4.7 // 실제 계산 로직 필요
       }
@@ -909,6 +897,7 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
         endDate: course.endDate,
         lanes: course.lanes || [1],
         poolType: course.poolType || 'main',
+        laneInfo: course.laneInfo || { assignedLanes: [], maxLanes: 0, minLanes: 0, laneNotes: '' },
         enrolledStudents: course.enrolledStudents || [],
         isActive: course.isActive,
         createdAt: course.createdAt,
@@ -919,7 +908,10 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
         _id: courseData._id,
         name: courseData.name,
         instructorId: courseData.instructorId,
-        instructorName: courseData.instructorName
+        instructorName: courseData.instructorName,
+        lanes: courseData.lanes,
+        poolType: courseData.poolType,
+        laneInfo: courseData.laneInfo
       });
       
       return courseData;
@@ -2400,30 +2392,33 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
     }).populate('instructorId', 'name email');
 
     // 강사 정보를 포함한 과정 데이터 구성
-    const coursesData = courses.map(course => ({
-      _id: course._id,
-      name: course.name,
-      description: course.description,
-      level: course.level,
-      duration: course.duration,
-      maxStudents: course.maxStudents,
-      currentStudents: course.enrolledStudents?.length || 0,
-      instructorId: course.instructorId,
-      instructor: course.instructorId, // 강사 정보
-      price: course.price,
-      schedule: course.schedule,
-      status: course.status,
-      createdAt: course.createdAt,
-      tags: course.tags || [],
-      poolType: course.poolType,
-      lanes: course.lanes,
-      laneInfo: course.laneInfo,
-      courseType: course.courseType,
-      isPersonalLesson: course.isPersonalLesson,
-      enrolledStudents: course.enrolledStudents,
-      startDate: course.startDate,
-      endDate: course.endDate
-    }));
+    const coursesData = courses.map(course => {
+      console.log(`🔍 과정 ${course.name} - laneInfo 원본:`, JSON.stringify(course.laneInfo, null, 2));
+      return {
+        _id: course._id,
+        name: course.name,
+        description: course.description,
+        level: course.level,
+        duration: course.duration,
+        maxStudents: course.maxStudents,
+        currentStudents: course.enrolledStudents?.length || 0,
+        instructorId: course.instructorId,
+        instructor: course.instructorId, // 강사 정보
+        price: course.price,
+        schedule: course.schedule,
+        status: course.status,
+        createdAt: course.createdAt,
+        tags: course.tags || [],
+        poolType: course.poolType,
+        lanes: course.lanes,
+        laneInfo: course.laneInfo,
+        courseType: course.courseType,
+        isPersonalLesson: course.isPersonalLesson,
+        enrolledStudents: course.enrolledStudents,
+        startDate: course.startDate,
+        endDate: course.endDate
+      };
+    });
 
     res.json({
       success: true,
