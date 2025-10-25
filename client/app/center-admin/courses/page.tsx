@@ -247,7 +247,9 @@ function CoursesManagement() {
           // ⭐ 레인 정보 추가
           poolType: course.poolType,
           lanes: course.lanes,
-          laneInfo: course.laneInfo
+          laneInfo: course.laneInfo,
+          // ⭐ 개인레슨 여부 추가
+          isPersonalLesson: course.isPersonalLesson || course.courseType === 'personal' || false
         };
         
         console.log('✅ 강습 과정 변환 후:', {
@@ -860,7 +862,7 @@ function CoursesManagement() {
       </div>
 
       {/* 통계 카드 */}
-          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-6 mb-8">
+      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-7 gap-3 md:gap-6 mb-8">
         <StatCard
           icon="📚"
           title="총 과정"
@@ -868,10 +870,28 @@ function CoursesManagement() {
           color="blue"
         />
         <StatCard
+          icon="✅"
+          title="활성"
+          value={`${courses.filter(c => c.status === 'active' && !c.isPersonalLesson).length}개`}
+          color="green"
+        />
+        <StatCard
+          icon="⏸️"
+          title="비활성"
+          value={`${courses.filter(c => c.status === 'inactive' && !c.isPersonalLesson).length}개`}
+          color="gray"
+        />
+        <StatCard
+          icon="🔒"
+          title="마감"
+          value={`${courses.filter(c => c.status === 'full' && !c.isPersonalLesson).length}개`}
+          color="orange"
+        />
+        <StatCard
           icon="👥"
           title="총 학생"
           value={`${courses.reduce((sum, course) => sum + course.currentStudents, 0)}명`}
-          color="green"
+          color="purple"
         />
         <StatCard
           icon="⏱️"
@@ -880,19 +900,13 @@ function CoursesManagement() {
             ? Math.round(courses.reduce((sum, course) => sum + course.duration, 0) / courses.length)
             : 0
           }분`}
-          color="purple"
-        />
-        <StatCard
-          icon="⭐"
-          title="활성 과정"
-          value={`${courses.filter(course => course.status === 'active' && !course.isPersonalLesson).length}개`}
-          color="yellow"
+          color="indigo"
         />
         <StatCard
           icon="👤"
           title="개인레슨"
           value={`${courses.filter(course => course.isPersonalLesson).length}개`}
-          color="purple"
+          color="pink"
         />
       </div>
 
