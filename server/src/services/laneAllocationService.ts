@@ -19,11 +19,26 @@ export class LaneAllocationService {
     try {
       const { date, time, centerId } = personalLessonData;
       
+      console.log(`🔍 개인레슨 레인 조정 시작 - 입력 데이터:`, {
+        date,
+        time,
+        centerId,
+        dateType: typeof date,
+        dateValue: date
+      });
+      
       // 날짜에서 요일 추출 (0=일요일, 1=월요일, ...)
       const lessonDate = new Date(date);
       const dayOfWeek = lessonDate.getDay();
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const dayName = dayNames[dayOfWeek];
+      
+      console.log(`📅 날짜 파싱 결과:`, {
+        originalDate: date,
+        parsedDate: lessonDate,
+        dayOfWeek,
+        dayName
+      });
       
       console.log(`🔍 개인레슨 레인 조정 시작: ${dayName} ${time}, centerId: ${centerId}`);
       
@@ -57,18 +72,19 @@ export class LaneAllocationService {
       for (const course of conflictingCourses) {
         const maxLanes = course.laneInfo.maxLanes || course.laneInfo.assignedLanes?.length || 1;
         const minLanes = course.laneInfo.minLanes || 1;
-        const originalLanes = course.laneInfo.assignedLanes || [1];
+        const currentLanes = course.laneInfo.assignedLanes || [1];
+        const currentLaneCount = currentLanes.length;
         
-        // 개인레슨 수만큼 레인 감소 (최소 레인 수는 유지)
-        const adjustedLaneCount = Math.max(minLanes, maxLanes - rentalCount);
+        // 현재 레인 수에서 개인레슨 수만큼 감소 (최소 레인 수는 유지)
+        const adjustedLaneCount = Math.max(minLanes, currentLaneCount - rentalCount);
         const adjustedLanes = Array.from({ length: adjustedLaneCount }, (_, i) => i + 1);
         
         await Course.findByIdAndUpdate(course._id, {
           'laneInfo.assignedLanes': adjustedLanes,
-          'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${maxLanes} → ${adjustedLaneCount})`
+          'laneInfo.laneNotes': `개인레슨 ${rentalCount}개로 인해 레인 조정됨 (${currentLaneCount} → ${adjustedLaneCount})`
         });
 
-        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${maxLanes} → ${adjustedLaneCount} 레인`);
+        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: ${currentLaneCount} → ${adjustedLaneCount} 레인 (max:${maxLanes}, min:${minLanes})`);
       }
 
       return { success: true, adjustedCourses: conflictingCourses.length };
