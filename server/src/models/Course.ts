@@ -199,6 +199,7 @@ const courseSchema = new mongoose.Schema({
   }],
   laneInfo: {
     assignedLanes: [{ type: Number }], // 배정된 레인 번호들 (예: [1, 2, 3])
+    originalAssignedLanes: [{ type: Number }], // 원래 배정된 레인 번호들 (개인레슨 취소 시 복원용)
     maxLanes: { type: Number, default: 1 }, // 최대 사용 레인 수
     minLanes: { type: Number, default: 1 }, // 최소 사용 레인 수 (개인레슨 시 조정용)
     laneNotes: { type: String, default: '' } // 레인 관련 메모

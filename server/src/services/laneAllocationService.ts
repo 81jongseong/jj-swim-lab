@@ -67,11 +67,16 @@ export class LaneAllocationService {
         const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
         const minLanes = course.laneInfo?.minLanes || 1;
         const currentLanes = course.laneInfo?.assignedLanes || [1];
+        // 원래 레인 저장 (아직 저장되지 않은 경우에만)
+        const originalLanes = course.laneInfo?.originalAssignedLanes?.length > 0 
+          ? course.laneInfo.originalAssignedLanes 
+          : currentLanes;
         
         console.log(`🔧 강습과정 ${course.name} 레인 조정 시작:`, {
           maxLanes,
           minLanes,
           currentLanes,
+          originalLanes,
           availableLanes: remainingAvailableLanes
         });
 
@@ -94,6 +99,7 @@ export class LaneAllocationService {
           maxLanes,
           minLanes,
           currentLanes: currentLanes.join(','),
+          originalLanes: originalLanes.join(','),
           adjustedLanes: adjustedLanes.join(',')
         });
 
@@ -102,10 +108,16 @@ export class LaneAllocationService {
           console.log(`⚠️ 경고: ${course.name}의 최소 레인 수(${minLanes})를 만족하지 못함 (사용 가능: ${adjustedLanes.length})`);
         }
         
-        const updateData = {
+        const updateData: any = {
           'laneInfo.assignedLanes': adjustedLanes.length > 0 ? adjustedLanes : currentLanes,
           'laneInfo.laneNotes': `개인레슨으로 인해 레인 조정됨 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
         };
+        
+        // originalAssignedLanes가 없으면 현재 레인을 저장 (첫 조정 시)
+        if (!course.laneInfo?.originalAssignedLanes || course.laneInfo.originalAssignedLanes.length === 0) {
+          updateData['laneInfo.originalAssignedLanes'] = currentLanes;
+          console.log(`💾 원래 레인 저장: [${currentLanes.join(',')}]`);
+        }
         
         console.log(`💾 업데이트할 데이터:`, {
           courseId: course._id,
@@ -119,6 +131,7 @@ export class LaneAllocationService {
         const updatedCourse = await Course.findById(course._id);
         console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: [${currentLanes.join(',')}] → [${adjustedLanes.join(',')}] (max:${maxLanes}, min:${minLanes})`);
         console.log(`✅ DB 확인 - 업데이트된 레인: [${updatedCourse?.laneInfo?.assignedLanes?.join(',')}]`);
+        console.log(`✅ DB 확인 - 원래 레인: [${updatedCourse?.laneInfo?.originalAssignedLanes?.join(',')}]`);
       }
       
       return { 
@@ -165,36 +178,42 @@ export class LaneAllocationService {
         });
       });
 
-      // 각 강습과정의 레인을 원래대로 복원 (maxLanes까지)
+      // 각 강습과정의 레인을 원래대로 복원 (originalAssignedLanes 사용)
       for (const course of courses) {
-        const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
+        const originalLanes = course.laneInfo?.originalAssignedLanes || [];
         const currentLanes = course.laneInfo?.assignedLanes || [];
         
         console.log(`🔧 강습과정 ${course.name} 레인 복원 시작:`, {
-          maxLanes,
+          originalLanes: originalLanes.join(','),
           currentLanes: currentLanes.join(','),
           currentCount: currentLanes.length
         });
         
-        // 최대 레인 수까지 확장
-        const restoredLanes = Array.from({ length: maxLanes }, (_, i) => i + 1);
+        // originalAssignedLanes가 있으면 복원, 없으면 현재 레인 유지
+        const restoredLanes = originalLanes.length > 0 ? originalLanes : currentLanes;
         
         console.log(`📊 레인 복원 계산 결과:`, {
           courseName: course.name,
           currentLanes: currentLanes.join(','),
           restoredLanes: restoredLanes.join(','),
-          maxLanes
+          hasOriginalLanes: originalLanes.length > 0
         });
         
-        await Course.findByIdAndUpdate(course._id, {
-          'laneInfo.assignedLanes': restoredLanes,
-          'laneInfo.laneNotes': `개인레슨 취소로 레인 복원됨 (${currentLanes.join(',')} → ${restoredLanes.join(',')})`
-        });
+        // originalAssignedLanes를 사용한 경우에만 복원
+        if (originalLanes.length > 0) {
+          await Course.findByIdAndUpdate(course._id, {
+            'laneInfo.assignedLanes': restoredLanes,
+            'laneInfo.originalAssignedLanes': [], // 복원 후 초기화
+            'laneInfo.laneNotes': `개인레슨 취소로 원래 레인 복원됨 (${currentLanes.join(',')} → ${restoredLanes.join(',')})`
+          });
 
-        // 업데이트 확인
-        const updatedCourse = await Course.findById(course._id);
-        console.log(`✅ 강습과정 ${course.name} 레인 복원 완료: [${currentLanes.join(',')}] → [${restoredLanes.join(',')}] (max:${maxLanes})`);
-        console.log(`✅ DB 확인 - 복원된 레인: [${updatedCourse?.laneInfo?.assignedLanes?.join(',')}]`);
+          // 업데이트 확인
+          const updatedCourse = await Course.findById(course._id);
+          console.log(`✅ 강습과정 ${course.name} 레인 복원 완료: [${currentLanes.join(',')}] → [${restoredLanes.join(',')}]`);
+          console.log(`✅ DB 확인 - 복원된 레인: [${updatedCourse?.laneInfo?.assignedLanes?.join(',')}]`);
+        } else {
+          console.log(`⚠️ ${course.name}는 복원할 원래 레인이 없어 현재 레인 유지`);
+        }
       }
 
       return { success: true, restoredCourses: courses.length };
