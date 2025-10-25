@@ -418,22 +418,15 @@ export default function WeeklyCalendar({
                               </div>
                             )}
                             {/* 레인 정보 */}
-                            {(() => {
-                              // originalAssignedLanes가 있으면 개인레슨이 없는 요일이므로 원래 레인 표시
-                              const hasOriginalLanes = course.laneInfo?.originalAssignedLanes && course.laneInfo.originalAssignedLanes.length > 0;
-                              const lanesToShow = hasOriginalLanes 
-                                ? course.laneInfo.originalAssignedLanes 
-                                : (course.laneInfo?.assignedLanes || course.lanes || []);
-                              
-                              return lanesToShow.length > 0 ? (
-                                <div className="flex items-center text-xs text-blue-600 mt-1">
-                                  <span className="mr-1">🏊</span>
-                                  <span className="font-medium">
-                                    {lanesToShow.join(',')}레인
-                                  </span>
-                                </div>
-                              ) : null;
-                            })()}
+                            {((course.laneInfo?.assignedLanes && course.laneInfo.assignedLanes.length > 0) || 
+                              (course.lanes && course.lanes.length > 0)) && (
+                              <div className="flex items-center text-xs text-blue-600 mt-1">
+                                <span className="mr-1">🏊</span>
+                                <span className="font-medium">
+                                  {(course.laneInfo?.assignedLanes || course.lanes || []).join(',')}레인
+                                </span>
+                              </div>
+                            )}
                             {course.status === 'full' && (
                               <div className="text-xs bg-red-500 text-white px-1 py-0.5 rounded mt-1 inline-block">
                                 마감
