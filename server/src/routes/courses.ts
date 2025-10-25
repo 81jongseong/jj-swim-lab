@@ -513,7 +513,7 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
 });
 
 // 강습 과정 삭제 (강사/관리자만)
-router.delete('/:id', authenticateToken, requireInstructor, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authenticateToken, requireInstructorOrAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const course = await Course.findById(req.params.id);
     
@@ -524,7 +524,7 @@ router.delete('/:id', authenticateToken, requireInstructor, async (req: AuthRequ
     // 강사 본인의 과정만 삭제 가능 (센터관리자/슈퍼관리자는 모든 과정 삭제 가능)
     const user = await User.findById(req.user.userId);
     const isSuperAdmin = user?.userType === 'superAdmin';
-    const isCenterAdmin = user?.userType === 'centerAdmin';
+    const isCenterAdmin = ['centerAdmin', 'center-admin'].includes(user?.userType || '');
     const isOwnCourse = course.instructor.toString() === String(req.user.userId);
     
     console.log('🔐 삭제 권한 확인:', {
