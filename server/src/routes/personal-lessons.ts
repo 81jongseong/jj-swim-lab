@@ -81,19 +81,24 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       status: 'pending'
     });
 
-    await personalLesson.save();
-
-    // 레인 자동 조정 (필요시)
-    await LaneAllocationService.adjustLanesForPersonalLesson({
+    // 레인 자동 조정 및 레인 배정
+    const adjustmentResult = await LaneAllocationService.adjustLanesForPersonalLesson({
       date,
       time,
       centerId
     });
 
+    // 개인레슨에 레인 배정
+    personalLesson.assignedLane = adjustmentResult.personalLessonLane || 1;
+    await personalLesson.save();
+
     res.status(201).json({
       success: true,
       message: '개인레슨 신청이 완료되었습니다.',
-      data: personalLesson
+      data: {
+        ...personalLesson.toObject(),
+        assignedLane: adjustmentResult.personalLessonLane || 1
+      }
     });
 
   } catch (error) {

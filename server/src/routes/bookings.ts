@@ -487,45 +487,45 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
       });
     }
 
-    // 개인레슨 생성
-    const personalLesson = new PersonalLesson({
-      student: userId,
-      instructor: instructorId,
-      centerId: user.centerId,
-      lessonType: lessonType || 'private',
-      level: level || 'beginner',
-      scheduledDate: new Date(scheduledDate),
-      startTime,
-      endTime,
-      laneNumber: laneNumber || 1,
-      poolType: poolType || 'mainPool',
-      status: 'requested',
-      lessonContent: lessonContent || '',
-      specialRequests: specialRequests || '',
-      payment: {
-        amount: 50000, // 기본 가격 (실제로는 강사별/시간대별 가격 적용)
-        status: 'pending',
-        paymentMethod: 'card'
-      }
-    });
-
-    await personalLesson.save();
-
-    // 강사별 예약 수 증가
-    await updateInstructorBookingCount(instructorId, startTime, endTime, 1);
-
-    // 레인 자동 조정 (개인레슨 신청 시 다른 수업의 레인을 밀어냄)
+    // 레인 자동 조정 및 레인 배정
+    let adjustmentResult;
+    let assignedLane = 1;
     try {
-      const adjustmentResult = await LaneAllocationService.adjustLanesForPersonalLesson({
+      adjustmentResult = await LaneAllocationService.adjustLanesForPersonalLesson({
         date: scheduledDate,
         time: startTime,
         centerId: user.centerId
       });
+      assignedLane = adjustmentResult.personalLessonLane || 1;
       console.log('✅ 레인 자동 조정 완료:', adjustmentResult);
     } catch (adjustmentError) {
       console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
       // 레인 조정 실패해도 개인레슨 신청은 진행됨
     }
+
+    // 개인레슨 생성 (모델 구조에 맞게 수정)
+    const personalLesson = new PersonalLesson({
+      studentId: userId,
+      instructorId: instructorId,
+      centerId: user.centerId,
+      date: new Date(scheduledDate),
+      time: startTime,
+      duration: 60, // 분 단위
+      lessonType: lessonType || 'freestyle',
+      skillLevel: level || 'beginner',
+      goals: '개인 맞춤 레슨',
+      notes: lessonContent || '',
+      price: 50000,
+      specialRequests: specialRequests || '',
+      paymentStatus: 'pending',
+      status: 'pending',
+      assignedLane: assignedLane
+    });
+
+    await personalLesson.save();
+
+    // 강사별 예약 수 증가
+    await updateInstructorBookingCount(instructorId, startTime, '', 1);
 
     res.json({
       success: true,

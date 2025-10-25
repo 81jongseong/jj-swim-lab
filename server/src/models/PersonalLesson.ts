@@ -21,6 +21,7 @@ export interface IPersonalLesson extends Document {
   price: number;
   specialRequests?: string;
   paymentStatus: 'pending' | 'completed' | 'failed';
+  assignedLane?: number; // 배정된 레인 번호
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,6 +86,10 @@ const personalLessonSchema = new Schema<IPersonalLesson>({
     type: String,
     enum: ['pending', 'completed', 'failed'],
     default: 'pending'
+  },
+  assignedLane: {
+    type: Number,
+    default: 1 // 기본값: 1레인
   }
 }, {
   timestamps: true
