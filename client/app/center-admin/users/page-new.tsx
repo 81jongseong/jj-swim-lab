@@ -261,6 +261,33 @@ function CenterUsersManagement() {
     }
   };
 
+  const handleCourseUnassignment = async (memberId: string, courseId: string) => {
+    if (!confirm('과정 배정을 취소하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/data-center-admin/members/${memberId}/course/${courseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert('과정 배정이 취소되었습니다.');
+        loadMembers();
+      } else {
+        alert('과정 배정 취소에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('과정 배정 취소 오류:', error);
+      alert('과정 배정 취소 중 오류가 발생했습니다.');
+    }
+  };
+
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -460,6 +487,7 @@ function CenterUsersManagement() {
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
         member={selectedMember}
+        onUnassignCourse={handleCourseUnassignment}
       />
       
       <CourseAssignmentModal

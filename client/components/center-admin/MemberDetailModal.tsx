@@ -20,6 +20,7 @@ interface Member {
   medicalConditions?: string;
   swimmingGoals?: string[];
   currentCourses?: Array<{
+    courseId: string;
     courseName: string;
     courseType: string;
     instructorName: string;
@@ -40,9 +41,10 @@ interface MemberDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   member: Member | null;
+  onUnassignCourse?: (memberId: string, courseId: string) => void;
 }
 
-export default function MemberDetailModal({ isOpen, onClose, member }: MemberDetailModalProps) {
+export default function MemberDetailModal({ isOpen, onClose, member, onUnassignCourse }: MemberDetailModalProps) {
   if (!isOpen || !member) return null;
 
   return (
@@ -125,7 +127,7 @@ export default function MemberDetailModal({ isOpen, onClose, member }: MemberDet
               {member.currentCourses.map((course, index) => (
                 <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium text-blue-900">{course.courseName}</p>
                       <p className="text-sm text-blue-600">
                         {course.courseType === 'group' ? '단체반' : '개인레슨'} | {course.instructorName}
@@ -134,14 +136,25 @@ export default function MemberDetailModal({ isOpen, onClose, member }: MemberDet
                         {course.remainingSessions}/{course.totalSessions}회 남음
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      course.status === 'active' ? 'bg-green-100 text-green-800' :
-                      course.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {course.status === 'active' ? '진행중' :
-                       course.status === 'completed' ? '완료' : '취소'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        course.status === 'active' ? 'bg-green-100 text-green-800' :
+                        course.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {course.status === 'active' ? '진행중' :
+                         course.status === 'completed' ? '완료' : '취소'}
+                      </span>
+                      {course.status === 'active' && course.courseId && onUnassignCourse && (
+                        <button
+                          onClick={() => onUnassignCourse(member._id, course.courseId)}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                          title="배정 취소"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

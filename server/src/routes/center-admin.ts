@@ -2066,7 +2066,7 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
         
         // 현재 수강 정보 추가
         currentCourses: courseDetails.map(course => ({
-          courseId: course.courseId,
+          courseId: course.courseId.toString(), // ObjectId를 문자열로 변환
           courseName: course.courseName,
           courseType: 'group',
           instructorName: course.instructorName,
@@ -2265,7 +2265,11 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
           console.log('⚠️ 잘못된 등록 데이터:', enrollment);
           return false;
         }
-        return enrollment.student.toString() === memberId;
+        // ObjectId나 문자열 모두 비교할 수 있도록 처리
+        const enrollmentStudentId = enrollment.student.toString();
+        const memberIdStr = memberId.toString();
+        console.log('🔍 등록 비교:', { enrollmentStudentId, memberIdStr, match: enrollmentStudentId === memberIdStr });
+        return enrollmentStudentId === memberIdStr;
       }
     );
 
@@ -2311,6 +2315,15 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
 
     await course.save();
     console.log('💾 강습 과정 저장 완료');
+    
+    // 저장 후 검증: 다시 조회해서 확인
+    const savedCourse = await Course.findById(courseId);
+    console.log('🔍 저장 후 검증 - enrolledStudents:', savedCourse?.enrolledStudents);
+    console.log('🔍 저장 후 검증 - 찾고 있는 memberId:', memberId);
+    const isNowEnrolled = savedCourse?.enrolledStudents?.some(
+      (e: any) => e.student?.toString() === memberId.toString()
+    );
+    console.log('🔍 저장 후 검증 - 배정 확인:', isNowEnrolled);
 
     // 회원의 레벨을 강습 과정 레벨로 업데이트
     console.log('🔄 회원 레벨 업데이트 시작:', {
@@ -2384,6 +2397,84 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
     console.error('❌ 오류 타입:', typeof error);
     console.error('❌ 오류 메시지:', error.message);
     
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * 회원 과정 배정 취소 (퇴원)
+ * DELETE /api/center-admin/members/:memberId/course/:courseId
+ */
+router.delete('/members/:memberId/course/:courseId', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { memberId, courseId } = req.params;
+
+    console.log('🗑️ 회원 과정 배정 취소 시작:', { memberId, courseId });
+
+    const centerAdmin = await User.findById(req.user._id);
+    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리하는 센터가 없습니다.'
+      });
+    }
+
+    // 회원 존재 확인
+    const member = await User.findById(memberId);
+    if (!member || member.userType !== 'student') {
+      return res.status(404).json({
+        success: false,
+        message: '학생 회원을 찾을 수 없습니다.'
+      });
+    }
+
+    // 과정 존재 확인
+    const course = await Course.findOne({
+      _id: courseId,
+      centerId: centerId,
+      isPersonalLesson: { $ne: true }
+    });
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: '과정을 찾을 수 없습니다.'
+      });
+    }
+
+    // enrolledStudents에서 해당 회원 제거
+    const enrolledStudents = course.enrolledStudents || [];
+    const updatedEnrolledStudents = enrolledStudents.filter(
+      (enrollment: any) => {
+        const enrollmentStudentId = enrollment.student?.toString();
+        const memberIdStr = memberId.toString();
+        console.log('🔍 배정 취소 비교:', { enrollmentStudentId, memberIdStr, willRemove: enrollmentStudentId === memberIdStr });
+        return enrollmentStudentId !== memberIdStr;
+      }
+    );
+
+    course.enrolledStudents = updatedEnrolledStudents;
+    await course.save();
+
+    console.log('💾 과정 배정 취소 완료');
+
+    res.json({
+      success: true,
+      message: '과정 배정이 취소되었습니다.',
+      data: {
+        memberId: memberId,
+        courseId: courseId,
+        courseName: course.name
+      }
+    });
+  } catch (error) {
+    console.error('❌ 회원 과정 배정 취소 오류:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.',

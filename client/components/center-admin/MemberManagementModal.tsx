@@ -74,6 +74,7 @@ interface MemberManagementModalProps {
   onUpdateMemo: (memberId: string, memo: string, memoType: 'info' | 'warning' | 'complaint' | 'special') => Promise<void>;
   onDeleteMemo: (memberId: string, memoId: string) => Promise<void>;
   onAssignCourse: (memberId: string, courseId: string) => Promise<void>;
+  onUnassignCourse?: (memberId: string, courseId: string) => Promise<void>;
 }
 
 export default function MemberManagementModal({
@@ -85,6 +86,7 @@ export default function MemberManagementModal({
   onUpdateMemo,
   onDeleteMemo,
   onAssignCourse,
+  onUnassignCourse,
 }: MemberManagementModalProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'course'>('info');
   const [formData, setFormData] = useState<Partial<Member>>({});
@@ -542,13 +544,28 @@ export default function MemberManagementModal({
                   <div className="space-y-3">
                     {member.currentCourses?.map((course, index) => (
                       <div key={`group-${index}`} className="bg-white border border-green-200 rounded-lg p-3">
-                        <p className="font-medium text-green-900">{course.courseName} ({course.courseType === 'group' ? '단체반' : '개인레슨'})</p>
-                        <p className="text-sm text-green-600">강사: {course.instructorName}</p>
-                        <p className="text-sm text-green-500">기간: {new Date(course.startDate).toLocaleDateString()} ~ {new Date(course.endDate).toLocaleDateString()}</p>
-                        <p className="text-sm text-green-500">남은 횟수: {course.remainingSessions}/{course.totalSessions}회</p>
-                        <span className={`mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(course.status)}`}>
-                          {course.status === 'active' ? '진행중' : course.status === 'completed' ? '완료' : '취소'}
-                        </span>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-green-900">{course.courseName} ({course.courseType === 'group' ? '단체반' : '개인레슨'})</p>
+                            <p className="text-sm text-green-600">강사: {course.instructorName}</p>
+                            <p className="text-sm text-green-500">기간: {new Date(course.startDate).toLocaleDateString()} ~ {new Date(course.endDate).toLocaleDateString()}</p>
+                            <p className="text-sm text-green-500">남은 횟수: {course.remainingSessions}/{course.totalSessions}회</p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className={`mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(course.status)}`}>
+                              {course.status === 'active' ? '진행중' : course.status === 'completed' ? '완료' : '취소'}
+                            </span>
+                            {course.status === 'active' && course.courseId && onUnassignCourse && (
+                              <button
+                                onClick={() => onUnassignCourse(member._id, course.courseId)}
+                                className="text-red-500 hover:text-red-700 text-sm"
+                                title="배정 취소"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                     {member.personalLessons?.map((lesson, index) => (

@@ -110,10 +110,14 @@ function CenterMembersManagement() {
 
   const loadMembers = async () => {
     try {
+      console.log('🔄 loadMembers 호출됨');
       setIsLoading(true);
       const response = await apiClient.get('/api/center-admin/members');
       
+      console.log('📡 회원 목록 API 응답:', response);
+      
       if (response.success) {
+        console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
         setMembers(response.data);
       } else {
         console.error('회원 목록 로드 실패:', response.message);
@@ -174,20 +178,49 @@ function CenterMembersManagement() {
 
   const handleAssignCourse = async (memberId: string, courseId: string) => {
     try {
+      console.log('🔄 과정 배정 시작:', { memberId, courseId });
       const response = await apiClient.put(`/api/center-admin/members/${memberId}/course`, {
         courseId: courseId
       });
       
+      console.log('📡 과정 배정 응답:', { status: response.status, statusText: response.statusText, ok: response.ok, success: response.success, message: response.message });
+      console.log('✅ 과정 배정 성공:', response);
+      
       if (response.success) {
         alert('과정 배정이 완료되었습니다.');
-        loadMembers(); // 목록 새로고침
+        console.log('🔄 loadMembers 호출 전');
         setShowAssignmentModal(false);
+        // 즉시 목록 새로고침
+        loadMembers();
+        console.log('🔄 loadMembers 호출 후');
       } else {
+        console.error('❌ 과정 배정 실패:', response);
         alert('과정 배정 실패: ' + response.message);
       }
     } catch (error) {
-      console.error('과정 배정 오류:', error);
+      console.error('❌ 과정 배정 오류:', error);
       alert('과정 배정 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleUnassignCourse = async (memberId: string, courseId: string) => {
+    if (!confirm('과정 배정을 취소하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ 과정 배정 취소 시작:', { memberId, courseId });
+      const response = await apiClient.delete(`/api/center-admin/members/${memberId}/course/${courseId}`);
+      
+      if (response.success) {
+        alert('과정 배정이 취소되었습니다.');
+        loadMembers();
+      } else {
+        alert('과정 배정 취소 실패: ' + response.message);
+      }
+    } catch (error) {
+      console.error('과정 배정 취소 오류:', error);
+      alert('과정 배정 취소 중 오류가 발생했습니다.');
     }
   };
 
@@ -379,10 +412,17 @@ function CenterMembersManagement() {
                         {member.assignedCourses && member.assignedCourses.length > 0 ? (
                           <div className="space-y-1">
                             {member.assignedCourses.map((course, index) => (
-                              <div key={index} className="flex items-center">
+                              <div key={index} className="flex items-center gap-2">
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                   {course.courseName}
                                 </span>
+                                <button
+                                  onClick={() => handleUnassignCourse(member._id, course.courseId)}
+                                  className="text-red-500 hover:text-red-700 text-xs"
+                                  title="배정 취소"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -507,13 +547,23 @@ function CenterMembersManagement() {
                     <div className="space-y-2">
                       {selectedMember.assignedCourses.map((course, index) => (
                         <div key={index} className="bg-blue-50 p-3 rounded-lg">
-                          <div className="font-medium">{course.courseName}</div>
-                          <div className="text-sm text-gray-600">강사: {course.instructorName}</div>
-                          <div className="text-sm text-gray-600">
-                            배정일: {new Date(course.enrollmentDate).toLocaleDateString()}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            상태: {course.status === 'active' ? '활성' : course.status === 'completed' ? '완료' : '취소'}
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-medium">{course.courseName}</div>
+                              <div className="text-sm text-gray-600">강사: {course.instructorName}</div>
+                              <div className="text-sm text-gray-600">
+                                배정일: {new Date(course.enrollmentDate).toLocaleDateString()}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                상태: {course.status === 'active' ? '활성' : course.status === 'completed' ? '완료' : '취소'}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleUnassignCourse(selectedMember._id, course.courseId)}
+                              className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                            >
+                              취소
+                            </button>
                           </div>
                         </div>
                       ))}

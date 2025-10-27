@@ -127,6 +127,7 @@ function CenterUsersManagement() {
 
   const loadMembers = async () => {
     try {
+      console.log('🔄 회원 목록 로드 시작');
       setIsLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/center-admin/members', {
@@ -138,12 +139,14 @@ function CenterUsersManagement() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 회원 목록 응답:', data);
         if (data.success) {
+          console.log('✅ 회원 목록 설정:', data.data?.length, '명');
           setMembers(data.data || []);
         }
       }
     } catch (error) {
-      console.error('회원 목록 로드 실패:', error);
+      console.error('❌ 회원 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -255,8 +258,31 @@ function CenterUsersManagement() {
       if (response.ok) {
         const result = await response.json();
         console.log('✅ 과정 배정 성공:', result);
-        alert('과정 배정이 완료되었습니다.');
-        loadMembers();
+        
+        // 전체 회원 목록 다시 로드하고 업데이트된 데이터 받기
+        const membersResponse = await fetch('http://localhost:5000/api/center-admin/members', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (membersResponse.ok) {
+          const membersData = await membersResponse.json();
+          console.log('📦 업데이트된 회원 목록:', membersData);
+          
+          if (membersData.success && selectedMember) {
+            // 업데이트된 회원 정보 찾기
+            const updatedMember = membersData.data.find((m: Member) => m._id === selectedMember._id);
+            if (updatedMember) {
+              console.log('🔄 선택된 회원 정보 업데이트');
+              setSelectedMember({ ...updatedMember });
+            }
+            
+            // 전체 회원 목록도 업데이트
+            setMembers(membersData.data || []);
+          }
+        }
       } else {
         const errorData = await response.json();
         console.error('❌ 과정 배정 실패:', errorData);
@@ -265,6 +291,69 @@ function CenterUsersManagement() {
     } catch (error) {
       console.error('❌ 과정 배정 오류:', error);
       alert('과정 배정 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleCourseUnassignment = async (memberId: string, courseId: string) => {
+    if (!confirm('과정 배정을 취소하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ 과정 배정 취소 시작:', { memberId, courseId });
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/center-admin/members/${memberId}/course/${courseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📡 과정 배정 취소 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ 과정 배정 취소 성공:', result);
+        
+        // 전체 회원 목록 다시 로드하고 업데이트된 데이터 받기
+        const token = localStorage.getItem('token');
+        const membersResponse = await fetch('http://localhost:5000/api/center-admin/members', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (membersResponse.ok) {
+          const membersData = await membersResponse.json();
+          console.log('📦 업데이트된 회원 목록:', membersData);
+          
+          if (membersData.success && selectedMember) {
+            // 업데이트된 회원 정보 찾기
+            const updatedMember = membersData.data.find((m: Member) => m._id === selectedMember._id);
+            if (updatedMember) {
+              console.log('🔄 선택된 회원 정보 업데이트');
+              setSelectedMember({ ...updatedMember });
+            }
+            
+            // 전체 회원 목록도 업데이트
+            setMembers(membersData.data || []);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('❌ 과정 배정 취소 실패:', errorData);
+        alert(`과정 배정 취소에 실패했습니다: ${errorData.message || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error('❌ 과정 배정 취소 오류:', error);
+      alert('과정 배정 취소 중 오류가 발생했습니다.');
     }
   };
 
@@ -474,6 +563,7 @@ function CenterUsersManagement() {
         onUpdateMemo={handleUpdateMemo}
         onDeleteMemo={handleDeleteMemo}
         onAssignCourse={handleCourseAssignment}
+        onUnassignCourse={handleCourseUnassignment}
       />
 
       {/* 회원 일괄 등록 모달 */}
