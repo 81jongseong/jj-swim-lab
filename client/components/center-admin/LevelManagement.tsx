@@ -20,6 +20,7 @@ interface Level {
 interface LevelManagementProps {
   levels: Level[];
   onLevelsChange: (levels: Level[]) => void;
+  isEditing?: boolean; // 편집 모드 여부
 }
 
 // 최고관리자 강습법 레벨
@@ -31,7 +32,7 @@ const ADMIN_LEVELS = [
   { id: 'master', name: '마스터' }
 ];
 
-export default function LevelManagement({ levels, onLevelsChange }: LevelManagementProps) {
+export default function LevelManagement({ levels, onLevelsChange, isEditing = true }: LevelManagementProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newLevel, setNewLevel] = useState({ 
@@ -126,7 +127,7 @@ export default function LevelManagement({ levels, onLevelsChange }: LevelManagem
             센터만의 급수 체계를 설정하세요 (과정 생성 시 사용됩니다)
           </p>
         </div>
-        {!isAdding && (
+        {!isAdding && isEditing && (
           <button
             onClick={() => {
               setIsAdding(true);

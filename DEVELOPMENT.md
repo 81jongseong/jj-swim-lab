@@ -6483,3 +6483,29 @@ return {
 - 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
   - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
 
+
+
+## 🔍 자동 헬스 체크 (2025. 10. 25. 오후 10:04:34)
+
+- 총 검사: 418개
+- 통과: 526개
+- 실패: 2개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- 클라이언트 tsconfig.json 파싱 오류
+  - 해결: Unexpected token '/', "/**
+ * 🔧 "... is not valid JSON
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+

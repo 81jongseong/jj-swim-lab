@@ -492,7 +492,7 @@ router.get('/student-dashboard-stats', authMiddleware, requireRole(['student']),
 });
 
 // 1. 센터 정보 조회 (센터 관리자만)
-router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     console.log('🔍 센터 정보 조회 요청 - 사용자:', req.user?._id, '타입:', req.user?.userType);
     
@@ -546,7 +546,7 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
 });
 
 // 2. 센터 정보 수정 (센터 관리자만)
-router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     const centerAdmin = await User.findById(req.user._id);
     if (!centerAdmin?.centerAdminInfo?.managedCenters) {
@@ -567,7 +567,21 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     // 수정 가능한 필드들
-    const { name, address, phone, email, website, description, facilities, operatingHours, pricing } = req.body;
+    const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings } = req.body;
+    
+    console.log('📝 센터 정보 수정 요청:', {
+      name, 
+      facilities: !!facilities, 
+      operatingHours: !!operatingHours,
+      customLevels: !!customLevels,
+      availabilitySettings: !!availabilitySettings
+    });
+    if (customLevels) {
+      console.log('📋 customLevels 상세:', JSON.stringify(customLevels, null, 2));
+    }
+    if (availabilitySettings) {
+      console.log('📋 availabilitySettings 상세:', JSON.stringify(availabilitySettings, null, 2));
+    }
     
     if (name) center.name = name;
     if (address) center.address = address;
@@ -575,11 +589,52 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     if (email) center.email = email;
     if (website) center.website = website;
     if (description) center.description = description;
-    if (facilities) center.facilities = { ...center.facilities, ...facilities };
+    if (facilities) {
+      // facilities는 배열인 경우 그대로, 객체인 경우 병합
+      if (Array.isArray(facilities)) {
+        center.facilities = facilities;
+      } else {
+        center.facilities = { ...center.facilities, ...facilities };
+      }
+    }
     if (operatingHours) center.operatingHours = { ...center.operatingHours, ...operatingHours };
     if (pricing) center.pricing = { ...center.pricing, ...pricing };
+    if (customLevels) center.customLevels = customLevels;
+    if (availabilitySettings) {
+      // availabilitySettings를 안전하게 병합
+      // 기존 값을 보존하면서 새로운 값만 업데이트
+      if (!center.availabilitySettings) {
+        center.availabilitySettings = {
+          personalLesson: {
+            enabled: false,
+            availableDays: [],
+            availableTimes: [],
+            cancellationPolicy: ''
+          },
+          laneRental: {
+            enabled: false,
+            availableDays: [],
+            availableTimes: [],
+            availableLanes: [],
+            cancellationPolicy: ''
+          }
+        } as any;
+      }
+      
+      // personalLesson만 업데이트 (laneRental은 유지)
+      if (availabilitySettings.personalLesson) {
+        center.availabilitySettings.personalLesson = availabilitySettings.personalLesson;
+      }
+      
+      // laneRental도 업데이트 (요청에 포함된 경우에만)
+      if (availabilitySettings.laneRental) {
+        center.availabilitySettings.laneRental = availabilitySettings.laneRental;
+      }
+    }
 
+    console.log('💾 센터 정보 저장 중...');
     await center.save();
+    console.log('✅ 센터 정보 저장 완료');
 
     res.json({
       success: true,
@@ -587,10 +642,15 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
       data: center
     });
   } catch (error) {
-    console.error('센터 정보 수정 오류:', error);
+    console.error('❌ 센터 정보 수정 오류:', error);
+    if (error instanceof Error) {
+      console.error('❌ 오류 메시지:', error.message);
+      console.error('❌ 오류 스택:', error.stack);
+    }
     res.status(500).json({
       success: false,
-      message: '센터 정보 수정에 실패했습니다.'
+      message: '센터 정보 수정에 실패했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
     });
   }
 });

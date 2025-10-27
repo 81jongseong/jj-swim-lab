@@ -60,6 +60,14 @@ export interface ICenter extends Document {
         close: string;
         days: string[];
     };
+    customLevels?: Array<{
+        id: string;
+        name: string;
+        description: string;
+        color: string;
+        mappedToAdminLevel: string;
+        order: number;
+    }>;
     availabilitySettings: {
         personalLesson: {
             enabled: boolean;
@@ -67,9 +75,16 @@ export interface ICenter extends Document {
             availableTimes: Array<{
                 startTime: string;
                 endTime: string;
-                maxDuration: number;
+                maxDuration?: number;
             }>;
-            advanceBookingDays: number;
+            dayTimeSlots?: Array<{
+                day: string;
+                timeSlots: Array<{
+                    startTime: string;
+                    endTime: string;
+                }>;
+            }>;
+            advanceBookingDays?: number;
             cancellationPolicy: string;
         };
         laneRental: {

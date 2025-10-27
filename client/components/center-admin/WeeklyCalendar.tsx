@@ -39,9 +39,15 @@ import React, { useState } from 'react';
 import { Clock, User, Users } from 'lucide-react';
 
 interface CourseSchedule {
-  dayOfWeek: string;
+  dayOfWeek?: string;
+  day?: string; // ⭐ day 필드 지원
   startTime: string;
   endTime?: string;
+  lanes?: { // ⭐ 스케줄별 레인 정보
+    assignedLanes?: number[];
+    originalAssignedLanes?: number[];
+    isAdjusted?: boolean;
+  };
 }
 
 interface Course {
@@ -77,6 +83,15 @@ interface WeeklyCalendarProps {
   schedules?: any[]; // 확정된 스케줄 데이터
   onCourseClick?: (course: Course) => void;
   onEmptySlotClick?: (day: string, time: string) => void;
+  personalLessonAvailability?: { // ⭐ 개인레슨 운영시간 (센터 설정에서)
+    dayTimeSlots?: Array<{
+      day: string; // 'monday', 'tuesday', etc.
+      timeSlots: Array<{
+        startTime: string;
+        endTime: string;
+      }>;
+    }>;
+  };
 }
 
 const DAYS_OF_WEEK = ['월', '화', '수', '목', '금', '토', '일'];
@@ -169,43 +184,94 @@ export default function WeeklyCalendar({
   courses,
   schedules = [],
   onCourseClick,
-  onEmptySlotClick
+  onEmptySlotClick,
+  personalLessonAvailability
 }: WeeklyCalendarProps) {
 
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  // 레인 충돌 감지 및 재배치 로직
-  const detectLaneConflicts = (courses: Course[]): Course[] => {
-    const conflicts: { [lane: number]: Course[] } = {};
+  // ⭐ 개인레슨 운영시간에 해당하는 슬롯인지 확인
+  const isPersonalLessonSlotAvailable = (day: string, timeSlot: string): boolean => {
+    if (!personalLessonAvailability?.dayTimeSlots || personalLessonAvailability.dayTimeSlots.length === 0) {
+      return false;
+    }
     
-    // 레인별로 강습들을 그룹화
-    courses.forEach(course => {
-      const lanes = course.lanes || course.laneInfo?.assignedLanes || [];
-      lanes.forEach(lane => {
-        if (!conflicts[lane]) conflicts[lane] = [];
-        conflicts[lane].push(course);
-      });
-    });
+    const dayEnglish = DAY_MAP[day]?.toLowerCase();
     
-    // 충돌이 있는 레인들을 재배치
-    Object.entries(conflicts).forEach(([lane, conflictingCourses]) => {
-      if (conflictingCourses.length > 1) {
-        
-        // 개인레슨이 있으면 다른 강습들을 재배치
-        const personalLessons = conflictingCourses.filter(c => c.isPersonalLesson);
-        const groupLessons = conflictingCourses.filter(c => !c.isPersonalLesson);
-        
-        if (personalLessons.length > 0) {
-          // 개인레슨이 레인을 차지하고, 단체 수업을 재배치
-          groupLessons.forEach((course, index) => {
-            const newLanes = [parseInt(lane) + index + 1]; // 다음 레인으로 이동
-            course.lanes = newLanes;
-          });
+    // 요일별로 확인
+    for (const daySlot of personalLessonAvailability.dayTimeSlots) {
+      if (daySlot.day === dayEnglish || daySlot.day === day) {
+        // 해당 요일의 시간대 중에 현재 시간이 포함되는지 확인
+        for (const timeRange of daySlot.timeSlots) {
+          const slotTime = timeSlot.split(':').map(Number);
+          const startTime = timeRange.startTime.split(':').map(Number);
+          const endTime = timeRange.endTime.split(':').map(Number);
+          
+          const slotMinutes = slotTime[0] * 60 + slotTime[1];
+          const startMinutes = startTime[0] * 60 + startTime[1];
+          const endMinutes = endTime[0] * 60 + endTime[1];
+          
+          // 시간대에 포함되면 true
+          if (slotMinutes >= startMinutes && slotMinutes < endMinutes) {
+            return true;
+          }
         }
       }
+    }
+    
+    return false;
+  };
+
+  // 레인 충돌 감지 및 재배치 로직 (클라이언트 계산)
+  const detectLaneConflicts = (courses: Course[]): Course[] => {
+    // 개인레슨 찾기 (강사 배정된 경우만)
+    const activePersonalLessons = courses.filter(course => {
+      if (!course.isPersonalLesson) return false;
+      const isUnassigned = !course.instructorName || 
+                          course.instructorName === '강사 미배정' || 
+                          course.instructorName === '센터 관리자';
+      return !isUnassigned && course.instructorId && course.instructorId !== '' && course.instructorId !== 'unassigned';
     });
     
-    return courses;
+    // 개인레슨이 없으면 원본 반환
+    if (activePersonalLessons.length === 0) {
+      return courses;
+    }
+    
+    // 개인레슨 레인 찾기
+    const personalLessonLane = activePersonalLessons[0].lanes?.[0] || activePersonalLessons[0].laneInfo?.assignedLanes?.[0] || 1;
+    
+    // 단체반들의 레인 조정 (UI 표시용, DB 변경 없음)
+    return courses.map(course => {
+      // 개인레슨은 그대로
+      if (course.isPersonalLesson) {
+        return course;
+      }
+      
+      // 단체반의 레인 조정: 개인레슨 레인보다 크거나 같은 레인은 모두 이동
+      const originalLanes = course.lanes || course.laneInfo?.assignedLanes || [];
+      const hasAnyLaneAbovePersonal = originalLanes.some(lane => lane >= personalLessonLane);
+      
+      if (hasAnyLaneAbovePersonal) {
+        // 개인레슨 레인보다 크거나 같은 레인은 모두 1칸씩 뒤로 이동
+        const adjustedLanes = originalLanes.map(lane => {
+          if (lane >= personalLessonLane) {
+            return lane + 1;
+          }
+          return lane;
+        });
+        
+        // 조정된 레인으로 임시 복사본 생성
+        return {
+          ...course,
+          lanes: adjustedLanes,
+          adjustedLanes: adjustedLanes // 조정된 레인 표시
+        };
+      }
+      
+      // 개인레슨 레인보다 작은 레인만 있는 경우 그대로
+      return course;
+    });
   };
 
   // 특정 시간대, 요일에 해당하는 강습들 찾기 (레인 순서대로 정렬)
@@ -213,18 +279,19 @@ export default function WeeklyCalendar({
     const dayEnglish = DAY_MAP[day]?.toLowerCase();
     
     const filteredCourses = courses.filter(course => {
-      // schedule이 없거나 비어있으면 스킵
+      // ⭐ 모든 수업(개인레슨, 단체 수업 모두) schedule에서 확인
       if (!course.schedule || course.schedule.length === 0) {
         return false;
       }
       
       return course.schedule.some(sch => {
-        // dayOfWeek나 startTime이 없으면 스킵
-        if (!sch.dayOfWeek || !sch.startTime) {
+        // dayOfWeek 또는 day, startTime이 없으면 스킵
+        const schDay = sch.dayOfWeek || sch.day; // ⭐ dayOfWeek 또는 day 사용
+        if (!schDay || !sch.startTime) {
           return false;
         }
         
-        let schDays = sch.dayOfWeek;
+        let schDays = schDay;
         const schTime = sch.startTime;
         
         // 쉼표로 구분된 요일 처리 (예: "월,수,금")
@@ -246,19 +313,18 @@ export default function WeeklyCalendar({
         const schHour = schTime.split(':')[0];
         const timeMatch = slotHour === schHour;
         
-        
         return dayMatch && timeMatch;
       });
     });
-
+    
     // 레인 충돌 감지 및 재배치
     const resolvedCourses = detectLaneConflicts(filteredCourses);
 
-    // ⭐ 레인 순서대로 정렬
+    // ⭐ 레인 순서대로 정렬 (조정된 레인 사용)
     return resolvedCourses.sort((a, b) => {
-      // 레인 정보가 있는 경우 레인 번호로 정렬
-      const aLanes = a.laneInfo?.assignedLanes || a.lanes || [];
-      const bLanes = b.laneInfo?.assignedLanes || b.lanes || [];
+      // 조정된 레인 또는 원본 레인 사용
+      const aLanes = (a as any).adjustedLanes || a.lanes || [];
+      const bLanes = (b as any).adjustedLanes || b.lanes || [];
       
       // 첫 번째 레인 번호로 비교
       const aFirstLane = aLanes.length > 0 ? aLanes[0] : 999;
@@ -352,10 +418,20 @@ export default function WeeklyCalendar({
                     onClick={() => handleSlotClick(day, timeSlot, coursesInSlot)}
                   >
                     {isEmpty ? (
-                      // 빈 슬롯 - 자유수영 가능 표시
-                      <div className="h-full flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <div className="text-xs text-green-600 font-medium mb-1">💧 자유수영</div>
-                        <div className="text-xs text-gray-400">+ 개인레슨</div>
+                      // 빈 슬롯 - 개인레슨 운영시간인 경우 회색으로 표시
+                      <div className={`h-full flex flex-col items-center justify-center transition-opacity ${
+                        isPersonalLessonSlotAvailable(day, timeSlot) 
+                          ? 'bg-gray-100 border-2 border-dashed border-gray-400 rounded' 
+                          : 'opacity-0 hover:opacity-100'
+                      }`}>
+                        {isPersonalLessonSlotAvailable(day, timeSlot) ? (
+                          <div className="text-xs text-gray-600 font-medium">⏰ 개인레슨 시간</div>
+                        ) : (
+                          <>
+                            <div className="text-xs text-green-600 font-medium mb-1">💧 자유수영</div>
+                            <div className="text-xs text-gray-400">+ 개인레슨</div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       // 강습 및 스케줄 표시 (여러 개 가능)
@@ -388,10 +464,25 @@ export default function WeeklyCalendar({
                             )}
                           </div>
                         ))}
-                        {coursesInSlot.map(course => (
+                        {coursesInSlot.map(course => {
+                          // ⭐ 강사 미배정 개인레슨인지 확인 
+                          // instructorName이 '강사 미배정' 또는 '센터 관리자'이면 미배정으로 처리
+                          const isUnassignedPersonalLesson = course.isPersonalLesson && 
+                            (!course.instructorName || 
+                             course.instructorName === '강사 미배정' || 
+                             course.instructorName === '센터 관리자' ||
+                             !course.instructorId || 
+                             course.instructorId === '' || 
+                             course.instructorId === 'unassigned');
+                          
+                          return (
                           <div
                             key={course._id}
-                            className={`p-2 rounded border-l-4 ${getLevelColor(course.level)} cursor-pointer hover:shadow-md transition-shadow ${
+                            className={`p-2 rounded border-l-4 ${
+                              isUnassignedPersonalLesson 
+                                ? 'bg-gray-100 border-gray-400 opacity-50' // 회색으로 표시
+                                : getLevelColor(course.level)
+                            } cursor-pointer hover:shadow-md transition-shadow ${
                               coursesInSlot.length > 1 ? 'min-w-0 lg:min-w-[140px]' : ''
                             }`}
                             onClick={(e) => {
@@ -399,12 +490,13 @@ export default function WeeklyCalendar({
                               onCourseClick?.(course);
                             }}
                           >
-                            <div className="text-xs font-semibold mb-1 truncate" title={course.name}>
+                            <div className={`text-xs font-semibold mb-1 truncate ${isUnassignedPersonalLesson ? 'text-gray-500' : ''}`} title={course.name}>
                               {course.name}
+                              {isUnassignedPersonalLesson && ' (미배정)'}
                             </div>
                             <div className="flex items-center text-xs text-gray-600">
                               <User className="w-3 h-3 mr-1" />
-                              <span className="truncate">{course.instructorName}</span>
+                              <span className="truncate">{course.instructorName || '강사 미배정'}</span>
                             </div>
                             <div className="flex items-center text-xs text-gray-600 mt-1">
                               <Users className="w-3 h-3 mr-1" />
@@ -417,23 +509,50 @@ export default function WeeklyCalendar({
                                 <span>개인레슨</span>
                               </div>
                             )}
-                            {/* 레인 정보 */}
-                            {((course.laneInfo?.assignedLanes && course.laneInfo.assignedLanes.length > 0) || 
-                              (course.lanes && course.lanes.length > 0)) && (
-                              <div className="flex items-center text-xs text-blue-600 mt-1">
-                                <span className="mr-1">🏊</span>
-                                <span className="font-medium">
-                                  {(course.laneInfo?.assignedLanes || course.lanes || []).join(',')}레인
-                                </span>
-                              </div>
-                            )}
+                            {/* 레인 정보 (스케줄별) */}
+                            {(() => {
+                              // 현재 시간 슬롯에 해당하는 스케줄 찾기
+                              const dayEnglish = DAY_MAP[day]?.toLowerCase();
+                              const slotHour = timeSlot.split(':')[0];
+                              const matchingSchedule = course.schedule?.find(sch => {
+                                const schDay = sch.dayOfWeek || sch.day; // ⭐ dayOfWeek 또는 day 사용
+                                const schDays = schDay?.split(',').map(d => d.trim()) || [];
+                                const dayMatch = schDays.some(schDay => {
+                                  const schDayLower = schDay.toLowerCase();
+                                  return schDayLower === dayEnglish || 
+                                         schDayLower === day.toLowerCase() || 
+                                         DAY_MAP[schDay] === day ||
+                                         DAY_MAP[schDayLower] === day;
+                                });
+                                const schHour = sch.startTime?.split(':')[0];
+                                const timeMatch = schHour === slotHour;
+                                return dayMatch && timeMatch;
+                              });
+                              
+                              // 조정된 레인 우선 사용, 없으면 스케줄별 레인 정보, 없으면 기본 레인 정보
+                              const adjustedLanes = (course as any).adjustedLanes;
+                              const lanes = adjustedLanes || 
+                                          matchingSchedule?.lanes?.assignedLanes || 
+                                          course.laneInfo?.assignedLanes || 
+                                          course.lanes || [];
+                              
+                              return lanes.length > 0 ? (
+                                <div className="flex items-center text-xs text-blue-600 mt-1">
+                                  <span className="mr-1">🏊</span>
+                                  <span className="font-medium">
+                                    {lanes.join(',')}레인
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
                             {course.status === 'full' && (
                               <div className="text-xs bg-red-500 text-white px-1 py-0.5 rounded mt-1 inline-block">
                                 마감
                               </div>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>

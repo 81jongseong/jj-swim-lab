@@ -15,14 +15,49 @@ export class LaneAllocationService {
    */
   static async adjustLanesForPersonalLesson(personalLessonData: any) {
     try {
-      const { date, time, centerId, rentalCount = 1 } = personalLessonData;
+      const { date, time, centerId, rentalCount = 1, dayName } = personalLessonData;
       
-      // 날짜에서 요일 추출
-      const dateObj = new Date(date);
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const dayName = dayNames[dateObj.getDay()];
+      // 요일 정규화 함수
+      const normalizeDayName = (day: string): string => {
+        const dayMap: { [key: string]: string } = {
+          'monday': 'monday',
+          'tuesday': 'tuesday',
+          'wednesday': 'wednesday',
+          'thursday': 'thursday',
+          'friday': 'friday',
+          'saturday': 'saturday',
+          'sunday': 'sunday',
+          '월': 'monday',
+          '화': 'tuesday',
+          '수': 'wednesday',
+          '목': 'thursday',
+          '금': 'friday',
+          '토': 'saturday',
+          '일': 'sunday',
+          '월요일': 'monday',
+          '화요일': 'tuesday',
+          '수요일': 'wednesday',
+          '목요일': 'thursday',
+          '금요일': 'friday',
+          '토요일': 'saturday',
+          '일요일': 'sunday'
+        };
+        return dayMap[day.toLowerCase()] || day.toLowerCase();
+      };
       
-      console.log(`📅 개인레슨 날짜: ${date}, 요일: ${dayName}, 시간: ${time}`);
+      // 요일 추출: dayName이 제공되면 사용, 아니면 date에서 추출
+      let actualDayName = dayName ? normalizeDayName(dayName) : null;
+      if (!actualDayName && date) {
+        const dateObj = new Date(date);
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        actualDayName = dayNames[dateObj.getDay()];
+      }
+      
+      if (!actualDayName) {
+        throw new Error('요일 정보가 없습니다.');
+      }
+      
+      console.log(`📅 개인레슨: ${actualDayName}, 시간: ${time}`);
       
       // 모든 활성 강습과정 가져오기
       const allCourses = await Course.find({
@@ -30,10 +65,38 @@ export class LaneAllocationService {
         isActive: true
       });
       
-      // 해당 요일과 시간에 충돌하는 강습과정 찾기
+      // 요일 정규화 함수 (스코프 문제 해결)
+      const normalizeDayForCompare = (day: string): string => {
+        const dayMap: { [key: string]: string } = {
+          'monday': 'monday', 'tuesday': 'tuesday', 'wednesday': 'wednesday', 'thursday': 'thursday',
+          'friday': 'friday', 'saturday': 'saturday', 'sunday': 'sunday',
+          '월': 'monday', '화': 'tuesday', '수': 'wednesday', '목': 'thursday',
+          '금': 'friday', '토': 'saturday', '일': 'sunday',
+          '월요일': 'monday', '화요일': 'tuesday', '수요일': 'wednesday', '목요일': 'thursday',
+          '금요일': 'friday', '토요일': 'saturday', '일요일': 'sunday'
+        };
+        return dayMap[day.toLowerCase()] || day.toLowerCase();
+      };
+      
+      // 해당 요일과 시간에 충돌하는 강습과정 찾기 (개인레슨 제외)
       const conflictingCourses = allCourses.filter((course: any) => {
+        // 개인레슨은 제외
+        if (course.isPersonalLesson) {
+          return false;
+        }
+        
         return course.schedule.some((scheduleItem: any) => {
-          return scheduleItem.day === dayName && 
+          // day 필드가 배열이거나 쉼표로 구분된 경우 처리
+          const courseDay = scheduleItem.day || '';
+          const courseDays = Array.isArray(courseDay) 
+            ? courseDay 
+            : courseDay.split(',').map((d: string) => d.trim()).filter((d: string) => d);
+          
+          // 모든 요일을 정규화하여 비교
+          const normalizedCourseDays = courseDays.map((d: string) => normalizeDayForCompare(d));
+          const normalizedDayName = normalizeDayForCompare(actualDayName);
+          
+          return normalizedCourseDays.includes(normalizedDayName) && 
                  scheduleItem.startTime <= time && 
                  scheduleItem.endTime >= time;
         });
@@ -41,27 +104,26 @@ export class LaneAllocationService {
 
       console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
 
-      // 개인레슨을 위한 레인 추천 (충돌 없는 레인)
-      const usedLanes = new Set<number>();
-      conflictingCourses.forEach((course: any) => {
-        (course.laneInfo?.assignedLanes || []).forEach((lane: number) => usedLanes.add(lane));
+      // ⚠️ 개인레슨은 항상 1레인을 사용
+      const personalLessonLane = 1;
+      
+      // 1레인을 사용 중인 것으로 간주하고 다른 레인을 순차적으로 조정
+      const usedLanes = new Set<number>([personalLessonLane]);
+      
+      console.log(`🔍 개인레슨 레인: ${personalLessonLane}`);
+      
+      // 1레인과 겹치는 강습과정들을 찾아서 순차적으로 밀어냄
+      const coursesWithLane1 = conflictingCourses.filter((course: any) => {
+        const currentLanes = course.laneInfo?.assignedLanes || [];
+        return currentLanes.includes(1);
       });
       
-      // 사용 가능한 레인 찾기 (총 6개 레인 중에서)
-      const availableLanes = Array.from({ length: 6 }, (_, i) => i + 1).filter(lane => !usedLanes.has(lane));
-      
-      console.log(`🔍 사용 중인 레인:`, Array.from(usedLanes));
-      console.log(`🔍 사용 가능한 레인:`, availableLanes);
-    
-      // 개인레슨에 사용할 레인 우선 배정 (항상 1레인 우선 사용)
-      const personalLessonLane = 1;
-      usedLanes.add(personalLessonLane);
-      
-      // 사용 가능한 레인 재계산
-      const remainingAvailableLanes = Array.from({ length: 6 }, (_, i) => i + 1).filter(lane => !usedLanes.has(lane));
-      
-      console.log(`🔍 개인레슨 ${personalLessonLane}레인 배정 후 사용 가능한 레인:`, remainingAvailableLanes);
+      console.log(`🔍 1레인과 충돌하는 강습과정: ${coursesWithLane1.length}개`);
 
+      // 레인 조정: 1레인을 사용하는 강습과정들을 순차적으로 밀어냄
+      let currentAvailableLanes = [2, 3, 4, 5, 6]; // 1레인 제외한 사용 가능한 레인
+      let nextLaneIndex = 0; // 다음에 사용할 레인의 인덱스
+      
       // 각 강습과정의 레인을 조정 - 개인레슨을 피해서 밀어냄
       for (const course of conflictingCourses) {
         const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
@@ -77,7 +139,7 @@ export class LaneAllocationService {
           minLanes,
           currentLanes,
           originalLanes,
-          availableLanes: remainingAvailableLanes
+          currentAvailableLanes: currentAvailableLanes.slice(nextLaneIndex)
         });
 
         // 현재 레인이 1레인과 겹치는지 확인
@@ -85,9 +147,16 @@ export class LaneAllocationService {
         
         let adjustedLanes: number[];
         if (hasLane1) {
-          // 1레인이 포함되어 있으면 개인레슨을 피해 minLanes로 축소
-          // 충돌하지 않는 레인 중에서 minLanes 수만큼만 선택
-          adjustedLanes = remainingAvailableLanes.slice(0, minLanes);
+          // 1레인이 포함되어 있으면 순차적으로 밀어냄
+          adjustedLanes = currentAvailableLanes.slice(nextLaneIndex, nextLaneIndex + minLanes);
+          nextLaneIndex += minLanes; // 다음 강습과정을 위한 인덱스 업데이트
+          
+          console.log(`📊 레인 순차 할당:`, {
+            courseName: course.name,
+            fromLanes: currentLanes.join(','),
+            toLanes: adjustedLanes.join(','),
+            nextIndex: nextLaneIndex
+          });
         } else {
           // 1레인이 없으면 그대로 유지 (개인레슨과 겹치지 않음)
           adjustedLanes = currentLanes;
@@ -108,9 +177,132 @@ export class LaneAllocationService {
           console.log(`⚠️ 경고: ${course.name}의 최소 레인 수(${minLanes})를 만족하지 못함 (사용 가능: ${adjustedLanes.length})`);
         }
         
+        // ⭐ 스케줄별로 레인 정보 업데이트 (요일/시간별 관리)
+        const schedule = course.schedule || [];
+        const updatedSchedule = schedule.map((scheduleItem: any) => {
+          console.log(`🔍 스케줄 항목 검토:`, {
+            courseName: course.name,
+            day: scheduleItem.day,
+            dayType: typeof scheduleItem.day,
+            startTime: scheduleItem.startTime,
+            endTime: scheduleItem.endTime,
+            lanes: scheduleItem.lanes
+          });
+          
+          // day가 없는 스케줄 항목은 그대로 유지 (필터링하지 않음)
+          if (!scheduleItem.day || scheduleItem.day.trim() === '') {
+            console.log(`⚠️ 유효하지 않은 스케줄 항목 발견 (유지):`, {
+              courseName: course.name,
+              day: scheduleItem.day,
+              startTime: scheduleItem.startTime
+            });
+            return scheduleItem; // 유효하지 않은 스케줄도 그대로 반환
+          }
+          
+          // 개인레슨과 충돌하는 스케줄 항목만 조정
+          const courseDay = scheduleItem.day || '';
+          const courseDays = Array.isArray(courseDay) 
+            ? courseDay 
+            : courseDay.split(',').map((d: string) => d.trim()).filter((d: string) => d);
+          
+          const normalizedCourseDays = courseDays.map((d: string) => normalizeDayForCompare(d));
+          const normalizedDayName = normalizeDayForCompare(actualDayName);
+          
+          console.log(`🔍 요일 비교:`, {
+            courseDays,
+            normalizedCourseDays,
+            actualDayName,
+            normalizedDayName,
+            isIncluded: normalizedCourseDays.includes(normalizedDayName)
+          });
+          
+          const isConflicting = normalizedCourseDays.includes(normalizedDayName) && 
+                                 scheduleItem.startTime <= time && 
+                                 scheduleItem.endTime >= time;
+          
+          console.log(`🔍 충돌 확인:`, {
+            isConflicting,
+            timeCheck: `${scheduleItem.startTime} <= ${time} <= ${scheduleItem.endTime}`
+          });
+          
+          if (isConflicting) {
+            // 충돌하는 스케줄 항목의 레인 정보 업데이트
+            const scheduleCurrentLanes = scheduleItem.lanes?.assignedLanes || currentLanes;
+            const scheduleOriginalLanes = scheduleItem.lanes?.originalAssignedLanes || scheduleCurrentLanes;
+            
+            console.log(`🔧 레인 조정 적용:`, {
+              courseName: course.name,
+              day: scheduleItem.day,
+              time: `${scheduleItem.startTime}-${scheduleItem.endTime}`,
+              hasLane1,
+              scheduleCurrentLanes,
+              adjustedLanes,
+              updatedLanes: hasLane1 ? adjustedLanes : scheduleCurrentLanes
+            });
+            
+            return {
+              ...scheduleItem,
+              lanes: {
+                assignedLanes: hasLane1 ? adjustedLanes : scheduleCurrentLanes,
+                originalAssignedLanes: scheduleItem.lanes?.originalAssignedLanes?.length > 0 
+                  ? scheduleItem.lanes.originalAssignedLanes 
+                  : scheduleCurrentLanes,
+                isAdjusted: hasLane1
+              }
+            };
+          }
+            
+          // 충돌하지 않는 스케줄 항목은 원래 설정 유지
+          return scheduleItem;
+        });
+        
+        // Mongoose 서브도큐먼트를 일반 객체로 변환 (조정된 lanes 보존)
+        const scheduleForUpdate = updatedSchedule.map((s: any) => {
+          // 조정된 lanes 정보를 보존
+          const adjustedLanes = s.lanes || {};
+          
+          // 기본 필드 추출
+          let day, startTime, endTime, _id;
+          
+          if (s.toObject && typeof s.toObject === 'function') {
+            const temp = s.toObject();
+            day = temp.day;
+            startTime = temp.startTime;
+            endTime = temp.endTime;
+            _id = temp._id;
+          } else if (s._doc) {
+            day = s._doc.day;
+            startTime = s._doc.startTime;
+            endTime = s._doc.endTime;
+            _id = s._doc._id;
+          } else {
+            day = s.day;
+            startTime = s.startTime;
+            endTime = s.endTime;
+            _id = s._id;
+          }
+          
+          const converted = {
+            day,
+            startTime,
+            endTime,
+            lanes: adjustedLanes, // 조정된 lanes 사용
+            _id
+          };
+          
+          console.log(`🔄 변환된 스케줄 항목:`, {
+            day: converted.day,
+            startTime: converted.startTime,
+            endTime: converted.endTime,
+            lanes: converted.lanes
+          });
+          
+          return converted;
+        });
+        
         const updateData: any = {
-          'laneInfo.assignedLanes': adjustedLanes.length > 0 ? adjustedLanes : currentLanes,
-          'laneInfo.laneNotes': `개인레슨으로 인해 레인 조정됨 (${currentLanes.join(',')} → ${adjustedLanes.join(',')})`
+          schedule: scheduleForUpdate,
+          'laneInfo.laneNotes': `개인레슨으로 인해 레인 조정됨 (${actualDayName} ${time})`
         };
         
         // originalAssignedLanes가 없으면 현재 레인을 저장 (첫 조정 시)
@@ -119,19 +311,44 @@ export class LaneAllocationService {
           console.log(`💾 원래 레인 저장: [${currentLanes.join(',')}]`);
         }
         
-        console.log(`💾 업데이트할 데이터:`, {
+        // 디버깅: updatedSchedule의 실제 내용 확인
+        console.log(`🔍 updatedSchedule 상세 내용:`, updatedSchedule);
+        
+        console.log(`💾 업데이트할 데이터 (변환 전):`, {
           courseId: course._id,
           courseName: course.name,
-          updateData
+          scheduleLength: updatedSchedule.length,
+          updatedSchedule: updatedSchedule.map((s: any) => ({
+            day: s.day,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            time: `${s.startTime}-${s.endTime}`,
+            lanes: s.lanes?.assignedLanes
+          }))
         });
+        
+        console.log(`💾 업데이트할 데이터 (변환 후):`, {
+          courseId: course._id,
+          courseName: course.name,
+          scheduleLength: scheduleForUpdate.length,
+          scheduleForUpdate: scheduleForUpdate.map((s: any) => ({
+            day: s.day,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            time: `${s.startTime}-${s.endTime}`,
+            lanes: s.lanes?.assignedLanes
+          }))
+        });
+        
+        console.log(`💾 실제 updateData:`, JSON.stringify(updateData, null, 2));
         
         await Course.findByIdAndUpdate(course._id, updateData);
         
         // 업데이트 확인
         const updatedCourse = await Course.findById(course._id);
-        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료: [${currentLanes.join(',')}] → [${adjustedLanes.join(',')}] (max:${maxLanes}, min:${minLanes})`);
-        console.log(`✅ DB 확인 - 업데이트된 레인: [${updatedCourse?.laneInfo?.assignedLanes?.join(',')}]`);
+        console.log(`✅ 강습과정 ${course.name} 레인 조정 완료 (요일별 관리)`);
         console.log(`✅ DB 확인 - 원래 레인: [${updatedCourse?.laneInfo?.originalAssignedLanes?.join(',')}]`);
+        console.log(`✅ DB 확인 - 조정된 레인:`, updatedCourse?.schedule?.find((s: any) => s.day === actualDayName)?.lanes);
       }
       
       return { 
@@ -380,6 +597,90 @@ export class LaneAllocationService {
     } catch (error) {
       console.error('❌ 모든 강습 과정 레인 정리 실패:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 개인레슨이 없으면 레인 자동 복원
+   */
+  static async restoreLanesIfNoPersonalLesson(centerId: string) {
+    try {
+      console.log('🔄 개인레슨 없음 확인 및 레인 복원 시작...');
+      
+      // 센터의 모든 활성 개인레슨 가져오기
+      const personalLessons = await Course.find({
+        centerId,
+        isActive: true,
+        isPersonalLesson: true
+      });
+
+      console.log(`📊 개인레슨 수: ${personalLessons.length}개`);
+
+      // 개인레슨이 없으면 레인 복원
+      if (personalLessons.length === 0) {
+        console.log('✅ 개인레슨이 없으므로 레인 복원 수행...');
+        
+        // 모든 활성 강습과정 가져오기
+        const allCourses = await Course.find({
+          centerId,
+          isActive: true
+        });
+
+        const restoredSchedules: any[] = [];
+
+        for (const course of allCourses) {
+          if (course.schedule && course.schedule.length > 0) {
+            const updatedSchedule = course.schedule.map((scheduleItem: any) => {
+              // originalAssignedLanes가 있으면 복원 (isAdjusted 여부와 상관없이)
+              if (scheduleItem.lanes?.originalAssignedLanes && 
+                  scheduleItem.lanes.originalAssignedLanes.length > 0) {
+                
+                const originalLanes = scheduleItem.lanes.originalAssignedLanes;
+                const currentLanes = scheduleItem.lanes.assignedLanes;
+                
+                // 현재 레인과 원래 레인이 다르면 복원
+                if (JSON.stringify(currentLanes) !== JSON.stringify(originalLanes)) {
+                  console.log(`🔧 ${course.name} ${scheduleItem.day} ${scheduleItem.startTime} 레인 복원:`, {
+                    current: currentLanes,
+                    original: originalLanes
+                  });
+                  
+                  restoredSchedules.push({
+                    courseName: course.name,
+                    day: scheduleItem.day,
+                    time: scheduleItem.startTime,
+                    from: currentLanes,
+                    to: originalLanes
+                  });
+                  
+                  return {
+                    ...(typeof scheduleItem.toObject === 'function' ? scheduleItem.toObject() : scheduleItem),
+                    lanes: {
+                      assignedLanes: originalLanes,
+                      originalAssignedLanes: originalLanes,
+                      isAdjusted: false
+                    }
+                  };
+                }
+              }
+              return scheduleItem;
+            });
+
+            await Course.findByIdAndUpdate(course._id, {
+              schedule: updatedSchedule
+            });
+          }
+        }
+
+        console.log(`✅ 레인 복원 완료: ${restoredSchedules.length}개 스케줄 복원`);
+        return restoredSchedules;
+      } else {
+        console.log('⏭️ 개인레슨이 존재하므로 레인 복원 건너뜀');
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ 레인 복원 실패:', error);
+      return [];
     }
   }
 }

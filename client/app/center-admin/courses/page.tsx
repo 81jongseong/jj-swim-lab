@@ -130,13 +130,38 @@ function CoursesManagement() {
     setShowLessonProgress(true);
   };
 
+  // ⭐ 센터 정보 상태 추가
+  const [centerInfo, setCenterInfo] = useState<any>(null);
+
   useEffect(() => {
     if (user) {
       loadCourses();
       loadInstructors();
       loadSchedules();
+      loadCenterInfo();
     }
   }, [user]);
+
+  // ⭐ 센터 정보 로드 함수
+  const loadCenterInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/center-admin/center-info', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🏢 센터 정보:', data.data?.availabilitySettings?.personalLesson);
+        setCenterInfo(data.data);
+      }
+    } catch (error) {
+      console.error('💥 센터 정보 로드 실패:', error);
+    }
+  };
 
   const loadCourses = async () => {
     try {
@@ -199,34 +224,19 @@ function CoursesManagement() {
         // schedule 필드 안전하게 처리 & 영어 → 한글 변환
         let schedule = [];
         if (Array.isArray(course.schedule) && course.schedule.length > 0) {
-          // 같은 시간대의 요일들을 그룹화 (예: monday 16:00, wednesday 16:00 → "월,수")
-          const timeSlotMap: { [key: string]: string[] } = {};
-          
-          course.schedule.forEach((sch: any) => {
+          // ⭐ 각 스케줄 항목을 개별적으로 변환 (요일별로 분리)
+          schedule = course.schedule.map((sch: any) => {
             const dayEnglish = sch.day || sch.dayOfWeek || '';
             const dayKorean = dayMap[dayEnglish.toLowerCase()] || dayEnglish;
             const startTime = sch.startTime || '09:00';
             const endTime = sch.endTime || '';
             
-            // 시간대를 키로 사용 (startTime-endTime)
-            const timeKey = `${startTime}-${endTime}`;
-            
-            if (!timeSlotMap[timeKey]) {
-              timeSlotMap[timeKey] = [];
-            }
-            
-            if (dayKorean && !timeSlotMap[timeKey].includes(dayKorean)) {
-              timeSlotMap[timeKey].push(dayKorean);
-            }
-          });
-          
-          // 그룹화된 데이터를 schedule 배열로 변환
-          schedule = Object.entries(timeSlotMap).map(([timeKey, days]) => {
-            const [startTime, endTime] = timeKey.split('-');
             return {
-              dayOfWeek: days.join(','), // 쉼표로 구분
+              dayOfWeek: dayKorean,
               startTime,
-              endTime
+              endTime,
+              day: dayEnglish, // ⭐ 원본 영어 요일 추가
+              lanes: sch.lanes // ⭐ 레인 정보 추가
             };
           });
         }
@@ -745,9 +755,25 @@ function CoursesManagement() {
       // schedule 변환 (dayOfWeek → day)
       // "월,수,금" → 3개의 별도 schedule 항목으로 분리
       const scheduleForDB: any[] = [];
+      
+      console.log('🔍 courseData.schedule:', courseData.schedule);
+      
+      if (!courseData.schedule || courseData.schedule.length === 0) {
+        console.error('❌ schedule이 비어있습니다!');
+        throw new Error('요일과 시간을 선택해주세요.');
+      }
+      
       (courseData.schedule || []).forEach(sch => {
+        console.log('🔍 schedule 변환:', sch);
         // 쉼표로 구분된 요일 처리 (예: "월,수,금" → ["월", "수", "금"])
-        const days = sch.dayOfWeek.split(',').map(d => d.trim());
+        const days = (sch.dayOfWeek || sch.day || '').split(',').map(d => d.trim()).filter(d => d);
+        
+        console.log('📅 변환된 days:', days);
+        
+        if (days.length === 0) {
+          console.error('❌ 요일이 비어있습니다!');
+          return;
+        }
         
         // 각 요일별로 별도의 schedule 항목 생성
         days.forEach(dayKorean => {
@@ -760,6 +786,13 @@ function CoursesManagement() {
           });
         });
       });
+      
+      console.log('📋 최종 scheduleForDB:', scheduleForDB);
+      
+      if (scheduleForDB.length === 0) {
+        console.error('❌ scheduleForDB가 비어있습니다!');
+        throw new Error('요일과 시간을 올바르게 선택해주세요.');
+      }
       
       if (editingCourse && editingCourse._id) {
         // ✅ 수정 - PUT 요청
@@ -975,6 +1008,7 @@ function CoursesManagement() {
             console.log('빈 슬롯 클릭:', day, time);
             handleAddCourse(day, time); // 선택한 요일/시간 전달 ✅
           }}
+          personalLessonAvailability={centerInfo?.availabilitySettings?.personalLesson} // ⭐ 개인레슨 운영시간 전달
         />
       )}
 

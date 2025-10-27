@@ -203,7 +203,6 @@ const userMenuStructure = {
     center: [
       { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
       { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
-      { href: '/center-admin/settings', label: '🔧 센터 설정' },
     ],
     health: [
       { href: '/center-admin/health', label: '📊 센터 건강 현황' },
@@ -413,16 +412,22 @@ export default function Navigation() {
   useEffect(() => {
     if (isMenuOpen) {
       setTimeout(() => {
+        console.log('🎯 메뉴 포커스 시도 - 현재 경로:', pathname);
+        
         // 정확한 경로 매칭으로 첫 번째 활성 메뉴 항목만 찾기
         const activeMenuItems = document.querySelectorAll('[data-active="true"]');
+        console.log(`📋 발견된 활성 메뉴 항목: ${activeMenuItems.length}개`);
+        
         let targetMenuItem = null;
         
-        // 정확한 경로 매칭 우선
+        // href 속성으로 정확한 경로 매칭 우선
         for (let i = 0; i < activeMenuItems.length; i++) {
           const item = activeMenuItems[i] as HTMLElement;
-          const href = item.getAttribute('href');
+          const href = item.getAttribute('data-href') || item.getAttribute('href');
+          console.log(`  - 메뉴 항목 ${i}: ${href}`);
           if (href && pathname === href) {
             targetMenuItem = item;
+            console.log('✅ 정확한 매칭 발견:', href);
             break;
           }
         }
@@ -430,25 +435,31 @@ export default function Navigation() {
         // 정확한 매칭이 없으면 첫 번째 활성 항목 사용
         if (!targetMenuItem && activeMenuItems.length > 0) {
           targetMenuItem = activeMenuItems[0] as HTMLElement;
+          console.log('✅ 첫 번째 활성 항목 사용');
         }
         
         if (targetMenuItem && typeof targetMenuItem.scrollIntoView === 'function') {
+          console.log('📜 스크롤 및 포커스 시작');
           targetMenuItem.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center',
             inline: 'nearest'
           });
-          // 포커스는 제거하여 자동 포커싱 방지
-          // targetMenuItem.focus();
+          // 메뉴 항목에 포커스
+          targetMenuItem.focus();
+          console.log('✅ 포커스 완료');
+        } else {
+          console.log('⚠️ 타겟 메뉴 항목 없음, 첫 번째 메뉴 항목 시도');
+          // 첫 번째 메뉴 항목 자동 포커스
+          const firstMenuItem = document.querySelector('[role="menuitem"]');
+          if (firstMenuItem) {
+            (firstMenuItem as HTMLElement).focus();
+            console.log('✅ 첫 번째 메뉴 항목에 포커스');
+          } else {
+            console.log('❌ 메뉴 항목을 찾을 수 없음');
+          }
         }
-        // 첫 번째 메뉴 항목 자동 포커스도 제거
-        // else {
-        //   const firstMenuItem = document.querySelector('[role="menuitem"]');
-        //   if (firstMenuItem) {
-        //     (firstMenuItem as HTMLElement).focus();
-        //   }
-        // }
-      }, 100);
+      }, 200);
     }
   }, [isMenuOpen, pathname]);
 
@@ -580,6 +591,8 @@ export default function Navigation() {
               return menuItems.map((item, itemIndex) => (
                 <button
                   key={`${category}-${itemIndex}`}
+                  data-active={isMenuActive(item.href, pathname).toString()}
+                  data-href={item.href}
                   className={`block w-full text-left px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isMenuActive(item.href, pathname)
                       ? 'bg-blue-500 text-white font-bold border-l-3 border-blue-700 shadow-sm' 

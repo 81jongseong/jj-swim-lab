@@ -32,6 +32,7 @@ const LaneRental_1 = require("../models/LaneRental");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const role_1 = require("../middleware/role");
+const laneAllocationService_1 = require("../services/laneAllocationService");
 const router = express_1.default.Router();
 router.use(auth_1.authMiddleware);
 router.use(role_1.requireCenterAdmin);
@@ -386,28 +387,39 @@ router.post('/personal-lessons/request', async (req, res) => {
                 message: '해당 시간대에 이미 예약이 있습니다.'
             });
         }
+        let adjustmentResult;
+        let assignedLane = 1;
+        try {
+            adjustmentResult = await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({
+                date: scheduledDate,
+                time: startTime,
+                centerId: user.centerId
+            });
+            assignedLane = adjustmentResult.personalLessonLane || 1;
+            console.log('✅ 레인 자동 조정 완료:', adjustmentResult);
+        }
+        catch (adjustmentError) {
+            console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
+        }
         const personalLesson = new PersonalLesson_1.PersonalLesson({
-            student: userId,
-            instructor: instructorId,
+            studentId: userId,
+            instructorId: instructorId,
             centerId: user.centerId,
-            lessonType: lessonType || 'private',
-            level: level || 'beginner',
-            scheduledDate: new Date(scheduledDate),
-            startTime,
-            endTime,
-            laneNumber: laneNumber || 1,
-            poolType: poolType || 'mainPool',
-            status: 'requested',
-            lessonContent: lessonContent || '',
+            date: new Date(scheduledDate),
+            time: startTime,
+            duration: 60,
+            lessonType: lessonType || 'freestyle',
+            skillLevel: level || 'beginner',
+            goals: '개인 맞춤 레슨',
+            notes: lessonContent || '',
+            price: 50000,
             specialRequests: specialRequests || '',
-            payment: {
-                amount: 50000,
-                status: 'pending',
-                paymentMethod: 'card'
-            }
+            paymentStatus: 'pending',
+            status: 'pending',
+            assignedLane: assignedLane
         });
         await personalLesson.save();
-        await updateInstructorBookingCount(instructorId, startTime, endTime, 1);
+        await updateInstructorBookingCount(instructorId, startTime, '', 1);
         res.json({
             success: true,
             message: '개인레슨 신청이 완료되었습니다.',

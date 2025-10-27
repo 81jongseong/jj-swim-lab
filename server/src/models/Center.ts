@@ -38,17 +38,33 @@ export interface ICenter extends Document {
     close: string;
     days: string[];
   };
+  // ⭐ 커스텀 급수 관리
+  customLevels?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    color: string;
+    mappedToAdminLevel: string;
+    order: number;
+  }>;
   // 센터 가능시간 설정 (개인레슨, 레인대여용)
   availabilitySettings: {
     personalLesson: {
       enabled: boolean;
-      availableDays: string[]; // ['monday', 'tuesday', ...]
+      availableDays: string[]; // ['monday', 'tuesday', ...] - 하위 호환성용 (deprecated)
       availableTimes: Array<{
         startTime: string; // "09:00"
         endTime: string;   // "18:00"
-        maxDuration: number; // 최대 시간 (분)
+        maxDuration?: number; // 최대 시간 (분) - 선택적
+      }>; // 하위 호환성용 (deprecated)
+      dayTimeSlots?: Array<{ // ⭐ 새 형식: 요일별 시간대
+        day: string; // 'monday', 'tuesday', etc.
+        timeSlots: Array<{
+          startTime: string; // "09:00"
+          endTime: string;   // "18:00"
+        }>;
       }>;
-      advanceBookingDays: number; // 예약 가능 일수
+      advanceBookingDays?: number; // 예약 가능 일수 - 선택적
       cancellationPolicy: string;
     };
     laneRental: {
@@ -211,6 +227,15 @@ const centerSchema = new Schema<ICenter>({
       default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }]
   },
+  // ⭐ 커스텀 급수 관리 (센터별 커스텀 급수)
+  customLevels: [{
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    color: { type: String, default: '#3b82f6' },
+    mappedToAdminLevel: { type: String, default: 'beginner' },
+    order: { type: Number, default: 0 }
+  }],
   // 센터 가능시간 설정 (개인레슨, 레인대여용)
   availabilitySettings: {
     personalLesson: {
@@ -223,9 +248,16 @@ const centerSchema = new Schema<ICenter>({
       availableTimes: [{
         startTime: { type: String, default: '09:00' },
         endTime: { type: String, default: '18:00' },
-        maxDuration: { type: Number, default: 120 }
+        maxDuration: { type: Number, default: 120, required: false }
       }],
-      advanceBookingDays: { type: Number, default: 7 },
+      dayTimeSlots: [{ // ⭐ 새 형식: 요일별 시간대
+        day: { type: String, required: true },
+        timeSlots: [{
+          startTime: { type: String, required: true },
+          endTime: { type: String, required: true }
+        }]
+      }],
+      advanceBookingDays: { type: Number, default: 7, required: false },
       cancellationPolicy: { type: String, default: '24시간 전 취소 가능' }
     },
     laneRental: {

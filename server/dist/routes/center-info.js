@@ -76,7 +76,10 @@ router.get('/', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAdmin', '
                 location: center.location,
                 capacity: center.capacity,
                 policies: center.policies,
-                introduction: center.introduction
+                introduction: center.introduction,
+                poolConfiguration: center.poolConfiguration,
+                availabilitySettings: center.availabilitySettings,
+                customLevels: center.customLevels
             }
         });
     }
@@ -115,7 +118,8 @@ router.put('/', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAdmin', '
         const allowedFields = [
             'name', 'address', 'phone', 'email', 'website',
             'operatingHours', 'facilities', 'amenities', 'description',
-            'contactInfo', 'location', 'capacity', 'policies', 'introduction'
+            'contactInfo', 'location', 'capacity', 'policies', 'introduction',
+            'poolConfiguration', 'availabilitySettings', 'customLevels'
         ];
         const updateFields = {};
         allowedFields.forEach(field => {

@@ -147,7 +147,10 @@ router.get('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asyn
         location: center.location,
         capacity: center.capacity,
         policies: center.policies,
-        introduction: center.introduction
+        introduction: center.introduction,
+        poolConfiguration: center.poolConfiguration, // ⭐ 풀 구성 정보 추가
+        availabilitySettings: center.availabilitySettings, // ⭐ 개인레슨 운영시간 추가
+        customLevels: center.customLevels // ⭐ 커스텀 급수 추가
       }
     });
   } catch (error) {
@@ -196,7 +199,8 @@ router.put('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asyn
     const allowedFields = [
       'name', 'address', 'phone', 'email', 'website',
       'operatingHours', 'facilities', 'amenities', 'description',
-      'contactInfo', 'location', 'capacity', 'policies', 'introduction'
+      'contactInfo', 'location', 'capacity', 'policies', 'introduction',
+      'poolConfiguration', 'availabilitySettings', 'customLevels' // ⭐ 추가
     ];
 
     const updateFields: any = {};

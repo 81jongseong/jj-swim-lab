@@ -27,6 +27,7 @@ interface Course {
   status: 'active' | 'inactive' | 'full';
   createdAt: Date;
   tags?: string[];
+  isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
 }
 
 interface CourseTableProps {
@@ -136,8 +137,12 @@ export default function CourseTable({ courses, onEdit, onDelete, onAssignMembers
                 {/* 일정 */}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {course.schedule && course.schedule.length > 0 ? (
+                    // ⭐ 개인레슨과 단체 수업 모두 schedule 표시
                     <div>
-                      <div>{course.schedule[0].dayOfWeek}</div>
+                      <div className={course.isPersonalLesson ? 'text-purple-600' : ''}>
+                        {course.isPersonalLesson ? '개인레슨 - ' : ''}
+                        {course.schedule[0].dayOfWeek}
+                      </div>
                       <div className="text-xs text-gray-500">{course.schedule[0].startTime}</div>
                       {course.schedule.length > 1 && (
                         <div className="text-xs text-gray-400">+{course.schedule.length - 1}개</div>

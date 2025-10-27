@@ -114,6 +114,14 @@ const centerSchema = new mongoose_1.Schema({
                 default: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
             }]
     },
+    customLevels: [{
+            id: { type: String, required: true },
+            name: { type: String, required: true },
+            description: { type: String, default: '' },
+            color: { type: String, default: '#3b82f6' },
+            mappedToAdminLevel: { type: String, default: 'beginner' },
+            order: { type: Number, default: 0 }
+        }],
     availabilitySettings: {
         personalLesson: {
             enabled: { type: Boolean, default: true },
@@ -125,9 +133,16 @@ const centerSchema = new mongoose_1.Schema({
             availableTimes: [{
                     startTime: { type: String, default: '09:00' },
                     endTime: { type: String, default: '18:00' },
-                    maxDuration: { type: Number, default: 120 }
+                    maxDuration: { type: Number, default: 120, required: false }
                 }],
-            advanceBookingDays: { type: Number, default: 7 },
+            dayTimeSlots: [{
+                    day: { type: String, required: true },
+                    timeSlots: [{
+                            startTime: { type: String, required: true },
+                            endTime: { type: String, required: true }
+                        }]
+                }],
+            advanceBookingDays: { type: Number, default: 7, required: false },
             cancellationPolicy: { type: String, default: '24시간 전 취소 가능' }
         },
         laneRental: {

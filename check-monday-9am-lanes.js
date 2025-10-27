@@ -11,25 +11,26 @@ async function checkMonday9amLanes() {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB 연결 성공\n');
 
-    // 월요일 9시 강습과정 조회
-    const courses = await Course.find({
-      'schedule.day': 'monday',
-      'schedule.startTime': '09:00'
-    });
+    // 초급 자유형 찾기
+    const course = await Course.findOne({ name: '초급 자유형' });
+    
+    if (!course) {
+      console.log('❌ 초급 자유형을 찾을 수 없습니다.');
+      return;
+    }
 
-    console.log(`📅 월요일 9시 강습과정: ${courses.length}개\n`);
+    console.log(`📅 초급 자유형 스케줄:\n`);
 
-    courses.forEach((course, index) => {
-      console.log(`\n강습과정 ${index + 1}: ${course.name}`);
-      console.log(`  - 레인 정보:`);
-      console.log(`    lanes:`, course.lanes);
-      console.log(`    laneInfo:`, course.laneInfo);
-      
-      if (course.laneInfo?.assignedLanes) {
-        console.log(`    assignedLanes:`, course.laneInfo.assignedLanes);
-        console.log(`    maxLanes:`, course.laneInfo.maxLanes);
-        console.log(`    minLanes:`, course.laneInfo.minLanes);
-        console.log(`    레인 배열 정렬 여부:`, JSON.stringify(course.laneInfo.assignedLanes) === JSON.stringify([...course.laneInfo.assignedLanes].sort((a, b) => a - b)));
+    course.schedule.forEach((sched, index) => {
+      if (sched.day === 'monday' && sched.startTime === '09:00') {
+        console.log(`스케줄 ${index + 1}:`);
+        console.log(`  - day: ${sched.day}`);
+        console.log(`  - startTime: ${sched.startTime}`);
+        console.log(`  - endTime: ${sched.endTime}`);
+        console.log(`  - lanes:`, JSON.stringify(sched.lanes, null, 2));
+        console.log(`  - assignedLanes:`, sched.lanes?.assignedLanes);
+        console.log(`  - originalAssignedLanes:`, sched.lanes?.originalAssignedLanes);
+        console.log(`  - isAdjusted:`, sched.lanes?.isAdjusted);
       }
     });
 

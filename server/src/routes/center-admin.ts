@@ -860,14 +860,16 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
       });
     }
 
-    // 모든 강습 과정의 레인 정리 및 검증 (일시 비활성화 - 레인 충돌 해결 중)
-    // try {
-    //   const { LaneAllocationService } = await import('../services/laneAllocationService');
-    //   const organizeResult = await LaneAllocationService.organizeAllCourseLanes(centerId.toString());
-    //   console.log('🔄 레인 정리 결과:', organizeResult);
-    // } catch (organizeError) {
-    //   console.error('⚠️ 레인 정리 실패 (무시하고 계속 진행):', organizeError);
-    // }
+    // ⭐ 강습 과정 조회 시 개인레슨 없으면 레인 자동 복원
+    try {
+      const { LaneAllocationService } = await import('../services/laneAllocationService');
+      const restoredLanes = await LaneAllocationService.restoreLanesIfNoPersonalLesson(centerId.toString());
+      if (restoredLanes && restoredLanes.length > 0) {
+        console.log('🔄 레인 자동 복원 완료:', restoredLanes);
+      }
+    } catch (restoreError) {
+      console.error('⚠️ 레인 복원 실패 (무시하고 계속 진행):', restoreError);
+    }
 
     // 센터의 강습 과정 조회 (강사 정보 포함)
     const courses = await Course.find({
@@ -902,8 +904,10 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
         schedule: course.schedule,
         isPersonalLesson: course.isPersonalLesson || false,
         courseType: course.courseType || 'group',
+        personalLessonSettings: course.personalLessonSettings || { timeSlots: [], lessonTypes: [], frequencyOptions: [] }, // ⭐ 개인레슨 설정 추가 (기본값 제공)
         startDate: course.startDate,
         endDate: course.endDate,
+        duration: course.duration || 60, // ⭐ 수업 시간 추가
         lanes: course.lanes || [1],
         poolType: course.poolType || 'main',
         laneInfo: course.laneInfo || { assignedLanes: [], maxLanes: 0, minLanes: 0, laneNotes: '' },
@@ -912,6 +916,14 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
         createdAt: course.createdAt,
         updatedAt: course.updatedAt
       };
+      
+      // ⭐ 초급 자유형 월요일 9시 레인 정보 로그
+      if (courseData.name === '초급 자유형') {
+        const mondaySchedule = course.schedule.find((s: any) => s.day === 'monday' && s.startTime === '09:00');
+        if (mondaySchedule) {
+          console.log('🔍 초급 자유형 월요일 9시 스케줄:', JSON.stringify(mondaySchedule, null, 2));
+        }
+      }
       
       console.log('🔄 변환된 강습 과정 데이터:', {
         _id: courseData._id,

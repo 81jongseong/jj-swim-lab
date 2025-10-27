@@ -35,9 +35,6 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 conflicts
             });
         }
-        const availableLanes = await laneAllocationService_1.LaneAllocationService.findAvailableLanes(date, time, centerId, duration);
-        const assignedLane = availableLanes.availableLanes[0] || 1;
-        console.log(`🔍 개인레슨 레인 배정: ${assignedLane}번 레인`);
         const personalLesson = new PersonalLesson_1.PersonalLesson({
             studentId: userId,
             centerId,
@@ -48,19 +45,22 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
             skillLevel,
             goals,
             notes,
-            status: 'pending',
-            assignedLane
+            status: 'pending'
         });
-        await personalLesson.save();
-        await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({
+        const adjustmentResult = await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({
             date,
             time,
             centerId
         });
+        personalLesson.assignedLane = adjustmentResult.personalLessonLane || 1;
+        await personalLesson.save();
         res.status(201).json({
             success: true,
             message: '개인레슨 신청이 완료되었습니다.',
-            data: personalLesson
+            data: {
+                ...personalLesson.toObject(),
+                assignedLane: adjustmentResult.personalLessonLane || 1
+            }
         });
     }
     catch (error) {

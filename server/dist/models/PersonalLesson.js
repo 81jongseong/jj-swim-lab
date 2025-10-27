@@ -88,8 +88,7 @@ const personalLessonSchema = new mongoose_1.Schema({
     },
     assignedLane: {
         type: Number,
-        min: 1,
-        max: 10
+        default: 1
     }
 }, {
     timestamps: true

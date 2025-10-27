@@ -27,6 +27,7 @@ interface Course {
   status: 'active' | 'inactive' | 'full';
   createdAt: Date;
   tags?: string[];
+  isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
   poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool'; // ⭐ 풀 타입
   lanes?: number[];
   laneInfo?: {
@@ -149,12 +150,25 @@ export default function CourseCard({ course, levelName, onEdit, onDelete, onAssi
         <div className="flex items-center gap-2 text-sm text-gray-700">
           <Calendar className="w-4 h-4 text-gray-500" />
           <span>
-            {course.schedule.map((s, i) => (
-              <span key={i}>
-                {s.dayOfWeek} {s.startTime}
-                {i < course.schedule.length - 1 && ', '}
+            {course.isPersonalLesson ? (
+              // ⭐ 개인레슨: schedule 표시
+              <span className="text-purple-600">
+                개인레슨 - {course.schedule.map((s, i) => (
+                  <span key={i}>
+                    {s.dayOfWeek} {s.startTime}
+                    {i < course.schedule.length - 1 && ', '}
+                  </span>
+                ))}
               </span>
-            ))}
+            ) : (
+              // ⭐ 단체 수업: schedule 표시
+              course.schedule.map((s, i) => (
+                <span key={i}>
+                  {s.dayOfWeek} {s.startTime}
+                  {i < course.schedule.length - 1 && ', '}
+                </span>
+              ))
+            )}
           </span>
         </div>
 

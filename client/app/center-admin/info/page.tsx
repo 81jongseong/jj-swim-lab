@@ -1,15 +1,17 @@
 /**
- * 🏢 JJ Swim Lab - 센터 정보 관리 페이지 (센터 관리자용)
+ * 🏢 JJ Swim Lab - 센터 관리 페이지 (센터 관리자용)
  *
  * 📋 **페이지 목적**
- * - 센터 관리자가 센터의 기본 정보, 시설 정보, 운영 시간 등을 관리
- * - 센터 가입 페이지와 동일한 UI/UX 제공
+ * - 센터 관리자가 센터의 기본 정보, 시설 정보, 운영 시간, 설정 등을 관리
+ * - 센터 정보 + 센터 설정 통합 페이지
  * 
  * 🔄 **주요 기능**
  * - 센터 기본 정보 관리 (이름, 주소, 연락처)
  * - 수영장 정보 관리 (메인풀, 유아풀, 엔드리스풀)
  * - 시설 정보 관리 (샤워실, 락커룸, 사우나, 체온유지탕 등)
  * - 운영시간 설정
+ * - 급수 관리 (센터별 커스텀 급수)
+ * - 개인레슨 운영시간 설정
  * 
  * 🗄️ **데이터 연동**
  * - SwimmingCenter 모델과 연동
@@ -23,6 +25,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, LoadingSpinner } from '../../../components/ui';
 import { Button } from '../../../components/Button';
+import LevelManagement from '../../../components/center-admin/LevelManagement';
 import { 
   Building, 
   Edit,
@@ -31,7 +34,9 @@ import {
   Plus,
   Trash2,
   Waves,
-  Clock
+  Clock,
+  Settings,
+  Users
 } from 'lucide-react';
 
 // 수영장 정보 인터페이스
@@ -55,6 +60,23 @@ interface FacilityDetail {
     type?: string;
     description?: string;
   };
+}
+
+// ⭐ 개인레슨 운영시간 타입 정의
+interface PersonalLessonTimeSlot {
+  startTime: string;
+  endTime: string;
+}
+
+interface DayTimeSlot {
+  day: string; // 'monday', 'tuesday', etc.
+  timeSlots: PersonalLessonTimeSlot[];
+}
+
+interface PersonalLessonSettings {
+  enabled: boolean;
+  dayTimeSlots: DayTimeSlot[]; // 요일별로 시간대를 분리 저장
+  cancellationPolicy: string;
 }
 
 // 시설 기본 템플릿
@@ -167,6 +189,38 @@ function CenterInfoManagementPage() {
   const [parkingAvailable, setParkingAvailable] = useState(false);
   const [parkingSpaces, setParkingSpaces] = useState(0);
   
+  // ⭐ 급수 관리 (초기값: 강습 관리에서 사용하는 급수)
+  const [customLevels, setCustomLevels] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    order: number;
+    color?: string;
+    mappedToAdminLevel?: string;
+  }>>([
+    { id: 'beginner_1', name: '완전 초보', description: '물에 익숙해지는 단계', order: 1, color: '#22c55e', mappedToAdminLevel: 'beginner' },
+    { id: 'beginner_2', name: '초급', description: '자유형 기본, 배영 가능', order: 2, color: '#3b82f6', mappedToAdminLevel: 'beginner' },
+    { id: 'intermediate_1', name: '중급 하위', description: '자유형, 배영, 평영 가능', order: 3, color: '#a855f7', mappedToAdminLevel: 'intermediate' },
+    { id: 'intermediate_2', name: '중급 상위', description: '모든 영법으로 100m 연속 수영', order: 4, color: '#f59e0b', mappedToAdminLevel: 'intermediate' },
+    { id: 'advanced_1', name: '고급 하위', description: '모든 영법으로 장거리 수영 가능', order: 5, color: '#ef4444', mappedToAdminLevel: 'advanced' },
+    { id: 'advanced_2', name: '고급 상위 (마스터즈)', description: '경쟁 수준, 기록 향상 목표', order: 6, color: '#8b5cf6', mappedToAdminLevel: 'advanced' },
+    { id: 'master', name: '마스터', description: '엘리트 수준, 최적화된 훈련', order: 7, color: '#ec4899', mappedToAdminLevel: 'master' },
+    { id: 'expert', name: '전문가', description: '경쟁 수준, 최대 부하', order: 8, color: '#dc2626', mappedToAdminLevel: 'master' }
+  ]);
+  
+  // ⭐ 개인레슨 운영시간 설정 (요일별로 시간대 분리)
+  const [personalLessonSettings, setPersonalLessonSettings] = useState<PersonalLessonSettings>({
+    enabled: true,
+    dayTimeSlots: [], // 요일별 시간대
+    cancellationPolicy: '24시간 전 취소 가능'
+  });
+  
+  // 새 시간대 입력 상태
+  const [newTimeSlot, setNewTimeSlot] = useState({
+    startTime: '09:00',
+    endTime: '18:00'
+  });
+  
   const [centerId, setCenterId] = useState('');
 
   // 권한 확인
@@ -201,7 +255,7 @@ function CenterInfoManagementPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/centers/my-center', {
+      const response = await fetch('http://localhost:5000/api/center-admin/center-info', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -283,6 +337,25 @@ function CenterInfoManagementPage() {
             }
             
             setPools(loadedPools);
+          }
+          
+          // ⭐ 급수 정보 로드 (DB에 데이터가 없으면 기본값 유지)
+          if (centerData.customLevels && centerData.customLevels.length > 0) {
+            setCustomLevels(centerData.customLevels);
+          } else if (centerData.availabilitySettings?.personalLesson?.customLevels && centerData.availabilitySettings.personalLesson.customLevels.length > 0) {
+            setCustomLevels(centerData.availabilitySettings.personalLesson.customLevels);
+          }
+          // DB에 데이터가 없으면 초기값 사용 (강습 관리에서 사용하는 급수)
+          
+          // ⭐ 개인레슨 운영시간 설정 로드
+          if (centerData.availabilitySettings?.personalLesson) {
+            // 새로운 dayTimeSlots 형식으로 변환
+            const dayTimeSlots = centerData.availabilitySettings.personalLesson.dayTimeSlots || [];
+            setPersonalLessonSettings({
+              enabled: centerData.availabilitySettings.personalLesson.enabled || true,
+              dayTimeSlots: dayTimeSlots.length > 0 ? dayTimeSlots : [],
+              cancellationPolicy: centerData.availabilitySettings.personalLesson.cancellationPolicy || '24시간 전 취소 가능'
+            });
           }
           
           // 시설 정보 로드
@@ -486,38 +559,7 @@ function CenterInfoManagementPage() {
         email,
         phone,
         description,
-        facilities: {
-          availablePoolLengths: pools.map(p => p.length),
-          mainPool: mainPool ? {
-            lanes: mainPool.laneCount || 0,
-            poolLength: mainPool.length || 0,
-            poolWidth: mainPool.width || 0,
-            poolDepth: mainPool.depth || 0,
-            temperature: mainPool.temperature || 0
-          } : undefined,
-          kidsPool: kidsPool ? {
-            hasKidsPool: true,
-            kidsPoolLanes: kidsPool.laneCount || 0,
-            kidsPoolLength: kidsPool.length || 0,
-            kidsPoolDepth: kidsPool.depth || 0,
-            kidsPoolTemperature: kidsPool.temperature || 0
-          } : { hasKidsPool: false },
-          endlessPool: endlessPool ? {
-            hasEndlessPool: true,
-            endlessPoolCount: endlessPool.laneCount || 1,
-            endlessPoolLength: endlessPool.length || 0,
-            endlessPoolWidth: endlessPool.width || 0
-          } : { hasEndlessPool: false },
-          amenities: {
-            additionalFacilities: JSON.stringify(facilityDetails),
-            hasShower: facilities.some(f => f.name === '샤워실' && f.enabled),
-            hasLocker: facilities.some(f => f.name === '락커룸' && f.enabled),
-            hasSauna: facilities.some(f => f.name === '사우나' && f.enabled),
-            hasJacuzzi: facilities.some(f => f.name === '체온유지탕(월풀)' && f.enabled),
-            hasParking: parkingAvailable,
-            parkingSpaces: parkingSpaces
-          }
-        },
+        // facilities는 제외 (Center 모델의 facilities는 string[] 형식)
         operatingHours: {
           monday: { open: weekdaysOpen, close: weekdaysClose, isOpen: true },
           tuesday: { open: weekdaysOpen, close: weekdaysClose, isOpen: true },
@@ -526,7 +568,15 @@ function CenterInfoManagementPage() {
           friday: { open: weekdaysOpen, close: weekdaysClose, isOpen: true },
           saturday: { open: weekendsOpen, close: weekendsClose, isOpen: true },
           sunday: { open: weekendsOpen, close: weekendsClose, isOpen: true }
-        }
+        },
+        customLevels: customLevels.length > 0 ? customLevels : undefined,
+        availabilitySettings: personalLessonSettings ? {
+          personalLesson: {
+            enabled: personalLessonSettings.enabled,
+            dayTimeSlots: personalLessonSettings.dayTimeSlots, // 요일별 시간대 저장
+            cancellationPolicy: personalLessonSettings.cancellationPolicy
+          }
+        } : undefined
       };
 
       const response = await fetch('http://localhost:5000/api/centers/my-center', {
@@ -590,8 +640,8 @@ function CenterInfoManagementPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* 헤더 */}
-      <div className="mb-8">
+      {/* 헤더 - 상단 고정 */}
+      <div className="sticky top-0 z-50 bg-white pt-8 pb-4 mb-8 -mx-4 px-4 border-b border-gray-200">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -1626,6 +1676,334 @@ function CenterInfoManagementPage() {
           </div>
         </CardContent>
         </Card>
+
+      {/* ⭐ 급수 관리 */}
+      <LevelManagement
+        levels={customLevels}
+        onLevelsChange={(newLevels) => setCustomLevels(newLevels)}
+        isEditing={isEditing}
+      />
+
+      {/* ⭐ 개인레슨 운영시간 설정 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2" />
+            개인레슨 운영시간 설정
+          </CardTitle>
+          <CardDescription>개인레슨 운영 가능 시간대를 설정합니다</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 개인레슨 활성화 */}
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <div>
+              <h4 className="font-medium text-gray-900">개인레슨 활성화</h4>
+              <p className="text-sm text-gray-600">센터에서 개인레슨을 제공합니다</p>
+            </div>
+            <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="checkbox"
+                checked={personalLessonSettings?.enabled || false}
+                onChange={(e) => {
+                  if (!isEditing) return;
+                  setPersonalLessonSettings({
+                    ...personalLessonSettings,
+                    enabled: e.target.checked
+                  });
+                }}
+                disabled={!isEditing}
+                className="sr-only peer"
+              />
+              <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                !isEditing 
+                  ? 'bg-gray-100 cursor-not-allowed' 
+                  : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+              }`}></div>
+            </label>
+          </div>
+
+          {/* 요일별 시간대 설정 */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-sm font-medium text-gray-700">요일별 운영 시간대</label>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 모든 요일 설정 초기화
+                    setPersonalLessonSettings({
+                      ...personalLessonSettings,
+                      dayTimeSlots: []
+                    });
+                  }}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  전체 초기화
+                </button>
+              )}
+            </div>
+            
+            {/* 시간대 입력 */}
+            {isEditing && (
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">새 시간대 추가</h4>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">시작 시간</label>
+                    <input
+                      type="time"
+                      id="newStartTime"
+                      value={newTimeSlot.startTime}
+                      onChange={(e) => setNewTimeSlot({ ...newTimeSlot, startTime: e.target.value })}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">종료 시간</label>
+                    <input
+                      type="time"
+                      id="newEndTime"
+                      value={newTimeSlot.endTime}
+                      onChange={(e) => setNewTimeSlot({ ...newTimeSlot, endTime: e.target.value })}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-600 mb-2">적용할 요일 선택</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { value: 'monday', label: '월' },
+                      { value: 'tuesday', label: '화' },
+                      { value: 'wednesday', label: '수' },
+                      { value: 'thursday', label: '목' },
+                      { value: 'friday', label: '금' },
+                      { value: 'saturday', label: '토' },
+                      { value: 'sunday', label: '일' }
+                    ].map(day => (
+                      <label key={day.value} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          className="mr-1"
+                          id={`day-${day.value}`}
+                        />
+                        <span className="text-sm">{day.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const startTime = newTimeSlot.startTime;
+                    const endTime = newTimeSlot.endTime;
+                    
+                    if (!startTime || !endTime) {
+                      alert('시작 시간과 종료 시간을 모두 입력하세요.');
+                      return;
+                    }
+                    
+                    const selectedDays: string[] = [];
+                    [
+                      { value: 'monday', label: '월' },
+                      { value: 'tuesday', label: '화' },
+                      { value: 'wednesday', label: '수' },
+                      { value: 'thursday', label: '목' },
+                      { value: 'friday', label: '금' },
+                      { value: 'saturday', label: '토' },
+                      { value: 'sunday', label: '일' }
+                    ].forEach(day => {
+                      const checkbox = document.getElementById(`day-${day.value}`) as HTMLInputElement;
+                      if (checkbox?.checked) {
+                        selectedDays.push(day.value);
+                      }
+                    });
+                    
+                    if (selectedDays.length === 0) {
+                      alert('최소 1개 이상의 요일을 선택하세요.');
+                      return;
+                    }
+                    
+                    const currentSlots = [...(personalLessonSettings?.dayTimeSlots || [])];
+                    
+                    selectedDays.forEach(dayValue => {
+                      const existingIndex = currentSlots.findIndex(d => d.day === dayValue);
+                      
+                      if (existingIndex >= 0) {
+                        // 기존 요일에 시간대 추가
+                        currentSlots[existingIndex].timeSlots.push({
+                          startTime,
+                          endTime
+                        });
+                      } else {
+                        // 새 요일 추가
+                        currentSlots.push({
+                          day: dayValue,
+                          timeSlots: [{ startTime, endTime }]
+                        });
+                      }
+                    });
+                    
+                    setPersonalLessonSettings({
+                      ...personalLessonSettings,
+                      dayTimeSlots: currentSlots
+                    });
+                    
+                    // 입력 필드 초기화
+                    setNewTimeSlot({ startTime: '09:00', endTime: '18:00' });
+                    [
+                      { value: 'monday', label: '월' },
+                      { value: 'tuesday', label: '화' },
+                      { value: 'wednesday', label: '수' },
+                      { value: 'thursday', label: '목' },
+                      { value: 'friday', label: '금' },
+                      { value: 'saturday', label: '토' },
+                      { value: 'sunday', label: '일' }
+                    ].forEach(day => {
+                      const checkbox = document.getElementById(`day-${day.value}`) as HTMLInputElement;
+                      if (checkbox) checkbox.checked = false;
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                >
+                  시간대 추가
+                </button>
+              </div>
+            )}
+            
+            {/* 요일 버튼 - 현재 설정된 요일 표시 */}
+            <div className="flex gap-2 flex-wrap mb-4">
+              {[
+                { value: 'monday', label: '월' },
+                { value: 'tuesday', label: '화' },
+                { value: 'wednesday', label: '수' },
+                { value: 'thursday', label: '목' },
+                { value: 'friday', label: '금' },
+                { value: 'saturday', label: '토' },
+                { value: 'sunday', label: '일' }
+              ].map(day => {
+                const daySlot = personalLessonSettings?.dayTimeSlots?.find(d => d.day === day.value);
+                const timeSlots = daySlot?.timeSlots || [];
+                const hasTimeSlots = timeSlots.length > 0;
+                
+                return (
+                  <div
+                    key={day.value}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      hasTimeSlots
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {day.label}요일 {hasTimeSlots && `(${timeSlots.length})`}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* 설정된 시간대 표시 */}
+            {personalLessonSettings?.dayTimeSlots && personalLessonSettings.dayTimeSlots.length > 0 && (
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                {personalLessonSettings.dayTimeSlots.map((daySlot, dayIndex) => {
+                  const dayLabel = [
+                    { value: 'monday', label: '월' },
+                    { value: 'tuesday', label: '화' },
+                    { value: 'wednesday', label: '수' },
+                    { value: 'thursday', label: '목' },
+                    { value: 'friday', label: '금' },
+                    { value: 'saturday', label: '토' },
+                    { value: 'sunday', label: '일' }
+                  ].find(d => d.value === daySlot.day)?.label;
+                  
+                  return (
+                    <div key={daySlot.day} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
+                      <h4 className="font-medium text-gray-900 mb-2">{dayLabel}요일</h4>
+                      <div className="space-y-2">
+                        {daySlot.timeSlots.map((timeSlot, index) => (
+                          <div key={index} className="flex gap-3 items-center">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">시작 시간</label>
+                                <input
+                                  type="time"
+                                  value={timeSlot.startTime}
+                                  onChange={(e) => {
+                                    const currentSlots = [...(personalLessonSettings?.dayTimeSlots || [])];
+                                    currentSlots[dayIndex].timeSlots[index].startTime = e.target.value;
+                                    setPersonalLessonSettings({
+                                      ...personalLessonSettings,
+                                      dayTimeSlots: currentSlots
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm disabled:bg-gray-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">종료 시간</label>
+                                <input
+                                  type="time"
+                                  value={timeSlot.endTime}
+                                  onChange={(e) => {
+                                    const currentSlots = [...(personalLessonSettings?.dayTimeSlots || [])];
+                                    currentSlots[dayIndex].timeSlots[index].endTime = e.target.value;
+                                    setPersonalLessonSettings({
+                                      ...personalLessonSettings,
+                                      dayTimeSlots: currentSlots
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm disabled:bg-gray-100"
+                                />
+                              </div>
+                            </div>
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentSlots = [...(personalLessonSettings?.dayTimeSlots || [])];
+                                  currentSlots[dayIndex].timeSlots = currentSlots[dayIndex].timeSlots.filter((_, i) => i !== index);
+                                  // 시간이 없으면 요일 자체 제거
+                                  if (currentSlots[dayIndex].timeSlots.length === 0) {
+                                    currentSlots.splice(dayIndex, 1);
+                                  }
+                                  setPersonalLessonSettings({
+                                    ...personalLessonSettings,
+                                    dayTimeSlots: currentSlots
+                                  });
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentSlots = [...(personalLessonSettings?.dayTimeSlots || [])];
+                            currentSlots[dayIndex].timeSlots.push({ startTime: '09:00', endTime: '18:00' });
+                            setPersonalLessonSettings({
+                              ...personalLessonSettings,
+                              dayTimeSlots: currentSlots
+                            });
+                          }}
+                          className="mt-2 text-xs text-blue-600 hover:text-blue-700"
+                        >
+                          + 시간 추가
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

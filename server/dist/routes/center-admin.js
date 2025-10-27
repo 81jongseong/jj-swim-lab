@@ -80,13 +80,6 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
             centerId,
             status: 'pending'
         });
-        const totalPersonalLessons = await PersonalLesson_1.PersonalLesson.countDocuments({
-            centerId
-        });
-        const activePersonalLessons = await PersonalLesson_1.PersonalLesson.countDocuments({
-            centerId,
-            status: { $in: ['pending', 'confirmed', 'in_progress'] }
-        });
         res.json({
             success: true,
             message: '센터 관리자 대시보드 데이터 조회 성공!',
@@ -97,8 +90,6 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
                 monthlyRevenue: monthlyRevenue[0]?.total || 0,
                 todayBookings,
                 pendingApprovals,
-                personalLessons: totalPersonalLessons,
-                activePersonalLessons: activePersonalLessons,
                 monthlyGrowth: 12.5,
                 averageRating: 4.7
             }
@@ -720,20 +711,32 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 schedule: course.schedule,
                 isPersonalLesson: course.isPersonalLesson || false,
                 courseType: course.courseType || 'group',
+                personalLessonSettings: course.personalLessonSettings || { timeSlots: [], lessonTypes: [], frequencyOptions: [] },
                 startDate: course.startDate,
                 endDate: course.endDate,
+                duration: course.duration || 60,
                 lanes: course.lanes || [1],
                 poolType: course.poolType || 'main',
+                laneInfo: course.laneInfo || { assignedLanes: [], maxLanes: 0, minLanes: 0, laneNotes: '' },
                 enrolledStudents: course.enrolledStudents || [],
                 isActive: course.isActive,
                 createdAt: course.createdAt,
                 updatedAt: course.updatedAt
             };
+            if (courseData.name === '초급 자유형') {
+                const mondaySchedule = course.schedule.find((s) => s.day === 'monday' && s.startTime === '09:00');
+                if (mondaySchedule) {
+                    console.log('🔍 초급 자유형 월요일 9시 스케줄:', JSON.stringify(mondaySchedule, null, 2));
+                }
+            }
             console.log('🔄 변환된 강습 과정 데이터:', {
                 _id: courseData._id,
                 name: courseData.name,
                 instructorId: courseData.instructorId,
-                instructorName: courseData.instructorName
+                instructorName: courseData.instructorName,
+                lanes: courseData.lanes,
+                poolType: courseData.poolType,
+                laneInfo: courseData.laneInfo
             });
             return courseData;
         });
@@ -1895,30 +1898,33 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         const courses = await Course_1.Course.find({
             centerId: centerId
         }).populate('instructorId', 'name email');
-        const coursesData = courses.map(course => ({
-            _id: course._id,
-            name: course.name,
-            description: course.description,
-            level: course.level,
-            duration: course.duration,
-            maxStudents: course.maxStudents,
-            currentStudents: course.enrolledStudents?.length || 0,
-            instructorId: course.instructorId,
-            instructor: course.instructorId,
-            price: course.price,
-            schedule: course.schedule,
-            status: course.status,
-            createdAt: course.createdAt,
-            tags: course.tags || [],
-            poolType: course.poolType,
-            lanes: course.lanes,
-            laneInfo: course.laneInfo,
-            courseType: course.courseType,
-            isPersonalLesson: course.isPersonalLesson,
-            enrolledStudents: course.enrolledStudents,
-            startDate: course.startDate,
-            endDate: course.endDate
-        }));
+        const coursesData = courses.map(course => {
+            console.log(`🔍 과정 ${course.name} - laneInfo 원본:`, JSON.stringify(course.laneInfo, null, 2));
+            return {
+                _id: course._id,
+                name: course.name,
+                description: course.description,
+                level: course.level,
+                duration: course.duration,
+                maxStudents: course.maxStudents,
+                currentStudents: course.enrolledStudents?.length || 0,
+                instructorId: course.instructorId,
+                instructor: course.instructorId,
+                price: course.price,
+                schedule: course.schedule,
+                status: course.status,
+                createdAt: course.createdAt,
+                tags: course.tags || [],
+                poolType: course.poolType,
+                lanes: course.lanes,
+                laneInfo: course.laneInfo,
+                courseType: course.courseType,
+                isPersonalLesson: course.isPersonalLesson,
+                enrolledStudents: course.enrolledStudents,
+                startDate: course.startDate,
+                endDate: course.endDate
+            };
+        });
         res.json({
             success: true,
             message: '강습 과정 목록 조회 성공',

@@ -185,6 +185,19 @@ const courseSchema = new mongoose.Schema({
       type: String,
       required: true,
     },
+    // ⭐ 요일/시간별 레인 정보 (개인레슨 시 레인 조정용)
+    lanes: {
+      type: {
+        assignedLanes: [{ type: Number }], // 현재 배정된 레인 번호들
+        originalAssignedLanes: [{ type: Number }], // 원래 배정된 레인 번호들 (복원용)
+        isAdjusted: { type: Boolean, default: false } // 레인이 조정되었는지 여부
+      },
+      default: () => ({
+        assignedLanes: [],
+        originalAssignedLanes: [],
+        isAdjusted: false
+      })
+    }
   }],
   // ⭐ 레인 정보 (수영장 레인 배정)
   poolType: {
@@ -258,7 +271,27 @@ const courseSchema = new mongoose.Schema({
   // 과정 태그 (필터링/검색용)
   tags: [{
     type: String
-  }]
+  }],
+  // ⭐ 개인레슨 여부
+  isPersonalLesson: {
+    type: Boolean,
+    default: false
+  },
+  // ⭐ 개인레슨 설정
+  personalLessonSettings: {
+    timeSlots: [{
+      startTime: String,
+      endTime: String
+    }],
+    lessonTypes: [String],
+    frequencyOptions: [String]
+  },
+  // ⭐ 과정 타입
+  courseType: {
+    type: String,
+    enum: ['group', 'personal'],
+    default: 'group'
+  }
 }, { 
   timestamps: true 
 });

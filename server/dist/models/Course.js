@@ -83,6 +83,18 @@ const courseSchema = new mongoose_1.default.Schema({
                 type: String,
                 required: true,
             },
+            lanes: {
+                type: {
+                    assignedLanes: [{ type: Number }],
+                    originalAssignedLanes: [{ type: Number }],
+                    isAdjusted: { type: Boolean, default: false }
+                },
+                default: () => ({
+                    assignedLanes: [],
+                    originalAssignedLanes: [],
+                    isAdjusted: false
+                })
+            }
         }],
     poolType: {
         type: String,
@@ -96,6 +108,7 @@ const courseSchema = new mongoose_1.default.Schema({
         }],
     laneInfo: {
         assignedLanes: [{ type: Number }],
+        originalAssignedLanes: [{ type: Number }],
         maxLanes: { type: Number, default: 1 },
         minLanes: { type: Number, default: 1 },
         laneNotes: { type: String, default: '' }
