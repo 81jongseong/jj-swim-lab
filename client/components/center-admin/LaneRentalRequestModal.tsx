@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../Button';
 import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
+import Textarea from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { X, Calendar, Clock, MapPin, Target } from 'lucide-react';
 

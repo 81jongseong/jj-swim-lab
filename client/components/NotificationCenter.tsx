@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, X, Check, Trash2, Filter } from 'lucide-react';
 import Button from './ui/button';
 import Card from './ui/card';
-import { Badge } from './ui/badge';
+import { Badge } from '@/components/ui';
 
 interface Notification {
   _id: string;

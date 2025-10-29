@@ -159,16 +159,15 @@ router.patch('/personal-lessons/:id/status', async (req, res) => {
                 return res.status(400).json({ success: false, message: '강사 ID가 필요합니다.' });
             }
             const conflict = await PersonalLesson_1.PersonalLesson.findOne({
-                instructor: instructorId,
-                scheduledDate: personalLesson.scheduledDate,
-                startTime: personalLesson.startTime,
-                endTime: personalLesson.endTime,
-                status: { $in: ['accepted', 'in_progress'] }
+                instructorId: instructorId,
+                date: personalLesson.date,
+                time: personalLesson.time,
+                status: { $in: ['pending', 'approved', 'completed'] }
             });
             if (conflict) {
                 return res.status(400).json({ success: false, message: '강사 스케줄이 충돌합니다.' });
             }
-            personalLesson.instructor = instructorId;
+            personalLesson.instructorId = instructorId;
         }
         personalLesson.status = status;
         if (notes) {
@@ -225,19 +224,14 @@ router.patch('/lane-rentals/:id/status', async (req, res) => {
         if (status === 'approved') {
             const conflict = await LaneRental_1.LaneRental.findOne({
                 centerId: laneRental.centerId,
-                rentalDate: laneRental.rentalDate,
+                date: laneRental.date,
                 startTime: laneRental.startTime,
                 endTime: laneRental.endTime,
-                laneNumbers: { $in: laneRental.laneNumbers },
-                status: { $in: ['approved', 'in_progress'] }
+                laneNumber: laneRental.laneNumber,
+                status: { $in: ['pending', 'approved', 'completed'] }
             });
             if (conflict) {
                 return res.status(400).json({ success: false, message: '레인 사용 시간이 충돌합니다.' });
-            }
-            laneRental.approval.approvedBy = req.user.id;
-            laneRental.approval.approvedAt = new Date();
-            if (notes) {
-                laneRental.approval.approvalNotes = notes;
             }
         }
         laneRental.status = status;

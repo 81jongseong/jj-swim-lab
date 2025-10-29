@@ -34,6 +34,8 @@ interface ScheduleItem {
   isRecurring: boolean;
   recurringPattern?: 'daily' | 'weekly' | 'monthly';
   notes?: string;
+  dayOfWeek?: string;
+  day?: string;
 }
 
 interface ScheduleCalendarProps {
@@ -88,7 +90,7 @@ export default function ScheduleCalendar({
     
     return schedules.filter(schedule => {
       const scheduleDate = schedule.date || '';
-      const scheduleDay = schedule.dayOfWeek || '';
+      const scheduleDay = schedule.dayOfWeek || schedule.day || '';
       const scheduleTime = schedule.startTime || '';
       
       // 날짜 매칭 (정확한 날짜 또는 요일)

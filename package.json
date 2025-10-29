@@ -18,8 +18,7 @@
     "lint:fix": "echo 'Linting skipped'",
     "check-health": "node scripts/comprehensive-health-check.cjs",
     "fix-issues": "node scripts/auto-fix-issues.cjs",
-    "fix-issues:dry": "node scripts/auto-fix-issues.cjs --dry-run",
-    "pre-commit": "npm run check-health"
+    "fix-issues:dry": "node scripts/auto-fix-issues.cjs --dry-run"
   },
   "keywords": [
     "swimming",

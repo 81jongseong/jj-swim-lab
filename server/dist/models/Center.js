@@ -79,6 +79,10 @@ const centerSchema = new mongoose_1.Schema({
             type: String,
             trim: true
         }],
+    images: {
+        logo: { type: String },
+        mainImage: { type: String }
+    },
     poolConfiguration: {
         mainPool: {
             name: { type: String, default: '메인 풀' },
@@ -160,6 +164,17 @@ const centerSchema = new mongoose_1.Schema({
             availableLanes: [{ type: Number, min: 1, max: 10 }],
             advanceBookingDays: { type: Number, default: 14 },
             cancellationPolicy: { type: String, default: '12시간 전 취소 가능' }
+        },
+        freeSwim: {
+            enabled: { type: Boolean, default: true },
+            dayTimeSlots: [{
+                    day: { type: String, required: true },
+                    timeSlots: [{
+                            startTime: { type: String, required: true },
+                            endTime: { type: String, required: true }
+                        }]
+                }],
+            cancellationPolicy: { type: String, default: '' }
         }
     },
     introduction: {

@@ -383,7 +383,7 @@ export default function InstructorEditModal({
                       
                       if (response.ok) {
                         const result = await response.json();
-                        setFormData({ ...formData, photo: result.data.imageUrl });
+                        setFormData((prev) => ({ ...prev, photo: result.data.imageUrl }));
                         alert('강사 사진이 성공적으로 업로드되었습니다.');
                       } else {
                         const error = await response.json();

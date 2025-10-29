@@ -6,7 +6,7 @@ import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
 import Card from "@/components/ui/card";
 import Button from "@/components/Button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui";
 
 interface CenterStats {
   totalInstructors: number;

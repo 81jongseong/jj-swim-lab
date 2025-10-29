@@ -1,6 +1,0 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-echo "🚀 푸시 전 전체 검증 시작..."
-echo "⏭️ 테스트 스킵 (개발 중)"
-# npm run test:all

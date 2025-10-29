@@ -39,6 +39,9 @@ const Report_1 = require("../models/Report");
 const Center_1 = require("../models/Center");
 const PersonalLesson_1 = require("../models/PersonalLesson");
 const LaneRental_1 = require("../models/LaneRental");
+const multer_1 = __importDefault(require("multer"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const router = express_1.default.Router();
 const requireCenterAdmin = (0, auth_1.requireRole)(['centerAdmin', 'center-admin']);
 router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
@@ -137,7 +140,7 @@ router.get('/center-info', auth_1.authMiddleware, requireCenterAdmin, async (req
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const center = await Center_1.Center.findById(centerId);
+        const center = await Center_1.Center.findById(centerId).lean();
         if (!center) {
             return res.status(404).json({
                 success: false,
@@ -146,7 +149,8 @@ router.get('/center-info', auth_1.authMiddleware, requireCenterAdmin, async (req
         }
         console.log('🏊 센터 정보 조회:', {
             centerName: center.name,
-            poolConfiguration: center.poolConfiguration
+            poolConfiguration: center.poolConfiguration,
+            availabilitySettings: center.availabilitySettings ? JSON.stringify(center.availabilitySettings, null, 2) : '없음'
         });
         return res.json({
             success: true,
@@ -407,9 +411,21 @@ router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req
         }
         const instructors = await User_1.User.find(query)
             .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
+            .lean()
             .skip(skip)
             .limit(Number(limit))
             .sort({ createdAt: -1 });
+        const instructorsWithPhoto = instructors.map(instructor => {
+            const instructorInfo = instructor.instructorInfo || {};
+            return {
+                ...instructor,
+                instructorInfo: {
+                    ...instructorInfo,
+                    photo: instructorInfo.photo,
+                    bio: instructorInfo.bio || instructorInfo.introduction
+                }
+            };
+        });
         const total = await User_1.User.countDocuments(query);
         console.log('📊 조회 결과:', {
             강사수: instructors.length,
@@ -420,11 +436,11 @@ router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req
             success: true,
             message: '센터 강사 목록 조회 성공!',
             data: {
-                instructors,
+                instructors: instructorsWithPhoto,
                 pagination: {
                     current: Number(page),
                     total: Math.ceil(total / Number(limit)),
-                    count: instructors.length,
+                    count: instructorsWithPhoto.length,
                     totalCount: total
                 }
             }
@@ -512,6 +528,15 @@ router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
             if (instructorInfo.certifications) {
                 updateData['instructorInfo.certifications'] = instructorInfo.certifications;
             }
+            if (instructorInfo.photo !== undefined) {
+                updateData['instructorInfo.photo'] = instructorInfo.photo;
+            }
+            if (instructorInfo.bio !== undefined) {
+                updateData['instructorInfo.bio'] = instructorInfo.bio;
+            }
+            if (instructorInfo.introduction !== undefined) {
+                updateData['instructorInfo.introduction'] = instructorInfo.introduction;
+            }
         }
         console.log('📊 업데이트 데이터:', updateData);
         console.log('📋 원본 요청 데이터:', {
@@ -539,6 +564,87 @@ router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
             success: false,
             message: '서버 오류가 발생했습니다.',
             error: error.message
+        });
+    }
+});
+const uploadDir = path_1.default.join(process.cwd(), 'uploads');
+if (!fs_1.default.existsSync(uploadDir)) {
+    fs_1.default.mkdirSync(uploadDir, { recursive: true });
+}
+const instructorImageStorage = multer_1.default.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path_1.default.join(uploadDir, 'instructor-images');
+        if (!fs_1.default.existsSync(dir)) {
+            fs_1.default.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, `instructor-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
+    }
+});
+const instructorImageUpload = (0, multer_1.default)({
+    storage: instructorImageStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('이미지 파일만 업로드 가능합니다.'));
+        }
+    }
+});
+router.post('/instructors/:instructorId/upload-photo', auth_1.authMiddleware, requireCenterAdmin, instructorImageUpload.single('photo'), async (req, res) => {
+    try {
+        const { instructorId } = req.params;
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: '파일이 업로드되지 않았습니다.'
+            });
+        }
+        const centerAdmin = await User_1.User.findById(req.user._id);
+        const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        if (!centerId) {
+            return res.status(400).json({
+                success: false,
+                message: '관리하는 센터가 없습니다.'
+            });
+        }
+        const instructor = await User_1.User.findOne({
+            _id: instructorId,
+            userType: 'instructor',
+            centerId: centerId
+        });
+        if (!instructor) {
+            return res.status(404).json({
+                success: false,
+                message: '해당 강사를 찾을 수 없거나 권한이 없습니다.'
+            });
+        }
+        const imageUrl = `/uploads/instructor-images/${file.filename}`;
+        if (!instructor.instructorInfo) {
+            instructor.instructorInfo = {};
+        }
+        instructor.instructorInfo.photo = imageUrl;
+        await instructor.save();
+        res.json({
+            success: true,
+            message: '강사 사진이 성공적으로 업로드되었습니다.',
+            data: {
+                imageUrl,
+                photo: imageUrl
+            }
+        });
+    }
+    catch (error) {
+        console.error('강사 사진 업로드 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || '강사 사진 업로드 중 오류가 발생했습니다.'
         });
     }
 });
@@ -626,10 +732,10 @@ router.get('/bookings', auth_1.authMiddleware, requireCenterAdmin, async (req, r
             ...personalLessons.map(lesson => ({
                 _id: lesson._id,
                 type: 'personal-lesson',
-                memberId: lesson.studentId._id,
-                memberName: lesson.studentId.name,
-                instructorId: lesson.instructorId?._id,
-                instructorName: lesson.instructorId?.name,
+                memberId: lesson.studentId?._id || lesson.studentId,
+                memberName: lesson.studentId?.name || '회원 정보 없음',
+                instructorId: lesson.instructorId?._id || lesson.instructorId,
+                instructorName: lesson.instructorId?.name || '강사 정보 없음',
                 date: lesson.date,
                 time: lesson.time,
                 duration: lesson.duration,
@@ -640,8 +746,8 @@ router.get('/bookings', auth_1.authMiddleware, requireCenterAdmin, async (req, r
             ...laneRentals.map(rental => ({
                 _id: rental._id,
                 type: 'lane-rental',
-                memberId: rental.userId._id,
-                memberName: rental.userId.name,
+                memberId: rental.userId?._id || rental.userId,
+                memberName: rental.userId?.name || '회원 정보 없음',
                 date: rental.date,
                 time: rental.startTime,
                 duration: rental.duration,
@@ -1649,7 +1755,6 @@ router.put('/members/:memberId/memo/:memoId', auth_1.authMiddleware, requireCent
         }
         member.studentInfo.centerMemos[memoIndex].content = content;
         member.studentInfo.centerMemos[memoIndex].type = type;
-        member.studentInfo.centerMemos[memoIndex].updatedAt = new Date();
         await member.save();
         res.json({
             success: true,
@@ -1684,9 +1789,8 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         console.log('🔍 조회된 회원 수:', members.length);
         members.forEach((member, index) => {
             console.log(`${index + 1}. ${member.name}:`, {
-                level: member.studentInfo?.level,
+                level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel,
                 studentInfo: member.studentInfo,
-                _doc: member._doc,
                 toObject: member.toObject ? member.toObject() : 'N/A'
             });
         });
@@ -1723,7 +1827,7 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 email: member.email,
                 phone: member.phone || '',
                 userType: member.userType,
-                status: member.status || 'active',
+                status: member.studentInfo?.status || 'active',
                 enrollmentDate: member.createdAt || new Date(),
                 assignedCourses: courseDetails,
                 totalLessonsCompleted: 0,
@@ -1760,8 +1864,8 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 membershipType: 'regular',
                 emergencyContact: member.studentInfo?.emergencyContact || '',
                 medicalConditions: member.studentInfo?.medicalConditions || '',
-                swimmingGoals: member.studentInfo?.goals || [],
-                preferredTimes: member.studentInfo?.preferredTimes || [],
+                swimmingGoals: member.studentInfo?.swimmingProfile?.currentGoal ? [member.studentInfo.swimmingProfile.currentGoal] : [],
+                preferredTimes: member.studentInfo?.swimmingProfile?.trainingDays || [],
                 notes: member.studentInfo?.centerMemo || ''
             };
         }));
@@ -1871,7 +1975,7 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         }
         if (member.studentInfo?.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
             const contact = member.studentInfo.emergencyContact;
-            member.studentInfo.emergencyContact = `${contact.name || ''} (${contact.phone || ''})`;
+            member.studentInfo.emergencyContact = `${contact?.name || ''} (${contact?.phone || ''})`;
             console.log('🔄 emergencyContact 필드 변환:', member.studentInfo.emergencyContact);
         }
         console.log('🔍 과정 조회 조건:', {
@@ -1944,17 +2048,17 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         console.log('🔍 저장 후 검증 - 배정 확인:', isNowEnrolled);
         console.log('🔄 회원 레벨 업데이트 시작:', {
             memberId: memberId,
-            currentLevel: member.studentInfo?.level,
+            currentLevel: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel,
             courseLevel: course.level
         });
         if (!member.studentInfo) {
             member.studentInfo = {};
         }
-        const oldLevel = member.studentInfo.level;
-        member.studentInfo.level = course.level;
+        const oldLevel = member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel;
+        member.studentInfo.currentLevel = course.level || '레벨 미설정';
         if (member.studentInfo.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
             const contact = member.studentInfo.emergencyContact;
-            member.studentInfo.emergencyContact = `${contact.name || ''} (${contact.phone || ''})`;
+            member.studentInfo.emergencyContact = `${contact?.name || ''} (${contact?.phone || ''})`;
         }
         const memberToSave = member.toObject();
         if (memberToSave.studentInfo?.emergencyContact && typeof memberToSave.studentInfo.emergencyContact === 'object') {
@@ -2143,8 +2247,9 @@ router.put('/members/:memberId', auth_1.authMiddleware, requireCenterAdmin, asyn
             member.email = updateData.email;
         if (updateData.phone !== undefined)
             member.phone = updateData.phone;
-        if (updateData.status)
-            member.status = updateData.status;
+        if (updateData.status && member.studentInfo) {
+            member.studentInfo.status = updateData.status;
+        }
         if (!member.studentInfo) {
             member.studentInfo = {};
         }
@@ -2154,14 +2259,13 @@ router.put('/members/:memberId', auth_1.authMiddleware, requireCenterAdmin, asyn
             member.studentInfo.emergencyContact = updateData.emergencyContact;
         if (updateData.medicalConditions !== undefined)
             member.studentInfo.medicalConditions = updateData.medicalConditions;
-        if (updateData.swimmingGoals !== undefined)
-            member.studentInfo.goals = updateData.swimmingGoals;
+        if (updateData.swimmingGoals !== undefined && member.studentInfo.swimmingProfile) {
+            member.studentInfo.swimmingProfile.currentGoal = Array.isArray(updateData.swimmingGoals)
+                ? updateData.swimmingGoals[0]
+                : updateData.swimmingGoals;
+        }
         if (updateData.centerMemo !== undefined)
             member.studentInfo.centerMemo = updateData.centerMemo;
-        if (updateData.membershipType !== undefined)
-            member.studentInfo.membershipType = updateData.membershipType;
-        if (updateData.notes !== undefined)
-            member.studentInfo.notes = updateData.notes;
         await member.save();
         res.json({
             success: true,
@@ -2500,7 +2604,8 @@ router.put('/lessons/:lessonId/progress', auth_1.authMiddleware, requireCenterAd
 });
 async function getCenterId(req) {
     const centerAdmin = await User_1.User.findById(req.user?._id);
-    return centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0] || null;
+    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    return centerId ? centerId.toString() : null;
 }
 exports.default = router;
 //# sourceMappingURL=center-admin.js.map

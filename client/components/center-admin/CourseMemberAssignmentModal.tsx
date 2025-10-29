@@ -21,6 +21,7 @@ interface Member {
     level?: string;
     centerId?: string;
   };
+  isEnrolledInSpecificCourse?: boolean;
 }
 
 interface Course {

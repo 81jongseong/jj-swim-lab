@@ -428,7 +428,7 @@ function BookingsManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {console.log('📊 대시보드에서 렌더링할 예약 목록:', bookings.slice(0, 5))}
+                {(() => { console.log('📊 대시보드에서 렌더링할 예약 목록:', bookings.slice(0, 5)); return null; })()}
                 {bookings.slice(0, 5).map((booking) => (
                   <div key={booking._id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
@@ -468,7 +468,7 @@ function BookingsManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {console.log('🏊‍♂️ 개인레슨 예약 목록:', bookings.filter(b => b.type === 'personal-lesson'))}
+                {(() => { console.log('🏊‍♂️ 개인레슨 예약 목록:', bookings.filter(b => b.type === 'personal-lesson')); return null; })()}
                 {bookings.filter(b => b.type === 'personal-lesson').map((booking) => (
                   <div key={booking._id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -526,7 +526,7 @@ function BookingsManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {console.log('🏊‍♀️ 레인대여 예약 목록:', bookings.filter(b => b.type === 'lane-rental'))}
+                {(() => { console.log('🏊‍♀️ 레인대여 예약 목록:', bookings.filter(b => b.type === 'lane-rental')); return null; })()}
                 {bookings.filter(b => b.type === 'lane-rental').map((booking) => (
                   <div key={booking._id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">

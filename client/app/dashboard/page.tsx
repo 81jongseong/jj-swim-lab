@@ -90,6 +90,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, lazy } from "react";
+import { useAuth } from '../../hooks/useAuth';
 import apiClient from '../../utils/api';
 
 // 동적 임포트로 코드 스플리팅 적용
@@ -139,6 +140,7 @@ interface WeeklyProgram {
 }
 
 export default function MemberDashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<MemberStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
@@ -158,7 +160,7 @@ export default function MemberDashboard() {
         let apiEndpoint = 'http://localhost:5000/api/centers/student-dashboard-stats';
         
         // center-admin인 경우 센터 관리자 전용 API 사용
-        if (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') {
+        if (user?.userType === 'centerAdmin' || user?.userType === 'center-admin') {
           apiEndpoint = 'http://localhost:5000/api/center-admin/bookings/dashboard';
         }
         

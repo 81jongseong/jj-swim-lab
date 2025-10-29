@@ -117,7 +117,7 @@ export default function GeoCentersPage() {
         DeckGL = deckGlCore.Deck;
         setH3Module(h3); // h3 모듈을 상태로 설정
 
-        await import('maplibre-gl/dist/maplibre-gl.css');
+        await import('maplibre-gl/dist/maplibre-gl.css' as any);
 
         console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
         setLibrariesLoaded(true); // 로딩 완료 상태 업데이트

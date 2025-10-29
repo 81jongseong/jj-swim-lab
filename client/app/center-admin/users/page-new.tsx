@@ -471,7 +471,7 @@ function CenterUsersManagement() {
                 </Button>
                 <Button
                   onClick={() => handleStatusChange(member._id, member.status === 'active' ? 'inactive' : 'active')}
-                  variant={member.status === 'active' ? 'destructive' : 'default'}
+                  variant={member.status === 'active' ? 'danger' : 'secondary'}
                   size="sm"
                 >
                   {member.status === 'active' ? '비활성화' : '활성화'}

@@ -19,26 +19,39 @@ interface Course {
   instructorId: string;
   instructorName: string;
   price: number;
-  schedule: {
-    dayOfWeek: string;
+  schedule: Array<{
+    dayOfWeek?: string;
+    day?: string;
     startTime: string;
-    endTime?: string; // optional로 변경
-  }[];
+    endTime?: string;
+    lanes?: {
+      assignedLanes?: number[];
+      originalAssignedLanes?: number[];
+      isAdjusted?: boolean;
+    };
+  }>;
   status: 'active' | 'inactive' | 'full';
-  createdAt?: Date; // 추가
-  tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
-  startDate?: Date; // 수업 시작일
-  endDate?: Date; // 수업 종료일 (만료일)
-  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool'; // ⭐ 풀 타입
-  lanes?: number[]; // ⭐ 레인 번호 배열 (예: [1, 2, 3])
+  createdAt?: Date;
+  tags?: string[];
+  startDate?: Date;
+  endDate?: Date;
+  poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool';
+  lanes?: number[];
   laneInfo?: {
     assignedLanes?: number[];
     maxLanes?: number;
     minLanes?: number;
     laneNotes?: string;
   };
-  courseType?: 'group' | 'personal' | 'freeSwim'; // ⭐ 과정 타입 (단체/개인/자유수영)
-  isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
+  courseType?: 'group' | 'personal' | 'freeSwim';
+  isPersonalLesson?: boolean;
+  enrolledStudents?: Array<{
+    studentId: string;
+    studentName: string;
+    status: 'active' | 'inactive' | 'completed' | 'cancelled';
+    enrolledAt?: Date;
+    completedAt?: Date;
+  }>;
   personalLessonSettings?: {
     timeSlots: Array<{
       id: string;
@@ -238,7 +251,10 @@ export default function CourseFormModal({
           monthlyPrice: 200000
         }],
         frequencyOptions: [{
-          type: 'weekly'
+          type: 'weekly' as const,
+          sessions: 4,
+          price: 200000,
+          expirationDays: 30
         }]
       };
       

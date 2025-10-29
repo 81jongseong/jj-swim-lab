@@ -37,6 +37,8 @@ interface CenterInfo {
   facilities?: string[];
   images?: {
     mainImage?: string;
+    logo?: string;
+    [key: string]: string | undefined;
   };
   introduction?: {
     shortDescription?: string;
@@ -166,7 +168,7 @@ const CenterHomePage: React.FC = () => {
         name: centerInfo?.name || '',
         shortDescription: centerInfo?.introduction?.shortDescription || centerInfo?.description || '',
         mainImage: centerInfo?.images?.mainImage || '',
-        logoImage: (centerInfo?.images as any)?.logo || ''
+        logoImage: centerInfo?.images?.logo || ''
       });
     }
   };
@@ -307,10 +309,10 @@ const CenterHomePage: React.FC = () => {
           </div>
           
           {/* 로고 이미지 표시 */}
-          {(centerInfo?.images as any)?.logo && (
+          {centerInfo?.images?.logo && (
             <div className="mb-6">
               <img 
-                src={`http://localhost:5000${(centerInfo.images as any).logo}`} 
+                src={`http://localhost:5000${centerInfo.images.logo}`} 
                 alt={centerInfo.name}
                 className="h-24 md:h-32 mx-auto object-contain drop-shadow-lg"
                 onError={(e) => {

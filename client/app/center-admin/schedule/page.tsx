@@ -37,6 +37,7 @@ interface ScheduleItem {
   isRecurring: boolean;
   recurringPattern?: 'daily' | 'weekly' | 'monthly';
   notes?: string;
+  dayOfWeek?: string;
 }
 
 interface CenterSchedule {

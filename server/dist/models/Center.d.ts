@@ -35,6 +35,11 @@ export interface ICenter extends Document {
     capacity: number;
     status: 'active' | 'inactive' | 'maintenance';
     facilities: string[];
+    images?: {
+        logo?: string;
+        mainImage?: string;
+        [key: string]: string | undefined;
+    };
     poolConfiguration?: {
         mainPool?: {
             name: string;
@@ -98,6 +103,17 @@ export interface ICenter extends Document {
             availableLanes: number[];
             advanceBookingDays: number;
             cancellationPolicy: string;
+        };
+        freeSwim?: {
+            enabled: boolean;
+            dayTimeSlots?: Array<{
+                day: string;
+                timeSlots: Array<{
+                    startTime: string;
+                    endTime: string;
+                }>;
+            }>;
+            cancellationPolicy?: string;
         };
     };
     introduction: {

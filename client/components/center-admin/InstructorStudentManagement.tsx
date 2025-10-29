@@ -50,6 +50,7 @@ interface Student {
   };
   status: 'active' | 'inactive' | 'expired' | 'suspended';
   notes?: string;
+  progress?: number;
   // 개인레슨 관련 정보
   isPersonalLesson?: boolean;
   personalLessonInfo?: {
@@ -81,11 +82,13 @@ interface Instructor {
 interface InstructorStudentManagementProps {
   instructorId: string;
   onClose: () => void;
+  onManageLessons?: (instructorId: string, date: string) => void;
 }
 
 export default function InstructorStudentManagement({ 
   instructorId, 
-  onClose 
+  onClose,
+  onManageLessons
 }: InstructorStudentManagementProps) {
   const [instructor, setInstructor] = useState<Instructor | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
@@ -112,8 +115,8 @@ export default function InstructorStudentManagement({
       setLoading(true);
       // 강사 정보 조회
       const instructorResponse = await apiClient.get(`/api/center-admin/instructors/${instructorId}`);
-      if (instructorResponse.success) {
-        setInstructor(instructorResponse.data);
+      if (instructorResponse.success && instructorResponse.data) {
+        setInstructor(instructorResponse.data as Instructor);
       }
 
       // 강사별 수강생 목록 조회

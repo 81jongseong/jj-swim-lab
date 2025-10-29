@@ -11,6 +11,15 @@ const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.use(auth_1.authMiddleware);
+function timeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + (minutes || 0);
+}
+function minutesToTime(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
 router.get('/personal-lesson/availability', async (req, res) => {
     try {
         const centerId = req.user.centerId;
@@ -67,11 +76,11 @@ router.get('/personal-lesson/availability', async (req, res) => {
         }
         const existingLessons = await PersonalLesson_1.PersonalLesson.find({
             centerId,
-            scheduledDate: {
+            date: {
                 $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
                 $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
             },
-            status: { $in: ['requested', 'accepted', 'in_progress'] }
+            status: { $in: ['pending', 'approved', 'completed'] }
         });
         let availableTimeSlots = schedule.personalLessonSettings.timeSlots;
         if (instructorId) {
@@ -89,15 +98,23 @@ router.get('/personal-lesson/availability', async (req, res) => {
         }
         const availableSlots = availableTimeSlots.map(slot => {
             const existingCount = existingLessons.filter(lesson => {
-                const lessonStart = lesson.startTime;
-                const lessonEnd = lesson.endTime;
+                const lessonStart = lesson.time;
+                const lessonStartMinutes = timeToMinutes(lessonStart);
+                const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+                const lessonEnd = minutesToTime(lessonEndMinutes);
                 return lessonStart === slot.startTime && lessonEnd === slot.endTime;
             }).length;
             let instructorBookings = 0;
             if (instructorId) {
-                instructorBookings = existingLessons.filter(lesson => lesson.instructor?.toString() === instructorId &&
-                    lesson.startTime === slot.startTime &&
-                    lesson.endTime === slot.endTime).length;
+                instructorBookings = existingLessons.filter(lesson => {
+                    const lessonStart = lesson.time;
+                    const lessonStartMinutes = timeToMinutes(lessonStart);
+                    const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+                    const lessonEnd = minutesToTime(lessonEndMinutes);
+                    return lesson.instructorId?.toString() === instructorId &&
+                        lessonStart === slot.startTime &&
+                        lessonEnd === slot.endTime;
+                }).length;
             }
             const isAvailable = existingCount < slot.maxLessons;
             const instructorAvailable = instructorId ? instructorBookings < slot.instructorCapacity : true;
@@ -194,11 +211,11 @@ router.get('/lane-rental/availability', async (req, res) => {
         }
         const existingRentals = await LaneRental_1.LaneRental.find({
             centerId,
-            rentalDate: {
+            date: {
                 $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
                 $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
             },
-            status: { $in: ['requested', 'approved', 'in_progress'] }
+            status: { $in: ['pending', 'approved', 'completed'] }
         });
         const poolTypes = poolType ? [poolType] : ['mainPool', 'kidsPool', 'auxiliaryPool'];
         const laneAvailability = [];
@@ -206,7 +223,7 @@ router.get('/lane-rental/availability', async (req, res) => {
             const poolLanes = schedule.laneAvailability.filter(la => la.poolType === pType);
             for (const lane of poolLanes) {
                 const laneRentals = existingRentals.filter(rental => rental.poolType === pType &&
-                    rental.laneNumbers.includes(lane.laneNumber));
+                    rental.laneNumber === lane.laneNumber);
                 const timeSlots = schedule.laneRentalSettings.timeSlots
                     .filter(slot => slot.poolType === pType)
                     .map(slot => {
@@ -307,16 +324,21 @@ router.get('/instructor/:instructorId/availability', async (req, res) => {
         }
         const existingLessons = await PersonalLesson_1.PersonalLesson.find({
             centerId,
-            instructor: instructorId,
-            scheduledDate: {
+            instructorId: instructorId,
+            date: {
                 $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
                 $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
             },
-            status: { $in: ['requested', 'accepted', 'in_progress'] }
+            status: { $in: ['pending', 'approved', 'completed'] }
         });
         const availableSlots = instructorSchedule.timeSlots.map(slot => {
-            const existingCount = existingLessons.filter(lesson => lesson.startTime === slot.startTime &&
-                lesson.endTime === slot.endTime).length;
+            const existingCount = existingLessons.filter(lesson => {
+                const lessonStart = lesson.time;
+                const lessonStartMinutes = timeToMinutes(lessonStart);
+                const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+                const lessonEnd = minutesToTime(lessonEndMinutes);
+                return lessonStart === slot.startTime && lessonEnd === slot.endTime;
+            }).length;
             const isAvailable = existingCount < slot.maxStudents;
             const availableCapacity = slot.maxStudents - existingCount;
             return {

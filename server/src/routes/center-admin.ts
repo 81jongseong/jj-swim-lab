@@ -263,9 +263,9 @@ router.get('/users', authMiddleware, requireCenterAdmin, async (req: AuthRequest
       
       if (userObj.userType === 'student') {
         // DB에 한글 레벨로 저장되어 있으므로 변환 없이 직접 사용
-        userObj.currentLevel = userObj.studentInfo?.currentLevel 
+        (userObj as any).currentLevel = userObj.studentInfo?.currentLevel 
           || userObj.studentInfo?.swimmingLevel 
-          || userObj.level
+          || (userObj as any).level
           || '레벨 미설정';
         console.log(`✅ 회원 ${index + 1} (${userObj.name}) currentLevel 설정됨:`, (userObj as any).currentLevel);
       }
@@ -274,7 +274,7 @@ router.get('/users', authMiddleware, requireCenterAdmin, async (req: AuthRequest
     
     console.log('🔧 currentLevel 필드 추가 완료. 결과:', usersWithLevel.map(u => ({
       name: u.name,
-      currentLevel: u.currentLevel
+      currentLevel: (u as any).currentLevel
     })));
 
     res.json({
@@ -906,10 +906,10 @@ router.get('/bookings', authMiddleware, requireCenterAdmin, async (req: AuthRequ
       ...personalLessons.map(lesson => ({
         _id: lesson._id,
         type: 'personal-lesson',
-        memberId: lesson.studentId._id,
-        memberName: lesson.studentId.name,
-        instructorId: lesson.instructorId?._id,
-        instructorName: lesson.instructorId?.name,
+        memberId: (lesson.studentId as any)?._id || lesson.studentId,
+        memberName: (lesson.studentId as any)?.name || '회원 정보 없음',
+        instructorId: (lesson.instructorId as any)?._id || lesson.instructorId,
+        instructorName: (lesson.instructorId as any)?.name || '강사 정보 없음',
         date: lesson.date,
         time: lesson.time,
         duration: lesson.duration,
@@ -920,8 +920,8 @@ router.get('/bookings', authMiddleware, requireCenterAdmin, async (req: AuthRequ
       ...laneRentals.map(rental => ({
         _id: rental._id,
         type: 'lane-rental',
-        memberId: rental.userId._id,
-        memberName: rental.userId.name,
+        memberId: (rental.userId as any)?._id || rental.userId,
+        memberName: (rental.userId as any)?.name || '회원 정보 없음',
         date: rental.date,
         time: rental.startTime,
         duration: rental.duration,
@@ -1830,7 +1830,7 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
             courseName: course.name,
             isPersonalLesson: false,
             status: 'active',
-            enrollmentDate: student.createdAt || new Date(),
+            enrollmentDate: (student as any).createdAt || new Date(),
             phone: student.phone || '010-0000-0000',
             email: student.email || `${student.name}@example.com`,
             totalLessonsCompleted: 0,
@@ -1885,7 +1885,7 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
           courseName: '개인레슨',
           isPersonalLesson: true,
           status: lesson.status || 'active',
-          enrollmentDate: lesson.date || lesson.createdAt || new Date(),
+          enrollmentDate: lesson.date || (lesson as any).createdAt || new Date(),
           phone: student.phone || '',
           email: student.email || '',
           totalLessonsCompleted: lesson.completedSessions || 0,
@@ -1927,7 +1927,7 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
                 courseName: course.name || '개인레슨',
                 isPersonalLesson: true,
                 status: 'active',
-                enrollmentDate: student.createdAt || new Date(),
+                enrollmentDate: (student as any).createdAt || new Date(),
                 phone: student.phone || '',
                 email: student.email || '',
                 totalLessonsCompleted: 0,
@@ -2171,7 +2171,7 @@ router.put('/members/:memberId/memo/:memoId', authMiddleware, requireCenterAdmin
     // 메모 내용과 타입 업데이트
     member.studentInfo.centerMemos[memoIndex].content = content;
     member.studentInfo.centerMemos[memoIndex].type = type;
-    member.studentInfo.centerMemos[memoIndex].updatedAt = new Date();
+    // updatedAt은 centerMemos 스키마에 없으므로 제거 (또는 메모를 새로 추가하는 방식으로 처리)
 
     await member.save();
 
@@ -2215,9 +2215,8 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
     console.log('🔍 조회된 회원 수:', members.length);
     members.forEach((member, index) => {
       console.log(`${index + 1}. ${member.name}:`, {
-        level: member.studentInfo?.level,
+        level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel,
         studentInfo: member.studentInfo,
-        _doc: member._doc,
         toObject: member.toObject ? member.toObject() : 'N/A'
       });
     });
@@ -2266,8 +2265,8 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
         email: member.email,
         phone: member.phone || '',
         userType: member.userType,
-        status: member.status || 'active',
-        enrollmentDate: member.createdAt || new Date(),
+        status: member.studentInfo?.status || 'active',
+        enrollmentDate: (member as any).createdAt || new Date(),
         assignedCourses: courseDetails,
         totalLessonsCompleted: 0, // TODO: 실제 수업 완료 횟수 계산
         lastLessonDate: null, // TODO: 마지막 수업 날짜 계산
@@ -2313,8 +2312,8 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
         membershipType: 'regular',
         emergencyContact: member.studentInfo?.emergencyContact || '',
         medicalConditions: member.studentInfo?.medicalConditions || '',
-        swimmingGoals: member.studentInfo?.goals || [],
-        preferredTimes: member.studentInfo?.preferredTimes || [],
+        swimmingGoals: member.studentInfo?.swimmingProfile?.currentGoal ? [member.studentInfo.swimmingProfile.currentGoal] : [],
+        preferredTimes: member.studentInfo?.swimmingProfile?.trainingDays || [],
         notes: member.studentInfo?.centerMemo || ''
       };
     }));
@@ -2447,8 +2446,8 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
 
     // emergencyContact 필드 안전하게 처리 (객체인 경우 문자열로 변환)
     if (member.studentInfo?.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
-      const contact = member.studentInfo.emergencyContact;
-      member.studentInfo.emergencyContact = `${contact.name || ''} (${contact.phone || ''})`;
+      const contact = member.studentInfo.emergencyContact as any;
+      member.studentInfo.emergencyContact = `${contact?.name || ''} (${contact?.phone || ''})`;
       console.log('🔄 emergencyContact 필드 변환:', member.studentInfo.emergencyContact);
     }
 
@@ -2557,22 +2556,22 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
     // 회원의 레벨을 강습 과정 레벨로 업데이트
     console.log('🔄 회원 레벨 업데이트 시작:', {
       memberId: memberId,
-      currentLevel: member.studentInfo?.level,
-      courseLevel: course.level
+      currentLevel: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel,
+      courseLevel: (course as any).level
     });
 
-    // 회원의 studentInfo.level 업데이트 - 과정 레벨을 그대로 사용
+    // 회원의 studentInfo.currentLevel 업데이트 - 과정 레벨을 그대로 사용
     if (!member.studentInfo) {
-      member.studentInfo = {};
+      member.studentInfo = {} as any;
     }
     
-    const oldLevel = member.studentInfo.level;
-    member.studentInfo.level = course.level;
+    const oldLevel = member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel;
+    member.studentInfo.currentLevel = (course as any).level || '레벨 미설정';
     
     // emergencyContact 필드 안전하게 처리 (객체인 경우 문자열로 변환)
     if (member.studentInfo.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
-      const contact = member.studentInfo.emergencyContact;
-      member.studentInfo.emergencyContact = `${contact.name || ''} (${contact.phone || ''})`;
+      const contact = member.studentInfo.emergencyContact as any;
+      member.studentInfo.emergencyContact = `${contact?.name || ''} (${contact?.phone || ''})`;
     }
     
     // 회원 저장 시 validation 오류 방지를 위해 emergencyContact 필드 제거
@@ -2800,21 +2799,26 @@ router.put('/members/:memberId', authMiddleware, requireCenterAdmin, async (req:
     if (updateData.name) member.name = updateData.name;
     if (updateData.email) member.email = updateData.email;
     if (updateData.phone !== undefined) member.phone = updateData.phone;
-    if (updateData.status) member.status = updateData.status;
+    if (updateData.status && member.studentInfo) {
+      member.studentInfo.status = updateData.status;
+    }
 
     // studentInfo 객체 초기화
     if (!member.studentInfo) {
-      member.studentInfo = {};
+      member.studentInfo = {} as any;
     }
 
     // studentInfo 필드 업데이트
     if (updateData.currentLevel !== undefined) member.studentInfo.currentLevel = updateData.currentLevel;
     if (updateData.emergencyContact !== undefined) member.studentInfo.emergencyContact = updateData.emergencyContact;
     if (updateData.medicalConditions !== undefined) member.studentInfo.medicalConditions = updateData.medicalConditions;
-    if (updateData.swimmingGoals !== undefined) member.studentInfo.goals = updateData.swimmingGoals;
+    if (updateData.swimmingGoals !== undefined && member.studentInfo.swimmingProfile) {
+      member.studentInfo.swimmingProfile.currentGoal = Array.isArray(updateData.swimmingGoals) 
+        ? updateData.swimmingGoals[0] 
+        : updateData.swimmingGoals;
+    }
     if (updateData.centerMemo !== undefined) member.studentInfo.centerMemo = updateData.centerMemo;
-    if (updateData.membershipType !== undefined) member.studentInfo.membershipType = updateData.membershipType;
-    if (updateData.notes !== undefined) member.studentInfo.notes = updateData.notes;
+    // membershipType과 notes는 studentInfo에 없는 필드이므로 무시
 
     await member.save();
 
@@ -2912,7 +2916,7 @@ router.get('/instructors/:instructorId/lessons', authMiddleware, requireCenterAd
 
     console.log('🏊 PersonalLesson 모델의 개인레슨 수:', personalLessons.length);
     personalLessons.forEach((lesson, index) => {
-      console.log(`  ${index + 1}. ${lesson.studentId?.name || '미배정'} - ${lesson.time}, 상태: ${lesson.status}`);
+      console.log(`  ${index + 1}. ${(lesson.studentId as any)?.name || '미배정'} - ${lesson.time}, 상태: ${lesson.status}`);
     });
 
     // 수업 일정 변환 함수
@@ -3249,7 +3253,8 @@ router.put('/lessons/:lessonId/progress', authMiddleware, requireCenterAdmin, as
 // getCenterId 헬퍼 함수
 async function getCenterId(req: AuthRequest): Promise<string | null> {
   const centerAdmin = await User.findById(req.user?._id);
-  return centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0] || null;
+  const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+  return centerId ? centerId.toString() : null;
 }
 
 export default router;

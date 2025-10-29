@@ -20,14 +20,14 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 message: '학생만 개인레슨을 신청할 수 있습니다.'
             });
         }
-        const centerId = user.studentInfo?.centerId;
+        const centerId = user.centerId;
         if (!centerId) {
             return res.status(400).json({
                 success: false,
                 message: '소속 센터가 없습니다.'
             });
         }
-        const conflicts = await laneAllocationService_1.LaneAllocationService.checkLaneConflicts(date, time, centerId, duration);
+        const conflicts = await laneAllocationService_1.LaneAllocationService.checkLaneConflicts(date, time, centerId?.toString() || '', duration);
         if (conflicts.length > 0) {
             return res.status(400).json({
                 success: false,

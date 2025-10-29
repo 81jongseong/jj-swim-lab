@@ -43,27 +43,32 @@ import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberA
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
 
-// Course 타입을 CourseTable과 동일하게 통일
+// Course 타입 정의 (서버 모델과 일치)
 type Course = {
-  _id: string;
+  _id?: string;
   name: string;
   description: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: 'beginner' | 'intermediate' | 'advanced' | string;
   duration: number; // minutes
   maxStudents: number;
   currentStudents: number;
   instructorId: string;
   instructorName: string;
   price: number;
-  schedule: {
-    dayOfWeek: string;
+  schedule: Array<{
+    dayOfWeek?: string;
+    day?: string;
     startTime: string;
-    endTime?: string; // CourseTable과 동일하게 optional
-  }[];
+    endTime?: string;
+    lanes?: {
+      assignedLanes?: number[];
+      originalAssignedLanes?: number[];
+      isAdjusted?: boolean;
+    };
+  }>;
   status: 'active' | 'inactive' | 'full';
-  createdAt: Date;
-  tags?: string[]; // 과정 태그 (어린이, 아쿠아 등)
-  // ⭐ 레인 정보 추가
+  createdAt?: Date;
+  tags?: string[];
   poolType?: 'mainPool' | 'kidsPool' | 'auxiliaryPool';
   lanes?: number[];
   laneInfo?: {
@@ -73,6 +78,15 @@ type Course = {
   };
   courseType?: 'group' | 'personal' | 'freeSwim';
   isPersonalLesson?: boolean;
+  enrolledStudents?: Array<{
+    studentId: string;
+    studentName: string;
+    status: 'active' | 'inactive' | 'completed' | 'cancelled';
+    enrolledAt?: Date;
+    completedAt?: Date;
+  }>;
+  startDate?: Date | string;
+  endDate?: Date | string;
 }
 
 function CoursesManagement() {
@@ -748,7 +762,7 @@ function CoursesManagement() {
   };
 
   // 과정 저장 핸들러
-  const handleSaveCourse = async (courseData: Course) => {
+  const handleSaveCourse = async (courseData: any) => {
     try {
       const token = localStorage.getItem('token');
       
@@ -777,7 +791,7 @@ function CoursesManagement() {
       (courseData.schedule || []).forEach(sch => {
         console.log('🔍 schedule 변환:', sch);
         // 쉼표로 구분된 요일 처리 (예: "월,수,금" → ["월", "수", "금"])
-        const days = (sch.dayOfWeek || sch.day || '').split(',').map(d => d.trim()).filter(d => d);
+        const days = ((sch as any).dayOfWeek || (sch as any).day || '').split(',').map((d: string) => d.trim()).filter((d: string) => d);
         
         console.log('📅 변환된 days:', days);
         
@@ -870,8 +884,8 @@ function CoursesManagement() {
           laneInfo: courseData.laneInfo, // ⭐ 레인 정보 추가
           courseType: courseData.courseType || 'group', // ⭐ 과정 타입 추가
           isPersonalLesson: courseData.isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
-          startDate: courseData.startDate, // ⭐ 시작일 추가
-          endDate: courseData.endDate // ⭐ 종료일 추가
+          startDate: (courseData as any).startDate, // ⭐ 시작일 추가
+          endDate: (courseData as any).endDate // ⭐ 종료일 추가
         };
         
         console.log('📡 강습 과정 생성 요청:', requestBody);
@@ -1054,8 +1068,8 @@ function CoursesManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredCourses.map((course) => (
                 <CourseCard
-                  key={course._id}
-                  course={course}
+                  key={course._id || Math.random()}
+                  course={course as any}
                   levelName={getLevelName(course.level)}
                   onEdit={handleEditCourse}
                   onDelete={handleDeleteCourse}
@@ -1085,7 +1099,7 @@ function CoursesManagement() {
           setEditingCourse(null);
         }}
         onSave={handleSaveCourse}
-        course={editingCourse}
+        course={editingCourse as any}
         instructors={instructors}
         customLevels={allLevels}
         onAssignMembers={handleOpenMemberAssignment}
@@ -1098,7 +1112,7 @@ function CoursesManagement() {
           setShowMemberAssignmentModal(false);
           setAssignmentCourse(null);
         }}
-        course={assignmentCourse}
+        course={assignmentCourse as any}
         onAssignMembers={handleAssignMembers}
       />
 

@@ -20,14 +20,14 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 message: '사용자 정보를 찾을 수 없습니다.'
             });
         }
-        const centerId = user.studentInfo?.centerId || user.instructorInfo?.assignedCenters?.[0];
+        const centerId = user.centerId || user.instructorInfo?.assignedCenters?.[0];
         if (!centerId) {
             return res.status(400).json({
                 success: false,
                 message: '소속 센터가 없습니다.'
             });
         }
-        const conflicts = await laneAllocationService_1.LaneAllocationService.checkLaneConflicts(date, startTime, centerId, duration);
+        const conflicts = await laneAllocationService_1.LaneAllocationService.checkLaneConflicts(date, startTime, centerId?.toString() || '', duration);
         const laneConflicts = conflicts.filter(conflict => conflict.lanes.includes(laneNumber));
         if (laneConflicts.length > 0) {
             return res.status(400).json({
@@ -38,7 +38,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         }
         const laneRental = new LaneRental_1.LaneRental({
             userId,
-            centerId,
+            centerId: centerId,
             date: new Date(date),
             startTime,
             endTime,
@@ -168,14 +168,14 @@ router.get('/availability/:date/:time', auth_1.authMiddleware, async (req, res) 
         const { date, time } = req.params;
         const { duration = 60 } = req.query;
         const user = await User_1.User.findById(req.user._id);
-        const centerId = user?.studentInfo?.centerId || user?.instructorInfo?.assignedCenters?.[0];
+        const centerId = user?.centerId || user?.instructorInfo?.assignedCenters?.[0];
         if (!centerId) {
             return res.status(400).json({
                 success: false,
                 message: '소속 센터가 없습니다.'
             });
         }
-        const availability = await laneAllocationService_1.LaneAllocationService.findAvailableLanes(date, time, centerId, Number(duration));
+        const availability = await laneAllocationService_1.LaneAllocationService.findAvailableLanes(date, time, centerId?.toString() || '', Number(duration));
         res.json({
             success: true,
             message: '사용 가능한 레인 조회 성공',

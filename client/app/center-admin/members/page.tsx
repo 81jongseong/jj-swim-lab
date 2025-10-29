@@ -116,9 +116,9 @@ function CenterMembersManagement() {
       
       console.log('📡 회원 목록 API 응답:', response);
       
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
-        setMembers(response.data);
+        setMembers(response.data as Member[]);
       } else {
         console.error('회원 목록 로드 실패:', response.message);
       }
@@ -136,9 +136,9 @@ function CenterMembersManagement() {
       
       console.log('📚 과정 목록 API 응답:', response);
       
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         console.log('📚 로드된 과정 목록:', response.data);
-        setCourses(response.data);
+        setCourses(response.data as Course[]);
       } else {
         console.error('📚 과정 목록 로드 실패:', response.message);
       }
@@ -183,7 +183,7 @@ function CenterMembersManagement() {
         courseId: courseId
       });
       
-      console.log('📡 과정 배정 응답:', { status: response.status, statusText: response.statusText, ok: response.ok, success: response.success, message: response.message });
+      console.log('📡 과정 배정 응답:', { success: response.success, message: response.message });
       console.log('✅ 과정 배정 성공:', response);
       
       if (response.success) {

@@ -286,9 +286,9 @@ function CenterInstructorsManagement() {
       const response = await apiClient.get('/api/center-admin/instructors/stats');
       console.log('📊 강사 통계 API 응답:', response);
       
-      if (response.success) {
+      if (response.success && Array.isArray(response.data)) {
         const statsMap: {[key: string]: any} = {};
-        response.data.forEach((stat: any) => {
+        (response.data as any[]).forEach((stat: any) => {
           statsMap[stat.instructorId] = stat;
         });
         setInstructorStats(statsMap);

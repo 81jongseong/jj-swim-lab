@@ -42,6 +42,18 @@ const router = express.Router();
 // 모든 라우트에 인증 적용
 router.use(authMiddleware);
 
+// 시간 변환 헬퍼 함수
+function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + (minutes || 0);
+}
+
+function minutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
 // 개인레슨 가능 시간 조회
 router.get('/personal-lesson/availability', async (req: any, res: Response) => {
   try {
@@ -113,11 +125,11 @@ router.get('/personal-lesson/availability', async (req: any, res: Response) => {
     // 기존 예약 조회
     const existingLessons = await PersonalLesson.find({
       centerId,
-      scheduledDate: {
+      date: {
         $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
         $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
       },
-      status: { $in: ['requested', 'accepted', 'in_progress'] }
+      status: { $in: ['pending', 'approved', 'completed'] }
     });
 
     // 강사별 가능 시간 필터링
@@ -149,19 +161,26 @@ router.get('/personal-lesson/availability', async (req: any, res: Response) => {
     const availableSlots = availableTimeSlots.map(slot => {
       // 해당 시간대의 기존 예약 수 계산
       const existingCount = existingLessons.filter(lesson => {
-        const lessonStart = lesson.startTime;
-        const lessonEnd = lesson.endTime;
+        // time을 startTime으로 간주하고, duration으로 endTime 계산
+        const lessonStart = lesson.time;
+        const lessonStartMinutes = timeToMinutes(lessonStart);
+        const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+        const lessonEnd = minutesToTime(lessonEndMinutes);
         return lessonStart === slot.startTime && lessonEnd === slot.endTime;
       }).length;
 
       // 강사별 예약 수 계산 (특정 강사가 지정된 경우)
       let instructorBookings = 0;
       if (instructorId) {
-        instructorBookings = existingLessons.filter(lesson => 
-          lesson.instructor?.toString() === instructorId &&
-          lesson.startTime === slot.startTime &&
-          lesson.endTime === slot.endTime
-        ).length;
+        instructorBookings = existingLessons.filter(lesson => {
+          const lessonStart = lesson.time;
+          const lessonStartMinutes = timeToMinutes(lessonStart);
+          const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+          const lessonEnd = minutesToTime(lessonEndMinutes);
+          return lesson.instructorId?.toString() === instructorId &&
+            lessonStart === slot.startTime &&
+            lessonEnd === slot.endTime;
+        }).length;
       }
 
       const isAvailable = existingCount < slot.maxLessons;
@@ -277,11 +296,11 @@ router.get('/lane-rental/availability', async (req: any, res: Response) => {
     // 기존 레인대여 조회
     const existingRentals = await LaneRental.find({
       centerId,
-      rentalDate: {
+      date: {
         $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
         $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
       },
-      status: { $in: ['requested', 'approved', 'in_progress'] }
+      status: { $in: ['pending', 'approved', 'completed'] }
     });
 
     // 풀 타입별 레인 상태 계산
@@ -295,7 +314,7 @@ router.get('/lane-rental/availability', async (req: any, res: Response) => {
         // 해당 레인의 기존 대여 확인
         const laneRentals = existingRentals.filter(rental => 
           rental.poolType === pType && 
-          rental.laneNumbers.includes(lane.laneNumber)
+          rental.laneNumber === lane.laneNumber
         );
 
         // 시간대별 사용 가능 상태 계산
@@ -423,20 +442,23 @@ router.get('/instructor/:instructorId/availability', async (req: any, res: Respo
     // 기존 예약 조회
     const existingLessons = await PersonalLesson.find({
       centerId,
-      instructor: instructorId,
-      scheduledDate: {
+      instructorId: instructorId,
+      date: {
         $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
         $lt: new Date(requestedDate.setHours(23, 59, 59, 999))
       },
-      status: { $in: ['requested', 'accepted', 'in_progress'] }
+      status: { $in: ['pending', 'approved', 'completed'] }
     });
 
     // 강사별 가능 시간 슬롯 계산
     const availableSlots = instructorSchedule.timeSlots.map(slot => {
-      const existingCount = existingLessons.filter(lesson => 
-        lesson.startTime === slot.startTime && 
-        lesson.endTime === slot.endTime
-      ).length;
+      const existingCount = existingLessons.filter(lesson => {
+        const lessonStart = lesson.time;
+        const lessonStartMinutes = timeToMinutes(lessonStart);
+        const lessonEndMinutes = lessonStartMinutes + (lesson.duration || 60);
+        const lessonEnd = minutesToTime(lessonEndMinutes);
+        return lessonStart === slot.startTime && lessonEnd === slot.endTime;
+      }).length;
 
       const isAvailable = existingCount < slot.maxStudents;
       const availableCapacity = slot.maxStudents - existingCount;

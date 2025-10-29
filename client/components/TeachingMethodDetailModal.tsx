@@ -73,7 +73,7 @@
 
 import React from 'react';
 import Modal from './ui/modal';
-import { Badge } from './ui/badge';
+import { Badge } from '@/components/ui';
 import Button from './ui/button';
 
 interface TeachingMethod {

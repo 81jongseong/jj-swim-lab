@@ -772,8 +772,16 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     if (address) center.address = address;
     if (phone) center.phone = phone;
     if (email) center.email = email;
-    if (website) center.website = website;
-    if (description) center.description = description;
+    if (website && center.introduction) {
+      if (!center.introduction.contactInfo) {
+        center.introduction.contactInfo = {} as any;
+      }
+      center.introduction.contactInfo.website = website;
+    }
+    // description은 introduction.fullDescription로 저장
+    if (description && center.introduction) {
+      center.introduction.fullDescription = description;
+    }
     if (images) {
       // images 객체를 병합하여 업데이트
       center.images = { ...(center.images || {}), ...images };
@@ -803,7 +811,13 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
       }
     }
     if (operatingHours) center.operatingHours = { ...center.operatingHours, ...operatingHours };
-    if (pricing) center.pricing = { ...center.pricing, ...pricing };
+    // pricing은 introduction.pricing으로 저장
+    if (pricing && center.introduction) {
+      if (!center.introduction.pricing) {
+        center.introduction.pricing = {} as any;
+      }
+      center.introduction.pricing = { ...center.introduction.pricing, ...pricing };
+    }
     if (customLevels) center.customLevels = customLevels;
     if (availabilitySettings) {
       // availabilitySettings를 안전하게 병합
@@ -1189,14 +1203,14 @@ router.get('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       data: {
         centerId: center._id,
         name: center.name,
-        description: center.description,
+        description: center.introduction?.fullDescription || '',
         address: center.address,
         phone: center.phone,
         email: center.email,
         operatingHours: center.operatingHours,
         facilities: center.facilities || [],
-        introduction: center.introduction || '',
-        guide: center.guide || '',
+        introduction: center.introduction || ({} as any),
+        guide: '', // guide 필드는 Center 모델에 없으므로 빈 문자열 반환
         updatedAt: center.updatedAt
       }
     });
@@ -1244,14 +1258,20 @@ router.put('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
 
     // 센터 정보 업데이트
     if (name) center.name = name;
-    if (description) center.description = description;
+    // description은 introduction.fullDescription로 저장
+    if (description) {
+      if (!center.introduction) {
+        center.introduction = {} as any;
+      }
+      center.introduction.fullDescription = description;
+    }
     if (address) center.address = address;
     if (phone) center.phone = phone;
     if (email) center.email = email;
     if (operatingHours) center.operatingHours = operatingHours;
     if (facilities) center.facilities = facilities;
     if (introduction) center.introduction = introduction;
-    if (guide) center.guide = guide;
+    // guide 필드는 Center 모델에 없으므로 무시
 
     await center.save();
 
@@ -1261,14 +1281,14 @@ router.put('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       data: {
         centerId: center._id,
         name: center.name,
-        description: center.description,
+        description: center.introduction?.fullDescription || '',
         address: center.address,
         phone: center.phone,
         email: center.email,
         operatingHours: center.operatingHours,
         facilities: center.facilities,
         introduction: center.introduction,
-        guide: center.guide,
+        guide: '', // guide 필드는 Center 모델에 없으므로 빈 문자열 반환
         updatedAt: center.updatedAt
       }
     });
@@ -1326,7 +1346,7 @@ router.get('/dashboard', authMiddleware, requireRole(['centerAdmin']), async (re
         activeBookings,
         recentPayments
       },
-      centerInfo: await Center.findById(centerId).select('name address currentCapacity maxCapacity')
+      centerInfo: await Center.findById(centerId).select('name address capacity')
     };
 
     res.json({
@@ -1542,7 +1562,7 @@ router.get('/analytics', authMiddleware, requireRole(['centerAdmin']), async (re
     ]);
 
     // 수용 인원 활용률
-    const capacityUtilization = await Center.findById(centerId).select('currentCapacity maxCapacity');
+    const centerForCapacity = await Center.findById(centerId).select('capacity');
 
     const analyticsData = {
       revenue: {
@@ -1563,7 +1583,7 @@ router.get('/analytics', authMiddleware, requireRole(['centerAdmin']), async (re
       },
       operations: {
         peakHours: peakHours.sort((a, b) => b.bookingCount - a.bookingCount).slice(0, 3),
-        capacityUtilization: capacityUtilization ? Math.round((capacityUtilization.currentCapacity / capacityUtilization.maxCapacity) * 100) : 0
+        capacityUtilization: centerForCapacity && centerForCapacity.capacity ? Math.round((studentRetention.length / centerForCapacity.capacity) * 100) : 0
       },
       recommendations: [
         '피크 타임에 강사 배치 최적화',
@@ -1725,8 +1745,8 @@ router.get('/my-center/stats', authMiddleware, requireRole(['centerAdmin']), asy
       totalInstructors,
       totalCourses,
       totalBookings,
-      centerCapacity: (await Center.findById(centerId))?.maxCapacity || 0,
-      utilizationRate: totalStudents / ((await Center.findById(centerId))?.maxCapacity || 1) * 100
+      centerCapacity: (await Center.findById(centerId))?.capacity || 0,
+      utilizationRate: totalStudents / ((await Center.findById(centerId))?.capacity || 1) * 100
     };
 
     res.json({

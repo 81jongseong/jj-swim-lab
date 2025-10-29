@@ -51,10 +51,10 @@ interface CourseSchedule {
 }
 
 interface Course {
-  _id: string;
+  _id?: string;
   name: string;
   description: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
+  level: 'beginner' | 'intermediate' | 'advanced' | string;
   duration: number;
   maxStudents: number;
   currentStudents: number;

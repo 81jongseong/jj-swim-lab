@@ -43,7 +43,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     // 센터 ID 가져오기
-    const centerId = user.studentInfo?.centerId || user.instructorInfo?.assignedCenters?.[0];
+    const centerId = user.centerId || user.instructorInfo?.assignedCenters?.[0];
     if (!centerId) {
       return res.status(400).json({
         success: false,
@@ -55,7 +55,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     const conflicts = await LaneAllocationService.checkLaneConflicts(
       date,
       startTime,
-      centerId,
+      centerId?.toString() || '',
       duration
     );
 
@@ -75,7 +75,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     // 레인대여 생성
     const laneRental = new LaneRental({
       userId,
-      centerId,
+      centerId: centerId,
       date: new Date(date),
       startTime,
       endTime,
@@ -241,7 +241,7 @@ router.get('/availability/:date/:time', authMiddleware, async (req: AuthRequest,
     const { duration = 60 } = req.query;
 
     const user = await User.findById(req.user._id);
-    const centerId = user?.studentInfo?.centerId || user?.instructorInfo?.assignedCenters?.[0];
+    const centerId = user?.centerId || user?.instructorInfo?.assignedCenters?.[0];
 
     if (!centerId) {
       return res.status(400).json({
@@ -253,7 +253,7 @@ router.get('/availability/:date/:time', authMiddleware, async (req: AuthRequest,
     const availability = await LaneAllocationService.findAvailableLanes(
       date,
       time,
-      centerId,
+      centerId?.toString() || '',
       Number(duration)
     );
 

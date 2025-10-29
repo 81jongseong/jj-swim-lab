@@ -53,8 +53,23 @@ export default function ScheduleModal({
   selectedDate,
   selectedTime
 }: ScheduleModalProps) {
-  const [formData, setFormData] = useState({
-    type: 'operating_hours' as const,
+  const [formData, setFormData] = useState<{
+    type: 'operating_hours' | 'instructor_schedule' | 'group_class' | 'maintenance';
+    title: string;
+    description: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    instructorId: string;
+    instructorName: string;
+    maxStudents: number;
+    poolType: 'mainPool' | 'kidsPool' | 'auxiliaryPool';
+    status: 'confirmed' | 'tentative' | 'cancelled';
+    isRecurring: boolean;
+    recurringPattern: 'daily' | 'weekly' | 'monthly';
+    notes: string;
+  }>({
+    type: 'operating_hours',
     title: '',
     description: '',
     date: selectedDate || '',
@@ -63,10 +78,10 @@ export default function ScheduleModal({
     instructorId: '',
     instructorName: '',
     maxStudents: 1,
-    poolType: 'mainPool' as const,
-    status: 'confirmed' as const,
+    poolType: 'mainPool',
+    status: 'confirmed',
     isRecurring: false,
-    recurringPattern: 'weekly' as const,
+    recurringPattern: 'weekly',
     notes: ''
   });
 

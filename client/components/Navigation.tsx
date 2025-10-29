@@ -586,7 +586,8 @@ export default function Navigation() {
               {group.groupName}
             </div>
             {group.categories && group.categories.map && group.categories.map(category => {
-              const menuItems = userMenuStructure[user?.userType === 'center-admin' ? 'center-admin' : (user?.userType || 'guest')]?.[category] || [];
+              const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
+              const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
               return menuItems.map((item, itemIndex) => (
                 <button
                   key={`${category}-${itemIndex}`}
@@ -633,7 +634,7 @@ export default function Navigation() {
             <button
               className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
                 group.categories.some(cat => 
-                  userMenuStructure[user?.userType === 'center-admin' ? 'center-admin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
+                  userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
                     isMenuActive(item.href, pathname)
                   )
                 ) ? 'text-blue-600 font-semibold bg-blue-50' : ''
@@ -654,7 +655,8 @@ export default function Navigation() {
                   {group.groupName}
                 </div>
                   {group.categories && group.categories.map && group.categories.map(category => {
-                    const menuItems = userMenuStructure[user?.userType === 'center-admin' ? 'center-admin' : (user?.userType || 'guest')]?.[category] || [];
+                    const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
+              const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
                     return menuItems.map((item, itemIndex) => (
                       <button 
                         key={`${category}-${itemIndex}`} 

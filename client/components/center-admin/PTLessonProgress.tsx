@@ -60,6 +60,7 @@ interface PTLessonProgressProps {
   instructorId: string;
   selectedDate: string;
   onClose: () => void;
+  onBack?: () => void;
 }
 
 interface Instructor {
@@ -77,7 +78,8 @@ interface StudentProgress {
 export default function PTLessonProgress({ 
   instructorId, 
   selectedDate,
-  onClose 
+  onClose,
+  onBack
 }: PTLessonProgressProps) {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);

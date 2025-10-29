@@ -99,7 +99,7 @@ export interface User {
   userId: string;
   name: string;
   email: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
+  userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
   level: string;
   centerId?: string;
   membershipTier?: string; // 멤버십 등급

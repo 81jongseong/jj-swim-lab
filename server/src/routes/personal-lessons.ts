@@ -43,7 +43,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
     // 센터 ID 가져오기
-    const centerId = user.studentInfo?.centerId;
+    const centerId = user.centerId;
     if (!centerId) {
       return res.status(400).json({
         success: false,
@@ -55,7 +55,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     const conflicts = await LaneAllocationService.checkLaneConflicts(
       date,
       time,
-      centerId,
+      centerId?.toString() || '',
       duration
     );
 

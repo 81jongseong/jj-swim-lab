@@ -136,11 +136,11 @@ export default function GeoDistributionPage() {
         const deckGl = await import('@deck.gl/mapbox');
         const geoLayers = await import('@deck.gl/geo-layers');
         
-        MapboxLayer = deckGl.MapboxLayer;
+        MapboxLayer = (deckGl as any).MapboxLayer || (deckGl as any).MapboxOverlay;
         H3HexagonLayer = geoLayers.H3HexagonLayer;
         
         // CSS 로딩
-        await import('maplibre-gl/dist/maplibre-gl.css');
+        await import('maplibre-gl/dist/maplibre-gl.css' as any);
         
         console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
       } catch (error) {
