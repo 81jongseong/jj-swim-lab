@@ -128,6 +128,8 @@ export default function InstructorEditModal({
     status: instructor.status || 'active',
     specialties: instructor.specialties || instructor.instructorInfo?.specialties || [],
     certifications: instructor.certifications || instructor.instructorInfo?.certifications || [],
+    photo: (instructor.instructorInfo as any)?.photo || '',
+    bio: (instructor.instructorInfo as any)?.bio || (instructor.instructorInfo as any)?.introduction || '',
     workSchedule: {
       daysOfWeek: instructor.instructorInfo?.workSchedule?.daysOfWeek || [],
       timeSlots: instructor.instructorInfo?.workSchedule?.timeSlots || ['09:00-18:00']
@@ -147,6 +149,7 @@ export default function InstructorEditModal({
   const [newTimeSlotStart, setNewTimeSlotStart] = useState('09:00');
   const [newTimeSlotEnd, setNewTimeSlotEnd] = useState('18:00');
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // 현재 센터 경력 계산 (개월)
   const calculateCurrentTenure = () => {
@@ -203,7 +206,9 @@ export default function InstructorEditModal({
           hiredAt: formData.hiredAt,
           contractType: formData.contractType,
           specialties: formData.specialties,
-          certifications: formData.certifications
+          certifications: formData.certifications,
+          photo: formData.photo,
+          bio: formData.bio
         }
       };
       
@@ -346,6 +351,81 @@ export default function InstructorEditModal({
                 placeholder="010-1234-5678"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+          </section>
+
+          {/* 📸 홈페이지용 사진 및 소개 */}
+          <section className="bg-purple-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">📸 홈페이지용 사진 및 소개</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">강사 사진</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    setUploadingPhoto(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('photo', file);
+                      
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`http://localhost:5000/api/center-admin/instructors/${instructor._id}/upload-photo`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                      });
+                      
+                      if (response.ok) {
+                        const result = await response.json();
+                        setFormData({ ...formData, photo: result.data.imageUrl });
+                        alert('강사 사진이 성공적으로 업로드되었습니다.');
+                      } else {
+                        const error = await response.json();
+                        alert(error.message || '강사 사진 업로드에 실패했습니다.');
+                      }
+                    } catch (error) {
+                      console.error('강사 사진 업로드 오류:', error);
+                      alert('강사 사진 업로드 중 오류가 발생했습니다.');
+                    } finally {
+                      setUploadingPhoto(false);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={uploadingPhoto}
+                />
+                {formData.photo && (
+                  <div className="mt-2">
+                    <img 
+                      src={`http://localhost:5000${formData.photo}`} 
+                      alt="강사 사진 미리보기" 
+                      className="w-32 h-32 object-cover rounded-full border-2 border-gray-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                {uploadingPhoto && <p className="mt-2 text-xs text-blue-600">업로드 중...</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">강사 소개 글</label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="홈페이지에 표시될 강사 소개 글을 입력하세요..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  💡 홈페이지의 강사진 섹션에 표시되는 소개 글입니다
+                </p>
+              </div>
             </div>
           </section>
 

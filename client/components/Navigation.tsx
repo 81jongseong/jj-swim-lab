@@ -235,7 +235,7 @@ const userMenuStructure = {
   },
   'center-admin': {
     dashboard: [
-      { href: '/', label: '🏠 홈' },
+      { href: '/center-admin/home', label: '🏠 홈' },
       { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center-admin/users', label: '👥 센터 회원 관리' },
       { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
@@ -249,7 +249,6 @@ const userMenuStructure = {
       { href: '/center-admin/approvals', label: '⏳ 회원 강습 승인', description: '강습신청/결제/환불/일정변경 승인' },
     ],
     center: [
-      { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
       { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center-admin/settings', label: '🔧 센터 설정' },
     ],

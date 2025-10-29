@@ -1,15 +1,22 @@
 /**
  * @file 센터 관리자 대시보드 페이지
  * @description 센터 관리자가 센터의 전반적인 현황을 한눈에 볼 수 있는 대시보드입니다.
- * @date 2025-01-13
- * @author JJ Swim Lab
+ * 
+ * @연동되는 데이터:
+ * - 대시보드 통계 API (/api/center-admin/dashboard)
+ * - 센터 정보 API (/api/center-admin/center-info)
+ * 
+ * @연동되는 파일:
+ * - hooks/useAuth.tsx (인증 상태)
+ * - components/StatCard.tsx (통계 카드 컴포넌트)
+ * - components/ui (UI 컴포넌트)
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Users, BookOpen, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Settings } from 'lucide-react';
+import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
 import { StatCard } from '../../../components/StatCard';
 import { Button } from '../../../components/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
@@ -78,7 +85,6 @@ const CenterAdminDashboard: React.FC = () => {
       try {
         console.log('📊 센터 데이터 로드 중...');
         
-        // 대시보드 통계 API 호출
         const response = await fetch('http://localhost:5000/api/center-admin/dashboard', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -102,7 +108,6 @@ const CenterAdminDashboard: React.FC = () => {
           }
         } else {
           console.error('❌ 대시보드 API 호출 실패:', response.status);
-          // 기본값 설정
           setStats({
             totalMembers: 0,
             activeInstructors: 0,
@@ -114,7 +119,6 @@ const CenterAdminDashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('❌ 센터 데이터 로드 실패:', error);
-        // 기본값 설정
         setStats({
           totalMembers: 0,
           activeInstructors: 0,
@@ -275,38 +279,38 @@ const CenterAdminDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button 
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => window.location.href = '/center-admin/users'}
-          >
-            <Users className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">회원 관리</span>
-          </Button>
-          <Button 
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => window.location.href = '/center-admin/instructors'}
-          >
-            <Settings className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">강사 관리</span>
-          </Button>
-          <Button 
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => window.location.href = '/center-admin/courses'}
-          >
-            <BookOpen className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">강의 관리</span>
-          </Button>
-          <Button 
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => window.location.href = '/center-admin/reports'}
-          >
-            <TrendingUp className="h-6 w-6 mb-2" />
-            <span className="text-sm font-medium">리포트</span>
-          </Button>
+            <Button 
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              onClick={() => window.location.href = '/center-admin/users'}
+            >
+              <Users className="h-6 w-6 mb-2" />
+              <span className="text-sm font-medium">회원 관리</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              onClick={() => window.location.href = '/center-admin/instructors'}
+            >
+              <Settings className="h-6 w-6 mb-2" />
+              <span className="text-sm font-medium">강사 관리</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              onClick={() => window.location.href = '/center-admin/courses'}
+            >
+              <BookOpen className="h-6 w-6 mb-2" />
+              <span className="text-sm font-medium">강의 관리</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+              onClick={() => window.location.href = '/center-admin/reports'}
+            >
+              <TrendingUp className="h-6 w-6 mb-2" />
+              <span className="text-sm font-medium">리포트</span>
+            </Button>
           </div>
         </CardContent>
       </Card>

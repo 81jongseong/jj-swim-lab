@@ -18,6 +18,9 @@ import { Report } from '../models/Report';
 import { Center } from '../models/Center'; // ⭐ Center 모델 추가
 import { PersonalLesson } from '../models/PersonalLesson';
 import { LaneRental } from '../models/LaneRental';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -496,9 +499,23 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
 
     const instructors = await User.find(query)
       .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
+      .lean()
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
+    
+    // instructorInfo에 photo와 bio/introduction 필드 포함
+    const instructorsWithPhoto = instructors.map(instructor => {
+      const instructorInfo = (instructor.instructorInfo as any) || {};
+      return {
+        ...instructor,
+        instructorInfo: {
+          ...instructorInfo,
+          photo: instructorInfo.photo,
+          bio: instructorInfo.bio || instructorInfo.introduction
+        }
+      };
+    });
 
     const total = await User.countDocuments(query);
 
@@ -512,11 +529,11 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
       success: true,
       message: '센터 강사 목록 조회 성공!',
       data: {
-        instructors,
+        instructors: instructorsWithPhoto,
         pagination: {
           current: Number(page),
           total: Math.ceil(total / Number(limit)),
-          count: instructors.length,
+          count: instructorsWithPhoto.length,
           totalCount: total
         }
       }
@@ -627,6 +644,15 @@ router.put('/instructors/:instructorId', authMiddleware, requireCenterAdmin, asy
       if (instructorInfo.certifications) {
         updateData['instructorInfo.certifications'] = instructorInfo.certifications;
       }
+      if (instructorInfo.photo !== undefined) {
+        updateData['instructorInfo.photo'] = instructorInfo.photo;
+      }
+      if (instructorInfo.bio !== undefined) {
+        updateData['instructorInfo.bio'] = instructorInfo.bio;
+      }
+      if (instructorInfo.introduction !== undefined) {
+        updateData['instructorInfo.introduction'] = instructorInfo.introduction;
+      }
     }
 
     console.log('📊 업데이트 데이터:', updateData);
@@ -666,6 +692,108 @@ router.put('/instructors/:instructorId', authMiddleware, requireCenterAdmin, asy
   }
 });
 
+/**
+ * 강사 사진 업로드
+ * POST /api/center-admin/instructors/:instructorId/upload-photo
+ */
+// Multer 설정 (강사 이미지 업로드)
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const instructorImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(uploadDir, 'instructor-images');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `instructor-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const instructorImageUpload = multer({
+  storage: instructorImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('이미지 파일만 업로드 가능합니다.'));
+    }
+  }
+});
+
+router.post('/instructors/:instructorId/upload-photo',
+  authMiddleware,
+  requireCenterAdmin,
+  instructorImageUpload.single('photo'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { instructorId } = req.params;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: '파일이 업로드되지 않았습니다.'
+        });
+      }
+
+      const centerAdmin = await User.findById(req.user._id);
+      const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+
+      if (!centerId) {
+        return res.status(400).json({
+          success: false,
+          message: '관리하는 센터가 없습니다.'
+        });
+      }
+
+      // 강사 존재 여부 및 권한 확인
+      const instructor = await User.findOne({
+        _id: instructorId,
+        userType: 'instructor',
+        centerId: centerId
+      });
+
+      if (!instructor) {
+        return res.status(404).json({
+          success: false,
+          message: '해당 강사를 찾을 수 없거나 권한이 없습니다.'
+        });
+      }
+
+      const imageUrl = `/uploads/instructor-images/${file.filename}`;
+
+      // 강사 정보에 사진 URL 저장
+      if (!instructor.instructorInfo) {
+        instructor.instructorInfo = {} as any;
+      }
+      (instructor.instructorInfo as any).photo = imageUrl;
+      await instructor.save();
+
+      res.json({
+        success: true,
+        message: '강사 사진이 성공적으로 업로드되었습니다.',
+        data: {
+          imageUrl,
+          photo: imageUrl
+        }
+      });
+    } catch (error: any) {
+      console.error('강사 사진 업로드 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || '강사 사진 업로드 중 오류가 발생했습니다.'
+      });
+    }
+  }
+);
 
 /**
  * 📅 센터 예약 대시보드 데이터 조회

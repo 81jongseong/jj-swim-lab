@@ -71,12 +71,73 @@ import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
 import mongoose from 'mongoose';
 import { Payment } from '../models/Payment'; // Added Payment import
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 interface AuthRequest extends Request {
   user?: any;
 }
 
 const router: Router = express.Router();
+
+// Multer 설정 (이미지 업로드)
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const centerImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(uploadDir, 'center-images');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `center-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const instructorImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(uploadDir, 'instructor-images');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `instructor-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const centerImageUpload = multer({
+  storage: centerImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('이미지 파일만 업로드 가능합니다.'));
+    }
+  }
+});
+
+const instructorImageUpload = multer({
+  storage: instructorImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('이미지 파일만 업로드 가능합니다.'));
+    }
+  }
+});
 
 // ===== 기본 센터 목록 조회 =====
 
@@ -108,6 +169,128 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instr
     });
   }
 });
+
+/**
+ * 센터 로고/이미지 업로드
+ * POST /api/centers/my-center/upload-logo
+ * POST /api/centers/my-center/upload-main-image
+ */
+router.post('/my-center/upload-logo', 
+  authMiddleware, 
+  requireRole(['centerAdmin', 'center-admin', 'superAdmin']), 
+  centerImageUpload.single('logo'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: '파일이 업로드되지 않았습니다.'
+        });
+      }
+
+      const centerAdmin = await User.findById(req.user._id);
+      const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+      
+      if (!centerId) {
+        return res.status(404).json({
+          success: false,
+          message: '관리하는 센터가 없습니다.'
+        });
+      }
+
+      const center = await Center.findById(centerId);
+      if (!center) {
+        return res.status(404).json({
+          success: false,
+          message: '센터를 찾을 수 없습니다.'
+        });
+      }
+
+      const imageUrl = `/uploads/center-images/${file.filename}`;
+      
+      // 기존 이미지 구조 유지하면서 로고 업데이트
+      if (!center.images) {
+        center.images = {} as any;
+      }
+      center.images.logo = imageUrl;
+      await center.save();
+
+      res.json({
+        success: true,
+        message: '로고가 성공적으로 업로드되었습니다.',
+        data: {
+          imageUrl,
+          logo: imageUrl
+        }
+      });
+    } catch (error: any) {
+      console.error('로고 업로드 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || '로고 업로드 중 오류가 발생했습니다.'
+      });
+    }
+  }
+);
+
+router.post('/my-center/upload-main-image', 
+  authMiddleware, 
+  requireRole(['centerAdmin', 'center-admin', 'superAdmin']), 
+  centerImageUpload.single('mainImage'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: '파일이 업로드되지 않았습니다.'
+        });
+      }
+
+      const centerAdmin = await User.findById(req.user._id);
+      const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+      
+      if (!centerId) {
+        return res.status(404).json({
+          success: false,
+          message: '관리하는 센터가 없습니다.'
+        });
+      }
+
+      const center = await Center.findById(centerId);
+      if (!center) {
+        return res.status(404).json({
+          success: false,
+          message: '센터를 찾을 수 없습니다.'
+        });
+      }
+
+      const imageUrl = `/uploads/center-images/${file.filename}`;
+      
+      if (!center.images) {
+        center.images = {} as any;
+      }
+      center.images.mainImage = imageUrl;
+      await center.save();
+
+      res.json({
+        success: true,
+        message: '메인 이미지가 성공적으로 업로드되었습니다.',
+        data: {
+          imageUrl,
+          mainImage: imageUrl
+        }
+      });
+    } catch (error: any) {
+      console.error('메인 이미지 업로드 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || '메인 이미지 업로드 중 오류가 발생했습니다.'
+      });
+    }
+  }
+);
 
 // ===== 센터 관리자 전용 기능 =====
 
@@ -567,14 +750,16 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     // 수정 가능한 필드들
-    const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings } = req.body;
+    const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings, images, introduction } = req.body;
     
     console.log('📝 센터 정보 수정 요청:', {
       name, 
       facilities: !!facilities, 
       operatingHours: !!operatingHours,
       customLevels: !!customLevels,
-      availabilitySettings: !!availabilitySettings
+      availabilitySettings: !!availabilitySettings,
+      images: !!images,
+      introduction: !!introduction
     });
     if (customLevels) {
       console.log('📋 customLevels 상세:', JSON.stringify(customLevels, null, 2));
@@ -589,6 +774,26 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     if (email) center.email = email;
     if (website) center.website = website;
     if (description) center.description = description;
+    if (images) {
+      // images 객체를 병합하여 업데이트
+      center.images = { ...(center.images || {}), ...images };
+    }
+    if (introduction) {
+      // introduction 객체를 안전하게 병합
+      if (!center.introduction) {
+        center.introduction = {} as any;
+      }
+      // shortDescription만 업데이트하는 경우와 전체 객체를 업데이트하는 경우 모두 처리
+      if (introduction.shortDescription !== undefined) {
+        center.introduction.shortDescription = introduction.shortDescription;
+      }
+      // 다른 introduction 필드들도 병합
+      Object.keys(introduction).forEach(key => {
+        if (key !== 'visibility' && introduction[key] !== undefined) {
+          (center.introduction as any)[key] = introduction[key];
+        }
+      });
+    }
     if (facilities) {
       // facilities는 배열인 경우 그대로, 객체인 경우 병합
       if (Array.isArray(facilities)) {

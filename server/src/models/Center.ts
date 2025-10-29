@@ -12,6 +12,12 @@ export interface ICenter extends Document {
   capacity: number;
   status: 'active' | 'inactive' | 'maintenance';
   facilities: string[];
+  // 이미지 정보 (로고, 메인 이미지 등)
+  images?: {
+    logo?: string;
+    mainImage?: string;
+    [key: string]: string | undefined;
+  };
   // ⭐ 풀 구성 정보
   poolConfiguration?: {
     mainPool?: {
@@ -202,6 +208,11 @@ const centerSchema = new Schema<ICenter>({
     type: String,
     trim: true
   }],
+  // 이미지 정보 (로고, 메인 이미지 등)
+  images: {
+    logo: { type: String },
+    mainImage: { type: String }
+  },
   // ⭐ 풀 구성 정보
   poolConfiguration: {
     mainPool: {

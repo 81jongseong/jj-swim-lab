@@ -43,8 +43,8 @@ export default function HomePage() {
         // 계정 유형별 대시보드로 리다이렉트
         const dashboardRoutes = {
           superAdmin: '/admin/dashboard',
-          centerAdmin: '/center-admin/dashboard',
-          'center-admin': '/center-admin/dashboard', 
+          centerAdmin: '/center-admin/home', // 센터 관리자는 홈페이지로
+          'center-admin': '/center-admin/home', // 센터 관리자는 홈페이지로
           instructor: '/instructor/dashboard',
           student: '/student/dashboard',
         };
