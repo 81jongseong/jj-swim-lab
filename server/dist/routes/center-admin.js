@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -31,15 +54,16 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
             });
         }
         const totalMembers = await User_1.User.countDocuments({
+            centerId: centerId,
             $or: [
-                { 'studentInfo.centerId': centerId },
-                { 'instructorInfo.assignedCenters': centerId }
+                { userType: 'student' },
+                { userType: 'instructor' }
             ],
             isActive: true
         });
         const activeInstructors = await User_1.User.countDocuments({
             userType: 'instructor',
-            'instructorInfo.assignedCenters': centerId,
+            centerId: centerId,
             isActive: true
         });
         const activeCourses = await Course_1.Course.countDocuments({
@@ -151,10 +175,7 @@ router.get('/users', auth_1.authMiddleware, requireCenterAdmin, async (req, res)
         const { page = 1, limit = 10, search = '', userType = 'all' } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
         const query = {
-            $or: [
-                { 'studentInfo.centerId': centerId },
-                { 'instructorInfo.assignedCenters': centerId }
-            ],
+            centerId: centerId,
             isActive: true
         };
         if (userType !== 'all') {
@@ -198,19 +219,14 @@ router.get('/users', auth_1.authMiddleware, requireCenterAdmin, async (req, res)
             console.log(`🔧 회원 ${index + 1} (${userObj.name}) 처리 중:`, {
                 userType: userObj.userType,
                 studentInfo: userObj.studentInfo,
-                hasStudentInfo: !!userObj.studentInfo,
-                studentInfoLevel: userObj.studentInfo?.level
+                hasStudentInfo: !!userObj.studentInfo
             });
-            if (userObj.userType === 'student' && userObj.studentInfo?.level) {
-                userObj.currentLevel = userObj.studentInfo.level;
-                console.log(`✅ 회원 ${index + 1} (${userObj.name}) currentLevel 추가됨:`, userObj.currentLevel);
-            }
-            else {
-                console.log(`❌ 회원 ${index + 1} (${userObj.name}) currentLevel 추가 실패:`, {
-                    isStudent: userObj.userType === 'student',
-                    hasStudentInfo: !!userObj.studentInfo,
-                    hasLevel: !!userObj.studentInfo?.level
-                });
+            if (userObj.userType === 'student') {
+                userObj.currentLevel = userObj.studentInfo?.currentLevel
+                    || userObj.studentInfo?.swimmingLevel
+                    || userObj.level
+                    || '레벨 미설정';
+                console.log(`✅ 회원 ${index + 1} (${userObj.name}) currentLevel 설정됨:`, userObj.currentLevel);
             }
             return userObj;
         });
@@ -258,30 +274,64 @@ router.get('/instructors/stats', auth_1.authMiddleware, requireCenterAdmin, asyn
         const instructorStats = await Promise.all(instructors.map(async (instructor) => {
             try {
                 const groupCoursesWithStudents = await Course_1.Course.find({
-                    instructorId: instructor._id,
+                    $or: [
+                        { instructorId: instructor._id },
+                        { instructor: instructor._id }
+                    ],
                     centerId: centerId,
                     isPersonalLesson: { $ne: true },
                     'enrolledStudents.0': { '$exists': true }
                 }).select('_id enrolledStudents');
                 const groupStudentsCount = groupCoursesWithStudents.reduce((acc, course) => acc + course.enrolledStudents.length, 0);
-                const personalStudentsCount = await mongoose_1.default.connection.db.collection('personallessons').countDocuments({
+                const personalLessons = await PersonalLesson_1.PersonalLesson.find({
                     instructorId: instructor._id,
                     centerId: centerId
                 });
+                const uniqueStudentIds = new Set();
+                personalLessons.forEach(lesson => {
+                    if (lesson.studentId) {
+                        uniqueStudentIds.add(lesson.studentId.toString());
+                    }
+                });
+                const personalLessonCourses = await Course_1.Course.find({
+                    $or: [
+                        { instructorId: instructor._id },
+                        { instructor: instructor._id }
+                    ],
+                    centerId: centerId,
+                    isPersonalLesson: true
+                }).select('enrolledStudents');
+                personalLessonCourses.forEach(course => {
+                    course.enrolledStudents.forEach(enrollment => {
+                        if (enrollment.student) {
+                            uniqueStudentIds.add(enrollment.student.toString());
+                        }
+                    });
+                });
+                const personalStudentsCount = uniqueStudentIds.size;
                 const groupCoursesCount = await Course_1.Course.countDocuments({
-                    instructorId: instructor._id,
+                    $or: [
+                        { instructorId: instructor._id },
+                        { instructor: instructor._id }
+                    ],
                     centerId: centerId,
                     isPersonalLesson: { $ne: true }
                 });
-                const personalLessonsCount = await mongoose_1.default.connection.db.collection('personallessons').countDocuments({
-                    instructorId: instructor._id,
-                    centerId: centerId
-                });
-                const completedPersonalLessonsCount = await mongoose_1.default.connection.db.collection('personallessons').countDocuments({
-                    instructorId: instructor._id,
+                const coursePersonalLessonsCount = await Course_1.Course.countDocuments({
+                    $or: [
+                        { instructorId: instructor._id },
+                        { instructor: instructor._id }
+                    ],
                     centerId: centerId,
-                    status: 'completed'
+                    isPersonalLesson: true
                 });
+                console.log(`📊 ${instructor.name} 개인레슨 통계:`, {
+                    personalStudentsFromPersonalLessonModel: personalLessons.length,
+                    personalStudentsFromCourseModel: personalLessonCourses.length,
+                    uniqueStudentsCount: personalStudentsCount
+                });
+                const personalLessonsCount = personalLessons.length + coursePersonalLessonsCount;
+                const completedPersonalLessonsCount = personalLessons.filter(lesson => lesson.status === 'completed').length;
                 return {
                     instructorId: instructor._id,
                     name: instructor.name,
@@ -356,7 +406,7 @@ router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req
             ];
         }
         const instructors = await User_1.User.find(query)
-            .select('-password')
+            .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
             .skip(skip)
             .limit(Number(limit))
             .sort({ createdAt: -1 });
@@ -681,6 +731,16 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 success: false,
                 message: '관리하는 센터가 없습니다.'
             });
+        }
+        try {
+            const { LaneAllocationService } = await Promise.resolve().then(() => __importStar(require('../services/laneAllocationService')));
+            const restoredLanes = await LaneAllocationService.restoreLanesIfNoPersonalLesson(centerId.toString());
+            if (restoredLanes && restoredLanes.length > 0) {
+                console.log('🔄 레인 자동 복원 완료:', restoredLanes);
+            }
+        }
+        catch (restoreError) {
+            console.error('⚠️ 레인 복원 실패 (무시하고 계속 진행):', restoreError);
         }
         const courses = await Course_1.Course.find({
             centerId: new mongoose_1.default.Types.ObjectId(centerId)
@@ -1275,11 +1335,21 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
             });
         }
         const groupCourses = await Course_1.Course.find({
-            instructorId: new mongoose_1.default.Types.ObjectId(instructorId),
+            $or: [
+                { instructorId: new mongoose_1.default.Types.ObjectId(instructorId) },
+                { instructor: new mongoose_1.default.Types.ObjectId(instructorId) }
+            ],
             centerId: new mongoose_1.default.Types.ObjectId(centerId),
             isPersonalLesson: { $ne: true }
-        });
+        })
+            .populate('enrolledStudents.student', 'name phone email studentInfo');
         console.log(`📚 조회된 단체반 수업: ${groupCourses.length}개`);
+        console.log(`📚 전체 단체반 조회 결과:`, JSON.stringify(groupCourses.map(c => ({
+            name: c.name,
+            _id: c._id,
+            students: c.students,
+            enrolledStudents: c.enrolledStudents
+        })), null, 2));
         const groupStudents = [];
         for (const course of groupCourses) {
             console.log(`📚 Course: ${course.name}, Students:`, course.students);
@@ -1290,8 +1360,15 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
                 studentIds.push(...course.students.map(id => typeof id === 'string' ? new mongoose_1.default.Types.ObjectId(id) : id));
             }
             if (course.enrolledStudents && course.enrolledStudents.length > 0) {
-                console.log(`🔍 enrolledStudents 필드에서 조회할 학생 ID들:`, course.enrolledStudents);
-                studentIds.push(...course.enrolledStudents.map(enrollment => typeof enrollment.student === 'string' ? new mongoose_1.default.Types.ObjectId(enrollment.student) : enrollment.student));
+                console.log(`🔍 enrolledStudents 필드에서 조회할 학생들:`, course.enrolledStudents);
+                for (const enrollment of course.enrolledStudents) {
+                    if (enrollment.student) {
+                        const studentId = typeof enrollment.student === 'string'
+                            ? enrollment.student
+                            : enrollment.student._id?.toString() || enrollment.student.toString();
+                        studentIds.push(new mongoose_1.default.Types.ObjectId(studentId));
+                    }
+                }
             }
             if (studentIds.length > 0) {
                 console.log(`🔍 최종 조회할 학생 ID들:`, studentIds);
@@ -1308,6 +1385,7 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
                         enrollmentDate: student.createdAt || new Date(),
                         phone: student.phone || '010-0000-0000',
                         email: student.email || `${student.name}@example.com`,
+                        totalLessonsCompleted: 0,
                         progress: Math.floor(Math.random() * 100),
                         currentPackage: {
                             name: course.name,
@@ -1321,13 +1399,25 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
                 console.log(`⚠️ ${course.name}: 실제 학생 데이터 없음`);
             }
         }
-        const personalLessons = await mongoose_1.default.connection.db.collection('personallessons').find({
+        console.log('🔍 PersonalLesson 모델에서 개인레슨 조회 시작...');
+        const personalLessonsRaw = await mongoose_1.default.connection.db.collection('personallessons').find({
             instructorId: new mongoose_1.default.Types.ObjectId(instructorId),
             centerId: new mongoose_1.default.Types.ObjectId(centerId)
         }).toArray();
-        const studentIds = personalLessons.map(lesson => lesson.studentId).filter(Boolean);
+        console.log(`🏊 PersonalLesson 모델에서 조회된 개인레슨: ${personalLessonsRaw.length}개`);
+        const personalLessonCourses = await Course_1.Course.find({
+            $or: [
+                { instructorId: new mongoose_1.default.Types.ObjectId(instructorId) },
+                { instructor: new mongoose_1.default.Types.ObjectId(instructorId) }
+            ],
+            centerId: new mongoose_1.default.Types.ObjectId(centerId),
+            isPersonalLesson: true
+        })
+            .populate('enrolledStudents.student', 'name phone email studentInfo');
+        console.log(`🏊 Course 모델에서 조회된 개인레슨: ${personalLessonCourses.length}개`);
+        const studentIds = personalLessonsRaw.map(lesson => lesson.studentId).filter(Boolean);
         const students = await User_1.User.find({ _id: { $in: studentIds } });
-        const personalStudents = personalLessons.map(lesson => {
+        const personalStudents1 = personalLessonsRaw.map((lesson) => {
             const student = students.find(s => s._id.toString() === lesson.studentId?.toString());
             if (student) {
                 return {
@@ -1337,10 +1427,11 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
                     courseName: '개인레슨',
                     isPersonalLesson: true,
                     status: lesson.status || 'active',
-                    enrollmentDate: lesson.schedule?.date || lesson.createdAt || new Date(),
+                    enrollmentDate: lesson.date || lesson.createdAt || new Date(),
                     phone: student.phone || '',
                     email: student.email || '',
-                    progress: lesson.progress || 0,
+                    totalLessonsCompleted: lesson.completedSessions || 0,
+                    progress: { percentage: lesson.progress || 0 },
                     currentPackage: {
                         name: '개인레슨 패키지',
                         remainingSessions: lesson.remainingSessions || 0,
@@ -1358,6 +1449,49 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
             }
             return null;
         }).filter(Boolean);
+        const personalStudents2 = [];
+        for (const course of personalLessonCourses) {
+            if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+                for (const enrollment of course.enrolledStudents) {
+                    if (enrollment.student) {
+                        const studentId = typeof enrollment.student === 'string'
+                            ? enrollment.student
+                            : enrollment.student._id?.toString() || enrollment.student.toString();
+                        const student = await User_1.User.findById(studentId);
+                        if (student) {
+                            personalStudents2.push({
+                                _id: student._id,
+                                name: student.name,
+                                courseId: course._id,
+                                courseName: course.name || '개인레슨',
+                                isPersonalLesson: true,
+                                status: 'active',
+                                enrollmentDate: student.createdAt || new Date(),
+                                phone: student.phone || '',
+                                email: student.email || '',
+                                totalLessonsCompleted: 0,
+                                progress: { percentage: enrollment.progress?.percentage || 0 },
+                                currentPackage: {
+                                    name: course.name || '개인레슨 패키지',
+                                    remainingSessions: 10,
+                                    expirationDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+                                },
+                                personalLessonInfo: {
+                                    lessonType: '1:1',
+                                    completedSessions: 0,
+                                    remainingSessions: 10,
+                                    totalSessions: 10,
+                                    pricePerSession: course.price || 0,
+                                    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        const personalStudents = [...personalStudents1, ...personalStudents2];
+        console.log(`👥 총 개인레슨 학생 수: ${personalStudents.length}명`);
         const allStudents = [...groupStudents, ...personalStudents];
         res.json({
             success: true,
@@ -1596,40 +1730,23 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                 lastLessonDate: null,
                 centerMemo: member.studentInfo?.centerMemo || '',
                 centerMemos: member.studentInfo?.centerMemos || [],
-                currentLevel: (() => {
-                    let level = member.studentInfo?.level;
-                    if (!level && courseDetails.length > 0) {
-                        const enrolledCourse = courseDetails[0];
-                        if (enrolledCourse.courseLevel) {
-                            level = enrolledCourse.courseLevel;
-                        }
-                    }
-                    if (!level && courseDetails.length > 0) {
-                        const course = courseDetails[0];
-                        if (course.courseLevel) {
-                            level = course.courseLevel;
-                        }
-                    }
-                    console.log(`🔍 ${member.name} 레벨 확인:`, {
-                        studentInfoLevel: member.studentInfo?.level,
-                        enrolledCoursesCount: courseDetails.length,
-                        courseLevel: courseDetails.length > 0 ? courseDetails[0].courseLevel : 'none',
-                        courseName: courseDetails.length > 0 ? courseDetails[0].courseName : 'none',
-                        finalLevel: level
-                    });
-                    return level || '레벨 미설정';
-                })(),
+                currentLevel: courseDetails.length > 0
+                    ? courseDetails[0].courseLevel
+                    : member.studentInfo?.currentLevel
+                        || member.studentInfo?.swimmingLevel
+                        || member.level
+                        || '레벨 미설정',
                 studentInfo: {
-                    level: member.studentInfo?.level || '레벨 미설정',
+                    level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel || '레벨 미설정',
                     emergencyContact: member.studentInfo?.emergencyContact || '',
                     medicalConditions: member.studentInfo?.medicalConditions || '',
-                    goals: member.studentInfo?.goals || [],
+                    goals: [],
                     centerMemo: member.studentInfo?.centerMemo || '',
                     centerMemos: member.studentInfo?.centerMemos || []
                 },
                 isEnrolledInSpecificCourse: isEnrolledInSpecificCourse,
                 currentCourses: courseDetails.map(course => ({
-                    courseId: course.courseId,
+                    courseId: course.courseId.toString(),
                     courseName: course.courseName,
                     courseType: 'group',
                     instructorName: course.instructorName,
@@ -1764,10 +1881,9 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         });
         const course = await Course_1.Course.findOne({
             _id: courseId,
-            centerId: centerId,
-            isPersonalLesson: { $ne: true }
+            centerId: centerId
         });
-        console.log('📚 과정 조회 결과:', course ? '찾음' : '찾지 못함');
+        console.log('📚 과정 조회 결과:', course ? '찾음' : '찾지 못함', course ? `(${course.isPersonalLesson ? '개인레슨' : '단체반'})` : '');
         console.log('📚 과정 정보:', {
             courseId: course?._id,
             courseName: course?.name,
@@ -1789,7 +1905,10 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
                 console.log('⚠️ 잘못된 등록 데이터:', enrollment);
                 return false;
             }
-            return enrollment.student.toString() === memberId;
+            const enrollmentStudentId = enrollment.student.toString();
+            const memberIdStr = memberId.toString();
+            console.log('🔍 등록 비교:', { enrollmentStudentId, memberIdStr, match: enrollmentStudentId === memberIdStr });
+            return enrollmentStudentId === memberIdStr;
         });
         console.log('🔍 이미 배정되어 있는지 확인:', alreadyEnrolled);
         if (alreadyEnrolled) {
@@ -1818,29 +1937,21 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         console.log('✅ 업데이트할 enrolledStudents:', course.enrolledStudents);
         await course.save();
         console.log('💾 강습 과정 저장 완료');
+        const savedCourse = await Course_1.Course.findById(courseId);
+        console.log('🔍 저장 후 검증 - enrolledStudents:', savedCourse?.enrolledStudents);
+        console.log('🔍 저장 후 검증 - 찾고 있는 memberId:', memberId);
+        const isNowEnrolled = savedCourse?.enrolledStudents?.some((e) => e.student?.toString() === memberId.toString());
+        console.log('🔍 저장 후 검증 - 배정 확인:', isNowEnrolled);
         console.log('🔄 회원 레벨 업데이트 시작:', {
             memberId: memberId,
             currentLevel: member.studentInfo?.level,
             courseLevel: course.level
         });
-        let updatedLevel = course.level;
-        const levelMapping = {
-            'level1': '초급',
-            'level2': '중급',
-            'level3': '고급',
-            'beginner': '초급',
-            'intermediate': '중급',
-            'advanced': '고급',
-            'all': '전체'
-        };
-        if (levelMapping[course.level]) {
-            updatedLevel = levelMapping[course.level];
-        }
         if (!member.studentInfo) {
             member.studentInfo = {};
         }
         const oldLevel = member.studentInfo.level;
-        member.studentInfo.level = updatedLevel;
+        member.studentInfo.level = course.level;
         if (member.studentInfo.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
             const contact = member.studentInfo.emergencyContact;
             member.studentInfo.emergencyContact = `${contact.name || ''} (${contact.phone || ''})`;
@@ -1850,13 +1961,13 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
             delete memberToSave.studentInfo.emergencyContact;
         }
         await User_1.User.findByIdAndUpdate(memberId, {
-            'studentInfo.level': updatedLevel,
+            'studentInfo.level': course.level,
             'studentInfo.emergencyContact': member.studentInfo.emergencyContact || ''
         });
         console.log('✅ 회원 레벨 업데이트 완료:', {
             memberName: member.name,
             oldLevel: oldLevel,
-            newLevel: updatedLevel
+            newLevel: course.level
         });
         res.json({
             success: true,
@@ -1867,7 +1978,7 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
                 courseName: course.name,
                 levelUpdated: {
                     oldLevel: oldLevel,
-                    newLevel: updatedLevel
+                    newLevel: course.level
                 }
             }
         });
@@ -1877,6 +1988,65 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         console.error('❌ 오류 스택:', error.stack);
         console.error('❌ 오류 타입:', typeof error);
         console.error('❌ 오류 메시지:', error.message);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.',
+            error: error.message
+        });
+    }
+});
+router.delete('/members/:memberId/course/:courseId', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { memberId, courseId } = req.params;
+        console.log('🗑️ 회원 과정 배정 취소 시작:', { memberId, courseId });
+        const centerAdmin = await User_1.User.findById(req.user._id);
+        const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        if (!centerId) {
+            return res.status(400).json({
+                success: false,
+                message: '관리하는 센터가 없습니다.'
+            });
+        }
+        const member = await User_1.User.findById(memberId);
+        if (!member || member.userType !== 'student') {
+            return res.status(404).json({
+                success: false,
+                message: '학생 회원을 찾을 수 없습니다.'
+            });
+        }
+        const course = await Course_1.Course.findOne({
+            _id: courseId,
+            centerId: centerId,
+            isPersonalLesson: { $ne: true }
+        });
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: '과정을 찾을 수 없습니다.'
+            });
+        }
+        const enrolledStudents = course.enrolledStudents || [];
+        const updatedEnrolledStudents = enrolledStudents.filter((enrollment) => {
+            const enrollmentStudentId = enrollment.student?.toString();
+            const memberIdStr = memberId.toString();
+            console.log('🔍 배정 취소 비교:', { enrollmentStudentId, memberIdStr, willRemove: enrollmentStudentId === memberIdStr });
+            return enrollmentStudentId !== memberIdStr;
+        });
+        course.enrolledStudents = updatedEnrolledStudents;
+        await course.save();
+        console.log('💾 과정 배정 취소 완료');
+        res.json({
+            success: true,
+            message: '과정 배정이 취소되었습니다.',
+            data: {
+                memberId: memberId,
+                courseId: courseId,
+                courseName: course.name
+            }
+        });
+    }
+    catch (error) {
+        console.error('❌ 회원 과정 배정 취소 오류:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.',
@@ -2007,5 +2177,330 @@ router.put('/members/:memberId', auth_1.authMiddleware, requireCenterAdmin, asyn
         });
     }
 });
+router.get('/instructors/:instructorId/lessons', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { instructorId } = req.params;
+        const { date } = req.query;
+        console.log('📅 강사 수업 일정 조회:', { instructorId, date });
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                message: '날짜가 필요합니다.'
+            });
+        }
+        const requestedDate = new Date(date);
+        const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][requestedDate.getDay()];
+        console.log('📅 요청된 날짜:', {
+            date: requestedDate.toISOString().split('T')[0],
+            dayOfWeek
+        });
+        const centerId = await getCenterId(req);
+        console.log('🔍 강사 수업 일정 조회 - 필터 조건:', {
+            instructorId,
+            centerId,
+            isPersonalLesson: { $ne: true }
+        });
+        const courses = await Course_1.Course.find({
+            $or: [
+                { instructorId: instructorId },
+                { instructor: instructorId }
+            ],
+            centerId: centerId,
+            isPersonalLesson: { $ne: true }
+        })
+            .populate('enrolledStudents.student', 'name phone');
+        console.log('📚 조회된 단체반 과정 수:', courses.length);
+        courses.forEach((course, index) => {
+            console.log(`  ${index + 1}. ${course.name} - 학생 ${course.enrolledStudents?.length || 0}명, 스케줄:`, course.schedule?.map((s) => `${s.day} ${s.startTime}`));
+        });
+        const coursePersonalLessons = await Course_1.Course.find({
+            $or: [
+                { instructorId: instructorId },
+                { instructor: instructorId }
+            ],
+            centerId: centerId,
+            isPersonalLesson: true
+        })
+            .populate('enrolledStudents.student', 'name phone');
+        console.log('🏊 Course 모델의 개인레슨 수:', coursePersonalLessons.length);
+        coursePersonalLessons.forEach((course, index) => {
+            console.log(`  ${index + 1}. ${course.name} - 학생 ${course.enrolledStudents?.length || 0}명, 스케줄:`, course.schedule?.map((s) => `${s.day} ${s.startTime}`));
+        });
+        const personalLessons = await PersonalLesson_1.PersonalLesson.find({
+            instructorId: instructorId,
+            centerId: centerId
+        })
+            .populate('studentId', 'name phone');
+        console.log('🏊 PersonalLesson 모델의 개인레슨 수:', personalLessons.length);
+        personalLessons.forEach((lesson, index) => {
+            console.log(`  ${index + 1}. ${lesson.studentId?.name || '미배정'} - ${lesson.time}, 상태: ${lesson.status}`);
+        });
+        const transformLessons = (courses, coursePersonalLessons, personalLessons) => {
+            const lessons = [];
+            console.log('🔄 수업 일정 변환 시작...');
+            courses.forEach((course, courseIndex) => {
+                console.log(`  📚 단체반 ${courseIndex + 1}: ${course.name}`);
+                const scheduleInfo = course.schedule?.map((sch) => `${sch.day} ${sch.startTime}-${sch.endTime}`).join(', ') || '스케줄 없음';
+                if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+                    console.log(`    📅 스케줄: ${scheduleInfo}, 학생 ${course.enrolledStudents.length}명`);
+                    course.enrolledStudents.forEach((enrollment, studentIndex) => {
+                        const student = enrollment.student;
+                        console.log(`      👤 학생 ${studentIndex + 1}: ${student.name}`);
+                        lessons.push({
+                            _id: `${course._id}_${student._id}`,
+                            courseId: course._id,
+                            courseName: course.name,
+                            studentId: student._id,
+                            studentName: student.name,
+                            studentPhone: student.phone,
+                            instructorId: instructorId,
+                            scheduledDates: course.schedule?.map(s => {
+                                const dayMap = {
+                                    'monday': '월',
+                                    'tuesday': '화',
+                                    'wednesday': '수',
+                                    'thursday': '목',
+                                    'friday': '금',
+                                    'saturday': '토',
+                                    'sunday': '일'
+                                };
+                                return dayMap[s.day.toLowerCase()] || s.day;
+                            }).join(', '),
+                            startTime: course.schedule?.[0]?.startTime || '09:00',
+                            endTime: course.schedule?.[0]?.endTime || '10:00',
+                            status: 'scheduled',
+                            lessonType: 'group',
+                            level: course.level,
+                            poolType: course.schedule?.[0]?.poolType || 'mainPool',
+                            laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+                            packageInfo: null,
+                            progress: enrollment.progress
+                        });
+                    });
+                }
+                else {
+                    console.log(`    📅 스케줄: ${scheduleInfo}, 회원 미배정`);
+                    lessons.push({
+                        _id: `${course._id}_no_student`,
+                        courseId: course._id,
+                        courseName: course.name,
+                        studentId: null,
+                        studentName: '회원 미배정',
+                        studentPhone: null,
+                        instructorId: instructorId,
+                        scheduledDates: course.schedule?.map(s => {
+                            const dayMap = {
+                                'monday': '월',
+                                'tuesday': '화',
+                                'wednesday': '수',
+                                'thursday': '목',
+                                'friday': '금',
+                                'saturday': '토',
+                                'sunday': '일'
+                            };
+                            return dayMap[s.day.toLowerCase()] || s.day;
+                        }).join(', '),
+                        startTime: course.schedule?.[0]?.startTime || '09:00',
+                        endTime: course.schedule?.[0]?.endTime || '10:00',
+                        status: 'scheduled',
+                        lessonType: 'group',
+                        level: course.level,
+                        poolType: course.schedule?.[0]?.poolType || 'mainPool',
+                        laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+                        packageInfo: null,
+                        progress: null
+                    });
+                }
+            });
+            console.log(`✅ 단체반 변환 완료: ${lessons.length}개 수업 생성`);
+            coursePersonalLessons.forEach((course, courseIndex) => {
+                console.log(`  🏊 개인레슨(Course) ${courseIndex + 1}: ${course.name}`);
+                const scheduleInfo = course.schedule?.map((sch) => `${sch.day} ${sch.startTime}-${sch.endTime}`).join(', ') || '스케줄 없음';
+                if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+                    console.log(`    📅 스케줄: ${scheduleInfo}, 학생 ${course.enrolledStudents.length}명`);
+                    course.enrolledStudents.forEach((enrollment, studentIndex) => {
+                        const student = enrollment.student;
+                        console.log(`      👤 학생 ${studentIndex + 1}: ${student.name}`);
+                        lessons.push({
+                            _id: `${course._id}_${student._id}`,
+                            courseId: course._id,
+                            courseName: course.name,
+                            studentId: student._id,
+                            studentName: student.name,
+                            studentPhone: student.phone,
+                            instructorId: instructorId,
+                            scheduledDates: course.schedule?.map(s => {
+                                const dayMap = {
+                                    'monday': '월',
+                                    'tuesday': '화',
+                                    'wednesday': '수',
+                                    'thursday': '목',
+                                    'friday': '금',
+                                    'saturday': '토',
+                                    'sunday': '일'
+                                };
+                                return dayMap[s.day.toLowerCase()] || s.day;
+                            }).join(', '),
+                            startTime: course.schedule?.[0]?.startTime || '09:00',
+                            endTime: course.schedule?.[0]?.endTime || '10:00',
+                            status: 'scheduled',
+                            lessonType: 'private',
+                            level: course.level,
+                            poolType: course.schedule?.[0]?.poolType || 'mainPool',
+                            laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+                            packageInfo: null,
+                            progress: enrollment.progress
+                        });
+                    });
+                }
+                else {
+                    console.log(`    📅 스케줄: ${scheduleInfo}, 회원 미배정`);
+                    lessons.push({
+                        _id: `${course._id}_no_student`,
+                        courseId: course._id,
+                        courseName: course.name,
+                        studentId: null,
+                        studentName: '회원 미배정',
+                        studentPhone: null,
+                        instructorId: instructorId,
+                        scheduledDates: course.schedule?.map(s => {
+                            const dayMap = {
+                                'monday': '월',
+                                'tuesday': '화',
+                                'wednesday': '수',
+                                'thursday': '목',
+                                'friday': '금',
+                                'saturday': '토',
+                                'sunday': '일'
+                            };
+                            return dayMap[s.day.toLowerCase()] || s.day;
+                        }).join(', '),
+                        startTime: course.schedule?.[0]?.startTime || '09:00',
+                        endTime: course.schedule?.[0]?.endTime || '10:00',
+                        status: 'scheduled',
+                        lessonType: 'private',
+                        level: course.level,
+                        poolType: course.schedule?.[0]?.poolType || 'mainPool',
+                        laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+                        packageInfo: null,
+                        progress: null
+                    });
+                }
+            });
+            console.log(`✅ 개인레슨(Course) 변환 완료: 총 ${lessons.length}개 수업 생성`);
+            personalLessons.forEach((lesson) => {
+                const [hour, minute] = lesson.time.split(':').map(Number);
+                const startTime = new Date(lesson.date);
+                startTime.setHours(hour, minute, 0, 0);
+                const endTime = new Date(startTime);
+                endTime.setMinutes(endTime.getMinutes() + lesson.duration);
+                lessons.push({
+                    _id: lesson._id,
+                    courseId: lesson._id,
+                    studentId: lesson.studentId._id,
+                    studentName: lesson.studentId.name,
+                    studentPhone: lesson.studentId.phone,
+                    instructorId: instructorId,
+                    scheduledDate: new Date(lesson.date).toISOString().split('T')[0],
+                    startTime: lesson.time,
+                    endTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
+                    status: lesson.status === 'approved' ? 'scheduled' : 'pending',
+                    lessonType: 'private',
+                    level: lesson.skillLevel,
+                    poolType: 'mainPool',
+                    laneNumber: lesson.assignedLane || 1,
+                    packageInfo: null,
+                    progress: null
+                });
+            });
+            lessons.sort((a, b) => {
+                const timeA = a.startTime.split(':').map(Number);
+                const timeB = b.startTime.split(':').map(Number);
+                if (timeA[0] !== timeB[0])
+                    return timeA[0] - timeB[0];
+                return timeA[1] - timeB[1];
+            });
+            return lessons;
+        };
+        const transformedLessons = transformLessons(courses, coursePersonalLessons, personalLessons);
+        console.log('✅ 변환된 수업 일정 수:', transformedLessons.length);
+        res.json({
+            success: true,
+            data: transformedLessons
+        });
+    }
+    catch (error) {
+        console.error('❌ 강사 수업 일정 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+router.put('/lessons/:lessonId/status', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const { status } = req.body;
+        console.log('📝 수업 상태 업데이트:', { lessonId, status });
+        const [courseId, studentId] = lessonId.split('_');
+        console.log('📋 파싱된 lessonId:', { courseId, studentId });
+        if (status === 'cancelled') {
+            const course = await Course_1.Course.findById(courseId);
+            if (!course) {
+                return res.status(404).json({
+                    success: false,
+                    message: '강습 과정을 찾을 수 없습니다.'
+                });
+            }
+            console.log('🗑️ 취소 전 enrolledStudents:', course.enrolledStudents.length);
+            course.enrolledStudents = course.enrolledStudents.filter((enrollment) => enrollment.student?.toString() !== studentId);
+            course.currentStudents = course.enrolledStudents.filter((e) => e.status === 'active').length;
+            await course.save();
+            console.log('✅ 취소 후 enrolledStudents:', course.enrolledStudents.length);
+            return res.json({
+                success: true,
+                message: '회원이 강습 과정에서 제외되었습니다.',
+                data: {
+                    courseId,
+                    studentId,
+                    remainingStudents: course.enrolledStudents.length
+                }
+            });
+        }
+        res.json({
+            success: true,
+            message: '수업 상태가 업데이트되었습니다.'
+        });
+    }
+    catch (error) {
+        console.error('❌ 수업 상태 업데이트 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+router.put('/lessons/:lessonId/progress', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { lessonId } = req.params;
+        const progressData = req.body;
+        console.log('📝 수업 진행 기록 저장:', { lessonId, progressData });
+        res.json({
+            success: true,
+            message: '수업 진행 기록이 저장되었습니다.'
+        });
+    }
+    catch (error) {
+        console.error('❌ 수업 진행 기록 저장 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+async function getCenterId(req) {
+    const centerAdmin = await User_1.User.findById(req.user?._id);
+    return centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0] || null;
+}
 exports.default = router;
 //# sourceMappingURL=center-admin.js.map

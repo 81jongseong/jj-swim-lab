@@ -395,7 +395,7 @@ function CenterInstructorsManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <InstructorStatsCards instructors={instructors} />
+      <InstructorStatsCards instructors={instructors} instructorStats={instructorStats} />
 
       {/* 강사 종류 필터 */}
       <div className="mb-6 flex gap-3">

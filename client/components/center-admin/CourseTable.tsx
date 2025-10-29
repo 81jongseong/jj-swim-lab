@@ -28,6 +28,7 @@ interface Course {
   createdAt: Date;
   tags?: string[];
   isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
+  courseType?: 'group' | 'personal' | 'freeSwim'; // ⭐ 과정 타입
 }
 
 interface CourseTableProps {
@@ -190,13 +191,16 @@ export default function CourseTable({ courses, onEdit, onDelete, onAssignMembers
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
-                      onClick={() => onAssignMembers(course)}
-                      className="text-green-600 hover:text-green-900"
-                      title="회원 배정"
-                    >
-                      <Users className="w-4 h-4" />
-                    </button>
+                    {/* 자유수영은 학생배정 버튼 숨김 */}
+                    {course.courseType !== 'freeSwim' && (
+                      <button 
+                        onClick={() => onAssignMembers(course)}
+                        className="text-green-600 hover:text-green-900"
+                        title="회원 배정"
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                    )}
                     <button 
                       onClick={() => onDelete(course._id)}
                       className="text-red-600 hover:text-red-900"

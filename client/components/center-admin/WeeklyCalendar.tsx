@@ -74,7 +74,7 @@ interface Course {
     maxLanes?: number;
     laneNotes?: string;
   };
-  courseType?: 'group' | 'personal';
+  courseType?: 'group' | 'personal' | 'freeSwim';
   isPersonalLesson?: boolean;
 }
 
@@ -84,6 +84,15 @@ interface WeeklyCalendarProps {
   onCourseClick?: (course: Course) => void;
   onEmptySlotClick?: (day: string, time: string) => void;
   personalLessonAvailability?: { // ⭐ 개인레슨 운영시간 (센터 설정에서)
+    dayTimeSlots?: Array<{
+      day: string; // 'monday', 'tuesday', etc.
+      timeSlots: Array<{
+        startTime: string;
+        endTime: string;
+      }>;
+    }>;
+  };
+  freeSwimAvailability?: { // ⭐ 자유수영 운영시간 (센터 설정에서)
     dayTimeSlots?: Array<{
       day: string; // 'monday', 'tuesday', etc.
       timeSlots: Array<{
@@ -156,6 +165,12 @@ const getLevelColor = (level: string): string => {
     'beginner': 0,       // 파란색
     'intermediate': 2,    // 보라색
     'advanced': 3,       // 핑크색
+    // 한글 레벨 추가
+    '초급': 0,           // 파란색
+    '중급': 1,           // 초록색
+    '고급': 2,           // 보라색
+    '전문가': 3,          // 핑크색
+    '마스터': 4,          // 주황색
   };
   
   // 명시적으로 정의된 급수가 있으면 해당 색상 사용
@@ -185,7 +200,8 @@ export default function WeeklyCalendar({
   schedules = [],
   onCourseClick,
   onEmptySlotClick,
-  personalLessonAvailability
+  personalLessonAvailability,
+  freeSwimAvailability
 }: WeeklyCalendarProps) {
 
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -200,6 +216,38 @@ export default function WeeklyCalendar({
     
     // 요일별로 확인
     for (const daySlot of personalLessonAvailability.dayTimeSlots) {
+      if (daySlot.day === dayEnglish || daySlot.day === day) {
+        // 해당 요일의 시간대 중에 현재 시간이 포함되는지 확인
+        for (const timeRange of daySlot.timeSlots) {
+          const slotTime = timeSlot.split(':').map(Number);
+          const startTime = timeRange.startTime.split(':').map(Number);
+          const endTime = timeRange.endTime.split(':').map(Number);
+          
+          const slotMinutes = slotTime[0] * 60 + slotTime[1];
+          const startMinutes = startTime[0] * 60 + startTime[1];
+          const endMinutes = endTime[0] * 60 + endTime[1];
+          
+          // 시간대에 포함되면 true
+          if (slotMinutes >= startMinutes && slotMinutes < endMinutes) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // ⭐ 자유수영 운영시간에 해당하는 슬롯인지 확인
+  const isFreeSwimSlotAvailable = (day: string, timeSlot: string): boolean => {
+    if (!freeSwimAvailability?.dayTimeSlots || freeSwimAvailability.dayTimeSlots.length === 0) {
+      return false;
+    }
+    
+    const dayEnglish = DAY_MAP[day]?.toLowerCase();
+    
+    // 요일별로 확인
+    for (const daySlot of freeSwimAvailability.dayTimeSlots) {
       if (daySlot.day === dayEnglish || daySlot.day === day) {
         // 해당 요일의 시간대 중에 현재 시간이 포함되는지 확인
         for (const timeRange of daySlot.timeSlots) {
@@ -406,32 +454,47 @@ export default function WeeklyCalendar({
                 const coursesInSlot = getCoursesForSlot(day, timeSlot);
                 const schedulesInSlot = getSchedulesForSlot(day, timeSlot);
                 const isEmpty = coursesInSlot.length === 0 && schedulesInSlot.length === 0;
+                const hasFreeSwim = isFreeSwimSlotAvailable(day, timeSlot);
+                const hasPersonalLesson = isPersonalLessonSlotAvailable(day, timeSlot);
 
                 return (
                   <div
                     key={`${day}-${timeSlot}`}
-                    className={`p-2 border-r last:border-r-0 min-h-[80px] cursor-pointer transition-colors ${
+                    className={`p-2 border-r last:border-r-0 min-h-[80px] cursor-pointer transition-colors relative ${
                       isEmpty 
                         ? 'hover:bg-blue-50' 
                         : 'hover:bg-gray-100'
+                    } ${
+                      hasFreeSwim && !isEmpty ? 'bg-blue-50/30' : ''
+                    } ${
+                      hasPersonalLesson && !isEmpty && !hasFreeSwim ? 'bg-amber-50/30' : ''
                     }`}
+                    style={{
+                      borderRight: hasFreeSwim && !isEmpty ? '2px dashed #60a5fa' : undefined,
+                      borderTop: hasFreeSwim && !isEmpty ? '2px dashed #60a5fa' : undefined,
+                      borderLeft: hasPersonalLesson && !isEmpty && !hasFreeSwim ? '2px dashed #f59e0b' : undefined,
+                      borderBottom: hasPersonalLesson && !isEmpty && !hasFreeSwim ? '2px dashed #f59e0b' : undefined,
+                    }}
                     onClick={() => handleSlotClick(day, timeSlot, coursesInSlot)}
                   >
                     {isEmpty ? (
-                      // 빈 슬롯 - 개인레슨 운영시간인 경우 회색으로 표시
+                      // 빈 슬롯 - 개인레슨/자유수영 운영시간 표시
                       <div className={`h-full flex flex-col items-center justify-center transition-opacity ${
-                        isPersonalLessonSlotAvailable(day, timeSlot) 
-                          ? 'bg-gray-100 border-2 border-dashed border-gray-400 rounded' 
+                        isPersonalLessonSlotAvailable(day, timeSlot) || isFreeSwimSlotAvailable(day, timeSlot)
+                          ? 'border-2 border-dashed rounded' 
                           : 'opacity-0 hover:opacity-100'
+                      } ${
+                        isFreeSwimSlotAvailable(day, timeSlot)
+                          ? 'bg-blue-50 border-blue-400'
+                          : isPersonalLessonSlotAvailable(day, timeSlot)
+                          ? 'bg-amber-50 border-amber-400'
+                          : ''
                       }`}>
-                        {isPersonalLessonSlotAvailable(day, timeSlot) ? (
-                          <div className="text-xs text-gray-600 font-medium">⏰ 개인레슨 시간</div>
-                        ) : (
-                          <>
-                            <div className="text-xs text-green-600 font-medium mb-1">💧 자유수영</div>
-                            <div className="text-xs text-gray-400">+ 개인레슨</div>
-                          </>
-                        )}
+                        {isFreeSwimSlotAvailable(day, timeSlot) ? (
+                          <div className="text-xs text-blue-600 font-medium">🏊 자유수영 시간</div>
+                        ) : isPersonalLessonSlotAvailable(day, timeSlot) ? (
+                          <div className="text-xs text-amber-600 font-medium">⏰ 개인레슨 시간</div>
+                        ) : null}
                       </div>
                     ) : (
                       // 강습 및 스케줄 표시 (여러 개 가능)
@@ -478,10 +541,14 @@ export default function WeeklyCalendar({
                           return (
                           <div
                             key={course._id}
-                            className={`p-2 rounded border-l-4 ${
+                            className={`p-2 rounded border-l-4 relative ${
                               isUnassignedPersonalLesson 
                                 ? 'bg-gray-100 border-gray-400 opacity-50' // 회색으로 표시
-                                : getLevelColor(course.level)
+                                : course.courseType === 'freeSwim'
+                                  ? 'bg-blue-100 border-blue-400 text-blue-800' // 자유수영은 파란색 (테두리 파란색)
+                                  : course.isPersonalLesson
+                                    ? 'bg-amber-100 border-amber-400 text-amber-800' // 개인레슨은 노란색 (테두리 노란색)
+                                    : getLevelColor(course.level)
                             } cursor-pointer hover:shadow-md transition-shadow ${
                               coursesInSlot.length > 1 ? 'min-w-0 lg:min-w-[140px]' : ''
                             }`}
@@ -490,7 +557,22 @@ export default function WeeklyCalendar({
                               onCourseClick?.(course);
                             }}
                           >
-                            <div className={`text-xs font-semibold mb-1 truncate ${isUnassignedPersonalLesson ? 'text-gray-500' : ''}`} title={course.name}>
+                            {/* 가능시간 배지 표시 */}
+                            {hasFreeSwim && (
+                              <div className="absolute top-1 right-1 flex items-center gap-1">
+                                <div className="px-1.5 py-0.5 bg-blue-500/80 text-white text-[10px] rounded-full font-medium whitespace-nowrap">
+                                  🏊 자유수영
+                                </div>
+                              </div>
+                            )}
+                            {hasPersonalLesson && !hasFreeSwim && (
+                              <div className="absolute top-1 right-1 flex items-center gap-1">
+                                <div className="px-1.5 py-0.5 bg-amber-500/80 text-white text-[10px] rounded-full font-medium whitespace-nowrap">
+                                  ⏰ 개인레슨
+                                </div>
+                              </div>
+                            )}
+                            <div className={`text-xs font-semibold mb-1 truncate ${isUnassignedPersonalLesson ? 'text-gray-500' : ''} ${hasFreeSwim || hasPersonalLesson ? 'pr-16' : ''}`} title={course.name}>
                               {course.name}
                               {isUnassignedPersonalLesson && ' (미배정)'}
                             </div>
@@ -502,9 +584,15 @@ export default function WeeklyCalendar({
                               <Users className="w-3 h-3 mr-1" />
                               <span>{course.currentStudents}/{course.maxStudents}명</span>
                             </div>
-                            {/* 개인레슨 표시 */}
+                            {/* 자유수영/개인레슨 표시 */}
+                            {course.courseType === 'freeSwim' && (
+                              <div className="flex items-center text-xs text-blue-600 mt-1">
+                                <span className="mr-1">🏊</span>
+                                <span>자유수영</span>
+                              </div>
+                            )}
                             {course.isPersonalLesson && (
-                              <div className="flex items-center text-xs text-purple-600 mt-1">
+                              <div className="flex items-center text-xs text-amber-600 mt-1">
                                 <span className="mr-1">👤</span>
                                 <span>개인레슨</span>
                               </div>

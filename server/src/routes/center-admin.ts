@@ -50,16 +50,17 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
 
     // 센터 통계 조회
     const totalMembers = await User.countDocuments({
+      centerId: centerId,
       $or: [
-        { 'studentInfo.centerId': centerId },
-        { 'instructorInfo.assignedCenters': centerId }
+        { userType: 'student' },
+        { userType: 'instructor' }
       ],
       isActive: true
     });
 
     const activeInstructors = await User.countDocuments({
       userType: 'instructor',
-      'instructorInfo.assignedCenters': centerId,
+      centerId: centerId,
       isActive: true
     });
 
@@ -150,7 +151,7 @@ router.get('/center-info', authMiddleware, requireCenterAdmin, async (req: AuthR
     }
 
     // 센터 정보 조회
-    const center = await Center.findById(centerId);
+    const center = await Center.findById(centerId).lean();
     
     if (!center) {
       return res.status(404).json({
@@ -161,7 +162,8 @@ router.get('/center-info', authMiddleware, requireCenterAdmin, async (req: AuthR
 
     console.log('🏊 센터 정보 조회:', {
       centerName: center.name,
-      poolConfiguration: center.poolConfiguration
+      poolConfiguration: center.poolConfiguration,
+      availabilitySettings: center.availabilitySettings ? JSON.stringify(center.availabilitySettings, null, 2) : '없음'
     });
 
     return res.json({
@@ -199,10 +201,7 @@ router.get('/users', authMiddleware, requireCenterAdmin, async (req: AuthRequest
 
     // 쿼리 조건 구성
     const query: any = {
-      $or: [
-        { 'studentInfo.centerId': centerId },
-        { 'instructorInfo.assignedCenters': centerId }
-      ],
+      centerId: centerId,
       isActive: true
     };
 
@@ -253,22 +252,19 @@ router.get('/users', authMiddleware, requireCenterAdmin, async (req: AuthRequest
     console.log('🔧 currentLevel 필드 추가 시작...');
     const usersWithLevel = users.map((user, index) => {
       const userObj = user.toObject();
-      console.log(`🔧 회원 ${index + 1} (${userObj.name}) 처리 중:`, {
+        console.log(`🔧 회원 ${index + 1} (${userObj.name}) 처리 중:`, {
         userType: userObj.userType,
         studentInfo: userObj.studentInfo,
-        hasStudentInfo: !!userObj.studentInfo,
-        studentInfoLevel: userObj.studentInfo?.level
+        hasStudentInfo: !!userObj.studentInfo
       });
       
-      if (userObj.userType === 'student' && userObj.studentInfo?.level) {
-        userObj.currentLevel = userObj.studentInfo.level;
-        console.log(`✅ 회원 ${index + 1} (${userObj.name}) currentLevel 추가됨:`, userObj.currentLevel);
-      } else {
-        console.log(`❌ 회원 ${index + 1} (${userObj.name}) currentLevel 추가 실패:`, {
-          isStudent: userObj.userType === 'student',
-          hasStudentInfo: !!userObj.studentInfo,
-          hasLevel: !!userObj.studentInfo?.level
-        });
+      if (userObj.userType === 'student') {
+        // DB에 한글 레벨로 저장되어 있으므로 변환 없이 직접 사용
+        userObj.currentLevel = userObj.studentInfo?.currentLevel 
+          || userObj.studentInfo?.swimmingLevel 
+          || userObj.level
+          || '레벨 미설정';
+        console.log(`✅ 회원 ${index + 1} (${userObj.name}) currentLevel 설정됨:`, (userObj as any).currentLevel);
       }
       return userObj;
     });
@@ -328,8 +324,12 @@ router.get('/instructors/stats', authMiddleware, requireCenterAdmin, async (req:
     const instructorStats = await Promise.all(instructors.map(async (instructor) => {
       try {
         // 단체 수업 학생 수 (Course의 enrolledStudents 필드 사용)
+        // instructorId 또는 instructor 필드로 조회
         const groupCoursesWithStudents = await Course.find({
-          instructorId: instructor._id,
+          $or: [
+            { instructorId: instructor._id },
+            { instructor: instructor._id }
+          ],
           centerId: centerId,
           isPersonalLesson: { $ne: true },
           'enrolledStudents.0': { '$exists': true } // enrolledStudents 배열이 비어있지 않은 경우만 카운트
@@ -337,31 +337,74 @@ router.get('/instructors/stats', authMiddleware, requireCenterAdmin, async (req:
 
         const groupStudentsCount = groupCoursesWithStudents.reduce((acc, course) => acc + course.enrolledStudents.length, 0);
 
-        // 개인레슨 학생 수
-        const personalStudentsCount = await mongoose.connection.db.collection('personallessons').countDocuments({
+        // 개인레슨 학생 수 - PersonalLesson 모델에서
+        const personalLessons = await PersonalLesson.find({
           instructorId: instructor._id,
           centerId: centerId
         });
+        
+        // 중복 제거된 학생 ID 집합
+        const uniqueStudentIds = new Set();
+        personalLessons.forEach(lesson => {
+          if (lesson.studentId) {
+            uniqueStudentIds.add(lesson.studentId.toString());
+          }
+        });
+        
+        // 개인레슨 학생 수 - Course 모델에서 (isPersonalLesson=true)
+        // instructorId 또는 instructor 필드로 조회
+        const personalLessonCourses = await Course.find({
+          $or: [
+            { instructorId: instructor._id },
+            { instructor: instructor._id }
+          ],
+          centerId: centerId,
+          isPersonalLesson: true
+        }).select('enrolledStudents');
+        
+        personalLessonCourses.forEach(course => {
+          course.enrolledStudents.forEach(enrollment => {
+            if (enrollment.student) {
+              uniqueStudentIds.add(enrollment.student.toString());
+            }
+          });
+        });
+        
+        const personalStudentsCount = uniqueStudentIds.size;
 
         // 단체반 수업 수 (강사가 담당하는 단체반 개수)
+        // instructorId 또는 instructor 필드로 조회
         const groupCoursesCount = await Course.countDocuments({
-          instructorId: instructor._id,
+          $or: [
+            { instructorId: instructor._id },
+            { instructor: instructor._id }
+          ],
           centerId: centerId,
           isPersonalLesson: { $ne: true }
         });
 
-        // 개인레슨 수업 수 (강사가 담당하는 개인레슨 개수)
-        const personalLessonsCount = await mongoose.connection.db.collection('personallessons').countDocuments({
-          instructorId: instructor._id,
-          centerId: centerId
+        // Course 모델에서 isPersonalLesson=true인 개인레슨 수 추가 조회
+        // instructorId 또는 instructor 필드로 조회
+        const coursePersonalLessonsCount = await Course.countDocuments({
+          $or: [
+            { instructorId: instructor._id },
+            { instructor: instructor._id }
+          ],
+          centerId: centerId,
+          isPersonalLesson: true
         });
+        
+        console.log(`📊 ${instructor.name} 개인레슨 통계:`, {
+          personalStudentsFromPersonalLessonModel: personalLessons.length,
+          personalStudentsFromCourseModel: personalLessonCourses.length,
+          uniqueStudentsCount: personalStudentsCount
+        });
+        
+        // 개인레슨 수업 수 = PersonalLesson + Course (isPersonalLesson=true)
+        const personalLessonsCount = personalLessons.length + coursePersonalLessonsCount;
 
         // 완료된 개인레슨 수
-        const completedPersonalLessonsCount = await mongoose.connection.db.collection('personallessons').countDocuments({
-          instructorId: instructor._id,
-          centerId: centerId,
-          status: 'completed'
-        });
+        const completedPersonalLessonsCount = personalLessons.filter(lesson => lesson.status === 'completed').length;
 
         return {
           instructorId: instructor._id,
@@ -452,7 +495,7 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
     }
 
     const instructors = await User.find(query)
-      .select('-password')
+      .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
@@ -1595,14 +1638,25 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
       });
     }
 
-    // 단체반 학생들 조회
+    // 단체반 학생들 조회 - enrolledStudents populate
+    // instructorId 또는 instructor 필드로 조회
     const groupCourses = await Course.find({
-      instructorId: new mongoose.Types.ObjectId(instructorId),
+      $or: [
+        { instructorId: new mongoose.Types.ObjectId(instructorId) },
+        { instructor: new mongoose.Types.ObjectId(instructorId) }
+      ],
       centerId: new mongoose.Types.ObjectId(centerId),
       isPersonalLesson: { $ne: true }
-    });
+    })
+    .populate('enrolledStudents.student', 'name phone email studentInfo');
     
     console.log(`📚 조회된 단체반 수업: ${groupCourses.length}개`);
+    console.log(`📚 전체 단체반 조회 결과:`, JSON.stringify(groupCourses.map(c => ({
+      name: c.name,
+      _id: c._id,
+      students: c.students,
+      enrolledStudents: c.enrolledStudents
+    })), null, 2));
 
     const groupStudents = [];
     for (const course of groupCourses) {
@@ -1620,12 +1674,18 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
         ));
       }
       
-      // 2. enrolledStudents 필드가 있는 경우 (스키마 정의)
+      // 2. enrolledStudents 필드가 있는 경우 (populate 후에는 student 객체가 있음)
       if (course.enrolledStudents && course.enrolledStudents.length > 0) {
-        console.log(`🔍 enrolledStudents 필드에서 조회할 학생 ID들:`, course.enrolledStudents);
-        studentIds.push(...course.enrolledStudents.map(enrollment => 
-          typeof enrollment.student === 'string' ? new mongoose.Types.ObjectId(enrollment.student) : enrollment.student
-        ));
+        console.log(`🔍 enrolledStudents 필드에서 조회할 학생들:`, course.enrolledStudents);
+        // populate 후에는 enrollment.student가 User 객체 또는 ID
+        for (const enrollment of course.enrolledStudents) {
+          if (enrollment.student) {
+            const studentId = typeof enrollment.student === 'string' 
+              ? enrollment.student 
+              : enrollment.student._id?.toString() || enrollment.student.toString();
+            studentIds.push(new mongoose.Types.ObjectId(studentId));
+          }
+        }
       }
       
       if (studentIds.length > 0) {
@@ -1645,6 +1705,7 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
             enrollmentDate: student.createdAt || new Date(),
             phone: student.phone || '010-0000-0000',
             email: student.email || `${student.name}@example.com`,
+            totalLessonsCompleted: 0,
             progress: Math.floor(Math.random() * 100),
             currentPackage: {
               name: course.name,
@@ -1658,19 +1719,36 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
       }
     }
 
-    // 개인레슨 학생들 조회
-    const personalLessons = await mongoose.connection.db.collection('personallessons').find({
+    // 개인레슨 학생들 조회 - PersonalLesson 모델
+    console.log('🔍 PersonalLesson 모델에서 개인레슨 조회 시작...');
+    const personalLessonsRaw = await mongoose.connection.db.collection('personallessons').find({
       instructorId: new mongoose.Types.ObjectId(instructorId),
       centerId: new mongoose.Types.ObjectId(centerId)
     }).toArray();
+    
+    console.log(`🏊 PersonalLesson 모델에서 조회된 개인레슨: ${personalLessonsRaw.length}개`);
+
+    // Course 모델에서 isPersonalLesson=true인 개인레슨도 조회
+    // instructorId 또는 instructor 필드로 조회
+    const personalLessonCourses = await Course.find({
+      $or: [
+        { instructorId: new mongoose.Types.ObjectId(instructorId) },
+        { instructor: new mongoose.Types.ObjectId(instructorId) }
+      ],
+      centerId: new mongoose.Types.ObjectId(centerId),
+      isPersonalLesson: true
+    })
+    .populate('enrolledStudents.student', 'name phone email studentInfo');
+
+    console.log(`🏊 Course 모델에서 조회된 개인레슨: ${personalLessonCourses.length}개`);
 
     // 개인레슨 학생들의 실제 사용자 정보 조회
-    const studentIds = personalLessons.map(lesson => lesson.studentId).filter(Boolean);
+    const studentIds = personalLessonsRaw.map(lesson => lesson.studentId).filter(Boolean);
     const students = await User.find({ _id: { $in: studentIds } });
 
-    const personalStudents = personalLessons.map(lesson => {
+    // PersonalLesson 모델에서 개인레슨 학생들 추가
+    const personalStudents1 = personalLessonsRaw.map((lesson: any) => {
       const student = students.find(s => s._id.toString() === lesson.studentId?.toString());
-      // 실제 학생 데이터가 있는 경우만 처리
       if (student) {
         return {
           _id: lesson._id,
@@ -1679,10 +1757,11 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
           courseName: '개인레슨',
           isPersonalLesson: true,
           status: lesson.status || 'active',
-          enrollmentDate: lesson.schedule?.date || lesson.createdAt || new Date(),
+          enrollmentDate: lesson.date || lesson.createdAt || new Date(),
           phone: student.phone || '',
           email: student.email || '',
-          progress: lesson.progress || 0,
+          totalLessonsCompleted: lesson.completedSessions || 0,
+          progress: {percentage: lesson.progress || 0} as any,
           currentPackage: {
             name: '개인레슨 패키지',
             remainingSessions: lesson.remainingSessions || 0,
@@ -1699,7 +1778,54 @@ router.get('/instructors/:instructorId/students-list', authMiddleware, requireCe
         };
       }
       return null;
-    }).filter(Boolean); // null 값 제거
+    }).filter(Boolean);
+
+    // Course 모델에서 개인레슨 학생들 추가
+    const personalStudents2 = [];
+    for (const course of personalLessonCourses) {
+      if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+        for (const enrollment of course.enrolledStudents) {
+          if (enrollment.student) {
+            const studentId = typeof enrollment.student === 'string' 
+              ? enrollment.student 
+              : enrollment.student._id?.toString() || enrollment.student.toString();
+            
+            const student = await User.findById(studentId);
+            if (student) {
+              personalStudents2.push({
+                _id: student._id,
+                name: student.name,
+                courseId: course._id,
+                courseName: course.name || '개인레슨',
+                isPersonalLesson: true,
+                status: 'active',
+                enrollmentDate: student.createdAt || new Date(),
+                phone: student.phone || '',
+                email: student.email || '',
+                totalLessonsCompleted: 0,
+                progress: {percentage: enrollment.progress?.percentage || 0} as any,
+                currentPackage: {
+                  name: course.name || '개인레슨 패키지',
+                  remainingSessions: 10,
+                  expirationDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+                },
+                personalLessonInfo: {
+                  lessonType: '1:1',
+                  completedSessions: 0,
+                  remainingSessions: 10,
+                  totalSessions: 10,
+                  pricePerSession: course.price || 0,
+                  endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const personalStudents = [...personalStudents1, ...personalStudents2];
+    console.log(`👥 총 개인레슨 학생 수: ${personalStudents.length}명`);
 
     const allStudents = [...groupStudents, ...personalStudents];
 
@@ -1991,7 +2117,7 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
         return {
           courseId: course._id,
           courseName: course.name,
-          courseLevel: course.level, // 과정 레벨 추가
+          courseLevel: course.level, // 레벨 그대로 사용 (영어 또는 한글)
           instructorName: instructor?.name || '미배정',
           enrollmentDate: new Date(), // 실제로는 enrolledStudents에서 가져와야 함
           status: 'active'
@@ -2020,43 +2146,18 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
         centerMemo: member.studentInfo?.centerMemo || '',
         centerMemos: member.studentInfo?.centerMemos || [],
         
-        // 회원 레벨 정보 추가 - 수강 중인 과정이 있으면 그 레벨 사용
-        currentLevel: (() => {
-          // 1. 먼저 studentInfo.level 확인
-          let level = member.studentInfo?.level;
-          
-          // 2. studentInfo.level이 없으면 수강 중인 과정의 레벨 사용
-          if (!level && courseDetails.length > 0) {
-            // 수강 중인 과정에서 레벨 정보 가져오기
-            const enrolledCourse = courseDetails[0]; // 첫 번째 수강 과정
-            if (enrolledCourse.courseLevel) {
-              level = enrolledCourse.courseLevel;
-            }
-          }
-          
-          // 3. courseDetails에서도 레벨 확인 (백업)
-          if (!level && courseDetails.length > 0) {
-            const course = courseDetails[0];
-            if (course.courseLevel) {
-              level = course.courseLevel;
-            }
-          }
-          
-          console.log(`🔍 ${member.name} 레벨 확인:`, {
-            studentInfoLevel: member.studentInfo?.level,
-            enrolledCoursesCount: courseDetails.length,
-            courseLevel: courseDetails.length > 0 ? courseDetails[0].courseLevel : 'none',
-            courseName: courseDetails.length > 0 ? courseDetails[0].courseName : 'none',
-            finalLevel: level
-          });
-          
-          return level || '레벨 미설정';
-        })(),
+        // 회원 레벨 정보 - DB에 저장된 값 그대로 사용
+        currentLevel: courseDetails.length > 0 
+          ? courseDetails[0].courseLevel 
+          : member.studentInfo?.currentLevel 
+          || member.studentInfo?.swimmingLevel 
+          || member.level
+          || '레벨 미설정',
         studentInfo: {
-          level: member.studentInfo?.level || '레벨 미설정',
+          level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel || '레벨 미설정',
           emergencyContact: member.studentInfo?.emergencyContact || '',
           medicalConditions: member.studentInfo?.medicalConditions || '',
-          goals: member.studentInfo?.goals || [],
+          goals: [],
           centerMemo: member.studentInfo?.centerMemo || '',
           centerMemos: member.studentInfo?.centerMemos || []
         },
@@ -2230,13 +2331,13 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
       isPersonalLesson: { $ne: true }
     });
 
+    // 과정 조회 - 개인레슨 여부 상관없이 조회
     const course = await Course.findOne({
       _id: courseId,
-      centerId: centerId,
-      isPersonalLesson: { $ne: true }
+      centerId: centerId
     });
 
-    console.log('📚 과정 조회 결과:', course ? '찾음' : '찾지 못함');
+    console.log('📚 과정 조회 결과:', course ? '찾음' : '찾지 못함', course ? `(${course.isPersonalLesson ? '개인레슨' : '단체반'})` : '');
 
     console.log('📚 과정 정보:', {
       courseId: course?._id,
@@ -2332,29 +2433,13 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
       courseLevel: course.level
     });
 
-    // 강습 과정 레벨을 한국어로 변환 (필요한 경우)
-    let updatedLevel = course.level;
-    const levelMapping: { [key: string]: string } = {
-      'level1': '초급',
-      'level2': '중급', 
-      'level3': '고급',
-      'beginner': '초급',
-      'intermediate': '중급',
-      'advanced': '고급',
-      'all': '전체'
-    };
-
-    if (levelMapping[course.level]) {
-      updatedLevel = levelMapping[course.level];
-    }
-
-    // 회원의 studentInfo.level 업데이트
+    // 회원의 studentInfo.level 업데이트 - 과정 레벨을 그대로 사용
     if (!member.studentInfo) {
       member.studentInfo = {};
     }
     
     const oldLevel = member.studentInfo.level;
-    member.studentInfo.level = updatedLevel;
+    member.studentInfo.level = course.level;
     
     // emergencyContact 필드 안전하게 처리 (객체인 경우 문자열로 변환)
     if (member.studentInfo.emergencyContact && typeof member.studentInfo.emergencyContact === 'object') {
@@ -2369,13 +2454,13 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
     }
     
     await User.findByIdAndUpdate(memberId, { 
-      'studentInfo.level': updatedLevel,
+      'studentInfo.level': course.level,
       'studentInfo.emergencyContact': member.studentInfo.emergencyContact || ''
     });
     console.log('✅ 회원 레벨 업데이트 완료:', {
       memberName: member.name,
       oldLevel: oldLevel,
-      newLevel: updatedLevel
+      newLevel: course.level
     });
 
     res.json({
@@ -2387,7 +2472,7 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
         courseName: course.name,
         levelUpdated: {
           oldLevel: oldLevel,
-          newLevel: updatedLevel
+          newLevel: course.level
         }
       }
     });
@@ -2618,5 +2703,425 @@ router.put('/members/:memberId', authMiddleware, requireCenterAdmin, async (req:
     });
   }
 });
+
+/**
+ * 강사별 수업 일정 조회
+ * GET /api/center-admin/instructors/:instructorId/lessons
+ */
+router.get('/instructors/:instructorId/lessons', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { instructorId } = req.params;
+    const { date } = req.query;
+
+    console.log('📅 강사 수업 일정 조회:', { instructorId, date });
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: '날짜가 필요합니다.'
+      });
+    }
+
+    // 요청 날짜 파싱
+    const requestedDate = new Date(date as string);
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][requestedDate.getDay()];
+
+    console.log('📅 요청된 날짜:', { 
+      date: requestedDate.toISOString().split('T')[0],
+      dayOfWeek 
+    });
+
+    // ⭐ 요일 필터 제거 - 모든 요일의 수업 표시
+
+    // centerId 조회
+    const centerId = await getCenterId(req);
+    console.log('🔍 강사 수업 일정 조회 - 필터 조건:', {
+      instructorId,
+      centerId,
+      isPersonalLesson: { $ne: true }
+    });
+
+    // 1. 단체반 수업 일정 조회
+    // instructorId 또는 instructor 필드로 조회 (둘 중 하나가 일치하면 조회)
+    const courses = await Course.find({
+      $or: [
+        { instructorId: instructorId },
+        { instructor: instructorId }
+      ],
+      centerId: centerId,
+      isPersonalLesson: { $ne: true }
+    })
+    .populate('enrolledStudents.student', 'name phone');
+
+    console.log('📚 조회된 단체반 과정 수:', courses.length);
+    courses.forEach((course, index) => {
+      console.log(`  ${index + 1}. ${course.name} - 학생 ${course.enrolledStudents?.length || 0}명, 스케줄:`, course.schedule?.map((s: any) => `${s.day} ${s.startTime}`));
+    });
+
+    // 2. Course 모델에서 isPersonalLesson=true인 개인레슨 조회
+    // instructorId 또는 instructor 필드로 조회 (둘 중 하나가 일치하면 조회)
+    const coursePersonalLessons = await Course.find({
+      $or: [
+        { instructorId: instructorId },
+        { instructor: instructorId }
+      ],
+      centerId: centerId,
+      isPersonalLesson: true
+    })
+    .populate('enrolledStudents.student', 'name phone');
+
+    console.log('🏊 Course 모델의 개인레슨 수:', coursePersonalLessons.length);
+    coursePersonalLessons.forEach((course, index) => {
+      console.log(`  ${index + 1}. ${course.name} - 학생 ${course.enrolledStudents?.length || 0}명, 스케줄:`, course.schedule?.map((s: any) => `${s.day} ${s.startTime}`));
+    });
+
+    // 3. PersonalLesson 모델에서 개인레슨 조회
+    const personalLessons = await PersonalLesson.find({
+      instructorId: instructorId,
+      centerId: centerId
+    })
+    .populate('studentId', 'name phone');
+
+    console.log('🏊 PersonalLesson 모델의 개인레슨 수:', personalLessons.length);
+    personalLessons.forEach((lesson, index) => {
+      console.log(`  ${index + 1}. ${lesson.studentId?.name || '미배정'} - ${lesson.time}, 상태: ${lesson.status}`);
+    });
+
+    // 수업 일정 변환 함수
+    const transformLessons = (courses: any[], coursePersonalLessons: any[], personalLessons: any[]) => {
+      const lessons: any[] = [];
+
+      console.log('🔄 수업 일정 변환 시작...');
+      
+      // 단체반 처리 - 과정 단위로 표시 (요일별로 중복 생성하지 않음)
+      courses.forEach((course, courseIndex) => {
+        console.log(`  📚 단체반 ${courseIndex + 1}: ${course.name}`);
+        
+        // 수업 시간 및 요일 정보 수집
+        const scheduleInfo = course.schedule?.map((sch: any) => `${sch.day} ${sch.startTime}-${sch.endTime}`).join(', ') || '스케줄 없음';
+        
+        // enrolledStudents가 있으면 학생별로 수업 생성
+        if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+          console.log(`    📅 스케줄: ${scheduleInfo}, 학생 ${course.enrolledStudents.length}명`);
+          
+          // 학생별로 하나의 수업만 생성 (요일 중복 없이)
+          course.enrolledStudents.forEach((enrollment: any, studentIndex: number) => {
+            const student = enrollment.student;
+            console.log(`      👤 학생 ${studentIndex + 1}: ${student.name}`);
+            
+            lessons.push({
+              _id: `${course._id}_${student._id}`,
+              courseId: course._id,
+              courseName: course.name,
+              studentId: student._id,
+              studentName: student.name,
+              studentPhone: student.phone,
+              instructorId: instructorId,
+              scheduledDates: course.schedule?.map(s => {
+                const dayMap: { [key: string]: string } = {
+                  'monday': '월',
+                  'tuesday': '화',
+                  'wednesday': '수',
+                  'thursday': '목',
+                  'friday': '금',
+                  'saturday': '토',
+                  'sunday': '일'
+                };
+                return dayMap[s.day.toLowerCase()] || s.day;
+              }).join(', '), // 모든 요일 표시
+              startTime: course.schedule?.[0]?.startTime || '09:00',
+              endTime: course.schedule?.[0]?.endTime || '10:00',
+              status: 'scheduled',
+              lessonType: 'group',
+              level: course.level,
+              poolType: course.schedule?.[0]?.poolType || 'mainPool',
+              laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+              packageInfo: null,
+              progress: enrollment.progress
+            });
+          });
+        } else {
+          // enrolledStudents가 없어도 과정 자체를 하나의 수업으로 표시 (회원 미배정)
+          console.log(`    📅 스케줄: ${scheduleInfo}, 회원 미배정`);
+          
+          lessons.push({
+            _id: `${course._id}_no_student`,
+            courseId: course._id,
+            courseName: course.name,
+            studentId: null,
+            studentName: '회원 미배정',
+            studentPhone: null,
+            instructorId: instructorId,
+            scheduledDates: course.schedule?.map(s => {
+              const dayMap: { [key: string]: string } = {
+                'monday': '월',
+                'tuesday': '화',
+                'wednesday': '수',
+                'thursday': '목',
+                'friday': '금',
+                'saturday': '토',
+                'sunday': '일'
+              };
+              return dayMap[s.day.toLowerCase()] || s.day;
+            }).join(', '),
+            startTime: course.schedule?.[0]?.startTime || '09:00',
+            endTime: course.schedule?.[0]?.endTime || '10:00',
+            status: 'scheduled',
+            lessonType: 'group',
+            level: course.level,
+            poolType: course.schedule?.[0]?.poolType || 'mainPool',
+            laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+            packageInfo: null,
+            progress: null
+          });
+        }
+      });
+
+      console.log(`✅ 단체반 변환 완료: ${lessons.length}개 수업 생성`);
+
+      // Course 모델의 개인레슨 처리 - 과정 단위로 표시
+      coursePersonalLessons.forEach((course, courseIndex) => {
+        console.log(`  🏊 개인레슨(Course) ${courseIndex + 1}: ${course.name}`);
+        
+        const scheduleInfo = course.schedule?.map((sch: any) => `${sch.day} ${sch.startTime}-${sch.endTime}`).join(', ') || '스케줄 없음';
+        
+        // enrolledStudents가 있으면 학생별로 수업 생성
+        if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+          console.log(`    📅 스케줄: ${scheduleInfo}, 학생 ${course.enrolledStudents.length}명`);
+          
+          course.enrolledStudents.forEach((enrollment: any, studentIndex: number) => {
+            const student = enrollment.student;
+            console.log(`      👤 학생 ${studentIndex + 1}: ${student.name}`);
+            
+            lessons.push({
+              _id: `${course._id}_${student._id}`,
+              courseId: course._id,
+              courseName: course.name,
+              studentId: student._id,
+              studentName: student.name,
+              studentPhone: student.phone,
+              instructorId: instructorId,
+              scheduledDates: course.schedule?.map(s => {
+                const dayMap: { [key: string]: string } = {
+                  'monday': '월',
+                  'tuesday': '화',
+                  'wednesday': '수',
+                  'thursday': '목',
+                  'friday': '금',
+                  'saturday': '토',
+                  'sunday': '일'
+                };
+                return dayMap[s.day.toLowerCase()] || s.day;
+              }).join(', '),
+              startTime: course.schedule?.[0]?.startTime || '09:00',
+              endTime: course.schedule?.[0]?.endTime || '10:00',
+              status: 'scheduled',
+              lessonType: 'private',
+              level: course.level,
+              poolType: course.schedule?.[0]?.poolType || 'mainPool',
+              laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+              packageInfo: null,
+              progress: enrollment.progress
+            });
+          });
+        } else {
+          // enrolledStudents가 없어도 과정 자체를 하나의 수업으로 표시 (회원 미배정)
+          console.log(`    📅 스케줄: ${scheduleInfo}, 회원 미배정`);
+          
+          lessons.push({
+            _id: `${course._id}_no_student`,
+            courseId: course._id,
+            courseName: course.name,
+            studentId: null,
+            studentName: '회원 미배정',
+            studentPhone: null,
+            instructorId: instructorId,
+            scheduledDates: course.schedule?.map(s => {
+              const dayMap: { [key: string]: string } = {
+                'monday': '월',
+                'tuesday': '화',
+                'wednesday': '수',
+                'thursday': '목',
+                'friday': '금',
+                'saturday': '토',
+                'sunday': '일'
+              };
+              return dayMap[s.day.toLowerCase()] || s.day;
+            }).join(', '),
+            startTime: course.schedule?.[0]?.startTime || '09:00',
+            endTime: course.schedule?.[0]?.endTime || '10:00',
+            status: 'scheduled',
+            lessonType: 'private',
+            level: course.level,
+            poolType: course.schedule?.[0]?.poolType || 'mainPool',
+            laneNumber: (course.schedule?.[0]?.lanes?.assignedLanes?.join(',') || course.laneInfo?.assignedLanes?.join(',') || '1'),
+            packageInfo: null,
+            progress: null
+          });
+        }
+      });
+      
+      console.log(`✅ 개인레슨(Course) 변환 완료: 총 ${lessons.length}개 수업 생성`);
+
+      // PersonalLesson 모델의 개인레슨 처리
+      personalLessons.forEach((lesson: any) => {
+        const [hour, minute] = lesson.time.split(':').map(Number);
+        const startTime = new Date(lesson.date);
+        startTime.setHours(hour, minute, 0, 0);
+        
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + lesson.duration);
+
+        lessons.push({
+          _id: lesson._id,
+          courseId: lesson._id,
+          studentId: lesson.studentId._id,
+          studentName: lesson.studentId.name,
+          studentPhone: lesson.studentId.phone,
+          instructorId: instructorId,
+          scheduledDate: new Date(lesson.date).toISOString().split('T')[0],
+          startTime: lesson.time,
+          endTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
+          status: lesson.status === 'approved' ? 'scheduled' : 'pending',
+          lessonType: 'private',
+          level: lesson.skillLevel,
+          poolType: 'mainPool',
+          laneNumber: lesson.assignedLane || 1,
+          packageInfo: null, // TODO: 패키지 정보 추가
+          progress: null
+        });
+      });
+
+      // 시간순 정렬
+      lessons.sort((a, b) => {
+        const timeA = a.startTime.split(':').map(Number);
+        const timeB = b.startTime.split(':').map(Number);
+        
+        if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0];
+        return timeA[1] - timeB[1];
+      });
+
+      return lessons;
+    };
+
+    const transformedLessons = transformLessons(courses, coursePersonalLessons, personalLessons);
+
+    console.log('✅ 변환된 수업 일정 수:', transformedLessons.length);
+
+    res.json({
+      success: true,
+      data: transformedLessons
+    });
+
+  } catch (error) {
+    console.error('❌ 강사 수업 일정 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * 수업 상태 업데이트
+ * PUT /api/lessons/:lessonId/status
+ */
+router.put('/lessons/:lessonId/status', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { lessonId } = req.params;
+    const { status } = req.body;
+
+    console.log('📝 수업 상태 업데이트:', { lessonId, status });
+
+    // lessonId 파싱: "courseId_studentId" 형식
+    const [courseId, studentId] = lessonId.split('_');
+    
+    console.log('📋 파싱된 lessonId:', { courseId, studentId });
+
+    if (status === 'cancelled') {
+      // 수업 취소 시 해당 회원을 반에서 제외
+      const course = await Course.findById(courseId);
+      
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: '강습 과정을 찾을 수 없습니다.'
+        });
+      }
+
+      console.log('🗑️ 취소 전 enrolledStudents:', course.enrolledStudents.length);
+      
+      // enrolledStudents에서 해당 학생 제거
+      course.enrolledStudents = course.enrolledStudents.filter(
+        (enrollment: any) => enrollment.student?.toString() !== studentId
+      );
+
+      // currentStudents 카운트 업데이트
+      course.currentStudents = course.enrolledStudents.filter(
+        (e: any) => e.status === 'active'
+      ).length;
+
+      await course.save();
+
+      console.log('✅ 취소 후 enrolledStudents:', course.enrolledStudents.length);
+      
+      return res.json({
+        success: true,
+        message: '회원이 강습 과정에서 제외되었습니다.',
+        data: {
+          courseId,
+          studentId,
+          remainingStudents: course.enrolledStudents.length
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '수업 상태가 업데이트되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('❌ 수업 상태 업데이트 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * 수업 진행 기록 저장
+ * PUT /api/lessons/:lessonId/progress
+ */
+router.put('/lessons/:lessonId/progress', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { lessonId } = req.params;
+    const progressData = req.body;
+
+    console.log('📝 수업 진행 기록 저장:', { lessonId, progressData });
+
+    // TODO: 실제로 Course.enrolledStudents.progress 또는 PersonalLesson에 저장
+    // 현재는 간단하게 임시 처리
+
+    res.json({
+      success: true,
+      message: '수업 진행 기록이 저장되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('❌ 수업 진행 기록 저장 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '서버 오류가 발생했습니다.'
+    });
+  }
+});
+
+// getCenterId 헬퍼 함수
+async function getCenterId(req: AuthRequest): Promise<string | null> {
+  const centerAdmin = await User.findById(req.user?._id);
+  return centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0] || null;
+}
 
 export default router;

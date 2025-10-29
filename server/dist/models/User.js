@@ -59,8 +59,8 @@ const userSchema = new mongoose_1.default.Schema({
         medicalConditions: { type: String, default: '' },
         swimmingLevel: {
             type: String,
-            enum: ['beginner', 'intermediate', 'advanced', 'expert'],
-            default: 'beginner'
+            enum: ['초급', '중급', '고급', '전문가', '마스터'],
+            default: '초급'
         },
         currentLevel: { type: String },
         instructorId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User' },
@@ -292,7 +292,7 @@ userSchema.virtual('userLevelInfo').get(function () {
         case 'student':
             return {
                 type: 'student',
-                level: this.studentInfo?.swimmingLevel || 'beginner',
+                level: this.studentInfo?.swimmingLevel || '초급',
                 nextLevel: this.getNextStudentLevel(),
                 progress: this.calculateStudentProgress()
             };
@@ -322,8 +322,8 @@ userSchema.virtual('userLevelInfo').get(function () {
     }
 });
 userSchema.methods.getNextStudentLevel = function () {
-    const levels = ['beginner', 'intermediate', 'advanced', 'expert'];
-    const currentIndex = levels.indexOf(this.studentInfo?.swimmingLevel || 'beginner');
+    const levels = ['초급', '중급', '고급', '전문가', '마스터'];
+    const currentIndex = levels.indexOf(this.studentInfo?.swimmingLevel || '초급');
     return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : null;
 };
 userSchema.methods.getNextInstructorLevel = function () {

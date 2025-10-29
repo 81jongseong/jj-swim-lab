@@ -24,5 +24,6 @@ export declare class LaneAllocationService {
         errorCount: number;
         totalCourses: number;
     }>;
+    static restoreLanesIfNoPersonalLesson(centerId: string): Promise<any[]>;
 }
 //# sourceMappingURL=laneAllocationService.d.ts.map

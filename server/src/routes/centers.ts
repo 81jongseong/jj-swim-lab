@@ -611,6 +611,11 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
             availableTimes: [],
             cancellationPolicy: ''
           },
+          freeSwim: {
+            enabled: false,
+            dayTimeSlots: [],
+            cancellationPolicy: ''
+          },
           laneRental: {
             enabled: false,
             availableDays: [],
@@ -621,9 +626,20 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
         } as any;
       }
       
-      // personalLesson만 업데이트 (laneRental은 유지)
+      // personalLesson 업데이트
       if (availabilitySettings.personalLesson) {
         center.availabilitySettings.personalLesson = availabilitySettings.personalLesson;
+      }
+      
+      // freeSwim 업데이트 (자유수영 운영시간) - 항상 업데이트
+      if (availabilitySettings.freeSwim !== undefined) {
+        console.log('🏊 자유수영 운영시간 저장:', JSON.stringify(availabilitySettings.freeSwim, null, 2));
+        center.availabilitySettings.freeSwim = {
+          enabled: availabilitySettings.freeSwim.enabled !== undefined ? availabilitySettings.freeSwim.enabled : true,
+          dayTimeSlots: availabilitySettings.freeSwim.dayTimeSlots || [],
+          cancellationPolicy: availabilitySettings.freeSwim.cancellationPolicy || ''
+        };
+        console.log('✅ 자유수영 운영시간 저장 완료:', JSON.stringify(center.availabilitySettings.freeSwim, null, 2));
       }
       
       // laneRental도 업데이트 (요청에 포함된 경우에만)
@@ -633,13 +649,14 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     console.log('💾 센터 정보 저장 중...');
-    await center.save();
+    const savedCenter = await center.save();
     console.log('✅ 센터 정보 저장 완료');
+    console.log('🔍 저장된 availabilitySettings:', JSON.stringify(savedCenter.availabilitySettings, null, 2));
 
     res.json({
       success: true,
       message: '센터 정보가 성공적으로 수정되었습니다!',
-      data: center
+      data: savedCenter
     });
   } catch (error) {
     console.error('❌ 센터 정보 수정 오류:', error);

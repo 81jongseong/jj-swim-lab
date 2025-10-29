@@ -26,19 +26,29 @@ interface Instructor {
 
 interface InstructorStatsCardsProps {
   instructors: Instructor[];
+  instructorStats?: {[key: string]: any};
 }
 
-export default function InstructorStatsCards({ instructors }: InstructorStatsCardsProps) {
-  // 평균 평점 계산
+export default function InstructorStatsCards({ instructors, instructorStats = {} }: InstructorStatsCardsProps) {
+  // 평균 평점 계산 (안전하게)
   const averageRating = instructors.length > 0 
-    ? (instructors.reduce((sum, i) => sum + i.rating, 0) / instructors.length).toFixed(1)
+    ? (instructors.reduce((sum, i) => sum + (i.rating || 0), 0) / instructors.length).toFixed(1)
     : '0.0';
   
-  // 총 수업 수 계산
-  const totalClasses = instructors.reduce((sum, i) => sum + i.totalClasses, 0);
+  // 총 수업 수 계산 (instructorStats에서 가져옴)
+  const totalClasses = Object.values(instructorStats).reduce((sum, stat: any) => sum + (stat.totalLessons || 0), 0);
   
-  // 총 학생 수 계산
-  const totalStudents = instructors.reduce((sum, i) => sum + i.totalStudents, 0);
+  // 총 학생 수 계산 (instructorStats에서 가져옴)
+  const totalStudents = Object.values(instructorStats).reduce((sum, stat: any) => sum + (stat.totalStudents || 0), 0);
+  
+  console.log('📊 강사 통계 카드 계산:', { 
+    instructorsCount: instructors.length,
+    instructorStatsCount: Object.keys(instructorStats).length,
+    averageRating,
+    totalClasses,
+    totalStudents,
+    instructorStats
+  });
 
   return (
     <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">

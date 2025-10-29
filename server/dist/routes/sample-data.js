@@ -36,7 +36,7 @@ router.post('/generate-dashboard-data', auth_1.authMiddleware, (0, auth_1.requir
                     {
                         name: '수영 기초반',
                         description: '초보자를 위한 기본 수영 강습',
-                        level: 'beginner',
+                        level: '초급',
                         duration: 60,
                         price: 50000,
                         maxStudents: 8,
@@ -56,7 +56,7 @@ router.post('/generate-dashboard-data', auth_1.authMiddleware, (0, auth_1.requir
                     {
                         name: '자유형 중급반',
                         description: '자유형 기술 향상 강습',
-                        level: 'intermediate',
+                        level: '중급',
                         duration: 60,
                         price: 70000,
                         maxStudents: 6,

@@ -30,6 +30,7 @@ interface Course {
   maxStudents: number;
   currentStudents: number;
   enrolledStudents: any[];
+  isPersonalLesson?: boolean;
 }
 
 interface CourseMemberAssignmentModalProps {
@@ -184,10 +185,22 @@ export default function CourseMemberAssignmentModal({
     console.log('🔄 현재 선택된 회원들:', selectedMembers);
     
     setSelectedMembers(prev => {
-      const newSelection = prev.includes(memberId) 
-        ? prev.filter(id => id !== memberId)
-        : [...prev, memberId];
+      // 이미 선택된 경우 해제
+      if (prev.includes(memberId)) {
+        return prev.filter(id => id !== memberId);
+      }
       
+      // 개인레슨인 경우 최대 인원 체크
+      if (course.isPersonalLesson) {
+        const willExceed = prev.length + 1 > course.maxStudents;
+        if (willExceed) {
+          alert(`❌ 최대 인원을 초과할 수 없습니다.\n현재 선택: ${prev.length + 1}명 / 최대 인원: ${course.maxStudents}명`);
+          return prev;
+        }
+      }
+      
+      // 새로 선택
+      const newSelection = [...prev, memberId];
       console.log('🔄 새로운 선택된 회원들:', newSelection);
       return newSelection;
     });
@@ -196,6 +209,14 @@ export default function CourseMemberAssignmentModal({
   // 전체 선택/해제
   const toggleAllMembers = () => {
     const availableMembers = filteredMembers.filter(member => !member.isEnrolledInSpecificCourse);
+    
+    // 개인레슨인 경우 최대 인원 체크
+    if (course.isPersonalLesson && availableMembers.length > course.maxStudents) {
+      alert(`❌ 최대 인원을 초과할 수 없습니다.\n선택 가능한 회원: ${availableMembers.length}명 / 최대 인원: ${course.maxStudents}명\n가능한 회원 ${course.maxStudents}명만 선택됩니다.`);
+      // 최대 인원만큼만 선택
+      setSelectedMembers(availableMembers.slice(0, course.maxStudents).map(member => member._id));
+      return;
+    }
     
     if (selectedMembers.length === availableMembers.length) {
       setSelectedMembers([]);
@@ -209,6 +230,15 @@ export default function CourseMemberAssignmentModal({
     if (selectedMembers.length === 0) {
       alert('배정할 회원을 선택해주세요.');
       return;
+    }
+
+    // 개인레슨인 경우 최대 인원 체크
+    if (course.isPersonalLesson) {
+      const willExceed = course.currentStudents + selectedMembers.length > course.maxStudents;
+      if (willExceed) {
+        alert(`❌ 최대 인원을 초과할 수 없습니다.\n현재 인원: ${course.currentStudents}명\n선택한 회원: ${selectedMembers.length}명\n최대 인원: ${course.maxStudents}명\n배정 후 인원: ${course.currentStudents + selectedMembers.length}명`);
+        return;
+      }
     }
 
     setAssigning(true);

@@ -1,4 +1,4 @@
-/**
+ /**
  * 📅 JJ Swim Lab - 예약관리 API 라우트
  * 
  * 📋 **API 목적**
@@ -336,7 +336,7 @@ router.get('/instructors', async (req: any, res: Response) => {
       userType: 'instructor',
       centerId: centerId
     }).select('name email phone instructorInfo');
-    
+
     res.json({
       success: true,
       data: instructors
@@ -407,7 +407,7 @@ router.get('/statistics', async (req: any, res: Response) => {
         }
       }
     ]);
-    
+
     res.json({
       success: true,
       data: {
@@ -727,4 +727,4 @@ router.get('/my-bookings', async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+export default router; 

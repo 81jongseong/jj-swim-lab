@@ -10,7 +10,6 @@ const Center_1 = require("../models/Center");
 const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
 const role_1 = require("../middleware/role");
-const laneAllocationService_1 = require("../services/laneAllocationService");
 const router = (0, express_1.Router)();
 const auth_2 = require("../middleware/auth");
 router.get('/', async (req, res) => {
@@ -241,25 +240,50 @@ router.post('/', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res) 
             lanes: lanes || [],
             laneInfo: laneInfo || {},
             courseType: courseType || 'group',
-            isPersonalLesson: isPersonalLesson || false,
+            isPersonalLesson: isPersonalLesson === true || name?.includes('개인 레슨') || name?.includes('개인레슨'),
             personalLessonSettings: finalPersonalLessonSettings,
             startDate: startDate || new Date(),
             endDate: endDate || new Date(new Date().setMonth(new Date().getMonth() + 1))
         };
+        console.log('🎯 isPersonalLesson 판단:', {
+            isPersonalLesson,
+            name,
+            finalValue: courseData.isPersonalLesson
+        });
         if (schedule && schedule.length > 0) {
-            courseData.schedule = schedule.map((sched) => {
-                if (sched.lanes && sched.lanes.assignedLanes) {
-                    return sched;
-                }
-                return {
+            const dayNameMap = {
+                '월': 'monday', '화': 'tuesday', '수': 'wednesday', '목': 'thursday',
+                '금': 'friday', '토': 'saturday', '일': 'sunday',
+                '월요일': 'monday', '화요일': 'tuesday', '수요일': 'wednesday', '목요일': 'thursday',
+                '금요일': 'friday', '토요일': 'saturday', '일요일': 'sunday',
+                'monday': 'monday', 'tuesday': 'tuesday', 'wednesday': 'wednesday', 'thursday': 'thursday',
+                'friday': 'friday', 'saturday': 'saturday', 'sunday': 'sunday'
+            };
+            courseData.schedule = schedule
+                .map((sched) => {
+                const day = sched.day || sched.dayOfWeek || '';
+                const dayArray = day.split(',').map((d) => d.trim()).filter((d) => d);
+                const englishDay = dayArray.map((d) => dayNameMap[d.toLowerCase()] || d).join(',');
+                const scheduleItem = {
                     ...sched,
-                    lanes: {
+                    day: englishDay,
+                    lanes: sched.lanes && sched.lanes.assignedLanes ? sched.lanes : {
                         assignedLanes: sched.lanes?.assignedLanes || lanes || [],
                         originalAssignedLanes: sched.lanes?.originalAssignedLanes || lanes || [],
                         isAdjusted: sched.lanes?.isAdjusted || false
                     }
                 };
+                console.log(`📅 스케줄 변환: ${day} → ${englishDay}`);
+                return scheduleItem;
+            })
+                .filter((sched) => {
+                const hasValidDay = sched.day && sched.day.trim() !== '';
+                if (!hasValidDay) {
+                    console.log(`⚠️ 유효하지 않은 스케줄 제외: day=${sched.day}, startTime=${sched.startTime}`);
+                }
+                return hasValidDay;
             });
+            console.log(`📊 최종 schedule 항목 수: ${courseData.schedule.length}`);
         }
         console.log('📚 강습 과정 생성 데이터:', courseData);
         console.log('💾 저장할 데이터:', courseData);
@@ -267,30 +291,6 @@ router.post('/', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res) 
         const course = new Course_1.Course(courseData);
         await course.save();
         console.log('✅ 저장 성공:', course._id);
-        if (isPersonalLesson && schedule && schedule.length > 0) {
-            console.log('🔄 개인레슨 레인 자동 조정 시작...');
-            for (const scheduleItem of schedule) {
-                const day = scheduleItem.day || scheduleItem.dayOfWeek;
-                const time = scheduleItem.startTime;
-                const days = day.split(',').map((d) => d.trim()).filter((d) => d);
-                for (const singleDay of days) {
-                    try {
-                        console.log(`🔄 레인 조정: ${singleDay} ${time}`);
-                        await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({
-                            date: '',
-                            time,
-                            centerId: centerId.toString(),
-                            dayName: singleDay,
-                            rentalCount: 1
-                        });
-                    }
-                    catch (error) {
-                        console.error(`❌ ${singleDay} ${time} 레인 조정 실패:`, error);
-                    }
-                }
-            }
-            console.log('✅ 레인 자동 조정 완료');
-        }
         const populatedCourse = await Course_1.Course.findById(course._id)
             .populate('instructor', 'name userId');
         console.log('📋 생성된 강습 과정 정보:', {
@@ -611,24 +611,49 @@ router.delete('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, 
             console.error('❌ 삭제 권한 없음:', { userType: user?.userType, userId: req.user.userId });
             return res.status(403).json({ error: '삭제 권한이 없습니다.' });
         }
-        if (course.isPersonalLesson) {
+        console.log('🔍 삭제할 코스 정보:', {
+            name: course.name,
+            isPersonalLesson: course.isPersonalLesson,
+            schedule: course.schedule
+        });
+        const isPersonalLesson = course.isPersonalLesson === true ||
+            (course.name && (course.name.includes('개인 레슨') || course.name.includes('개인레슨')));
+        console.log('🎯 개인레슨 판단:', {
+            isPersonalLessonFlag: course.isPersonalLesson,
+            courseName: course.name,
+            finalIsPersonalLesson: isPersonalLesson
+        });
+        if (isPersonalLesson) {
             console.log('🔄 개인레슨 삭제 - 레인 복원 시작...');
             console.log('📅 개인레슨 스케줄:', course.schedule);
             for (const scheduleItem of course.schedule) {
                 const dayName = scheduleItem.day;
                 const time = scheduleItem.startTime;
                 console.log(`🔍 복원 대상 요일/시간: ${dayName} ${time}`);
+                const actualDayName = Array.isArray(dayName)
+                    ? dayName[0]
+                    : dayName.split(',')[0].trim();
+                console.log(`🔍 실제 날짜: ${actualDayName}`);
                 const otherCourses = await Course_1.Course.find({
                     _id: { $ne: course._id },
                     centerId: course.centerId,
                     isActive: true,
-                    'schedule.day': dayName,
+                    $or: [
+                        { 'schedule.day': actualDayName },
+                        { 'schedule.day': { $regex: actualDayName, $options: 'i' } }
+                    ],
                     'schedule.startTime': time
                 });
                 console.log(`🔍 발견된 다른 강습과정 수: ${otherCourses.length}`);
                 for (const otherCourse of otherCourses) {
                     console.log(`🔍 처리 중인 강습과정: ${otherCourse.name}`);
-                    const otherScheduleItem = otherCourse.schedule.find((s) => s.day === dayName && s.startTime === time);
+                    const otherScheduleItem = otherCourse.schedule.find((s) => {
+                        const sDay = s.day || '';
+                        const sDays = Array.isArray(sDay)
+                            ? sDay
+                            : sDay.split(',').map((d) => d.trim());
+                        return sDays.includes(actualDayName) && s.startTime === time;
+                    });
                     if (otherScheduleItem) {
                         console.log(`📊 스케줄 항목 발견:`, {
                             day: otherScheduleItem.day,
@@ -638,17 +663,22 @@ router.delete('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, 
                         if (otherScheduleItem.lanes?.originalAssignedLanes && otherScheduleItem.lanes.originalAssignedLanes.length > 0) {
                             const originalLanes = otherScheduleItem.lanes.originalAssignedLanes;
                             const currentLanes = otherScheduleItem.lanes.assignedLanes;
-                            console.log(`🔧 ${otherCourse.name} ${dayName} ${time} 레인 복원:`, {
+                            console.log(`🔧 ${otherCourse.name} ${actualDayName} ${time} 레인 복원:`, {
                                 current: currentLanes,
                                 original: originalLanes
                             });
                             const updatedSchedule = otherCourse.schedule.map((s) => {
-                                if (s.day === dayName && s.startTime === time) {
+                                const sDay = s.day || '';
+                                const sDays = Array.isArray(sDay)
+                                    ? sDay
+                                    : sDay.split(',').map((d) => d.trim());
+                                const isMatchingDay = sDays.includes(actualDayName);
+                                if (isMatchingDay && s.startTime === time) {
                                     return {
                                         ...s,
                                         lanes: {
                                             assignedLanes: originalLanes,
-                                            originalAssignedLanes: [],
+                                            originalAssignedLanes: originalLanes,
                                             isAdjusted: false
                                         }
                                     };
@@ -661,11 +691,11 @@ router.delete('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, 
                             console.log(`✅ ${otherCourse.name} 레인 복원 완료: [${currentLanes.join(',')}] → [${originalLanes.join(',')}]`);
                         }
                         else {
-                            console.log(`⚠️  ${otherCourse.name} ${dayName} ${time} 복원할 원본 레인이 없음`);
+                            console.log(`⚠️  ${otherCourse.name} ${actualDayName} ${time} 복원할 원본 레인이 없음`);
                         }
                     }
                     else {
-                        console.log(`⚠️  ${otherCourse.name} ${dayName} ${time} 스케줄 항목을 찾을 수 없음`);
+                        console.log(`⚠️  ${otherCourse.name} ${actualDayName} ${time} 스케줄 항목을 찾을 수 없음`);
                     }
                 }
             }

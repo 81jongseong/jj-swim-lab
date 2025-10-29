@@ -41,7 +41,7 @@ interface IUser extends mongoose.Document {
         age?: number;
         emergencyContact?: string;
         medicalConditions?: string;
-        swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+        swimmingLevel?: '초급' | '중급' | '고급' | '전문가' | '마스터';
         currentLevel?: string;
         instructorId?: mongoose.Types.ObjectId;
         centerMemo?: string;

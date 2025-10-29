@@ -112,8 +112,8 @@ interface IUser extends mongoose.Document {
     age?: number;
     emergencyContact?: string;
     medicalConditions?: string;
-    swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    currentLevel?: string; // 현재 레벨 추가
+    swimmingLevel?: '초급' | '중급' | '고급' | '전문가' | '마스터'; // 한글 레벨 사용
+    currentLevel?: string; // 현재 레벨 추가 (한글)
     instructorId?: mongoose.Types.ObjectId; // 담당 강사
     centerMemo?: string; // 센터 내부 메모 (레거시)
     centerMemoUpdatedAt?: Date; // 센터 메모 수정 시간 (레거시)
@@ -396,8 +396,8 @@ const userSchema = new mongoose.Schema({
     medicalConditions: { type: String, default: '' },
     swimmingLevel: { 
       type: String, 
-      enum: ['beginner', 'intermediate', 'advanced', 'expert'],
-      default: 'beginner'
+      enum: ['초급', '중급', '고급', '전문가', '마스터'],
+      default: '초급'
     },
     currentLevel: { type: String },
     instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -651,7 +651,7 @@ userSchema.virtual('userLevelInfo').get(function(this: IUser) {
     case 'student':
       return {
         type: 'student',
-        level: this.studentInfo?.swimmingLevel || 'beginner',
+        level: this.studentInfo?.swimmingLevel || '초급',
         nextLevel: this.getNextStudentLevel(),
         progress: this.calculateStudentProgress()
       };
@@ -683,8 +683,8 @@ userSchema.virtual('userLevelInfo').get(function(this: IUser) {
 
 // 수강생 레벨 업그레이드 메서드
 userSchema.methods.getNextStudentLevel = function(this: IUser): string | null {
-  const levels = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const currentIndex = levels.indexOf(this.studentInfo?.swimmingLevel || 'beginner');
+  const levels = ['초급', '중급', '고급', '전문가', '마스터'];
+  const currentIndex = levels.indexOf(this.studentInfo?.swimmingLevel || '초급');
   return currentIndex < levels.length - 1 ? levels[currentIndex + 1] : null;
 };
 

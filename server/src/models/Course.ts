@@ -115,7 +115,7 @@ const courseSchema = new mongoose.Schema({
   },
   level: {
     type: String,
-    // ⭐ enum 제거 - 커스텀 레벨(level1, level2 등) 허용
+    // ⭐ 한글 레벨 사용 (초급, 중급, 고급, 전문가, 마스터)
     required: true,
   },
   duration: {
@@ -289,7 +289,7 @@ const courseSchema = new mongoose.Schema({
   // ⭐ 과정 타입
   courseType: {
     type: String,
-    enum: ['group', 'personal'],
+    enum: ['group', 'personal', 'freeSwim'],
     default: 'group'
   }
 }, { 

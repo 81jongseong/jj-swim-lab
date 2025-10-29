@@ -164,7 +164,24 @@ const courseSchema = new mongoose_1.default.Schema({
         }],
     tags: [{
             type: String
-        }]
+        }],
+    isPersonalLesson: {
+        type: Boolean,
+        default: false
+    },
+    personalLessonSettings: {
+        timeSlots: [{
+                startTime: String,
+                endTime: String
+            }],
+        lessonTypes: [String],
+        frequencyOptions: [String]
+    },
+    courseType: {
+        type: String,
+        enum: ['group', 'personal', 'freeSwim'],
+        default: 'group'
+    }
 }, {
     timestamps: true
 });

@@ -27,6 +27,8 @@ import {
 
 interface Student {
   _id: string;
+  courseId?: string;
+  courseName?: string;
   name: string;
   email: string;
   phone: string;
@@ -116,8 +118,14 @@ export default function InstructorStudentManagement({
 
       // 강사별 수강생 목록 조회
       const studentsResponse = await apiClient.get(`/api/center-admin/instructors/${instructorId}/students-list`);
+      
       if (studentsResponse.success) {
-        setStudents(studentsResponse.data);
+        const studentsData = studentsResponse.data || [];
+        const studentsArray = Array.isArray(studentsData) ? studentsData : [];
+        setStudents(studentsArray);
+      } else {
+        console.error('수강생 목록 조회 실패:', studentsResponse.message);
+        setStudents([]);
       }
     } catch (error) {
       console.error('강사 데이터 조회 실패:', error);
@@ -127,7 +135,9 @@ export default function InstructorStudentManagement({
   };
 
   const filterAndSortStudents = () => {
+    console.log('🔍 filterAndSortStudents 시작, students:', students.length);
     let filtered = [...students];
+    console.log('🔍 초기 filtered:', filtered.length);
 
     // 검색어 필터링
     if (searchTerm) {
@@ -224,7 +234,7 @@ export default function InstructorStudentManagement({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-4">
@@ -362,17 +372,15 @@ export default function InstructorStudentManagement({
                 <option value="lastLesson">최근 수업순</option>
               </select>
             </div>
-            <div className="text-sm text-gray-600">
-              총 {filteredStudents.length}명의 수강생
-            </div>
           </div>
         </div>
 
         {/* 수강생 목록 */}
         <div className="flex-1 overflow-y-auto p-6">
+          {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredStudents.map((student) => (
-              <div key={student._id} className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+            {filteredStudents.map((student, index) => (
+              <div key={student.courseId ? `${student._id}_${student.courseId}` : `${student._id}_${index}`} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     {student.profileImage ? (
@@ -414,7 +422,7 @@ export default function InstructorStudentManagement({
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-sm">
                     <span className="text-gray-600">완료 수업: </span>
-                    <span className="font-medium">{student.totalLessonsCompleted}회</span>
+                    <span className="font-medium">{student.totalLessonsCompleted || 0}회</span>
                   </div>
                   {getPackageStatus(student)}
                 </div>
@@ -545,8 +553,7 @@ export default function InstructorStudentManagement({
               </div>
             ))}
           </div>
-
-          {filteredStudents.length === 0 && (
+          ) : (
             <div className="text-center py-12">
               <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">등록된 수강생이 없습니다.</p>

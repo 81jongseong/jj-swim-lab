@@ -37,7 +37,7 @@ interface Course {
     minLanes?: number;
     laneNotes?: string;
   };
-  courseType?: 'group' | 'personal'; // ⭐ 과정 타입 (단체/개인)
+  courseType?: 'group' | 'personal' | 'freeSwim'; // ⭐ 과정 타입 (단체/개인/자유수영)
   isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
   personalLessonSettings?: {
     timeSlots: Array<{
@@ -546,14 +546,14 @@ export default function CourseFormModal({
                   value="group"
                   checked={formData.courseType === 'group'}
                   onChange={(e) => {
-                    const courseType = e.target.value as 'group' | 'personal';
+                    const courseType = e.target.value as 'group' | 'personal' | 'freeSwim';
                     setFormData({
                       ...formData,
                       courseType,
-                      isPersonalLesson: courseType === 'personal',
-                      maxStudents: courseType === 'personal' ? 1 : 20,
+                      isPersonalLesson: false,
+                      maxStudents: 20,
                       currentStudents: courseType === 'personal' ? 0 : formData.currentStudents,
-                      name: courseType === 'personal' ? '개인 레슨' : formData.name
+                      name: courseType === 'personal' ? '개인 레슨' : courseType === 'freeSwim' ? '자유수영' : formData.name
                     });
                   }}
                   className="mr-2"
@@ -567,7 +567,7 @@ export default function CourseFormModal({
                   value="personal"
                   checked={formData.courseType === 'personal'}
                   onChange={(e) => {
-                    const courseType = e.target.value as 'group' | 'personal';
+                    const courseType = e.target.value as 'group' | 'personal' | 'freeSwim';
                     setFormData({
                       ...formData,
                       courseType,
@@ -580,6 +580,27 @@ export default function CourseFormModal({
                   className="mr-2"
                 />
                 <span className="text-sm">개인 레슨</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="courseType"
+                  value="freeSwim"
+                  checked={formData.courseType === 'freeSwim'}
+                  onChange={(e) => {
+                    const courseType = e.target.value as 'group' | 'personal' | 'freeSwim';
+                    setFormData({
+                      ...formData,
+                      courseType,
+                      isPersonalLesson: false,
+                      maxStudents: 50, // 자유수영은 더 많은 인원 가능
+                      currentStudents: formData.currentStudents,
+                      name: courseType === 'freeSwim' ? '자유수영' : formData.name
+                    });
+                  }}
+                  className="mr-2"
+                />
+                <span className="text-sm">자유수영</span>
               </label>
             </div>
           </div>
@@ -597,12 +618,21 @@ export default function CourseFormModal({
               className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 formData.isPersonalLesson ? 'bg-gray-50 cursor-not-allowed' : ''
               }`}
-              placeholder={formData.isPersonalLesson ? '개인 레슨' : '예: 초급 자유형 클래스'}
+              placeholder={
+                formData.isPersonalLesson ? '개인 레슨' : 
+                formData.courseType === 'freeSwim' ? '예: 오전 자유수영, 저녁 자유수영' :
+                '예: 초급 자유형 클래스'
+              }
               disabled={formData.isPersonalLesson}
             />
             {formData.isPersonalLesson && (
               <p className="text-xs text-blue-600 mt-1">
                 💡 개인레슨은 자동으로 '개인 레슨'으로 설정됩니다.
+              </p>
+            )}
+            {formData.courseType === 'freeSwim' && (
+              <p className="text-xs text-blue-600 mt-1">
+                💡 자유수영은 회원이 자유롭게 이용할 수 있는 시간대입니다.
               </p>
             )}
           </div>
@@ -816,7 +846,7 @@ export default function CourseFormModal({
             {/* 가격 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {formData.isPersonalLesson ? '개인레슨 가격 설정' : '가격 (원) *'}
+                {formData.isPersonalLesson ? '개인레슨 가격 설정' : formData.courseType === 'freeSwim' ? '이용권 가격 (원) *' : '가격 (원) *'}
               </label>
               {formData.isPersonalLesson ? (
                 <div className="space-y-4">
@@ -1079,15 +1109,23 @@ export default function CourseFormModal({
                   </div>
                 </div>
               ) : (
-                <input
-                  type="number"
-                  required
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="0"
-                  step="1000"
-                />
+                <>
+                  <input
+                    type="number"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                    step="1000"
+                    placeholder={formData.courseType === 'freeSwim' ? '예: 시간당 5000원' : '예: 50000'}
+                  />
+                  {formData.courseType === 'freeSwim' && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      💡 자유수영은 시간당 이용권 가격을 설정할 수 있습니다.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1154,15 +1192,33 @@ export default function CourseFormModal({
               </option>
               {Array.isArray(instructors) ? instructors
                 .filter(instructor => {
+                  // 자유수영 선택 시 안전요원, 강습강사 모두 표시
+                  if (formData.courseType === 'freeSwim') {
+                    return true; // 자유수영은 모든 강사 표시
+                  }
+                  // 자유수영이 아닐 때만 필터 적용
                   if (instructorTypeFilter === 'all') return true;
-                  return instructor.instructorInfo?.specialties?.includes(instructorTypeFilter) || 
-                         instructor.userType === instructorTypeFilter;
+                  // instructorInfo.instructorType으로 필터링 (instructor 또는 lifeguard)
+                  const instructorType = instructor.instructorInfo?.instructorType || instructor.instructorType;
+                  // 안전요원 필터 선택 시 안전요원만 표시
+                  if (instructorTypeFilter === 'lifeguard') {
+                    return instructorType === 'lifeguard';
+                  }
+                  // 강습 강사 필터 선택 시 강습 강사만 표시 (안전요원 제외)
+                  if (instructorTypeFilter === 'instructor') {
+                    return instructorType === 'instructor' || !instructorType; // 기본값도 강습 강사로 처리
+                  }
+                  return instructorType === instructorTypeFilter;
                 })
-                .map((instructor) => (
-                <option key={instructor._id} value={instructor._id}>
-                  {instructor.name}
-                </option>
-              )) : []}
+                .map((instructor) => {
+                  const instructorType = instructor.instructorInfo?.instructorType || instructor.instructorType;
+                  const typeLabel = instructorType === 'lifeguard' ? ' (안전요원)' : '';
+                  return (
+                    <option key={instructor._id} value={instructor._id}>
+                      {instructor.name}{typeLabel}
+                    </option>
+                  );
+                }) : []}
             </select>
             
 

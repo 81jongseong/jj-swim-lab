@@ -71,7 +71,7 @@ type Course = {
     maxLanes?: number;
     laneNotes?: string;
   };
-  courseType?: 'group' | 'personal';
+  courseType?: 'group' | 'personal' | 'freeSwim';
   isPersonalLesson?: boolean;
 }
 
@@ -155,7 +155,10 @@ function CoursesManagement() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🏢 센터 정보:', data.data?.availabilitySettings?.personalLesson);
+        console.log('🏢 센터 정보:', {
+          personalLesson: data.data?.availabilitySettings?.personalLesson,
+          freeSwim: data.data?.availabilitySettings?.freeSwim
+        });
         setCenterInfo(data.data);
       }
     } catch (error) {
@@ -266,7 +269,9 @@ function CoursesManagement() {
           lanes: course.lanes,
           laneInfo: course.laneInfo,
           // ⭐ 개인레슨 여부 추가
-          isPersonalLesson: isPersonalLesson
+          isPersonalLesson: isPersonalLesson,
+          // ⭐ 과정 타입 추가
+          courseType: course.courseType || (isPersonalLesson ? 'personal' : 'group')
         };
         
         console.log('✅ 강습 과정 변환 후:', {
@@ -641,8 +646,14 @@ function CoursesManagement() {
 
   // 과정 수정 핸들러
   const handleEditCourse = (course: Course) => {
-    setEditingCourse(course);
-    setIsModalOpen(true);
+    // 개인레슨이 아닌 경우에만 편집 모달 열기
+    if (!course.isPersonalLesson) {
+      setEditingCourse(course);
+      setIsModalOpen(true);
+    } else {
+      // 개인레슨인 경우 회원 배정 모달 열기
+      handleOpenMemberAssignment(course);
+    }
   };
 
   // 과정 삭제 핸들러
@@ -1009,6 +1020,7 @@ function CoursesManagement() {
             handleAddCourse(day, time); // 선택한 요일/시간 전달 ✅
           }}
           personalLessonAvailability={centerInfo?.availabilitySettings?.personalLesson} // ⭐ 개인레슨 운영시간 전달
+          freeSwimAvailability={centerInfo?.availabilitySettings?.freeSwim} // ⭐ 자유수영 운영시간 전달
         />
       )}
 

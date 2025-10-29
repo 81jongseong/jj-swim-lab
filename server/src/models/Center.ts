@@ -79,6 +79,17 @@ export interface ICenter extends Document {
       advanceBookingDays: number; // 예약 가능 일수
       cancellationPolicy: string;
     };
+    freeSwim?: { // ⭐ 자유수영 운영시간
+      enabled: boolean;
+      dayTimeSlots?: Array<{ // 요일별 시간대
+        day: string; // 'monday', 'tuesday', etc.
+        timeSlots: Array<{
+          startTime: string; // "09:00"
+          endTime: string;   // "18:00"
+        }>;
+      }>;
+      cancellationPolicy?: string;
+    };
   };
   // 센터 소개 정보 추가
   introduction: {
@@ -275,6 +286,17 @@ const centerSchema = new Schema<ICenter>({
       availableLanes: [{ type: Number, min: 1, max: 10 }],
       advanceBookingDays: { type: Number, default: 14 },
       cancellationPolicy: { type: String, default: '12시간 전 취소 가능' }
+    },
+    freeSwim: { // ⭐ 자유수영 운영시간
+      enabled: { type: Boolean, default: true },
+      dayTimeSlots: [{ // 요일별 시간대
+        day: { type: String, required: true },
+        timeSlots: [{
+          startTime: { type: String, required: true },
+          endTime: { type: String, required: true }
+        }]
+      }],
+      cancellationPolicy: { type: String, default: '' }
     }
   },
   // 센터 소개 정보 스키마 추가
