@@ -745,12 +745,30 @@ ${list}`);
               description="오늘 처리된 예약 수"
             />
             <ThemedStatCard
+              title="개인레슨 예약"
+              value={`${dashboardStats.personalLessons}건`}
+              icon={<User className="h-4 w-4" />}
+              color="purple"
+              description="전체 개인레슨 예약"
+            />
+            <ThemedStatCard
+              title="레인대여 예약"
+              value={`${dashboardStats.laneRentals}건`}
+              icon={<MapPin className="h-4 w-4" />}
+              color="indigo"
+              description="전체 레인대여 예약"
+            />
+            <ThemedStatCard
               title="총 매출"
               value={formatCurrency(dashboardStats.totalRevenue || payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0))}
               icon={<TrendingUp className="h-4 w-4" />}
               color="green"
               description="이번달 총 수익"
             />
+          </div>
+          
+          {/* 통합 통계 카드 (2행 결제 KPI) */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ThemedStatCard
               title="평균 결제액"
               value={formatCurrency(dashboardStats.averageTicketSize)}
@@ -765,10 +783,6 @@ ${list}`);
               color="teal"
               description="완료/전체 결제 비율"
             />
-          </div>
-
-          {/* 2행 보조 KPI */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ThemedStatCard
               title="환불 건수"
               value={`${dashboardStats.refundCount}건`}
@@ -783,6 +797,10 @@ ${list}`);
               color="orange"
               description="환불/전체 결제 비율"
             />
+          </div>
+
+          {/* 3행 보조 KPI */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ThemedStatCard
               title="대기 결제"
               value={`${dashboardStats.pendingPayments}건`}
@@ -796,6 +814,20 @@ ${list}`);
               icon={<CheckCircle className="h-4 w-4" />}
               color="blue"
               description="처리 완료된 결제"
+            />
+            <ThemedStatCard
+              title="이번 주 예약"
+              value={`${dashboardStats.weekBookings}건`}
+              icon={<Calendar className="h-4 w-4" />}
+              color="cyan"
+              description="이번 주 총 예약"
+            />
+            <ThemedStatCard
+              title="대기 승인"
+              value={`${dashboardStats.pendingApprovalCount}건`}
+              icon={<AlertCircle className="h-4 w-4" />}
+              color="amber"
+              description="승인 대기 중인 요청"
             />
           </div>
 
