@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { TenantSettingsProvider } from '@/contexts/TenantSettingsContext';
 
 interface TenantContextValue {
   centerSlug: string;
@@ -93,7 +94,9 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
 
   return (
     <TenantContext.Provider value={value}>
-      {children}
+      <TenantSettingsProvider centerId={centerId}>
+        {children}
+      </TenantSettingsProvider>
     </TenantContext.Provider>
   );
 }

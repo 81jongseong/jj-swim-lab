@@ -2015,8 +2015,12 @@ router.get('/availability', authMiddleware, async (req: AuthRequest, res: Respon
 // 📦 설정 머지: 글로벌 → 센터 → 사용자
 router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    // x-center-id 헤더 우선 사용 (Phase 2)
+    const headerCenterId = req.headers['x-center-id'];
     const user = await User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
-    const centerId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+    const centerId = (headerCenterId && typeof headerCenterId === 'string') 
+      ? headerCenterId 
+      : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
 
     // 글로벌 기본값 (간단한 기본 세트)
     const globalSettings: any = {
@@ -2026,9 +2030,22 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     };
 
     let centerSettings: any = {};
+    let centerBranding: any = {};
+    
     if (centerId) {
-      const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction');
-      centerSettings = (centerDoc as any)?.settings || {};
+      const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+      if (centerDoc) {
+        centerSettings = (centerDoc as any)?.settings || {};
+        
+        // 브랜딩 정보 추출 (Phase 4)
+        centerBranding = {
+          logo: (centerDoc as any)?.images?.logo,
+          mainImage: (centerDoc as any)?.images?.mainImage,
+          primaryColor: centerSettings?.theme?.primaryColor,
+          secondaryColor: centerSettings?.theme?.secondaryColor,
+          theme: centerSettings?.theme?.mode || 'light',
+        };
+      }
     }
 
     const userSettings: any = (user as any)?.settings || {};
@@ -2037,6 +2054,7 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
       ...globalSettings,
       ...centerSettings,
       ...userSettings,
+      branding: centerBranding, // 브랜딩 정보 추가
     };
 
     return res.json({ success: true, data: merged });

@@ -639,12 +639,25 @@
 4. 기존 `/api/center-admin/*` 쿼리들은 기존 필터 유지(점진적 강화 기반)
 
 ### Phase 3 (완료: 2025-10-30)
-1. ✅ 캐노니컬 경로 전환 완료: 주요 페이지들 `/center/[slug]/admin/*` 실제 구현 추가
-   - dashboard, members, instructors, courses, manage, reports
+1. ✅ 캐노니컬 경로 전환 완료: **모든 페이지** `/center/[slug]/admin/*` 실제 구현 추가
+   - 핵심 페이지: dashboard, members, instructors, courses, manage, reports, approvals, bookings, payments, notices
+   - 추가 페이지: home, info, introduction, schedule, levels, lesson-plans, teaching-methods, swim-programs, health (members/programs), reviews, users, algorithm-performance, exercise-calculator
 2. ✅ 리다이렉트 완료: 모든 기존 `/center-admin/*` → `/center/[slug]/admin/*` 자동 리다이렉트
 3. ✅ 내부 링크 업데이트: 대시보드 빠른 액션 버튼들이 tenant 경로 사용
 4. ✅ centerSlug 저장: tenant layout에서 localStorage에 slug 저장하여 리다이렉트에 활용
 5. ✅ import 경로 수정: tenant 경로 페이지들의 import를 `@/` alias로 통일 (빌드 호환성)
-6. 🔄 테넌트별 설정 머지(글로벌→센터→사용자) 및 UI 주입(브랜딩/메뉴) - 향후 구현
+
+### Phase 4 (완료: 2025-10-30)
+1. ✅ 테넌트 설정 컨텍스트 구현: `TenantSettingsContext` 생성 및 글로벌→센터→사용자 설정 머지
+2. ✅ 서버 설정 API 강화: `/api/centers/settings`에 브랜딩 정보 포함 (로고, 색상, 테마)
+3. ✅ 테넌트 레이아웃 통합: `TenantSettingsProvider`를 레이아웃에 추가하여 하위 컴포넌트에서 사용 가능
+4. ✅ 브랜딩 컴포넌트 생성: `TenantBranding`, `TenantLogo` 컴포넌트로 센터별 로고/브랜딩 표시
+5. 🔄 브랜딩 UI 적용: DashboardLayout, Navigation 등에 테넌트 브랜딩 적용 (선택적)
+
+**구현 세부사항:**
+- `TenantSettingsContext`: API에서 설정을 로드하고 브랜딩 정보를 추출하여 CSS 변수로 적용
+- `/api/centers/settings`: x-center-id 헤더 우선 사용, Center 모델의 images.logo/mainImage 포함
+- CSS 변수: `--tenant-primary-color`, `--tenant-secondary-color`로 테마 색상 주입 가능
+- 테마 모드: branding.theme에 따라 dark/light 모드 자동 적용
 
 비고: 점진적 전환 전략으로 기존 경로는 유지하되 tenant 경로로 자동 리다이렉트하여 하위 호환성 보장. Navigation.tsx는 이미 `/center/default/admin/*` 경로 사용 중.
