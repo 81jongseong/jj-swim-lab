@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from 'react';
 import apiClient from '../../utils/api';
 
 interface ApiPayment {
@@ -91,7 +92,7 @@ export default function PaymentsPage() {
     }
   };
 
-  const handleCreatePayment = async (e: React.FormEvent) => {
+  const handleCreatePayment = async (e: FormEvent) => {
     e.preventDefault();
     const res = await apiClient.post("/payments", {
       amount: Number(newPayment.amount),

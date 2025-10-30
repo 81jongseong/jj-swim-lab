@@ -133,6 +133,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 // export { default as Switch } from './switch';
 
 // 테이블 컴포넌트들
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './table';
 // export { default as ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from './responsivetable';
 // export { default as TableHeaderCell } from './tableheadercell';
 

@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '@/components/ui';
@@ -115,7 +116,7 @@ function MembershipPage() {
     setLoading(false);
   };
 
-  const handleCreatePlan = async (e: React.FormEvent) => {
+  const handleCreatePlan = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const res = await apiClient.post('/membership/plans', newPlan);
@@ -133,7 +134,7 @@ function MembershipPage() {
     }
   };
 
-  const handleCreateMembership = async (e: React.FormEvent) => {
+  const handleCreateMembership = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const res = await apiClient.post('/membership', newMembership);

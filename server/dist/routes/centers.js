@@ -31,6 +31,26 @@ const centerImageStorage = multer_1.default.diskStorage({
         cb(null, `center-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
     }
 });
+router.get('/resolve-slug/:slug', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const { slug } = req.params;
+        if (!slug) {
+            return res.status(400).json({ success: false, message: 'slug가 필요합니다.' });
+        }
+        let center = /^[0-9a-fA-F]{24}$/.test(slug) ? await Center_1.Center.findById(slug).select('_id name') : null;
+        if (!center) {
+            center = await Center_1.Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
+        }
+        if (!center) {
+            return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
+        }
+        return res.json({ success: true, data: { centerId: center._id, name: center.name } });
+    }
+    catch (error) {
+        console.error('resolve-slug 오류:', error);
+        return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+});
 const instructorImageStorage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         const dir = path_1.default.join(uploadDir, 'instructor-images');
@@ -1588,6 +1608,33 @@ router.get('/availability', auth_1.authMiddleware, async (req, res) => {
             success: false,
             message: '서버 오류가 발생했습니다.'
         });
+    }
+});
+router.get('/settings', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const user = await User_1.User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
+        const centerId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+        const globalSettings = {
+            theme: { color: 'blue', density: 'comfortable' },
+            notifications: { email: true, sms: false },
+            features: { reports: true, payments: true, bookings: true }
+        };
+        let centerSettings = {};
+        if (centerId) {
+            const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction');
+            centerSettings = centerDoc?.settings || {};
+        }
+        const userSettings = user?.settings || {};
+        const merged = {
+            ...globalSettings,
+            ...centerSettings,
+            ...userSettings,
+        };
+        return res.json({ success: true, data: merged });
+    }
+    catch (error) {
+        console.error('설정 조회/머지 오류:', error);
+        return res.status(500).json({ success: false, message: '설정 조회 중 오류가 발생했습니다.' });
     }
 });
 exports.default = router;

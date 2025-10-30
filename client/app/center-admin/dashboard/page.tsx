@@ -13,6 +13,8 @@
  */
 
 'use client';
+/* eslint-disable no-console */
+/* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -20,6 +22,8 @@ import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock,
 import { StatCard } from '../../../components/StatCard';
 import { Button } from '../../../components/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
+
+const DEBUG = false;
 
 interface CenterStats {
   totalMembers: number;
@@ -83,7 +87,7 @@ const CenterAdminDashboard: React.FC = () => {
   useEffect(() => {
     const loadCenterData = async () => {
       try {
-        console.log('📊 센터 데이터 로드 중...');
+        if (DEBUG) console.log('📊 센터 데이터 로드 중...');
         
         const response = await fetch('http://localhost:5000/api/center-admin/dashboard', {
           headers: {
@@ -93,7 +97,7 @@ const CenterAdminDashboard: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('📡 대시보드 API 응답:', data);
+          if (DEBUG) console.log('📡 대시보드 API 응답:', data);
           
           if (data.success && data.data) {
             setStats({
@@ -104,10 +108,10 @@ const CenterAdminDashboard: React.FC = () => {
               pendingApprovals: data.data.pendingApprovals || 0,
               todayBookings: data.data.todayBookings || 0
             });
-            console.log('✅ 대시보드 통계 로드 성공:', data.data);
+            if (DEBUG) console.log('✅ 대시보드 통계 로드 성공:', data.data);
           }
         } else {
-          console.error('❌ 대시보드 API 호출 실패:', response.status);
+          if (DEBUG) console.error('❌ 대시보드 API 호출 실패:', response.status);
           setStats({
             totalMembers: 0,
             activeInstructors: 0,
@@ -118,7 +122,7 @@ const CenterAdminDashboard: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error('❌ 센터 데이터 로드 실패:', error);
+        if (DEBUG) console.error('❌ 센터 데이터 로드 실패:', error);
         setStats({
           totalMembers: 0,
           activeInstructors: 0,
@@ -281,34 +285,52 @@ const CenterAdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button 
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
               onClick={() => window.location.href = '/center-admin/users'}
             >
-              <Users className="h-6 w-6 mb-2" />
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
               <span className="text-sm font-medium">회원 관리</span>
             </Button>
             <Button 
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 hover:border-green-300 transition-all"
               onClick={() => window.location.href = '/center-admin/instructors'}
             >
-              <Settings className="h-6 w-6 mb-2" />
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <Settings className="h-6 w-6 text-green-600" />
+              </div>
               <span className="text-sm font-medium">강사 관리</span>
             </Button>
             <Button 
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 hover:border-purple-300 transition-all"
               onClick={() => window.location.href = '/center-admin/courses'}
             >
-              <BookOpen className="h-6 w-6 mb-2" />
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-purple-600" />
+              </div>
               <span className="text-sm font-medium">강의 관리</span>
             </Button>
             <Button 
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-orange-50 hover:border-orange-300 transition-all"
+              onClick={() => window.location.href = '/center-admin/manage'}
+            >
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-orange-600" />
+              </div>
+              <span className="text-sm font-medium">예약·결제 관리</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-indigo-50 hover:border-indigo-300 transition-all"
               onClick={() => window.location.href = '/center-admin/reports'}
             >
-              <TrendingUp className="h-6 w-6 mb-2" />
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-indigo-600" />
+              </div>
               <span className="text-sm font-medium">리포트</span>
             </Button>
           </div>

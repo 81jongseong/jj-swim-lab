@@ -128,14 +128,18 @@ const router: Router = Router();
 import { auth as authenticateToken } from '../middleware/auth';
 
 // 모든 강습 과정 조회
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { level, instructor, isActive } = req.query;
+    const { level, instructor, isActive, centerId: centerIdQuery } = req.query as any;
     const filter: any = {};
     
     if (level) filter.level = level;
     if (instructor) filter.instructor = instructor;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
+    // 테넌트 가드: centerId 우선순위 = query.centerId > req.user.centerId > req.user.centerAdminInfo.managedCenters[0]
+    const user = req.user;
+    const resolvedCenterId = centerIdQuery || user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+    if (resolvedCenterId) filter.centerId = resolvedCenterId;
 
     const courses = await Course.find(filter)
       .populate('instructor', 'name userId')

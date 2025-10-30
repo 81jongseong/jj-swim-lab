@@ -97,7 +97,7 @@ interface AccessPermissions {
   systemSettings: boolean;
 }
 
-interface FeatureSequence {
+interface FeatureSequenceInfo {
   currentStep: string;
   completedSteps: string[];
   availableSteps: string[];

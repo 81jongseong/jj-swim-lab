@@ -101,6 +101,33 @@ const centerImageStorage = multer.diskStorage({
   }
 });
 
+// 테넌트 슬러그 해석: /api/centers/resolve-slug/:slug
+router.get('/resolve-slug/:slug', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) {
+      return res.status(400).json({ success: false, message: 'slug가 필요합니다.' });
+    }
+
+    // 1) ObjectId로 시도
+    let center = /^[0-9a-fA-F]{24}$/.test(slug) ? await Center.findById(slug).select('_id name') : null;
+
+    // 2) 이름으로 시도 (대소문자 무시)
+    if (!center) {
+      center = await Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
+    }
+
+    if (!center) {
+      return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
+    }
+
+    return res.json({ success: true, data: { centerId: center._id, name: center.name } });
+  } catch (error) {
+    console.error('resolve-slug 오류:', error);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
 const instructorImageStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(uploadDir, 'instructor-images');
@@ -1982,6 +2009,40 @@ router.get('/availability', authMiddleware, async (req: AuthRequest, res: Respon
       success: false,
       message: '서버 오류가 발생했습니다.'
     });
+  }
+});
+
+// 📦 설정 머지: 글로벌 → 센터 → 사용자
+router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
+    const centerId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+
+    // 글로벌 기본값 (간단한 기본 세트)
+    const globalSettings: any = {
+      theme: { color: 'blue', density: 'comfortable' },
+      notifications: { email: true, sms: false },
+      features: { reports: true, payments: true, bookings: true }
+    };
+
+    let centerSettings: any = {};
+    if (centerId) {
+      const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction');
+      centerSettings = (centerDoc as any)?.settings || {};
+    }
+
+    const userSettings: any = (user as any)?.settings || {};
+
+    const merged = {
+      ...globalSettings,
+      ...centerSettings,
+      ...userSettings,
+    };
+
+    return res.json({ success: true, data: merged });
+  } catch (error) {
+    console.error('설정 조회/머지 오류:', error);
+    return res.status(500).json({ success: false, message: '설정 조회 중 오류가 발생했습니다.' });
   }
 });
 

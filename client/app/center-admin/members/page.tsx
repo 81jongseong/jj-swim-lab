@@ -18,12 +18,17 @@
  */
 
 'use client';
+/* eslint-disable no-console */
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, UserPlus, Search, Filter, Eye, Edit, Calendar } from 'lucide-react';
+import { Users, UserPlus, Search, Calendar } from 'lucide-react';
+import ThemedStatCard from '@/components/ThemedStatCard';
+import MemberCard from '@/components/center-admin/MemberCard';
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
+
+const DEBUG = false;
 
 interface Member {
   _id: string;
@@ -110,20 +115,19 @@ function CenterMembersManagement() {
 
   const loadMembers = async () => {
     try {
-      console.log('🔄 loadMembers 호출됨');
+      if (DEBUG) console.log('🔄 loadMembers 호출됨');
       setIsLoading(true);
       const response = await apiClient.get('/api/center-admin/members');
-      
-      console.log('📡 회원 목록 API 응답:', response);
+      if (DEBUG) console.log('📡 회원 목록 API 응답:', response);
       
       if (response.success && Array.isArray(response.data)) {
-        console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
+        if (DEBUG) console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
         setMembers(response.data as Member[]);
       } else {
-        console.error('회원 목록 로드 실패:', response.message);
+        if (DEBUG) console.error('회원 목록 로드 실패:', response.message);
       }
     } catch (error) {
-      console.error('회원 목록 로드 오류:', error);
+      if (DEBUG) console.error('회원 목록 로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -131,19 +135,18 @@ function CenterMembersManagement() {
 
   const loadCourses = async () => {
     try {
-      console.log('📚 과정 목록 로드 시작');
+      if (DEBUG) console.log('📚 과정 목록 로드 시작');
       const response = await apiClient.get('/api/center-admin/courses');
-      
-      console.log('📚 과정 목록 API 응답:', response);
+      if (DEBUG) console.log('📚 과정 목록 API 응답:', response);
       
       if (response.success && Array.isArray(response.data)) {
-        console.log('📚 로드된 과정 목록:', response.data);
+        if (DEBUG) console.log('📚 로드된 과정 목록:', response.data);
         setCourses(response.data as Course[]);
       } else {
-        console.error('📚 과정 목록 로드 실패:', response.message);
+        if (DEBUG) console.error('📚 과정 목록 로드 실패:', response.message);
       }
     } catch (error) {
-      console.error('📚 과정 목록 로드 오류:', error);
+      if (DEBUG) console.error('📚 과정 목록 로드 오류:', error);
     }
   };
 
@@ -178,27 +181,25 @@ function CenterMembersManagement() {
 
   const handleAssignCourse = async (memberId: string, courseId: string) => {
     try {
-      console.log('🔄 과정 배정 시작:', { memberId, courseId });
+      if (DEBUG) console.log('🔄 과정 배정 시작:', { memberId, courseId });
       const response = await apiClient.put(`/api/center-admin/members/${memberId}/course`, {
         courseId: courseId
       });
       
-      console.log('📡 과정 배정 응답:', { success: response.success, message: response.message });
-      console.log('✅ 과정 배정 성공:', response);
+      if (DEBUG) console.log('📡 과정 배정 응답:', { success: response.success, message: response.message });
+      if (DEBUG) console.log('✅ 과정 배정 성공:', response);
       
       if (response.success) {
         alert('과정 배정이 완료되었습니다.');
-        console.log('🔄 loadMembers 호출 전');
         setShowAssignmentModal(false);
         // 즉시 목록 새로고침
         loadMembers();
-        console.log('🔄 loadMembers 호출 후');
       } else {
-        console.error('❌ 과정 배정 실패:', response);
+        if (DEBUG) console.error('❌ 과정 배정 실패:', response);
         alert('과정 배정 실패: ' + response.message);
       }
     } catch (error) {
-      console.error('❌ 과정 배정 오류:', error);
+      if (DEBUG) console.error('❌ 과정 배정 오류:', error);
       alert('과정 배정 중 오류가 발생했습니다.');
     }
   };
@@ -209,7 +210,7 @@ function CenterMembersManagement() {
     }
 
     try {
-      console.log('🗑️ 과정 배정 취소 시작:', { memberId, courseId });
+      if (DEBUG) console.log('🗑️ 과정 배정 취소 시작:', { memberId, courseId });
       const response = await apiClient.delete(`/api/center-admin/members/${memberId}/course/${courseId}`);
       
       if (response.success) {
@@ -219,7 +220,7 @@ function CenterMembersManagement() {
         alert('과정 배정 취소 실패: ' + response.message);
       }
     } catch (error) {
-      console.error('과정 배정 취소 오류:', error);
+      if (DEBUG) console.error('과정 배정 취소 오류:', error);
       alert('과정 배정 취소 중 오류가 발생했습니다.');
     }
   };
@@ -239,7 +240,7 @@ function CenterMembersManagement() {
         alert('메모 저장 실패: ' + response.message);
       }
     } catch (error) {
-      console.error('메모 저장 오류:', error);
+      if (DEBUG) console.error('메모 저장 오류:', error);
       alert('메모 저장 중 오류가 발생했습니다.');
     }
   };
@@ -271,52 +272,11 @@ function CenterMembersManagement() {
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">전체 회원</p>
-                <p className="text-2xl font-bold text-gray-900">{members.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <UserPlus className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">활성 회원</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {members.filter(m => m.status === 'active').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">과정 배정 회원</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {members.filter(m => m.assignedCourses && m.assignedCourses.length > 0).length}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">미배정 회원</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {members.filter(m => !m.assignedCourses || m.assignedCourses.length === 0).length}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <ThemedStatCard className="border-2" title="전체 회원" value={members.length} icon={<Users className="h-4 w-4" />} color="blue" />
+          <ThemedStatCard className="border-2" title="활성 회원" value={members.filter(m => m.status === 'active').length} icon={<UserPlus className="h-4 w-4" />} color="green" />
+          <ThemedStatCard className="border-2" title="배정 회원" value={members.filter(m => m.assignedCourses && m.assignedCourses.length > 0).length} icon={<Calendar className="h-4 w-4" />} color="purple" />
+          <ThemedStatCard className="border-2" title="미배정" value={members.filter(m => !m.assignedCourses || m.assignedCourses.length === 0).length} icon={<Users className="h-4 w-4" />} color="orange" />
         </div>
 
         {/* 검색 및 필터 */}
@@ -358,149 +318,30 @@ function CenterMembersManagement() {
           </div>
         </div>
 
-        {/* 회원 목록 */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
+        {/* 회원 목록 - MemberCard 그리드 */}
+        <div>
+          <div className="mb-3">
             <h2 className="text-lg font-semibold text-gray-900">회원 목록</h2>
             <p className="text-sm text-gray-600">총 {filteredMembers.length}명의 회원</p>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    회원 정보
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    배정된 과정
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    수강 이력
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    특이사항
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    등록일
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    관리
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMembers.map((member) => (
-                  <tr key={member._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                        <div className="text-sm text-gray-500">{member.email}</div>
-                        <div className="text-sm text-gray-500">{member.phone}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(member.status)}`}>
-                        {getStatusLabel(member.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {member.assignedCourses && member.assignedCourses.length > 0 ? (
-                          <div className="space-y-1">
-                            {member.assignedCourses.map((course, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {course.courseName}
-                                </span>
-                                <button
-                                  onClick={() => handleUnassignCourse(member._id, course.courseId)}
-                                  className="text-red-500 hover:text-red-700 text-xs"
-                                  title="배정 취소"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">미배정</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
-                        <div>완료 수업: {member.totalLessonsCompleted}회</div>
-                        {member.lastLessonDate && (
-                          <div className="text-xs text-gray-500">
-                            최근 수업: {new Date(member.lastLessonDate).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs">
-                        {member.centerMemo || member.studentInfo?.centerMemo ? (
-                          <div className="truncate">
-                            {(member.centerMemo || member.studentInfo?.centerMemo)?.substring(0, 50)}
-                            {(member.centerMemo || member.studentInfo?.centerMemo)?.length > 50 && '...'}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">메모 없음</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(member.enrollmentDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setShowDetailModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 flex items-center"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          상세
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setShowAssignmentModal(true);
-                          }}
-                          className="text-green-600 hover:text-green-900 flex items-center"
-                        >
-                          <UserPlus className="w-4 h-4 mr-1" />
-                          배정
-                        </button>
-                        <button
-                          onClick={() => openMemoModal(member)}
-                          className="text-purple-600 hover:text-purple-900 flex items-center"
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          메모
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setShowMemoHistoryModal(true);
-                          }}
-                          className="text-orange-600 hover:text-orange-900 flex items-center"
-                        >
-                          <Calendar className="w-4 h-4 mr-1" />
-                          이력
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredMembers.map((member) => (
+              <MemberCard
+                key={member._id}
+                member={{
+                  _id: member._id,
+                  name: member.name,
+                  email: member.email,
+                  phone: member.phone,
+                  status: member.status,
+                  assignedCourses: (member.assignedCourses || []).map((c: any) => ({ courseId: c.courseId, courseName: c.courseName, instructorName: c.instructorName })),
+                  enrollmentDate: member.enrollmentDate
+                }}
+                onView={() => { setSelectedMember(member); setShowDetailModal(true); }}
+                onAssign={() => { setSelectedMember(member); setShowAssignmentModal(true); }}
+                onMemo={() => openMemoModal(member)}
+              />
+            ))}
           </div>
         </div>
 
@@ -609,8 +450,8 @@ function CenterMembersManagement() {
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {(() => {
                   const availableCourses = courses.filter(course => course.currentStudents < course.maxStudents);
-                  console.log('📚 전체 과정 목록:', courses);
-                  console.log('📚 배정 가능한 과정 목록:', availableCourses);
+                  if (DEBUG) console.log('📚 전체 과정 목록:', courses);
+                  if (DEBUG) console.log('📚 배정 가능한 과정 목록:', availableCourses);
                   return availableCourses.map((course) => (
                   <div key={course._id} className="border rounded-lg p-3 hover:bg-gray-50">
                     <div className="flex justify-between items-center">

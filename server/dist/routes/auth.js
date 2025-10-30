@@ -83,7 +83,13 @@ router.post('/signup', async (req, res) => {
             userType: user.userType,
             email: user.email,
             name: user.name,
-            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || [],
+            memberships: [
+                ...(user.centerAdminInfo?.managedCenters || []).map((cid) => ({ centerId: cid, role: 'centerAdmin' })),
+                ...(user.instructorInfo?.assignedCenters || []).map((cid) => ({ centerId: cid, role: 'instructor' })),
+                ...(user.centerId ? [{ centerId: user.centerId, role: user.userType }] : [])
+            ],
+            defaultCenterId: user.centerId || (user.centerAdminInfo?.managedCenters?.[0])
         };
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
             expiresIn: '24h',
@@ -212,7 +218,13 @@ router.post('/login', async (req, res) => {
             email: user.email,
             name: user.name,
             centerId: user.centerId,
-            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+            permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || [],
+            memberships: [
+                ...(user.centerAdminInfo?.managedCenters || []).map((cid) => ({ centerId: cid, role: 'centerAdmin' })),
+                ...(user.instructorInfo?.assignedCenters || []).map((cid) => ({ centerId: cid, role: 'instructor' })),
+                ...(user.centerId ? [{ centerId: user.centerId, role: user.userType }] : [])
+            ],
+            defaultCenterId: user.centerId || (user.centerAdminInfo?.managedCenters?.[0])
         };
         console.log('🔍 JWT 토큰 페이로드 생성:', {
             id: tokenPayload.id,

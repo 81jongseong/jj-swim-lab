@@ -986,7 +986,7 @@ router.get('/payments', authMiddleware, requireCenterAdmin, async (req: AuthRequ
     }
 
     const payments = await Payment.find(query)
-      .populate('userId', 'name email')
+      .populate('user', 'name email')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });

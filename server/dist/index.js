@@ -66,6 +66,7 @@ const instructorManagement_1 = __importDefault(require("./routes/instructorManag
 const instructor_evaluation_1 = __importDefault(require("./routes/instructor-evaluation"));
 const revenue_1 = __importDefault(require("./routes/revenue"));
 const approvals_1 = __importDefault(require("./routes/approvals"));
+const availability_1 = __importDefault(require("./routes/availability"));
 const center_admin_1 = __importDefault(require("./routes/center-admin"));
 const member_bulk_import_1 = __importDefault(require("./routes/member-bulk-import"));
 const student_1 = __importDefault(require("./routes/student"));
@@ -120,7 +121,6 @@ const teaching_progress_1 = __importDefault(require("./routes/teaching-progress"
 const group_programs_1 = __importDefault(require("./routes/group-programs"));
 const unified_program_1 = __importDefault(require("./routes/unified-program"));
 const my_programs_1 = __importDefault(require("./routes/my-programs"));
-const availability_1 = __importDefault(require("./routes/availability"));
 const center_schedule_1 = __importDefault(require("./routes/center-schedule"));
 console.log('📦 모델 import 시작...');
 require("./models/TrainingPlan");
@@ -342,6 +342,7 @@ app.use('/api/revenue', revenue_1.default);
 app.use('/api/approvals', approvals_1.default);
 app.use('/api/center-admin', center_admin_1.default);
 app.use('/api/center-admin', center_admin_instructor_stats_1.default);
+app.use('/api/center-admin/bookings', bookings_1.default);
 app.use('/api/personal-lessons', personal_lessons_1.default);
 app.use('/api/lane-rentals', lane_rentals_1.default);
 app.use('/api/member-bulk-import', member_bulk_import_1.default);

@@ -49,6 +49,15 @@ type SyntheticDot = {
   cellId: string;
 };
 
+// 주변 버킷들의 합계(로컬 밀도) 계산
+function computeLocalDensity(bucket: string, ring: number, counts: Map<string, number>): number {
+  let sum = 0;
+  for (const nb of h3.gridDisk(bucket, ring)) {
+    sum += counts.get(nb) || 0;
+  }
+  return sum; // 반경≈300m 주변 점 개수
+}
+
 // 도넛 지오마스킹(셀 중심 근처에 합성 점)
 function jitterAround(lng: number, lat: number, minR = 80, maxR = 180): [number, number] {
   const rad = Math.PI / 180;
@@ -176,17 +185,9 @@ export async function GET() {
       bucketCount.set(b, (bucketCount.get(b) || 0) + 1);
     }
 
-    function localDensityOf(bucket: string): number {
-      let sum = 0;
-      for (const nb of h3.gridDisk(bucket, RING)) {
-        sum += bucketCount.get(nb) || 0;
-      }
-      return sum; // 반경≈300m 주변 점 개수
-    }
-
     const dotsWithDensity: SyntheticDot[] = visibleDots.map((d, i) => ({
       ...d,
-      localDensity: localDensityOf(dotBucket[i])
+      localDensity: computeLocalDensity(dotBucket[i], RING, bucketCount)
     }));
 
     console.log(`✅ 로컬 밀도 계산 완료: 평균 ${(dotsWithDensity.reduce((s, d) => s + d.localDensity, 0) / dotsWithDensity.length).toFixed(1)}개/점`);

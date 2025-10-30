@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '@/components/ui';
@@ -148,7 +149,7 @@ function NotificationsPage() {
     }
   };
 
-  const sendBroadcast = async (e: React.FormEvent) => {
+  const sendBroadcast = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await apiClient.post('/notifications/broadcast', broadcastForm);

@@ -147,10 +147,10 @@ router.get('/pricing/calculate', authenticateToken, async (req: AuthRequest, res
   }
 });
 
-// 모든 결제 내역 조회
+// 모든 결제 내역 조회 (테넌트 가드 적용)
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { status, purpose, startDate, endDate } = req.query;
+    const { status, purpose, startDate, endDate, centerId: centerIdQuery } = req.query as any;
     const filter: any = {};
     
     if (status) filter.status = status;
@@ -163,9 +163,12 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       };
     }
 
-    // 일반 사용자는 본인 결제만 조회 가능
+    // 테넌트 가드: centerId 우선 적용, 없으면 본인 결제로 제한
     const currentUser = req.user;
-    if (currentUser?.userType !== 'superAdmin') {
+    const resolvedCenterId = centerIdQuery || currentUser?.centerId || currentUser?.centerAdminInfo?.managedCenters?.[0];
+    if (resolvedCenterId) {
+      filter.centerId = resolvedCenterId;
+    } else if (currentUser?.userType !== 'superAdmin') {
       filter.user = currentUser.userId;
     }
 

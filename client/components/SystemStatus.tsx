@@ -85,7 +85,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-interface SystemStatus {
+interface SystemStatusState {
   server: 'online' | 'offline' | 'warning';
   database: 'online' | 'offline' | 'warning';
   api: 'online' | 'offline' | 'warning';
@@ -93,7 +93,7 @@ interface SystemStatus {
 }
 
 export default function SystemStatus() {
-  const [status, setStatus] = useState<SystemStatus>({
+  const [status, setStatus] = useState<SystemStatusState>({
     server: 'offline',
     database: 'offline',
     api: 'offline',

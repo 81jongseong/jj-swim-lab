@@ -1,9 +1,13 @@
 'use client';
+/* eslint-disable no-console */
+/* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import ThemedStatCard from '@/components/ThemedStatCard';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
 
 interface Notice {
   _id: string;
@@ -337,165 +341,110 @@ function NoticesManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Bell className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 공지사항</p>
-              <p className="text-2xl font-bold text-gray-900">{notices.length}개</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Eye className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">발행된 공지</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.filter(notice => notice.status === 'published').length}개
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">이번 달 공지</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.filter(notice => 
-                  notice.createdAt.getMonth() === new Date().getMonth() &&
-                  notice.createdAt.getFullYear() === new Date().getFullYear()
-                ).length}개
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <User className="w-8 h-8 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 조회수</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {notices.reduce((sum, notice) => sum + notice.views, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <ThemedStatCard
+          title="총 공지사항"
+          value={`${notices.length}개`}
+          icon={<Bell className="h-4 w-4" />}
+          color="blue"
+          className="border-2"
+        />
+        <ThemedStatCard
+          title="발행된 공지"
+          value={`${notices.filter(n=>n.status==='published').length}개`}
+          icon={<Eye className="h-4 w-4" />}
+          color="green"
+          className="border-2"
+        />
+        <ThemedStatCard
+          title="이번 달 공지"
+          value={`${notices.filter(n=> n.createdAt.getMonth()===new Date().getMonth() && n.createdAt.getFullYear()===new Date().getFullYear()).length}개`}
+          icon={<Calendar className="h-4 w-4" />}
+          color="purple"
+          className="border-2"
+        />
+        <ThemedStatCard
+          title="총 조회수"
+          value={notices.reduce((sum, n)=> sum + n.views, 0)}
+          icon={<User className="h-4 w-4" />}
+          color="orange"
+          className="border-2"
+        />
       </div>
 
-      {/* 공지사항 목록 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* 공지사항 목록 - 카드 그리드 */}
+      <Card className="border-2">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-900">공지사항 목록</h3>
-          <button 
-            onClick={handleCreate}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            새 공지사항 작성
-          </button>
+          <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" /> 새 공지사항 작성
+          </Button>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  제목
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  유형
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  우선순위
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작성자
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  조회수
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작성일
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  액션
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+        <CardContent>
+          {notices.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">등록된 공지사항이 없습니다.</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {notices.map((notice) => (
-                <tr key={notice._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{notice.title}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-xs">
-                        {notice.content}
-                      </div>
+                <Card key={notice._id} className={`border-2 bg-white hover:shadow-lg transition-all`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-semibold truncate">{notice.title}</CardTitle>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        notice.status==='published' ? 'bg-green-100 text-green-800' : notice.status==='draft' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {getStatusLabel(notice.status)}
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(notice.type)}`}>
-                      {getTypeLabel(notice.type)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(notice.status)}`}>
-                      {getStatusLabel(notice.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(notice.priority)}`}>
-                      {getPriorityLabel(notice.priority)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {notice.authorName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {notice.views}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {notice.createdAt.toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                    <div className="mt-1 text-xs text-gray-500 flex items-center gap-2">
+                      <Calendar className="w-3 h-3" /> {notice.createdAt.toLocaleDateString('ko-KR')}
+                      <span className="mx-1">•</span>
+                      <User className="w-3 h-3" /> {notice.authorName}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-gray-700 min-h-[48px] line-clamp-3 break-words">
+                      {notice.content}
+                    </div>
+                    <div className="mt-3 flex items-center flex-wrap gap-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full border ${
+                        notice.type==='important' ? 'bg-red-50 border-red-200 text-red-800' :
+                        notice.type==='maintenance' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                        notice.type==='event' ? 'bg-green-50 border-green-200 text-green-800' :
+                        'bg-blue-50 border-blue-200 text-blue-800'
+                      }`}>
+                        {getTypeLabel(notice.type)}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full border ${
+                        notice.priority==='high' ? 'bg-red-50 border-red-200 text-red-800' :
+                        notice.priority==='medium' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                        'bg-green-50 border-green-200 text-green-800'
+                      }`}>
+                        {getPriorityLabel(notice.priority)}
+                      </span>
+                      <span className="ml-auto text-gray-500">조회 {notice.views.toLocaleString()}회</span>
+                    </div>
+
+                    <div className="mt-4 flex gap-2 pt-3 border-t">
                       {notice.status === 'draft' && (
-                        <button 
-                          onClick={() => handlePublish(notice)}
-                          className="text-purple-600 hover:text-purple-900"
-                          title="발행"
-                        >
-                          <Bell className="w-4 h-4" />
-                        </button>
+                        <Button onClick={() => handlePublish(notice)} size="sm" className="bg-purple-600 hover:bg-purple-700">
+                          <Bell className="w-3 h-3 mr-1" /> 발행
+                        </Button>
                       )}
-                      <button 
-                        onClick={() => handleEdit(notice)}
-                        className="text-green-600 hover:text-green-900"
-                        title="수정"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(notice._id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="삭제"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <Button onClick={() => handleEdit(notice)} variant="outline" size="sm" className="border-green-300 text-green-700 hover:bg-green-50">
+                        <Edit className="w-3 h-3 mr-1" /> 수정
+                      </Button>
+                      <Button onClick={() => handleDelete(notice._id)} variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-50">
+                        <Trash2 className="w-3 h-3 mr-1" /> 삭제
+                      </Button>
                     </div>
-                  </td>
-                </tr>
+                  </CardContent>
+                </Card>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* 공지사항 작성/수정 모달 */}
       {showModal && (

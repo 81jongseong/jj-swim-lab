@@ -14,12 +14,14 @@
  */
 
 'use client';
+/* eslint-disable no-console */
+/* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { 
   MapPin, Phone, Mail, Clock, Edit, 
-  Users, BookOpen, ArrowRight, Calendar, Save, X, Upload
+  Users, ArrowRight, Calendar, Save, X, Upload
 } from 'lucide-react';
 import { Button } from '../../../components/Button';
 
@@ -336,13 +338,14 @@ const CenterHomePage: React.FC = () => {
           </p>
           
           <div className="flex flex-wrap justify-center gap-4 mt-4">
-            <a href="/center-admin/courses">
-              <button className="!bg-white !text-blue-700 hover:!bg-gray-50 px-10 py-4 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-2">
-                <Calendar className="h-5 w-5" />
-                강습 등록하기
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            </a>
+            <Button
+              onClick={() => window.location.href = '/center-admin/courses'}
+              className="bg-white text-blue-700 hover:bg-gray-50 px-10 py-4 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-2"
+            >
+              <Calendar className="h-5 w-5" />
+              강습 등록하기
+              <ArrowRight className="h-5 w-5" />
+            </Button>
           </div>
           
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -881,13 +884,14 @@ const CenterHomePage: React.FC = () => {
           </div>
 
           <div className="text-center mt-16">
-            <a href="/center-admin/courses">
-              <button className="bg-white text-blue-700 hover:bg-gray-50 px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-3 mx-auto">
-                <Calendar className="h-6 w-6" />
-                지금 바로 강습 등록하기
-                <ArrowRight className="h-6 w-6" />
-              </button>
-            </a>
+            <Button
+              onClick={() => window.location.href = '/center-admin/courses'}
+              className="bg-white text-blue-700 hover:bg-gray-50 px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-3 mx-auto"
+            >
+              <Calendar className="h-6 w-6" />
+              지금 바로 강습 등록하기
+              <ArrowRight className="h-6 w-6" />
+            </Button>
           </div>
         </div>
       </section>

@@ -342,7 +342,7 @@ router.get('/statistics', async (req, res) => {
 router.post('/personal-lessons/request', async (req, res) => {
     try {
         const userId = req.user.id;
-        const { instructorId, scheduledDate, startTime, endTime, poolType, laneNumber, lessonType, level, lessonContent, specialRequests } = req.body;
+        const { instructorId, studentId: requestedStudentId, scheduledDate, startTime, endTime, poolType, laneNumber, lessonType, level, lessonContent, specialRequests } = req.body;
         console.log('📝 개인레슨 신청:', {
             userId,
             instructorId,
@@ -355,26 +355,38 @@ router.post('/personal-lessons/request', async (req, res) => {
             level
         });
         const user = await User_1.User.findById(userId);
-        if (!user || !user.centerId) {
-            return res.status(400).json({
-                success: false,
-                message: '센터 정보를 찾을 수 없습니다.'
-            });
+        if (!user) {
+            return res.status(400).json({ success: false, message: '사용자 정보를 찾을 수 없습니다.' });
         }
-        const instructor = await User_1.User.findById(instructorId);
-        if (!instructor || instructor.userType !== 'instructor') {
-            return res.status(400).json({
-                success: false,
-                message: '유효하지 않은 강사입니다.'
-            });
+        let applicantId = userId;
+        if (requestedStudentId) {
+            const student = await User_1.User.findById(requestedStudentId);
+            if (!student || student.userType !== 'student') {
+                return res.status(400).json({ success: false, message: '신청자(회원) 정보가 올바르지 않습니다.' });
+            }
+            applicantId = student._id.toString();
         }
-        const existingLesson = await PersonalLesson_1.PersonalLesson.findOne({
-            instructor: instructorId,
+        const applicant = await User_1.User.findById(applicantId);
+        const centerId = applicant?.centerId || user.centerAdminInfo?.managedCenters?.[0];
+        if (!centerId) {
+            return res.status(400).json({ success: false, message: '센터 정보를 찾을 수 없습니다.' });
+        }
+        let instructor = null;
+        if (instructorId) {
+            instructor = await User_1.User.findById(instructorId);
+            if (!instructor || instructor.userType !== 'instructor') {
+                return res.status(400).json({ success: false, message: '유효하지 않은 강사입니다.' });
+            }
+        }
+        const existingQuery = {
             scheduledDate: new Date(scheduledDate),
             startTime,
             endTime,
             status: { $in: ['requested', 'accepted', 'in_progress'] }
-        });
+        };
+        if (instructorId)
+            existingQuery.instructor = instructorId;
+        const existingLesson = await PersonalLesson_1.PersonalLesson.findOne(existingQuery);
         if (existingLesson) {
             return res.status(400).json({
                 success: false,
@@ -396,9 +408,9 @@ router.post('/personal-lessons/request', async (req, res) => {
             console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
         }
         const personalLesson = new PersonalLesson_1.PersonalLesson({
-            studentId: userId,
-            instructorId: instructorId,
-            centerId: user.centerId,
+            studentId: applicantId,
+            instructorId: instructorId || undefined,
+            centerId: centerId,
             date: new Date(scheduledDate),
             time: startTime,
             duration: 60,

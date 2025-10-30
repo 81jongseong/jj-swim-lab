@@ -10,6 +10,7 @@
  */
 
 'use client';
+/* eslint-disable no-console */
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,8 +20,9 @@ import InstructorCard from '@/components/center-admin/InstructorCard';
 import InstructorEditModal from '@/components/center-admin/InstructorEditModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
-import PersonalLessonSettingsModal from '@/components/center-admin/PersonalLessonSettingsModal';
 import apiClient from '@/utils/api';
+
+const DEBUG = false;
 
 interface EmploymentHistory {
   centerName: string;
@@ -113,26 +115,26 @@ function CenterInstructorsManagement() {
       setIsLoading(true);
       
       // 현재 로그인한 사용자 정보 확인
-      console.log('🔍 현재 로그인한 사용자:', user);
-      console.log('🔍 사용자 센터 ID:', user?.centerId);
+      if (DEBUG) console.log('🔍 현재 로그인한 사용자:', user);
+      if (DEBUG) console.log('🔍 사용자 센터 ID:', user?.centerId);
       
       // 실제 API 연동
       const response = await apiClient.get('/api/center-admin/instructors');
-      console.log('📡 전체 응답:', response);
+      if (DEBUG) console.log('📡 전체 응답:', response);
       
       // response = { success, message, data: { instructors, pagination } }
       if ((response as any).success) {
         const instructors = ((response as any).data?.instructors || [])
           .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'ko-KR')); // ⭐ 가나다순 정렬
-        console.log('📋 강사 배열 (가나다순):', instructors);
+        if (DEBUG) console.log('📋 강사 배열 (가나다순):', instructors);
         setInstructors(instructors);
-        console.log('✅ 강사 데이터 로드 성공:', instructors.length, '명');
+        if (DEBUG) console.log('✅ 강사 데이터 로드 성공:', instructors.length, '명');
         
         if (instructors.length === 0) {
-          console.warn('⚠️ 센터에 배정된 강사가 없습니다. 서버 로그를 확인하세요.');
+          if (DEBUG) console.warn('⚠️ 센터에 배정된 강사가 없습니다. 서버 로그를 확인하세요.');
         }
       } else {
-        console.error('❌ API 호출 실패');
+        if (DEBUG) console.error('❌ API 호출 실패');
         setInstructors([]);
       }
       
@@ -273,7 +275,7 @@ function CenterInstructorsManagement() {
       setInstructors(tempInstructors);
       */
     } catch (error) {
-      console.error('강사 목록 로드 실패:', error);
+      if (DEBUG) console.error('강사 목록 로드 실패:', error);
       setInstructors([]);
     } finally {
       setIsLoading(false);
@@ -282,9 +284,9 @@ function CenterInstructorsManagement() {
 
   const loadInstructorStats = async () => {
     try {
-      console.log('📊 강사 통계 로드 시작...');
+      if (DEBUG) console.log('📊 강사 통계 로드 시작...');
       const response = await apiClient.get('/api/center-admin/instructors/stats');
-      console.log('📊 강사 통계 API 응답:', response);
+      if (DEBUG) console.log('📊 강사 통계 API 응답:', response);
       
       if (response.success && Array.isArray(response.data)) {
         const statsMap: {[key: string]: any} = {};
@@ -292,12 +294,12 @@ function CenterInstructorsManagement() {
           statsMap[stat.instructorId] = stat;
         });
         setInstructorStats(statsMap);
-        console.log('📊 강사 통계 로드 완료:', statsMap);
+        if (DEBUG) console.log('📊 강사 통계 로드 완료:', statsMap);
       } else {
-        console.error('📊 강사 통계 API 실패:', response.message);
+        if (DEBUG) console.error('📊 강사 통계 API 실패:', response.message);
       }
     } catch (error) {
-      console.error('강사 통계 로드 실패:', error);
+      if (DEBUG) console.error('강사 통계 로드 실패:', error);
     }
   };
 
@@ -310,7 +312,7 @@ function CenterInstructorsManagement() {
     if (!selectedInstructor) return;
 
     try {
-      console.log('🔥 강사 정보 저장 시작:', {
+      if (DEBUG) console.log('🔥 강사 정보 저장 시작:', {
         instructorId: selectedInstructor._id,
         instructorName: selectedInstructor.name,
         updatedData: updatedData
@@ -321,7 +323,7 @@ function CenterInstructorsManagement() {
         updatedData
       );
 
-      console.log('📡 서버 응답:', response);
+      if (DEBUG) console.log('📡 서버 응답:', response);
 
       // apiClient는 response.data를 반환하므로 response.success 확인
       if ((response as any)?.success) {
@@ -343,8 +345,8 @@ function CenterInstructorsManagement() {
         throw new Error('응답 실패');
       }
     } catch (error: any) {
-      console.error('❌ 강사 정보 수정 실패:', error);
-      console.error('📋 에러 상세:', error.response?.data);
+      if (DEBUG) console.error('❌ 강사 정보 수정 실패:', error);
+      if (DEBUG) console.error('📋 에러 상세:', error.response?.data);
       
       // 에러 메시지 개선
       const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류';
@@ -431,8 +433,8 @@ function CenterInstructorsManagement() {
         </button>
       </div>
 
-      {/* 강사 목록 - 반응형 카드 뷰 (최소 2열) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* 강사 목록 - 반응형 카드 뷰 (기본 2열) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredInstructors.map((instructor) => (
                 <InstructorCard
                   key={instructor._id}

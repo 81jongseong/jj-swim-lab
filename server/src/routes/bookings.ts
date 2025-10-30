@@ -423,6 +423,7 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
     const userId = (req as any).user.id;
     const { 
       instructorId, 
+      studentId: requestedStudentId,
       scheduledDate, 
       startTime, 
       endTime, 
@@ -446,32 +447,46 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
       level
     });
 
-    // 센터 ID 가져오기 (사용자 정보에서)
+    // 센터 ID 가져오기 (사용자 정보에서) - 학생/센터관리자 모두 지원
     const user = await User.findById(userId);
-    if (!user || !user.centerId) {
-      return res.status(400).json({
-        success: false,
-        message: '센터 정보를 찾을 수 없습니다.'
-      });
+    if (!user) {
+      return res.status(400).json({ success: false, message: '사용자 정보를 찾을 수 없습니다.' });
+    }
+    // 신청자(student) 결정: center-admin이 전달한 studentId가 있으면 그 학생으로 대체
+    let applicantId = userId;
+    if (requestedStudentId) {
+      const student = await User.findById(requestedStudentId);
+      if (!student || student.userType !== 'student') {
+        return res.status(400).json({ success: false, message: '신청자(회원) 정보가 올바르지 않습니다.' });
+      }
+      applicantId = student._id.toString();
     }
 
-    // 강사 정보 확인
-    const instructor = await User.findById(instructorId);
-    if (!instructor || instructor.userType !== 'instructor') {
-      return res.status(400).json({
-        success: false,
-        message: '유효하지 않은 강사입니다.'
-      });
+    // 센터 결정: 학생의 centerId 우선, 없으면 관리자 정보에서
+    const applicant = await User.findById(applicantId);
+    const centerId = (applicant as any)?.centerId || (user as any).centerAdminInfo?.managedCenters?.[0];
+    if (!centerId) {
+      return res.status(400).json({ success: false, message: '센터 정보를 찾을 수 없습니다.' });
+    }
+
+    // 강사 배정은 신청 후 관리에서 가능하도록 instructorId는 선택 사항
+    let instructor: any = null;
+    if (instructorId) {
+      instructor = await User.findById(instructorId);
+      if (!instructor || instructor.userType !== 'instructor') {
+        return res.status(400).json({ success: false, message: '유효하지 않은 강사입니다.' });
+      }
     }
 
     // 중복 예약 확인
-    const existingLesson = await PersonalLesson.findOne({
-      instructor: instructorId,
+    const existingQuery: any = {
       scheduledDate: new Date(scheduledDate),
       startTime,
       endTime,
       status: { $in: ['requested', 'accepted', 'in_progress'] }
-    });
+    };
+    if (instructorId) existingQuery.instructor = instructorId;
+    const existingLesson = await PersonalLesson.findOne(existingQuery);
 
     if (existingLesson) {
       return res.status(400).json({
@@ -498,9 +513,9 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
 
     // 개인레슨 생성 (모델 구조에 맞게 수정)
     const personalLesson = new PersonalLesson({
-      studentId: userId,
-      instructorId: instructorId,
-      centerId: user.centerId,
+      studentId: applicantId,
+      instructorId: instructorId || undefined,
+      centerId: centerId,
       date: new Date(scheduledDate),
       time: startTime,
       duration: 60, // 분 단위

@@ -173,6 +173,7 @@ import instructorManagementRoutes from './routes/instructorManagement';
 import instructorEvaluationRoutes from './routes/instructor-evaluation';
 import revenueRoutes from './routes/revenue';
 import approvalRoutes from './routes/approvals';
+import availabilityRoutes from './routes/availability';
 // 사용자 유형별 라우트
 import centerAdminRoutes from './routes/center-admin';
 import memberBulkImportRoutes from './routes/member-bulk-import';
@@ -232,7 +233,7 @@ import groupProgramsRoutes from './routes/group-programs';
 import unifiedProgramRoutes from './routes/unified-program';
 import myProgramsRoutes from './routes/my-programs';
 // import noticeRoutes from './routes/notice'; // ⭐ 중복 제거
-import availabilityRoutes from './routes/availability'; // ⭐ 추가
+// import availabilityRoutes from './routes/availability'; // 중복 임포트 제거 (아래에서 이미 임포트됨)
 import centerScheduleRoutes from './routes/center-schedule'; // ⭐ 추가
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
@@ -502,9 +503,12 @@ app.use('/api/instructor-management', instructorManagementRoutes);
 app.use('/api/instructor-evaluation', instructorEvaluationRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/approvals', approvalRoutes);
+// 중복 라우트 등록 제거: '/api/availability'는 한 번만 등록
 // 사용자 유형별 API 라우트
 app.use('/api/center-admin', centerAdminRoutes);
 app.use('/api/center-admin', centerAdminInstructorStatsRoutes);
+// 예약 관리 하위 라우트 (개인레슨/레인대여 상태 변경 등)
+app.use('/api/center-admin/bookings', bookingRoutes);
 app.use('/api/personal-lessons', personalLessonRoutes);
 app.use('/api/lane-rentals', laneRentalRoutes);
 app.use('/api/member-bulk-import', memberBulkImportRoutes);

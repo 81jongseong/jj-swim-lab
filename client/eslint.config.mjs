@@ -89,6 +89,39 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      globals: {
+        React: "readonly",
+        HeadersInit: "readonly",
+        RequestInit: "readonly",
+        NodeJS: "readonly",
+      },
+    },
+    rules: {
+      // TypeScript 환경에서는 전역 식별자 판별을 TS가 담당하므로 중복 경고를 끕니다
+      "no-undef": "off",
+      // 콘텐츠 문자열의 작은따옴표/쌍따옴표 이스케이프 강제 비활성화
+      "react/no-unescaped-entities": "off",
+    },
+  },
+  {
+    files: ["**/*.{test,spec}.{ts,tsx,js,jsx}", "**/__tests__/**/*"],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        test: "readonly",
+        expect: "readonly",
+      },
+    },
+  },
+  {
+    rules: {
+      // 콘솔은 경고로 완화
+      "no-console": "warn",
+    },
+  },
 ];
 
 export default eslintConfig;

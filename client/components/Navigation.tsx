@@ -188,31 +188,29 @@ const userMenuStructure = {
   centerAdmin: {
     dashboard: [
       { href: '/', label: '🏠 홈' },
-      { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
-      { href: '/center-admin/users', label: '👥 센터 회원 관리' },
-      { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
-      { href: '/center-admin/courses', label: '📚 센터 강의 관리' },
-      { href: '/center-admin/bookings', label: '📅 예약 관리' },
-      { href: '/center-admin/payments', label: '💰 결제 관리' },
-      { href: '/center-admin/reports', label: '📊 센터 통계' },
-      { href: '/center-admin/notices', label: '📢 공지사항 관리' },
+      { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
+      { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
+      { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
+      { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
+      { href: '/center/default/admin/reports', label: '📊 센터 통계' },
+      { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
     ],
-    approvals: [
-      { href: '/center-admin/approvals', label: '⏳ 회원 강습 승인', description: '강습신청/결제/환불/일정변경 승인' },
+    transactions: [
+      { href: '/center/default/admin/manage', label: '📋 예약·결제 관리', description: '예약/결제/승인 통합 관리' },
     ],
     center: [
-      { href: '/center-admin/introduction', label: '🏢 센터 소개 편집' },
-      { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
+      { href: '/center/default/admin/introduction', label: '🏢 센터 소개 편집' },
+      { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
     ],
     health: [
-      { href: '/center-admin/health', label: '📊 센터 건강 현황' },
-      { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
-      { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
-      { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
-      { href: '/center-admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
-      { href: '/center-admin/health/history', label: '📋 프로그램 이력 관리' },
-      { href: '/center-admin/algorithm-performance', label: '📈 알고리즘 성과' },
-      { href: '/center-admin/exercise-calculator', label: '⚡ 운동량 계산기' },
+      { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
+      { href: '/center/default/admin/health/statistics', label: '📈 건강 통계' },
+      { href: '/center/default/admin/health/members', label: '👥 회원 건강정보' },
+      { href: '/center/default/admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
+      { href: '/center/default/admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
+      { href: '/center/default/admin/health/history', label: '📋 프로그램 이력 관리' },
+      { href: '/center/default/admin/algorithm-performance', label: '📈 알고리즘 성과' },
+      { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
       { href: '/guide', label: '📖 이용안내' },
@@ -230,37 +228,35 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     levels: [
-      { href: '/center-admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
     ]
   },
   'center-admin': {
     dashboard: [
-      { href: '/center-admin/home', label: '🏠 홈' },
-      { href: '/center-admin/dashboard', label: '📊 센터 대시보드' },
-      { href: '/center-admin/users', label: '👥 센터 회원 관리' },
-      { href: '/center-admin/instructors', label: '👨‍🏫 센터 강사 관리' },
-      { href: '/center-admin/courses', label: '📚 센터 강의 관리' },
-      { href: '/center-admin/bookings', label: '📅 예약 관리' },
-      { href: '/center-admin/payments', label: '💰 결제 관리' },
-      { href: '/center-admin/reports', label: '📊 센터 통계' },
-      { href: '/center-admin/notices', label: '📢 공지사항 관리' },
+      { href: '/center/default/admin/home', label: '🏠 홈' },
+      { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
+      { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
+      { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
+      { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
+      { href: '/center/default/admin/reports', label: '📊 센터 통계' },
+      { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
     ],
-    approvals: [
-      { href: '/center-admin/approvals', label: '⏳ 회원 강습 승인', description: '강습신청/결제/환불/일정변경 승인' },
+    transactions: [
+      { href: '/center/default/admin/manage', label: '📋 예약·결제 관리', description: '예약/결제/승인 통합 관리' },
     ],
     center: [
-      { href: '/center-admin/info', label: '⚙️ 센터 정보 관리' },
-      { href: '/center-admin/settings', label: '🔧 센터 설정' },
+      { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
+      { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
     ],
     health: [
-      { href: '/center-admin/health', label: '📊 센터 건강 현황' },
-      { href: '/center-admin/health/statistics', label: '📈 건강 통계' },
-      { href: '/center-admin/health/members', label: '👥 회원 건강정보' },
-      { href: '/center-admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
-      { href: '/center-admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
-      { href: '/center-admin/health/history', label: '📋 프로그램 이력 관리' },
-      { href: '/center-admin/algorithm-performance', label: '📈 알고리즘 성과' },
-      { href: '/center-admin/exercise-calculator', label: '⚡ 운동량 계산기' },
+      { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
+      { href: '/center/default/admin/health/statistics', label: '📈 건강 통계' },
+      { href: '/center/default/admin/health/members', label: '👥 회원 건강정보' },
+      { href: '/center/default/admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
+      { href: '/center/default/admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
+      { href: '/center/default/admin/health/history', label: '📋 프로그램 이력 관리' },
+      { href: '/center/default/admin/algorithm-performance', label: '📈 알고리즘 성과' },
+      { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
       { href: '/guide', label: '📖 이용안내' },
@@ -278,7 +274,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     levels: [
-      { href: '/center-admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
     ]
   },
   superAdmin: {
@@ -366,19 +362,21 @@ const menuGrouping = {
   ],
   centerAdmin: [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
-    { groupName: '⏳ 센터 승인', categories: ['approvals'] },
+    { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
   'center-admin': [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
-    { groupName: '⏳ 센터 승인', categories: ['approvals'] },
+    { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
@@ -507,6 +505,9 @@ export default function Navigation() {
     // 하위 경로 매칭
     if (currentPath.startsWith(href + '/')) return true;
     
+    // 특수 케이스: 예약·결제 관리 페이지 (쿼리 파라미터 포함)
+    if (href === '/center/default/admin/manage' && currentPath.startsWith('/center/default/admin/manage')) return true;
+    
     // 특수 케이스: 건강 관리 관련 페이지들
     if (href === '/health' && currentPath.startsWith('/health')) return true;
     
@@ -589,8 +590,9 @@ export default function Navigation() {
               const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
               const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
               return menuItems.map((item, itemIndex) => (
-                <button
+                <Link
                   key={`${category}-${itemIndex}`}
+                  href={item.href}
                   data-active={isMenuActive(item.href, pathname).toString()}
                   data-href={item.href}
                   className={`block w-full text-left px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -599,14 +601,9 @@ export default function Navigation() {
                       : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                   }`}
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     console.log('🔗 모바일 메뉴 클릭:', item.href);
                     setIsMenuOpen(false);
-                    // 강제로 페이지 이동
-                    if (typeof window !== 'undefined') {
-                      window.location.href = item.href;
-                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -622,7 +619,7 @@ export default function Navigation() {
                   tabIndex={0}
                 >
                   {item.label}
-                </button>
+                </Link>
               ));
             })}
           </div>
@@ -658,10 +655,12 @@ export default function Navigation() {
                     const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
               const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
                     return menuItems.map((item, itemIndex) => (
-                      <button 
-                        key={`${category}-${itemIndex}`} 
+                      <Link
+                        key={`${category}-${itemIndex}`}
+                        href={item.href}
                         className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                           pathname === item.href || 
+                          (item.href === '/center/default/admin/manage' && pathname.startsWith('/center/default/admin/manage')) ||
                           (item.href === '/health' && pathname.startsWith('/health')) ||
                           (item.href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
                           (item.href === '/health/program' && pathname === '/health/program') ||
@@ -671,17 +670,12 @@ export default function Navigation() {
                             : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                         }`}
                         onClick={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                           console.log('🔗 데스크탑 메뉴 클릭:', item.href);
-                          // 강제로 페이지 이동
-                          if (typeof window !== 'undefined') {
-                            window.location.href = item.href;
-                          }
                         }}
                       >
                         {item.label}
-                      </button>
+                      </Link>
                     ));
                   })}
               </div>

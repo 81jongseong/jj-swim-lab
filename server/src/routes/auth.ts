@@ -200,7 +200,14 @@ router.post('/signup', async (req: Request, res: Response) => {
       userType: user.userType,
       email: user.email,
       name: user.name,
-      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || [],
+      // 멤버십 및 기본 센터
+      memberships: [
+        ...(user.centerAdminInfo?.managedCenters || []).map((cid: any) => ({ centerId: cid, role: 'centerAdmin' })),
+        ...(user.instructorInfo?.assignedCenters || []).map((cid: any) => ({ centerId: cid, role: 'instructor' })),
+        ...(user.centerId ? [{ centerId: user.centerId, role: user.userType }] : [])
+      ],
+      defaultCenterId: user.centerId || (user.centerAdminInfo?.managedCenters?.[0])
     };
     
     const token = jwt.sign(
@@ -401,7 +408,13 @@ router.post('/login', async (req: Request, res: Response) => {
       email: user.email,
       name: user.name,
       centerId: user.centerId,
-      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || []
+      permissions: user.centerAdminInfo?.permissions || user.superAdminInfo?.systemPermissions || [],
+      memberships: [
+        ...(user.centerAdminInfo?.managedCenters || []).map((cid: any) => ({ centerId: cid, role: 'centerAdmin' })),
+        ...(user.instructorInfo?.assignedCenters || []).map((cid: any) => ({ centerId: cid, role: 'instructor' })),
+        ...(user.centerId ? [{ centerId: user.centerId, role: user.userType }] : [])
+      ],
+      defaultCenterId: user.centerId || (user.centerAdminInfo?.managedCenters?.[0])
     };
     
     // 디버깅: JWT 토큰 페이로드 확인

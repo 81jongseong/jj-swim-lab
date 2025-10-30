@@ -258,6 +258,43 @@ const HeroWave: React.FC<HeroWaveProps> = ({
             </motion.p>
           )}
           
+          {/* CTA 버튼 */}
+          <motion.div
+            variants={motionPresets.slideUp}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8"
+          >
+            {ctaPrimary && (
+              <motion.a
+                href={ctaPrimary.href}
+                className="px-10 py-4 bg-white text-blue-600 rounded-lg font-bold text-lg hover:bg-gray-50 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-105 border-2 border-white"
+                style={{ 
+                  minWidth: '180px',
+                  textAlign: 'center',
+                  display: 'inline-block'
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {ctaPrimary.text}
+              </motion.a>
+            )}
+            {ctaSecondary && (
+              <motion.a
+                href={ctaSecondary.href}
+                className="px-10 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-lg font-bold text-lg hover:bg-white/20 transition-all shadow-lg"
+                style={{ 
+                  minWidth: '180px',
+                  textAlign: 'center',
+                  display: 'inline-block'
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {ctaSecondary.text}
+              </motion.a>
+            )}
+          </motion.div>
+          
         </motion.div>
       </div>
       

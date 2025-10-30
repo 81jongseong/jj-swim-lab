@@ -16,6 +16,7 @@
 'use client';
 
 import React from 'react';
+import ThemedStatCard from './ThemedStatCard';
 
 interface StatCardProps {
   title: string;
@@ -102,56 +103,20 @@ export function StatCard({
   onClick,
   href
 }: StatCardProps) {
-  const colors = colorClasses[color];
-
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else if (href) {
-      window.location.href = href;
-    }
-  };
-
-  const isClickable = onClick || href;
-  const clickableClasses = isClickable 
-    ? 'cursor-pointer hover:shadow-lg hover:scale-105 transform transition-all duration-200' 
-    : '';
-
+  // 변경 요약(change)과 subtitle은 현재 ThemedStatCard에서 직접 표시하지 않지만,
+  // 설명(description)에 우선 표시되도록 합성합니다.
+  const composedDescription = description || subtitle;
   return (
-    <div 
-      className={`${colors.bg} rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow ${clickableClasses} ${className}`}
-      onClick={isClickable ? handleClick : undefined}
-    >
-      <div className="flex items-center">
-        <div className={`p-2 ${colors.iconBg} rounded-lg`}>
-          {typeof icon === 'string' ? (
-            <span className={`text-2xl ${colors.icon}`}>{icon}</span>
-          ) : (
-            <div className={colors.icon}>{icon}</div>
-          )}
-        </div>
-        <div className="ml-4 flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className={`text-2xl font-bold ${colors.text}`}>
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
-          {subtitle && (
-            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-          )}
-          {description && (
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
-          )}
-          {change && (
-            <div className="flex items-center mt-1">
-              <span className={`text-xs ${changeColors[change.type]}`}>
-                {changeIcons[change.type]} {Math.abs(change.value)}%
-              </span>
-              <span className="text-xs text-gray-500 ml-1">전월 대비</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <ThemedStatCard
+      title={title}
+      value={typeof value === 'number' ? value : value}
+      icon={typeof icon === 'string' ? <span className="text-2xl">{icon}</span> : icon}
+      color={color as any}
+      description={composedDescription}
+      className={className}
+      onClick={onClick}
+      href={href}
+    />
   );
 }
 

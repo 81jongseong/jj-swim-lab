@@ -12,7 +12,8 @@ const Approval_1 = require("../models/Approval");
 const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
 const requireAdmin = (req, res, next) => {
-    if (!['superAdmin', 'centerAdmin'].includes(req.user.userType)) {
+    const userType = req.user.userType;
+    if (!['superAdmin', 'centerAdmin', 'center-admin'].includes(userType)) {
         return res.status(403).json({
             success: false,
             message: '승인 관리 권한이 없습니다. 관리자 계정이 필요합니다.'
@@ -22,11 +23,20 @@ const requireAdmin = (req, res, next) => {
 };
 router.get('/', auth_1.auth, requireAdmin, async (req, res) => {
     try {
-        const { userType, centerId } = req.user;
+        let { userType, centerId } = req.user;
         const { status, type, page = 1, limit = 20 } = req.query;
+        if (userType === 'center-admin') {
+            userType = 'centerAdmin';
+        }
+        let finalCenterId = centerId;
+        if ((userType === 'centerAdmin' || userType === 'center-admin') && !centerId) {
+            const user = await User_1.User.findById(req.user._id);
+            const dbCenterId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+            finalCenterId = dbCenterId ? (dbCenterId.toString ? dbCenterId.toString() : dbCenterId) : undefined;
+        }
         const queryCondition = {};
-        if (userType === 'centerAdmin' && centerId) {
-            queryCondition.centerId = centerId;
+        if ((userType === 'centerAdmin' || userType === 'center-admin') && finalCenterId) {
+            queryCondition.centerId = finalCenterId;
         }
         if (status && status !== 'all') {
             queryCondition.status = status;

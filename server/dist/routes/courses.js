@@ -12,9 +12,9 @@ const auth_1 = require("../middleware/auth");
 const role_1 = require("../middleware/role");
 const router = (0, express_1.Router)();
 const auth_2 = require("../middleware/auth");
-router.get('/', async (req, res) => {
+router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { level, instructor, isActive } = req.query;
+        const { level, instructor, isActive, centerId: centerIdQuery } = req.query;
         const filter = {};
         if (level)
             filter.level = level;
@@ -22,6 +22,10 @@ router.get('/', async (req, res) => {
             filter.instructor = instructor;
         if (isActive !== undefined)
             filter.isActive = isActive === 'true';
+        const user = req.user;
+        const resolvedCenterId = centerIdQuery || user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+        if (resolvedCenterId)
+            filter.centerId = resolvedCenterId;
         const courses = await Course_1.Course.find(filter)
             .populate('instructor', 'name userId')
             .populate('enrolledStudents.student', 'name userId')

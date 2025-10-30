@@ -28,7 +28,7 @@ router.get('/pricing/calculate', auth_1.auth, async (req, res) => {
 });
 router.get('/', auth_1.auth, async (req, res) => {
     try {
-        const { status, purpose, startDate, endDate } = req.query;
+        const { status, purpose, startDate, endDate, centerId: centerIdQuery } = req.query;
         const filter = {};
         if (status)
             filter.status = status;
@@ -41,7 +41,11 @@ router.get('/', auth_1.auth, async (req, res) => {
             };
         }
         const currentUser = req.user;
-        if (currentUser?.userType !== 'superAdmin') {
+        const resolvedCenterId = centerIdQuery || currentUser?.centerId || currentUser?.centerAdminInfo?.managedCenters?.[0];
+        if (resolvedCenterId) {
+            filter.centerId = resolvedCenterId;
+        }
+        else if (currentUser?.userType !== 'superAdmin') {
             filter.user = currentUser.userId;
         }
         const payments = await Payment_1.Payment.find(filter)

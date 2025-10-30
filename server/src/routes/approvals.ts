@@ -42,8 +42,9 @@ const router = express.Router();
  * @param next 다음 미들웨어 함수
  */
 const requireAdmin = (req: any, res: any, next: any) => {
-  // 승인 관리 권한이 있는 계정 타입 확인
-  if (!['superAdmin', 'centerAdmin'].includes(req.user.userType)) {
+  // 승인 관리 권한이 있는 계정 타입 확인 (center-admin도 허용)
+  const userType = req.user.userType;
+  if (!['superAdmin', 'centerAdmin', 'center-admin'].includes(userType)) {
     return res.status(403).json({
       success: false,
       message: '승인 관리 권한이 없습니다. 관리자 계정이 필요합니다.'
@@ -74,14 +75,27 @@ const requireAdmin = (req: any, res: any, next: any) => {
 router.get('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     // 🔍 요청자 정보 및 쿼리 파라미터 추출
-    const { userType, centerId } = req.user;  // 요청자 계정 정보
+    let { userType, centerId } = req.user;  // 요청자 계정 정보
     const { status, type, page = 1, limit = 20 } = req.query;  // 필터링 옵션
+
+    // center-admin을 centerAdmin으로 정규화
+    if (userType === 'center-admin') {
+      userType = 'centerAdmin';
+    }
+
+    // centerId가 없으면 DB에서 조회
+    let finalCenterId: string | mongoose.Types.ObjectId | undefined = centerId;
+    if ((userType === 'centerAdmin' || userType === 'center-admin') && !centerId) {
+      const user = await User.findById(req.user._id);
+      const dbCenterId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+      finalCenterId = dbCenterId ? (dbCenterId.toString ? dbCenterId.toString() : dbCenterId) : undefined;
+    }
 
     // 🔍 기본 쿼리 조건 구성 (계정별 접근 범위 제한)
     const queryCondition: any = {};
-    if (userType === 'centerAdmin' && centerId) {
+    if ((userType === 'centerAdmin' || userType === 'center-admin') && finalCenterId) {
       // 센터관리자: 자신의 센터 관련 승인 요청만 조회
-      queryCondition.centerId = centerId;
+      queryCondition.centerId = finalCenterId;
     }
     // superAdmin: 모든 승인 요청 조회 (추가 조건 없음)
 

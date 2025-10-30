@@ -103,7 +103,7 @@ export default function ConditionQuickPick({ value, onChange }:{ value: string[]
 
   // 최근 선택
   const [recent, setRecent] = useState<string[]>([]);
-  useEffect(()=>{ try{ setRecent(JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')); }catch{} },[]);
+  useEffect(()=>{ try{ setRecent(JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')); }catch{ /* noop */ } },[]);
   
   const pushRecent = (id:string)=>{
     const next = [id, ...recent.filter(x=>x!==id)].slice(0, MAX_RECENT);
