@@ -175,6 +175,13 @@ function IntegratedManagement() {
     }
   }, []);
 
+  // 탭 전환 시 상단으로 스크롤
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeTab]);
+
   // 대시보드 통계 업데이트 함수 (useCallback으로 메모이제이션)
   const updateDashboardStats = useCallback(() => {
     // payments와 approvals 배열에서 직접 계산
