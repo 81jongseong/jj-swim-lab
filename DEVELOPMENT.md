@@ -632,11 +632,11 @@
 
 ## 🗓 멀티테넌트 라우팅 전환 계획 (Phase 2~3)
 
-### Phase 2 (예정: 2025-11-03 주간)
-1. 테넌트 컨텍스트 미들웨어 도입 (`/center/[slug]` → `centerId` 주입)
-2. 서버 API 가드 일괄 적용: 모든 `/api/center-admin/*`에 `centerId` 필수
-3. 네비게이션/링크 기준 경로를 `/center/[slug]/admin/*`로 전환(캐노니컬 유지)
-4. 결제/예약 API에 테넌트 필터 적용(인덱스 보강 포함)
+### Phase 2 (완료: 2025-10-30)
+1. 테넌트 컨텍스트 주입: 레이아웃에서 slug→centerId 해석, localStorage+cookie 저장
+2. 클라이언트 전역 API 헤더: `x-center-id` 자동 첨부 (`api.ts`)
+3. 서버 centerId 해석: 요청 헤더(`x-center-id`) 우선, 불가 시 사용자 소속 센터 사용
+4. 기존 `/api/center-admin/*` 쿼리들은 기존 필터 유지(점진적 강화 기반)
 
 ### Phase 3 (예정: 2025-11-10 주간)
 1. 캐노니컬 경로 전환: `/center-admin/*` → `/center/[slug]/admin/*`
