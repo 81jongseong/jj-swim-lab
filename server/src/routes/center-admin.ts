@@ -3250,8 +3250,12 @@ router.put('/lessons/:lessonId/progress', authMiddleware, requireCenterAdmin, as
   }
 });
 
-// getCenterId 헬퍼 함수
+// getCenterId 헬퍼 함수: 헤더 우선, 없으면 사용자 소속 사용
 async function getCenterId(req: AuthRequest): Promise<string | null> {
+  const headerCenterId = (req.headers['x-center-id'] as string | undefined)?.trim();
+  if (headerCenterId) {
+    return headerCenterId;
+  }
   const centerAdmin = await User.findById(req.user?._id);
   const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
   return centerId ? centerId.toString() : null;

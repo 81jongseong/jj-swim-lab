@@ -41,11 +41,18 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
         if (res.ok) {
           const data = await res.json();
           const id = data?.data?.centerId || data?.centerId || data?.id || (centerSlug || undefined);
-          if (isMounted) setCenterId(id);
+          if (isMounted) {
+            setCenterId(id);
+            try {
+              // 로컬/쿠키에 저장하여 API 헤더에 첨부될 수 있게 함
+              localStorage.setItem('centerId', String(id || ''));
+              document.cookie = `centerId=${encodeURIComponent(String(id || ''))}; path=/; max-age=${60 * 60 * 24 * 7}`;
+            } catch {}
+          }
         } else {
           if (isMounted) {
             // 실패 시 slug 자체를 id로 취급하여 최소한 컨텍스트는 채움
-            setCenterId(centerSlug || undefined);
+          setCenterId(centerSlug || undefined);
             setError('failed_to_resolve_center_slug');
           }
         }

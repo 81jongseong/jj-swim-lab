@@ -316,6 +316,7 @@ class ApiClient {
    */
   private async request<T = ApiResponse>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const centerId = typeof window !== 'undefined' ? (localStorage.getItem('centerId') || '') : '';
     
     console.log(`🔍 API 요청: ${this.baseURL}${endpoint}`);
     console.log(`🔑 인증 토큰: ${token ? '있음' : '없음'}`);
@@ -324,6 +325,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(centerId ? { 'x-center-id': centerId } as any : {}),
         ...options.headers,
       },
       ...options,
