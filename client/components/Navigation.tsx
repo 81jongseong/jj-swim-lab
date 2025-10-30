@@ -97,6 +97,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from 'hooks/useAuth';
 import NotificationsBell from './NotificationsBell';
+import { TenantLogo } from './TenantBranding';
 
 // 사용자별 메뉴 구조 정의
 const userMenuStructure = {
@@ -693,13 +694,7 @@ export default function Navigation() {
           {/* Logo and Brand */}
           <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                <img 
-                  src="/icons/manifest-icon-192.maskable.png" 
-                  alt="JJ Swim Lab" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <TenantLogo size="lg" />
               <span className="text-xl font-bold text-gray-900 leading-tight">JJ Swim Lab</span>
             </Link>
           </div>

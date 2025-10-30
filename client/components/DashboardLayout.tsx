@@ -195,16 +195,15 @@ export default function DashboardLayout({
           `}>
             <div className="flex flex-col h-full">
               {/* 로고 및 브랜드 */}
-              <div className="flex items-center justify-between h-16 px-6 border-b border-border bg-gradient-to-r from-blue-600 to-indigo-700">
+              <div 
+                className="flex items-center justify-between h-16 px-6 border-b border-border bg-gradient-to-r from-blue-600 to-indigo-700"
+              >
                 <Link href="/" className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                    <span className="text-blue-600 font-bold text-xl">J</span>
-                  </div>
-                  <span className="font-bold text-xl text-white">JJ Swim Lab</span>
+                  <TenantBranding showName={true} size="md" />
                 </Link>
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="lg:hidden p-2 rounded-md hover:bg-muted"
+                  className="lg:hidden p-2 rounded-md hover:bg-white/20 text-white"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

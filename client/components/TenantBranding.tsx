@@ -22,7 +22,13 @@ interface TenantBrandingProps {
 }
 
 export function TenantLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const { branding } = useTenantSettings();
+  let branding = null;
+  try {
+    const settings = useTenantSettings();
+    branding = settings.branding;
+  } catch {
+    // TenantSettingsContext가 없으면 기본 로고 사용
+  }
   
   const sizeMap = {
     sm: 'w-8 h-8',
@@ -51,7 +57,13 @@ export function TenantLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md'
 }
 
 export function TenantBranding({ showLogo = true, showName = true, size = 'md', className = '' }: TenantBrandingProps) {
-  const { branding } = useTenantSettings();
+  let branding = null;
+  try {
+    const settings = useTenantSettings();
+    branding = settings.branding;
+  } catch {
+    // TenantSettingsContext가 없으면 기본 브랜딩 사용
+  }
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
