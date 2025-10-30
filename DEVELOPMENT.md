@@ -644,7 +644,7 @@
 2. ✅ 리다이렉트 완료: 모든 기존 `/center-admin/*` → `/center/[slug]/admin/*` 자동 리다이렉트
 3. ✅ 내부 링크 업데이트: 대시보드 빠른 액션 버튼들이 tenant 경로 사용
 4. ✅ centerSlug 저장: tenant layout에서 localStorage에 slug 저장하여 리다이렉트에 활용
-5. ✅ import 경로 수정: tenant 경로 페이지들의 import를 상대 경로(../../../../)로 통일
+5. ✅ import 경로 수정: tenant 경로 페이지들의 import를 `@/` alias로 통일 (빌드 호환성)
 6. 🔄 테넌트별 설정 머지(글로벌→센터→사용자) 및 UI 주입(브랜딩/메뉴) - 향후 구현
 
 비고: 점진적 전환 전략으로 기존 경로는 유지하되 tenant 경로로 자동 리다이렉트하여 하위 호환성 보장. Navigation.tsx는 이미 `/center/default/admin/*` 경로 사용 중.
