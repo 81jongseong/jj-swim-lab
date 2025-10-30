@@ -33,6 +33,7 @@
 /* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
 import ThemedStatCard from '../../../components/ThemedStatCard';
@@ -136,7 +137,23 @@ interface DashboardStats {
 type TabType = 'dashboard' | 'bookings' | 'payments';
 
 function IntegratedManagement() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  
+  // 테넌트 경로로 리다이렉트 (Phase 3)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const slug = localStorage.getItem('centerSlug') || 'default';
+      const currentPath = window.location.pathname;
+      const search = window.location.search;
+      if (currentPath.startsWith('/center-admin/manage') && !currentPath.includes('/center/')) {
+        const newPath = `/center/${slug}/admin/manage${search}`;
+        router.replace(newPath);
+        return;
+      }
+    }
+  }, [router]);
+  
   // URL 쿼리 파라미터에서 탭 읽기
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [bookings, setBookings] = useState<Booking[]>([]);
