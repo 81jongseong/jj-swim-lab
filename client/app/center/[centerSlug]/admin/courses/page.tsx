@@ -31,18 +31,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Plus, Calendar, List } from 'lucide-react';
-import withAuth from '../../../../components/withAuth';
-import StatCard from '../../../../components/StatCard';
-import CourseFilterButtons from '../../../../components/center-admin/CourseFilterButtons';
-import CourseTable from '../../../../components/center-admin/CourseTable';
-import CourseCard from '../../../../components/center-admin/CourseCard';
-import CourseFormModal from '../../../../components/center-admin/CourseFormModal';
-import WeeklyCalendar from '../../../../components/center-admin/WeeklyCalendar';
-import CourseMemberAssignmentModal from '../../../../components/center-admin/CourseMemberAssignmentModal';
-import InstructorStudentManagement from '../../../../components/center-admin/InstructorStudentManagement';
-import PTLessonProgress from '../../../../components/center-admin/PTLessonProgress';
+import withAuth from '@/components/withAuth';
+import StatCard from '@/components/StatCard';
+import CourseFilterButtons from '@/components/center-admin/CourseFilterButtons';
+import CourseTable from '@/components/center-admin/CourseTable';
+import CourseCard from '@/components/center-admin/CourseCard';
+import CourseFormModal from '@/components/center-admin/CourseFormModal';
+import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
+import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
+import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
+import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
 
 // Course 타입 정의 (서버 모델과 일치)
 type Course = {

@@ -3,11 +3,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, TrendingUp, Users, Calendar, Download } from 'lucide-react';
-import withAuth from '../../../../components/withAuth';
-import ThemedStatCard from '../../../../components/ThemedStatCard';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui';
+import withAuth from '@/components/withAuth';
+import ThemedStatCard from '@/components/ThemedStatCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
 interface ReportData {
   period: string;

@@ -22,12 +22,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Users, UserPlus, Search, Calendar } from 'lucide-react';
-import ThemedStatCard from '../../../../components/ThemedStatCard';
-import MemberCard from '../../../../components/center-admin/MemberCard';
-import withAuth from '../../../../components/withAuth';
-import apiClient from '../../../../utils/api';
+import ThemedStatCard from '@/components/ThemedStatCard';
+import MemberCard from '@/components/center-admin/MemberCard';
+import withAuth from '@/components/withAuth';
+import apiClient from '@/utils/api';
 
 const DEBUG = false;
 

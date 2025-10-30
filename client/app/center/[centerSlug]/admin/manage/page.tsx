@@ -34,10 +34,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui';
-import ThemedStatCard from '../../../../components/ThemedStatCard';
-import { Button } from '../../../../components/Button';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import ThemedStatCard from '@/components/ThemedStatCard';
+import { Button } from '@/components/Button';
 import { 
   Calendar, 
   Clock, 
@@ -51,11 +51,11 @@ import {
   CreditCard,
   LayoutDashboard
 } from 'lucide-react';
-import SimplePersonalLessonModal from '../../../../components/center-admin/SimplePersonalLessonModal';
-import SimpleLaneRentalModal from '../../../../components/center-admin/SimpleLaneRentalModal';
-import BookingTable from '../../../../components/center-admin/BookingTable';
-import PaymentTable from '../../../../components/center-admin/PaymentTable';
-import apiClient from '../../../../utils/api';
+import SimplePersonalLessonModal from '@/components/center-admin/SimplePersonalLessonModal';
+import SimpleLaneRentalModal from '@/components/center-admin/SimpleLaneRentalModal';
+import BookingTable from '@/components/center-admin/BookingTable';
+import PaymentTable from '@/components/center-admin/PaymentTable';
+import apiClient from '@/utils/api';
 
 // 예약 인터페이스
 interface Booking {

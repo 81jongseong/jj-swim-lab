@@ -18,11 +18,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
-import { StatCard } from '../../../../components/StatCard';
-import { Button } from '../../../../components/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui';
+import { StatCard } from '@/components/StatCard';
+import { Button } from '@/components/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 
 const DEBUG = false;
 

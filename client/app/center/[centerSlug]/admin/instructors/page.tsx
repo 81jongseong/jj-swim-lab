@@ -14,14 +14,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../../../../hooks/useAuth';
-import withAuth from '../../../../components/withAuth';
-import InstructorStatsCards from '../../../../components/center-admin/InstructorStatsCards';
-import InstructorCard from '../../../../components/center-admin/InstructorCard';
-import InstructorEditModal from '../../../../components/center-admin/InstructorEditModal';
-import InstructorStudentManagement from '../../../../components/center-admin/InstructorStudentManagement';
-import PTLessonProgress from '../../../../components/center-admin/PTLessonProgress';
-import apiClient from '../../../../utils/api';
+import { useAuth } from '@/hooks/useAuth';
+import withAuth from '@/components/withAuth';
+import InstructorStatsCards from '@/components/center-admin/InstructorStatsCards';
+import InstructorCard from '@/components/center-admin/InstructorCard';
+import InstructorEditModal from '@/components/center-admin/InstructorEditModal';
+import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
+import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
+import apiClient from '@/utils/api';
 
 const DEBUG = false;
 
