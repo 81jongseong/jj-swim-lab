@@ -563,7 +563,7 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
                 message: '센터를 찾을 수 없습니다.'
             });
         }
-        const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings, images, introduction } = req.body;
+        const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings, images, introduction, settings } = req.body;
         console.log('📝 센터 정보 수정 요청:', {
             name,
             facilities: !!facilities,
@@ -630,6 +630,35 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         }
         if (customLevels)
             center.customLevels = customLevels;
+        if (settings) {
+            if (!center.settings) {
+                center.settings = {};
+            }
+            if (settings.theme) {
+                if (!center.settings.theme) {
+                    center.settings.theme = {};
+                }
+                if (settings.theme.primaryColor !== undefined) {
+                    center.settings.theme.primaryColor = settings.theme.primaryColor;
+                }
+                if (settings.theme.secondaryColor !== undefined) {
+                    center.settings.theme.secondaryColor = settings.theme.secondaryColor;
+                }
+                if (settings.theme.mode !== undefined) {
+                    center.settings.theme.mode = settings.theme.mode;
+                }
+                Object.keys(settings.theme).forEach(key => {
+                    if (settings.theme[key] !== undefined) {
+                        center.settings.theme[key] = settings.theme[key];
+                    }
+                });
+            }
+            Object.keys(settings).forEach(key => {
+                if (key !== 'theme' && settings[key] !== undefined) {
+                    center.settings[key] = settings[key];
+                }
+            });
+        }
         if (availabilitySettings) {
             if (!center.availabilitySettings) {
                 center.availabilitySettings = {
@@ -1612,23 +1641,37 @@ router.get('/availability', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/settings', auth_1.authMiddleware, async (req, res) => {
     try {
+        const headerCenterId = req.headers['x-center-id'];
         const user = await User_1.User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
-        const centerId = user?.centerId || user?.centerAdminInfo?.managedCenters?.[0];
+        const centerId = (headerCenterId && typeof headerCenterId === 'string')
+            ? headerCenterId
+            : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
         const globalSettings = {
             theme: { color: 'blue', density: 'comfortable' },
             notifications: { email: true, sms: false },
             features: { reports: true, payments: true, bookings: true }
         };
         let centerSettings = {};
+        let centerBranding = {};
         if (centerId) {
-            const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction');
-            centerSettings = centerDoc?.settings || {};
+            const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+            if (centerDoc) {
+                centerSettings = centerDoc?.settings || {};
+                centerBranding = {
+                    logo: centerDoc?.images?.logo,
+                    mainImage: centerDoc?.images?.mainImage,
+                    primaryColor: centerSettings?.theme?.primaryColor,
+                    secondaryColor: centerSettings?.theme?.secondaryColor,
+                    theme: centerSettings?.theme?.mode || 'light',
+                };
+            }
         }
         const userSettings = user?.settings || {};
         const merged = {
             ...globalSettings,
             ...centerSettings,
             ...userSettings,
+            branding: centerBranding,
         };
         return res.json({ success: true, data: merged });
     }

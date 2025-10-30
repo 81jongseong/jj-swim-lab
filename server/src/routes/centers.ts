@@ -777,7 +777,7 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
 
     // 수정 가능한 필드들
-    const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings, images, introduction } = req.body;
+    const { name, address, phone, email, website, description, facilities, operatingHours, pricing, customLevels, availabilitySettings, images, introduction, settings } = req.body;
     
     console.log('📝 센터 정보 수정 요청:', {
       name, 
@@ -846,6 +846,41 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
       center.introduction.pricing = { ...center.introduction.pricing, ...pricing };
     }
     if (customLevels) center.customLevels = customLevels;
+    
+    // settings 필드 처리 (Phase 4: 브랜딩 설정)
+    if (settings) {
+      if (!center.settings) {
+        center.settings = {} as any;
+      }
+      // theme 설정 병합
+      if (settings.theme) {
+        if (!center.settings.theme) {
+          center.settings.theme = {} as any;
+        }
+        if (settings.theme.primaryColor !== undefined) {
+          center.settings.theme.primaryColor = settings.theme.primaryColor;
+        }
+        if (settings.theme.secondaryColor !== undefined) {
+          center.settings.theme.secondaryColor = settings.theme.secondaryColor;
+        }
+        if (settings.theme.mode !== undefined) {
+          center.settings.theme.mode = settings.theme.mode;
+        }
+        // 다른 theme 필드도 병합
+        Object.keys(settings.theme).forEach(key => {
+          if (settings.theme[key] !== undefined) {
+            (center.settings.theme as any)[key] = settings.theme[key];
+          }
+        });
+      }
+      // 다른 settings 필드들도 병합
+      Object.keys(settings).forEach(key => {
+        if (key !== 'theme' && settings[key] !== undefined) {
+          (center.settings as any)[key] = settings[key];
+        }
+      });
+    }
+    
     if (availabilitySettings) {
       // availabilitySettings를 안전하게 병합
       // 기존 값을 보존하면서 새로운 값만 업데이트

@@ -664,3 +664,23 @@
 - 테마 모드: branding.theme에 따라 dark/light 모드 자동 적용
 
 비고: 점진적 전환 전략으로 기존 경로는 유지하되 tenant 경로로 자동 리다이렉트하여 하위 호환성 보장. Navigation.tsx는 이미 `/center/default/admin/*` 경로 사용 중.
+
+### Phase 5: 브랜딩 설정 시스템 완성 (완료: 2025-10-30)
+1. ✅ 서버 API 강화: `PUT /api/centers/my-center`에 `settings` 필드 처리 추가
+   - Center 모델에 `settings` 필드 정의 (theme, notifications, features 등)
+   - `settings.theme.primaryColor`, `secondaryColor`, `mode` 저장 지원
+2. ✅ 브랜딩 설정 페이지 생성: `/center/[centerSlug]/admin/branding`
+   - 로고/메인 이미지 업로드 UI
+   - 테마 색상 선택기 (primaryColor, secondaryColor)
+   - 테마 모드 선택 (light/dark/auto)
+   - 실시간 미리보기 기능
+3. ✅ 사용자 경험 개선:
+   - 미리보기 모드로 변경사항 확인 후 저장
+   - 색상 선택기와 텍스트 입력 양쪽 지원
+   - 업로드 즉시 반영 및 설정 컨텍스트 갱신
+
+**구현 세부사항:**
+- Center 모델: `settings` 필드를 `Schema.Types.Mixed`로 추가하여 유연한 설정 저장 지원
+- 브랜딩 페이지: `TenantSettingsContext`와 연동하여 현재 설정 로드 및 저장
+- FormData 처리: 로고/메인 이미지 업로드는 직접 fetch 사용 (Content-Type 자동 설정)
+- CSS 변수 실시간 적용: 미리보기 모드에서 `--tenant-primary-color`, `--tenant-secondary-color` 즉시 반영

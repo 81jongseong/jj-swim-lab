@@ -150,6 +150,27 @@ export interface ICenter extends Document {
       updatedBy: mongoose.Types.ObjectId;
     };
   };
+  // 센터 설정 (브랜딩, 테마 등)
+  settings?: {
+    theme?: {
+      primaryColor?: string;
+      secondaryColor?: string;
+      mode?: 'light' | 'dark' | 'auto';
+      color?: string;
+      density?: string;
+      [key: string]: any;
+    };
+    notifications?: {
+      email?: boolean;
+      sms?: boolean;
+    };
+    features?: {
+      reports?: boolean;
+      payments?: boolean;
+      bookings?: boolean;
+    };
+    [key: string]: any;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -362,6 +383,11 @@ const centerSchema = new Schema<ICenter>({
       lastUpdated: { type: Date, default: Date.now },
       updatedBy: { type: Schema.Types.ObjectId, ref: 'User' }
     }
+  },
+  // 센터 설정 (브랜딩, 테마 등)
+  settings: {
+    type: Schema.Types.Mixed,
+    default: {}
   }
 }, {
   timestamps: true

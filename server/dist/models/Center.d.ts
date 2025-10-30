@@ -168,6 +168,26 @@ export interface ICenter extends Document {
             updatedBy: mongoose.Types.ObjectId;
         };
     };
+    settings?: {
+        theme?: {
+            primaryColor?: string;
+            secondaryColor?: string;
+            mode?: 'light' | 'dark' | 'auto';
+            color?: string;
+            density?: string;
+            [key: string]: any;
+        };
+        notifications?: {
+            email?: boolean;
+            sms?: boolean;
+        };
+        features?: {
+            reports?: boolean;
+            payments?: boolean;
+            bookings?: boolean;
+        };
+        [key: string]: any;
+    };
     createdAt: Date;
     updatedAt: Date;
 }

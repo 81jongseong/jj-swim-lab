@@ -228,6 +228,10 @@ const centerSchema = new mongoose_1.Schema({
             lastUpdated: { type: Date, default: Date.now },
             updatedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }
         }
+    },
+    settings: {
+        type: mongoose_1.Schema.Types.Mixed,
+        default: {}
     }
 }, {
     timestamps: true
