@@ -55,10 +55,24 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
               document.cookie = `centerId=${encodeURIComponent(String(id || ''))}; path=/; max-age=${60 * 60 * 24 * 7}`;
             } catch {}
           }
+        } else if (res.status === 401) {
+          // 인증 실패 시에도 slug를 id로 사용하여 계속 진행
+          if (isMounted) {
+            setCenterId(centerSlug || undefined);
+            try {
+              localStorage.setItem('centerId', centerSlug || '');
+              document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
+            } catch {}
+            setError('auth_required'); // 에러는 설정하되 계속 진행
+          }
         } else {
           if (isMounted) {
             // 실패 시 slug 자체를 id로 취급하여 최소한 컨텍스트는 채움
             setCenterId(centerSlug || undefined);
+            try {
+              localStorage.setItem('centerId', centerSlug || '');
+              document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
+            } catch {}
             setError('failed_to_resolve_center_slug');
           }
         }

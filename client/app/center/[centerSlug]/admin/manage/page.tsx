@@ -248,17 +248,9 @@ function IntegratedManagement() {
 
   const loadBookings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/center-admin/bookings', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setBookings(data.data?.bookings || []);
+      const response = await apiClient.get('/api/center-admin/bookings');
+      if (response.success) {
+        setBookings(response.data?.bookings || []);
       }
     } catch (error) {
       if (DEBUG) console.error('예약 데이터 로딩 실패:', error);
@@ -267,18 +259,10 @@ function IntegratedManagement() {
 
   const loadPayments = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/center-admin/payments', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const response = await apiClient.get('/api/center-admin/payments');
+      if (response.success) {
         // Payment 모델은 user 필드 사용 (populate로 name, email 포함)
-        const formattedPayments = (data.data?.payments || []).map((payment: any) => ({
+        const formattedPayments = (response.data?.payments || []).map((payment: any) => ({
           _id: payment._id,
           userId: payment.user?._id || payment.user || payment.userId,
           userName: payment.user?.name || payment.userName || '알 수 없음',
@@ -297,7 +281,7 @@ function IntegratedManagement() {
         if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);
       } else {
-        if (DEBUG) console.error('결제 데이터 로딩 실패:', response.status);
+        if (DEBUG) console.error('결제 데이터 로딩 실패:', response.message);
       }
     } catch (error) {
       if (DEBUG) console.error('결제 데이터 로딩 실패:', error);
@@ -306,18 +290,10 @@ function IntegratedManagement() {
 
   const loadApprovals = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/approvals', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const response = await apiClient.get('/api/approvals');
+      if (response.success) {
         // Approval 모델 구조에 맞게 변환
-        const formattedApprovals: ApprovalItem[] = (data.data?.approvals || []).map((approval: any) => {
+        const formattedApprovals: ApprovalItem[] = ((response.data?.approvals || response.data || [])).map((approval: any) => {
           // userId populate된 경우 user.name, user.email 사용
           const user = approval.userId && typeof approval.userId === 'object' 
             ? approval.userId 
@@ -348,7 +324,7 @@ function IntegratedManagement() {
         if (DEBUG) console.log('✅ 승인 데이터 로드:', formattedApprovals.length, '건');
         setApprovals(formattedApprovals);
       } else {
-        if (DEBUG) console.error('승인 데이터 로딩 실패:', response.status);
+        if (DEBUG) console.error('승인 데이터 로딩 실패:', response.message);
       }
     } catch (error) {
       if (DEBUG) console.error('승인 데이터 로딩 실패:', error);
@@ -458,21 +434,17 @@ function IntegratedManagement() {
 
   const handleBookingAction = async (bookingId: string, action: 'approve' | 'reject', instructorId?: string, bookingType?: 'personal-lesson' | 'lane-rental') => {
     try {
-      const base = 'http://localhost:5000/api/center-admin/bookings';
       const endpoint = bookingType === 'lane-rental'
-        ? `${base}/lane-rentals/${bookingId}/status`
-        : `${base}/personal-lessons/${bookingId}/status`;
+        ? `/api/center-admin/bookings/lane-rentals/${bookingId}/status`
+        : `/api/center-admin/bookings/personal-lessons/${bookingId}/status`;
       const status = action === 'approve' ? (bookingType === 'lane-rental' ? 'approved' : 'accepted') : 'rejected';
 
       // 개인레슨 승인 시 강사 ID가 필수 → 간단 선택 프롬프트 제공
       let finalInstructorId = instructorId;
       if (bookingType === 'personal-lesson' && action === 'approve' && !finalInstructorId) {
         try {
-          const res = await fetch('http://localhost:5000/api/center-admin/instructors', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          });
-          const data = await res.json();
-          const instructors: any[] = data?.data?.instructors || [];
+          const res = await apiClient.get('/api/center-admin/instructors');
+          const instructors: any[] = res.data?.instructors || res.data || [];
           if (instructors.length === 0) {
             alert('배정 가능한 강사가 없습니다. 강사를 먼저 등록해 주세요.');
             return;
@@ -497,19 +469,15 @@ ${list}`);
       setBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status, instructorId: finalInstructorId || b.instructorId } as any : b));
       updateDashboardStats();
 
-      const response = await fetch(endpoint, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status, instructorId: finalInstructorId })
+      const response = await apiClient.patch(endpoint, {
+        status,
+        instructorId: finalInstructorId
       });
 
-      if (response.ok) {
+      if (response.success) {
         await loadAllData();
       } else {
-        if (DEBUG) console.warn('예약 상태 변경 API 실패:', response.status, await response.text());
+        if (DEBUG) console.warn('예약 상태 변경 API 실패:', response.message);
       }
     } catch (error) {
       if (DEBUG) console.error('예약 처리 실패:', error);
@@ -589,22 +557,14 @@ ${list}`);
         specialRequests: Array.isArray(data.goals) ? data.goals.join(', ') : (data.goals || '')
       };
 
-      const response = await fetch('http://localhost:5000/api/center-admin/bookings/personal-lessons/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await apiClient.post('/api/center-admin/bookings/personal-lessons/request', payload);
 
-      if (response.ok) {
+      if (response.success) {
         await loadAllData();
         setShowPersonalLessonModal(false);
         alert('개인레슨 신청이 완료되었습니다.');
       } else {
-        const text = await response.text();
-        if (DEBUG) console.warn('개인레슨 신청 실패:', response.status, text);
+        if (DEBUG) console.warn('개인레슨 신청 실패:', response.message);
         alert('개인레슨 신청에 실패했습니다. 입력 값을 확인해 주세요.');
       }
     } catch (error) {
@@ -615,19 +575,15 @@ ${list}`);
 
   const handleLaneRentalSubmit = async (data: any) => {
     try {
-      const response = await fetch('http://localhost:5000/api/lane-rentals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(data)
-      });
+      const response = await apiClient.post('/api/lane-rentals', data);
 
-      if (response.ok) {
+      if (response.success) {
         await loadAllData();
         setShowLaneRentalModal(false);
         alert('레인대여 신청이 완료되었습니다.');
+      } else {
+        if (DEBUG) console.error('레인대여 신청 실패:', response.message);
+        alert('레인대여 신청에 실패했습니다.');
       }
     } catch (error) {
       if (DEBUG) console.error('레인대여 신청 실패:', error);
