@@ -29,6 +29,12 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
 
   useEffect(() => {
     let isMounted = true;
+    // centerSlug를 localStorage에 저장 (리다이렉트용)
+    if (centerSlug) {
+      try {
+        localStorage.setItem('centerSlug', centerSlug);
+      } catch {}
+    }
     async function resolveSlug() {
       try {
         setLoading(true);
@@ -52,7 +58,7 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
         } else {
           if (isMounted) {
             // 실패 시 slug 자체를 id로 취급하여 최소한 컨텍스트는 채움
-          setCenterId(centerSlug || undefined);
+            setCenterId(centerSlug || undefined);
             setError('failed_to_resolve_center_slug');
           }
         }

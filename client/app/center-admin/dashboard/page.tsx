@@ -17,6 +17,7 @@
 /* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
 import { StatCard } from '../../../components/StatCard';
@@ -43,6 +44,7 @@ interface RecentActivity {
 }
 
 const CenterAdminDashboard: React.FC = () => {
+  const router = useRouter();
   const { user } = useAuth();
   const [stats, setStats] = useState<CenterStats>({
     totalMembers: 0,
@@ -83,6 +85,19 @@ const CenterAdminDashboard: React.FC = () => {
       status: 'warning'
     }
   ]);
+
+  // 테넌트 경로로 리다이렉트 (Phase 3)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const slug = localStorage.getItem('centerSlug') || 'default';
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
+        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
+        router.replace(newPath);
+        return;
+      }
+    }
+  }, [router]);
 
   useEffect(() => {
     const loadCenterData = async () => {
@@ -286,7 +301,10 @@ const CenterAdminDashboard: React.FC = () => {
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
-              onClick={() => window.location.href = '/center-admin/users'}
+              onClick={() => {
+                const slug = localStorage.getItem('centerSlug') || 'default';
+                window.location.href = `/center/${slug}/admin/members`;
+              }}
             >
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <Users className="h-6 w-6 text-blue-600" />
@@ -296,7 +314,10 @@ const CenterAdminDashboard: React.FC = () => {
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 hover:border-green-300 transition-all"
-              onClick={() => window.location.href = '/center-admin/instructors'}
+              onClick={() => {
+                const slug = localStorage.getItem('centerSlug') || 'default';
+                window.location.href = `/center/${slug}/admin/instructors`;
+              }}
             >
               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                 <Settings className="h-6 w-6 text-green-600" />
@@ -306,7 +327,10 @@ const CenterAdminDashboard: React.FC = () => {
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 hover:border-purple-300 transition-all"
-              onClick={() => window.location.href = '/center-admin/courses'}
+              onClick={() => {
+                const slug = localStorage.getItem('centerSlug') || 'default';
+                window.location.href = `/center/${slug}/admin/courses`;
+              }}
             >
               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-purple-600" />
@@ -316,7 +340,10 @@ const CenterAdminDashboard: React.FC = () => {
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-orange-50 hover:border-orange-300 transition-all"
-              onClick={() => window.location.href = '/center-admin/manage'}
+              onClick={() => {
+                const slug = localStorage.getItem('centerSlug') || 'default';
+                window.location.href = `/center/${slug}/admin/manage`;
+              }}
             >
               <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-orange-600" />
@@ -326,7 +353,10 @@ const CenterAdminDashboard: React.FC = () => {
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-indigo-50 hover:border-indigo-300 transition-all"
-              onClick={() => window.location.href = '/center-admin/reports'}
+              onClick={() => {
+                const slug = localStorage.getItem('centerSlug') || 'default';
+                window.location.href = `/center/${slug}/admin/reports`;
+              }}
             >
               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-indigo-600" />
