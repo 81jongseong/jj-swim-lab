@@ -8,25 +8,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../hooks/useAuth';
+import { useParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CenterLessonPlansPage() {
-  const router = useRouter();
   const { user, loading } = useAuth();
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [myPlans, setMyPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

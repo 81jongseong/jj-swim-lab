@@ -18,7 +18,8 @@
     "lint:fix": "echo 'Linting skipped'",
     "check-health": "node scripts/comprehensive-health-check.cjs",
     "fix-issues": "node scripts/auto-fix-issues.cjs",
-    "fix-issues:dry": "node scripts/auto-fix-issues.cjs --dry-run"
+    "fix-issues:dry": "node scripts/auto-fix-issues.cjs --dry-run",
+    "setup-hooks": "node scripts/setup-git-hooks.js && git config commit.template .gitmessage.txt"
   },
   "keywords": [
     "swimming",

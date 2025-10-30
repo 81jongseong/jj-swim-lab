@@ -12,18 +12,7 @@ export default function IntroductionPage() {
   const router = useRouter();
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/introduction') && !currentPath.includes('/center/')) {
-        router.replace(`/center/${slug}/admin/introduction`);
-        return;
-      }
-      // 기존 로직: introduction 페이지가 없는 경우 dashboard로
-      if (!currentPath.includes('/center/')) {
-        router.replace(`/center/${slug}/admin/dashboard`);
-      }
-    }
+    router.replace('/center-admin/dashboard');
   }, [router]);
   
   return (

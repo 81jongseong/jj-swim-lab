@@ -13,7 +13,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
@@ -28,23 +27,9 @@ interface Level {
 }
 
 function LevelsManagement() {
-  const router = useRouter();
   const { user } = useAuth();
   const [levels, setLevels] = useState<Level[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   // 권한 확인 - 페이지 렌더링 전에 체크
   // center@swim.com 계정도 센터 관리자로 인식

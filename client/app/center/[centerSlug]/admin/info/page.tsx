@@ -19,25 +19,12 @@
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import withAuth from '../../../components/withAuth';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
+import React from 'react';
+import { useParams } from 'next/navigation';
+import withAuth from '@/components/withAuth';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 
 function CenterInfoManagementPage() {
-  const router = useRouter();
-  
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-      if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/info') && !currentPath.includes('/center/')) {
-        router.replace(`/center/${slug}/admin/info`);
-        return;
-      }
-    }
-  }, [router]);
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Card>

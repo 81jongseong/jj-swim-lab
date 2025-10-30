@@ -8,8 +8,24 @@
  * - /center-admin/users 접근 시 /center-admin/members 로 리다이렉트
  */
 
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function UsersAliasPage() {
-	redirect('/center-admin/members');
+	const router = useRouter();
+	
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			const slug = localStorage.getItem('centerSlug') || 'default';
+			const currentPath = window.location.pathname;
+			if (currentPath.startsWith('/center-admin/users')) {
+				router.replace(`/center/${slug}/admin/members`);
+				return;
+			}
+		}
+	}, [router]);
+	
+	return null;
 }

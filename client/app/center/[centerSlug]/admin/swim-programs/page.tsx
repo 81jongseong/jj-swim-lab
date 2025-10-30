@@ -40,25 +40,10 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
 export default function SwimProgramsPage() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   // 샘플 통계 데이터
   const centerStats = {

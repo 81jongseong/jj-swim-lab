@@ -18,13 +18,13 @@
 /* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../hooks/useAuth';
+import { useParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   MapPin, Phone, Mail, Clock, Edit, 
   Users, ArrowRight, Calendar, Save, X, Upload
 } from 'lucide-react';
-import { Button } from '../../../components/Button';
+import { Button } from '@/components/Button';
 
 interface CenterInfo {
   _id: string;
@@ -80,7 +80,6 @@ interface Instructor {
 }
 
 const CenterHomePage: React.FC = () => {
-  const router = useRouter();
   const { user } = useAuth();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -92,19 +91,6 @@ const CenterHomePage: React.FC = () => {
   const [editData, setEditData] = useState<any>({});
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   // 센터 정보 로드
   useEffect(() => {

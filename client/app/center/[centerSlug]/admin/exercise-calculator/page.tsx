@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   Calculator, 
   Activity, 
@@ -19,7 +18,6 @@ import {
 } from 'lucide-react';
 
 export default function CenterAdminExerciseCalculatorPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     age: '',
     gender: '',
@@ -35,19 +33,6 @@ export default function CenterAdminExerciseCalculatorPage() {
   const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   const ACTIVITY_LEVELS = [
     { value: 'sedentary', label: '거의 운동 안함', multiplier: 1.2 },

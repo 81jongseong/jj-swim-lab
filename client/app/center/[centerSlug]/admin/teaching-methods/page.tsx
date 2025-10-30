@@ -15,7 +15,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
@@ -50,7 +49,6 @@ interface LevelMethodMapping {
 }
 
 function CenterTeachingMethodsPage() {
-  const router = useRouter();
   const { user } = useAuth();
   const [adminMethods, setAdminMethods] = useState<AdminTeachingMethod[]>([]);
   const [centerLevels, setCenterLevels] = useState<CenterLevel[]>([]);
@@ -62,19 +60,6 @@ function CenterTeachingMethodsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [editingComment, setEditingComment] = useState<{ levelId: string; methodId: string; comment: string } | null>(null);
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   useEffect(() => {
     if (user) {

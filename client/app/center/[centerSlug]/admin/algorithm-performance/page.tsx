@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, TrendingUp, Activity, Target, Clock, Users } from 'lucide-react';
 import withAuth from '@/components/withAuth';
@@ -19,23 +18,9 @@ interface AlgorithmPerformance {
 }
 
 function AlgorithmPerformancePage() {
-  const router = useRouter();
   const { user } = useAuth();
   const [performanceData, setPerformanceData] = useState<AlgorithmPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // 테넌트 경로로 리다이렉트 (Phase 3)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const slug = localStorage.getItem('centerSlug') || 'default';
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/center-admin/') && !currentPath.includes('/center/')) {
-        const newPath = currentPath.replace('/center-admin', `/center/${slug}/admin`);
-        router.replace(newPath);
-        return;
-      }
-    }
-  }, [router]);
 
   useEffect(() => {
     if (user) {

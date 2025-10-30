@@ -2603,6 +2603,10 @@ router.put('/lessons/:lessonId/progress', auth_1.authMiddleware, requireCenterAd
     }
 });
 async function getCenterId(req) {
+    const headerCenterId = req.headers['x-center-id']?.trim();
+    if (headerCenterId) {
+        return headerCenterId;
+    }
     const centerAdmin = await User_1.User.findById(req.user?._id);
     const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
     return centerId ? centerId.toString() : null;
