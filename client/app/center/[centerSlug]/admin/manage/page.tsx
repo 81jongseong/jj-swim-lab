@@ -799,38 +799,6 @@ ${list}`);
             />
           </div>
 
-          {/* 3행 보조 KPI */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ThemedStatCard
-              title="대기 결제"
-              value={`${dashboardStats.pendingPayments}건`}
-              icon={<Clock className="h-4 w-4" />}
-              color="yellow"
-              description="승인/처리 대기"
-            />
-            <ThemedStatCard
-              title="완료 결제"
-              value={`${dashboardStats.completedPayments}건`}
-              icon={<CheckCircle className="h-4 w-4" />}
-              color="blue"
-              description="처리 완료된 결제"
-            />
-            <ThemedStatCard
-              title="이번 주 예약"
-              value={`${dashboardStats.weekBookings}건`}
-              icon={<Calendar className="h-4 w-4" />}
-              color="cyan"
-              description="이번 주 총 예약"
-            />
-            <ThemedStatCard
-              title="대기 승인"
-              value={`${dashboardStats.pendingApprovalCount}건`}
-              icon={<AlertCircle className="h-4 w-4" />}
-              color="amber"
-              description="승인 대기 중인 요청"
-            />
-          </div>
-
           {/* 최근 활동 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 최근 예약 */}
