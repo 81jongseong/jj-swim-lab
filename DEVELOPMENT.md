@@ -638,12 +638,13 @@
 3. 서버 centerId 해석: 요청 헤더(`x-center-id`) 우선, 불가 시 사용자 소속 센터 사용
 4. 기존 `/api/center-admin/*` 쿼리들은 기존 필터 유지(점진적 강화 기반)
 
-### Phase 3 (진행 중: 2025-10-30)
-1. ✅ 캐노니컬 경로 전환 시작: `/center/[slug]/admin/dashboard` 실제 구현 추가
-2. ✅ 리다이렉트: 기존 `/center-admin/dashboard` → `/center/[slug]/admin/dashboard` 자동 리다이렉트
+### Phase 3 (완료: 2025-10-30)
+1. ✅ 캐노니컬 경로 전환 완료: 주요 페이지들 `/center/[slug]/admin/*` 실제 구현 추가
+   - dashboard, members, instructors, courses, manage, reports
+2. ✅ 리다이렉트 완료: 모든 기존 `/center-admin/*` → `/center/[slug]/admin/*` 자동 리다이렉트
 3. ✅ 내부 링크 업데이트: 대시보드 빠른 액션 버튼들이 tenant 경로 사용
 4. ✅ centerSlug 저장: tenant layout에서 localStorage에 slug 저장하여 리다이렉트에 활용
-5. 🔄 남은 작업: 나머지 center-admin 페이지들도 동일하게 tenant 경로 구현 및 리다이렉트 추가
+5. ✅ import 경로 수정: tenant 경로 페이지들의 import를 상대 경로(../../../../)로 통일
 6. 🔄 테넌트별 설정 머지(글로벌→센터→사용자) 및 UI 주입(브랜딩/메뉴) - 향후 구현
 
-비고: 점진적 전환 전략으로 기존 경로는 유지하되 tenant 경로로 자동 리다이렉트하여 하위 호환성 보장.
+비고: 점진적 전환 전략으로 기존 경로는 유지하되 tenant 경로로 자동 리다이렉트하여 하위 호환성 보장. Navigation.tsx는 이미 `/center/default/admin/*` 경로 사용 중.
