@@ -72,6 +72,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from 'hooks/useAuth';
 import TopNavigation from './TopNavigation';
+import { TenantBranding } from './TenantBranding';
 
 interface Breadcrumb {
   label: string;
