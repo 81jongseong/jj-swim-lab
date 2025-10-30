@@ -652,7 +652,10 @@
 2. ✅ 서버 설정 API 강화: `/api/centers/settings`에 브랜딩 정보 포함 (로고, 색상, 테마)
 3. ✅ 테넌트 레이아웃 통합: `TenantSettingsProvider`를 레이아웃에 추가하여 하위 컴포넌트에서 사용 가능
 4. ✅ 브랜딩 컴포넌트 생성: `TenantBranding`, `TenantLogo` 컴포넌트로 센터별 로고/브랜딩 표시
-5. 🔄 브랜딩 UI 적용: DashboardLayout, Navigation 등에 테넌트 브랜딩 적용 (선택적)
+5. ✅ 브랜딩 UI 적용: DashboardLayout, Navigation에 테넌트 브랜딩 적용 완료
+   - DashboardLayout 사이드바 로고 영역에 TenantBranding 적용
+   - Navigation 헤더 로고 영역에 TenantLogo 적용
+   - 컨텍스트 없을 때 기본 브랜딩으로 폴백 처리
 
 **구현 세부사항:**
 - `TenantSettingsContext`: API에서 설정을 로드하고 브랜딩 정보를 추출하여 CSS 변수로 적용
