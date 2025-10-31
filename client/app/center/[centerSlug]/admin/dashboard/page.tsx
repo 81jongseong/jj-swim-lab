@@ -168,7 +168,19 @@ const CenterAdminDashboard: React.FC = () => {
       </div>
 
       {/* 주요 통계 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-6 mb-8">
+        <StatCard
+          title="승인 대기"
+          value={`${stats.pendingApprovals}건`}
+          icon={<AlertCircle className="h-5 w-5" />}
+          color="red"
+        />
+        <StatCard
+          title="오늘 예약"
+          value={`${stats.todayBookings}건`}
+          icon={<Calendar className="h-5 w-5" />}
+          color="blue"
+        />
         <StatCard
           title="총 회원"
           value={`${stats.totalMembers}명`}
@@ -192,22 +204,6 @@ const CenterAdminDashboard: React.FC = () => {
           value={`${stats.monthlyRevenue.toLocaleString()}원`}
           icon="💰"
           color="orange"
-        />
-      </div>
-
-      {/* 추가 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <StatCard
-          title="승인 대기"
-          value={`${stats.pendingApprovals}건`}
-          icon={<AlertCircle className="h-5 w-5" />}
-          color="red"
-        />
-        <StatCard
-          title="오늘 예약"
-          value={`${stats.todayBookings}건`}
-          icon={<Calendar className="h-5 w-5" />}
-          color="blue"
         />
       </div>
 
