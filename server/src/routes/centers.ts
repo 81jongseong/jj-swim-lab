@@ -102,7 +102,8 @@ const centerImageStorage = multer.diskStorage({
 });
 
 // 테넌트 슬러그 해석: /api/centers/resolve-slug/:slug
-router.get('/resolve-slug/:slug', authMiddleware, async (req: AuthRequest, res: Response) => {
+// 인증 없이도 접근 가능하도록 변경 (센터 정보는 공개 정보)
+router.get('/resolve-slug/:slug', async (req: AuthRequest, res: Response) => {
   try {
     const { slug } = req.params;
     if (!slug) {
@@ -117,13 +118,19 @@ router.get('/resolve-slug/:slug', authMiddleware, async (req: AuthRequest, res: 
       center = await Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
     }
 
+    // 3) slug가 'default'인 경우 첫 번째 활성 센터 반환
+    if (!center && slug.toLowerCase() === 'default') {
+      center = await Center.findOne({ isActive: true }).select('_id name').sort({ createdAt: 1 });
+    }
+
     if (!center) {
       return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
     }
 
     return res.json({ success: true, data: { centerId: center._id, name: center.name } });
-  } catch (error) {
+  } catch (error: any) {
     console.error('resolve-slug 오류:', error);
+    console.error('에러 스택:', error?.stack);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -2050,6 +2057,17 @@ router.get('/availability', authMiddleware, async (req: AuthRequest, res: Respon
 // 📦 설정 머지: 글로벌 → 센터 → 사용자
 router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    // req.user가 없으면 기본 설정만 반환
+    if (!req.user || !req.user._id) {
+      const globalSettings = {
+        theme: { color: 'blue', density: 'comfortable' },
+        notifications: { email: true, sms: false },
+        features: { reports: true, payments: true, bookings: true },
+        branding: {}
+      };
+      return res.json({ success: true, data: globalSettings });
+    }
+
     // x-center-id 헤더 우선 사용 (Phase 2)
     const headerCenterId = req.headers['x-center-id'];
     const user = await User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
@@ -2093,9 +2111,14 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     };
 
     return res.json({ success: true, data: merged });
-  } catch (error) {
+  } catch (error: any) {
     console.error('설정 조회/머지 오류:', error);
-    return res.status(500).json({ success: false, message: '설정 조회 중 오류가 발생했습니다.' });
+    console.error('에러 스택:', error?.stack);
+    return res.status(500).json({ 
+      success: false, 
+      message: '설정 조회 중 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
