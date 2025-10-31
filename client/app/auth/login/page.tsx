@@ -127,7 +127,8 @@ export default function LoginPage() {
             break;
           case 'centerAdmin':
           case 'center-admin':
-            window.location.href = '/center-admin/dashboard';
+            const slug = localStorage.getItem('centerSlug') || 'default';
+            window.location.href = `/center/${slug}/admin/home`;
             break;
           case 'instructor':
             window.location.href = '/instructor/dashboard';

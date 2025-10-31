@@ -98,6 +98,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from 'hooks/useAuth';
 import NotificationsBell from './NotificationsBell';
 import { TenantLogo } from './TenantBranding';
+import { useTenantSettings } from '@/contexts/TenantSettingsContext';
 
 // 사용자별 메뉴 구조 정의
 const userMenuStructure = {
@@ -190,9 +191,8 @@ const userMenuStructure = {
       { href: '/center/default/admin/manage', label: '📋 예약·결제 관리', description: '예약/결제/승인 통합 관리' },
     ],
     center: [
-      { href: '/center/default/admin/introduction', label: '🏢 센터 소개 편집' },
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
-      { href: '/center/default/admin/branding', label: '🎨 브랜딩 설정' },
+      { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
     health: [
       { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
@@ -234,7 +234,7 @@ const userMenuStructure = {
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
-      { href: '/center/default/admin/branding', label: '🎨 브랜딩 설정' },
+      { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
     health: [
       { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
@@ -380,6 +380,123 @@ const menuGrouping = {
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [centerName, setCenterName] = useState('JJ Swim Lab');
+  const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
+  const [secondaryColor, setSecondaryColor] = useState<string | undefined>(undefined);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // 테넌트 브랜딩 정보 가져오기 (TenantSettingsProvider 밖에서도 작동하도록)
+  useEffect(() => {
+    // localStorage에서 센터명 가져오기
+    const storedCenterName = localStorage.getItem('center-name');
+    if (storedCenterName) {
+      setCenterName(storedCenterName);
+    }
+    
+    // localStorage에서 로고 URL 가져오기 (우선순위 1)
+    const loadLogoFromLocalStorage = () => {
+      const storedLogo = localStorage.getItem('center-logo');
+      if (storedLogo) {
+        const fullLogoUrl = storedLogo.startsWith('http') ? storedLogo : `http://localhost:5000${storedLogo}`;
+        setLogoUrl(fullLogoUrl);
+        return true;
+      }
+      return false;
+    };
+    
+    // localStorage에서 로고 로드 시도
+    if (!loadLogoFromLocalStorage()) {
+      // localStorage에 없으면 API에서 가져오기
+      const loadLogoFromAPI = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const centerId = localStorage.getItem('centerId');
+          if (token && centerId) {
+            const response = await fetch(`http://localhost:5000/api/centers/settings`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'x-center-id': centerId
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data?.branding?.logo) {
+                const logo = data.data.branding.logo;
+                const fullLogoUrl = logo.startsWith('http') ? logo : `http://localhost:5000${logo}`;
+                setLogoUrl(fullLogoUrl);
+                // localStorage에 저장
+                try {
+                  localStorage.setItem('center-logo', logo);
+                } catch (e) {
+                  console.warn('로고 URL localStorage 저장 실패:', e);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Navigation: 로고 URL 로드 실패:', error);
+        }
+      };
+      
+      loadLogoFromAPI();
+    }
+    
+    // 커스텀 이벤트 리스너 (로고 업데이트 감지)
+    const handleLogoUpdate = (event: any) => {
+      const logoUrlFromEvent = event.detail?.logoUrl;
+      if (logoUrlFromEvent) {
+        const fullLogoUrl = logoUrlFromEvent.startsWith('http') ? logoUrlFromEvent : `http://localhost:5000${logoUrlFromEvent}`;
+        setLogoUrl(fullLogoUrl);
+      }
+    };
+    
+    window.addEventListener('center-logo-updated', handleLogoUpdate);
+    
+    // CSS 변수에서 primaryColor와 secondaryColor 가져오기
+    const updateColor = () => {
+      const primary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
+      const secondary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim();
+      if (primary) {
+        setPrimaryColor(primary);
+      }
+      if (secondary) {
+        setSecondaryColor(secondary);
+      }
+    };
+    
+    updateColor();
+    
+    // MutationObserver로 CSS 변수 변경 감지
+    const observer = new MutationObserver(() => {
+      updateColor();
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+    
+    // 주기적으로 확인 (백업)
+    const interval = setInterval(() => {
+      updateColor();
+      // 로고도 주기적으로 확인 (localStorage 우선)
+      loadLogoFromLocalStorage();
+    }, 1000);
+    
+    // pathname 변경 시에도 색상 확인
+    const checkColor = () => {
+      updateColor();
+    };
+    
+    window.addEventListener('focus', checkColor);
+    
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+      window.removeEventListener('focus', checkColor);
+      window.removeEventListener('center-logo-updated', handleLogoUpdate);
+    };
+  }, [pathname]); // pathname 변경 시에도 실행
 
   // 페이지 경로 변경 시 최상단으로 스크롤
   useEffect(() => {
@@ -390,11 +507,9 @@ export default function Navigation() {
   useEffect(() => {
     if (isMenuOpen) {
       setTimeout(() => {
-        console.log('🎯 메뉴 포커스 시도 - 현재 경로:', pathname);
         
         // 정확한 경로 매칭으로 첫 번째 활성 메뉴 항목만 찾기
         const activeMenuItems = document.querySelectorAll('[data-active="true"]');
-        console.log(`📋 발견된 활성 메뉴 항목: ${activeMenuItems.length}개`);
         
         let targetMenuItem = null;
         
@@ -402,10 +517,8 @@ export default function Navigation() {
         for (let i = 0; i < activeMenuItems.length; i++) {
           const item = activeMenuItems[i] as HTMLElement;
           const href = item.getAttribute('data-href') || item.getAttribute('href');
-          console.log(`  - 메뉴 항목 ${i}: ${href}`);
           if (href && pathname === href) {
             targetMenuItem = item;
-            console.log('✅ 정확한 매칭 발견:', href);
             break;
           }
         }
@@ -413,11 +526,9 @@ export default function Navigation() {
         // 정확한 매칭이 없으면 첫 번째 활성 항목 사용
         if (!targetMenuItem && activeMenuItems.length > 0) {
           targetMenuItem = activeMenuItems[0] as HTMLElement;
-          console.log('✅ 첫 번째 활성 항목 사용');
         }
         
         if (targetMenuItem && typeof targetMenuItem.scrollIntoView === 'function') {
-          console.log('📜 스크롤 및 포커스 시작');
           targetMenuItem.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center',
@@ -425,16 +536,11 @@ export default function Navigation() {
           });
           // 메뉴 항목에 포커스
           targetMenuItem.focus();
-          console.log('✅ 포커스 완료');
         } else {
-          console.log('⚠️ 타겟 메뉴 항목 없음, 첫 번째 메뉴 항목 시도');
           // 첫 번째 메뉴 항목 자동 포커스
           const firstMenuItem = document.querySelector('[role="menuitem"]');
           if (firstMenuItem) {
             (firstMenuItem as HTMLElement).focus();
-            console.log('✅ 첫 번째 메뉴 항목에 포커스');
-          } else {
-            console.log('❌ 메뉴 항목을 찾을 수 없음');
           }
         }
       }, 200);
@@ -549,15 +655,12 @@ export default function Navigation() {
   // 현재 사용자 타입에 따른 메뉴 그룹 가져오기
   const getCurrentMenuGrouping = () => {
     const userType = user?.userType || 'guest';
-    console.log('🔍 현재 사용자 타입:', userType);
-    console.log('🔍 사용 가능한 메뉴 그룹:', menuGrouping[userType]);
     return menuGrouping[userType] || menuGrouping.guest;
   };
 
   // 메뉴 렌더링 함수 (데스크탑과 모바일 모두에서 사용)
   const renderMenuGroups = (isMobile: boolean = false) => {
     const grouping = getCurrentMenuGrouping();
-    console.log('🔍 메뉴 그룹 렌더링:', grouping);
     
     return grouping.map((group, groupIndex) => {
       if (isMobile) {
@@ -583,7 +686,6 @@ export default function Navigation() {
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('🔗 모바일 메뉴 클릭:', item.href);
                     setIsMenuOpen(false);
                   }}
                   onKeyDown={(e) => {
@@ -610,12 +712,12 @@ export default function Navigation() {
         return (
           <div key={groupIndex} className="relative group">
             <button
-              className={`text-gray-700 hover:text-blue-600 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-50 ${
+              className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 ${
                 group.categories.some(cat => 
                   userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
                     isMenuActive(item.href, pathname)
                   )
-                ) ? 'text-blue-600 font-semibold bg-blue-50' : ''
+                ) ? 'text-white font-semibold bg-white/30' : ''
               }`}
               onMouseEnter={() => openDropdown(`desktop-${groupIndex}`)}
               onMouseLeave={closeDropdown}
@@ -639,7 +741,7 @@ export default function Navigation() {
                       <Link
                         key={`${category}-${itemIndex}`}
                         href={item.href}
-                        className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors text-white ${
                           pathname === item.href || 
                           (item.href === '/center/default/admin/manage' && pathname.startsWith('/center/default/admin/manage')) ||
                           (item.href === '/health' && pathname.startsWith('/health')) ||
@@ -647,12 +749,29 @@ export default function Navigation() {
                           (item.href === '/health/program' && pathname === '/health/program') ||
                           (item.href === '/health/history' && pathname === '/health/history') ||
                           (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')
-                            ? 'bg-blue-100 text-blue-700 font-semibold border-r-2 border-blue-600' 
-                            : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                            ? 'font-semibold border-r-2' 
+                            : 'hover:opacity-80'
                         }`}
+                        style={{
+                          ...(pathname === item.href || 
+                            (item.href === '/center/default/admin/manage' && pathname.startsWith('/center/default/admin/manage')) ||
+                            (item.href === '/health' && pathname.startsWith('/health')) ||
+                            (item.href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
+                            (item.href === '/health/program' && pathname === '/health/program') ||
+                            (item.href === '/health/history' && pathname === '/health/history') ||
+                            (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')
+                            ? {
+                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                                color: '#ffffff',
+                                borderRightColor: '#ffffff'
+                              }
+                            : {
+                                color: '#ffffff',
+                                ...(primaryColor ? { '--hover-bg': `rgba(255, 255, 255, 0.1)` } : {})
+                              })
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('🔗 데스크탑 메뉴 클릭:', item.href);
                         }}
                       >
                         {item.label}
@@ -667,15 +786,46 @@ export default function Navigation() {
     });
   };
 
+  // 배경색 그라데이션 계산 (주요 색상 → 보조 색상)
+  const primaryNavColor = primaryColor || '#3b82f6';
+  const secondaryNavColor = secondaryColor || '#ffffff';
+  const navBackgroundStyle = { 
+    background: `linear-gradient(to right, ${primaryNavColor}, ${secondaryNavColor})`,
+    border: 'none'
+  };
+  
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-[100]">
+    <nav 
+      className="shadow-lg fixed top-0 left-0 right-0 z-[9999]"
+      style={navBackgroundStyle}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 min-w-0">
           {/* Logo and Brand */}
           <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center space-x-3">
-              <TenantLogo size="lg" />
-              <span className="text-xl font-bold text-gray-900 leading-tight">JJ Swim Lab</span>
+              {logoUrl ? (
+                <div className="w-12 h-12 relative">
+                  <img
+                    src={logoUrl}
+                    alt="센터 로고"
+                    className="w-full h-full object-contain rounded-lg"
+                    onError={(e) => {
+                      console.error('Navigation: 로고 이미지 로드 실패:', logoUrl);
+                      setLogoUrl(null); // 로드 실패 시 null로 설정하여 기본 로고 표시
+                    }}
+                    onLoad={() => {
+                    }}
+                  />
+                </div>
+              ) : (
+                <TenantLogo size="lg" />
+              )}
+              <span 
+                className="text-xl font-bold leading-tight text-white"
+              >
+                {centerName}
+              </span>
             </Link>
           </div>
 
@@ -689,15 +839,20 @@ export default function Navigation() {
             {!loading && isLoggedIn ? (
               <>
                 <div className="hidden md:flex items-center space-x-4 flex-nowrap">
-                  <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg flex-shrink-0">
+                  <div 
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg flex-shrink-0"
+                    style={{ backgroundColor: secondaryColor ? `${secondaryColor}40` : '#f9fafb' }}
+                  >
                   <NotificationsBell />
                 </div>
-                  <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-lg whitespace-nowrap flex-shrink-0">
-                    <span className="text-sm font-medium text-gray-800">{userName}님</span>
-                    <span className="text-xs text-gray-500">|</span>
+                  <div 
+                    className="flex items-center space-x-3 px-4 py-2 rounded-lg whitespace-nowrap flex-shrink-0 bg-white/20"
+                  >
+                    <span className="text-sm font-medium text-white">{userName}님</span>
+                    <span className="text-xs text-white/60">|</span>
                   <button
                     onClick={handleLogout}
-                      className="text-sm text-gray-700 hover:text-red-600 transition-colors font-medium"
+                      className="text-sm text-white hover:text-red-200 transition-colors font-medium"
                   >
                     로그아웃
                   </button>
@@ -717,14 +872,34 @@ export default function Navigation() {
                     setIsMenuOpen(!isMenuOpen);
                   }
                 }}
-                className="p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="p-2 rounded-md transition-colors focus:outline-none focus:ring-2 text-white"
+                style={{
+                  color: '#ffffff',
+                  '--hover-bg': 'rgba(255, 255, 255, 0.2)'
+                } as React.CSSProperties & { '--hover-bg': string }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
                 aria-label={isMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
                 aria-expanded={isMenuOpen}
               >
                 {isMenuOpen ? (
-                  <span className="text-2xl">✕</span>
+                  <span 
+                    className="text-2xl"
+                    style={{ color: primaryColor || '#3b82f6' }}
+                  >
+                    ✕
+                  </span>
                 ) : (
-                  <span className="text-2xl">☰</span>
+                  <span 
+                    className="text-2xl"
+                    style={{ color: primaryColor || '#3b82f6' }}
+                  >
+                    ☰
+                  </span>
                 )}
               </button>
             </div>
@@ -735,7 +910,11 @@ export default function Navigation() {
         {isMenuOpen && (
           <div 
             data-menu="mobile-menu"
-            className="lg:hidden absolute top-16 right-4 z-50 bg-white border border-gray-200 rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]"
+            className="lg:hidden absolute top-16 right-4 z-50 border rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]"
+            style={{
+              backgroundColor: secondaryColor || '#ffffff',
+              borderColor: primaryColor ? `${primaryColor}40` : '#e5e7eb'
+            }}
             role="menu"
             aria-label="주 메뉴"
           >
@@ -761,7 +940,17 @@ export default function Navigation() {
                   </button>
                 </div>
               ) : !loading ? (
-                <div className="px-3 py-2 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg mx-2 mb-2">
+                <div 
+                  className="px-3 py-2 border-t rounded-lg mx-2 mb-2"
+                  style={{
+                    borderTopColor: primaryColor ? `${primaryColor}40` : '#e5e7eb',
+                    background: primaryColor && secondaryColor 
+                      ? `linear-gradient(to right, ${primaryColor}20, ${secondaryColor}20)`
+                      : primaryColor 
+                        ? `${primaryColor}20`
+                        : '#eff6ff'
+                  }}
+                >
                   <div className="text-center text-sm text-gray-600 mb-3 py-2">
                     🎯 더 많은 기능을 체험해보세요!
                   </div>
@@ -775,7 +964,26 @@ export default function Navigation() {
                     </Link>
                     <Link 
                       href="/auth/signup" 
-                      className="block w-full text-center px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold"
+                      className="block w-full text-center px-3 py-2 text-white rounded-md transition-all duration-200 font-semibold"
+                      style={{
+                        background: primaryColor && secondaryColor
+                          ? `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
+                          : primaryColor || '#2563eb'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (primaryColor && secondaryColor) {
+                          e.currentTarget.style.background = `linear-gradient(to right, ${primaryColor}dd, ${secondaryColor}dd)`;
+                        } else if (primaryColor) {
+                          e.currentTarget.style.opacity = '0.9';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (primaryColor && secondaryColor) {
+                          e.currentTarget.style.background = `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`;
+                        } else if (primaryColor) {
+                          e.currentTarget.style.opacity = '1';
+                        }
+                      }}
                       onClick={() => setIsMenuOpen(false)}
                     >
                       📝 회원가입

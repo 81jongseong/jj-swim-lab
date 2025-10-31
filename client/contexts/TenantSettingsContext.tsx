@@ -22,6 +22,7 @@ export interface TenantBranding {
   primaryColor?: string;
   secondaryColor?: string;
   theme?: 'light' | 'dark' | 'auto';
+  name?: string; // 센터명 추가
 }
 
 export interface TenantSettings {
@@ -63,22 +64,20 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
       setLoading(true);
       setError(undefined);
 
-      console.log(`🔄 테넌트 설정 로드 시작: centerId=${centerId}`);
-
       // centerId가 변경되면 localStorage도 업데이트하여 apiClient가 최신 값을 사용하도록 함
       if (centerId) {
         try {
           localStorage.setItem('centerId', centerId);
           document.cookie = `centerId=${encodeURIComponent(centerId)}; path=/; max-age=${60 * 60 * 24 * 7}`;
-          console.log(`💾 centerId 저장 완료: ${centerId}`);
         } catch (e) {
-          console.warn('centerId 저장 실패:', e);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('centerId 저장 실패:', e);
+          }
         }
       }
 
       // 설정 머지 API 호출
       const response = await apiClient.get<{ success: boolean; data: TenantSettings }>('/api/centers/settings');
-      console.log(`📥 테넌트 설정 응답:`, response);
       
       if (response.success && response.data) {
         setSettings(response.data);
@@ -90,49 +89,118 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
           primaryColor: response.data.branding?.primaryColor || (response.data.theme?.color ? undefined : undefined),
           secondaryColor: response.data.branding?.secondaryColor,
           theme: (response.data.branding?.theme as 'light' | 'dark' | 'auto') || 'light',
+          name: response.data.branding?.name, // 센터명 추가
         };
         setBranding(brandingData);
-        console.log(`✅ 테넌트 설정 로드 완료:`, { settings: response.data, branding: brandingData });
+        
+        // 센터명을 localStorage에 저장 (Navigation 컴포넌트에서 사용)
+        if (brandingData.name) {
+          try {
+            localStorage.setItem('center-name', brandingData.name);
+          } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('센터명 localStorage 저장 실패:', e);
+            }
+          }
+        }
+        
+        // 로고 URL을 localStorage에 저장 (Navigation 컴포넌트에서 사용)
+        if (brandingData.logo) {
+          try {
+            localStorage.setItem('center-logo', brandingData.logo);
+            // 커스텀 이벤트 발생
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('center-logo-updated', { detail: { logoUrl: brandingData.logo } }));
+            }
+          } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('로고 URL localStorage 저장 실패:', e);
+            }
+          }
+        }
+
+        // Hex to HSL 변환 함수
+        const hexToHsl = (hex: string): string => {
+          // # 제거
+          hex = hex.replace('#', '');
+          const r = parseInt(hex.substr(0, 2), 16) / 255;
+          const g = parseInt(hex.substr(2, 2), 16) / 255;
+          const b = parseInt(hex.substr(4, 2), 16) / 255;
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          let h: number = 0;
+          let s: number = 0;
+          const l = (max + min) / 2;
+
+          if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+              case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+              case g: h = ((b - r) / d + 2) / 6; break;
+              case b: h = ((r - g) / d + 4) / 6; break;
+            }
+          }
+
+          return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+        };
 
         // 브랜딩 CSS 변수 적용 (값이 있을 때만 적용, 없으면 localStorage 또는 기존 값 유지)
         // 브랜딩 페이지에서 저장 중일 때는 덮어쓰지 않도록 주의 필요
-        if (brandingData.primaryColor) {
-          console.log('🎨 브랜딩 primaryColor 적용:', brandingData.primaryColor);
-          document.documentElement.style.setProperty('--tenant-primary-color', brandingData.primaryColor);
-          // localStorage에도 저장
-          try {
-            localStorage.setItem('tenant-primary-color', brandingData.primaryColor);
-          } catch (e) {
-            console.warn('localStorage 저장 실패:', e);
-          }
-        } else {
+        let primaryColorToApply = brandingData.primaryColor;
+        if (!primaryColorToApply) {
           // branding 값이 없으면 localStorage에서 가져와서 사용
           const storedPrimaryColor = typeof window !== 'undefined' ? localStorage.getItem('tenant-primary-color') : null;
           if (storedPrimaryColor) {
-            console.log('💾 localStorage에서 primaryColor 가져옴:', storedPrimaryColor);
-            document.documentElement.style.setProperty('--tenant-primary-color', storedPrimaryColor);
-          } else {
-            console.log('⚠️ 브랜딩 primaryColor가 없어서 기존 값 유지');
+            primaryColorToApply = storedPrimaryColor;
           }
         }
-        if (brandingData.secondaryColor) {
-          console.log('🎨 브랜딩 secondaryColor 적용:', brandingData.secondaryColor);
-          document.documentElement.style.setProperty('--tenant-secondary-color', brandingData.secondaryColor);
+        
+        if (primaryColorToApply) {
+          // --tenant-primary-color (hex 값)
+          document.documentElement.style.setProperty('--tenant-primary-color', primaryColorToApply);
+          // --primary (HSL 값) - Tailwind가 사용하는 변수
+          const primaryHsl = hexToHsl(primaryColorToApply);
+          document.documentElement.style.setProperty('--primary', primaryHsl);
           // localStorage에도 저장
           try {
-            localStorage.setItem('tenant-secondary-color', brandingData.secondaryColor);
+            localStorage.setItem('tenant-primary-color', primaryColorToApply);
           } catch (e) {
-            console.warn('localStorage 저장 실패:', e);
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('localStorage 저장 실패:', e);
+            }
           }
-        } else {
+        }
+        
+        let secondaryColorToApply = brandingData.secondaryColor;
+        if (!secondaryColorToApply) {
           // branding 값이 없으면 localStorage에서 가져와서 사용
           const storedSecondaryColor = typeof window !== 'undefined' ? localStorage.getItem('tenant-secondary-color') : null;
           if (storedSecondaryColor) {
-            console.log('💾 localStorage에서 secondaryColor 가져옴:', storedSecondaryColor);
-            document.documentElement.style.setProperty('--tenant-secondary-color', storedSecondaryColor);
-          } else {
-            console.log('⚠️ 브랜딩 secondaryColor가 없어서 기존 값 유지');
+            secondaryColorToApply = storedSecondaryColor;
           }
+        }
+        
+        if (secondaryColorToApply) {
+          // --tenant-secondary-color (hex 값)
+          document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColorToApply);
+          // --secondary (HSL 값) - Tailwind가 사용하는 변수
+          const secondaryHsl = hexToHsl(secondaryColorToApply);
+          document.documentElement.style.setProperty('--secondary', secondaryHsl);
+          // 페이지 배경색 설정 (secondaryColor 사용)
+          document.body.style.backgroundColor = secondaryColorToApply;
+          // localStorage에도 저장
+          try {
+            localStorage.setItem('tenant-secondary-color', secondaryColorToApply);
+          } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('localStorage 저장 실패:', e);
+            }
+          }
+        } else {
+          // 기본값으로 흰색
+          document.body.style.backgroundColor = '#ffffff';
         }
         
         // 테마 모드 적용 (localStorage 우선, 없으면 branding 값 사용)
@@ -143,38 +211,27 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
           const storedTheme = localStorage.getItem('tenant-theme');
           if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto')) {
             themeMode = storedTheme as 'light' | 'dark' | 'auto';
-            console.log('💾 localStorage에서 테마 모드 가져옴 (우선):', storedTheme);
           }
         }
         
         // localStorage에 없으면 branding 값 사용
         if (!themeMode && brandingData.theme) {
           themeMode = brandingData.theme as 'light' | 'dark' | 'auto';
-          console.log('🔍 brandingData.theme 사용:', brandingData.theme);
         }
-        
-        console.log('🔍 brandingData.theme:', brandingData.theme);
-        console.log('🔍 현재 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
         
         // themeMode가 없으면 기본값 'light' 사용
         themeMode = themeMode || 'light';
-        console.log('🎨 최종 적용할 테마 모드:', themeMode);
-        console.log('🔍 document.documentElement.classList:', Array.from(document.documentElement.classList));
-        console.log('🔍 document.body.classList:', Array.from(document.body.classList));
         
         if (themeMode === 'dark') {
           document.documentElement.classList.add('dark');
           document.body.classList.add('dark');
-          console.log('🌙 TenantSettingsContext: 다크 모드 적용');
         } else if (themeMode === 'light') {
           document.documentElement.classList.remove('dark');
           document.body.classList.remove('dark');
-          console.log('☀️ TenantSettingsContext: 라이트 모드 적용');
         } else if (themeMode === 'auto') {
           // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
           document.documentElement.classList.remove('dark');
           document.body.classList.remove('dark');
-          console.log('⚙️ TenantSettingsContext: 자동 모드 (라이트로 처리)');
         }
       }
     } catch (err: any) {

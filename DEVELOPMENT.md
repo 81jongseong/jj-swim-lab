@@ -300,6 +300,42 @@
 
 ---
 
+## 🐛 브랜딩 색상 적용 문제 (2025-01-31)
+
+### ❌ Tailwind `bg-primary` 클래스가 브랜딩 색상을 적용하지 않음
+**상태: ✅ 해결 완료**
+
+**문제:**
+- 브랜딩 색상을 설정하고 저장했지만, UI에서 색상이 적용되지 않음
+- CSS 변수 `--primary`는 올바르게 설정됨 (`9 91% 60%` 등)
+- 하지만 `bg-primary` 클래스를 사용하는 요소의 배경색이 `rgba(0, 0, 0, 0)` (투명)
+- Tailwind가 `bg-primary` CSS 규칙을 생성하지 않음
+
+**원인:**
+- Tailwind CSS는 빌드 타임에 클래스를 생성하는데, `bg-primary` 클래스가 제대로 생성되지 않음
+- `tailwind.config.cjs`에서 `primary.DEFAULT: 'hsl(var(--primary))'`로 설정했지만, Tailwind가 런타임 CSS 변수 변경을 반영하지 못함
+
+**해결 방법:**
+1. `globals.css`에 직접 CSS 유틸리티 클래스 추가:
+   - `.bg-primary-dynamic`: `background-color: hsl(var(--primary)) !important;`
+   - `.text-primary-dynamic`: `color: hsl(var(--primary-foreground)) !important;`
+   - `.bg-secondary-dynamic`: `background-color: hsl(var(--secondary)) !important;`
+   - `.text-secondary-dynamic`: `color: hsl(var(--secondary-foreground)) !important;`
+
+2. Button 컴포넌트 업데이트:
+   - `bg-primary` → `bg-primary-dynamic`
+   - `bg-secondary` → `bg-secondary-dynamic`
+   - `text-primary` → `text-primary-dynamic`
+
+3. 브랜딩 페이지 미리보기 섹션에 `bg-primary-dynamic` 사용
+
+**구현 세부사항:**
+- Hex 색상을 HSL 형식으로 변환하여 `--primary`, `--secondary` CSS 변수에 설정
+- `TenantSettingsContext`와 브랜딩 페이지 `useEffect`에서 색상 설정 시 HSL 변환 적용
+- 브랜딩 색상 변경 시 즉시 UI에 반영됨
+
+---
+
 ## 🐛 브랜딩 설정 미리보기 및 API 엔드포인트 오류 (2025-01-31)
 
 ### ❌ API 엔드포인트 404 오류

@@ -733,6 +733,11 @@ router.get('/student-dashboard-stats', authMiddleware, requireRole(['student']),
 router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     console.log('🔍 센터 정보 조회 요청 - 사용자:', req.user?._id, '타입:', req.user?.userType);
+    console.log('🔍 JWT 토큰 정보:', {
+      centerId: req.user?.centerId,
+      defaultCenterId: (req.user as any)?.defaultCenterId,
+      memberships: (req.user as any)?.memberships
+    });
     
     // ObjectId 유효성 검사
     if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
@@ -746,8 +751,12 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     const centerAdmin = await User.findById(req.user._id);
     console.log('👤 센터 관리자 조회:', centerAdmin?.email, 'centerId:', centerAdmin?.centerId, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
     
-    // centerId 필드 또는 centerAdminInfo.managedCenters에서 센터 ID 가져오기
-    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    // centerId 우선순위: 1) JWT의 defaultCenterId, 2) JWT의 memberships[0].centerId, 3) DB의 centerId, 4) DB의 managedCenters[0]
+    const jwtToken = req.user as any;
+    let centerId = jwtToken?.defaultCenterId || 
+                   jwtToken?.memberships?.[0]?.centerId ||
+                   centerAdmin?.centerId || 
+                   centerAdmin?.centerAdminInfo?.managedCenters?.[0];
     
     if (!centerId) {
       console.error('❌ 관리하는 센터가 없음');
@@ -756,9 +765,11 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
         message: '관리하는 센터가 없습니다.'
       });
     }
+    
+    console.log('🏢 사용할 센터 ID:', centerId);
     console.log('🏢 센터 ID로 조회 시도:', centerId);
     
-    const center = await Center.findById(centerId);
+    const center = await Center.findById(centerId).lean();
     console.log('🏢 센터 조회 결과:', center ? `${center.name} 찾음` : '센터 없음');
 
     if (!center) {
@@ -768,6 +779,14 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
         message: '센터 정보를 찾을 수 없습니다.'
       });
     }
+
+    console.log('📋 센터 데이터 확인:', {
+      hasOperatingHours: !!center.operatingHours,
+      hasAvailabilitySettings: !!center.availabilitySettings,
+      hasFacilities: !!center.facilities,
+      facilitiesType: Array.isArray(center.facilities) ? 'array' : typeof center.facilities,
+      facilitiesLength: Array.isArray(center.facilities) ? center.facilities.length : 'N/A'
+    });
 
     res.json({
       success: true,
@@ -839,7 +858,13 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     }
     if (images) {
       // images 객체를 병합하여 업데이트
+      if (!center.images) {
+        center.images = {} as any;
+      }
       center.images = { ...(center.images || {}), ...images };
+      // Mixed 타입 필드는 markModified()를 호출해야 Mongoose가 변경을 감지함
+      center.markModified('images');
+      console.log('📸 images 업데이트:', JSON.stringify(center.images, null, 2));
     }
     if (introduction) {
       // introduction 객체를 안전하게 병합
@@ -2125,9 +2150,16 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     // x-center-id 헤더 우선 사용 (Phase 2)
     const headerCenterId = req.headers['x-center-id'];
     const user = await User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
+    
+    // centerId 우선순위: 1) x-center-id 헤더, 2) JWT의 centerId, 3) JWT의 defaultCenterId, 4) JWT의 memberships[0].centerId, 5) DB의 centerId, 6) DB의 managedCenters[0]
+    const jwtUser = req.user as any;
     let rawCenterId = (headerCenterId && typeof headerCenterId === 'string') 
       ? headerCenterId 
-      : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
+      : (jwtUser?.centerId || 
+         jwtUser?.defaultCenterId || 
+         jwtUser?.memberships?.[0]?.centerId ||
+         user?.centerId || 
+         user?.centerAdminInfo?.managedCenters?.[0]);
 
     // ObjectId 형식 검증 및 변환
     let centerId: string | null = null;
@@ -2177,6 +2209,7 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
             primaryColor: centerSettings?.theme?.primaryColor,
             secondaryColor: centerSettings?.theme?.secondaryColor,
             theme: centerSettings?.theme?.mode || 'light',
+            name: (centerDoc as any)?.name, // 센터명 추가
           };
           console.log('🎨 추출된 centerBranding:', JSON.stringify(centerBranding, null, 2));
         } else {

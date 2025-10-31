@@ -37,12 +37,29 @@ export function TenantLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md'
   };
 
   if (branding?.logo) {
+    // 로고 URL이 상대 경로인 경우 서버 URL 추가
+    const logoUrl = branding.logo.startsWith('http') 
+      ? branding.logo 
+      : `http://localhost:5000${branding.logo}`;
+    
     return (
       <div className={`${sizeMap[size]} ${className} relative`}>
         <img
-          src={branding.logo}
+          src={logoUrl}
           alt="센터 로고"
           className="w-full h-full object-contain rounded-lg"
+          onError={(e) => {
+            console.error('로고 이미지 로드 실패:', logoUrl);
+            // 로드 실패 시 기본 로고로 대체
+            (e.target as HTMLImageElement).style.display = 'none';
+            const parent = (e.target as HTMLImageElement).parentElement;
+            if (parent) {
+              parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center"><span class="text-white font-bold text-lg">J</span></div>';
+            }
+          }}
+          onLoad={() => {
+            console.log('✅ 로고 이미지 로드 성공:', logoUrl);
+          }}
         />
       </div>
     );
@@ -69,10 +86,13 @@ export function TenantBranding({ showLogo = true, showName = true, size = 'md', 
     <div className={`flex items-center space-x-3 ${className}`}>
       {showLogo && <TenantLogo size={size} />}
       {showName && (
-        <span className="font-bold text-xl text-white" style={{ 
-          color: branding?.primaryColor ? `var(--tenant-primary-color, #fff)` : undefined 
-        }}>
-          JJ Swim Lab
+        <span 
+          className="font-bold text-xl text-white" 
+          style={{ 
+            color: branding?.primaryColor || undefined 
+          }}
+        >
+          {branding?.name || 'JJ Swim Lab'}
         </span>
       )}
     </div>

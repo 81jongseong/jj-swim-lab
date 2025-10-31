@@ -227,10 +227,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       email: decoded.email,
       name: decoded.name,
       centerId: decoded.centerId,
-      permissions: decoded.permissions
+      permissions: decoded.permissions,
+      defaultCenterId: (decoded as any).defaultCenterId,
+      memberships: (decoded as any).memberships
     });
     
-    // 사용자 정보를 요청 객체에 추가
+    // 사용자 정보를 요청 객체에 추가 (JWT의 모든 정보 포함)
     (req as any).user = {
       id: decoded.id,
       _id: decoded.id,
@@ -238,9 +240,16 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       userType: decoded.userType,
       email: decoded.email,
       name: decoded.name,
-      centerId: decoded.centerId,
-      permissions: decoded.permissions || []
+      centerId: decoded.centerId || (decoded as any).defaultCenterId || (decoded as any).memberships?.[0]?.centerId,
+      permissions: decoded.permissions || [],
+      defaultCenterId: (decoded as any).defaultCenterId,
+      memberships: (decoded as any).memberships
     };
+    
+    // centerId가 없으면 defaultCenterId나 memberships에서 가져오기
+    if (!(req as any).user.centerId) {
+      (req as any).user.centerId = (decoded as any).defaultCenterId || (decoded as any).memberships?.[0]?.centerId;
+    }
     
     // 디버깅: 설정된 사용자 정보 출력
     console.log('🔍 설정된 사용자 정보:', (req as any).user);

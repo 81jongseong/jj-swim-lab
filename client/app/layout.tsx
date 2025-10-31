@@ -87,7 +87,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <Navigation />
           
           {/* 메인 콘텐츠 */}
-          <main className="min-h-screen">
+          <main className="min-h-screen pt-16">
             {children}
           </main>
           

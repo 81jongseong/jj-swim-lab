@@ -313,12 +313,6 @@ const CenterAdminDashboard: React.FC = () => {
               href={`/center/${centerSlug}/admin/reports`}
               color="indigo"
             />
-            <QuickActionCard
-              title="브랜딩 설정"
-              emoji="🎨"
-              href={`/center/${centerSlug}/admin/branding`}
-              color="pink"
-            />
           </div>
         </CardContent>
       </Card>

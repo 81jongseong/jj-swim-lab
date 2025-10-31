@@ -528,6 +528,11 @@ router.get('/student-dashboard-stats', auth_1.authMiddleware, (0, auth_1.require
 router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['centeradmin', 'centerAdmin', 'center-admin']), async (req, res) => {
     try {
         console.log('🔍 센터 정보 조회 요청 - 사용자:', req.user?._id, '타입:', req.user?.userType);
+        console.log('🔍 JWT 토큰 정보:', {
+            centerId: req.user?.centerId,
+            defaultCenterId: req.user?.defaultCenterId,
+            memberships: req.user?.memberships
+        });
         if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
             console.error('❌ 유효하지 않은 사용자 ID:', req.user._id);
             return res.status(400).json({
@@ -537,7 +542,11 @@ router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         }
         const centerAdmin = await User_1.User.findById(req.user._id);
         console.log('👤 센터 관리자 조회:', centerAdmin?.email, 'centerId:', centerAdmin?.centerId, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
-        const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        const jwtToken = req.user;
+        let centerId = jwtToken?.defaultCenterId ||
+            jwtToken?.memberships?.[0]?.centerId ||
+            centerAdmin?.centerId ||
+            centerAdmin?.centerAdminInfo?.managedCenters?.[0];
         if (!centerId) {
             console.error('❌ 관리하는 센터가 없음');
             return res.status(404).json({
@@ -545,8 +554,9 @@ router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
                 message: '관리하는 센터가 없습니다.'
             });
         }
+        console.log('🏢 사용할 센터 ID:', centerId);
         console.log('🏢 센터 ID로 조회 시도:', centerId);
-        const center = await Center_1.Center.findById(centerId);
+        const center = await Center_1.Center.findById(centerId).lean();
         console.log('🏢 센터 조회 결과:', center ? `${center.name} 찾음` : '센터 없음');
         if (!center) {
             console.error('❌ 센터 정보를 찾을 수 없음');
@@ -555,6 +565,13 @@ router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
                 message: '센터 정보를 찾을 수 없습니다.'
             });
         }
+        console.log('📋 센터 데이터 확인:', {
+            hasOperatingHours: !!center.operatingHours,
+            hasAvailabilitySettings: !!center.availabilitySettings,
+            hasFacilities: !!center.facilities,
+            facilitiesType: Array.isArray(center.facilities) ? 'array' : typeof center.facilities,
+            facilitiesLength: Array.isArray(center.facilities) ? center.facilities.length : 'N/A'
+        });
         res.json({
             success: true,
             message: '센터 정보 조회 성공!',
@@ -620,7 +637,12 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
             center.introduction.fullDescription = description;
         }
         if (images) {
+            if (!center.images) {
+                center.images = {};
+            }
             center.images = { ...(center.images || {}), ...images };
+            center.markModified('images');
+            console.log('📸 images 업데이트:', JSON.stringify(center.images, null, 2));
         }
         if (introduction) {
             if (!center.introduction) {
@@ -654,6 +676,7 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         if (customLevels)
             center.customLevels = customLevels;
         if (settings) {
+            console.log('🎨 settings 업데이트 요청:', JSON.stringify(settings, null, 2));
             if (!center.settings) {
                 center.settings = {};
             }
@@ -663,15 +686,18 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
                 }
                 if (settings.theme.primaryColor !== undefined) {
                     center.settings.theme.primaryColor = settings.theme.primaryColor;
+                    console.log('✅ primaryColor 설정:', settings.theme.primaryColor);
                 }
                 if (settings.theme.secondaryColor !== undefined) {
                     center.settings.theme.secondaryColor = settings.theme.secondaryColor;
+                    console.log('✅ secondaryColor 설정:', settings.theme.secondaryColor);
                 }
                 if (settings.theme.mode !== undefined) {
                     center.settings.theme.mode = settings.theme.mode;
+                    console.log('✅ theme mode 설정:', settings.theme.mode);
                 }
                 Object.keys(settings.theme).forEach(key => {
-                    if (settings.theme[key] !== undefined) {
+                    if (settings.theme[key] !== undefined && !['primaryColor', 'secondaryColor', 'mode'].includes(key)) {
                         center.settings.theme[key] = settings.theme[key];
                     }
                 });
@@ -681,6 +707,9 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
                     center.settings[key] = settings[key];
                 }
             });
+            center.markModified('settings');
+            console.log('💾 저장될 settings:', JSON.stringify(center.settings, null, 2));
+            console.log('💾 markModified 호출 완료');
         }
         if (availabilitySettings) {
             if (!center.availabilitySettings) {
@@ -725,10 +754,28 @@ router.put('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         const savedCenter = await center.save();
         console.log('✅ 센터 정보 저장 완료');
         console.log('🔍 저장된 availabilitySettings:', JSON.stringify(savedCenter.availabilitySettings, null, 2));
+        console.log('🎨 저장된 settings:', JSON.stringify(savedCenter.settings, null, 2));
+        console.log('🎨 저장된 settings.theme:', JSON.stringify(savedCenter.settings?.theme, null, 2));
+        const refreshedCenter = await Center_1.Center.findById(centerId).select('settings images').lean();
+        if (refreshedCenter) {
+            console.log('🔄 저장 후 재조회한 settings:', JSON.stringify(refreshedCenter.settings, null, 2));
+            console.log('🔄 저장 후 재조회한 settings.theme:', JSON.stringify(refreshedCenter.settings?.theme, null, 2));
+        }
+        const responseData = savedCenter.toObject ? savedCenter.toObject() : savedCenter;
+        if (responseData.settings?.theme) {
+            console.log('📤 응답에 포함될 settings.theme:', JSON.stringify(responseData.settings.theme, null, 2));
+        }
         res.json({
             success: true,
             message: '센터 정보가 성공적으로 수정되었습니다!',
-            data: savedCenter
+            data: responseData,
+            branding: {
+                primaryColor: savedCenter.settings?.theme?.primaryColor,
+                secondaryColor: savedCenter.settings?.theme?.secondaryColor,
+                theme: savedCenter.settings?.theme?.mode || 'light',
+                logo: savedCenter.images?.logo,
+                mainImage: savedCenter.images?.mainImage,
+            }
         });
     }
     catch (error) {
@@ -1699,21 +1746,38 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
         let centerBranding = {};
         if (centerId) {
             try {
-                const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+                console.log(`🔍 센터 설정 조회: centerId=${centerId}`);
+                const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name').lean();
                 if (centerDoc) {
+                    console.log('✅ 센터 문서 조회 성공 (lean)');
                     centerSettings = centerDoc?.settings || {};
+                    console.log('📥 조회된 centerSettings:', JSON.stringify(centerSettings, null, 2));
+                    console.log('📥 centerSettings 타입:', typeof centerSettings);
+                    console.log('🎨 centerSettings.theme:', JSON.stringify(centerSettings?.theme, null, 2));
+                    console.log('🎨 centerSettings.theme?.primaryColor:', centerSettings?.theme?.primaryColor);
+                    console.log('🎨 centerSettings.theme?.secondaryColor:', centerSettings?.theme?.secondaryColor);
+                    console.log('🎨 centerSettings.theme?.mode:', centerSettings?.theme?.mode);
                     centerBranding = {
                         logo: centerDoc?.images?.logo,
                         mainImage: centerDoc?.images?.mainImage,
                         primaryColor: centerSettings?.theme?.primaryColor,
                         secondaryColor: centerSettings?.theme?.secondaryColor,
                         theme: centerSettings?.theme?.mode || 'light',
+                        name: centerDoc?.name,
                     };
+                    console.log('🎨 추출된 centerBranding:', JSON.stringify(centerBranding, null, 2));
+                }
+                else {
+                    console.warn(`⚠️ 센터를 찾을 수 없음: centerId=${centerId}`);
                 }
             }
             catch (dbError) {
                 console.error('센터 조회 오류:', dbError);
+                console.error('센터 조회 오류 스택:', dbError?.stack);
             }
+        }
+        else {
+            console.warn('⚠️ centerId가 없어 센터 설정을 조회할 수 없음');
         }
         const userSettings = user?.settings || {};
         const merged = {
@@ -1722,6 +1786,8 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
             ...userSettings,
             branding: centerBranding,
         };
+        console.log('📤 최종 반환 데이터:', JSON.stringify(merged, null, 2));
+        console.log('📤 최종 branding:', JSON.stringify(merged.branding, null, 2));
         return res.json({ success: true, data: merged });
     }
     catch (error) {

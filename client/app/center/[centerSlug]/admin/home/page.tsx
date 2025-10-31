@@ -20,6 +20,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenantSettings } from '@/contexts/TenantSettingsContext';
 import { 
   MapPin, Phone, Mail, Clock, Edit, 
   Users, ArrowRight, Calendar, Save, X, Upload
@@ -81,10 +82,15 @@ interface Instructor {
 
 const CenterHomePage: React.FC = () => {
   const { user } = useAuth();
+  const { branding } = useTenantSettings();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 브랜딩 색상 가져오기 (기본값 fallback)
+  const primaryColor = branding?.primaryColor || '#3b82f6';
+  const secondaryColor = branding?.secondaryColor || '#ffffff';
   
   // 편집 상태
   const [editingSection, setEditingSection] = useState<string | null>(null);
@@ -408,8 +414,32 @@ const CenterHomePage: React.FC = () => {
                       
                       if (response.ok) {
                         const result = await response.json();
-                        setEditData({ ...editData, logoImage: result.data.imageUrl });
-                        alert('로고가 성공적으로 업로드되었습니다.');
+                        const logoUrl = result.data?.logo || result.data?.imageUrl;
+                        if (logoUrl) {
+                          setEditData({ ...editData, logoImage: logoUrl });
+                          // 서버에 이미지 URL 저장 (PUT /api/centers/my-center)
+                          const saveResponse = await fetch(`http://localhost:5000/api/centers/my-center`, {
+                            method: 'PUT',
+                            headers: {
+                              'Authorization': `Bearer ${token}`,
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              images: {
+                                logo: logoUrl
+                              }
+                            })
+                          });
+                          if (saveResponse.ok) {
+                            alert('로고가 성공적으로 업로드 및 저장되었습니다.');
+                            // 센터 정보 다시 로드하여 브랜딩 설정에도 반영
+                            loadCenterInfo();
+                          } else {
+                            alert('로고는 업로드되었지만 저장에 실패했습니다.');
+                          }
+                        } else {
+                          alert('로고 업로드는 성공했지만 URL을 가져올 수 없습니다.');
+                        }
                       } else {
                         const error = await response.json();
                         alert(error.message || '로고 업로드에 실패했습니다.');
@@ -463,8 +493,32 @@ const CenterHomePage: React.FC = () => {
                       
                       if (response.ok) {
                         const result = await response.json();
-                        setEditData({ ...editData, mainImage: result.data.imageUrl });
-                        alert('메인 이미지가 성공적으로 업로드되었습니다.');
+                        const mainImageUrl = result.data?.mainImage || result.data?.imageUrl;
+                        if (mainImageUrl) {
+                          setEditData({ ...editData, mainImage: mainImageUrl });
+                          // 서버에 이미지 URL 저장 (PUT /api/centers/my-center)
+                          const saveResponse = await fetch(`http://localhost:5000/api/centers/my-center`, {
+                            method: 'PUT',
+                            headers: {
+                              'Authorization': `Bearer ${token}`,
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              images: {
+                                mainImage: mainImageUrl
+                              }
+                            })
+                          });
+                          if (saveResponse.ok) {
+                            alert('메인 이미지가 성공적으로 업로드 및 저장되었습니다.');
+                            // 센터 정보 다시 로드하여 브랜딩 설정에도 반영
+                            loadCenterInfo();
+                          } else {
+                            alert('메인 이미지는 업로드되었지만 저장에 실패했습니다.');
+                          }
+                        } else {
+                          alert('메인 이미지 업로드는 성공했지만 URL을 가져올 수 없습니다.');
+                        }
                       } else {
                         const error = await response.json();
                         alert(error.message || '메인 이미지 업로드에 실패했습니다.');
@@ -683,13 +737,21 @@ const CenterHomePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {courses.map((course) => (
                 <div key={course._id} className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 border border-gray-100 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+                  <div 
+                    className="absolute top-0 left-0 w-full h-2"
+                    style={{ 
+                      background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
+                    }}
+                  ></div>
                   
                   <div className="mb-6">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-2xl font-bold text-gray-900">{course.name}</h3>
                       {course.level && (
-                        <span className="px-4 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-semibold shadow-md">
+                        <span 
+                          className="px-4 py-1 text-white rounded-full text-sm font-semibold shadow-md"
+                          style={{ backgroundColor: primaryColor }}
+                        >
                           {course.level}
                         </span>
                       )}
@@ -707,14 +769,27 @@ const CenterHomePage: React.FC = () => {
                       </div>
                     )}
                     {course.price && (
-                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                      <span 
+                        className="text-2xl font-bold bg-clip-text text-transparent"
+                        style={{ 
+                          backgroundImage: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
+                        }}
+                      >
                         {course.price.toLocaleString()}원
                       </span>
                     )}
                   </div>
                   
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-indigo-700/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-center justify-center">
-                    <Button className="bg-white text-blue-600 hover:bg-gray-50 font-bold">
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-center justify-center"
+                    style={{ 
+                      background: `linear-gradient(to bottom right, ${primaryColor}E6, ${secondaryColor}E6)` 
+                    }}
+                  >
+                    <Button 
+                      className="bg-white font-bold"
+                      style={{ color: primaryColor }}
+                    >
                       상세보기
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
@@ -724,7 +799,12 @@ const CenterHomePage: React.FC = () => {
             </div>
             <div className="text-center mt-16">
               <a href="/center-admin/courses">
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full">
+                <Button 
+                  className="text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full"
+                  style={{ 
+                    background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
+                  }}
+                >
                   전체 강습 과정 보기
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -746,10 +826,18 @@ const CenterHomePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {instructors.map((instructor) => (
                 <div key={instructor._id} className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 text-center border border-gray-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full -mr-16 -mt-16 opacity-50"></div>
+                  <div 
+                    className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-50"
+                    style={{ 
+                      background: `linear-gradient(to bottom right, ${primaryColor}40, ${secondaryColor}40)` 
+                    }}
+                  ></div>
                   
                   <div className="relative z-10">
-                    <div className="w-32 h-32 rounded-full mx-auto mb-6 shadow-xl group-hover:shadow-2xl transition-all transform group-hover:scale-110 overflow-hidden border-4 border-blue-100">
+                    <div 
+                      className="w-32 h-32 rounded-full mx-auto mb-6 shadow-xl group-hover:shadow-2xl transition-all transform group-hover:scale-110 overflow-hidden border-4"
+                      style={{ borderColor: `${primaryColor}40` }}
+                    >
                       {instructor.instructorInfo?.photo ? (
                         <img 
                           src={`http://localhost:5000${instructor.instructorInfo.photo}`} 
@@ -761,12 +849,17 @@ const CenterHomePage: React.FC = () => {
                             target.style.display = 'none';
                             const parent = target.parentElement;
                             if (parent) {
-                              parent.innerHTML = '<div class="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center"><svg class="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>';
+                              parent.innerHTML = `<div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(to bottom right, ${primaryColor}, ${secondaryColor})"><svg class="h-12 w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>`;
                             }
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                        <div 
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ 
+                            background: `linear-gradient(to bottom right, ${primaryColor}, ${secondaryColor})` 
+                          }}
+                        >
                           <Users className="h-12 w-12 text-white" />
                         </div>
                       )}
@@ -776,7 +869,14 @@ const CenterHomePage: React.FC = () => {
                       <div className="mb-4">
                         <div className="flex flex-wrap justify-center gap-2">
                           {instructor.instructorInfo.specialties.map((specialty, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                            <span 
+                              key={idx} 
+                              className="px-3 py-1 rounded-full text-sm font-medium"
+                              style={{ 
+                                backgroundColor: `${primaryColor}20`,
+                                color: primaryColor
+                              }}
+                            >
                               {specialty}
                             </span>
                           ))}

@@ -40,11 +40,17 @@ export default function HomePage() {
   useEffect(() => {
     if (!loading) {
       if (user) {
+        // 센터 관리자는 센터 홈페이지로 리다이렉트 (대시보드가 아닌 소개 페이지)
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+          const slug = typeof window !== 'undefined' ? localStorage.getItem('centerSlug') || 'default' : 'default';
+          console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → /center/${slug}/admin/home`);
+          router.push(`/center/${slug}/admin/home`);
+          return;
+        }
+        
         // 계정 유형별 대시보드로 리다이렉트
         const dashboardRoutes = {
           superAdmin: '/admin/dashboard',
-          centerAdmin: '/center-admin/dashboard', // 센터 관리자는 대시보드로
-          'center-admin': '/center-admin/dashboard', // 센터 관리자는 대시보드로
           instructor: '/instructor/dashboard',
           student: '/student/dashboard',
         };

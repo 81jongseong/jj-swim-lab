@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Save, X, Eye, Palette, Image as ImageIcon } from 'lucide-react';
+import { Upload, Save, X, Eye, Palette, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 
 interface BrandingFormData {
@@ -47,21 +47,34 @@ function BrandingSettingsPage() {
   const [previewMode, setPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false); // 저장 중 플래그
   
+  // localStorage에서 저장된 색상 가져오기 (기본값보다 우선)
+  const getInitialColor = (key: 'primaryColor' | 'secondaryColor', defaultValue: string): string => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`tenant-${key === 'primaryColor' ? 'primary' : 'secondary'}-color`);
+      if (stored) {
+        console.log(`💾 초기값으로 localStorage 사용: ${key}=${stored}`);
+        return stored;
+      }
+    }
+    return defaultValue;
+  };
+
   const [formData, setFormData] = useState<BrandingFormData>({
-    primaryColor: '#3b82f6',
-    secondaryColor: '#8b5cf6',
-    themeMode: 'light',
+    primaryColor: getInitialColor('primaryColor', '#3b82f6'),
+    secondaryColor: getInitialColor('secondaryColor', '#ffffff'),
+    themeMode: (typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : null) as 'light' | 'dark' | 'auto' || 'light',
   });
 
   useEffect(() => {
     if (branding) {
-      setFormData({
-        logo: branding.logo,
-        mainImage: branding.mainImage,
-        primaryColor: branding.primaryColor || '#3b82f6',
-        secondaryColor: branding.secondaryColor || '#8b5cf6',
-        themeMode: branding.theme || 'light',
-      });
+      console.log('🔄 branding 업데이트:', branding);
+      setFormData(prev => ({
+        logo: branding.logo || prev.logo,
+        mainImage: branding.mainImage || prev.mainImage,
+        primaryColor: branding.primaryColor || prev.primaryColor || '#3b82f6',
+             secondaryColor: branding.secondaryColor || prev.secondaryColor || '#ffffff',
+        themeMode: branding.theme || prev.themeMode || 'light',
+      }));
     }
   }, [branding]);
 
@@ -73,27 +86,81 @@ function BrandingSettingsPage() {
     }
     
     if (previewMode) {
+      console.log('👁️ 미리보기 모드: 색상 적용', { 
+        primaryColor: formData.primaryColor, 
+        secondaryColor: formData.secondaryColor,
+        themeMode: formData.themeMode 
+      });
+      // Hex to HSL 변환 함수
+      const hexToHsl = (hex: string): string => {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16) / 255;
+        const g = parseInt(hex.substr(2, 2), 16) / 255;
+        const b = parseInt(hex.substr(4, 2), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h: number = 0;
+        let s: number = 0;
+        const l = (max + min) / 2;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+            case g: h = ((b - r) / d + 2) / 6; break;
+            case b: h = ((r - g) / d + 4) / 6; break;
+          }
+        }
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+      };
+
       // 미리보기 모드: 변경된 설정 적용
       if (formData.primaryColor) {
+        const primaryHsl = hexToHsl(formData.primaryColor);
         document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
+        document.documentElement.style.setProperty('--primary', primaryHsl);
+        console.log('🎨 미리보기: primaryColor 적용', { hex: formData.primaryColor, hsl: primaryHsl });
       }
       if (formData.secondaryColor) {
+        const secondaryHsl = hexToHsl(formData.secondaryColor);
         document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+        document.documentElement.style.setProperty('--secondary', secondaryHsl);
+        // 페이지 배경색도 미리보기
+        document.body.style.backgroundColor = formData.secondaryColor;
+        console.log('🎨 미리보기: secondaryColor 적용', { hex: formData.secondaryColor, hsl: secondaryHsl });
       }
       if (formData.themeMode === 'dark') {
         document.documentElement.classList.add('dark');
         document.body.classList.add('dark');
-        console.log('🌙 다크 모드 적용');
+        console.log('🌙 미리보기: 다크 모드 적용');
       } else if (formData.themeMode === 'light') {
         document.documentElement.classList.remove('dark');
         document.body.classList.remove('dark');
-        console.log('☀️ 라이트 모드 적용');
+        console.log('☀️ 미리보기: 라이트 모드 적용');
       } else if (formData.themeMode === 'auto') {
         // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
         document.documentElement.classList.remove('dark');
         document.body.classList.remove('dark');
-        console.log('⚙️ 자동 모드 (라이트로 처리)');
+        console.log('⚙️ 미리보기: 자동 모드 (라이트로 처리)');
       }
+      
+      // 미리보기 모드에서는 주기적으로 색상 재적용 (TenantSettingsContext가 덮어쓸 수 있으므로)
+      const previewInterval = setInterval(() => {
+        if (previewMode && formData.primaryColor) {
+          const primaryHsl = hexToHsl(formData.primaryColor);
+          document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
+          document.documentElement.style.setProperty('--primary', primaryHsl);
+        }
+        if (previewMode && formData.secondaryColor) {
+          const secondaryHsl = hexToHsl(formData.secondaryColor);
+          document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+          document.documentElement.style.setProperty('--secondary', secondaryHsl);
+        }
+      }, 500);
+      
+      return () => {
+        clearInterval(previewInterval);
+      };
     } else {
       // 미리보기 종료: 원래 설정으로 복원
       // localStorage에서 가져오거나 branding/formData 사용
@@ -119,7 +186,31 @@ function BrandingSettingsPage() {
       
       // 최종 fallback
       primaryColor = primaryColor || formData.primaryColor || '#3b82f6';
-      secondaryColor = secondaryColor || formData.secondaryColor || '#8b5cf6';
+      secondaryColor = secondaryColor || formData.secondaryColor || '#ffffff';
+      
+      // Hex to HSL 변환 함수
+      const hexToHsl = (hex: string): string => {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16) / 255;
+        const g = parseInt(hex.substr(2, 2), 16) / 255;
+        const b = parseInt(hex.substr(4, 2), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h: number = 0;
+        let s: number = 0;
+        const l = (max + min) / 2;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+            case g: h = ((b - r) / d + 2) / 6; break;
+            case b: h = ((r - g) / d + 4) / 6; break;
+          }
+        }
+        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+      };
+      
       // 테마 모드 확인 (localStorage 우선, 없으면 branding/formData 사용)
       let theme: 'light' | 'dark' | 'auto' | null = null;
       
@@ -138,13 +229,31 @@ function BrandingSettingsPage() {
         console.log('🔍 branding/formData 테마 모드 사용:', theme);
       }
       
-      document.documentElement.style.setProperty('--tenant-primary-color', primaryColor);
-      document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColor);
+           const primaryHsl = hexToHsl(primaryColor);
+           const secondaryHsl = hexToHsl(secondaryColor);
+           
+           document.documentElement.style.setProperty('--tenant-primary-color', primaryColor);
+           document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColor);
+           document.documentElement.style.setProperty('--primary', primaryHsl);
+           document.documentElement.style.setProperty('--secondary', secondaryHsl);
+           
+           // 페이지 배경색 설정 (secondaryColor 사용)
+           if (secondaryColor) {
+             document.body.style.backgroundColor = secondaryColor;
+             console.log('🎨 useEffect: 페이지 배경색 적용:', secondaryColor);
+           } else {
+             // 기본값으로 흰색
+             document.body.style.backgroundColor = '#ffffff';
+           }
       
       console.log('🎨 useEffect: 적용할 테마 모드:', theme);
       console.log('🔍 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
+      console.log('🎨 useEffect: --primary HSL 값 설정:', primaryHsl);
+      console.log('🎨 useEffect: --secondary HSL 값 설정:', secondaryHsl);
       console.log('🔍 현재 CSS 변수 --tenant-primary-color:', getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim());
       console.log('🔍 현재 CSS 변수 --tenant-secondary-color:', getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim());
+      console.log('🔍 현재 CSS 변수 --primary:', getComputedStyle(document.documentElement).getPropertyValue('--primary').trim());
+      console.log('🔍 현재 CSS 변수 --secondary:', getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim());
       console.log('🔍 적용 전 document.documentElement.classList:', Array.from(document.documentElement.classList));
       console.log('🔍 적용 전 document.body.classList:', Array.from(document.body.classList));
       
@@ -165,9 +274,73 @@ function BrandingSettingsPage() {
       // CSS 변수 실제 적용 확인
       const appliedPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
       const appliedSecondary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim();
-      console.log('🎨 실제 적용된 CSS 변수:', { appliedPrimary, appliedSecondary });
+      const appliedPrimaryHsl = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      const appliedSecondaryHsl = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+      console.log('🎨 실제 적용된 CSS 변수:', { 
+        appliedPrimary, 
+        appliedSecondary,
+        appliedPrimaryHsl,
+        appliedSecondaryHsl
+      });
+      
+      // 실제 요소에 적용된 색상 확인
+      setTimeout(() => {
+        const testElements = document.querySelectorAll('.bg-primary, [class*="bg-primary"]');
+        console.log('🔍 찾은 bg-primary 요소 개수:', testElements.length);
+        
+        testElements.forEach((element, index) => {
+          const computedStyle = getComputedStyle(element);
+          const backgroundColor = computedStyle.backgroundColor;
+          const backgroundImage = computedStyle.backgroundImage;
+          const cssText = element.className;
+          console.log(`🎨 bg-primary 요소 #${index + 1}:`, {
+            className: cssText,
+            backgroundColor,
+            backgroundImage,
+            element: element
+          });
+        });
+        
+        // CSS 변수 값 직접 확인
+        const rootStyle = getComputedStyle(document.documentElement);
+        const primaryVar = rootStyle.getPropertyValue('--primary').trim();
+        const secondaryVar = rootStyle.getPropertyValue('--secondary').trim();
+        console.log('🔍 root에서 확인한 CSS 변수:', {
+          '--primary': primaryVar,
+          '--secondary': secondaryVar,
+          '--tenant-primary-color': rootStyle.getPropertyValue('--tenant-primary-color').trim(),
+          '--tenant-secondary-color': rootStyle.getPropertyValue('--tenant-secondary-color').trim()
+        });
+        
+        // Tailwind가 생성한 bg-primary 클래스의 실제 CSS 확인
+        const styleSheets = Array.from(document.styleSheets);
+        let foundBgPrimary = false;
+        styleSheets.forEach(sheet => {
+          try {
+            const rules = Array.from(sheet.cssRules || sheet.rules || []);
+            rules.forEach(rule => {
+              if (rule instanceof CSSStyleRule) {
+                if (rule.selectorText && (rule.selectorText.includes('.bg-primary') || rule.selectorText.includes('bg-primary'))) {
+                  console.log('🎨 Tailwind bg-primary CSS 규칙:', {
+                    selector: rule.selectorText,
+                    style: rule.style.cssText,
+                    backgroundColor: rule.style.backgroundColor
+                  });
+                  foundBgPrimary = true;
+                }
+              }
+            });
+          } catch (e) {
+            // CORS 오류 등 무시
+          }
+        });
+        
+        if (!foundBgPrimary) {
+          console.log('⚠️ Tailwind bg-primary CSS 규칙을 찾을 수 없습니다');
+        }
+      }, 500);
     }
-  }, [formData, previewMode, branding, isSaving]);
+  }, [formData.primaryColor, formData.secondaryColor, formData.themeMode, previewMode, branding, isSaving]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,7 +353,9 @@ function BrandingSettingsPage() {
       
       const token = localStorage.getItem('token');
       const centerId = localStorage.getItem('centerId');
-      const response = await fetch('http://localhost:5000/api/centers/my-center/upload-logo', {
+      
+      // 1. 파일 업로드
+      const uploadResponse = await fetch('http://localhost:5000/api/centers/my-center/upload-logo', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -189,13 +364,63 @@ function BrandingSettingsPage() {
         body: formData,
       });
 
-      const result = await response.json();
-      if (result.success) {
-        setFormData(prev => ({ ...prev, logo: result.data.imageUrl }));
-        await refresh();
-        alert('로고가 성공적으로 업로드되었습니다.');
+      const uploadResult = await uploadResponse.json();
+      if (uploadResult.success) {
+        // 응답에서 로고 URL 가져오기 (imageUrl 또는 logo 필드 사용)
+        const logoUrl = uploadResult.data?.logo || uploadResult.data?.imageUrl;
+        if (logoUrl) {
+          console.log('✅ 로고 업로드 완료:', logoUrl);
+          
+          // 2. formData 즉시 업데이트 (UI 반영)
+          setFormData(prev => ({ ...prev, logo: logoUrl }));
+          
+          // 3. 서버에 이미지 URL 저장 (PUT /api/centers/my-center)
+          const saveResponse = await fetch('http://localhost:5000/api/centers/my-center', {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              ...(centerId ? { 'x-center-id': centerId } : {}),
+            },
+            body: JSON.stringify({
+              images: {
+                logo: logoUrl
+              }
+            }),
+          });
+
+          if (saveResponse.ok) {
+            const saveResult = await saveResponse.json();
+            console.log('✅ 로고 URL 서버 저장 완료:', saveResult);
+            
+            // 4. localStorage에 로고 URL 저장 (Navigation 컴포넌트에서 사용)
+            try {
+              localStorage.setItem('center-logo', logoUrl);
+              console.log('💾 로고 URL localStorage 저장:', logoUrl);
+            } catch (e) {
+              console.warn('localStorage 저장 실패:', e);
+            }
+            
+            // 5. 커스텀 이벤트 발생 (Navigation 컴포넌트에서 감지)
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('center-logo-updated', { detail: { logoUrl } }));
+              console.log('📢 center-logo-updated 이벤트 발생:', logoUrl);
+            }
+            
+            // 6. TenantSettingsContext 갱신
+            await refresh();
+            alert('로고가 성공적으로 업로드 및 저장되었습니다.');
+          } else {
+            const saveError = await saveResponse.json();
+            console.error('⚠️ 로고 URL 저장 실패:', saveError);
+            alert('로고는 업로드되었지만 저장에 실패했습니다. 다시 시도해주세요.');
+          }
+        } else {
+          console.error('⚠️ 로고 URL이 응답에 없습니다:', uploadResult);
+          alert('로고 업로드는 성공했지만 URL을 가져올 수 없습니다.');
+        }
       } else {
-        alert(result.message || '로고 업로드에 실패했습니다.');
+        alert(uploadResult.message || '로고 업로드에 실패했습니다.');
       }
     } catch (error) {
       console.error('로고 업로드 오류:', error);
@@ -216,7 +441,9 @@ function BrandingSettingsPage() {
       
       const token = localStorage.getItem('token');
       const centerId = localStorage.getItem('centerId');
-      const response = await fetch('http://localhost:5000/api/centers/my-center/upload-main-image', {
+      
+      // 1. 파일 업로드
+      const uploadResponse = await fetch('http://localhost:5000/api/centers/my-center/upload-main-image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -225,13 +452,49 @@ function BrandingSettingsPage() {
         body: formData,
       });
 
-      const result = await response.json();
-      if (result.success) {
-        setFormData(prev => ({ ...prev, mainImage: result.data.imageUrl }));
-        await refresh();
-        alert('메인 이미지가 성공적으로 업로드되었습니다.');
+      const uploadResult = await uploadResponse.json();
+      if (uploadResult.success) {
+        // 응답에서 메인 이미지 URL 가져오기 (imageUrl 또는 mainImage 필드 사용)
+        const mainImageUrl = uploadResult.data?.mainImage || uploadResult.data?.imageUrl;
+        if (mainImageUrl) {
+          console.log('✅ 메인 이미지 업로드 완료:', mainImageUrl);
+          
+          // 2. formData 즉시 업데이트 (UI 반영)
+          setFormData(prev => ({ ...prev, mainImage: mainImageUrl }));
+          
+          // 3. 서버에 이미지 URL 저장 (PUT /api/centers/my-center)
+          const saveResponse = await fetch('http://localhost:5000/api/centers/my-center', {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              ...(centerId ? { 'x-center-id': centerId } : {}),
+            },
+            body: JSON.stringify({
+              images: {
+                mainImage: mainImageUrl
+              }
+            }),
+          });
+
+          if (saveResponse.ok) {
+            const saveResult = await saveResponse.json();
+            console.log('✅ 메인 이미지 URL 서버 저장 완료:', saveResult);
+            
+            // 4. TenantSettingsContext 갱신
+            await refresh();
+            alert('메인 이미지가 성공적으로 업로드 및 저장되었습니다.');
+          } else {
+            const saveError = await saveResponse.json();
+            console.error('⚠️ 메인 이미지 URL 저장 실패:', saveError);
+            alert('메인 이미지는 업로드되었지만 저장에 실패했습니다. 다시 시도해주세요.');
+          }
+        } else {
+          console.error('⚠️ 메인 이미지 URL이 응답에 없습니다:', uploadResult);
+          alert('메인 이미지 업로드는 성공했지만 URL을 가져올 수 없습니다.');
+        }
       } else {
-        alert(result.message || '메인 이미지 업로드에 실패했습니다.');
+        alert(uploadResult.message || '메인 이미지 업로드에 실패했습니다.');
       }
     } catch (error) {
       console.error('메인 이미지 업로드 오류:', error);
@@ -272,9 +535,51 @@ function BrandingSettingsPage() {
         console.log('🔍 formData.themeMode:', formData.themeMode);
         console.log('🔍 responseBranding?.theme:', responseBranding?.theme);
         
+        // Hex to HSL 변환 함수
+        const hexToHsl = (hex: string): string => {
+          // # 제거
+          hex = hex.replace('#', '');
+          const r = parseInt(hex.substr(0, 2), 16) / 255;
+          const g = parseInt(hex.substr(2, 2), 16) / 255;
+          const b = parseInt(hex.substr(4, 2), 16) / 255;
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          let h: number = 0;
+          let s: number = 0;
+          const l = (max + min) / 2;
+
+          if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+              case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+              case g: h = ((b - r) / d + 2) / 6; break;
+              case b: h = ((r - g) / d + 4) / 6; break;
+            }
+          }
+
+          return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+        };
+
         // 저장 후 새로운 설정을 즉시 적용 (응답에서 받은 값 사용)
+        // --tenant-primary-color와 --tenant-secondary-color (hex 값)
         document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
         document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+        
+             // --primary와 --secondary (HSL 값) - Tailwind가 사용하는 변수
+             const primaryHsl = hexToHsl(savedPrimaryColor);
+             const secondaryHsl = hexToHsl(savedSecondaryColor);
+             document.documentElement.style.setProperty('--primary', primaryHsl);
+             document.documentElement.style.setProperty('--secondary', secondaryHsl);
+             console.log('🎨 --primary HSL 값 설정:', primaryHsl);
+             console.log('🎨 --secondary HSL 값 설정:', secondaryHsl);
+             
+             // 페이지 배경색 설정 (secondaryColor 사용)
+             if (savedSecondaryColor) {
+               document.body.style.backgroundColor = savedSecondaryColor;
+               console.log('🎨 저장 후 페이지 배경색 적용:', savedSecondaryColor);
+             }
         
         // CSS 변수 적용 확인
         const setPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
@@ -326,8 +631,34 @@ function BrandingSettingsPage() {
             // 업데이트된 branding 값으로 적용
             const finalPrimaryColor = currentBranding.primaryColor || savedPrimaryColor;
             const finalSecondaryColor = currentBranding.secondaryColor || savedSecondaryColor;
+            
+            // Hex to HSL 변환 함수 (이미 위에 정의되어 있지만 재사용을 위해)
+            const hexToHslLocal = (hex: string): string => {
+              hex = hex.replace('#', '');
+              const r = parseInt(hex.substr(0, 2), 16) / 255;
+              const g = parseInt(hex.substr(2, 2), 16) / 255;
+              const b = parseInt(hex.substr(4, 2), 16) / 255;
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+              let h: number = 0;
+              let s: number = 0;
+              const l = (max + min) / 2;
+              if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                  case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                  case g: h = ((b - r) / d + 2) / 6; break;
+                  case b: h = ((r - g) / d + 4) / 6; break;
+                }
+              }
+              return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+            };
+            
             document.documentElement.style.setProperty('--tenant-primary-color', finalPrimaryColor);
             document.documentElement.style.setProperty('--tenant-secondary-color', finalSecondaryColor);
+            document.documentElement.style.setProperty('--primary', hexToHslLocal(finalPrimaryColor));
+            document.documentElement.style.setProperty('--secondary', hexToHslLocal(finalSecondaryColor));
             console.log('🎨 최종 적용 색상:', { finalPrimaryColor, finalSecondaryColor });
             break;
           }
@@ -378,8 +709,33 @@ function BrandingSettingsPage() {
           
           if (needsApply) {
             console.log('✅ 색상 재적용:', savedPrimaryColor);
+            // Hex to HSL 변환 함수 (이미 위에 정의되어 있지만 재사용을 위해)
+            const hexToHslLocal = (hex: string): string => {
+              hex = hex.replace('#', '');
+              const r = parseInt(hex.substr(0, 2), 16) / 255;
+              const g = parseInt(hex.substr(2, 2), 16) / 255;
+              const b = parseInt(hex.substr(4, 2), 16) / 255;
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+              let h: number = 0;
+              let s: number = 0;
+              const l = (max + min) / 2;
+              if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                  case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                  case g: h = ((b - r) / d + 2) / 6; break;
+                  case b: h = ((r - g) / d + 4) / 6; break;
+                }
+              }
+              return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+            };
+            
             document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
             document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+            document.documentElement.style.setProperty('--primary', hexToHslLocal(savedPrimaryColor));
+            document.documentElement.style.setProperty('--secondary', hexToHslLocal(savedSecondaryColor));
             // localStorage도 업데이트
             try {
               localStorage.setItem('tenant-primary-color', savedPrimaryColor);
@@ -446,7 +802,7 @@ function BrandingSettingsPage() {
         logo: branding.logo,
         mainImage: branding.mainImage,
         primaryColor: branding.primaryColor || '#3b82f6',
-        secondaryColor: branding.secondaryColor || '#8b5cf6',
+        secondaryColor: branding.secondaryColor || '#ffffff',
         themeMode: branding.theme || 'light',
       });
     }
@@ -459,7 +815,7 @@ function BrandingSettingsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">브랜딩 설정</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">사이트 테마 설정</h1>
         <p className="text-gray-600">센터 로고, 색상, 테마를 설정하여 브랜드 아이덴티티를 표현하세요.</p>
       </div>
 
@@ -479,11 +835,15 @@ function BrandingSettingsPage() {
               {formData.logo && (
                 <div className="relative w-32 h-32 border rounded-lg overflow-hidden bg-gray-50">
                   <img
-                    src={`http://localhost:5000${formData.logo}`}
+                    src={formData.logo?.startsWith('http') ? formData.logo : `http://localhost:5000${formData.logo}`}
                     alt="로고 미리보기"
                     className="w-full h-full object-contain"
                     onError={(e) => {
+                      console.error('로고 이미지 로드 실패:', formData.logo);
                       (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('✅ 로고 이미지 로드 성공:', formData.logo);
                     }}
                   />
                 </div>
@@ -520,11 +880,15 @@ function BrandingSettingsPage() {
               {formData.mainImage && (
                 <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-gray-50">
                   <img
-                    src={`http://localhost:5000${formData.mainImage}`}
+                    src={formData.mainImage?.startsWith('http') ? formData.mainImage : `http://localhost:5000${formData.mainImage}`}
                     alt="메인 이미지 미리보기"
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('메인 이미지 로드 실패:', formData.mainImage);
                       (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('✅ 메인 이미지 로드 성공:', formData.mainImage);
                     }}
                   />
                 </div>
@@ -578,7 +942,10 @@ function BrandingSettingsPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="secondary-color">보조 색상 (Secondary)</Label>
+                <Label htmlFor="secondary-color">배경 색상 (Background Color)</Label>
+                <CardDescription className="mt-1 mb-2">
+                  메뉴바, 페이지 배경, 보조 요소에 사용되는 색상입니다.
+                </CardDescription>
                 <div className="flex items-center gap-3 mt-2">
                   <input
                     id="secondary-color"
@@ -591,7 +958,7 @@ function BrandingSettingsPage() {
                     type="text"
                     value={formData.secondaryColor}
                     onChange={(e) => setFormData(prev => ({ ...prev, secondaryColor: e.target.value }))}
-                    placeholder="#8b5cf6"
+                    placeholder="#ffffff"
                     className="flex-1"
                   />
                 </div>
@@ -623,55 +990,146 @@ function BrandingSettingsPage() {
           </Card>
 
           {/* 액션 버튼 */}
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => {
-                if (!previewMode) {
-                  // 미리보기 시작
-                  setPreviewMode(true);
-                  alert('미리보기 모드입니다. 변경사항을 적용하려면 저장을 클릭하세요.');
-                } else {
-                  // 미리보기 종료 - 변경사항은 유지하고 미리보기만 종료
-                  setPreviewMode(false);
-                  // 미리보기 종료 시 원래 저장된 설정으로 복원 (변경사항은 폼에 유지)
-                  if (branding) {
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => {
+                  if (!previewMode) {
+                    // 미리보기 시작
+                    setPreviewMode(true);
+                    alert('미리보기 모드입니다. 변경사항을 적용하려면 저장을 클릭하세요.');
+                  } else {
+                    // 미리보기 종료 - 변경사항은 유지하고 미리보기만 종료
+                    setPreviewMode(false);
+                    // 미리보기 종료 시 원래 저장된 설정으로 복원 (변경사항은 폼에 유지)
+                    if (branding) {
                     const originalPrimaryColor = branding.primaryColor || '#3b82f6';
-                    const originalSecondaryColor = branding.secondaryColor || '#8b5cf6';
-                    const originalTheme = branding.theme || 'light';
-                    
-                    document.documentElement.style.setProperty('--tenant-primary-color', originalPrimaryColor);
-                    document.documentElement.style.setProperty('--tenant-secondary-color', originalSecondaryColor);
-                    
-                    if (originalTheme === 'dark') {
-                      document.documentElement.classList.add('dark');
-                    } else {
-                      document.documentElement.classList.remove('dark');
+                    const originalSecondaryColor = branding.secondaryColor || '#ffffff';
+                      const originalTheme = branding.theme || 'light';
+                      
+                      // Hex to HSL 변환
+                      const hexToHsl = (hex: string): string => {
+                        hex = hex.replace('#', '');
+                        const r = parseInt(hex.substr(0, 2), 16) / 255;
+                        const g = parseInt(hex.substr(2, 2), 16) / 255;
+                        const b = parseInt(hex.substr(4, 2), 16) / 255;
+                        const max = Math.max(r, g, b);
+                        const min = Math.min(r, g, b);
+                        let h: number = 0;
+                        let s: number = 0;
+                        const l = (max + min) / 2;
+                        if (max !== min) {
+                          const d = max - min;
+                          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                          switch (max) {
+                            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                            case g: h = ((b - r) / d + 2) / 6; break;
+                            case b: h = ((r - g) / d + 4) / 6; break;
+                          }
+                        }
+                        return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+                      };
+                      
+                      document.documentElement.style.setProperty('--tenant-primary-color', originalPrimaryColor);
+                      document.documentElement.style.setProperty('--tenant-secondary-color', originalSecondaryColor);
+                      document.documentElement.style.setProperty('--primary', hexToHsl(originalPrimaryColor));
+                      document.documentElement.style.setProperty('--secondary', hexToHsl(originalSecondaryColor));
+                      
+                      if (originalTheme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.body.classList.add('dark');
+                      } else {
+                        document.documentElement.classList.remove('dark');
+                        document.body.classList.remove('dark');
+                      }
                     }
                   }
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {previewMode ? '미리보기 종료' : '미리보기'}
+              </Button>
+              {previewMode && (
+                <Button
+                  onClick={handleCancelPreview}
+                  variant="outline"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  취소
+                </Button>
+              )}
+              <Button
+                onClick={handleSave}
+                disabled={saving || loading}
+                className="flex-1"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? '저장 중...' : '저장'}
+              </Button>
+            </div>
+            <Button
+              onClick={() => {
+                // 디폴트 색상으로 복구
+                const defaultPrimaryColor = '#3b82f6';
+                const defaultSecondaryColor = '#ffffff';
+                
+                // formData 업데이트
+                setFormData(prev => ({
+                  ...prev,
+                  primaryColor: defaultPrimaryColor,
+                  secondaryColor: defaultSecondaryColor,
+                }));
+                
+                // Hex to HSL 변환 함수
+                const hexToHsl = (hex: string): string => {
+                  hex = hex.replace('#', '');
+                  const r = parseInt(hex.substr(0, 2), 16) / 255;
+                  const g = parseInt(hex.substr(2, 2), 16) / 255;
+                  const b = parseInt(hex.substr(4, 2), 16) / 255;
+                  const max = Math.max(r, g, b);
+                  const min = Math.min(r, g, b);
+                  let h: number = 0;
+                  let s: number = 0;
+                  const l = (max + min) / 2;
+                  if (max !== min) {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                      case g: h = ((b - r) / d + 2) / 6; break;
+                      case b: h = ((r - g) / d + 4) / 6; break;
+                    }
+                  }
+                  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+                };
+                
+                // CSS 변수 즉시 적용
+                document.documentElement.style.setProperty('--tenant-primary-color', defaultPrimaryColor);
+                document.documentElement.style.setProperty('--tenant-secondary-color', defaultSecondaryColor);
+                document.documentElement.style.setProperty('--primary', hexToHsl(defaultPrimaryColor));
+                document.documentElement.style.setProperty('--secondary', hexToHsl(defaultSecondaryColor));
+                
+                // 페이지 배경색 복구
+                document.body.style.backgroundColor = defaultSecondaryColor;
+                
+                // 미리보기 모드가 활성화되어 있으면 즉시 반영되도록
+                if (previewMode) {
+                  console.log('🔄 디폴트 색상으로 복구 (미리보기 모드)');
+                } else {
+                  // 미리보기 모드가 아니면 미리보기 모드로 전환
+                  setPreviewMode(true);
+                  console.log('🔄 디폴트 색상으로 복구 및 미리보기 모드 활성화');
                 }
+                
+                alert('디폴트 색상으로 복구되었습니다. 저장을 클릭하여 적용하세요.');
               }}
               variant="outline"
-              className="flex-1"
+              className="w-full border-dashed"
             >
-              <Eye className="h-4 w-4 mr-2" />
-              {previewMode ? '미리보기 종료' : '미리보기'}
-            </Button>
-            {previewMode && (
-              <Button
-                onClick={handleCancelPreview}
-                variant="outline"
-              >
-                <X className="h-4 w-4 mr-2" />
-                취소
-              </Button>
-            )}
-            <Button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="flex-1"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? '저장 중...' : '저장'}
+              <RotateCcw className="h-4 w-4 mr-2" />
+              디폴트 색으로 복구하기
             </Button>
           </div>
         </div>
@@ -686,9 +1144,10 @@ function BrandingSettingsPage() {
             <CardContent>
               <div className="space-y-4">
                 {/* 로고 미리보기 */}
-                <div className="border rounded-lg p-4 bg-gradient-to-r"
+                <div className="rounded-lg p-4"
                      style={{
-                       background: `linear-gradient(to right, ${formData.primaryColor}, ${formData.secondaryColor || formData.primaryColor})`
+                       background: `linear-gradient(to right, ${formData.primaryColor}, ${formData.secondaryColor || '#ffffff'})`,
+                       border: 'none'
                      }}>
                   <div className="flex items-center gap-3">
                     {formData.logo ? (

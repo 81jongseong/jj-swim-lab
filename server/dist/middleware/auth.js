@@ -75,7 +75,9 @@ const authMiddleware = async (req, res, next) => {
             email: decoded.email,
             name: decoded.name,
             centerId: decoded.centerId,
-            permissions: decoded.permissions
+            permissions: decoded.permissions,
+            defaultCenterId: decoded.defaultCenterId,
+            memberships: decoded.memberships
         });
         req.user = {
             id: decoded.id,
@@ -84,9 +86,14 @@ const authMiddleware = async (req, res, next) => {
             userType: decoded.userType,
             email: decoded.email,
             name: decoded.name,
-            centerId: decoded.centerId,
-            permissions: decoded.permissions || []
+            centerId: decoded.centerId || decoded.defaultCenterId || decoded.memberships?.[0]?.centerId,
+            permissions: decoded.permissions || [],
+            defaultCenterId: decoded.defaultCenterId,
+            memberships: decoded.memberships
         };
+        if (!req.user.centerId) {
+            req.user.centerId = decoded.defaultCenterId || decoded.memberships?.[0]?.centerId;
+        }
         console.log('🔍 설정된 사용자 정보:', req.user);
         next();
     }
