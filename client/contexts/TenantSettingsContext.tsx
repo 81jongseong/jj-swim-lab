@@ -138,8 +138,17 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
         // 테마 모드 적용
         if (brandingData.theme === 'dark') {
           document.documentElement.classList.add('dark');
+          document.body.classList.add('dark');
+          console.log('🌙 TenantSettingsContext: 다크 모드 적용');
         } else if (brandingData.theme === 'light') {
           document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+          console.log('☀️ TenantSettingsContext: 라이트 모드 적용');
+        } else if (brandingData.theme === 'auto') {
+          // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
+          document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+          console.log('⚙️ TenantSettingsContext: 자동 모드 (라이트로 처리)');
         }
       }
     } catch (err: any) {

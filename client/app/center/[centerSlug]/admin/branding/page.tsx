@@ -82,11 +82,17 @@ function BrandingSettingsPage() {
       }
       if (formData.themeMode === 'dark') {
         document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+        console.log('🌙 다크 모드 적용');
       } else if (formData.themeMode === 'light') {
         document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        console.log('☀️ 라이트 모드 적용');
       } else if (formData.themeMode === 'auto') {
         // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
         document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        console.log('⚙️ 자동 모드 (라이트로 처리)');
       }
     } else {
       // 미리보기 종료: 원래 설정으로 복원
@@ -121,8 +127,12 @@ function BrandingSettingsPage() {
       
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+        console.log('🌙 useEffect: 다크 모드 적용');
       } else {
         document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        console.log('☀️ useEffect: 라이트 모드 적용');
       }
     }
   }, [formData, previewMode, branding, isSaving]);
@@ -244,11 +254,17 @@ function BrandingSettingsPage() {
         
         if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark');
+          document.body.classList.add('dark');
+          console.log('🌙 저장 후 다크 모드 적용');
         } else if (savedTheme === 'light') {
           document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+          console.log('☀️ 저장 후 라이트 모드 적용');
         } else if (savedTheme === 'auto') {
           // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
           document.documentElement.classList.remove('dark');
+          document.body.classList.remove('dark');
+          console.log('⚙️ 저장 후 자동 모드 (라이트로 처리)');
         }
         
         // 저장 완료 후 플래그 해제 전에 잠시 대기 (저장 완료 보장)

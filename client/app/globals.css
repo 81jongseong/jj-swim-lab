@@ -106,6 +106,10 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* 테넌트 브랜딩 색상 (기본값) */
+    --tenant-primary-color: #3b82f6;
+    --tenant-secondary-color: #8b5cf6;
   }
 
   .dark {
@@ -133,6 +137,12 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+  }
+  
+  /* 테넌트 브랜딩 색상을 실제 사용되는 CSS 변수에 매핑 */
+  :root {
+    --primary-rgb: var(--tenant-primary-color);
+    --secondary-rgb: var(--tenant-secondary-color);
   }
 }
 
