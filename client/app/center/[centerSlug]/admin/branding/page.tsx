@@ -45,6 +45,7 @@ function BrandingSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // 저장 중 플래그
   
   const [formData, setFormData] = useState<BrandingFormData>({
     primaryColor: '#3b82f6',
@@ -66,6 +67,11 @@ function BrandingSettingsPage() {
 
   // 실시간 미리보기 적용
   useEffect(() => {
+    // 저장 중이면 useEffect 로직을 건너뜀 (handleSave에서 직접 설정 적용)
+    if (isSaving) {
+      return;
+    }
+    
     if (previewMode) {
       // 미리보기 모드: 변경된 설정 적용
       if (formData.primaryColor) {
@@ -104,7 +110,7 @@ function BrandingSettingsPage() {
         document.documentElement.classList.remove('dark');
       }
     }
-  }, [formData, previewMode, branding]);
+  }, [formData, previewMode, branding, isSaving]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,6 +186,7 @@ function BrandingSettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setIsSaving(true); // 저장 시작 플래그 설정
     try {
       const updateData = {
         settings: {
@@ -194,13 +201,34 @@ function BrandingSettingsPage() {
       const response = await apiClient.put('/api/centers/my-center', updateData);
       
       if (response.success) {
-        await refresh();
-        alert('브랜딩 설정이 저장되었습니다!');
+        // 미리보기 모드 종료 (useEffect 실행 방지)
         setPreviewMode(false);
+        
+        // 저장 후 새로운 설정을 즉시 적용 (useEffect보다 우선)
+        document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
+        document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+        
+        if (formData.themeMode === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else if (formData.themeMode === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else if (formData.themeMode === 'auto') {
+          // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
+          document.documentElement.classList.remove('dark');
+        }
+        
+        // 설정 새로고침 (서버에서 최신 데이터 가져오기)
+        await refresh();
+        
+        // 저장 완료 후 플래그 해제 (이제 useEffect가 새로운 branding 값으로 동작)
+        setIsSaving(false);
+        
+        alert('브랜딩 설정이 저장되었습니다!');
       }
     } catch (error) {
       console.error('브랜딩 설정 저장 오류:', error);
       alert('브랜딩 설정 저장에 실패했습니다.');
+      setIsSaving(false); // 오류 발생 시 플래그 해제
     } finally {
       setSaving(false);
     }
@@ -398,8 +426,23 @@ function BrandingSettingsPage() {
                   setPreviewMode(true);
                   alert('미리보기 모드입니다. 변경사항을 적용하려면 저장을 클릭하세요.');
                 } else {
-                  // 미리보기 종료 - 원래 상태로 복원
-                  handleCancelPreview();
+                  // 미리보기 종료 - 변경사항은 유지하고 미리보기만 종료
+                  setPreviewMode(false);
+                  // 미리보기 종료 시 원래 저장된 설정으로 복원 (변경사항은 폼에 유지)
+                  if (branding) {
+                    const originalPrimaryColor = branding.primaryColor || '#3b82f6';
+                    const originalSecondaryColor = branding.secondaryColor || '#8b5cf6';
+                    const originalTheme = branding.theme || 'light';
+                    
+                    document.documentElement.style.setProperty('--tenant-primary-color', originalPrimaryColor);
+                    document.documentElement.style.setProperty('--tenant-secondary-color', originalSecondaryColor);
+                    
+                    if (originalTheme === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  }
                 }
               }}
               variant="outline"
