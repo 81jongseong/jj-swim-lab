@@ -89,9 +89,31 @@ function BrandingSettingsPage() {
         document.documentElement.classList.remove('dark');
       }
     } else {
-      // 미리보기 종료: 원래 설정으로 복원 (branding이 있으면 사용, 없으면 formData 사용)
-      const primaryColor = branding?.primaryColor || formData.primaryColor || '#3b82f6';
-      const secondaryColor = branding?.secondaryColor || formData.secondaryColor || '#8b5cf6';
+      // 미리보기 종료: 원래 설정으로 복원
+      // localStorage에서 가져오거나 branding/formData 사용
+      let primaryColor = branding?.primaryColor;
+      let secondaryColor = branding?.secondaryColor;
+      
+      // branding 값이 없으면 localStorage에서 가져오기
+      if (!primaryColor && typeof window !== 'undefined') {
+        const storedPrimary = localStorage.getItem('tenant-primary-color');
+        if (storedPrimary) {
+          primaryColor = storedPrimary;
+          console.log('💾 useEffect: localStorage에서 primaryColor 가져옴:', storedPrimary);
+        }
+      }
+      
+      if (!secondaryColor && typeof window !== 'undefined') {
+        const storedSecondary = localStorage.getItem('tenant-secondary-color');
+        if (storedSecondary) {
+          secondaryColor = storedSecondary;
+          console.log('💾 useEffect: localStorage에서 secondaryColor 가져옴:', storedSecondary);
+        }
+      }
+      
+      // 최종 fallback
+      primaryColor = primaryColor || formData.primaryColor || '#3b82f6';
+      secondaryColor = secondaryColor || formData.secondaryColor || '#8b5cf6';
       const theme = branding?.theme || formData.themeMode || 'light';
       
       document.documentElement.style.setProperty('--tenant-primary-color', primaryColor);
@@ -269,16 +291,48 @@ function BrandingSettingsPage() {
           const expectedColor = savedPrimaryColor;
           console.log('🔍 색상 확인 - 현재:', currentPrimary, '예상:', expectedColor);
           
-          // 기본 파란색이거나 예상 색상과 다르면 재적용
-          if (!currentPrimary || 
-              currentPrimary === '#3b82f6' || 
-              currentPrimary === 'rgb(59, 130, 246)' ||
-              (expectedColor && currentPrimary !== expectedColor && !currentPrimary.includes(expectedColor.substring(1)))) {
-            console.log('⚠️ 색상이 예상과 다릅니다. 재적용합니다.');
+          // 색상이 예상과 다른지 확인 (RGB 변환 고려)
+          let needsApply = false;
+          
+          // 기본 파란색 체크
+          if (currentPrimary === '#3b82f6' || currentPrimary === 'rgb(59, 130, 246)') {
+            if (expectedColor !== '#3b82f6') {
+              needsApply = true;
+              console.log('⚠️ 기본 파란색으로 되어 있습니다.');
+            }
+          } 
+          // 예상 색상과 직접 비교
+          else if (expectedColor && currentPrimary !== expectedColor) {
+            // RGB 형식일 수 있으므로 hex를 RGB로 변환해서 비교
+            const hexToRgb = (hex: string) => {
+              const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+              return result ? `rgb(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)})` : null;
+            };
+            const expectedRgb = hexToRgb(expectedColor);
+            if (expectedRgb && currentPrimary !== expectedRgb) {
+              // hex 값의 마지막 6자리 포함 여부 확인 (대소문자 무시)
+              const hexValue = expectedColor.replace('#', '').toLowerCase();
+              if (!currentPrimary.toLowerCase().includes(hexValue)) {
+                needsApply = true;
+                console.log('⚠️ 예상 색상과 다릅니다.');
+              }
+            }
+          }
+          
+          if (needsApply) {
+            console.log('✅ 색상 재적용:', savedPrimaryColor);
             document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
             document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+            // localStorage도 업데이트
+            try {
+              localStorage.setItem('tenant-primary-color', savedPrimaryColor);
+              localStorage.setItem('tenant-secondary-color', savedSecondaryColor);
+            } catch (e) {
+              console.warn('localStorage 업데이트 실패:', e);
+            }
             return true; // 재적용했음
           }
+          console.log('✅ 색상이 정상적으로 적용되어 있습니다.');
           return false; // 정상
         };
         
@@ -305,8 +359,17 @@ function BrandingSettingsPage() {
           checkAndApplyColor();
         }, 1000);
         
+        // 저장 완료 후 플래그 해제 전에 한 번 더 확인 및 적용
+        // (TenantSettingsContext가 적용한 후 덮어쓸 수 있으므로)
+        setTimeout(() => {
+          checkAndApplyColor();
+        }, 1500);
+        
         // 저장 완료 후 플래그 해제 (이제 useEffect가 새로운 branding 값으로 동작)
-        setIsSaving(false);
+        // 하지만 branding 값이 없을 수 있으므로 플래그 해제를 조금 지연
+        setTimeout(() => {
+          setIsSaving(false);
+        }, 2000);
         
         alert('브랜딩 설정이 저장되었습니다!');
       }
