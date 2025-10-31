@@ -298,6 +298,51 @@
 - health-check 스크립트가 잘못된 경로(`/api/center-admin-instructor-stats`)를 확인함
 - 실제로는 `/api/center-admin` 경로로 등록되어 있어 정상 작동
 
+---
+
+## 🐛 브랜딩 설정 미리보기 및 API 엔드포인트 오류 (2025-01-31)
+
+### ❌ API 엔드포인트 404 오류
+**상태: ✅ 해결 완료**
+
+**문제:**
+- 브랜딩 설정 페이지에서 `PUT /centers/my-center` API 호출 시 404 오류 발생
+- 실제 서버 라우트는 `/api/centers/my-center`인데 클라이언트에서 `/centers/my-center`로 요청
+
+**원인:**
+- `apiClient.put('/centers/my-center', updateData)`에서 `/api` prefix가 누락됨
+- `apiClient`의 `baseURL`이 `http://localhost:5000`인데, 엔드포인트에 `/api`가 포함되지 않음
+
+**해결 방법:**
+- `client/app/center/[centerSlug]/admin/branding/page.tsx`의 `handleSave` 함수에서:
+  - `apiClient.put('/centers/my-center', updateData)` → `apiClient.put('/api/centers/my-center', updateData)`로 수정
+
+**수정된 파일:**
+- `client/app/center/[centerSlug]/admin/branding/page.tsx`: API 엔드포인트에 `/api` prefix 추가
+
+### ❌ 미리보기 종료 시 원상태 복귀 안 됨
+**상태: ✅ 해결 완료**
+
+**문제:**
+- 브랜딩 설정에서 테마 모드 설정 후 "미리보기 종료" 버튼을 누르면 원상태로 복귀가 안 됨
+- "취소" 버튼은 정상 작동 (원상태로 복귀)
+
+**원인:**
+- "미리보기 종료" 버튼이 단순히 `setPreviewMode(!previewMode)`만 호출
+- 원래 설정으로 폼 데이터와 CSS 변수/테마 모드를 복원하지 않음
+
+**해결 방법:**
+1. 미리보기 종료 버튼 클릭 시 `handleCancelPreview()` 함수 호출하도록 수정
+2. `useEffect`에서 `previewMode`가 `false`일 때 원래 설정으로 CSS 변수와 테마 모드 복원 로직 추가
+
+**수정된 파일:**
+- `client/app/center/[centerSlug]/admin/branding/page.tsx`:
+  - 미리보기 종료 버튼: `handleCancelPreview()` 호출하도록 수정
+  - `useEffect`에 미리보기 종료 시 원래 설정 복원 로직 추가
+
+**테스트:**
+- 미리보기 종료 버튼 클릭 시 폼 데이터, CSS 변수, 테마 모드가 원래 상태로 복원되는지 확인 필요
+
 **해결:**
 - 라우트는 정상 등록되어 있으므로 추가 조치 불필요
 - health-check 스크립트의 경로 확인 로직 개선 필요할 수 있음

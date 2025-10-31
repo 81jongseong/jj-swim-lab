@@ -67,6 +67,7 @@ function BrandingSettingsPage() {
   // 실시간 미리보기 적용
   useEffect(() => {
     if (previewMode) {
+      // 미리보기 모드: 변경된 설정 적용
       if (formData.primaryColor) {
         document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
       }
@@ -77,9 +78,33 @@ function BrandingSettingsPage() {
         document.documentElement.classList.add('dark');
       } else if (formData.themeMode === 'light') {
         document.documentElement.classList.remove('dark');
+      } else if (formData.themeMode === 'auto') {
+        // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
+        document.documentElement.classList.remove('dark');
+      }
+    } else {
+      // 미리보기 종료: 원래 설정으로 복원
+      if (branding) {
+        const originalPrimaryColor = branding.primaryColor || '#3b82f6';
+        const originalSecondaryColor = branding.secondaryColor || '#8b5cf6';
+        const originalTheme = branding.theme || 'light';
+        
+        document.documentElement.style.setProperty('--tenant-primary-color', originalPrimaryColor);
+        document.documentElement.style.setProperty('--tenant-secondary-color', originalSecondaryColor);
+        
+        if (originalTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } else {
+        // branding이 없으면 기본값으로 복원
+        document.documentElement.style.setProperty('--tenant-primary-color', '#3b82f6');
+        document.documentElement.style.setProperty('--tenant-secondary-color', '#8b5cf6');
+        document.documentElement.classList.remove('dark');
       }
     }
-  }, [formData, previewMode]);
+  }, [formData, previewMode, branding]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,7 +191,7 @@ function BrandingSettingsPage() {
         },
       };
 
-      const response = await apiClient.put('/centers/my-center', updateData);
+      const response = await apiClient.put('/api/centers/my-center', updateData);
       
       if (response.success) {
         await refresh();
@@ -182,7 +207,7 @@ function BrandingSettingsPage() {
   };
 
   const handleCancelPreview = () => {
-    setPreviewMode(false);
+    // 폼 데이터를 원래 상태로 복원
     if (branding) {
       setFormData({
         logo: branding.logo,
@@ -192,7 +217,9 @@ function BrandingSettingsPage() {
         themeMode: branding.theme || 'light',
       });
     }
-    // 원래 설정으로 복원
+    // 미리보기 모드 종료 (useEffect에서 원래 설정으로 복원됨)
+    setPreviewMode(false);
+    // 원래 설정으로 복원 (CSS 변수와 테마 모드도 복원)
     refresh();
   };
 
@@ -366,9 +393,13 @@ function BrandingSettingsPage() {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => {
-                setPreviewMode(!previewMode);
                 if (!previewMode) {
+                  // 미리보기 시작
+                  setPreviewMode(true);
                   alert('미리보기 모드입니다. 변경사항을 적용하려면 저장을 클릭하세요.');
+                } else {
+                  // 미리보기 종료 - 원래 상태로 복원
+                  handleCancelPreview();
                 }
               }}
               variant="outline"
