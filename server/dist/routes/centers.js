@@ -31,23 +31,46 @@ const centerImageStorage = multer_1.default.diskStorage({
         cb(null, `center-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
     }
 });
-router.get('/resolve-slug/:slug', auth_1.authMiddleware, async (req, res) => {
+router.get('/resolve-slug/:slug', async (req, res) => {
     try {
         const { slug } = req.params;
+        console.log(`🔍 센터 슬러그 해석 요청: ${slug}`);
         if (!slug) {
             return res.status(400).json({ success: false, message: 'slug가 필요합니다.' });
         }
-        let center = /^[0-9a-fA-F]{24}$/.test(slug) ? await Center_1.Center.findById(slug).select('_id name') : null;
-        if (!center) {
-            center = await Center_1.Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
+        let center = null;
+        if (slug.toLowerCase() === 'default') {
+            console.log('📌 "default" 슬러그 감지, 첫 번째 활성 센터 조회');
+            center = await Center_1.Center.findOne({ isActive: true }).select('_id name').sort({ createdAt: 1 });
+            if (center) {
+                console.log(`✅ "default" → 센터 ID: ${center._id}, 이름: ${center.name}`);
+                return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+            }
+            else {
+                console.warn('⚠️ 활성 센터가 없습니다. 기본값으로 "default" 반환');
+                return res.json({ success: true, data: { centerId: 'default', name: 'Default Center' } });
+            }
         }
-        if (!center) {
-            return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
+        if (/^[0-9a-fA-F]{24}$/.test(slug)) {
+            console.log(`📌 ObjectId 형식 감지: ${slug}`);
+            center = await Center_1.Center.findById(slug).select('_id name');
+            if (center) {
+                console.log(`✅ ObjectId로 센터 조회 성공: ${center._id}`);
+                return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+            }
         }
-        return res.json({ success: true, data: { centerId: center._id, name: center.name } });
+        console.log(`📌 이름으로 센터 조회 시도: ${slug}`);
+        center = await Center_1.Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
+        if (center) {
+            console.log(`✅ 이름으로 센터 조회 성공: ${center.name} (${center._id})`);
+            return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+        }
+        console.warn(`❌ 센터를 찾을 수 없음: ${slug}`);
+        return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
     }
     catch (error) {
         console.error('resolve-slug 오류:', error);
+        console.error('에러 스택:', error?.stack);
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -1641,11 +1664,32 @@ router.get('/availability', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/settings', auth_1.authMiddleware, async (req, res) => {
     try {
+        if (!req.user || !req.user._id) {
+            const globalSettings = {
+                theme: { color: 'blue', density: 'comfortable' },
+                notifications: { email: true, sms: false },
+                features: { reports: true, payments: true, bookings: true },
+                branding: {}
+            };
+            return res.json({ success: true, data: globalSettings });
+        }
         const headerCenterId = req.headers['x-center-id'];
         const user = await User_1.User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
-        const centerId = (headerCenterId && typeof headerCenterId === 'string')
+        let rawCenterId = (headerCenterId && typeof headerCenterId === 'string')
             ? headerCenterId
             : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
+        let centerId = null;
+        if (rawCenterId) {
+            if (/^[0-9a-fA-F]{24}$/.test(String(rawCenterId))) {
+                centerId = String(rawCenterId);
+            }
+            else if (String(rawCenterId).toLowerCase() === 'default') {
+                const defaultCenter = await Center_1.Center.findOne({ isActive: true }).select('_id').sort({ createdAt: 1 });
+                if (defaultCenter) {
+                    centerId = defaultCenter._id.toString();
+                }
+            }
+        }
         const globalSettings = {
             theme: { color: 'blue', density: 'comfortable' },
             notifications: { email: true, sms: false },
@@ -1654,16 +1698,21 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
         let centerSettings = {};
         let centerBranding = {};
         if (centerId) {
-            const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
-            if (centerDoc) {
-                centerSettings = centerDoc?.settings || {};
-                centerBranding = {
-                    logo: centerDoc?.images?.logo,
-                    mainImage: centerDoc?.images?.mainImage,
-                    primaryColor: centerSettings?.theme?.primaryColor,
-                    secondaryColor: centerSettings?.theme?.secondaryColor,
-                    theme: centerSettings?.theme?.mode || 'light',
-                };
+            try {
+                const centerDoc = await Center_1.Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+                if (centerDoc) {
+                    centerSettings = centerDoc?.settings || {};
+                    centerBranding = {
+                        logo: centerDoc?.images?.logo,
+                        mainImage: centerDoc?.images?.mainImage,
+                        primaryColor: centerSettings?.theme?.primaryColor,
+                        secondaryColor: centerSettings?.theme?.secondaryColor,
+                        theme: centerSettings?.theme?.mode || 'light',
+                    };
+                }
+            }
+            catch (dbError) {
+                console.error('센터 조회 오류:', dbError);
             }
         }
         const userSettings = user?.settings || {};
@@ -1677,7 +1726,12 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
     }
     catch (error) {
         console.error('설정 조회/머지 오류:', error);
-        return res.status(500).json({ success: false, message: '설정 조회 중 오류가 발생했습니다.' });
+        console.error('에러 스택:', error?.stack);
+        return res.status(500).json({
+            success: false,
+            message: '설정 조회 중 오류가 발생했습니다.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 exports.default = router;

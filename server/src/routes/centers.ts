@@ -106,28 +106,49 @@ const centerImageStorage = multer.diskStorage({
 router.get('/resolve-slug/:slug', async (req: AuthRequest, res: Response) => {
   try {
     const { slug } = req.params;
+    console.log(`🔍 센터 슬러그 해석 요청: ${slug}`);
+    
     if (!slug) {
       return res.status(400).json({ success: false, message: 'slug가 필요합니다.' });
     }
 
-    // 1) ObjectId로 시도
-    let center = /^[0-9a-fA-F]{24}$/.test(slug) ? await Center.findById(slug).select('_id name') : null;
+    let center = null;
 
-    // 2) 이름으로 시도 (대소문자 무시)
-    if (!center) {
-      center = await Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
-    }
-
-    // 3) slug가 'default'인 경우 첫 번째 활성 센터 반환
-    if (!center && slug.toLowerCase() === 'default') {
+    // 1) slug가 'default'인 경우 우선 처리 (가장 먼저)
+    if (slug.toLowerCase() === 'default') {
+      console.log('📌 "default" 슬러그 감지, 첫 번째 활성 센터 조회');
       center = await Center.findOne({ isActive: true }).select('_id name').sort({ createdAt: 1 });
+      if (center) {
+        console.log(`✅ "default" → 센터 ID: ${center._id}, 이름: ${center.name}`);
+        return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+      } else {
+        console.warn('⚠️ 활성 센터가 없습니다. 기본값으로 "default" 반환');
+        // 활성 센터가 없으면 "default"를 그대로 반환 (클라이언트에서 처리)
+        return res.json({ success: true, data: { centerId: 'default', name: 'Default Center' } });
+      }
     }
 
-    if (!center) {
-      return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
+    // 2) ObjectId로 시도
+    if (/^[0-9a-fA-F]{24}$/.test(slug)) {
+      console.log(`📌 ObjectId 형식 감지: ${slug}`);
+      center = await Center.findById(slug).select('_id name');
+      if (center) {
+        console.log(`✅ ObjectId로 센터 조회 성공: ${center._id}`);
+        return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+      }
     }
 
-    return res.json({ success: true, data: { centerId: center._id, name: center.name } });
+    // 3) 이름으로 시도 (대소문자 무시)
+    console.log(`📌 이름으로 센터 조회 시도: ${slug}`);
+    center = await Center.findOne({ name: { $regex: `^${slug}$`, $options: 'i' } }).select('_id name');
+    if (center) {
+      console.log(`✅ 이름으로 센터 조회 성공: ${center.name} (${center._id})`);
+      return res.json({ success: true, data: { centerId: center._id.toString(), name: center.name } });
+    }
+
+    // 4) 모두 실패한 경우
+    console.warn(`❌ 센터를 찾을 수 없음: ${slug}`);
+    return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
   } catch (error: any) {
     console.error('resolve-slug 오류:', error);
     console.error('에러 스택:', error?.stack);
