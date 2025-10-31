@@ -117,7 +117,6 @@ export default function DashboardLayout({
     { name: '진도 관리', href: '/progress', icon: '📈', category: 'main' },
     { name: '결제 내역', href: '/payments', icon: '💳', category: 'main' },
     { name: '커뮤니티', href: '/community', icon: '💬', category: 'social' },
-    { name: 'AI 분석', href: '/ai-analysis', icon: '🤖', category: 'ai' },
     { name: '퀴즈', href: '/quiz', icon: '❓', category: 'learning' },
     { name: '센터 정보', href: '/about', icon: 'ℹ️', category: 'info' },
   ];
@@ -140,13 +139,13 @@ export default function DashboardLayout({
     }
     if (user?.userType === 'instructor') {
       const instructorItems = navigationItems.filter(item => 
-        !['결제 내역', 'AI 분석'].includes(item.name)
+        !['결제 내역'].includes(item.name)
       );
       // 강사도 학생 레벨 관리에 접근 가능
       return [...instructorItems, { name: '학생 레벨 관리', href: '/admin/student-levels', icon: '👨‍🎓' }];
     }
     return navigationItems.filter(item => 
-      !['결제 내역', 'AI 분석', '사용자 관리'].includes(item.name)
+      !['결제 내역', '사용자 관리'].includes(item.name)
     );
   };
 
@@ -174,7 +173,6 @@ export default function DashboardLayout({
       main: { title: '주요 기능', color: 'text-blue-600', icon: '⭐' },
       admin: { title: '관리자 도구', color: 'text-purple-600', icon: '🔧' },
       social: { title: '소셜', color: 'text-green-600', icon: '💬' },
-      ai: { title: 'AI 서비스', color: 'text-orange-600', icon: '🤖' },
       learning: { title: '학습 도구', color: 'text-indigo-600', icon: '📚' },
       info: { title: '정보', color: 'text-gray-600', icon: 'ℹ️' },
       other: { title: '기타', color: 'text-gray-600', icon: '📋' }

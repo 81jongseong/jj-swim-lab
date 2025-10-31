@@ -336,6 +336,16 @@ const CenterAdminDashboard: React.FC = () => {
               </div>
               <span className="text-sm font-medium">리포트</span>
             </Button>
+            <Button 
+              variant="outline"
+              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-pink-50 hover:border-pink-300 transition-all"
+              onClick={() => window.location.href = `/center/${centerSlug}/admin/branding`}
+            >
+              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                <span className="text-2xl">🎨</span>
+              </div>
+              <span className="text-sm font-medium">브랜딩 설정</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
