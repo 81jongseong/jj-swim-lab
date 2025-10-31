@@ -218,23 +218,20 @@ function BrandingSettingsPage() {
         }
         
         // 저장 완료 후 플래그 해제 전에 잠시 대기 (저장 완료 보장)
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // 설정 새로고침 (서버에서 최신 데이터 가져오기)
         await refresh();
         
+        // refresh 후 잠시 대기하여 상태 업데이트 완료 보장
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 저장한 값으로 강제 적용 (refresh 후에도 적용 유지)
+        document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
+        document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+        
         // 저장 완료 후 플래그 해제 (이제 useEffect가 새로운 branding 값으로 동작)
         setIsSaving(false);
-        
-        // refresh 후에도 색상이 적용되었는지 확인하고, 없으면 다시 적용
-        setTimeout(() => {
-          const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
-          if (!currentPrimary || currentPrimary === 'rgb(59, 130, 246)') { // 기본 파란색인 경우
-            console.log('⚠️ 색상이 제대로 적용되지 않았습니다. 다시 적용합니다.');
-            document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
-            document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
-          }
-        }, 200);
         
         alert('브랜딩 설정이 저장되었습니다!');
       }
