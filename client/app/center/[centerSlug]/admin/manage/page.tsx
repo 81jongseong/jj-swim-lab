@@ -736,7 +736,14 @@ ${list}`);
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           {/* 통합 통계 카드 (1행 핵심 KPI) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <ThemedStatCard
+              title="승인대기"
+              value={`${dashboardStats.pendingApprovalCount}건`}
+              icon={<AlertCircle className="h-4 w-4" />}
+              color="yellow"
+              description="승인 대기 중인 요청"
+            />
             <ThemedStatCard
               title="오늘 예약"
               value={dashboardStats.todayBookings}
@@ -764,6 +771,13 @@ ${list}`);
               icon={<TrendingUp className="h-4 w-4" />}
               color="green"
               description="이번달 총 수익"
+            />
+            <ThemedStatCard
+              title="결제 대기"
+              value={`${dashboardStats.pendingPayments}건`}
+              icon={<Clock className="h-4 w-4" />}
+              color="orange"
+              description="결제 대기 중"
             />
           </div>
           
