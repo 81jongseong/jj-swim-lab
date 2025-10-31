@@ -137,6 +137,10 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
         
         // 테마 모드 적용 (branding 값이 없으면 localStorage에서 가져오기)
         let themeMode = brandingData.theme;
+        console.log('🔍 brandingData.theme:', brandingData.theme);
+        console.log('🔍 현재 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
+        console.log('🔍 localStorage의 모든 tenant 관련 키:', typeof window !== 'undefined' ? Object.keys(localStorage).filter(k => k.startsWith('tenant')) : []);
+        
         if (!themeMode && typeof window !== 'undefined') {
           const storedTheme = localStorage.getItem('tenant-theme');
           if (storedTheme) {
@@ -148,6 +152,8 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
         // themeMode가 없으면 기본값 'light' 사용
         themeMode = themeMode || 'light';
         console.log('🎨 적용할 테마 모드:', themeMode);
+        console.log('🔍 document.documentElement.classList:', Array.from(document.documentElement.classList));
+        console.log('🔍 document.body.classList:', Array.from(document.body.classList));
         
         if (themeMode === 'dark') {
           document.documentElement.classList.add('dark');

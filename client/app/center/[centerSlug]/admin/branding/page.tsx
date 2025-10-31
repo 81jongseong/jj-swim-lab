@@ -135,15 +135,30 @@ function BrandingSettingsPage() {
       document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColor);
       
       console.log('🎨 useEffect: 적용할 테마 모드:', theme);
+      console.log('🔍 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
+      console.log('🔍 현재 CSS 변수 --tenant-primary-color:', getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim());
+      console.log('🔍 현재 CSS 변수 --tenant-secondary-color:', getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim());
+      console.log('🔍 적용 전 document.documentElement.classList:', Array.from(document.documentElement.classList));
+      console.log('🔍 적용 전 document.body.classList:', Array.from(document.body.classList));
+      
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
         document.body.classList.add('dark');
         console.log('🌙 useEffect: 다크 모드 적용');
+        console.log('🔍 적용 후 document.documentElement.classList:', Array.from(document.documentElement.classList));
+        console.log('🔍 적용 후 document.body.classList:', Array.from(document.body.classList));
       } else {
         document.documentElement.classList.remove('dark');
         document.body.classList.remove('dark');
         console.log('☀️ useEffect: 라이트 모드 적용');
+        console.log('🔍 적용 후 document.documentElement.classList:', Array.from(document.documentElement.classList));
+        console.log('🔍 적용 후 document.body.classList:', Array.from(document.body.classList));
       }
+      
+      // CSS 변수 실제 적용 확인
+      const appliedPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
+      const appliedSecondary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim();
+      console.log('🎨 실제 적용된 CSS 변수:', { appliedPrimary, appliedSecondary });
     }
   }, [formData, previewMode, branding, isSaving]);
 
@@ -247,10 +262,17 @@ function BrandingSettingsPage() {
         
         console.log('✅ 저장 응답에서 받은 브랜딩 정보:', responseBranding);
         console.log('🎨 적용할 색상:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
+        console.log('🔍 formData.themeMode:', formData.themeMode);
+        console.log('🔍 responseBranding?.theme:', responseBranding?.theme);
         
         // 저장 후 새로운 설정을 즉시 적용 (응답에서 받은 값 사용)
         document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
         document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+        
+        // CSS 변수 적용 확인
+        const setPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
+        const setSecondary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-secondary-color').trim();
+        console.log('✅ CSS 변수 설정 확인:', { setPrimary, setSecondary });
         
         // localStorage에 저장하여 다른 페이지에서도 사용 가능하도록 함
         try {
@@ -258,6 +280,8 @@ function BrandingSettingsPage() {
           localStorage.setItem('tenant-secondary-color', savedSecondaryColor);
           localStorage.setItem('tenant-theme', savedTheme);
           console.log('💾 브랜딩 색상 및 테마를 localStorage에 저장:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
+          console.log('🔍 저장 후 localStorage 확인 - tenant-theme:', localStorage.getItem('tenant-theme'));
+          console.log('🔍 저장 후 localStorage 확인 - tenant-primary-color:', localStorage.getItem('tenant-primary-color'));
         } catch (e) {
           console.warn('localStorage 저장 실패:', e);
         }
