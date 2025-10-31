@@ -117,11 +117,6 @@ const userMenuStructure = {
       { href: '/health/measurements', label: '📊 측정 데이터' },
       { href: '/health/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
-    ai: [
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/ai-evaluation', label: '📊 AI 평가' },
-      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/uploads', label: '📹 영상 업로드' },
@@ -169,11 +164,6 @@ const userMenuStructure = {
     teaching: [
       { href: '/instructor/teaching-methods', label: '🏊‍♂️ 강습법 관리' },
     ],
-    ai: [
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/ai-evaluation', label: '📊 AI 평가' },
-      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
-    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/(labs)/animation', label: '🎬 애니메이션' },
@@ -202,6 +192,7 @@ const userMenuStructure = {
     center: [
       { href: '/center/default/admin/introduction', label: '🏢 센터 소개 편집' },
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
+      { href: '/center/default/admin/branding', label: '🎨 브랜딩 설정' },
     ],
     health: [
       { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
@@ -219,11 +210,6 @@ const userMenuStructure = {
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
-    ],
-    ai: [
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/ai-evaluation', label: '📊 AI 평가' },
-      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
@@ -248,6 +234,7 @@ const userMenuStructure = {
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
+      { href: '/center/default/admin/branding', label: '🎨 브랜딩 설정' },
     ],
     health: [
       { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
@@ -265,11 +252,6 @@ const userMenuStructure = {
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
-    ],
-    ai: [
-      { href: '/ai-analysis', label: '🤖 AI 분석' },
-      { href: '/ai-evaluation', label: '📊 AI 평가' },
-      { href: '/video-3d-analysis', label: '🎬 3D 동영상 분석' },
     ],
     tools: [
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
@@ -367,7 +349,6 @@ const menuGrouping = {
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
-    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
@@ -377,7 +358,6 @@ const menuGrouping = {
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
-    { groupName: '🤖 AI 분석', categories: ['ai'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
