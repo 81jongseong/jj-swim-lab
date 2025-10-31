@@ -210,6 +210,16 @@ function BrandingSettingsPage() {
         document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
         document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
         
+        // localStorage에 저장하여 다른 페이지에서도 사용 가능하도록 함
+        try {
+          localStorage.setItem('tenant-primary-color', savedPrimaryColor);
+          localStorage.setItem('tenant-secondary-color', savedSecondaryColor);
+          localStorage.setItem('tenant-theme', savedTheme);
+          console.log('💾 브랜딩 색상을 localStorage에 저장:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
+        } catch (e) {
+          console.warn('localStorage 저장 실패:', e);
+        }
+        
         if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark');
         } else if (savedTheme === 'light') {
@@ -253,16 +263,47 @@ function BrandingSettingsPage() {
         }
         
         // 추가 확인: refresh 후에도 색상 유지 확인 및 재적용 (TenantSettingsContext가 덮어쓸 수 있으므로)
-        setTimeout(() => {
+        // 여러 번 확인하여 계속 적용 (TenantSettingsContext가 비동기로 덮어쓸 수 있음)
+        const checkAndApplyColor = () => {
           const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
-          console.log('🔍 최종 확인 - 현재 적용된 primary 색상:', currentPrimary);
-          const expectedColor = branding?.primaryColor || savedPrimaryColor;
-          if (!currentPrimary || currentPrimary === '#3b82f6' || currentPrimary === 'rgb(59, 130, 246)') {
-            console.log('⚠️ 색상이 초기화되었습니다. 다시 적용합니다. (예상:', expectedColor, ')');
-            document.documentElement.style.setProperty('--tenant-primary-color', expectedColor);
-            document.documentElement.style.setProperty('--tenant-secondary-color', branding?.secondaryColor || savedSecondaryColor);
+          const expectedColor = savedPrimaryColor;
+          console.log('🔍 색상 확인 - 현재:', currentPrimary, '예상:', expectedColor);
+          
+          // 기본 파란색이거나 예상 색상과 다르면 재적용
+          if (!currentPrimary || 
+              currentPrimary === '#3b82f6' || 
+              currentPrimary === 'rgb(59, 130, 246)' ||
+              (expectedColor && currentPrimary !== expectedColor && !currentPrimary.includes(expectedColor.substring(1)))) {
+            console.log('⚠️ 색상이 예상과 다릅니다. 재적용합니다.');
+            document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
+            document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+            return true; // 재적용했음
           }
+          return false; // 정상
+        };
+        
+        // 즉시 확인
+        checkAndApplyColor();
+        
+        // 200ms 후 확인
+        setTimeout(() => {
+          if (checkAndApplyColor()) {
+            // 재적용이 필요했으면 400ms 후 다시 확인
+            setTimeout(() => {
+              checkAndApplyColor();
+            }, 400);
+          }
+        }, 200);
+        
+        // 600ms 후 최종 확인
+        setTimeout(() => {
+          checkAndApplyColor();
         }, 600);
+        
+        // 1000ms 후 최종 확인
+        setTimeout(() => {
+          checkAndApplyColor();
+        }, 1000);
         
         // 저장 완료 후 플래그 해제 (이제 useEffect가 새로운 branding 값으로 동작)
         setIsSaving(false);

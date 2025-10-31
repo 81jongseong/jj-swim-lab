@@ -94,19 +94,45 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
         setBranding(brandingData);
         console.log(`✅ 테넌트 설정 로드 완료:`, { settings: response.data, branding: brandingData });
 
-        // 브랜딩 CSS 변수 적용 (값이 있을 때만 적용, 없으면 기존 값 유지)
+        // 브랜딩 CSS 변수 적용 (값이 있을 때만 적용, 없으면 localStorage 또는 기존 값 유지)
         // 브랜딩 페이지에서 저장 중일 때는 덮어쓰지 않도록 주의 필요
         if (brandingData.primaryColor) {
           console.log('🎨 브랜딩 primaryColor 적용:', brandingData.primaryColor);
           document.documentElement.style.setProperty('--tenant-primary-color', brandingData.primaryColor);
+          // localStorage에도 저장
+          try {
+            localStorage.setItem('tenant-primary-color', brandingData.primaryColor);
+          } catch (e) {
+            console.warn('localStorage 저장 실패:', e);
+          }
         } else {
-          console.log('⚠️ 브랜딩 primaryColor가 없어서 기존 값 유지');
+          // branding 값이 없으면 localStorage에서 가져와서 사용
+          const storedPrimaryColor = typeof window !== 'undefined' ? localStorage.getItem('tenant-primary-color') : null;
+          if (storedPrimaryColor) {
+            console.log('💾 localStorage에서 primaryColor 가져옴:', storedPrimaryColor);
+            document.documentElement.style.setProperty('--tenant-primary-color', storedPrimaryColor);
+          } else {
+            console.log('⚠️ 브랜딩 primaryColor가 없어서 기존 값 유지');
+          }
         }
         if (brandingData.secondaryColor) {
           console.log('🎨 브랜딩 secondaryColor 적용:', brandingData.secondaryColor);
           document.documentElement.style.setProperty('--tenant-secondary-color', brandingData.secondaryColor);
+          // localStorage에도 저장
+          try {
+            localStorage.setItem('tenant-secondary-color', brandingData.secondaryColor);
+          } catch (e) {
+            console.warn('localStorage 저장 실패:', e);
+          }
         } else {
-          console.log('⚠️ 브랜딩 secondaryColor가 없어서 기존 값 유지');
+          // branding 값이 없으면 localStorage에서 가져와서 사용
+          const storedSecondaryColor = typeof window !== 'undefined' ? localStorage.getItem('tenant-secondary-color') : null;
+          if (storedSecondaryColor) {
+            console.log('💾 localStorage에서 secondaryColor 가져옴:', storedSecondaryColor);
+            document.documentElement.style.setProperty('--tenant-secondary-color', storedSecondaryColor);
+          } else {
+            console.log('⚠️ 브랜딩 secondaryColor가 없어서 기존 값 유지');
+          }
         }
         
         // 테마 모드 적용
