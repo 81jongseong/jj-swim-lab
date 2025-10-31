@@ -120,16 +120,23 @@ function BrandingSettingsPage() {
       // 최종 fallback
       primaryColor = primaryColor || formData.primaryColor || '#3b82f6';
       secondaryColor = secondaryColor || formData.secondaryColor || '#8b5cf6';
-      // 테마 모드 확인 (localStorage에서 가져오거나 branding/formData 사용)
-      let theme = branding?.theme || formData.themeMode;
-      if (!theme && typeof window !== 'undefined') {
+      // 테마 모드 확인 (localStorage 우선, 없으면 branding/formData 사용)
+      let theme: 'light' | 'dark' | 'auto' | null = null;
+      
+      // localStorage에서 우선 가져오기 (사용자가 저장한 값이 우선)
+      if (typeof window !== 'undefined') {
         const storedTheme = localStorage.getItem('tenant-theme');
-        if (storedTheme) {
+        if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto')) {
           theme = storedTheme as 'light' | 'dark' | 'auto';
-          console.log('💾 useEffect: localStorage에서 테마 모드 가져옴:', storedTheme);
+          console.log('💾 useEffect: localStorage에서 테마 모드 가져옴 (우선):', storedTheme);
         }
       }
-      theme = theme || 'light';
+      
+      // localStorage에 없으면 branding/formData 사용
+      if (!theme) {
+        theme = branding?.theme || formData.themeMode || 'light';
+        console.log('🔍 branding/formData 테마 모드 사용:', theme);
+      }
       
       document.documentElement.style.setProperty('--tenant-primary-color', primaryColor);
       document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColor);
@@ -742,4 +749,5 @@ function BrandingSettingsPage() {
 }
 
 export default withAuth(BrandingSettingsPage);
+
 

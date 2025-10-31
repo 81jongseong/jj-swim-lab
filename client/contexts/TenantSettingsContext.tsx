@@ -135,23 +135,30 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
           }
         }
         
-        // 테마 모드 적용 (branding 값이 없으면 localStorage에서 가져오기)
-        let themeMode = brandingData.theme;
-        console.log('🔍 brandingData.theme:', brandingData.theme);
-        console.log('🔍 현재 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
-        console.log('🔍 localStorage의 모든 tenant 관련 키:', typeof window !== 'undefined' ? Object.keys(localStorage).filter(k => k.startsWith('tenant')) : []);
+        // 테마 모드 적용 (localStorage 우선, 없으면 branding 값 사용)
+        let themeMode: 'light' | 'dark' | 'auto' | null = null;
         
-        if (!themeMode && typeof window !== 'undefined') {
+        // localStorage에서 우선 가져오기 (사용자가 저장한 값이 우선)
+        if (typeof window !== 'undefined') {
           const storedTheme = localStorage.getItem('tenant-theme');
-          if (storedTheme) {
+          if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto')) {
             themeMode = storedTheme as 'light' | 'dark' | 'auto';
-            console.log('💾 localStorage에서 테마 모드 가져옴:', storedTheme);
+            console.log('💾 localStorage에서 테마 모드 가져옴 (우선):', storedTheme);
           }
         }
         
+        // localStorage에 없으면 branding 값 사용
+        if (!themeMode && brandingData.theme) {
+          themeMode = brandingData.theme as 'light' | 'dark' | 'auto';
+          console.log('🔍 brandingData.theme 사용:', brandingData.theme);
+        }
+        
+        console.log('🔍 brandingData.theme:', brandingData.theme);
+        console.log('🔍 현재 localStorage의 tenant-theme:', typeof window !== 'undefined' ? localStorage.getItem('tenant-theme') : 'N/A');
+        
         // themeMode가 없으면 기본값 'light' 사용
         themeMode = themeMode || 'light';
-        console.log('🎨 적용할 테마 모드:', themeMode);
+        console.log('🎨 최종 적용할 테마 모드:', themeMode);
         console.log('🔍 document.documentElement.classList:', Array.from(document.documentElement.classList));
         console.log('🔍 document.body.classList:', Array.from(document.body.classList));
         
@@ -222,4 +229,5 @@ export function useTenantSettings() {
   }
   return context;
 }
+
 

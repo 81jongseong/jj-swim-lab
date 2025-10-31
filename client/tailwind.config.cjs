@@ -29,7 +29,8 @@ module.exports = {
   				'800': 'hsl(205 80% 22%)',
   				'900': 'hsl(205 80% 15%)',
   				'950': 'hsl(205 80% 10%)',
-  				DEFAULT: 'hsl(var(--primary))',
+  				// 테넌트 브랜딩 색상 사용 (있으면 우선, 없으면 기본값)
+  				DEFAULT: 'var(--tenant-primary-color, hsl(var(--primary)))',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
   			secondary: {
@@ -44,7 +45,8 @@ module.exports = {
   				'800': 'hsl(174 70% 25%)',
   				'900': 'hsl(174 70% 20%)',
   				'950': 'hsl(174 70% 15%)',
-  				DEFAULT: 'hsl(var(--secondary))',
+  				// 테넌트 브랜딩 색상 사용 (있으면 우선, 없으면 기본값)
+  				DEFAULT: 'var(--tenant-secondary-color, hsl(var(--secondary)))',
   				foreground: 'hsl(var(--secondary-foreground))'
   			},
   			accent: {
