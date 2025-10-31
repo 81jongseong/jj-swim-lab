@@ -613,6 +613,13 @@ function CenterInfoManagementPage() {
       const kidsPool = pools.find(p => p.type === 'kids');
       const endlessPool = pools.find(p => p.type === 'endless');
 
+      // freeSwim dayTimeSlots를 laneRental 형식으로 변환
+      const freeSwimDayTimeSlots = freeSwimSettings?.dayTimeSlots || [];
+      const availableDays = freeSwimDayTimeSlots.map(slot => slot.day);
+      const availableTimes = freeSwimDayTimeSlots.length > 0
+        ? freeSwimDayTimeSlots.flatMap(slot => slot.timeSlots)
+        : [];
+
       const dataToSave = {
         name: centerName,
         address,
@@ -643,6 +650,18 @@ function CenterInfoManagementPage() {
           freeSwim: {
             enabled: freeSwimSettings?.enabled !== undefined ? freeSwimSettings.enabled : true,
             dayTimeSlots: freeSwimSettings?.dayTimeSlots || [], // 요일별 시간대 저장 (항상 포함)
+            cancellationPolicy: freeSwimSettings?.cancellationPolicy || ''
+          },
+          laneRental: {
+            enabled: freeSwimSettings?.enabled !== undefined ? freeSwimSettings.enabled : true,
+            availableDays: availableDays, // 요일 배열
+            availableTimes: availableTimes.map((slot: any) => ({
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              maxDuration: 180
+            })),
+            availableLanes: [1, 2, 3, 4, 5, 6],
+            advanceBookingDays: 14,
             cancellationPolicy: freeSwimSettings?.cancellationPolicy || ''
           }
         }

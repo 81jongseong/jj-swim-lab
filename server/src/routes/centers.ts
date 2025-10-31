@@ -2082,7 +2082,14 @@ router.post('/fix-center-admin-link', authMiddleware, requireRole(['superAdmin']
 router.get('/availability', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const centerAdmin = await User.findById(req.user._id);
-    const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    
+    // centerId 우선순위: 1) JWT의 centerId, 2) JWT의 defaultCenterId, 3) JWT의 memberships[0].centerId, 4) DB의 centerId, 5) DB의 managedCenters[0]
+    const jwtUser = req.user as any;
+    const centerId = jwtUser?.centerId || 
+                     jwtUser?.defaultCenterId || 
+                     jwtUser?.memberships?.[0]?.centerId ||
+                     centerAdmin?.centerId || 
+                     centerAdmin?.centerAdminInfo?.managedCenters?.[0];
 
     if (!centerId) {
       return res.status(400).json({

@@ -1661,7 +1661,12 @@ router.post('/fix-center-admin-link', auth_1.authMiddleware, (0, auth_1.requireR
 router.get('/availability', auth_1.authMiddleware, async (req, res) => {
     try {
         const centerAdmin = await User_1.User.findById(req.user._id);
-        const centerId = centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        const jwtUser = req.user;
+        const centerId = jwtUser?.centerId ||
+            jwtUser?.defaultCenterId ||
+            jwtUser?.memberships?.[0]?.centerId ||
+            centerAdmin?.centerId ||
+            centerAdmin?.centerAdminInfo?.managedCenters?.[0];
         if (!centerId) {
             return res.status(400).json({
                 success: false,
@@ -1722,9 +1727,14 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
         }
         const headerCenterId = req.headers['x-center-id'];
         const user = await User_1.User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
+        const jwtUser = req.user;
         let rawCenterId = (headerCenterId && typeof headerCenterId === 'string')
             ? headerCenterId
-            : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
+            : (jwtUser?.centerId ||
+                jwtUser?.defaultCenterId ||
+                jwtUser?.memberships?.[0]?.centerId ||
+                user?.centerId ||
+                user?.centerAdminInfo?.managedCenters?.[0]);
         let centerId = null;
         if (rawCenterId) {
             if (/^[0-9a-fA-F]{24}$/.test(String(rawCenterId))) {

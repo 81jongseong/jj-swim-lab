@@ -941,7 +941,7 @@ function CoursesManagement() {
       </div>
 
       {/* 통계 카드 */}
-          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-7 gap-3 md:gap-6 mb-8">
+          <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-6 mb-8">
         <StatCard
           icon="📚"
           title="총 과정"
@@ -953,15 +953,6 @@ function CoursesManagement() {
           title="총 학생"
           value={`${courses.filter(c => !c.isPersonalLesson).reduce((sum, course) => sum + course.currentStudents, 0)}명`}
           color="green"
-        />
-        <StatCard
-          icon="⏱️"
-          title="평균 수업시간"
-          value={`${courses.filter(c => !c.isPersonalLesson).length > 0 
-            ? Math.round(courses.filter(c => !c.isPersonalLesson).reduce((sum, course) => sum + course.duration, 0) / courses.filter(c => !c.isPersonalLesson).length)
-            : 0
-          }분`}
-          color="purple"
         />
         <StatCard
           icon="⭐"
