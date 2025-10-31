@@ -204,15 +204,24 @@ function BrandingSettingsPage() {
         // 미리보기 모드 종료 (useEffect 실행 방지)
         setPreviewMode(false);
         
-        // 저장 후 새로운 설정을 즉시 적용 (useEffect보다 우선)
-        document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
-        document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+        // 응답에서 브랜딩 정보 확인 (서버에서 직접 반환)
+        const responseBranding = (response as any).branding;
+        const savedPrimaryColor = responseBranding?.primaryColor || formData.primaryColor;
+        const savedSecondaryColor = responseBranding?.secondaryColor || formData.secondaryColor;
+        const savedTheme = responseBranding?.theme || formData.themeMode;
         
-        if (formData.themeMode === 'dark') {
+        console.log('✅ 저장 응답에서 받은 브랜딩 정보:', responseBranding);
+        console.log('🎨 적용할 색상:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
+        
+        // 저장 후 새로운 설정을 즉시 적용 (응답에서 받은 값 사용)
+        document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
+        document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+        
+        if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark');
-        } else if (formData.themeMode === 'light') {
+        } else if (savedTheme === 'light') {
           document.documentElement.classList.remove('dark');
-        } else if (formData.themeMode === 'auto') {
+        } else if (savedTheme === 'auto') {
           // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
           document.documentElement.classList.remove('dark');
         }
@@ -223,12 +232,16 @@ function BrandingSettingsPage() {
         // 설정 새로고침 (서버에서 최신 데이터 가져오기)
         await refresh();
         
-        // refresh 후 잠시 대기하여 상태 업데이트 완료 보장
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // 저장한 값으로 강제 적용 (refresh 후에도 적용 유지)
-        document.documentElement.style.setProperty('--tenant-primary-color', formData.primaryColor);
-        document.documentElement.style.setProperty('--tenant-secondary-color', formData.secondaryColor);
+        // refresh 후에도 색상 유지 확인 및 재적용
+        setTimeout(() => {
+          const currentPrimary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
+          console.log('🔍 현재 적용된 primary 색상:', currentPrimary);
+          if (!currentPrimary || currentPrimary === 'rgb(59, 130, 246)') {
+            console.log('⚠️ 색상이 초기화되었습니다. 다시 적용합니다.');
+            document.documentElement.style.setProperty('--tenant-primary-color', savedPrimaryColor);
+            document.documentElement.style.setProperty('--tenant-secondary-color', savedSecondaryColor);
+          }
+        }, 200);
         
         // 저장 완료 후 플래그 해제 (이제 useEffect가 새로운 branding 값으로 동작)
         setIsSaving(false);

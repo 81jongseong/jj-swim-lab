@@ -969,17 +969,31 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     console.log('🎨 저장된 settings:', JSON.stringify((savedCenter as any).settings, null, 2));
     console.log('🎨 저장된 settings.theme:', JSON.stringify((savedCenter as any).settings?.theme, null, 2));
     
-    // 저장 후 다시 조회하여 최신 데이터 확인
-    const refreshedCenter = await Center.findById(centerId).select('settings images');
+    // 저장 후 다시 조회하여 최신 데이터 확인 (.lean() 사용하여 플레인 객체로 가져오기)
+    const refreshedCenter = await Center.findById(centerId).select('settings images').lean();
     if (refreshedCenter) {
       console.log('🔄 저장 후 재조회한 settings:', JSON.stringify((refreshedCenter as any).settings, null, 2));
       console.log('🔄 저장 후 재조회한 settings.theme:', JSON.stringify((refreshedCenter as any).settings?.theme, null, 2));
     }
 
+    // 응답에 settings 정보 포함 (클라이언트에서 즉시 사용 가능하도록)
+    const responseData: any = savedCenter.toObject ? savedCenter.toObject() : savedCenter;
+    if (responseData.settings?.theme) {
+      console.log('📤 응답에 포함될 settings.theme:', JSON.stringify(responseData.settings.theme, null, 2));
+    }
+
     res.json({
       success: true,
       message: '센터 정보가 성공적으로 수정되었습니다!',
-      data: savedCenter
+      data: responseData,
+      // 브랜딩 정보를 별도로 포함 (클라이언트에서 바로 사용 가능)
+      branding: {
+        primaryColor: (savedCenter as any).settings?.theme?.primaryColor,
+        secondaryColor: (savedCenter as any).settings?.theme?.secondaryColor,
+        theme: (savedCenter as any).settings?.theme?.mode || 'light',
+        logo: (savedCenter as any).images?.logo,
+        mainImage: (savedCenter as any).images?.mainImage,
+      }
     });
   } catch (error) {
     console.error('❌ 센터 정보 수정 오류:', error);
