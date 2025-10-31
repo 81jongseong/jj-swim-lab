@@ -94,12 +94,19 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
         setBranding(brandingData);
         console.log(`✅ 테넌트 설정 로드 완료:`, { settings: response.data, branding: brandingData });
 
-        // 브랜딩 CSS 변수 적용
+        // 브랜딩 CSS 변수 적용 (값이 있을 때만 적용, 없으면 기존 값 유지)
+        // 브랜딩 페이지에서 저장 중일 때는 덮어쓰지 않도록 주의 필요
         if (brandingData.primaryColor) {
+          console.log('🎨 브랜딩 primaryColor 적용:', brandingData.primaryColor);
           document.documentElement.style.setProperty('--tenant-primary-color', brandingData.primaryColor);
+        } else {
+          console.log('⚠️ 브랜딩 primaryColor가 없어서 기존 값 유지');
         }
         if (brandingData.secondaryColor) {
+          console.log('🎨 브랜딩 secondaryColor 적용:', brandingData.secondaryColor);
           document.documentElement.style.setProperty('--tenant-secondary-color', brandingData.secondaryColor);
+        } else {
+          console.log('⚠️ 브랜딩 secondaryColor가 없어서 기존 값 유지');
         }
         
         // 테마 모드 적용
