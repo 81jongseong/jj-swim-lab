@@ -23,6 +23,7 @@ import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock,
 import { StatCard } from '@/components/StatCard';
 import { Button } from '@/components/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import QuickActionCard from '@/components/center-admin/QuickActionCard';
 
 const DEBUG = false;
 
@@ -285,67 +286,43 @@ const CenterAdminDashboard: React.FC = () => {
           <CardDescription>자주 사용하는 기능들에 빠르게 접근하세요.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/members`}
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium">회원 관리</span>
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 hover:border-green-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/instructors`}
-            >
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <Settings className="h-6 w-6 text-green-600" />
-              </div>
-              <span className="text-sm font-medium">강사 관리</span>
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 hover:border-purple-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/courses`}
-            >
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-purple-600" />
-              </div>
-              <span className="text-sm font-medium">강의 관리</span>
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-orange-50 hover:border-orange-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/manage`}
-            >
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-orange-600" />
-              </div>
-              <span className="text-sm font-medium">예약·결제 관리</span>
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-indigo-50 hover:border-indigo-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/reports`}
-            >
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-indigo-600" />
-              </div>
-              <span className="text-sm font-medium">리포트</span>
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-pink-50 hover:border-pink-300 transition-all"
-              onClick={() => window.location.href = `/center/${centerSlug}/admin/branding`}
-            >
-              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-                <span className="text-2xl">🎨</span>
-              </div>
-              <span className="text-sm font-medium">브랜딩 설정</span>
-            </Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <QuickActionCard
+              title="회원 관리"
+              icon={Users}
+              href={`/center/${centerSlug}/admin/members`}
+              color="blue"
+            />
+            <QuickActionCard
+              title="강사 관리"
+              icon={Settings}
+              href={`/center/${centerSlug}/admin/instructors`}
+              color="green"
+            />
+            <QuickActionCard
+              title="강의 관리"
+              icon={BookOpen}
+              href={`/center/${centerSlug}/admin/courses`}
+              color="purple"
+            />
+            <QuickActionCard
+              title="예약·결제 관리"
+              icon={DollarSign}
+              href={`/center/${centerSlug}/admin/manage`}
+              color="orange"
+            />
+            <QuickActionCard
+              title="리포트"
+              icon={TrendingUp}
+              href={`/center/${centerSlug}/admin/reports`}
+              color="indigo"
+            />
+            <QuickActionCard
+              title="브랜딩 설정"
+              emoji="🎨"
+              href={`/center/${centerSlug}/admin/branding`}
+              color="pink"
+            />
           </div>
         </CardContent>
       </Card>
