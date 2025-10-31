@@ -63,8 +63,22 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
       setLoading(true);
       setError(undefined);
 
+      console.log(`🔄 테넌트 설정 로드 시작: centerId=${centerId}`);
+
+      // centerId가 변경되면 localStorage도 업데이트하여 apiClient가 최신 값을 사용하도록 함
+      if (centerId) {
+        try {
+          localStorage.setItem('centerId', centerId);
+          document.cookie = `centerId=${encodeURIComponent(centerId)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+          console.log(`💾 centerId 저장 완료: ${centerId}`);
+        } catch (e) {
+          console.warn('centerId 저장 실패:', e);
+        }
+      }
+
       // 설정 머지 API 호출
       const response = await apiClient.get<{ success: boolean; data: TenantSettings }>('/api/centers/settings');
+      console.log(`📥 테넌트 설정 응답:`, response);
       
       if (response.success && response.data) {
         setSettings(response.data);
@@ -78,6 +92,7 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
           theme: (response.data.branding?.theme as 'light' | 'dark' | 'auto') || 'light',
         };
         setBranding(brandingData);
+        console.log(`✅ 테넌트 설정 로드 완료:`, { settings: response.data, branding: brandingData });
 
         // 브랜딩 CSS 변수 적용
         if (brandingData.primaryColor) {
@@ -111,7 +126,17 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
 
   useEffect(() => {
     if (centerId) {
+      // centerId가 변경되면 설정을 다시 로드
       loadSettings();
+    } else {
+      // centerId가 없으면 기본 설정 사용
+      setSettings({
+        theme: { color: 'blue', density: 'comfortable' },
+        notifications: { email: true, sms: false },
+        features: { reports: true, payments: true, bookings: true },
+      });
+      setBranding(null);
+      setLoading(false);
     }
   }, [centerId]);
 
