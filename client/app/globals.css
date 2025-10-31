@@ -138,11 +138,33 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+}
+
+/* 테넌트 브랜딩 색상을 실제 사용되는 곳에 적용 */
+@layer utilities {
+  /* 브랜딩 색상을 사용하는 유틸리티 클래스 */
+  .bg-tenant-primary {
+    background-color: var(--tenant-primary-color, #3b82f6) !important;
+  }
   
-  /* 테넌트 브랜딩 색상을 실제 사용되는 CSS 변수에 매핑 */
-  :root {
-    --primary-rgb: var(--tenant-primary-color);
-    --secondary-rgb: var(--tenant-secondary-color);
+  .text-tenant-primary {
+    color: var(--tenant-primary-color, #3b82f6) !important;
+  }
+  
+  .border-tenant-primary {
+    border-color: var(--tenant-primary-color, #3b82f6) !important;
+  }
+  
+  .bg-tenant-secondary {
+    background-color: var(--tenant-secondary-color, #8b5cf6) !important;
+  }
+  
+  .text-tenant-secondary {
+    color: var(--tenant-secondary-color, #8b5cf6) !important;
+  }
+  
+  .border-tenant-secondary {
+    border-color: var(--tenant-secondary-color, #8b5cf6) !important;
   }
 }
 

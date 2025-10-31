@@ -80,8 +80,8 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground antialiased`} suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning className="h-full">
+      <body className={`${inter.className} bg-background text-foreground antialiased h-full`} suppressHydrationWarning>
         <AuthProvider>
           {/* 통합 네비게이션 시스템 */}
           <Navigation />
