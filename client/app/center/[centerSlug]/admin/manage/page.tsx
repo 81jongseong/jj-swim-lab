@@ -736,7 +736,7 @@ ${list}`);
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           {/* 통합 통계 카드 (1행 핵심 KPI) */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <ThemedStatCard
               title="오늘 예약"
               value={dashboardStats.todayBookings}
@@ -768,7 +768,7 @@ ${list}`);
           </div>
           
           {/* 통합 통계 카드 (2행 결제 KPI) */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <ThemedStatCard
               title="평균 결제액"
               value={formatCurrency(dashboardStats.averageTicketSize)}
