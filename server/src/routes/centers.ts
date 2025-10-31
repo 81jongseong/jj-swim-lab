@@ -2071,9 +2071,25 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     // x-center-id 헤더 우선 사용 (Phase 2)
     const headerCenterId = req.headers['x-center-id'];
     const user = await User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
-    const centerId = (headerCenterId && typeof headerCenterId === 'string') 
+    let rawCenterId = (headerCenterId && typeof headerCenterId === 'string') 
       ? headerCenterId 
       : (user?.centerId || user?.centerAdminInfo?.managedCenters?.[0]);
+
+    // ObjectId 형식 검증 및 변환
+    let centerId: string | null = null;
+    if (rawCenterId) {
+      // ObjectId 형식인 경우
+      if (/^[0-9a-fA-F]{24}$/.test(String(rawCenterId))) {
+        centerId = String(rawCenterId);
+      } else if (String(rawCenterId).toLowerCase() === 'default') {
+        // 'default'인 경우 첫 번째 활성 센터 찾기
+        const defaultCenter = await Center.findOne({ isActive: true }).select('_id').sort({ createdAt: 1 });
+        if (defaultCenter) {
+          centerId = defaultCenter._id.toString();
+        }
+      }
+      // 그 외의 경우는 null로 처리 (센터 정보 없이 진행)
+    }
 
     // 글로벌 기본값 (간단한 기본 세트)
     const globalSettings: any = {
@@ -2086,18 +2102,23 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     let centerBranding: any = {};
     
     if (centerId) {
-      const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
-      if (centerDoc) {
-        centerSettings = (centerDoc as any)?.settings || {};
-        
-        // 브랜딩 정보 추출 (Phase 4)
-        centerBranding = {
-          logo: (centerDoc as any)?.images?.logo,
-          mainImage: (centerDoc as any)?.images?.mainImage,
-          primaryColor: centerSettings?.theme?.primaryColor,
-          secondaryColor: centerSettings?.theme?.secondaryColor,
-          theme: centerSettings?.theme?.mode || 'light',
-        };
+      try {
+        const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+        if (centerDoc) {
+          centerSettings = (centerDoc as any)?.settings || {};
+          
+          // 브랜딩 정보 추출 (Phase 4)
+          centerBranding = {
+            logo: (centerDoc as any)?.images?.logo,
+            mainImage: (centerDoc as any)?.images?.mainImage,
+            primaryColor: centerSettings?.theme?.primaryColor,
+            secondaryColor: centerSettings?.theme?.secondaryColor,
+            theme: centerSettings?.theme?.mode || 'light',
+          };
+        }
+      } catch (dbError: any) {
+        console.error('센터 조회 오류:', dbError);
+        // 센터 조회 실패해도 기본 설정으로 진행
       }
     }
 
