@@ -1,6 +1,41 @@
 # 🏊 JJ Swim Lab - 개발 기록
 
-## 📊 **최신 작업 현황** (2025-10-28)
+## 📊 **최신 작업 현황** (2025-10-31)
+
+### ✅ **센터 정보 관리 페이지 복원 및 개선 완료** (2025-10-31)
+**진행 상태: 완료**
+
+#### **작업 내용:**
+1. **센터 정보 관리 페이지 복원**
+   - 10월 29일 커밋(8123639)의 이전 버전으로 복원
+   - 자유수영 운영시간 설정 기능 포함
+   - import 경로를 `@/`로 변경하여 테넌트 구조에 맞춤
+
+2. **수영장 수심 범위 설정 기능 추가**
+   - 동일한 수심 또는 범위(최소~최대) 선택 가능
+   - 드롭다운과 조건부 입력 필드로 구현
+   - `PoolInfo` 인터페이스에 `depthRange` 필드 추가
+
+3. **센터 정보 조회 개선**
+   - JWT 토큰의 `defaultCenterId`와 `memberships` 활용
+   - `/api/centers/my-center`에서 centerId 우선순위 개선
+   - `/api/centers/settings`에서도 동일한 우선순위 적용
+
+4. **디버깅 로그 정리**
+   - 개발 모드에서만 로그 출력
+   - 과도한 console.log 제거
+   - Navigation, TenantSettingsContext 로그 정리
+
+#### **수정된 파일:**
+- `client/app/center/[centerSlug]/admin/info/page.tsx`: 센터 정보 관리 페이지 복원 및 수심 범위 기능 추가
+- `server/src/middleware/auth.ts`: JWT centerId 추출 로직 개선
+- `server/src/routes/centers.ts`: 센터 정보 조회 우선순위 개선
+- `server/src/routes/centers.ts`: `/settings` 엔드포인트 centerId 우선순위 적용
+
+#### **커밋:**
+- `feat: 센터 정보 관리 페이지 복원 및 수심 범위 설정 기능 추가` (커밋 565c098)
+
+---
 
 ### 🚀 **강사 수업 관리 기능 구현 필요** 🔧
 **진행 상태: 기획 완료 → 구현 대기**
