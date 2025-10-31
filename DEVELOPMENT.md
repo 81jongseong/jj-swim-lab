@@ -34,6 +34,46 @@
 
 #### **커밋:**
 - `feat: 센터 정보 관리 페이지 복원 및 수심 범위 설정 기능 추가` (커밋 565c098)
+- `docs: 센터 정보 관리 페이지 복원 및 개선 작업 히스토리 추가` (커밋 09415b5)
+- `fix: 자유수영 레인 대여 신청 문제 수정 및 평균수업시간 카드 삭제` (커밋 08aa890)
+
+---
+
+### ✅ **자유수영 레인 대여 신청 문제 수정** (2025-10-31)
+**진행 상태: 완료**
+
+#### **문제:**
+- 자유수영 운영시간을 토,일 로 설정했는데 레인 대여 신청 모달에서 "레인대여가 불가능합니다" 메시지 표시
+- 레인 번호 선택 박스가 작동하지 않음
+
+#### **원인:**
+- 센터 정보 저장 시 `freeSwim`만 저장하고 `laneRental`은 저장하지 않음
+- 레인 대여 모달(`SimpleLaneRentalModal`)이 `laneRental` 데이터 구조 사용
+- `/api/centers/availability`에서 centerId 조회 우선순위 미적용
+
+#### **해결 방법:**
+1. **freeSwim을 laneRental로 변환하여 저장**
+   - `freeSwim`의 `dayTimeSlots`를 `laneRental` 형식으로 변환
+   - `availableDays`: 요일 배열
+   - `availableTimes`: 시간대 배열(각 slot의 startTime/endTime 포함)
+   - `availableLanes`: 기본값 [1,2,3,4,5,6]
+
+2. **centerId 조회 우선순위 개선**
+   - `/api/centers/availability`에 동일 로직 적용
+   - JWT의 `defaultCenterId`, `memberships` 우선 확인
+
+3. **평균수업시간 카드 삭제**
+   - 강습 과정 관리 페이지에서 통계 카드 7개 → 6개로 변경
+   - 그리드를 `lg:grid-cols-7` → `lg:grid-cols-6`으로 수정
+
+#### **수정된 파일:**
+- `client/app/center/[centerSlug]/admin/info/page.tsx`: freeSwim을 laneRental로 변환하여 저장
+- `server/src/routes/centers.ts`: `/availability` 엔드포인트 centerId 조회 개선
+- `client/app/center/[centerSlug]/admin/courses/page.tsx`: 평균수업시간 카드 삭제
+- `client/app/center-admin/courses/page.tsx`: 평균수업시간 카드 삭제
+
+#### **커밋:**
+- `fix: 자유수영 레인 대여 신청 문제 수정 및 평균수업시간 카드 삭제` (커밋 08aa890)
 
 ---
 
