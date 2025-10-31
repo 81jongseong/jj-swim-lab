@@ -120,11 +120,21 @@ function BrandingSettingsPage() {
       // 최종 fallback
       primaryColor = primaryColor || formData.primaryColor || '#3b82f6';
       secondaryColor = secondaryColor || formData.secondaryColor || '#8b5cf6';
-      const theme = branding?.theme || formData.themeMode || 'light';
+      // 테마 모드 확인 (localStorage에서 가져오거나 branding/formData 사용)
+      let theme = branding?.theme || formData.themeMode;
+      if (!theme && typeof window !== 'undefined') {
+        const storedTheme = localStorage.getItem('tenant-theme');
+        if (storedTheme) {
+          theme = storedTheme as 'light' | 'dark' | 'auto';
+          console.log('💾 useEffect: localStorage에서 테마 모드 가져옴:', storedTheme);
+        }
+      }
+      theme = theme || 'light';
       
       document.documentElement.style.setProperty('--tenant-primary-color', primaryColor);
       document.documentElement.style.setProperty('--tenant-secondary-color', secondaryColor);
       
+      console.log('🎨 useEffect: 적용할 테마 모드:', theme);
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
         document.body.classList.add('dark');
@@ -247,7 +257,7 @@ function BrandingSettingsPage() {
           localStorage.setItem('tenant-primary-color', savedPrimaryColor);
           localStorage.setItem('tenant-secondary-color', savedSecondaryColor);
           localStorage.setItem('tenant-theme', savedTheme);
-          console.log('💾 브랜딩 색상을 localStorage에 저장:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
+          console.log('💾 브랜딩 색상 및 테마를 localStorage에 저장:', { savedPrimaryColor, savedSecondaryColor, savedTheme });
         } catch (e) {
           console.warn('localStorage 저장 실패:', e);
         }

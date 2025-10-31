@@ -135,16 +135,29 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
           }
         }
         
-        // 테마 모드 적용
-        if (brandingData.theme === 'dark') {
+        // 테마 모드 적용 (branding 값이 없으면 localStorage에서 가져오기)
+        let themeMode = brandingData.theme;
+        if (!themeMode && typeof window !== 'undefined') {
+          const storedTheme = localStorage.getItem('tenant-theme');
+          if (storedTheme) {
+            themeMode = storedTheme as 'light' | 'dark' | 'auto';
+            console.log('💾 localStorage에서 테마 모드 가져옴:', storedTheme);
+          }
+        }
+        
+        // themeMode가 없으면 기본값 'light' 사용
+        themeMode = themeMode || 'light';
+        console.log('🎨 적용할 테마 모드:', themeMode);
+        
+        if (themeMode === 'dark') {
           document.documentElement.classList.add('dark');
           document.body.classList.add('dark');
           console.log('🌙 TenantSettingsContext: 다크 모드 적용');
-        } else if (brandingData.theme === 'light') {
+        } else if (themeMode === 'light') {
           document.documentElement.classList.remove('dark');
           document.body.classList.remove('dark');
           console.log('☀️ TenantSettingsContext: 라이트 모드 적용');
-        } else if (brandingData.theme === 'auto') {
+        } else if (themeMode === 'auto') {
           // auto 모드는 시스템 설정 따르기 - 현재는 light로 처리
           document.documentElement.classList.remove('dark');
           document.body.classList.remove('dark');
