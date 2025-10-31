@@ -64,7 +64,7 @@ export function TenantSettingsProvider({ children, centerId }: { children: React
       setError(undefined);
 
       // 설정 머지 API 호출
-      const response = await apiClient.get<{ success: boolean; data: TenantSettings }>('/centers/settings');
+      const response = await apiClient.get<{ success: boolean; data: TenantSettings }>('/api/centers/settings');
       
       if (response.success && response.data) {
         setSettings(response.data);
