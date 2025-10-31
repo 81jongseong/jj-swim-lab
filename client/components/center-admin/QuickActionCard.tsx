@@ -26,7 +26,7 @@ import { LucideIcon } from 'lucide-react';
 
 interface QuickActionCardProps {
   title: string;
-  icon: React.ReactNode | LucideIcon;
+  icon?: LucideIcon;
   href?: string;
   onClick?: () => void;
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'indigo' | 'pink' | 'red' | 'yellow';
@@ -86,15 +86,13 @@ const colorVariants = {
 
 export default function QuickActionCard({
   title,
-  icon,
+  icon: IconComponent,
   href,
   onClick,
   color = 'blue',
   emoji,
 }: QuickActionCardProps) {
   const colorVariant = colorVariants[color];
-  const IconComponent = typeof icon === 'function' ? icon : null;
-  const iconNode = IconComponent ? <IconComponent className={`h-6 w-6 ${colorVariant.iconColor}`} /> : icon;
 
   const baseClassName = `h-24 flex flex-col items-center justify-center space-y-2 border rounded-lg transition-all cursor-pointer ${colorVariant.hoverBg} ${colorVariant.hoverBorder}`;
 
@@ -103,11 +101,11 @@ export default function QuickActionCard({
       <div className="w-10 h-10 rounded-full flex items-center justify-center">
         {emoji ? (
           <span className="text-2xl">{emoji}</span>
-        ) : (
+        ) : IconComponent ? (
           <div className={`w-full h-full rounded-full ${colorVariant.bg} flex items-center justify-center`}>
-            {iconNode}
+            <IconComponent className={`h-6 w-6 ${colorVariant.iconColor}`} />
           </div>
-        )}
+        ) : null}
       </div>
       <span className="text-sm font-medium">{title}</span>
     </>
