@@ -911,7 +911,12 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
           (center.settings as any)[key] = settings[key];
         }
       });
+      
+      // Mixed 타입 필드는 markModified()를 호출해야 Mongoose가 변경을 감지함
+      center.markModified('settings');
+      
       console.log('💾 저장될 settings:', JSON.stringify(center.settings, null, 2));
+      console.log('💾 markModified 호출 완료');
     }
     
     if (availabilitySettings) {
@@ -2153,11 +2158,13 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     if (centerId) {
       try {
         console.log(`🔍 센터 설정 조회: centerId=${centerId}`);
-        const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name');
+        // .lean()을 사용하여 플레인 JavaScript 객체로 가져오기 (Mongoose 문서 변환 없음)
+        const centerDoc = await Center.findById(centerId).select('settings availabilitySettings customLevels introduction images name').lean();
         if (centerDoc) {
-          console.log('✅ 센터 문서 조회 성공');
+          console.log('✅ 센터 문서 조회 성공 (lean)');
           centerSettings = (centerDoc as any)?.settings || {};
           console.log('📥 조회된 centerSettings:', JSON.stringify(centerSettings, null, 2));
+          console.log('📥 centerSettings 타입:', typeof centerSettings);
           console.log('🎨 centerSettings.theme:', JSON.stringify(centerSettings?.theme, null, 2));
           console.log('🎨 centerSettings.theme?.primaryColor:', centerSettings?.theme?.primaryColor);
           console.log('🎨 centerSettings.theme?.secondaryColor:', centerSettings?.theme?.secondaryColor);
