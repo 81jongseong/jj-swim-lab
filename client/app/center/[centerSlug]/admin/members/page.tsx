@@ -110,6 +110,16 @@ interface Member {
         asthma?: boolean;
         other?: string[];
       };
+      fitnessMetrics?: {
+        restingHeartRate?: number;
+        maxHeartRate?: number;
+        bodyFatPercentage?: number;
+        muscleMass?: number;
+        lungCapacity?: number;
+        hydrationLevel?: number;
+        boneDensity?: number;
+        measuredAt?: Date;
+      };
       healthHistory?: Array<{
         date: Date;
         weight?: number;
@@ -927,17 +937,36 @@ function CenterMembersManagement() {
 
                         {/* 콜레스테롤 */}
                         <div className="bg-white rounded-lg p-4 border border-purple-100">
-                          <div className="text-xs text-gray-600 mb-2 font-medium">콜레스테롤</div>
+                          <div className="text-xs text-gray-600 mb-2 font-medium">콜레스테롤 (mg/dL)</div>
                           {selectedMember.studentInfo?.healthProfile?.cholesterol?.total ? (
                             <>
-                              <div className="text-lg font-bold text-purple-900 mb-1">
-                                총 {selectedMember.studentInfo.healthProfile.cholesterol.total}
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-gray-600">총 콜레스테롤</span>
+                                  <span className="text-lg font-bold text-purple-900">
+                                    {selectedMember.studentInfo.healthProfile.cholesterol.total}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center border-t pt-2">
+                                  <span className="text-xs text-gray-600">LDL</span>
+                                  <span className="text-sm font-semibold text-red-600">
+                                    {selectedMember.studentInfo.healthProfile.cholesterol.ldl || '-'}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-gray-600">HDL</span>
+                                  <span className="text-sm font-semibold text-green-600">
+                                    {selectedMember.studentInfo.healthProfile.cholesterol.hdl || '-'}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center border-t pt-2">
+                                  <span className="text-xs text-gray-600">중성지방</span>
+                                  <span className="text-sm font-semibold text-orange-600">
+                                    {selectedMember.studentInfo.healthProfile.cholesterol.triglycerides || '-'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-600 space-y-0.5">
-                                <div>LDL: {selectedMember.studentInfo.healthProfile.cholesterol.ldl || '-'}</div>
-                                <div>HDL: {selectedMember.studentInfo.healthProfile.cholesterol.hdl || '-'}</div>
-                              </div>
-                              <div className="text-xs text-gray-400 mt-1">
+                              <div className="text-xs text-gray-400 mt-2 pt-2 border-t">
                                 {selectedMember.studentInfo.healthProfile.cholesterol.measuredAt 
                                   ? new Date(selectedMember.studentInfo.healthProfile.cholesterol.measuredAt).toLocaleDateString('ko-KR')
                                   : '측정일 없음'}
@@ -1016,6 +1045,90 @@ function CenterMembersManagement() {
                               <div className="text-sm text-gray-400">등록된 건강질환이 없습니다.</div>
                             )}
                           </div>
+                        </div>
+                      )}
+
+                      {/* 수영 성능 관련 건강 지표 */}
+                      {selectedMember.studentInfo?.healthProfile?.fitnessMetrics && (
+                        <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-lg p-6 border border-cyan-200">
+                          <div className="text-lg font-semibold text-cyan-900 mb-4">🏊 수영 성능 관련 건강 지표</div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.restingHeartRate && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">안정시 심박수</div>
+                                <div className="text-xl font-bold text-red-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.restingHeartRate}
+                                </div>
+                                <div className="text-xs text-gray-500">bpm</div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.maxHeartRate && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">최대 심박수</div>
+                                <div className="text-xl font-bold text-red-700">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.maxHeartRate}
+                                </div>
+                                <div className="text-xs text-gray-500">bpm</div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.bodyFatPercentage !== undefined && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">체지방률</div>
+                                <div className="text-xl font-bold text-orange-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.bodyFatPercentage}%
+                                </div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.muscleMass && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">근육량</div>
+                                <div className="text-xl font-bold text-blue-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.muscleMass}kg
+                                </div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.lungCapacity && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">폐활량</div>
+                                <div className="text-xl font-bold text-green-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.lungCapacity}L
+                                </div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.hydrationLevel !== undefined && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">수분량</div>
+                                <div className="text-xl font-bold text-cyan-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.hydrationLevel}%
+                                </div>
+                              </div>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.fitnessMetrics.boneDensity && (
+                              <div className="bg-white rounded-lg p-3 border border-cyan-100">
+                                <div className="text-xs text-gray-600 mb-1">골밀도</div>
+                                <div className="text-xl font-bold text-purple-600">
+                                  {selectedMember.studentInfo.healthProfile.fitnessMetrics.boneDensity}
+                                </div>
+                                <div className="text-xs text-gray-500">g/cm²</div>
+                              </div>
+                            )}
+                          </div>
+                          {selectedMember.studentInfo.healthProfile.fitnessMetrics.measuredAt && (
+                            <div className="text-xs text-gray-400 mt-4 pt-3 border-t">
+                              최근 측정: {new Date(selectedMember.studentInfo.healthProfile.fitnessMetrics.measuredAt).toLocaleDateString('ko-KR')}
+                            </div>
+                          )}
+                          {!selectedMember.studentInfo.healthProfile.fitnessMetrics.restingHeartRate &&
+                           !selectedMember.studentInfo.healthProfile.fitnessMetrics.maxHeartRate &&
+                           selectedMember.studentInfo.healthProfile.fitnessMetrics.bodyFatPercentage === undefined &&
+                           !selectedMember.studentInfo.healthProfile.fitnessMetrics.muscleMass &&
+                           !selectedMember.studentInfo.healthProfile.fitnessMetrics.lungCapacity &&
+                           selectedMember.studentInfo.healthProfile.fitnessMetrics.hydrationLevel === undefined &&
+                           !selectedMember.studentInfo.healthProfile.fitnessMetrics.boneDensity && (
+                            <div className="text-sm text-gray-400 text-center py-4">
+                              수영 성능 관련 건강 지표 데이터가 없습니다.
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

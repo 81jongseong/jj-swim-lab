@@ -1134,6 +1134,25 @@
    - 최근 측정일 표시
    - 인바디 차트 형태의 시각화
    - 두 개의 회원 관리 페이지에 모두 적용
+   - `feat: add health status trend chart with BMI, weight, and height visualization` (커밋 adc1f7c)
+
+8. **건강 지표 확장 (혈압, 콜레스테롤, 당뇨, 수영 관련 건강질환)**
+   - User 모델 healthProfile 스키마 확장:
+     - 혈압: 수축기/이완기 혈압, 측정일
+     - 콜레스테롤: 총 콜레스테롤, LDL, HDL, 중성지방, 측정일
+     - 당뇨: 공복 혈당, 식후 혈당, 당화혈색소(HbA1c), 측정일
+     - 수영 관련 건강질환: 심장 질환, 호흡기 질환, 근골격계 질환, 당뇨, 고혈압, 천식, 기타
+     - 건강 데이터 이력: 시간에 따른 건강 지표 추세 저장
+   - 프론트엔드 인터페이스 업데이트 (Member 인터페이스)
+   - 건강정보 모달 UI 확장:
+     - 혈압 카드 (수축기/이완기 표시)
+     - 콜레스테롤 카드 (총, LDL, HDL 표시)
+     - 혈당 카드 (공복, 식후, HbA1c 표시)
+     - 수영 관련 건강질환 태그 표시
+   - API 응답에 새로운 필드 포함
+   - 테스트 데이터 스크립트 업데이트 (혈압, 콜레스테롤, 당뇨 샘플 데이터 추가)
+   - 두 개의 회원 관리 페이지에 모두 적용
+   - `feat: add blood pressure, cholesterol, diabetes, and swimming-related health conditions to health profile` (커밋 064feee)
 
 ---
 

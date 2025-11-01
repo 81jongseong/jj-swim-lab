@@ -185,6 +185,17 @@ interface IUser extends mongoose.Document {
         asthma?: boolean; // 천식
         other?: string[]; // 기타
       };
+      // 수영 성능 관련 건강 지표
+      fitnessMetrics?: {
+        restingHeartRate?: number; // 안정시 심박수 (bpm)
+        maxHeartRate?: number; // 최대 심박수 (bpm)
+        bodyFatPercentage?: number; // 체지방률 (%)
+        muscleMass?: number; // 근육량 (kg)
+        lungCapacity?: number; // 폐활량 (L)
+        hydrationLevel?: number; // 수분량 (%)
+        boneDensity?: number; // 골밀도 (g/cm²)
+        measuredAt?: Date;
+      };
       // 건강 데이터 이력
       healthHistory?: Array<{
         date: Date;
@@ -538,6 +549,17 @@ const userSchema = new mongoose.Schema({
         hypertension: { type: Boolean, default: false }, // 고혈압
         asthma: { type: Boolean, default: false }, // 천식
         other: [{ type: String }] // 기타
+      },
+      // 수영 성능 관련 건강 지표
+      fitnessMetrics: {
+        restingHeartRate: { type: Number }, // 안정시 심박수 (bpm)
+        maxHeartRate: { type: Number }, // 최대 심박수 (bpm)
+        bodyFatPercentage: { type: Number }, // 체지방률 (%)
+        muscleMass: { type: Number }, // 근육량 (kg)
+        lungCapacity: { type: Number }, // 폐활량 (L)
+        hydrationLevel: { type: Number }, // 수분량 (%)
+        boneDensity: { type: Number }, // 골밀도 (g/cm²)
+        measuredAt: { type: Date }
       },
       // 건강 데이터 이력 (시간에 따른 추세)
       healthHistory: [{

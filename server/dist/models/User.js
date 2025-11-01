@@ -143,6 +143,16 @@ const userSchema = new mongoose_1.default.Schema({
                 asthma: { type: Boolean, default: false },
                 other: [{ type: String }]
             },
+            fitnessMetrics: {
+                restingHeartRate: { type: Number },
+                maxHeartRate: { type: Number },
+                bodyFatPercentage: { type: Number },
+                muscleMass: { type: Number },
+                lungCapacity: { type: Number },
+                hydrationLevel: { type: Number },
+                boneDensity: { type: Number },
+                measuredAt: { type: Date }
+            },
             healthHistory: [{
                     date: { type: Date, default: Date.now },
                     weight: { type: Number },

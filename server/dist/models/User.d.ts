@@ -109,6 +109,16 @@ interface IUser extends mongoose.Document {
                 asthma?: boolean;
                 other?: string[];
             };
+            fitnessMetrics?: {
+                restingHeartRate?: number;
+                maxHeartRate?: number;
+                bodyFatPercentage?: number;
+                muscleMass?: number;
+                lungCapacity?: number;
+                hydrationLevel?: number;
+                boneDensity?: number;
+                measuredAt?: Date;
+            };
             healthHistory?: Array<{
                 date: Date;
                 weight?: number;
