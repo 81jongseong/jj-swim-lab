@@ -1790,8 +1790,13 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         members.forEach((member, index) => {
             console.log(`${index + 1}. ${member.name}:`, {
                 level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel,
-                studentInfo: member.studentInfo,
-                toObject: member.toObject ? member.toObject() : 'N/A'
+                age: member.studentInfo?.age,
+                healthProfile: member.studentInfo?.healthProfile ? {
+                    height: member.studentInfo.healthProfile.height,
+                    weight: member.studentInfo.healthProfile.weight,
+                    bmi: member.studentInfo.healthProfile.bmi
+                } : '없음',
+                studentInfo: member.studentInfo
             });
         });
         const membersWithCourses = await Promise.all(members.map(async (member) => {
