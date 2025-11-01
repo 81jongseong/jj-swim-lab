@@ -25,7 +25,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, UserPlus, Search, Calendar, Heart, TrendingUp, TrendingDown } from 'lucide-react';
 import ThemedStatCard from '@/components/ThemedStatCard';
-import MemberCard from '@/components/center-admin/MemberCard';
+import MemberCard, { MemberCardData } from '@/components/center-admin/MemberCard';
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
 
@@ -128,6 +128,14 @@ function CenterMembersManagement() {
       loadCourses();
     }
   }, [user]);
+
+  // 건강정보 모달 상태 추적
+  useEffect(() => {
+    console.log('❤️ [MembersPage] 건강정보 모달 상태 변경:', {
+      showHealthModal,
+      selectedMember: selectedMember ? { name: selectedMember.name, _id: selectedMember._id } : null
+    });
+  }, [showHealthModal, selectedMember]);
 
   const loadMembers = async () => {
     try {
@@ -267,6 +275,21 @@ function CenterMembersManagement() {
     setShowMemoModal(true);
   };
 
+  const handleHealthClick = (member: MemberCardData) => {
+    console.log('❤️ [MembersPage] handleHealthClick 호출됨:', member);
+    const fullMember = members.find(m => m._id === member._id);
+    if (!fullMember) {
+      console.error('❌ [MembersPage] 회원을 찾을 수 없습니다:', member._id);
+      return;
+    }
+    console.log('❤️ [MembersPage] 선택된 회원:', fullMember.name, fullMember._id);
+    console.log('❤️ [MembersPage] showHealthModal 상태 (이전):', showHealthModal);
+    setSelectedMember(fullMember);
+    setShowHealthModal(true);
+    console.log('❤️ [MembersPage] showHealthModal 상태 (이후): true');
+    console.log('❤️ [MembersPage] selectedMember 설정 완료:', fullMember.name);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -388,10 +411,21 @@ function CenterMembersManagement() {
                   assignedCourses: (member.assignedCourses || []).map((c: any) => ({ courseId: c.courseId, courseName: c.courseName, instructorName: c.instructorName })),
                   enrollmentDate: member.enrollmentDate
                 }}
-                onView={() => { setSelectedMember(member); setShowDetailModal(true); }}
-                onAssign={() => { setSelectedMember(member); setShowAssignmentModal(true); }}
-                onMemo={() => openMemoModal(member)}
-                onHealth={() => { setSelectedMember(member); setShowHealthModal(true); }}
+                onView={() => { 
+                  console.log('🔍 [MembersPage] 상세 버튼 클릭:', member.name);
+                  setSelectedMember(member); 
+                  setShowDetailModal(true); 
+                }}
+                onAssign={() => { 
+                  console.log('👤 [MembersPage] 배정 버튼 클릭:', member.name);
+                  setSelectedMember(member); 
+                  setShowAssignmentModal(true); 
+                }}
+                onMemo={() => {
+                  console.log('📝 [MembersPage] 메모 버튼 클릭:', member.name);
+                  openMemoModal(member);
+                }}
+                onHealth={handleHealthClick}
               />
             ))}
           </div>
@@ -668,7 +702,18 @@ function CenterMembersManagement() {
         )}
 
         {/* 건강정보 모달 */}
-        {showHealthModal && selectedMember && (
+        {(() => {
+          const shouldShow = showHealthModal && selectedMember;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('❤️ [MembersPage] 건강정보 모달 렌더링 체크:', {
+              showHealthModal,
+              hasSelectedMember: !!selectedMember,
+              shouldShow,
+              selectedMemberName: selectedMember?.name
+            });
+          }
+          return shouldShow;
+        })() && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6 border-b pb-4">

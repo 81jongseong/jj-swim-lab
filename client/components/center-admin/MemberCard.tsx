@@ -53,6 +53,34 @@ const colorThemes: Record<string, { bg: string; border: string; hoverBg: string;
 export default function MemberCard({ member, onView, onAssign, onMemo, onHealth, color = 'blue' }: MemberCardProps) {
   const theme = colorThemes[color] || colorThemes.blue;
   const courses = member.assignedCourses || [];
+  
+  const handleViewClick = () => {
+    console.log('🔍 [MemberCard] 상세 버튼 클릭:', member.name, member._id);
+    onView?.(member);
+  };
+  
+  const handleHealthClick = () => {
+    console.log('❤️ [MemberCard] 건강정보 버튼 클릭:', member.name, member._id);
+    console.log('❤️ [MemberCard] onHealth 함수 존재 여부:', typeof onHealth);
+    if (onHealth) {
+      console.log('❤️ [MemberCard] onHealth 함수 호출 중...');
+      onHealth(member);
+      console.log('❤️ [MemberCard] onHealth 함수 호출 완료');
+    } else {
+      console.error('❌ [MemberCard] onHealth 함수가 전달되지 않았습니다!');
+    }
+  };
+  
+  const handleAssignClick = () => {
+    console.log('👤 [MemberCard] 배정 버튼 클릭:', member.name, member._id);
+    onAssign?.(member);
+  };
+  
+  const handleMemoClick = () => {
+    console.log('📝 [MemberCard] 메모 버튼 클릭:', member.name, member._id);
+    onMemo?.(member);
+  };
+  
   return (
     <Card className={`border-2 ${theme.border} ${theme.bg} ${theme.hoverBg} ${theme.hoverBorder} hover:shadow-lg transition-all`}>
       <CardContent className="p-4">
@@ -91,16 +119,16 @@ export default function MemberCard({ member, onView, onAssign, onMemo, onHealth,
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="text-xs" onClick={() => onView?.(member)}>
+          <Button size="sm" variant="outline" className="text-xs hover:bg-gray-100 hover:border-gray-400 transition-colors" onClick={handleViewClick}>
             <Eye className="w-3 h-3 mr-1" /> 상세
           </Button>
-          <Button size="sm" variant="outline" className="text-xs" onClick={() => onHealth?.(member)}>
+          <Button size="sm" variant="outline" className="text-xs hover:bg-gray-100 hover:border-gray-400 transition-colors" onClick={handleHealthClick}>
             <Heart className="w-3 h-3 mr-1" /> 건강정보
           </Button>
-          <Button size="sm" className="text-xs" onClick={() => onAssign?.(member)}>
+          <Button size="sm" className="text-xs hover:opacity-90 transition-opacity" onClick={handleAssignClick}>
             <UserPlus className="w-3 h-3 mr-1" /> 배정
           </Button>
-          <Button size="sm" variant="secondary" className="text-xs" onClick={() => onMemo?.(member)}>
+          <Button size="sm" variant="secondary" className="text-xs hover:opacity-80 transition-opacity" onClick={handleMemoClick}>
             <Edit className="w-3 h-3 mr-1" /> 메모
           </Button>
         </div>
