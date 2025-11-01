@@ -1117,6 +1117,14 @@
    - 10가지 다양한 건강정보 샘플 제공
    - 각 회원에게 개별적인 건강정보 할당
    - `server/scripts/add-health-data.js` 스크립트 생성
+   - `feat: add healthProfile schema and update health data display in modals` (커밋 7259525)
+
+6. **건강정보 상세 데이터 추가 및 표시**
+   - User 모델에 healthProfile 스키마 추가 (신장, 체중, BMI 등)
+   - 나이, 신장, 체중 데이터베이스에 추가
+   - 건강정보 모달에 신장(cm), 체중(kg) 표시 추가
+   - BMI 자동 계산 및 저장
+   - 두 개의 회원 관리 페이지에 모두 적용
 
 ---
 
