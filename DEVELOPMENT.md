@@ -106,7 +106,7 @@
 #### **커밋:**
 - `feat: 공휴일 운영시간 설정 기능 추가` (커밋 2f31885)
 - `docs: 공휴일 운영시간 설정 기능 커밋 해시 업데이트` (커밋 81a9627)
-- `refactor: useAuth 디버깅 로그를 개발 모드 전용으로 변경` (커밋 예정)
+- `refactor: useAuth debugging logs for development mode only` (커밋 2bbd76a)
 
 ---
 
@@ -127,7 +127,7 @@
 - `client/hooks/useAuth.tsx`: 디버깅 로그를 개발 모드 전용으로 변경
 
 #### **커밋:**
-- `refactor: useAuth 디버깅 로그를 개발 모드 전용으로 변경` (커밋 예정)
+- `refactor: useAuth debugging logs for development mode only` (커밋 2bbd76a)
 
 ---
 
