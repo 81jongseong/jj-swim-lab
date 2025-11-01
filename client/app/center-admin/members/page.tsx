@@ -169,11 +169,12 @@ function CenterMembersManagement() {
           // 첫 번째 회원의 studentInfo 확인
           const firstMember = response.data[0];
           if (firstMember) {
-            console.log('🔍 첫 번째 회원 데이터:', {
-              name: firstMember.name,
-              studentInfo: firstMember.studentInfo,
-              healthProfile: firstMember.studentInfo?.healthProfile
-            });
+            console.log('🔍 첫 번째 회원 데이터 전체:', JSON.stringify(firstMember, null, 2));
+            console.log('🔍 첫 번째 회원 studentInfo:', firstMember.studentInfo);
+            console.log('🔍 첫 번째 회원 healthProfile:', firstMember.studentInfo?.healthProfile);
+            console.log('🔍 첫 번째 회원 age:', firstMember.studentInfo?.age);
+            console.log('🔍 첫 번째 회원 height:', firstMember.studentInfo?.healthProfile?.height);
+            console.log('🔍 첫 번째 회원 weight:', firstMember.studentInfo?.healthProfile?.weight);
           }
         }
         setMembers(response.data as Member[]);
@@ -307,17 +308,25 @@ function CenterMembersManagement() {
 
   const handleHealthClick = (member: MemberCardData) => {
     console.log('❤️ [MembersPage] handleHealthClick 호출됨:', member);
+    console.log('❤️ [MembersPage] members 배열:', members);
+    console.log('❤️ [MembersPage] members 배열 길이:', members.length);
     const fullMember = members.find(m => m._id === member._id);
     if (!fullMember) {
       console.error('❌ [MembersPage] 회원을 찾을 수 없습니다:', member._id);
+      console.error('❌ [MembersPage] 검색 대상 ID:', member._id);
+      console.error('❌ [MembersPage] members IDs:', members.map(m => m._id));
       return;
     }
+    console.log('❤️ [MembersPage] 선택된 회원 전체 데이터:', JSON.stringify(fullMember, null, 2));
     console.log('❤️ [MembersPage] 선택된 회원:', fullMember.name, fullMember._id);
+    console.log('❤️ [MembersPage] 회원 studentInfo:', fullMember.studentInfo);
     console.log('❤️ [MembersPage] 회원 건강정보:', {
       age: fullMember.studentInfo?.age,
       emergencyContact: fullMember.studentInfo?.emergencyContact,
       medicalConditions: fullMember.studentInfo?.medicalConditions,
-      healthProfile: fullMember.studentInfo?.healthProfile
+      healthProfile: fullMember.studentInfo?.healthProfile,
+      height: fullMember.studentInfo?.healthProfile?.height,
+      weight: fullMember.studentInfo?.healthProfile?.weight
     });
     console.log('❤️ [MembersPage] showHealthModal 상태 (이전):', showHealthModal);
     setSelectedMember(fullMember);
@@ -745,7 +754,12 @@ function CenterMembersManagement() {
               showHealthModal,
               hasSelectedMember: !!selectedMember,
               shouldShow,
-              selectedMemberName: selectedMember?.name
+              selectedMemberName: selectedMember?.name,
+              studentInfo: selectedMember?.studentInfo,
+              age: selectedMember?.studentInfo?.age,
+              healthProfile: selectedMember?.studentInfo?.healthProfile,
+              height: selectedMember?.studentInfo?.healthProfile?.height,
+              weight: selectedMember?.studentInfo?.healthProfile?.weight
             });
           }
           return shouldShow;
@@ -764,6 +778,19 @@ function CenterMembersManagement() {
                   ✕
                 </button>
               </div>
+              
+              {/* 디버깅 정보 (개발 환경에서만 표시) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mb-4 p-4 bg-gray-100 rounded text-xs">
+                  <strong>디버깅 정보:</strong>
+                  <div>studentInfo 존재: {selectedMember.studentInfo ? '예' : '아니오'}</div>
+                  <div>age: {selectedMember.studentInfo?.age ?? '없음'}</div>
+                  <div>healthProfile 존재: {selectedMember.studentInfo?.healthProfile ? '예' : '아니오'}</div>
+                  <div>height: {selectedMember.studentInfo?.healthProfile?.height ?? '없음'}</div>
+                  <div>weight: {selectedMember.studentInfo?.healthProfile?.weight ?? '없음'}</div>
+                  <div>전체 studentInfo: {JSON.stringify(selectedMember.studentInfo, null, 2)}</div>
+                </div>
+              )}
               
               {/* 인바디 차트 형태로 건강정보 표시 */}
               <div className="space-y-6">
