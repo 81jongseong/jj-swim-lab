@@ -1099,6 +1099,7 @@
 #### **커밋:**
 - `feat: integrate health info into center member management and remove separate health pages` (커밋 76ecfe3)
 - `feat: add health statistics to center member management page` (커밋 213e6af)
+- `fix: correct import path for Button in MemberCard component` (커밋 c5a6013)
 
 ---
 
