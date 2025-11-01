@@ -212,6 +212,8 @@ export interface ICommunityPost extends Document {
       };
       requirements?: string[]; // 자격 요건
       benefits?: string[]; // 혜택
+      incentives?: string[]; // 인센티브
+      instructorFeeRate?: number; // 강사 수수료 비율 (%)
       workSchedule?: {
         daysOfWeek?: number[]; // 0=일요일, 6=토요일
         timeSlots?: string[]; // ['09:00-18:00']
@@ -655,6 +657,8 @@ const communityPostSchema = new Schema<ICommunityPost>({
       },
       requirements: [String],
       benefits: [String],
+      incentives: [String],
+      instructorFeeRate: Number,
       workSchedule: {
         daysOfWeek: [Number],
         timeSlots: [String]

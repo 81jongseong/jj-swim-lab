@@ -67,6 +67,8 @@ interface JobPost {
       };
       requirements?: string[];
       benefits?: string[];
+      incentives?: string[];
+      instructorFeeRate?: number;
       workSchedule?: {
         daysOfWeek?: number[];
         timeSlots?: string[];
@@ -130,14 +132,51 @@ function JobBoardPage() {
     salaryType: 'monthly' as 'monthly' | 'hourly' | 'per_class',
     requirements: '',
     benefits: '',
+    incentives: '',
+    instructorFeeRate: '',
     contactEmail: '',
     contactPhone: '',
     applicationDeadline: ''
   });
 
+  const [centerInfo, setCenterInfo] = useState<any>(null);
+
   useEffect(() => {
     fetchJobPosts();
-  }, []);
+    if (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') {
+      loadCenterInfo();
+    }
+  }, [user]);
+
+  const loadCenterInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/centers/my-center', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setCenterInfo(data.data);
+          // 센터 정보 자동 입력
+          const city = data.data.address?.split(' ')[0] || '';
+          const location = city || data.data.address?.split('시')[0] || '';
+          setNewJobPost(prev => ({
+            ...prev,
+            location: location,
+            contactEmail: data.data.email || user?.email || prev.contactEmail,
+            contactPhone: data.data.phone || prev.contactPhone
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('센터 정보 로드 실패:', error);
+    }
+  };
 
   const fetchJobPosts = async () => {
     try {
@@ -344,6 +383,8 @@ function JobBoardPage() {
             },
             requirements: newJobPost.requirements ? newJobPost.requirements.split('\n').filter(r => r.trim()) : undefined,
             benefits: newJobPost.benefits ? newJobPost.benefits.split(',').map(b => b.trim()).filter(b => b) : undefined,
+            incentives: newJobPost.incentives ? newJobPost.incentives.split(',').map(i => i.trim()).filter(i => i) : undefined,
+            instructorFeeRate: newJobPost.instructorFeeRate ? Number(newJobPost.instructorFeeRate) : undefined,
             contactInfo: {
               email: newJobPost.contactEmail || undefined,
               phone: newJobPost.contactPhone || undefined
@@ -367,14 +408,16 @@ function JobBoardPage() {
         jobType: 'job_post',
         position: 'instructor',
         employmentType: 'full_time',
-        location: '',
+        location: centerInfo?.address ? (centerInfo.address.split(' ')[0] || centerInfo.address.split('시')[0] || '') : '',
         salaryMin: '',
         salaryMax: '',
         salaryType: 'monthly',
         requirements: '',
         benefits: '',
-        contactEmail: '',
-        contactPhone: '',
+        incentives: '',
+        instructorFeeRate: '',
+        contactEmail: centerInfo?.email || user?.email || '',
+        contactPhone: centerInfo?.phone || '',
         applicationDeadline: ''
       });
       setShowCreateModal(false);
@@ -827,6 +870,36 @@ function JobBoardPage() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="예: 4대보험, 퇴직금, 차량지원"
                   />
+                </div>
+              </div>
+
+              {/* 인센티브 및 강사 조건 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">인센티브 및 강사 조건</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">인센티브 (쉼표로 구분)</label>
+                  <input
+                    type="text"
+                    value={newJobPost.incentives}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, incentives: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="예: 신규 회원 유치 보너스, 목표 달성 시 추가 지급"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">개인레슨 강사 수수료 비율 (%)</label>
+                  <input
+                    type="number"
+                    value={newJobPost.instructorFeeRate}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, instructorFeeRate: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="예: 60"
+                    min="0"
+                    max="100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">강사가 개인레슨 수강료에서 받는 비율을 입력하세요 (0-100%)</p>
                 </div>
               </div>
 
