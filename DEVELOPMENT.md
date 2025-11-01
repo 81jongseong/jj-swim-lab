@@ -1109,6 +1109,14 @@
    - handleHealthClick 함수 분리 및 상세한 로깅 구현
    - 모달 렌더링 상태 추적을 위한 useEffect 추가
    - `fix: add health info button to center/[centerSlug]/admin/members page` (커밋 b50dee3)
+   - `feat: add health test data script for all members` (커밋 7349432)
+
+5. **회원 건강정보 테스트 데이터 추가**
+   - 기존 회원들에게 건강정보 테스트 데이터 추가 스크립트 작성
+   - 나이, 응급연락처, 만성질환 필드 업데이트
+   - 10가지 다양한 건강정보 샘플 제공
+   - 각 회원에게 개별적인 건강정보 할당
+   - `server/scripts/add-health-data.js` 스크립트 생성
 
 ---
 
