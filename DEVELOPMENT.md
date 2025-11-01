@@ -935,6 +935,91 @@
 
 ---
 
+### ✅ **강사 수강생 관리 레이아웃 개선** (2025-11-01)
+**진행 상태: 완료**
+
+#### **작업 내용:**
+- 강사 관리의 강사 카드에서 "회원관리" 버튼을 클릭했을 때 나오는 수강생 목록 화면 개선
+- 요약 카드를 2x2로 변경 (기존 4열 → 2열)
+- 학생 카드를 Card 컴포넌트로 변경하여 UI 일관성 향상
+- 학생 카드를 2열 그리드로 표시
+
+#### **구현:**
+1. **요약 카드 레이아웃**
+   - `grid-cols-4` → `grid-cols-2`로 변경
+   - 카드가 2행 2열로 표시되어 가독성 향상
+
+2. **학생 카드 개선**
+   - 일반 `div`를 `Card`, `CardContent` 컴포넌트로 변경
+   - import 경로 수정: `../../ui` → `@/components/ui`
+   - 그리드를 `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` → `grid-cols-1 md:grid-cols-2`로 변경
+   - 데스크톱에서 2열로 표시, 모바일에서 1열로 표시
+
+#### **수정된 파일:**
+- `client/components/center-admin/InstructorStudentManagement.tsx`: 요약 카드 및 학생 카드 레이아웃 개선
+
+#### **커밋:**
+- `feat: 강사 수강생 관리 레이아웃 개선` (커밋 1d8a5b0)
+- `docs: 강사 수강생 관리 레이아웃 개선 히스토리 추가` (커밋 63c8da8)
+
+---
+
+### ✅ **구인구직 커뮤니티 기능 구현** (2025-11-01 ~ 진행 중)
+**진행 상태: 진행 중**
+
+#### **작업 내용:**
+- 수영 산업 전용 구인구직 커뮤니티 페이지 생성
+- 최고 관리자, 센터 관리자, 강사만 접근 가능한 탭 추가
+- 구인/구직 게시글 조회, 필터링, 검색 기능
+- 구인등록 버튼 및 등록 폼 구현
+
+#### **구현:**
+1. **데이터 모델 설계**
+   - Community 모델에 `job_board` RoomType 추가
+   - `roomSpecific.jobBoard` 필드 추가
+   - `jobType` (구인/구직/프리랜스)
+   - `position` (강사/안전요원/인포데스크/사무직/관리자/기타)
+   - `employmentType` (정규직/파트타임/계약직/프리랜스)
+   - `salary`, `requirements`, `benefits`, `contactInfo`, `applicationDeadline`, `status` 등
+
+2. **페이지 생성**
+   - `client/app/job-board/page.tsx` 생성
+   - 구인구직 게시글 목록 조회 및 필터링
+   - 구분, 직책, 근무형태별 필터
+   - 검색 기능
+   - 게시글 상세 보기 모달
+
+3. **구인등록 기능**
+   - 구인등록 버튼 추가
+   - 등록 폼 모달 구현
+   - 기본 정보: 제목, 내용, 구분, 직책, 근무 형태, 근무 지역
+   - 급여 정보: 최소/최대 급여, 급여 단위
+   - 자격 요건 (줄바꿈 구분)
+   - 혜택 (쉼표 구분)
+   - 연락처: 이메일, 전화번호
+   - 모집 마감일
+   - 필수 입력 항목 체크 및 등록 처리
+
+4. **네비게이션 메뉴 추가**
+   - 최고 관리자, 센터 관리자, 강사 메뉴에 "구인구직" 링크 추가
+   - `/job-board` 경로로 연결
+
+#### **수정된 파일:**
+- `server/src/models/Community.ts`: `job_board` RoomType 및 `roomSpecific.jobBoard` 필드 추가
+- `client/app/job-board/page.tsx`: 구인구직 커뮤니티 페이지 생성
+- `client/components/Navigation.tsx`: 구인구직 메뉴 추가
+
+#### **커밋:**
+- `feat: add job board community page with navigation menu` (커밋 63c8da8)
+- `feat: implement job post creation form in job board` (예정)
+
+#### **다음 작업:**
+- [ ] 구인구직 게시글 CRUD API 구현
+- [ ] 최고 관리자 통합 관리 화면 구현
+- [ ] 접근 권한 설정 및 인증 로직 구현
+
+---
+
 ## 🗓 멀티테넌트 라우팅 전환 계획 (Phase 2~3)
 
 ### Phase 2 (완료: 2025-10-30)

@@ -116,6 +116,24 @@ function JobBoardPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<JobPost | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // 구인등록 폼 상태
+  const [newJobPost, setNewJobPost] = useState({
+    title: '',
+    content: '',
+    jobType: 'job_post' as 'job_post' | 'resume' | 'freelance',
+    position: 'instructor' as 'instructor' | 'lifeguard' | 'front_desk' | 'office' | 'manager' | 'other',
+    employmentType: 'full_time' as 'full_time' | 'part_time' | 'contract' | 'freelance',
+    location: '',
+    salaryMin: '',
+    salaryMax: '',
+    salaryType: 'monthly' as 'monthly' | 'hourly' | 'per_class',
+    requirements: '',
+    benefits: '',
+    contactEmail: '',
+    contactPhone: '',
+    applicationDeadline: ''
+  });
 
   useEffect(() => {
     fetchJobPosts();
@@ -261,6 +279,111 @@ function JobBoardPage() {
     return '면접 후 결정';
   };
 
+  const handleSubmit = async () => {
+    try {
+      // 필수 입력 항목 체크
+      if (!newJobPost.title || !newJobPost.content) {
+        alert('제목과 내용은 필수 입력 항목입니다.');
+        return;
+      }
+
+      // TODO: 실제 API 연동
+      // const token = localStorage.getItem('token');
+      // const response = await fetch('http://localhost:5000/api/community/posts', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     title: newJobPost.title,
+      //     content: newJobPost.content,
+      //     roomType: 'job_board',
+      //     roomSpecific: {
+      //       jobBoard: {
+      //         jobType: newJobPost.jobType,
+      //         position: newJobPost.position,
+      //         employmentType: newJobPost.employmentType,
+      //         location: newJobPost.location,
+      //         salary: {
+      //           min: newJobPost.salaryMin ? Number(newJobPost.salaryMin) : undefined,
+      //           max: newJobPost.salaryMax ? Number(newJobPost.salaryMax) : undefined,
+      //           type: newJobPost.salaryType
+      //         },
+      //         requirements: newJobPost.requirements ? newJobPost.requirements.split('\n').filter(r => r.trim()) : [],
+      //         benefits: newJobPost.benefits ? newJobPost.benefits.split(',').filter(b => b.trim()) : [],
+      //         contactInfo: {
+      //           email: newJobPost.contactEmail || undefined,
+      //           phone: newJobPost.contactPhone || undefined
+      //         },
+      //         applicationDeadline: newJobPost.applicationDeadline || undefined,
+      //         status: 'open'
+      //       }
+      //     }
+      //   })
+      // });
+
+      // 임시로 목록에 추가
+      const newPost: JobPost = {
+        _id: Date.now().toString(),
+        title: newJobPost.title,
+        content: newJobPost.content,
+        authorId: user?._id || '',
+        authorName: user?.name || '',
+        roomType: 'job_board',
+        roomSpecific: {
+          jobBoard: {
+            jobType: newJobPost.jobType,
+            position: newJobPost.position,
+            employmentType: newJobPost.employmentType,
+            location: newJobPost.location || undefined,
+            salary: {
+              min: newJobPost.salaryMin ? Number(newJobPost.salaryMin) : undefined,
+              max: newJobPost.salaryMax ? Number(newJobPost.salaryMax) : undefined,
+              type: newJobPost.salaryType
+            },
+            requirements: newJobPost.requirements ? newJobPost.requirements.split('\n').filter(r => r.trim()) : undefined,
+            benefits: newJobPost.benefits ? newJobPost.benefits.split(',').map(b => b.trim()).filter(b => b) : undefined,
+            contactInfo: {
+              email: newJobPost.contactEmail || undefined,
+              phone: newJobPost.contactPhone || undefined
+            },
+            applicationDeadline: newJobPost.applicationDeadline || undefined,
+            status: 'open'
+          }
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        views: 0
+      };
+
+      setJobPosts([newPost, ...jobPosts]);
+      alert('채용 공고가 등록되었습니다!');
+      
+      // 폼 초기화
+      setNewJobPost({
+        title: '',
+        content: '',
+        jobType: 'job_post',
+        position: 'instructor',
+        employmentType: 'full_time',
+        location: '',
+        salaryMin: '',
+        salaryMax: '',
+        salaryType: 'monthly',
+        requirements: '',
+        benefits: '',
+        contactEmail: '',
+        contactPhone: '',
+        applicationDeadline: ''
+      });
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('채용 공고 등록 실패:', error);
+      alert('채용 공고 등록에 실패했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -292,7 +415,7 @@ function JobBoardPage() {
               className="flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              공고 등록
+              구인등록
             </Button>
           </div>
 
@@ -536,18 +659,228 @@ function JobBoardPage() {
         </div>
       )}
 
-      {/* 등록 모달 - TODO */}
+      {/* 구인등록 모달 */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">채용 공고 등록</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">구인 공고 등록</h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <p className="text-gray-500 mb-4">채용 공고 등록 기능은 추후 구현 예정입니다.</p>
-            <Button onClick={() => setShowCreateModal(false)}>닫기</Button>
+            
+            <div className="p-6 space-y-6">
+              {/* 기본 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">기본 정보</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+                  <input
+                    type="text"
+                    value={newJobPost.title}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, title: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="예: 수영강사 정규직 채용합니다"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">상세 내용 *</label>
+                  <textarea
+                    value={newJobPost.content}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, content: e.target.value })}
+                    rows={4}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="채용 공고 상세 내용을 입력하세요"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">구분</label>
+                    <select
+                      value={newJobPost.jobType}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, jobType: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="job_post">구인</option>
+                      <option value="resume">구직</option>
+                      <option value="freelance">프리랜스</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">직책</label>
+                    <select
+                      value={newJobPost.position}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, position: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="instructor">강사</option>
+                      <option value="lifeguard">안전요원</option>
+                      <option value="front_desk">인포데스크</option>
+                      <option value="office">사무직</option>
+                      <option value="manager">관리자</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">근무 형태</label>
+                    <select
+                      value={newJobPost.employmentType}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, employmentType: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="full_time">정규직</option>
+                      <option value="part_time">파트타임</option>
+                      <option value="contract">계약직</option>
+                      <option value="freelance">프리랜스</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">근무 지역</label>
+                    <input
+                      type="text"
+                      value={newJobPost.location}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, location: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="예: 강남구"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 급여 정보 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">급여 정보</h3>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">최소 급여</label>
+                    <input
+                      type="number"
+                      value={newJobPost.salaryMin}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, salaryMin: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="2500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">최대 급여</label>
+                    <input
+                      type="number"
+                      value={newJobPost.salaryMax}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, salaryMax: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="3500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">급여 단위</label>
+                    <select
+                      value={newJobPost.salaryType}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, salaryType: e.target.value as any })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="monthly">만원/월</option>
+                      <option value="hourly">원/시간</option>
+                      <option value="per_class">원/회</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 자격 요건 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">자격 요건</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">자격 요건 (줄바꿈으로 구분)</label>
+                  <textarea
+                    value={newJobPost.requirements}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, requirements: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="예:&#10;수영 지도자 자격증&#10;3년 이상 경력"
+                  />
+                </div>
+              </div>
+
+              {/* 혜택 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">혜택</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">혜택 (쉼표로 구분)</label>
+                  <input
+                    type="text"
+                    value={newJobPost.benefits}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, benefits: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="예: 4대보험, 퇴직금, 차량지원"
+                  />
+                </div>
+              </div>
+
+              {/* 연락처 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">연락처</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                    <input
+                      type="email"
+                      value={newJobPost.contactEmail}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, contactEmail: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="contact@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                    <input
+                      type="tel"
+                      value={newJobPost.contactPhone}
+                      onChange={(e) => setNewJobPost({ ...newJobPost, contactPhone: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="010-1234-5678"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">모집 마감일</label>
+                  <input
+                    type="date"
+                    value={newJobPost.applicationDeadline}
+                    onChange={(e) => setNewJobPost({ ...newJobPost, applicationDeadline: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowCreateModal(false)}
+              >
+                취소
+              </Button>
+              <Button onClick={handleSubmit}>
+                등록하기
+              </Button>
+            </div>
           </div>
         </div>
       )}
