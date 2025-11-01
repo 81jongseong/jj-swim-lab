@@ -163,8 +163,16 @@ function JobBoardPage() {
         if (data.success && data.data) {
           setCenterInfo(data.data);
           // 센터 정보 자동 입력
-          const city = data.data.address?.split(' ')[0] || '';
-          const location = city || data.data.address?.split('시')[0] || '';
+          // 주소에서 시 구 단위 추출
+          const address = data.data.address || '';
+          let location = '';
+          if (address) {
+            // "서울특별시 강남구", "경기도 성남시 분당구" 등의 형태를 추출
+            const parts = address.split(' ');
+            // 시/도, 시/군/구 2개 단위만 추출
+            const locationParts = parts.slice(0, 2).filter(p => p);
+            location = locationParts.join(' ');
+          }
           setNewJobPost(prev => ({
             ...prev,
             location: location,
@@ -408,7 +416,11 @@ function JobBoardPage() {
         jobType: 'job_post',
         position: 'instructor',
         employmentType: 'full_time',
-        location: centerInfo?.address ? (centerInfo.address.split(' ')[0] || centerInfo.address.split('시')[0] || '') : '',
+        location: centerInfo?.address ? (() => {
+          const parts = centerInfo.address.split(' ');
+          const locationParts = parts.slice(0, 2).filter(p => p);
+          return locationParts.join(' ');
+        })() : '',
         salaryMin: '',
         salaryMax: '',
         salaryType: 'monthly',
