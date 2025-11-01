@@ -161,7 +161,7 @@
 - `ui: improve instructor student management layout` (커밋 ca66fcd)
 - `ui: apply Card component to instructor student cards` (커밋 4beada1)
 - `docs: update commit hash for Card component application` (커밋 3a88eb2)
-- `feat: add job_board to Community model for job postings` (커밋 예정)
+- `feat: add job_board to Community model for job postings` (커밋 4d601ee)
 
 ---
 
@@ -189,7 +189,7 @@
 - `server/src/models/Community.ts`: job_board roomType 및 jobBoard 필드 추가
 
 #### **커밋:**
-- `feat: add job_board to Community model for job postings` (커밋 예정)
+- `feat: add job_board to Community model for job postings` (커밋 4d601ee)
 
 ---
 
