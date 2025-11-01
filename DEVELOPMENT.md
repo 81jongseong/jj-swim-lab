@@ -1154,6 +1154,26 @@
    - 두 개의 회원 관리 페이지에 모두 적용
    - `feat: add blood pressure, cholesterol, diabetes, and swimming-related health conditions to health profile` (커밋 064feee)
 
+9. **콜레스테롤 표시 개선 및 수영 성능 관련 건강 지표 추가**
+   - 콜레스테롤 카드 개선:
+     - 총 콜레스테롤, LDL, HDL, 중성지방 모두 표시
+     - 각 수치를 명확하게 구분하여 표시 (색상 코딩)
+     - 단위 (mg/dL) 명시
+   - 수영 성능 관련 건강 지표 추가 (fitnessMetrics):
+     - 안정시 심박수 (restingHeartRate)
+     - 최대 심박수 (maxHeartRate)
+     - 체지방률 (bodyFatPercentage)
+     - 근육량 (muscleMass)
+     - 폐활량 (lungCapacity)
+     - 수분량 (hydrationLevel)
+     - 골밀도 (boneDensity)
+   - User 모델 스키마 확장
+   - 프론트엔드 인터페이스 및 UI 업데이트
+   - API 응답에 fitnessMetrics 포함
+   - 수영 성능 관련 건강 지표 전용 카드 UI 추가 (그라데이션 배경)
+   - 두 개의 회원 관리 페이지에 모두 적용
+   - `feat: improve cholesterol display with all metrics and add swimming fitness metrics (heart rate, body fat, muscle mass, lung capacity, etc.)` (커밋 ccb7c8c)
+
 ---
 
 ## 🗓 멀티테넌트 라우팅 전환 계획 (Phase 2~3)
