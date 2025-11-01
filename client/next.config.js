@@ -165,11 +165,16 @@ const nextConfig = {
   // 리라이트 설정
   async rewrites() {
     return [
-      // API 프록시 설정 예시
+      // API 프록시 설정
       // {
       //   source: '/api/:path*',
       //   destination: 'http://localhost:5000/api/:path*',
       // },
+      // 업로드된 이미지 파일 프록시 (서버의 uploads 폴더로)
+      {
+        source: '/uploads/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/uploads/:path*`,
+      },
     ];
   },
   
