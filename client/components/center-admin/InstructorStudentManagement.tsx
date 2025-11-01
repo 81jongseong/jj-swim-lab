@@ -269,7 +269,7 @@ export default function InstructorStudentManagement({
 
         {/* 통계 카드 */}
         <div className="p-6 border-b bg-gray-50">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <div className="flex items-center">
                 <Users className="w-8 h-8 text-blue-600" />
@@ -381,7 +381,7 @@ export default function InstructorStudentManagement({
         {/* 수강생 목록 */}
         <div className="flex-1 overflow-y-auto p-6">
           {filteredStudents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredStudents.map((student, index) => (
               <div key={student.courseId ? `${student._id}_${student.courseId}` : `${student._id}_${index}`} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
                 <div className="flex items-start justify-between mb-3">

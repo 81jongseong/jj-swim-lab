@@ -128,6 +128,32 @@
 
 #### **커밋:**
 - `refactor: useAuth debugging logs for development mode only` (커밋 2bbd76a)
+- `docs: useAuth log cleanup commit hash update` (커밋 5c1fca9)
+- `ui: 강사 수강생 관리 레이아웃 개선` (커밋 예정)
+
+---
+
+### ✅ **강사 수강생 관리 레이아웃 개선** (2025-11-01)
+**진행 상태: 완료**
+
+#### **작업 내용:**
+- 강사별 수강생 관리 화면의 요약 카드를 2줄(2x2)로 변경
+- 수강생 카드를 2열 그리드로 변경하여 화면 공간 효율 개선
+
+#### **구현:**
+1. **요약 카드 레이아웃 변경**
+   - `grid-cols-4`에서 `grid-cols-2`로 변경
+   - 총 수강생, 활성 수강생, 완료 수업, 월 매출 카드가 2x2로 표시
+
+2. **수강생 카드 그리드 변경**
+   - `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`에서 `grid-cols-1 md:grid-cols-2`로 변경
+   - 모바일은 1열, 데스크톱은 2열로 표시
+
+#### **수정된 파일:**
+- `client/components/center-admin/InstructorStudentManagement.tsx`: 요약 카드 및 수강생 카드 레이아웃 개선
+
+#### **커밋:**
+- `ui: 강사 수강생 관리 레이아웃 개선` (커밋 예정)
 
 ---
 
