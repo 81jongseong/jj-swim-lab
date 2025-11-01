@@ -1100,6 +1100,14 @@
 - `feat: integrate health info into center member management and remove separate health pages` (커밋 76ecfe3)
 - `feat: add health statistics to center member management page` (커밋 213e6af)
 - `fix: correct import path for Button in MemberCard component` (커밋 c5a6013)
+- `debug: add logging for health info button and restore hover styles` (커밋 029911b)
+
+4. **건강정보 버튼 디버깅 및 호버 스타일 복원**
+   - 건강정보 버튼 클릭 이벤트 추적을 위한 로그 추가
+   - 상세 버튼, 배정 버튼, 메모 버튼에도 클릭 로그 추가
+   - 버튼 호버 스타일 복원 (hover:bg-gray-100, hover:border-gray-400)
+   - handleHealthClick 함수 분리 및 상세한 로깅 구현
+   - 모달 렌더링 상태 추적을 위한 useEffect 추가
 
 ---
 

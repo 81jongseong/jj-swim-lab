@@ -23,9 +23,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, UserPlus, Search, Calendar } from 'lucide-react';
+import { Users, UserPlus, Search, Calendar, Heart, TrendingUp, TrendingDown } from 'lucide-react';
 import ThemedStatCard from '@/components/ThemedStatCard';
-import MemberCard from '@/components/center-admin/MemberCard';
+import MemberCard, { MemberCardData } from '@/components/center-admin/MemberCard';
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
 
@@ -105,6 +105,7 @@ function CenterMembersManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showMemoHistoryModal, setShowMemoHistoryModal] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
   const [memoText, setMemoText] = useState('');
 
   useEffect(() => {
@@ -113,6 +114,14 @@ function CenterMembersManagement() {
       loadCourses();
     }
   }, [user]);
+
+  // 건강정보 모달 상태 추적
+  useEffect(() => {
+    console.log('❤️ [MembersPage] 건강정보 모달 상태 변경:', {
+      showHealthModal,
+      selectedMember: selectedMember ? { name: selectedMember.name, _id: selectedMember._id } : null
+    });
+  }, [showHealthModal, selectedMember]);
 
   const loadMembers = async () => {
     try {
@@ -252,6 +261,21 @@ function CenterMembersManagement() {
     setShowMemoModal(true);
   };
 
+  const handleHealthClick = (member: MemberCardData) => {
+    console.log('❤️ [MembersPage] handleHealthClick 호출됨:', member);
+    const fullMember = members.find(m => m._id === member._id);
+    if (!fullMember) {
+      console.error('❌ [MembersPage] 회원을 찾을 수 없습니다:', member._id);
+      return;
+    }
+    console.log('❤️ [MembersPage] 선택된 회원:', fullMember.name, fullMember._id);
+    console.log('❤️ [MembersPage] showHealthModal 상태 (이전):', showHealthModal);
+    setSelectedMember(fullMember);
+    setShowHealthModal(true);
+    console.log('❤️ [MembersPage] showHealthModal 상태 (이후): true');
+    console.log('❤️ [MembersPage] selectedMember 설정 완료:', fullMember.name);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -278,6 +302,41 @@ function CenterMembersManagement() {
           <ThemedStatCard className="border-2" title="활성 회원" value={members.filter(m => m.status === 'active').length} icon={<UserPlus className="h-4 w-4" />} color="green" />
           <ThemedStatCard className="border-2" title="배정 회원" value={members.filter(m => m.assignedCourses && m.assignedCourses.length > 0).length} icon={<Calendar className="h-4 w-4" />} color="purple" />
           <ThemedStatCard className="border-2" title="미배정" value={members.filter(m => !m.assignedCourses || m.assignedCourses.length === 0).length} icon={<Users className="h-4 w-4" />} color="orange" />
+        </div>
+
+        {/* 건강 통계 카드 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <ThemedStatCard 
+            className="border-2 border-red-200" 
+            title="평균 나이" 
+            value={(() => {
+              const ages = members.filter(m => m.studentInfo?.age).map(m => m.studentInfo!.age!);
+              return ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : '-';
+            })()}
+            icon={<Heart className="h-4 w-4" />} 
+            color="red" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-green-200" 
+            title="건강 데이터 보유" 
+            value={members.filter(m => m.studentInfo?.age).length}
+            icon={<TrendingUp className="h-4 w-4" />} 
+            color="green" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-yellow-200" 
+            title="만성 질환 보유" 
+            value={members.filter(m => m.studentInfo?.medicalConditions).length}
+            icon={<Heart className="h-4 w-4" />} 
+            color="yellow" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-purple-200" 
+            title="응급연락처 등록" 
+            value={members.filter(m => m.studentInfo?.emergencyContact).length}
+            icon={<Users className="h-4 w-4" />} 
+            color="purple" 
+          />
         </div>
 
         {/* 검색 및 필터 */}
@@ -338,9 +397,21 @@ function CenterMembersManagement() {
                   assignedCourses: (member.assignedCourses || []).map((c: any) => ({ courseId: c.courseId, courseName: c.courseName, instructorName: c.instructorName })),
                   enrollmentDate: member.enrollmentDate
                 }}
-                onView={() => { setSelectedMember(member); setShowDetailModal(true); }}
-                onAssign={() => { setSelectedMember(member); setShowAssignmentModal(true); }}
-                onMemo={() => openMemoModal(member)}
+                onView={() => { 
+                  console.log('🔍 [MembersPage] 상세 버튼 클릭:', member.name);
+                  setSelectedMember(member); 
+                  setShowDetailModal(true); 
+                }}
+                onAssign={() => { 
+                  console.log('👤 [MembersPage] 배정 버튼 클릭:', member.name);
+                  setSelectedMember(member); 
+                  setShowAssignmentModal(true); 
+                }}
+                onMemo={() => {
+                  console.log('📝 [MembersPage] 메모 버튼 클릭:', member.name);
+                  openMemoModal(member);
+                }}
+                onHealth={handleHealthClick}
               />
             ))}
           </div>
@@ -608,6 +679,105 @@ function CenterMembersManagement() {
                 <button
                   onClick={() => setShowMemoHistoryModal(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 건강정보 모달 */}
+        {(() => {
+          const shouldShow = showHealthModal && selectedMember;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('❤️ [MembersPage] 건강정보 모달 렌더링 체크:', {
+              showHealthModal,
+              hasSelectedMember: !!selectedMember,
+              shouldShow,
+              selectedMemberName: selectedMember?.name
+            });
+          }
+          return shouldShow;
+        })() && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  <Heart className="inline w-6 h-6 mr-2 text-red-500" />
+                  {selectedMember.name} 회원 건강정보
+                </h3>
+                <button
+                  onClick={() => setShowHealthModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* 인바디 차트 형태로 건강정보 표시 */}
+              <div className="space-y-6">
+                {/* 기본 정보 */}
+                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                  <h4 className="text-lg font-semibold text-blue-900 mb-4">기본 건강 정보</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-white rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs text-gray-600 mb-1">나이</div>
+                      <div className="text-2xl font-bold text-blue-900">
+                        {selectedMember.studentInfo?.age || '-'}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs text-gray-600 mb-1">신장</div>
+                      <div className="text-2xl font-bold text-blue-900">
+                        {selectedMember.studentInfo?.age ? '-' : '-'} {/* Placeholder for height */}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs text-gray-600 mb-1">체중</div>
+                      <div className="text-2xl font-bold text-blue-900">
+                        {selectedMember.studentInfo?.age ? '-' : '-'} {/* Placeholder for weight */}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 차트 영역 (임시) */}
+                <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                  <h4 className="text-lg font-semibold text-green-900 mb-4">건강 상태 추세</h4>
+                  <div className="text-center py-12 text-gray-500">
+                    <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <p>건강 데이터가 없습니다.</p>
+                    <p className="text-sm mt-2">데이터가 추가되면 인바디 차트 형태로 표시됩니다.</p>
+                  </div>
+                </div>
+
+                {/* 만성 질환 */}
+                <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+                  <h4 className="text-lg font-semibold text-yellow-900 mb-4">만성 질환</h4>
+                  <div className="text-center py-8 text-gray-500">
+                    {selectedMember.studentInfo?.medicalConditions || '등록된 만성 질환이 없습니다.'}
+                  </div>
+                </div>
+
+                {/* 응급 연락처 */}
+                <div className="bg-red-50 rounded-lg p-6 border border-red-200">
+                  <h4 className="text-lg font-semibold text-red-900 mb-4">응급 연락처</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-4 border border-red-100">
+                      <div className="text-xs text-gray-600 mb-1">이름</div>
+                      <div className="text-lg font-semibold text-red-900">
+                        {selectedMember.studentInfo?.emergencyContact || '-'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-6 border-t pt-4">
+                <button
+                  onClick={() => setShowHealthModal(false)}
+                  className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 >
                   닫기
                 </button>
