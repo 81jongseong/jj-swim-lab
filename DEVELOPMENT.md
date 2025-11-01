@@ -1174,6 +1174,21 @@
    - 두 개의 회원 관리 페이지에 모두 적용
    - `feat: improve cholesterol display with all metrics and add swimming fitness metrics (heart rate, body fat, muscle mass, lung capacity, etc.)` (커밋 ccb7c8c)
 
+10. **강습계획관리 페이지 삭제 및 센터 관리자용 이용안내 페이지 추가**
+   - 강습계획관리 페이지 삭제 (불필요한 기능으로 판단)
+   - 네비게이션에서 강습계획 메뉴를 이용안내로 변경
+   - 센터 관리자용 이용안내 페이지 생성:
+     - 주요 기능 안내 (회원 관리, 센터 정보 관리, 예약·결제 관리, 통계 및 보고서)
+     - JJ Swim Lab 연락처 정보:
+       - 전화: 02-1234-5678 (평일 09:00-18:00)
+       - 이메일: support@jjswimlab.com
+       - 주소: 서울특별시 강남구 테헤란로 123 JJ Swim Lab 빌딩 5층
+       - 운영시간: 평일 09:00-18:00, 주말 및 공휴일 휴무
+     - 플랫폼 이용 절차 안내
+     - 중요 안내사항 (보안, 기능 업데이트, 최적 이용 팁)
+   - 두 개의 경로 모두 지원 (`/center-admin/guide`, `/center/[centerSlug]/admin/guide`)
+   - `feat: remove lesson plan management page and add center admin guide page with JJ Swim Lab contact info` (커밋 261e0e9)
+
 ---
 
 ## 🗓 멀티테넌트 라우팅 전환 계획 (Phase 2~3)
