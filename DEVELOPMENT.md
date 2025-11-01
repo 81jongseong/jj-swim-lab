@@ -159,7 +159,7 @@
 
 #### **커밋:**
 - `ui: improve instructor student management layout` (커밋 ca66fcd)
-- `ui: apply Card component to instructor student cards` (커밋 예정)
+- `ui: apply Card component to instructor student cards` (커밋 4beada1)
 
 ---
 
