@@ -193,11 +193,7 @@ const userMenuStructure = {
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
-      { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
-    ],
-    programs: [
-      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
     ],
     support: [
       { href: '/center/default/admin/guide', label: '📖 이용안내' },
@@ -210,6 +206,7 @@ const userMenuStructure = {
       { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     tools: [
+      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ]
   },
@@ -228,11 +225,7 @@ const userMenuStructure = {
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
-      { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
-    ],
-    programs: [
-      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
     ],
     support: [
       { href: '/center/default/admin/guide', label: '📖 이용안내' },
@@ -245,6 +238,7 @@ const userMenuStructure = {
       { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     tools: [
+      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ]
   },
@@ -336,7 +330,6 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
-    { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '💡 지원 & 안내', categories: ['support'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
@@ -345,7 +338,6 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
-    { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '💡 지원 & 안내', categories: ['support'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
