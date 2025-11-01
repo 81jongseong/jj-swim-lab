@@ -10,7 +10,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 // 커뮤니티 방 타입
-export type RoomType = 'chat' | 'tips' | 'equipment' | 'equipment_reviews' | 'reviews' | 'meetup';
+export type RoomType = 'chat' | 'tips' | 'equipment' | 'equipment_reviews' | 'reviews' | 'meetup' | 'job_board';
 
 // 게시글 인터페이스
 export interface ICommunityPost extends Document {
@@ -197,6 +197,32 @@ export interface ICommunityPost extends Document {
       isVerified: boolean;
       verifiedBy?: mongoose.Types.ObjectId;
     };
+    
+    // 구인구직 전용
+    jobBoard?: {
+      jobType: 'job_post' | 'resume' | 'freelance'; // 구인 / 구직 / 프리랜스
+      position: 'instructor' | 'lifeguard' | 'front_desk' | 'office' | 'manager' | 'other'; // 강사, 안전요원, 인포데스크, 사무직, 관리자, 기타
+      employmentType: 'full_time' | 'part_time' | 'contract' | 'freelance'; // 정규직, 파트타임, 계약직, 프리랜스
+      location?: string; // 근무 지역
+      centerId?: mongoose.Types.ObjectId; // 해당 센터 (구인인 경우)
+      salary?: {
+        min?: number;
+        max?: number;
+        type: 'monthly' | 'hourly' | 'per_class'; // 월급제, 시급제, 회당
+      };
+      requirements?: string[]; // 자격 요건
+      benefits?: string[]; // 혜택
+      workSchedule?: {
+        daysOfWeek?: number[]; // 0=일요일, 6=토요일
+        timeSlots?: string[]; // ['09:00-18:00']
+      };
+      contactInfo?: {
+        email?: string;
+        phone?: string;
+      };
+      applicationDeadline?: Date; // 마감일
+      status: 'open' | 'closed' | 'filled'; // 모집중, 마감, 채용완료
+    };
   };
   
   // 메타데이터
@@ -245,7 +271,7 @@ export interface IMeetupParticipant extends Document {
 const communityPostSchema = new Schema<ICommunityPost>({
   roomType: {
     type: String,
-    enum: ['chat', 'tips', 'equipment', 'equipment_reviews', 'reviews', 'meetup'],
+    enum: ['chat', 'tips', 'equipment', 'equipment_reviews', 'reviews', 'meetup', 'job_board'],
     required: true,
     index: true
   },
@@ -597,6 +623,51 @@ const communityPostSchema = new Schema<ICommunityPost>({
       verifiedBy: {
         type: Schema.Types.ObjectId,
         ref: 'User'
+      }
+    },
+    
+    // 구인구직
+    jobBoard: {
+      jobType: {
+        type: String,
+        enum: ['job_post', 'resume', 'freelance']
+      },
+      position: {
+        type: String,
+        enum: ['instructor', 'lifeguard', 'front_desk', 'office', 'manager', 'other']
+      },
+      employmentType: {
+        type: String,
+        enum: ['full_time', 'part_time', 'contract', 'freelance']
+      },
+      location: String,
+      centerId: {
+        type: Schema.Types.ObjectId,
+        ref: 'SwimmingCenter'
+      },
+      salary: {
+        min: Number,
+        max: Number,
+        type: {
+          type: String,
+          enum: ['monthly', 'hourly', 'per_class']
+        }
+      },
+      requirements: [String],
+      benefits: [String],
+      workSchedule: {
+        daysOfWeek: [Number],
+        timeSlots: [String]
+      },
+      contactInfo: {
+        email: String,
+        phone: String
+      },
+      applicationDeadline: Date,
+      status: {
+        type: String,
+        enum: ['open', 'closed', 'filled'],
+        default: 'open'
       }
     }
   },

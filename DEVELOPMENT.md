@@ -1,6 +1,6 @@
 # 🏊 JJ Swim Lab - 개발 기록
 
-## 📊 **최신 작업 현황** (2025-10-31)
+## 📊 **최신 작업 현황** (2025-11-01)
 
 ### ✅ **센터 정보 관리 페이지 복원 및 개선 완료** (2025-10-31)
 **진행 상태: 완료**
@@ -160,6 +160,36 @@
 #### **커밋:**
 - `ui: improve instructor student management layout` (커밋 ca66fcd)
 - `ui: apply Card component to instructor student cards` (커밋 4beada1)
+- `docs: update commit hash for Card component application` (커밋 3a88eb2)
+- `feat: add job_board to Community model for job postings` (커밋 예정)
+
+---
+
+### 🚀 **구인구직 커뮤니티 기능 구현** (2025-11-01)
+**진행 상태: 모델 설계 완료 → UI 구현 진행 중**
+
+#### **작업 내용:**
+- 수영 산업 전용 구인구직 커뮤니티 기능 추가
+- 강사, 안전요원, 인포데스크, 사무직 등의 채용 정보 공유
+- 최고 관리자, 센터 관리자, 강사만 접근 가능
+
+#### **설계:**
+1. **데이터 모델**
+   - Community 모델에 `job_board` roomType 추가
+   - roomSpecific에 jobBoard 필드 추가
+   - 구인/구직/프리랜스 구분, 채용 정보 필드 포함
+
+2. **구현 예정:**
+   - 구인구직 커뮤니티 페이지 UI
+   - 게시글 CRUD API
+   - 필터링/검색 기능
+   - 센터별/직책별 분류
+
+#### **수정된 파일:**
+- `server/src/models/Community.ts`: job_board roomType 및 jobBoard 필드 추가
+
+#### **커밋:**
+- `feat: add job_board to Community model for job postings` (커밋 예정)
 
 ---
 
