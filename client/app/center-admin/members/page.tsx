@@ -158,31 +158,29 @@ function CenterMembersManagement() {
 
   const loadMembers = async () => {
     try {
-      if (DEBUG) console.log('🔄 loadMembers 호출됨');
+      console.log('🔄 loadMembers 호출됨');
       setIsLoading(true);
       const response = await apiClient.get('/api/center-admin/members');
-      if (DEBUG) console.log('📡 회원 목록 API 응답:', response);
+      console.log('📡 회원 목록 API 응답:', response);
       
       if (response.success && Array.isArray(response.data)) {
-        if (DEBUG) console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
-        if (DEBUG) {
-          // 첫 번째 회원의 studentInfo 확인
-          const firstMember = response.data[0];
-          if (firstMember) {
-            console.log('🔍 첫 번째 회원 데이터 전체:', JSON.stringify(firstMember, null, 2));
-            console.log('🔍 첫 번째 회원 studentInfo:', firstMember.studentInfo);
-            console.log('🔍 첫 번째 회원 healthProfile:', firstMember.studentInfo?.healthProfile);
-            console.log('🔍 첫 번째 회원 age:', firstMember.studentInfo?.age);
-            console.log('🔍 첫 번째 회원 height:', firstMember.studentInfo?.healthProfile?.height);
-            console.log('🔍 첫 번째 회원 weight:', firstMember.studentInfo?.healthProfile?.weight);
-          }
+        console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
+        // 첫 번째 회원의 studentInfo 확인
+        const firstMember = response.data[0];
+        if (firstMember) {
+          console.log('🔍 첫 번째 회원 데이터 전체:', JSON.stringify(firstMember, null, 2));
+          console.log('🔍 첫 번째 회원 studentInfo:', firstMember.studentInfo);
+          console.log('🔍 첫 번째 회원 healthProfile:', firstMember.studentInfo?.healthProfile);
+          console.log('🔍 첫 번째 회원 age:', firstMember.studentInfo?.age);
+          console.log('🔍 첫 번째 회원 height:', firstMember.studentInfo?.healthProfile?.height);
+          console.log('🔍 첫 번째 회원 weight:', firstMember.studentInfo?.healthProfile?.weight);
         }
         setMembers(response.data as Member[]);
       } else {
-        if (DEBUG) console.error('회원 목록 로드 실패:', response.message);
+        console.error('회원 목록 로드 실패:', response.message);
       }
     } catch (error) {
-      if (DEBUG) console.error('회원 목록 로드 오류:', error);
+      console.error('회원 목록 로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
