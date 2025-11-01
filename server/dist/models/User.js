@@ -115,7 +115,55 @@ const userSchema = new mongoose_1.default.Schema({
             },
             targetWeight: { type: Number },
             targetBMI: { type: Number },
-            lastHealthCheck: { type: Date }
+            lastHealthCheck: { type: Date },
+            bloodPressure: {
+                systolic: { type: Number },
+                diastolic: { type: Number },
+                measuredAt: { type: Date }
+            },
+            cholesterol: {
+                total: { type: Number },
+                ldl: { type: Number },
+                hdl: { type: Number },
+                triglycerides: { type: Number },
+                measuredAt: { type: Date }
+            },
+            bloodSugar: {
+                fasting: { type: Number },
+                postprandial: { type: Number },
+                hba1c: { type: Number },
+                measuredAt: { type: Date }
+            },
+            swimmingRelatedConditions: {
+                cardiovascular: { type: Boolean, default: false },
+                respiratory: { type: Boolean, default: false },
+                musculoskeletal: { type: Boolean, default: false },
+                diabetes: { type: Boolean, default: false },
+                hypertension: { type: Boolean, default: false },
+                asthma: { type: Boolean, default: false },
+                other: [{ type: String }]
+            },
+            healthHistory: [{
+                    date: { type: Date, default: Date.now },
+                    weight: { type: Number },
+                    bmi: { type: Number },
+                    bloodPressure: {
+                        systolic: { type: Number },
+                        diastolic: { type: Number }
+                    },
+                    cholesterol: {
+                        total: { type: Number },
+                        ldl: { type: Number },
+                        hdl: { type: Number },
+                        triglycerides: { type: Number }
+                    },
+                    bloodSugar: {
+                        fasting: { type: Number },
+                        postprandial: { type: Number },
+                        hba1c: { type: Number }
+                    },
+                    notes: { type: String }
+                }]
         },
         swimmingProfile: {
             css: {

@@ -83,6 +83,54 @@ interface Member {
       targetWeight?: number;
       targetBMI?: number;
       lastHealthCheck?: Date;
+      bloodPressure?: {
+        systolic?: number;
+        diastolic?: number;
+        measuredAt?: Date;
+      };
+      cholesterol?: {
+        total?: number;
+        ldl?: number;
+        hdl?: number;
+        triglycerides?: number;
+        measuredAt?: Date;
+      };
+      bloodSugar?: {
+        fasting?: number;
+        postprandial?: number;
+        hba1c?: number;
+        measuredAt?: Date;
+      };
+      swimmingRelatedConditions?: {
+        cardiovascular?: boolean;
+        respiratory?: boolean;
+        musculoskeletal?: boolean;
+        diabetes?: boolean;
+        hypertension?: boolean;
+        asthma?: boolean;
+        other?: string[];
+      };
+      healthHistory?: Array<{
+        date: Date;
+        weight?: number;
+        bmi?: number;
+        bloodPressure?: {
+          systolic?: number;
+          diastolic?: number;
+        };
+        cholesterol?: {
+          total?: number;
+          ldl?: number;
+          hdl?: number;
+          triglycerides?: number;
+        };
+        bloodSugar?: {
+          fasting?: number;
+          postprandial?: number;
+          hba1c?: number;
+        };
+        notes?: string;
+      }>;
     };
   };
 }
@@ -853,6 +901,123 @@ function CenterMembersManagement() {
                           )}
                         </div>
                       </div>
+
+                      {/* 혈압, 콜레스테롤, 당뇨 카드 */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 혈압 */}
+                        <div className="bg-white rounded-lg p-4 border border-red-100">
+                          <div className="text-xs text-gray-600 mb-2 font-medium">혈압</div>
+                          {selectedMember.studentInfo?.healthProfile?.bloodPressure?.systolic ? (
+                            <>
+                              <div className="text-2xl font-bold text-red-900 mb-1">
+                                {selectedMember.studentInfo.healthProfile.bloodPressure.systolic}/
+                                {selectedMember.studentInfo.healthProfile.bloodPressure.diastolic}
+                              </div>
+                              <div className="text-xs text-gray-500">mmHg</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {selectedMember.studentInfo.healthProfile.bloodPressure.measuredAt 
+                                  ? new Date(selectedMember.studentInfo.healthProfile.bloodPressure.measuredAt).toLocaleDateString('ko-KR')
+                                  : '측정일 없음'}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-sm text-gray-400 py-4">데이터 없음</div>
+                          )}
+                        </div>
+
+                        {/* 콜레스테롤 */}
+                        <div className="bg-white rounded-lg p-4 border border-purple-100">
+                          <div className="text-xs text-gray-600 mb-2 font-medium">콜레스테롤</div>
+                          {selectedMember.studentInfo?.healthProfile?.cholesterol?.total ? (
+                            <>
+                              <div className="text-lg font-bold text-purple-900 mb-1">
+                                총 {selectedMember.studentInfo.healthProfile.cholesterol.total}
+                              </div>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                <div>LDL: {selectedMember.studentInfo.healthProfile.cholesterol.ldl || '-'}</div>
+                                <div>HDL: {selectedMember.studentInfo.healthProfile.cholesterol.hdl || '-'}</div>
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {selectedMember.studentInfo.healthProfile.cholesterol.measuredAt 
+                                  ? new Date(selectedMember.studentInfo.healthProfile.cholesterol.measuredAt).toLocaleDateString('ko-KR')
+                                  : '측정일 없음'}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-sm text-gray-400 py-4">데이터 없음</div>
+                          )}
+                        </div>
+
+                        {/* 당뇨 (혈당) */}
+                        <div className="bg-white rounded-lg p-4 border border-blue-100">
+                          <div className="text-xs text-gray-600 mb-2 font-medium">혈당</div>
+                          {selectedMember.studentInfo?.healthProfile?.bloodSugar?.fasting ? (
+                            <>
+                              <div className="text-lg font-bold text-blue-900 mb-1">
+                                공복 {selectedMember.studentInfo.healthProfile.bloodSugar.fasting}
+                              </div>
+                              <div className="text-xs text-gray-600 space-y-0.5">
+                                {selectedMember.studentInfo.healthProfile.bloodSugar.postprandial && (
+                                  <div>식후: {selectedMember.studentInfo.healthProfile.bloodSugar.postprandial}</div>
+                                )}
+                                {selectedMember.studentInfo.healthProfile.bloodSugar.hba1c && (
+                                  <div>HbA1c: {selectedMember.studentInfo.healthProfile.bloodSugar.hba1c}%</div>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {selectedMember.studentInfo.healthProfile.bloodSugar.measuredAt 
+                                  ? new Date(selectedMember.studentInfo.healthProfile.bloodSugar.measuredAt).toLocaleDateString('ko-KR')
+                                  : '측정일 없음'}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-sm text-gray-400 py-4">데이터 없음</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 수영 관련 건강질환 */}
+                      {selectedMember.studentInfo?.healthProfile?.swimmingRelatedConditions && (
+                        <div className="bg-white rounded-lg p-4 border border-orange-100">
+                          <div className="text-sm font-medium text-orange-900 mb-3">수영 관련 건강질환</div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.cardiovascular && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-800 text-xs">심장 질환</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.respiratory && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs">호흡기 질환</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.musculoskeletal && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs">근골격계 질환</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.diabetes && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-purple-100 text-purple-800 text-xs">당뇨</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.hypertension && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-pink-100 text-pink-800 text-xs">고혈압</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.asthma && (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-indigo-100 text-indigo-800 text-xs">천식</span>
+                            )}
+                            {selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.other && 
+                             selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.other.length > 0 && (
+                              selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.other.map((item, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs">{item}</span>
+                              ))
+                            )}
+                            {!selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.cardiovascular &&
+                             !selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.respiratory &&
+                             !selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.musculoskeletal &&
+                             !selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.diabetes &&
+                             !selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.hypertension &&
+                             !selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.asthma &&
+                             (!selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.other || 
+                              selectedMember.studentInfo.healthProfile.swimmingRelatedConditions.other.length === 0) && (
+                              <div className="text-sm text-gray-400">등록된 건강질환이 없습니다.</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">

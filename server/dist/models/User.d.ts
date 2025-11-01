@@ -82,6 +82,54 @@ interface IUser extends mongoose.Document {
             targetWeight?: number;
             targetBMI?: number;
             lastHealthCheck?: Date;
+            bloodPressure?: {
+                systolic?: number;
+                diastolic?: number;
+                measuredAt?: Date;
+            };
+            cholesterol?: {
+                total?: number;
+                ldl?: number;
+                hdl?: number;
+                triglycerides?: number;
+                measuredAt?: Date;
+            };
+            bloodSugar?: {
+                fasting?: number;
+                postprandial?: number;
+                hba1c?: number;
+                measuredAt?: Date;
+            };
+            swimmingRelatedConditions?: {
+                cardiovascular?: boolean;
+                respiratory?: boolean;
+                musculoskeletal?: boolean;
+                diabetes?: boolean;
+                hypertension?: boolean;
+                asthma?: boolean;
+                other?: string[];
+            };
+            healthHistory?: Array<{
+                date: Date;
+                weight?: number;
+                bmi?: number;
+                bloodPressure?: {
+                    systolic?: number;
+                    diastolic?: number;
+                };
+                cholesterol?: {
+                    total?: number;
+                    ldl?: number;
+                    hdl?: number;
+                    triglycerides?: number;
+                };
+                bloodSugar?: {
+                    fasting?: number;
+                    postprandial?: number;
+                    hba1c?: number;
+                };
+                notes?: string;
+            }>;
         };
         swimmingProfile?: {
             css?: {

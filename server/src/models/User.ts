@@ -154,6 +154,59 @@ interface IUser extends mongoose.Document {
       targetWeight?: number;
       targetBMI?: number;
       lastHealthCheck?: Date;
+      // 혈압
+      bloodPressure?: {
+        systolic?: number; // 수축기 혈압 (mmHg)
+        diastolic?: number; // 이완기 혈압 (mmHg)
+        measuredAt?: Date;
+      };
+      // 콜레스테롤
+      cholesterol?: {
+        total?: number; // 총 콜레스테롤 (mg/dL)
+        ldl?: number; // LDL 콜레스테롤 (mg/dL)
+        hdl?: number; // HDL 콜레스테롤 (mg/dL)
+        triglycerides?: number; // 중성지방 (mg/dL)
+        measuredAt?: Date;
+      };
+      // 당뇨 (혈당)
+      bloodSugar?: {
+        fasting?: number; // 공복 혈당 (mg/dL)
+        postprandial?: number; // 식후 혈당 (mg/dL)
+        hba1c?: number; // 당화혈색소 (%)
+        measuredAt?: Date;
+      };
+      // 수영 관련 건강질환
+      swimmingRelatedConditions?: {
+        cardiovascular?: boolean; // 심장 질환
+        respiratory?: boolean; // 호흡기 질환
+        musculoskeletal?: boolean; // 근골격계 질환
+        diabetes?: boolean; // 당뇨
+        hypertension?: boolean; // 고혈압
+        asthma?: boolean; // 천식
+        other?: string[]; // 기타
+      };
+      // 건강 데이터 이력
+      healthHistory?: Array<{
+        date: Date;
+        weight?: number;
+        bmi?: number;
+        bloodPressure?: {
+          systolic?: number;
+          diastolic?: number;
+        };
+        cholesterol?: {
+          total?: number;
+          ldl?: number;
+          hdl?: number;
+          triglycerides?: number;
+        };
+        bloodSugar?: {
+          fasting?: number;
+          postprandial?: number;
+          hba1c?: number;
+        };
+        notes?: string;
+      }>;
     };
     // 수영 관련 개인 정보
     swimmingProfile?: {
@@ -454,7 +507,60 @@ const userSchema = new mongoose.Schema({
       },
       targetWeight: { type: Number },
       targetBMI: { type: Number },
-      lastHealthCheck: { type: Date }
+      lastHealthCheck: { type: Date },
+      // 혈압 (혈압계)
+      bloodPressure: {
+        systolic: { type: Number }, // 수축기 혈압 (mmHg)
+        diastolic: { type: Number }, // 이완기 혈압 (mmHg)
+        measuredAt: { type: Date }
+      },
+      // 콜레스테롤
+      cholesterol: {
+        total: { type: Number }, // 총 콜레스테롤 (mg/dL)
+        ldl: { type: Number }, // LDL 콜레스테롤 (mg/dL)
+        hdl: { type: Number }, // HDL 콜레스테롤 (mg/dL)
+        triglycerides: { type: Number }, // 중성지방 (mg/dL)
+        measuredAt: { type: Date }
+      },
+      // 당뇨 (혈당)
+      bloodSugar: {
+        fasting: { type: Number }, // 공복 혈당 (mg/dL)
+        postprandial: { type: Number }, // 식후 혈당 (mg/dL)
+        hba1c: { type: Number }, // 당화혈색소 (%)
+        measuredAt: { type: Date }
+      },
+      // 수영 관련 건강질환
+      swimmingRelatedConditions: {
+        cardiovascular: { type: Boolean, default: false }, // 심장 질환
+        respiratory: { type: Boolean, default: false }, // 호흡기 질환
+        musculoskeletal: { type: Boolean, default: false }, // 근골격계 질환
+        diabetes: { type: Boolean, default: false }, // 당뇨
+        hypertension: { type: Boolean, default: false }, // 고혈압
+        asthma: { type: Boolean, default: false }, // 천식
+        other: [{ type: String }] // 기타
+      },
+      // 건강 데이터 이력 (시간에 따른 추세)
+      healthHistory: [{
+        date: { type: Date, default: Date.now },
+        weight: { type: Number },
+        bmi: { type: Number },
+        bloodPressure: {
+          systolic: { type: Number },
+          diastolic: { type: Number }
+        },
+        cholesterol: {
+          total: { type: Number },
+          ldl: { type: Number },
+          hdl: { type: Number },
+          triglycerides: { type: Number }
+        },
+        bloodSugar: {
+          fasting: { type: Number },
+          postprandial: { type: Number },
+          hba1c: { type: Number }
+        },
+        notes: { type: String }
+      }]
     },
     // 수영 관련 개인 정보
     swimmingProfile: {

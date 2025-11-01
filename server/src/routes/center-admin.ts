@@ -2306,7 +2306,12 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
             activityLevel: member.studentInfo.healthProfile.activityLevel,
             targetWeight: member.studentInfo.healthProfile.targetWeight,
             targetBMI: member.studentInfo.healthProfile.targetBMI,
-            lastHealthCheck: member.studentInfo.healthProfile.lastHealthCheck
+            lastHealthCheck: member.studentInfo.healthProfile.lastHealthCheck,
+            bloodPressure: member.studentInfo.healthProfile.bloodPressure,
+            cholesterol: member.studentInfo.healthProfile.cholesterol,
+            bloodSugar: member.studentInfo.healthProfile.bloodSugar,
+            swimmingRelatedConditions: member.studentInfo.healthProfile.swimmingRelatedConditions,
+            healthHistory: member.studentInfo.healthProfile.healthHistory || []
           } : null
         },
         

@@ -21,7 +21,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 170,
     weight: 65,
-    bmi: 22.5
+    bmi: 22.5,
+    bloodPressure: { systolic: 120, diastolic: 80 },
+    cholesterol: { total: 180, ldl: 100, hdl: 60, triglycerides: 120 },
+    bloodSugar: { fasting: 95, postprandial: 130, hba1c: 5.2 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 30,
@@ -29,7 +33,11 @@ const healthDataSamples = [
     medicalConditions: '천식',
     height: 175,
     weight: 80,
-    bmi: 26.1
+    bmi: 26.1,
+    bloodPressure: { systolic: 130, diastolic: 85 },
+    cholesterol: { total: 200, ldl: 130, hdl: 50, triglycerides: 150 },
+    bloodSugar: { fasting: 100, postprandial: 140, hba1c: 5.5 },
+    swimmingRelatedConditions: { asthma: true, hypertension: false, diabetes: false }
   },
   {
     age: 28,
@@ -37,7 +45,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 165,
     weight: 55,
-    bmi: 20.2
+    bmi: 20.2,
+    bloodPressure: { systolic: 115, diastolic: 75 },
+    cholesterol: { total: 170, ldl: 90, hdl: 65, triglycerides: 100 },
+    bloodSugar: { fasting: 90, postprandial: 120, hba1c: 5.0 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 35,
@@ -45,7 +57,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 180,
     weight: 75,
-    bmi: 23.1
+    bmi: 23.1,
+    bloodPressure: { systolic: 125, diastolic: 82 },
+    cholesterol: { total: 190, ldl: 115, hdl: 55, triglycerides: 130 },
+    bloodSugar: { fasting: 98, postprandial: 135, hba1c: 5.3 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 22,
@@ -53,7 +69,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 160,
     weight: 50,
-    bmi: 19.5
+    bmi: 19.5,
+    bloodPressure: { systolic: 110, diastolic: 70 },
+    cholesterol: { total: 160, ldl: 85, hdl: 70, triglycerides: 90 },
+    bloodSugar: { fasting: 88, postprandial: 115, hba1c: 4.9 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 32,
@@ -61,7 +81,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 178,
     weight: 82,
-    bmi: 25.9
+    bmi: 25.9,
+    bloodPressure: { systolic: 135, diastolic: 90 },
+    cholesterol: { total: 220, ldl: 150, hdl: 45, triglycerides: 180 },
+    bloodSugar: { fasting: 105, postprandial: 150, hba1c: 5.8 },
+    swimmingRelatedConditions: { asthma: false, hypertension: true, diabetes: false }
   },
   {
     age: 27,
@@ -69,7 +93,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 163,
     weight: 58,
-    bmi: 21.8
+    bmi: 21.8,
+    bloodPressure: { systolic: 118, diastolic: 78 },
+    cholesterol: { total: 175, ldl: 95, hdl: 62, triglycerides: 110 },
+    bloodSugar: { fasting: 92, postprandial: 125, hba1c: 5.1 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 29,
@@ -77,7 +105,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 172,
     weight: 70,
-    bmi: 23.7
+    bmi: 23.7,
+    bloodPressure: { systolic: 122, diastolic: 80 },
+    cholesterol: { total: 185, ldl: 105, hdl: 58, triglycerides: 125 },
+    bloodSugar: { fasting: 96, postprandial: 132, hba1c: 5.2 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 26,
@@ -85,7 +117,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 168,
     weight: 62,
-    bmi: 22.0
+    bmi: 22.0,
+    bloodPressure: { systolic: 119, diastolic: 77 },
+    cholesterol: { total: 178, ldl: 98, hdl: 61, triglycerides: 115 },
+    bloodSugar: { fasting: 94, postprandial: 128, hba1c: 5.1 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: false }
   },
   {
     age: 31,
@@ -93,7 +129,11 @@ const healthDataSamples = [
     medicalConditions: '없음',
     height: 176,
     weight: 78,
-    bmi: 25.2
+    bmi: 25.2,
+    bloodPressure: { systolic: 128, diastolic: 88 },
+    cholesterol: { total: 210, ldl: 140, hdl: 48, triglycerides: 160 },
+    bloodSugar: { fasting: 102, postprandial: 145, hba1c: 5.6 },
+    swimmingRelatedConditions: { asthma: false, hypertension: false, diabetes: true }
   }
 ];
 
@@ -148,9 +188,64 @@ async function addHealthData() {
         freshStudent.studentInfo.healthProfile.bmi = healthData.bmi;
         freshStudent.studentInfo.healthProfile.lastHealthCheck = new Date();
         
+        // 혈압 데이터 추가
+        if (healthData.bloodPressure) {
+          freshStudent.studentInfo.healthProfile.bloodPressure = {
+            systolic: healthData.bloodPressure.systolic,
+            diastolic: healthData.bloodPressure.diastolic,
+            measuredAt: new Date()
+          };
+        }
+        
+        // 콜레스테롤 데이터 추가
+        if (healthData.cholesterol) {
+          freshStudent.studentInfo.healthProfile.cholesterol = {
+            total: healthData.cholesterol.total,
+            ldl: healthData.cholesterol.ldl,
+            hdl: healthData.cholesterol.hdl,
+            triglycerides: healthData.cholesterol.triglycerides,
+            measuredAt: new Date()
+          };
+        }
+        
+        // 혈당 데이터 추가
+        if (healthData.bloodSugar) {
+          freshStudent.studentInfo.healthProfile.bloodSugar = {
+            fasting: healthData.bloodSugar.fasting,
+            postprandial: healthData.bloodSugar.postprandial,
+            hba1c: healthData.bloodSugar.hba1c,
+            measuredAt: new Date()
+          };
+        }
+        
+        // 수영 관련 건강질환 추가
+        if (healthData.swimmingRelatedConditions) {
+          freshStudent.studentInfo.healthProfile.swimmingRelatedConditions = {
+            cardiovascular: healthData.swimmingRelatedConditions.cardiovascular || false,
+            respiratory: healthData.swimmingRelatedConditions.respiratory || false,
+            musculoskeletal: healthData.swimmingRelatedConditions.musculoskeletal || false,
+            diabetes: healthData.swimmingRelatedConditions.diabetes || false,
+            hypertension: healthData.swimmingRelatedConditions.hypertension || false,
+            asthma: healthData.swimmingRelatedConditions.asthma || false,
+            other: healthData.swimmingRelatedConditions.other || []
+          };
+        }
+        
         // markModified로 Mixed 타입 필드 변경 알림
         freshStudent.markModified('studentInfo');
         freshStudent.markModified('studentInfo.healthProfile');
+        if (freshStudent.studentInfo.healthProfile.bloodPressure) {
+          freshStudent.markModified('studentInfo.healthProfile.bloodPressure');
+        }
+        if (freshStudent.studentInfo.healthProfile.cholesterol) {
+          freshStudent.markModified('studentInfo.healthProfile.cholesterol');
+        }
+        if (freshStudent.studentInfo.healthProfile.bloodSugar) {
+          freshStudent.markModified('studentInfo.healthProfile.bloodSugar');
+        }
+        if (freshStudent.studentInfo.healthProfile.swimmingRelatedConditions) {
+          freshStudent.markModified('studentInfo.healthProfile.swimmingRelatedConditions');
+        }
         
         await freshStudent.save();
         console.log(`   ✅ ${student.name} 회원 건강정보 추가 완료`);
