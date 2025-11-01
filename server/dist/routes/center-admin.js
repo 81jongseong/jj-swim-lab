@@ -1846,14 +1846,28 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                         || member.level
                         || '레벨 미설정',
                 studentInfo: {
-                    age: member.studentInfo?.age,
+                    age: member.studentInfo?.age ?? null,
                     level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel || '레벨 미설정',
                     emergencyContact: member.studentInfo?.emergencyContact || '',
                     medicalConditions: member.studentInfo?.medicalConditions || '',
                     goals: [],
                     centerMemo: member.studentInfo?.centerMemo || '',
                     centerMemos: member.studentInfo?.centerMemos || [],
-                    healthProfile: member.studentInfo?.healthProfile || null
+                    healthProfile: member.studentInfo?.healthProfile ? {
+                        height: member.studentInfo.healthProfile.height,
+                        weight: member.studentInfo.healthProfile.weight,
+                        bmi: member.studentInfo.healthProfile.bmi,
+                        bloodType: member.studentInfo.healthProfile.bloodType,
+                        allergies: member.studentInfo.healthProfile.allergies || [],
+                        chronicConditions: member.studentInfo.healthProfile.chronicConditions || [],
+                        medications: member.studentInfo.healthProfile.medications || [],
+                        emergencyContact: member.studentInfo.healthProfile.emergencyContact,
+                        fitnessGoals: member.studentInfo.healthProfile.fitnessGoals || [],
+                        activityLevel: member.studentInfo.healthProfile.activityLevel,
+                        targetWeight: member.studentInfo.healthProfile.targetWeight,
+                        targetBMI: member.studentInfo.healthProfile.targetBMI,
+                        lastHealthCheck: member.studentInfo.healthProfile.lastHealthCheck
+                    } : null
                 },
                 isEnrolledInSpecificCourse: isEnrolledInSpecificCourse,
                 currentCourses: courseDetails.map(course => ({
