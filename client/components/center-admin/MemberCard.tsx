@@ -9,8 +9,7 @@
 
 import React from 'react';
 import { Mail, Phone, Users, Calendar, Eye, UserPlus, Edit, Heart } from 'lucide-react';
-import { Card, CardContent } from '../ui';
-import { Button } from '../Button';
+import { Card, CardContent, Button } from '../ui';
 
 export interface MemberCardData {
   _id: string;
