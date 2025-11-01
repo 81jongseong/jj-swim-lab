@@ -1841,12 +1841,14 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                         || member.level
                         || '레벨 미설정',
                 studentInfo: {
+                    age: member.studentInfo?.age,
                     level: member.studentInfo?.currentLevel || member.studentInfo?.swimmingLevel || '레벨 미설정',
                     emergencyContact: member.studentInfo?.emergencyContact || '',
                     medicalConditions: member.studentInfo?.medicalConditions || '',
                     goals: [],
                     centerMemo: member.studentInfo?.centerMemo || '',
-                    centerMemos: member.studentInfo?.centerMemos || []
+                    centerMemos: member.studentInfo?.centerMemos || [],
+                    healthProfile: member.studentInfo?.healthProfile || null
                 },
                 isEnrolledInSpecificCourse: isEnrolledInSpecificCourse,
                 currentCourses: courseDetails.map(course => ({
