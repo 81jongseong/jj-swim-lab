@@ -1086,13 +1086,19 @@
    - 건강관리 섹션 전체 제거
    - 회원관리 페이지에서 모든 건강정보 관리
 
+3. **건강 통계 추가**
+   - 센터 관리자용 전체 회원 건강 통계 추가
+   - 평균 나이, 건강 데이터 보유, 만성 질환 보유, 응급연락처 등록 통계 표시
+   - 통계 카드 형식으로 시각화
+
 #### **수정된 파일:**
 - `client/components/center-admin/MemberCard.tsx`: 건강정보 버튼 추가
-- `client/app/center-admin/members/page.tsx`: 건강정보 모달 구현
+- `client/app/center-admin/members/page.tsx`: 건강정보 모달 구현 및 건강 통계 추가
 - `client/components/Navigation.tsx`: 건강관리 섹션 제거
 
 #### **커밋:**
 - `feat: integrate health info into center member management and remove separate health pages` (커밋 76ecfe3)
+- `feat: add health statistics to center member management page` (커밋 213e6af)
 
 ---
 
