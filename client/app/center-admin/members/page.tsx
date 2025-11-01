@@ -165,11 +165,15 @@ function CenterMembersManagement() {
       
       if (response.success && Array.isArray(response.data)) {
         console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
+        // 전체 API 응답 데이터 확인
+        console.log('📋 API 응답 전체 데이터:', JSON.stringify(response.data, null, 2));
         // 첫 번째 회원의 studentInfo 확인
         const firstMember = response.data[0];
         if (firstMember) {
           console.log('🔍 첫 번째 회원 데이터 전체:', JSON.stringify(firstMember, null, 2));
+          console.log('🔍 첫 번째 회원 studentInfo 존재:', !!firstMember.studentInfo);
           console.log('🔍 첫 번째 회원 studentInfo:', firstMember.studentInfo);
+          console.log('🔍 첫 번째 회원 healthProfile 존재:', !!firstMember.studentInfo?.healthProfile);
           console.log('🔍 첫 번째 회원 healthProfile:', firstMember.studentInfo?.healthProfile);
           console.log('🔍 첫 번째 회원 age:', firstMember.studentInfo?.age);
           console.log('🔍 첫 번째 회원 height:', firstMember.studentInfo?.healthProfile?.height);
