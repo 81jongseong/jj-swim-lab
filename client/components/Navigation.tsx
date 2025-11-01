@@ -207,7 +207,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     levels: [
-      { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/center/default/admin/guide', label: '📖 이용안내' },
     ],
     programs: [
       { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
@@ -243,7 +243,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     levels: [
-      { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
+      { href: '/center/default/admin/guide', label: '📖 이용안내' },
     ],
     programs: [
       { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
