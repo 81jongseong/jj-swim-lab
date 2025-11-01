@@ -1189,6 +1189,19 @@
    - 두 개의 경로 모두 지원 (`/center-admin/guide`, `/center/[centerSlug]/admin/guide`)
    - `feat: remove lesson plan management page and add center admin guide page with JJ Swim Lab contact info` (커밋 261e0e9)
 
+11. **센터 관리자 메뉴 구조 정리**
+   - "레벨 & 강습" (levels) 카테고리 삭제
+   - 메뉴 그룹화 재구성:
+     - 센터 관리 (대시보드, 회원, 강사, 강의, 통계, 공지)
+     - 예약·결제 관리
+     - 센터 설정 (정보 관리, 설정, 테마 설정)
+     - 프로그램 관리 (주간 프로그램 생성)
+     - 지원 & 안내 (이용안내, 공지사항, 구인구직)
+     - 커뮤니티 (커뮤니티, 상점, 수영센터 찾기)
+     - 도구 (3D 뷰어)
+   - 메뉴 항목을 논리적으로 재배치하여 사용성 개선
+   - `refactor: remove levels category and reorganize center admin menu structure` (커밋 72379aa)
+
 ---
 
 ## 🗓 멀티테넌트 라우팅 전환 계획 (Phase 2~3)
