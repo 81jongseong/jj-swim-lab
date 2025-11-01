@@ -196,13 +196,7 @@ const userMenuStructure = {
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
     health: [
-      { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
-      { href: '/center/default/admin/health/statistics', label: '📈 건강 통계' },
-      { href: '/center/default/admin/health/members', label: '👥 회원 건강정보' },
-      { href: '/center/default/admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
-      { href: '/center/default/admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
-      { href: '/center/default/admin/health/history', label: '📋 프로그램 이력 관리' },
-      { href: '/center/default/admin/algorithm-performance', label: '📈 알고리즘 성과' },
+      { href: '/center/default/admin/health', label: '🏥 센터 건강 정보 통합 관리' },
       { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
@@ -218,6 +212,9 @@ const userMenuStructure = {
     ],
     levels: [
       { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
+    ],
+    programs: [
+      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
     ]
   },
   'center-admin': {
@@ -239,13 +236,7 @@ const userMenuStructure = {
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
     health: [
-      { href: '/center/default/admin/health', label: '📊 센터 건강 현황' },
-      { href: '/center/default/admin/health/statistics', label: '📈 건강 통계' },
-      { href: '/center/default/admin/health/members', label: '👥 회원 건강정보' },
-      { href: '/center/default/admin/health/programs', label: '🏊‍♂️ 건강 프로그램' },
-      { href: '/center/default/admin/swim-programs', label: '🏊‍♂️ 수영 프로그램 관리' },
-      { href: '/center/default/admin/health/history', label: '📋 프로그램 이력 관리' },
-      { href: '/center/default/admin/algorithm-performance', label: '📈 알고리즘 성과' },
+      { href: '/center/default/admin/health', label: '🏥 센터 건강 정보 통합 관리' },
       { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
@@ -261,6 +252,9 @@ const userMenuStructure = {
     ],
     levels: [
       { href: '/center/default/admin/lesson-plans', label: '📋 강습 계획 관리' },
+    ],
+    programs: [
+      { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
     ]
   },
   superAdmin: {
@@ -353,6 +347,7 @@ const menuGrouping = {
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
@@ -362,6 +357,7 @@ const menuGrouping = {
     { groupName: '🏢 센터 소개', categories: ['center'] },
     { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
+    { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
     { groupName: '🛠️ 도구', categories: ['tools'] },
   ],
