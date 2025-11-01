@@ -1108,6 +1108,7 @@
    - 버튼 호버 스타일 복원 (hover:bg-gray-100, hover:border-gray-400)
    - handleHealthClick 함수 분리 및 상세한 로깅 구현
    - 모달 렌더링 상태 추적을 위한 useEffect 추가
+   - `fix: add health info button to center/[centerSlug]/admin/members page` (커밋 b50dee3)
 
 ---
 
