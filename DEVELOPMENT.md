@@ -129,7 +129,7 @@
 #### **커밋:**
 - `refactor: useAuth debugging logs for development mode only` (커밋 2bbd76a)
 - `docs: useAuth log cleanup commit hash update` (커밋 5c1fca9)
-- `ui: 강사 수강생 관리 레이아웃 개선` (커밋 예정)
+- `ui: improve instructor student management layout` (커밋 ca66fcd)
 
 ---
 
@@ -153,7 +153,7 @@
 - `client/components/center-admin/InstructorStudentManagement.tsx`: 요약 카드 및 수강생 카드 레이아웃 개선
 
 #### **커밋:**
-- `ui: 강사 수강생 관리 레이아웃 개선` (커밋 예정)
+- `ui: improve instructor student management layout` (커밋 ca66fcd)
 
 ---
 
