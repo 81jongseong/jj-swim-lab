@@ -295,6 +295,41 @@ function CenterMembersManagement() {
           <ThemedStatCard className="border-2" title="미배정" value={members.filter(m => !m.assignedCourses || m.assignedCourses.length === 0).length} icon={<Users className="h-4 w-4" />} color="orange" />
         </div>
 
+        {/* 건강 통계 카드 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <ThemedStatCard 
+            className="border-2 border-red-200" 
+            title="평균 나이" 
+            value={(() => {
+              const ages = members.filter(m => m.studentInfo?.age).map(m => m.studentInfo!.age!);
+              return ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : '-';
+            })()}
+            icon={<Heart className="h-4 w-4" />} 
+            color="red" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-green-200" 
+            title="건강 데이터 보유" 
+            value={members.filter(m => m.studentInfo?.age).length}
+            icon={<TrendingUp className="h-4 w-4" />} 
+            color="green" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-yellow-200" 
+            title="만성 질환 보유" 
+            value={members.filter(m => m.studentInfo?.medicalConditions).length}
+            icon={<Heart className="h-4 w-4" />} 
+            color="yellow" 
+          />
+          <ThemedStatCard 
+            className="border-2 border-purple-200" 
+            title="응급연락처 등록" 
+            value={members.filter(m => m.studentInfo?.emergencyContact).length}
+            icon={<Users className="h-4 w-4" />} 
+            color="purple" 
+          />
+        </div>
+
         {/* 검색 및 필터 */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6">
