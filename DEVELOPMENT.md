@@ -1014,6 +1014,7 @@
    - 센터 관리자 로그인 시 센터 정보 자동 로드
    - 근무 지역, 이메일, 전화번호 자동 입력
    - `loadCenterInfo` 함수로 `/api/centers/my-center`에서 센터 정보 가져오기
+   - 근무 지역은 주소에서 시·구 단위까지 추출 (예: "서울특별시 강남구", "경기도 성남시 분당구")
 
 2. **인센티브 및 강사 조건 필드 추가**
    - 인센티브 입력 필드 추가 (쉼표로 구분)
@@ -1024,6 +1025,7 @@
 - `feat: add job board community page with navigation menu` (커밋 63c8da8)
 - `feat: implement job post creation form in job board` (커밋 f852c5a)
 - `feat: add auto-fill from center info and instructor fee rate to job board` (커밋 06f4828)
+- `fix: extract city and district from address for location field` (커밋 df174c2)
 
 #### **다음 작업:**
 - [x] 구인구직 게시글 CRUD API 구현 (프론트엔드 폼 완료, 백엔드 API 연동 예정)
