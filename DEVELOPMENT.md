@@ -104,7 +104,7 @@
 - `client/app/center/[centerSlug]/admin/info/page.tsx`: 공휴일 운영시간 설정 추가
 
 #### **커밋:**
-- `feat: 공휴일 운영시간 설정 기능 추가` (커밋 예정)
+- `feat: 공휴일 운영시간 설정 기능 추가` (커밋 2f31885)
 
 ---
 
