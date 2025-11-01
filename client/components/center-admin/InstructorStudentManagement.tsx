@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../utils/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { 
   User, 
   Users,
@@ -383,7 +384,8 @@ export default function InstructorStudentManagement({
           {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredStudents.map((student, index) => (
-              <div key={student.courseId ? `${student._id}_${student.courseId}` : `${student._id}_${index}`} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+              <Card key={student.courseId ? `${student._id}_${student.courseId}` : `${student._id}_${index}`}>
+                <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     {student.profileImage ? (
@@ -553,7 +555,8 @@ export default function InstructorStudentManagement({
                     수정
                   </button>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
           ) : (
