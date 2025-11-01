@@ -65,6 +65,25 @@ interface Member {
       createdAt: Date;
       createdBy: string;
     }>;
+    healthProfile?: {
+      height?: number;
+      weight?: number;
+      bmi?: number;
+      bloodType?: string;
+      allergies?: string[];
+      chronicConditions?: string[];
+      medications?: string[];
+      emergencyContact?: {
+        name: string;
+        relationship: string;
+        phone: string;
+      };
+      fitnessGoals?: string[];
+      activityLevel?: string;
+      targetWeight?: number;
+      targetBMI?: number;
+      lastHealthCheck?: Date;
+    };
   };
 }
 

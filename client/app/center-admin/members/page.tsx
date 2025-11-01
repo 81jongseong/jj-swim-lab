@@ -29,7 +29,7 @@ import MemberCard, { MemberCardData } from '@/components/center-admin/MemberCard
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
 
-const DEBUG = false;
+const DEBUG = true;
 
 interface Member {
   _id: string;
@@ -65,6 +65,25 @@ interface Member {
       createdAt: Date;
       createdBy: string;
     }>;
+    healthProfile?: {
+      height?: number;
+      weight?: number;
+      bmi?: number;
+      bloodType?: string;
+      allergies?: string[];
+      chronicConditions?: string[];
+      medications?: string[];
+      emergencyContact?: {
+        name: string;
+        relationship: string;
+        phone: string;
+      };
+      fitnessGoals?: string[];
+      activityLevel?: string;
+      targetWeight?: number;
+      targetBMI?: number;
+      lastHealthCheck?: Date;
+    };
   };
 }
 
@@ -146,6 +165,17 @@ function CenterMembersManagement() {
       
       if (response.success && Array.isArray(response.data)) {
         if (DEBUG) console.log('✅ 회원 목록 업데이트:', response.data.length, '명');
+        if (DEBUG) {
+          // 첫 번째 회원의 studentInfo 확인
+          const firstMember = response.data[0];
+          if (firstMember) {
+            console.log('🔍 첫 번째 회원 데이터:', {
+              name: firstMember.name,
+              studentInfo: firstMember.studentInfo,
+              healthProfile: firstMember.studentInfo?.healthProfile
+            });
+          }
+        }
         setMembers(response.data as Member[]);
       } else {
         if (DEBUG) console.error('회원 목록 로드 실패:', response.message);
@@ -283,6 +313,12 @@ function CenterMembersManagement() {
       return;
     }
     console.log('❤️ [MembersPage] 선택된 회원:', fullMember.name, fullMember._id);
+    console.log('❤️ [MembersPage] 회원 건강정보:', {
+      age: fullMember.studentInfo?.age,
+      emergencyContact: fullMember.studentInfo?.emergencyContact,
+      medicalConditions: fullMember.studentInfo?.medicalConditions,
+      healthProfile: fullMember.studentInfo?.healthProfile
+    });
     console.log('❤️ [MembersPage] showHealthModal 상태 (이전):', showHealthModal);
     setSelectedMember(fullMember);
     setShowHealthModal(true);
