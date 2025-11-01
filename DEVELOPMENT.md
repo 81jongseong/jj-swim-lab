@@ -105,6 +105,29 @@
 
 #### **커밋:**
 - `feat: 공휴일 운영시간 설정 기능 추가` (커밋 2f31885)
+- `docs: 공휴일 운영시간 설정 기능 커밋 해시 업데이트` (커밋 81a9627)
+- `refactor: useAuth 디버깅 로그를 개발 모드 전용으로 변경` (커밋 예정)
+
+---
+
+### ✅ **useAuth 디버깅 로그 정리** (2025-10-31)
+**진행 상태: 완료**
+
+#### **작업 내용:**
+- useAuth 훅의 모든 디버깅 로그를 개발 모드 전용으로 변경
+- 프로덕션 환경에서는 console.log 출력되지 않도록 개선
+- 에러 로그(console.error)는 유지
+
+#### **구현:**
+- 모든 디버깅용 console.log를 `if (process.env.NODE_ENV === 'development')` 조건으로 감쌈
+- AuthProvider 렌더링, useEffect, validateToken, login 함수의 로그 정리
+- 에러 상황의 console.error는 디버깅을 위해 유지
+
+#### **수정된 파일:**
+- `client/hooks/useAuth.tsx`: 디버깅 로그를 개발 모드 전용으로 변경
+
+#### **커밋:**
+- `refactor: useAuth 디버깅 로그를 개발 모드 전용으로 변경` (커밋 예정)
 
 ---
 

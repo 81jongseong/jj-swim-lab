@@ -49,10 +49,11 @@
  * - 2024-12-19: JWT 토큰 기반 인증 시스템 구현
  * - 2024-12-19: 사용자 권한 및 역할 관리 시스템 구현
  * - 2024-12-19: 보안 및 에러 처리 시스템 구현
+ * - 2025-10-31: 개발 모드 전용 디버깅 로그로 변경
  * 
  * 👨‍💻 **개발자 정보**
  * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
+ * - 최종 수정: 2025-10-31
  * - 상태: ✅ 완성 (인증 시스템 완료)
  * 
  * 🚀 **다음 단계**
@@ -220,22 +221,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // 강제 디버깅 로그
-  console.log('🔍 AuthProvider 렌더링:', { 
-    user: user ? { _id: user._id, name: user.name, userType: user.userType } : null, 
-    loading 
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 AuthProvider 렌더링:', { 
+      user: user ? { _id: user._id, name: user.name, userType: user.userType } : null, 
+      loading 
+    });
+  }
 
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 복원
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     
-    console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 useAuth useEffect:', { token: !!token, savedUser: !!savedUser });
+    }
     
     if (token && savedUser) {
       // 토큰 검증을 한 번만 실행하도록 수정
       const userData = JSON.parse(savedUser);
-      console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+      }
       
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
@@ -256,11 +263,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       };
       
-      console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+      }
       setUser(userWithDefaults);
       setLoading(false);
     } else {
-      console.log('🔍 토큰 또는 사용자 정보 없음');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 토큰 또는 사용자 정보 없음');
+      }
       setLoading(false);
     }
   }, []);
@@ -285,7 +296,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const validateToken = async (token: string, savedUser: string) => {
     try {
-      console.log('🔍 validateToken 시작');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 validateToken 시작');
+      }
       
       const response = await fetch('http://localhost:5000/api/auth/verify', {
         method: 'GET',
@@ -295,12 +308,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         },
       });
 
-      console.log('🔍 validateToken 응답:', { status: response.status, ok: response.ok });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 validateToken 응답:', { status: response.status, ok: response.ok });
+      }
 
       if (response.ok) {
         // 토큰이 유효한 경우 사용자 정보 복원
         const userData = JSON.parse(savedUser);
-        console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 사용자 데이터 복원:', { userType: userData.userType, name: userData.name });
+        }
         
         // accessPermissions가 없으면 기본값 설정
         const userWithDefaults = {
@@ -321,18 +338,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         };
         
-        console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 사용자 설정 완료:', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
+        }
         setUser(userWithDefaults);
         return true;
       } else {
         // 토큰이 유효하지 않은 경우 정리
-        console.log('❌ 토큰이 만료되었습니다. 로그인이 필요합니다.');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('❌ 토큰이 만료되었습니다. 로그인이 필요합니다.');
+        }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
         
         // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
-        console.log('🔄 인증 상태만 업데이트 (리다이렉트 없음)');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 인증 상태만 업데이트 (리다이렉트 없음)');
+        }
         return false;
       }
     } catch (error) {
@@ -342,7 +365,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       
       // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
-      console.log('🔄 토큰 검증 실패 - 인증 상태만 업데이트 (리다이렉트 없음)');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 토큰 검증 실패 - 인증 상태만 업데이트 (리다이렉트 없음)');
+      }
       return false;
     }
   };
@@ -351,7 +376,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       
-      console.log('🔍 로그인 시도:', { email: email, password: '***' });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 로그인 시도:', { email: email, password: '***' });
+      }
       
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
@@ -362,7 +389,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ email: email, password }),
       });
       
-      console.log('📡 서버 응답 상태:', response.status, response.statusText);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📡 서버 응답 상태:', response.status, response.statusText);
+      }
       
       // 서버 연결 상태 확인
       if (!response.ok) {
@@ -372,7 +401,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const data = await response.json();
-      console.log('📡 서버 응답 데이터:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📡 서버 응답 데이터:', data);
+      }
       
       // 서버 응답 구조 확인 및 처리
       if (!data.user || !data.token) {
