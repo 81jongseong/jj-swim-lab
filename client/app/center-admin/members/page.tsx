@@ -744,13 +744,13 @@ function CenterMembersManagement() {
                     <div className="bg-white rounded-lg p-4 border border-blue-100">
                       <div className="text-xs text-gray-600 mb-1">신장</div>
                       <div className="text-2xl font-bold text-blue-900">
-                        {selectedMember.studentInfo?.age ? '-' : '-'}
+                        {selectedMember.studentInfo?.healthProfile?.height ? `${selectedMember.studentInfo.healthProfile.height}cm` : '-'}
                       </div>
                     </div>
                     <div className="bg-white rounded-lg p-4 border border-blue-100">
                       <div className="text-xs text-gray-600 mb-1">체중</div>
                       <div className="text-2xl font-bold text-blue-900">
-                        {selectedMember.studentInfo?.age ? '-' : '-'}
+                        {selectedMember.studentInfo?.healthProfile?.weight ? `${selectedMember.studentInfo.healthProfile.weight}kg` : '-'}
                       </div>
                     </div>
                   </div>

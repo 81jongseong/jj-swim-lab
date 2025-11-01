@@ -92,6 +92,31 @@ const userSchema = new mongoose_1.default.Schema({
                 reason: { type: String, default: '' },
                 changedAt: { type: Date, default: Date.now }
             }],
+        healthProfile: {
+            height: { type: Number },
+            weight: { type: Number },
+            bmi: { type: Number },
+            bloodType: {
+                type: String,
+                enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+            },
+            allergies: [{ type: String }],
+            chronicConditions: [{ type: String }],
+            medications: [{ type: String }],
+            emergencyContact: {
+                name: { type: String },
+                relationship: { type: String },
+                phone: { type: String }
+            },
+            fitnessGoals: [{ type: String }],
+            activityLevel: {
+                type: String,
+                enum: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active']
+            },
+            targetWeight: { type: Number },
+            targetBMI: { type: Number },
+            lastHealthCheck: { type: Date }
+        },
         swimmingProfile: {
             css: {
                 freestyle: { type: Number },

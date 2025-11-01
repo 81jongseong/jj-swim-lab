@@ -18,52 +18,82 @@ const healthDataSamples = [
   {
     age: 25,
     emergencyContact: '010-1234-5678 (어머니)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 170,
+    weight: 65,
+    bmi: 22.5
   },
   {
     age: 30,
     emergencyContact: '010-2345-6789 (아버지)',
-    medicalConditions: '천식'
+    medicalConditions: '천식',
+    height: 175,
+    weight: 80,
+    bmi: 26.1
   },
   {
     age: 28,
     emergencyContact: '010-3456-7890 (배우자)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 165,
+    weight: 55,
+    bmi: 20.2
   },
   {
     age: 35,
     emergencyContact: '010-4567-8901 (형)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 180,
+    weight: 75,
+    bmi: 23.1
   },
   {
     age: 22,
     emergencyContact: '010-5678-9012 (언니)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 160,
+    weight: 50,
+    bmi: 19.5
   },
   {
     age: 32,
     emergencyContact: '010-6789-0123 (남편)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 178,
+    weight: 82,
+    bmi: 25.9
   },
   {
     age: 27,
     emergencyContact: '010-7890-1234 (아내)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 163,
+    weight: 58,
+    bmi: 21.8
   },
   {
     age: 29,
     emergencyContact: '010-8901-2345 (아버지)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 172,
+    weight: 70,
+    bmi: 23.7
   },
   {
     age: 26,
     emergencyContact: '010-9012-3456 (어머니)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 168,
+    weight: 62,
+    bmi: 22.0
   },
   {
     age: 31,
     emergencyContact: '010-0123-4567 (아버지)',
-    medicalConditions: '없음'
+    medicalConditions: '없음',
+    height: 176,
+    weight: 78,
+    bmi: 25.2
   }
 ];
 
@@ -109,8 +139,18 @@ async function addHealthData() {
         freshStudent.studentInfo.emergencyContact = healthData.emergencyContact;
         freshStudent.studentInfo.medicalConditions = healthData.medicalConditions;
         
+        // healthProfile 업데이트
+        if (!freshStudent.studentInfo.healthProfile) {
+          freshStudent.studentInfo.healthProfile = {};
+        }
+        freshStudent.studentInfo.healthProfile.height = healthData.height;
+        freshStudent.studentInfo.healthProfile.weight = healthData.weight;
+        freshStudent.studentInfo.healthProfile.bmi = healthData.bmi;
+        freshStudent.studentInfo.healthProfile.lastHealthCheck = new Date();
+        
         // markModified로 Mixed 타입 필드 변경 알림
         freshStudent.markModified('studentInfo');
+        freshStudent.markModified('studentInfo.healthProfile');
         
         await freshStudent.save();
         console.log(`   ✅ ${student.name} 회원 건강정보 추가 완료`);
@@ -128,7 +168,9 @@ async function addHealthData() {
     const updatedStudents = await User.find({ userType: 'student' }).limit(10);
     for (const student of updatedStudents) {
       if (student.studentInfo && student.studentInfo.age) {
-        console.log(`   - ${student.name}: 나이 ${student.studentInfo.age}세, 응급연락처 ${student.studentInfo.emergencyContact || '없음'}, 만성질환 ${student.studentInfo.medicalConditions || '없음'}`);
+        const hp = student.studentInfo.healthProfile || {};
+        console.log(`   - ${student.name}: 나이 ${student.studentInfo.age}세, 신장 ${hp.height || '-'}cm, 체중 ${hp.weight || '-'}kg, BMI ${hp.bmi || '-'}`);
+        console.log(`     응급연락처: ${student.studentInfo.emergencyContact || '없음'}, 만성질환: ${student.studentInfo.medicalConditions || '없음'}`);
       }
     }
     

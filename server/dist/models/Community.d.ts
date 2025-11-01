@@ -23,7 +23,7 @@
 /// <reference types="mongoose/types/virtuals" />
 /// <reference types="mongoose/types/inferschematype" />
 import mongoose, { Document } from 'mongoose';
-export type RoomType = 'chat' | 'tips' | 'equipment' | 'equipment_reviews' | 'reviews' | 'meetup';
+export type RoomType = 'chat' | 'tips' | 'equipment' | 'equipment_reviews' | 'reviews' | 'meetup' | 'job_board';
 export interface ICommunityPost extends Document {
     roomType: RoomType;
     title: string;
@@ -163,6 +163,32 @@ export interface ICommunityPost extends Document {
             tags: string[];
             isVerified: boolean;
             verifiedBy?: mongoose.Types.ObjectId;
+        };
+        jobBoard?: {
+            jobType: 'job_post' | 'resume' | 'freelance';
+            position: 'instructor' | 'lifeguard' | 'front_desk' | 'office' | 'manager' | 'other';
+            employmentType: 'full_time' | 'part_time' | 'contract' | 'freelance';
+            location?: string;
+            centerId?: mongoose.Types.ObjectId;
+            salary?: {
+                min?: number;
+                max?: number;
+                type: 'monthly' | 'hourly' | 'per_class';
+            };
+            requirements?: string[];
+            benefits?: string[];
+            incentives?: string[];
+            instructorFeeRate?: number;
+            workSchedule?: {
+                daysOfWeek?: number[];
+                timeSlots?: string[];
+            };
+            contactInfo?: {
+                email?: string;
+                phone?: string;
+            };
+            applicationDeadline?: Date;
+            status: 'open' | 'closed' | 'filled';
         };
     };
     isPinned: boolean;

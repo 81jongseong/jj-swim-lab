@@ -28,7 +28,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const communityPostSchema = new mongoose_1.Schema({
     roomType: {
         type: String,
-        enum: ['chat', 'tips', 'equipment', 'equipment_reviews', 'reviews', 'meetup'],
+        enum: ['chat', 'tips', 'equipment', 'equipment_reviews', 'reviews', 'meetup', 'job_board'],
         required: true,
         index: true
     },
@@ -346,6 +346,51 @@ const communityPostSchema = new mongoose_1.Schema({
             verifiedBy: {
                 type: mongoose_1.Schema.Types.ObjectId,
                 ref: 'User'
+            }
+        },
+        jobBoard: {
+            jobType: {
+                type: String,
+                enum: ['job_post', 'resume', 'freelance']
+            },
+            position: {
+                type: String,
+                enum: ['instructor', 'lifeguard', 'front_desk', 'office', 'manager', 'other']
+            },
+            employmentType: {
+                type: String,
+                enum: ['full_time', 'part_time', 'contract', 'freelance']
+            },
+            location: String,
+            centerId: {
+                type: mongoose_1.Schema.Types.ObjectId,
+                ref: 'SwimmingCenter'
+            },
+            salary: {
+                min: Number,
+                max: Number,
+                type: {
+                    type: String,
+                    enum: ['monthly', 'hourly', 'per_class']
+                }
+            },
+            requirements: [String],
+            benefits: [String],
+            incentives: [String],
+            instructorFeeRate: Number,
+            workSchedule: {
+                daysOfWeek: [Number],
+                timeSlots: [String]
+            },
+            contactInfo: {
+                email: String,
+                phone: String
+            },
+            applicationDeadline: Date,
+            status: {
+                type: String,
+                enum: ['open', 'closed', 'filled'],
+                default: 'open'
             }
         }
     },

@@ -430,6 +430,32 @@ const userSchema = new mongoose.Schema({
       reason: { type: String, default: '' },
       changedAt: { type: Date, default: Date.now }
     }],
+    // 건강상태 정보
+    healthProfile: {
+      height: { type: Number }, // cm
+      weight: { type: Number }, // kg
+      bmi: { type: Number },
+      bloodType: { 
+        type: String, 
+        enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] 
+      },
+      allergies: [{ type: String }],
+      chronicConditions: [{ type: String }],
+      medications: [{ type: String }],
+      emergencyContact: {
+        name: { type: String },
+        relationship: { type: String },
+        phone: { type: String }
+      },
+      fitnessGoals: [{ type: String }],
+      activityLevel: { 
+        type: String, 
+        enum: ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'] 
+      },
+      targetWeight: { type: Number },
+      targetBMI: { type: Number },
+      lastHealthCheck: { type: Date }
+    },
     // 수영 관련 개인 정보
     swimmingProfile: {
       css: {
