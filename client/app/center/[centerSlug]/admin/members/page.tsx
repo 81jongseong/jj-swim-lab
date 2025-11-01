@@ -761,14 +761,106 @@ function CenterMembersManagement() {
                   </div>
                 </div>
 
-                {/* 차트 영역 (임시) */}
+                {/* 건강 상태 추세 차트 */}
                 <div className="bg-green-50 rounded-lg p-6 border border-green-200">
                   <h4 className="text-lg font-semibold text-green-900 mb-4">건강 상태 추세</h4>
-                  <div className="text-center py-12 text-gray-500">
-                    <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <p>건강 데이터가 없습니다.</p>
-                    <p className="text-sm mt-2">데이터가 추가되면 인바디 차트 형태로 표시됩니다.</p>
-                  </div>
+                  {selectedMember.studentInfo?.healthProfile?.height && selectedMember.studentInfo?.healthProfile?.weight ? (
+                    <div className="space-y-4">
+                      {/* BMI 표시 */}
+                      <div className="bg-white rounded-lg p-4 border border-green-100">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700">BMI</span>
+                          <span className="text-2xl font-bold text-green-900">
+                            {selectedMember.studentInfo.healthProfile.bmi?.toFixed(1) || '-'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
+                          <div 
+                            className={`h-3 rounded-full ${
+                              selectedMember.studentInfo.healthProfile.bmi < 18.5 ? 'bg-blue-500' :
+                              selectedMember.studentInfo.healthProfile.bmi < 23 ? 'bg-green-500' :
+                              selectedMember.studentInfo.healthProfile.bmi < 25 ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ 
+                              width: `${Math.min(100, Math.max(10, (selectedMember.studentInfo.healthProfile.bmi / 35) * 100))}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>저체중</span>
+                          <span>정상</span>
+                          <span>과체중</span>
+                          <span>비만</span>
+                        </div>
+                      </div>
+
+                      {/* 체중/신장 정보 */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white rounded-lg p-4 border border-green-100">
+                          <div className="text-xs text-gray-600 mb-1">체중 추세</div>
+                          <div className="text-xl font-bold text-green-900">
+                            {selectedMember.studentInfo.healthProfile.weight}kg
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            최근 측정: {selectedMember.studentInfo.healthProfile.lastHealthCheck 
+                              ? new Date(selectedMember.studentInfo.healthProfile.lastHealthCheck).toLocaleDateString('ko-KR')
+                              : '-'}
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-lg p-4 border border-green-100">
+                          <div className="text-xs text-gray-600 mb-1">신장 추세</div>
+                          <div className="text-xl font-bold text-green-900">
+                            {selectedMember.studentInfo.healthProfile.height}cm
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            최근 측정: {selectedMember.studentInfo.healthProfile.lastHealthCheck 
+                              ? new Date(selectedMember.studentInfo.healthProfile.lastHealthCheck).toLocaleDateString('ko-KR')
+                              : '-'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 간단한 추세 그래프 (추후 여러 데이터로 확장 가능) */}
+                      <div className="bg-white rounded-lg p-4 border border-green-100">
+                        <div className="text-sm font-medium text-gray-700 mb-3">체중 변화 추세</div>
+                        <div className="h-32 flex items-end justify-center">
+                          {selectedMember.studentInfo.healthProfile.weight ? (
+                            <div className="w-full max-w-xs">
+                              <div className="flex items-end justify-center h-full">
+                                <div className="flex flex-col items-center">
+                                  <div 
+                                    className="bg-green-500 rounded-t w-16 mb-2 flex items-end justify-center text-white text-xs font-semibold"
+                                    style={{ height: `${(selectedMember.studentInfo.healthProfile.weight / 100) * 100}%` }}
+                                  >
+                                    {selectedMember.studentInfo.healthProfile.weight}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {selectedMember.studentInfo.healthProfile.lastHealthCheck 
+                                      ? new Date(selectedMember.studentInfo.healthProfile.lastHealthCheck).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                                      : '현재'}
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-xs text-center text-gray-500 mt-2">
+                                추가 측정 기록이 쌓이면 추세 그래프가 표시됩니다.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-center text-gray-400 text-sm">
+                              데이터 없음
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>건강 데이터가 없습니다.</p>
+                      <p className="text-sm mt-2">데이터가 추가되면 인바디 차트 형태로 표시됩니다.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* 만성 질환 */}
