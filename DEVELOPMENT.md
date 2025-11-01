@@ -1060,6 +1060,39 @@
 
 #### **커밋:**
 - `feat: reorganize center admin health menu and add weekly program creation` (커밋 bb4dfc9)
+- `feat: integrate health info into center member management and remove separate health pages` (커밋 76ecfe3)
+
+---
+
+### ✅ **센터 회원관리 건강정보 통합** (2025-11-01)
+**진행 상태: 완료**
+
+#### **작업 내용:**
+- 센터 회원관리 페이지에 건강정보 통합
+- 회원 카드에 건강정보 버튼 추가
+- 회원별 건강정보 모달 구현 (인바디 차트 형태)
+- 별도 건강관리 페이지 삭제
+
+#### **구현:**
+1. **건강정보 모달**
+   - 회원 클릭 시 건강정보 모달 표시
+   - 기본 건강정보, 건강 추세 차트, 만성 질환, 응급 연락처 표시
+   - 인바디 차트 형태로 건강 데이터 시각화 (데이터 추가 시)
+   - 카드형 레이아웃으로 정보 구분
+
+2. **메뉴 정리**
+   - 센터 건강 정보 통합 관리 페이지 삭제
+   - 운동량 계산기 페이지 삭제
+   - 건강관리 섹션 전체 제거
+   - 회원관리 페이지에서 모든 건강정보 관리
+
+#### **수정된 파일:**
+- `client/components/center-admin/MemberCard.tsx`: 건강정보 버튼 추가
+- `client/app/center-admin/members/page.tsx`: 건강정보 모달 구현
+- `client/components/Navigation.tsx`: 건강관리 섹션 제거
+
+#### **커밋:**
+- `feat: integrate health info into center member management and remove separate health pages` (커밋 76ecfe3)
 
 ---
 
