@@ -9,7 +9,7 @@
  * - 센터 기본 정보 관리 (이름, 주소, 연락처)
  * - 수영장 정보 관리 (메인풀, 유아풀, 엔드리스풀)
  * - 시설 정보 관리 (샤워실, 락커룸, 사우나, 체온유지탕 등)
- * - 운영시간 설정 (평일/주말)
+ * - 운영시간 설정 (평일/주말/공휴일)
  * - 개인레슨 운영시간 설정 (요일별)
  * - 자유수영 운영시간 설정 (요일별)
  * - 급수 관리 (센터별 커스텀 급수)
@@ -27,7 +27,8 @@
  * 
  * 📅 **개발 히스토리**
  * - 2025-10-29: 자유수영 운영시간 설정 기능 추가
- * - 2025-10-31: 커밋 8123639에서 복원
+ * - 2025-10-31: 커밋 8123639에서 복원, 수심 범위 설정, 자유수영 레인 대여 연동
+ * - 2025-10-31: 공휴일 운영시간 설정 추가
  */
 
 'use client';
@@ -202,6 +203,9 @@ function CenterInfoManagementPage() {
   const [weekdaysClose, setWeekdaysClose] = useState('22:00');
   const [weekendsOpen, setWeekendsOpen] = useState('08:00');
   const [weekendsClose, setWeekendsClose] = useState('20:00');
+  const [holidaysOpen, setHolidaysOpen] = useState('09:00');
+  const [holidaysClose, setHolidaysClose] = useState('18:00');
+  const [holidaysEnabled, setHolidaysEnabled] = useState(false);
   const [parkingAvailable, setParkingAvailable] = useState(false);
   const [parkingSpaces, setParkingSpaces] = useState(0);
   
@@ -470,6 +474,12 @@ function CenterInfoManagementPage() {
               setWeekendsOpen(hours.saturday.open || '08:00');
               setWeekendsClose(hours.saturday.close || '20:00');
             }
+            // 공휴일 운영시간 로드
+            if (hours.holiday) {
+              setHolidaysOpen(hours.holiday.open || '09:00');
+              setHolidaysClose(hours.holiday.close || '18:00');
+              setHolidaysEnabled(hours.holiday.isOpen || false);
+            }
           }
           
           // 자유수영 운영시간 로드
@@ -636,7 +646,8 @@ function CenterInfoManagementPage() {
           thursday: { open: weekdaysOpen, close: weekdaysClose, isOpen: true },
           friday: { open: weekdaysOpen, close: weekdaysClose, isOpen: true },
           saturday: { open: weekendsOpen, close: weekendsClose, isOpen: true },
-          sunday: { open: weekendsOpen, close: weekendsClose, isOpen: true }
+          sunday: { open: weekendsOpen, close: weekendsClose, isOpen: true },
+          holiday: { open: holidaysOpen, close: holidaysClose, isOpen: holidaysEnabled }
         },
         customLevels: customLevels.length > 0 ? customLevels : undefined,
         availabilitySettings: {
@@ -1743,7 +1754,7 @@ function CenterInfoManagementPage() {
             {/* 강습 운영시간 */}
             <div>
               <h4 className="text-sm font-semibold text-gray-800 mb-3">강습 운영시간</h4>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">평일 운영시간</label>
                   <div className="flex items-center space-x-2">
@@ -1783,6 +1794,40 @@ function CenterInfoManagementPage() {
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">공휴일 운영시간</label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={holidaysEnabled}
+                        onChange={(e) => setHolidaysEnabled(e.target.checked)}
+                        disabled={!isEditing}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2 disabled:bg-gray-100"
+                      />
+                      <span className="text-xs text-gray-600">운영</span>
+                    </label>
+                  </div>
+                  {holidaysEnabled && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="time"
+                        value={holidaysOpen}
+                        onChange={(e) => setHolidaysOpen(e.target.value)}
+                        disabled={!isEditing}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                      <span>~</span>
+                      <input
+                        type="time"
+                        value={holidaysClose}
+                        onChange={(e) => setHolidaysClose(e.target.value)}
+                        disabled={!isEditing}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
