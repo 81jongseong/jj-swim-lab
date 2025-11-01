@@ -171,6 +171,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     info: [
+      { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
@@ -207,6 +208,7 @@ const userMenuStructure = {
     info: [
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
+      { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
@@ -249,6 +251,7 @@ const userMenuStructure = {
     info: [
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
+      { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
@@ -297,6 +300,7 @@ const userMenuStructure = {
     ],
     community: [
       { href: '/guide', label: '📖 이용안내' },
+      { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
