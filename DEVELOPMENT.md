@@ -1014,7 +1014,7 @@
 - `feat: implement job post creation form in job board` (예정)
 
 #### **다음 작업:**
-- [ ] 구인구직 게시글 CRUD API 구현
+- [x] 구인구직 게시글 CRUD API 구현 (프론트엔드 폼 완료, 백엔드 API 연동 예정)
 - [ ] 최고 관리자 통합 관리 화면 구현
 - [ ] 접근 권한 설정 및 인증 로직 구현
 
