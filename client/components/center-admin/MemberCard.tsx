@@ -8,7 +8,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, Phone, Users, Calendar, Eye, UserPlus, Edit } from 'lucide-react';
+import { Mail, Phone, Users, Calendar, Eye, UserPlus, Edit, Heart } from 'lucide-react';
 import { Card, CardContent } from '../ui';
 import { Button } from '../Button';
 
@@ -27,6 +27,7 @@ interface MemberCardProps {
   onView?: (member: MemberCardData) => void;
   onAssign?: (member: MemberCardData) => void;
   onMemo?: (member: MemberCardData) => void;
+  onHealth?: (member: MemberCardData) => void;
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo';
 }
 
@@ -50,7 +51,7 @@ const colorThemes: Record<string, { bg: string; border: string; hoverBg: string;
   indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBg: 'hover:bg-indigo-100', hoverBorder: 'hover:border-indigo-300', title: 'text-indigo-800', chip: 'bg-indigo-50 border-indigo-200 text-indigo-800' },
 };
 
-export default function MemberCard({ member, onView, onAssign, onMemo, color = 'blue' }: MemberCardProps) {
+export default function MemberCard({ member, onView, onAssign, onMemo, onHealth, color = 'blue' }: MemberCardProps) {
   const theme = colorThemes[color] || colorThemes.blue;
   const courses = member.assignedCourses || [];
   return (
@@ -90,9 +91,12 @@ export default function MemberCard({ member, onView, onAssign, onMemo, color = '
           등록일: {member.enrollmentDate ? new Date(member.enrollmentDate as any).toLocaleDateString('ko-KR') : '정보 없음'}
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <Button size="sm" variant="outline" className="text-xs" onClick={() => onView?.(member)}>
             <Eye className="w-3 h-3 mr-1" /> 상세
+          </Button>
+          <Button size="sm" variant="outline" className="text-xs" onClick={() => onHealth?.(member)}>
+            <Heart className="w-3 h-3 mr-1" /> 건강정보
           </Button>
           <Button size="sm" className="text-xs" onClick={() => onAssign?.(member)}>
             <UserPlus className="w-3 h-3 mr-1" /> 배정

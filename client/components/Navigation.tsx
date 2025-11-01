@@ -195,10 +195,6 @@ const userMenuStructure = {
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
-    health: [
-      { href: '/center/default/admin/health', label: '🏥 센터 건강 정보 통합 관리' },
-      { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
-    ],
     info: [
       { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
@@ -234,10 +230,6 @@ const userMenuStructure = {
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/settings', label: '🔧 센터 설정' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
-    ],
-    health: [
-      { href: '/center/default/admin/health', label: '🏥 센터 건강 정보 통합 관리' },
-      { href: '/center/default/admin/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     info: [
       { href: '/guide', label: '📖 이용안내' },
@@ -345,7 +337,6 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '🏢 센터 소개', categories: ['center'] },
-    { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
@@ -355,7 +346,6 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '🏢 센터 소개', categories: ['center'] },
-    { groupName: '🏥 건강 관리', categories: ['health'] },
     { groupName: '📚 레벨 & 강습', categories: ['levels'] },
     { groupName: '📅 프로그램 관리', categories: ['programs'] },
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
