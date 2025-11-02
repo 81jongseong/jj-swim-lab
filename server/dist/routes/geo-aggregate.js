@@ -144,14 +144,16 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                 try {
                     const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
                     const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
-                    if (center?.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
-                        coords = {
-                            lng: center.location.coordinates[0],
-                            lat: center.location.coordinates[1]
-                        };
-                    }
-                    else if (center?.address) {
-                        coords = await geocodeAddress(center.address);
+                    if (center && !Array.isArray(center)) {
+                        if (center.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
+                            coords = {
+                                lng: center.location.coordinates[0],
+                                lat: center.location.coordinates[1]
+                            };
+                        }
+                        else if (center.address) {
+                            coords = await geocodeAddress(center.address);
+                        }
                     }
                 }
                 catch (error) {

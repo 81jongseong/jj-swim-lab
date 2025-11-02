@@ -222,14 +222,16 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       else if (userItem.centerId) {
         try {
           const { SwimmingCenter } = await import('../models/SwimmingCenter');
-          const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
-          if (center?.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
-            coords = {
-              lng: center.location.coordinates[0],
-              lat: center.location.coordinates[1]
-            };
-          } else if (center?.address) {
-            coords = await geocodeAddress(center.address);
+          const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean() as any;
+          if (center && !Array.isArray(center)) {
+            if (center.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
+              coords = {
+                lng: center.location.coordinates[0],
+                lat: center.location.coordinates[1]
+              };
+            } else if (center.address) {
+              coords = await geocodeAddress(center.address);
+            }
           }
         } catch (error) {
           // 센터 주소지 조회 실패 시 무시
