@@ -181,14 +181,10 @@ export default function CenterAdminGeoDistributionPage() {
 
     mapInstanceRef.current = map;
 
+    // 관리자 페이지와 완전히 동일하게 설정
     const overlay = new MapboxOverlay({
       interleaved: true,
-      layers: [],
-      // 오류 처리 추가
-      onError: (error: any) => {
-        console.warn('⚠️ MapboxOverlay 오류 (무시됨):', error);
-        // 오류를 로그만 남기고 계속 진행
-      }
+      layers: []
     });
     
     map.addControl(overlay);
@@ -430,23 +426,15 @@ export default function CenterAdminGeoDistributionPage() {
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
-    // 데이터 검증
-    console.log('📊 스팟 데이터 샘플:', spots.slice(0, 2).map(s => ({
-      lat: typeof s.lat, lng: typeof s.lng, totalApprox: typeof s.totalApprox,
-      latVal: s.lat, lngVal: s.lng, totalApproxVal: s.totalApprox
-    })));
-    
     const layer = buildSpotsLayer();
     console.log('📦 생성된 레이어:', layer);
-    console.log('📦 레이어 데이터:', layer?.props?.data?.length, '개');
     
-    // 관리자 페이지처럼 바로 호출 (requestAnimationFrame 제거)
-    if (overlayRef.current && layer) {
-      overlayRef.current.setProps({
-        layers: [layer]
-      });
-      console.log('✅ 스팟 레이어 업데이트 완료');
-    }
+    // 관리자 페이지와 동일하게 바로 호출
+    overlayRef.current.setProps({
+      layers: [layer]
+    });
+    
+    console.log('✅ 스팟 레이어 업데이트 완료');
   }, [spots, currentZoom, buildSpotsLayer]);
 
   if (loading) {
