@@ -409,8 +409,13 @@ export default function CenterAdminGeoDistributionPage() {
 
     if (!spots || !spots.length) {
       console.log('⚠️ 스팟 데이터가 없어 레이어 제거');
-      overlayRef.current.setProps({
-        layers: []
+      // 비동기로 레이어 제거하여 렌더링 사이클 중 충돌 방지
+      requestAnimationFrame(() => {
+        if (overlayRef.current) {
+          overlayRef.current.setProps({
+            layers: []
+          });
+        }
       });
       return;
     }
@@ -420,23 +425,38 @@ export default function CenterAdminGeoDistributionPage() {
     const layer = buildSpotsLayer();
     if (!layer) {
       console.log('⚠️ 레이어 생성 실패');
-      overlayRef.current.setProps({
-        layers: []
+      requestAnimationFrame(() => {
+        if (overlayRef.current) {
+          overlayRef.current.setProps({
+            layers: []
+          });
+        }
       });
       return;
     }
     
-    try {
-      overlayRef.current.setProps({
-        layers: [layer]
+    // requestAnimationFrame을 사용하여 렌더링 사이클과 동기화
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          if (!overlayRef.current) {
+            console.warn('⚠️ overlayRef가 없음');
+            return;
+          }
+          overlayRef.current.setProps({
+            layers: [layer]
+          });
+          console.log('✅ 스팟 레이어 업데이트 완료');
+        } catch (error) {
+          console.error('❌ 레이어 설정 오류:', error);
+          if (overlayRef.current) {
+            overlayRef.current.setProps({
+              layers: []
+            });
+          }
+        }
       });
-      console.log('✅ 스팟 레이어 업데이트 완료');
-    } catch (error) {
-      console.error('❌ 레이어 설정 오류:', error);
-      overlayRef.current.setProps({
-        layers: []
-      });
-    }
+    });
   }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
 
   if (loading) {
