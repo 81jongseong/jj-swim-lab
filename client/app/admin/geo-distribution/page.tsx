@@ -815,10 +815,10 @@ export default function GeoDistributionPage() {
   // 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
   useEffect(() => {
     if (librariesLoaded) {
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType });
       fetchSpotsData();
     }
-  }, [librariesLoaded, memberType, selectedCenterId]);
+  }, [librariesLoaded, memberType]);
 
   // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
   useEffect(() => {
