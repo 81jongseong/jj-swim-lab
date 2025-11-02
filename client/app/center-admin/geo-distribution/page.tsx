@@ -232,14 +232,14 @@ export default function CenterAdminGeoDistributionPage() {
         fullResponse: response
       });
       
-      if (response.success && response.data) {
-        const cells = response.data.cells || [];
+      if (response.success) {
+        const cells = response.data?.cells || response.cells || [];
         console.log(`📍 수신된 셀 데이터: ${cells.length}개`);
         
         if (cells.length === 0) {
           console.warn('⚠️ 셀 데이터가 비어있습니다. 서버 로그를 확인하세요:');
           console.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}`);
-          console.warn(`  - metadata:`, response.data.metadata);
+          console.warn(`  - metadata:`, response.data?.metadata || response.metadata);
         }
         
         const spotsData: Spot[] = cells
@@ -262,9 +262,9 @@ export default function CenterAdminGeoDistributionPage() {
 
         console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
         setSpots(spotsData);
-        setMetadata(response.data.metadata || {});
+        setMetadata(response.data?.metadata || response.metadata || {});
       } else {
-        console.warn('⚠️ API 응답이 성공하지 않았거나 데이터가 없습니다:', response);
+        console.warn('⚠️ API 응답이 성공하지 않았습니다:', response);
         setSpots([]);
         setMetadata(null);
       }
