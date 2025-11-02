@@ -10,7 +10,7 @@
  * - 지오해시 블록별 스팟 표시
  * - 관리하는 센터 목록에서 선택하여 조회
  * - 전체 통계 및 지점별 통계 전환
- * - 회원 유형별 필터링 (전체/회원/강사/게스트)
+ * - 회원 유형별 필터링 (전체/단체레슨/개인레슨/자유수영)
  * 
  * 🗄️ **데이터 연동**
  * - /api/geo/aggregate API (지오해시 블록 스팟)
@@ -115,7 +115,7 @@ export default function CenterAdminGeoDistributionPage() {
               })
             );
             setManagedCenters(centersList);
-            setSelectedCenterId(null); // 초기값: "전체 통계"
+            setSelectedCenterId(null); // 초기값: "전체 센터 회원"
           } catch (error) {
             console.error('센터 목록 로드 오류:', error);
           }
@@ -219,25 +219,50 @@ export default function CenterAdminGeoDistributionPage() {
         params.append('centerId', selectedCenterId);
       }
 
+      console.log('🔍 API 요청:', `/api/geo/aggregate?${params.toString()}`);
       const response = await apiClient.get(`/api/geo/aggregate?${params.toString()}`);
+      
+      console.log('🗺️ 지도 데이터 응답:', {
+        success: response.success,
+        dataExists: !!response.data,
+        cellsCount: response.data?.cells?.length || 0,
+        metadata: response.data?.metadata
+      });
       
       if (response.success && response.data) {
         const cells = response.data.cells || [];
-        const spotsData: Spot[] = cells.map((cell: any) => ({
-          geohash: cell.h3Index || '',
-          lat: cell.lat || 0,
-          lng: cell.lng || 0,
-          totalApprox: cell.countApprox || 0,
-          dominantCenter: cell.centerName || '기타',
-          centers: cell.centers || [],
-          memberType: memberType === 'all' ? undefined : memberType
-        }));
+        console.log(`📍 수신된 셀 데이터: ${cells.length}개`);
+        
+        const spotsData: Spot[] = cells
+          .filter((cell: any) => {
+            const isValid = cell.lat && cell.lng && (cell.countApprox || 0) > 0;
+            if (!isValid) {
+              console.warn('⚠️ 유효하지 않은 셀 필터링:', cell);
+            }
+            return isValid;
+          })
+          .map((cell: any) => ({
+            geohash: cell.h3Index || '',
+            lat: cell.lat || 0,
+            lng: cell.lng || 0,
+            totalApprox: cell.countApprox || 0,
+            dominantCenter: cell.centerName || '기타',
+            centers: cell.centers || [],
+            memberType: memberType === 'all' ? undefined : memberType
+          }));
 
+        console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
         setSpots(spotsData);
         setMetadata(response.data.metadata || {});
+      } else {
+        console.warn('⚠️ API 응답이 성공하지 않았거나 데이터가 없습니다:', response);
+        setSpots([]);
+        setMetadata(null);
       }
     } catch (error) {
-      console.error('스팟 데이터 로딩 오류:', error);
+      console.error('❌ 스팟 데이터 로딩 오류:', error);
+      setSpots([]);
+      setMetadata(null);
     } finally {
       setLoadingData(false);
     }
@@ -279,7 +304,7 @@ export default function CenterAdminGeoDistributionPage() {
       return isValid;
     });
 
-    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟`);
+    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟 (전체 ${spots.length}개)`);
 
     if (validSpots.length === 0) {
       console.log('⚠️ 유효한 스팟이 없어 레이어 제거');
@@ -446,19 +471,19 @@ export default function CenterAdminGeoDistributionPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <div className="text-gray-600">총 스팟 수</div>
-                <div className="text-2xl font-bold">{metadata.totalSpots || 0}</div>
+                <div className="text-2xl font-bold">{metadata.totalCells || 0}</div>
               </div>
               <div>
-                <div className="text-gray-600">예상 총 회원 수</div>
-                <div className="text-2xl font-bold">{metadata.totalApproxCount || 0}</div>
+                <div className="text-gray-600">표시된 스팟 수</div>
+                <div className="text-2xl font-bold">{metadata.filteredCells || 0}</div>
               </div>
               <div>
                 <div className="text-gray-600">K-익명성</div>
-                <div className="text-2xl font-bold">{metadata.kAnonymity || 'N/A'}</div>
+                <div className="text-2xl font-bold">{metadata.k || 'N/A'}</div>
               </div>
               <div>
-                <div className="text-gray-600">정밀도</div>
-                <div className="text-2xl font-bold">{metadata.precision || 'N/A'}</div>
+                <div className="text-gray-600">처리된 회원 수</div>
+                <div className="text-2xl font-bold">{spots.length > 0 ? spots.reduce((sum, s) => sum + s.totalApprox, 0) : 0}</div>
               </div>
             </div>
           </div>
@@ -467,4 +492,3 @@ export default function CenterAdminGeoDistributionPage() {
     </div>
   );
 }
-
