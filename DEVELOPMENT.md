@@ -1369,6 +1369,12 @@
 - MapboxOverlay의 내부 초기화 타이밍 차이
 - 브라우저 콘솔의 WebGL 컨텍스트 손실 여부 확인
 
+**중요 발견 (2025-11-02):**
+- ✅ **문제 원인**: `@deck.gl/layers` 패키지가 `package.json`에 누락되어 있었음!
+- 코드에서는 `import('@deck.gl/layers')`를 사용하지만, `package.json`에는 `@deck.gl/geo-layers`와 `@deck.gl/mapbox`만 있고 `@deck.gl/layers`가 없었음
+- 이로 인해 런타임에 패키지를 찾지 못하거나 잘못된 버전이 로드되었을 가능성
+- **해결**: `package.json`에 `"@deck.gl/layers": "^9.0.0"` 추가 및 재설치 필요
+
 **해결 방법 요약:**
 - 관리자 페이지와 완전히 동일한 패턴 사용 (timeout 제거)
 - 지도 로드 완료 후에만 레이어 업데이트
