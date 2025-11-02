@@ -303,13 +303,32 @@ export default function CenterAdminGeoDistributionPage() {
       return null;
     }
 
-    const validSpots = spots.filter((spot: Spot) => {
-      const isValid = spot.lat && spot.lng && spot.totalApprox > 0;
-      if (!isValid) {
-        console.warn('❌ 유효하지 않은 스팟:', spot);
-      }
-      return isValid;
-    });
+    // 데이터 타입 검증 및 정규화
+    const validSpots = spots
+      .map((spot: Spot) => {
+        // 모든 필드를 명시적으로 숫자로 변환
+        const lat = Number(spot.lat);
+        const lng = Number(spot.lng);
+        const totalApprox = Number(spot.totalApprox);
+        
+        if (isNaN(lat) || isNaN(lng) || isNaN(totalApprox)) {
+          console.warn('❌ 유효하지 않은 숫자 데이터:', spot);
+          return null;
+        }
+        
+        if (totalApprox <= 0) {
+          return null;
+        }
+        
+        return {
+          ...spot,
+          lat,
+          lng,
+          totalApprox,
+          dominantCenter: spot.dominantCenter || '기타'
+        };
+      })
+      .filter((spot): spot is Spot => spot !== null);
 
     if (validSpots.length === 0) {
       console.log('⚠️ 유효한 스팟이 없습니다');
@@ -317,65 +336,78 @@ export default function CenterAdminGeoDistributionPage() {
     }
 
     console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟 (전체 ${spots.length}개)`);
+    console.log('📊 샘플 스팟 데이터:', validSpots[0]);
 
-    return new ScatterplotLayer({
-      id: 'spots-layer',
-      data: validSpots,
-      pickable: true,
-      opacity: 0.8,
-      stroked: true,
-      filled: true,
-      lineWidthMinPixels: 1,
-      radiusUnits: 'meters',
-      getPosition: (d: Spot) => {
-        if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
-          return [126.9780, 37.5665]; // 서울 중심부 (기본값)
+    try {
+      return new ScatterplotLayer({
+        id: 'spots-layer',
+        data: validSpots,
+        pickable: true,
+        opacity: 0.8,
+        stroked: true,
+        filled: true,
+        lineWidthMinPixels: 1,
+        radiusUnits: 'meters',
+        getPosition: (d: Spot) => {
+          // 타입 검증 강화
+          const lng = Number(d.lng);
+          const lat = Number(d.lat);
+          if (isNaN(lng) || isNaN(lat)) {
+            console.warn('⚠️ 잘못된 좌표:', d);
+            return [126.9780, 37.5665]; // 서울 중심부 (기본값)
+          }
+          return [lng, lat];
+        },
+        getRadius: (d: Spot) => {
+          const count = Number(d.totalApprox);
+          if (isNaN(count) || count <= 0) {
+            console.warn('⚠️ 잘못된 totalApprox:', d);
+            return 50; // 기본 크기 (미터)
+          }
+          return scaleRadius(count);
+        },
+        getFillColor: (d: Spot) => {
+          const center = d.dominantCenter || '기타';
+          const colors: Record<string, [number, number, number, number]> = {
+            'JJ Swim Lab': [255, 99, 132, 200],
+            '강남센터': [255, 99, 132, 200],
+            '홍대센터': [54, 162, 235, 200],
+            '송파센터': [255, 205, 86, 200],
+            '마포센터': [75, 192, 192, 200],
+          };
+          return colors[center] || [153, 102, 255, 200];
+        },
+        getLineColor: [255, 255, 255, 200],
+        onHover: (info: any) => {
+          if (info && info.object) {
+            setHoveredSpot(info.object);
+          }
         }
-        return [d.lng, d.lat];
-      },
-      getRadius: (d: Spot) => {
-        if (!d || typeof d.totalApprox !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-          return 50; // 기본 크기 (미터)
-        }
-        return scaleRadius(d.totalApprox);
-      },
-      getFillColor: (d: Spot) => {
-        if (!d || !d.dominantCenter) {
-          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
-          return [153, 102, 255, 200]; // 기본 색상
-        }
-        const colors: Record<string, [number, number, number, number]> = {
-          'JJ Swim Lab': [255, 99, 132, 200],
-          '강남센터': [255, 99, 132, 200],
-          '홍대센터': [54, 162, 235, 200],
-          '송파센터': [255, 205, 86, 200],
-          '마포센터': [75, 192, 192, 200],
-        };
-        return colors[d.dominantCenter] || [153, 102, 255, 200];
-      },
-      getLineColor: [255, 255, 255, 200],
-      onHover: (info: any) => {
-        if (info && info.object) {
-          setHoveredSpot(info.object);
-        }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('❌ ScatterplotLayer 생성 오류:', error);
+      return null;
+    }
   }, [spots, scaleRadius, ScatterplotLayer]);
 
   // Deck.gl 레이어 업데이트 (관리자 페이지와 동일한 방식)
   useEffect(() => {
-    if (!overlayRef.current || !spots || !spots.length) {
-      console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
+    // WebGL 컨텍스트와 라이브러리가 준비되지 않았으면 건너뜀
+    if (!overlayRef.current || !mapLoaded || !librariesLoaded || !ScatterplotLayer) {
+      console.log('⏳ 레이어 조건 대기 중:', {
         hasOverlay: !!overlayRef.current,
-        spotsLength: spots?.length || 0
+        mapLoaded,
+        librariesLoaded,
+        ScatterplotLayer: !!ScatterplotLayer
       });
-      if (overlayRef.current) {
-        overlayRef.current.setProps({
-          layers: []
-        });
-      }
+      return;
+    }
+
+    if (!spots || !spots.length) {
+      console.log('⚠️ 스팟 데이터가 없어 레이어 제거');
+      overlayRef.current.setProps({
+        layers: []
+      });
       return;
     }
 
@@ -384,20 +416,24 @@ export default function CenterAdminGeoDistributionPage() {
     const layer = buildSpotsLayer();
     if (!layer) {
       console.log('⚠️ 레이어 생성 실패');
-      if (overlayRef.current) {
-        overlayRef.current.setProps({
-          layers: []
-        });
-      }
+      overlayRef.current.setProps({
+        layers: []
+      });
       return;
     }
     
-    overlayRef.current.setProps({
-      layers: [layer]
-    });
-    
-    console.log('✅ 스팟 레이어 업데이트 완료');
-  }, [spots, buildSpotsLayer]);
+    try {
+      overlayRef.current.setProps({
+        layers: [layer]
+      });
+      console.log('✅ 스팟 레이어 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 레이어 설정 오류:', error);
+      overlayRef.current.setProps({
+        layers: []
+      });
+    }
+  }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
 
   if (loading) {
     return (
