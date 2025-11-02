@@ -267,8 +267,17 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             }
             if (!coords && userItem.centerId) {
                 try {
+                    let center = null;
+                    const centerId = userItem.centerId;
+                    let centerIdObj = centerId;
+                    if (typeof centerId === 'string' && mongoose_1.default.Types.ObjectId.isValid(centerId)) {
+                        centerIdObj = new mongoose_1.default.Types.ObjectId(centerId);
+                    }
                     const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
-                    const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
+                    center = await SwimmingCenter.findById(centerIdObj).select('address location').lean();
+                    if (!center) {
+                        center = await Center_1.default.findById(centerIdObj).select('address location').lean();
+                    }
                     if (processedCount < 3) {
                         console.log(`  🔍 센터 조회 시도: User ${userItem._id}, Center ${userItem.centerId}`);
                         console.log(`     센터 조회 결과:`, center ? '성공' : '실패 (센터 없음)');
@@ -308,7 +317,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                     }
                     else {
                         if (processedCount < 3) {
-                            console.warn(`  ⚠️ 센터 조회 실패: User ${userItem._id}, Center ${userItem.centerId} - 센터를 찾을 수 없음`);
+                            console.warn(`  ⚠️ 센터 조회 실패: User ${userItem._id}, Center ${userItem.centerId} - SwimmingCenter와 Center 모델 모두에서 찾을 수 없음`);
                         }
                     }
                 }
