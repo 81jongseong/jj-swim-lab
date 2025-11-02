@@ -267,8 +267,8 @@ function CenterInfoManagement() {
             </div>
           )}
 
-          {/* 센터 추가 버튼 */}
-          <div className="mb-6 flex justify-between items-center">
+          {/* 센터 추가 버튼 - 항상 표시 */}
+          <div className="mb-6 flex justify-between items-center bg-white rounded-lg shadow p-4">
             <h2 className="text-xl font-semibold">센터 정보</h2>
             <button
               onClick={() => setShowAddCenterModal(true)}
