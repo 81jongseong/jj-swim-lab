@@ -194,11 +194,15 @@ export default function CenterAdminGeoDistributionPage() {
     });
 
     map.on('load', () => {
-      setMapLoaded(true);
-      // 지도가 완전히 로드된 후 짧은 지연 후 데이터 로드
+      console.log('🗺️ VWorld 지도 로딩 완료');
+      // 지도가 완전히 로드되고 WebGL 컨텍스트가 준비될 때까지 대기
       setTimeout(() => {
-        fetchSpotsData();
-      }, 500);
+        setMapLoaded(true);
+        // 추가 지연으로 WebGL 컨텍스트가 완전히 준비되도록 함
+        setTimeout(() => {
+          fetchSpotsData();
+        }, 300);
+      }, 300);
     });
 
     return () => {
