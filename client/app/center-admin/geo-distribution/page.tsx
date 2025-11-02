@@ -212,11 +212,11 @@ export default function CenterAdminGeoDistributionPage() {
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
       setMapLoaded(true);
+      
       // 관리자 페이지와 동일하게 간단하게 처리
       // MapboxOverlay가 지도에 추가되면 자동으로 초기화됨
-      setTimeout(() => {
-        fetchSpotsData();
-      }, 300);
+      // 지도가 완전히 로드된 후 데이터를 가져옴
+      fetchSpotsData();
     });
 
     return () => {
@@ -430,11 +430,19 @@ export default function CenterAdminGeoDistributionPage() {
 
   // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
   useEffect(() => {
-    if (!overlayRef.current || !spots || !spots.length) {
+    // React StrictMode로 인한 이중 렌더링 방지
+    if (!mapLoaded || !overlayRef.current) {
       console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
+        mapLoaded,
         hasOverlay: !!overlayRef.current,
         spotsLength: spots?.length || 0
       });
+      return;
+    }
+
+    if (!spots || !spots.length) {
+      // 데이터가 없을 때는 빈 레이어로 설정
+      overlayRef.current.setProps({ layers: [] });
       return;
     }
 
@@ -443,26 +451,14 @@ export default function CenterAdminGeoDistributionPage() {
     
     const layer = buildSpotsLayer();
     console.log('📦 생성된 레이어:', layer);
-    console.log('📦 레이어 props.data:', layer?.props?.data?.length, '개');
-    console.log('📦 레이어 props.data 샘플:', layer?.props?.data?.slice(0, 1));
     
-    // Deck.gl이 준비될 때까지 약간의 지연 후 레이어 추가
-    // WebGL 컨텍스트가 완전히 준비되도록 함
-    const timeoutId = setTimeout(() => {
-      if (overlayRef.current && layer) {
-        try {
-          overlayRef.current.setProps({
-            layers: [layer]
-          });
-          console.log('✅ 스팟 레이어 업데이트 완료');
-        } catch (error) {
-          console.error('❌ 레이어 설정 실패:', error);
-        }
-      }
-    }, 100);
+    // 관리자 페이지와 완전히 동일하게 바로 호출 (timeout 제거)
+    overlayRef.current.setProps({
+      layers: [layer]
+    });
     
-    return () => clearTimeout(timeoutId);
-  }, [spots, currentZoom, buildSpotsLayer]);
+    console.log('✅ 스팟 레이어 업데이트 완료');
+  }, [spots, currentZoom, buildSpotsLayer, mapLoaded]);
 
   if (loading) {
     return (
