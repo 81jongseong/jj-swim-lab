@@ -184,6 +184,7 @@ const userMenuStructure = {
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
+      { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
       { href: '/center/default/admin/reports', label: '📊 센터 통계' },
       { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
     ],
