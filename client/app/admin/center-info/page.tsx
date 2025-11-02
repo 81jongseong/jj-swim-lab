@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2, List, Settings } from 'lucide-react';
+import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2, List, Settings, X } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
 import CenterManagementTab from './center-management-tab';
 
@@ -88,6 +88,21 @@ function CenterInfoManagement() {
     email: '',
     description: ''
   });
+
+  // 관리하는 센터 목록 로드
+  useEffect(() => {
+    if (user && isCenterAdmin && user.centerAdminInfo?.managedCenters) {
+      const centers = user.centerAdminInfo.managedCenters;
+      const centersList = centers.map((c: any) => ({
+        _id: c.toString ? c.toString() : c._id?.toString() || c,
+        name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
+      }));
+      setManagedCenters(centersList);
+      if (centersList.length > 0) {
+        setSelectedCenterId(centersList[0]._id);
+      }
+    }
+  }, [user, isCenterAdmin]);
 
   useEffect(() => {
     // 센터 관리자만 센터 정보 로드 (최고 관리자는 센터 관리 탭만 사용)
@@ -198,7 +213,7 @@ function CenterInfoManagement() {
       )}
 
       {/* 센터 정보 관리 탭 (센터 관리자만) */}
-      {(isCenterAdmin && activeTab === 'info') && (
+      {isCenterAdmin && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 센터 기본 정보 */}
         <div className="bg-white rounded-lg shadow p-6">

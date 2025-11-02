@@ -119,7 +119,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     const user = (req as any).user;
 
     // 권한 확인: superAdmin 또는 centerAdmin만 허용
-    if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin') {
+    if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin' && user.userType !== 'center-admin') {
       return res.status(403).json({
         success: false,
         message: '지리적 분포 조회 권한이 없습니다.',
@@ -133,7 +133,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     const filter: any = {};
 
     // centerAdmin은 자신의 센터(들)만 조회 가능
-    if (user.userType === 'centerAdmin') {
+    if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
       // 여러 센터를 관리하는 경우 처리
       const managedCenters = user.centerAdminInfo?.managedCenters || [];
       
