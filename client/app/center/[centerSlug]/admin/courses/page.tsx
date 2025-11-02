@@ -32,7 +32,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Calendar, List } from 'lucide-react';
+import { Plus, Calendar, List, BookOpen, CreditCard } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
 import CourseFilterButtons from '@/components/center-admin/CourseFilterButtons';
@@ -43,6 +43,7 @@ import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
+import BookingManagementContent from '../../../center-admin/courses/booking-management-content';
 
 // Course 타입 정의 (서버 모델과 일치)
 type Course = {
@@ -118,6 +119,7 @@ function CoursesManagement() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [schedules, setSchedules] = useState<any[]>([]); // 확정된 스케줄 데이터
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar'); // 캘린더/리스트 뷰 토글
+  const [activeTab, setActiveTab] = useState<'courses' | 'bookings'>('courses'); // 탭 상태
   const [instructors, setInstructors] = useState<{ _id: string; name: string; userId?: string }[]>([]);
   const [customLevels, setCustomLevels] = useState([
     { id: 'level1', name: '입문', description: '수영을 처음 시작하는 단계', order: 1 },
@@ -935,11 +937,49 @@ function CoursesManagement() {
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🏊‍♂️ 강습 과정 관리
+          📚 센터 강의 관리
         </h1>
-        <p className="text-gray-600">센터의 강습 과정을 관리하고 모니터링하세요</p>
+        <p className="text-gray-600">센터의 강의와 예약·결제를 한 곳에서 관리하세요</p>
       </div>
 
+      {/* 탭 네비게이션 */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('courses')}
+              className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'courses'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              강의 관리
+            </button>
+            <button
+              onClick={() => setActiveTab('bookings')}
+              className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                activeTab === 'bookings'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              예약·결제 관리
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* 예약·결제 관리 탭 */}
+      {activeTab === 'bookings' && (
+        <BookingManagementContent />
+      )}
+
+      {/* 강의 관리 탭 */}
+      {activeTab === 'courses' && (
+        <>
       {/* 통계 카드 */}
           <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-6 mb-8">
         <StatCard
@@ -1127,6 +1167,8 @@ function CoursesManagement() {
             setShowStudentManagement(true);
           }}
         />
+      )}
+        </>
       )}
     </div>
   );
