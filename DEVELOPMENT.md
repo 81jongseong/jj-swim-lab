@@ -529,6 +529,26 @@
 
 ## 🐛 브랜딩 설정 미리보기 및 API 엔드포인트 오류 (2025-01-31)
 
+### ❌ 센터 조회 404 오류 (해결됨)
+**문제**: 센터 관리자가 `managedCenters`에 있는 센터를 조회할 때 404 오류 발생
+- `GET /api/center-management/:id`에서 센터를 찾을 수 없음
+- 센터 이름이 ID로만 표시됨
+
+**원인**: 
+- `managedCenters` 배열의 센터 ID가 `SwimmingCenter` 모델이 아닌 `Center` 모델을 참조할 수 있음
+- API가 `SwimmingCenter`에서만 찾으려 했음
+
+**해결 방법** (2025-01-XX):
+1. `server/src/routes/center-management.ts`의 `GET /:id` 엔드포인트 수정
+   - `SwimmingCenter.findById(id)`로 먼저 찾기
+   - 없으면 `Center.findById(id)`로 찾기
+   - 두 모델 모두에서 찾을 수 없으면 404 반환
+
+**관련 파일**:
+- `server/src/routes/center-management.ts` (line 278-291)
+- `client/app/center-admin/geo-distribution/page.tsx` (line 101)
+- `client/app/admin/center-info/page.tsx` (line 116)
+
 ### ❌ API 엔드포인트 404 오류
 **상태: ✅ 해결 완료**
 
