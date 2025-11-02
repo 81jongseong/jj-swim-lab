@@ -1304,3 +1304,45 @@
 - 브랜딩 페이지: `TenantSettingsContext`와 연동하여 현재 설정 로드 및 저장
 - FormData 처리: 로고/메인 이미지 업로드는 직접 fetch 사용 (Content-Type 자동 설정)
 - CSS 변수 실시간 적용: 미리보기 모드에서 `--tenant-primary-color`, `--tenant-secondary-color` 즉시 반영
+
+---
+
+## ❌ Deck.gl WebGL 초기화 오류 (센터 관리자 회원 분포도)
+
+**현상:**
+- `Cannot read properties of undefined (reading 'attributes')` 오류
+- `Cannot read properties of undefined (reading 'shaderInputs')` 오류
+- `Vertex shader is not compiled` 오류
+
+**발생 위치:**
+- `client/app/center-admin/geo-distribution/page.tsx`
+- ScatterplotLayer 초기화 시점
+
+**원인 분석:**
+1. Deck.gl이 WebGL 모델을 생성할 때 필요한 리소스가 준비되지 않음
+2. MapboxOverlay와 WebGL 컨텍스트 초기화 타이밍 문제
+3. 관리자 페이지와는 달리 지도 로드 후 즉시 레이어를 생성하려고 시도
+
+**시도한 해결 방법:**
+1. ✅ 데이터 타입 검증 강화 (`Number()` 변환 및 `isNaN` 체크)
+2. ✅ WebGL 컨텍스트 준비 확인 (`mapLoaded`, `librariesLoaded`, `ScatterplotLayer` 체크)
+3. ✅ 에러 처리 강화 (`try-catch` 블록 추가)
+4. ✅ 지도 로드 후 추가 지연 시간 부여 (총 600ms)
+5. ✅ `useCallback`으로 레이어 생성 로직 분리
+6. ✅ 관리자 페이지와 동일한 구조로 리팩토링
+
+**현재 상태:**
+- 여전히 WebGL 초기화 오류 발생
+- 데이터는 정상적으로 수신되고 있음 (8개 스팟 확인)
+- 샘플 데이터: `{geohash: 'h3_8_3765_12692', lat: 37.655, lng: 126.925, totalApprox: 2, dominantCenter: '기타'}`
+
+**추가 조사 필요:**
+- Deck.gl 버전과 MapLibre GL 버전 호환성 확인
+- 브라우저의 WebGL 지원 상태 확인
+- 관리자 페이지가 작동하는 이유와 차이점 분석
+- MapboxOverlay 초기화 옵션 차이 확인
+
+**참고:**
+- 관리자 페이지 (`client/app/admin/geo-distribution/page.tsx`)는 정상 작동
+- 동일한 라이브러리와 유사한 구조 사용
+- 차이점: 관리자 페이지는 지역 선택 후 데이터 로드, center-admin은 자동 로드
