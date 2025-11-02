@@ -207,6 +207,16 @@ function CenterInfoManagementPage() {
     weekdaysClose: '22:00',
     weekendsOpen: '08:00',
     weekendsClose: '20:00',
+    personalLessonSettings: {
+      enabled: true,
+      dayTimeSlots: [] as DayTimeSlot[],
+      cancellationPolicy: '24시간 전 취소 가능'
+    },
+    freeSwimSettings: {
+      enabled: true,
+      dayTimeSlots: [] as DayTimeSlot[],
+      cancellationPolicy: ''
+    },
     capacity: 50,
     parkingAvailable: false,
     parkingSpaces: 0
@@ -2550,6 +2560,16 @@ function CenterInfoManagementPage() {
                       weekdaysClose: '22:00',
                       weekendsOpen: '08:00',
                       weekendsClose: '20:00',
+                      personalLessonSettings: {
+                        enabled: true,
+                        dayTimeSlots: [],
+                        cancellationPolicy: '24시간 전 취소 가능'
+                      },
+                      freeSwimSettings: {
+                        enabled: true,
+                        dayTimeSlots: [],
+                        cancellationPolicy: ''
+                      },
                       capacity: 50,
                       parkingAvailable: false,
                       parkingSpaces: 0
@@ -2938,53 +2958,320 @@ function CenterInfoManagementPage() {
               {newCenterFormTab === 'operating' && (
                 <div className="space-y-6">
                   <h4 className="text-lg font-semibold">운영시간</h4>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <h5 className="font-medium mb-3">평일 운영시간</h5>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
-                          <input
-                            type="time"
-                            value={newCenterForm.weekdaysOpen}
-                            onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysOpen: e.target.value })}
-                            className="w-full border rounded px-3 py-2"
-                          />
+                  
+                  {/* 일반 운영시간 */}
+                  <div className="border rounded p-4">
+                    <h5 className="font-medium mb-4">일반 운영시간</h5>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <h6 className="text-sm font-medium mb-3 text-gray-700">평일 운영시간</h6>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
+                            <input
+                              type="time"
+                              value={newCenterForm.weekdaysOpen}
+                              onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysOpen: e.target.value })}
+                              className="w-full border rounded px-3 py-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
+                            <input
+                              type="time"
+                              value={newCenterForm.weekdaysClose}
+                              onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysClose: e.target.value })}
+                              className="w-full border rounded px-3 py-2"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
-                          <input
-                            type="time"
-                            value={newCenterForm.weekdaysClose}
-                            onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysClose: e.target.value })}
-                            className="w-full border rounded px-3 py-2"
-                          />
+                      </div>
+                      <div>
+                        <h6 className="text-sm font-medium mb-3 text-gray-700">주말 운영시간</h6>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
+                            <input
+                              type="time"
+                              value={newCenterForm.weekendsOpen}
+                              onChange={e => setNewCenterForm({ ...newCenterForm, weekendsOpen: e.target.value })}
+                              className="w-full border rounded px-3 py-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
+                            <input
+                              type="time"
+                              value={newCenterForm.weekendsClose}
+                              onChange={e => setNewCenterForm({ ...newCenterForm, weekendsClose: e.target.value })}
+                              className="w-full border rounded px-3 py-2"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div>
-                      <h5 className="font-medium mb-3">주말 운영시간</h5>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
-                          <input
-                            type="time"
-                            value={newCenterForm.weekendsOpen}
-                            onChange={e => setNewCenterForm({ ...newCenterForm, weekendsOpen: e.target.value })}
-                            className="w-full border rounded px-3 py-2"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
-                          <input
-                            type="time"
-                            value={newCenterForm.weekendsClose}
-                            onChange={e => setNewCenterForm({ ...newCenterForm, weekendsClose: e.target.value })}
-                            className="w-full border rounded px-3 py-2"
-                          />
-                        </div>
+                  </div>
+
+                  {/* 개인레슨 운영시간 */}
+                  <div className="border rounded p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h5 className="font-medium">개인레슨 운영시간</h5>
+                        <p className="text-sm text-gray-500">요일별로 개인레슨 가능 시간을 설정하세요</p>
                       </div>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newCenterForm.personalLessonSettings.enabled}
+                          onChange={e => {
+                            setNewCenterForm({
+                              ...newCenterForm,
+                              personalLessonSettings: {
+                                ...newCenterForm.personalLessonSettings,
+                                enabled: e.target.checked
+                              }
+                            });
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">활성화</span>
+                      </label>
                     </div>
+                    {newCenterForm.personalLessonSettings.enabled && (
+                      <div className="space-y-4">
+                        {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day, dayIndex) => {
+                          const dayLabels: Record<string, string> = {
+                            monday: '월요일',
+                            tuesday: '화요일',
+                            wednesday: '수요일',
+                            thursday: '목요일',
+                            friday: '금요일',
+                            saturday: '토요일',
+                            sunday: '일요일'
+                          };
+                          const daySlot = newCenterForm.personalLessonSettings.dayTimeSlots.find(s => s.day === day);
+                          const timeSlots = daySlot?.timeSlots || [];
+
+                          return (
+                            <div key={day} className="border rounded p-3 bg-gray-50">
+                              <h6 className="font-medium mb-2">{dayLabels[day]}</h6>
+                              {timeSlots.length > 0 ? (
+                                <div className="space-y-2">
+                                  {timeSlots.map((slot, slotIndex) => (
+                                    <div key={slotIndex} className="flex items-center gap-2 bg-white p-2 rounded">
+                                      <span className="text-sm">{slot.startTime} ~ {slot.endTime}</span>
+                                      <Button
+                                        onClick={() => {
+                                          const updatedSlots = [...newCenterForm.personalLessonSettings.dayTimeSlots];
+                                          const dayIndex = updatedSlots.findIndex(s => s.day === day);
+                                          if (dayIndex >= 0) {
+                                            updatedSlots[dayIndex].timeSlots = updatedSlots[dayIndex].timeSlots.filter((_, i) => i !== slotIndex);
+                                            if (updatedSlots[dayIndex].timeSlots.length === 0) {
+                                              updatedSlots.splice(dayIndex, 1);
+                                            }
+                                          }
+                                          setNewCenterForm({
+                                            ...newCenterForm,
+                                            personalLessonSettings: {
+                                              ...newCenterForm.personalLessonSettings,
+                                              dayTimeSlots: updatedSlots
+                                            }
+                                          });
+                                        }}
+                                        variant="secondary"
+                                        className="text-red-600 hover:text-red-700 text-xs px-2 py-1"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-400">시간대가 설정되지 않았습니다</p>
+                              )}
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  type="time"
+                                  className="border rounded px-2 py-1 text-sm"
+                                  defaultValue="09:00"
+                                  id={`personal-${day}-start`}
+                                />
+                                <span className="self-center">~</span>
+                                <input
+                                  type="time"
+                                  className="border rounded px-2 py-1 text-sm"
+                                  defaultValue="18:00"
+                                  id={`personal-${day}-end`}
+                                />
+                                <Button
+                                  onClick={() => {
+                                    const startInput = document.getElementById(`personal-${day}-start`) as HTMLInputElement;
+                                    const endInput = document.getElementById(`personal-${day}-end`) as HTMLInputElement;
+                                    const startTime = startInput?.value || '09:00';
+                                    const endTime = endInput?.value || '18:00';
+                                    
+                                    const updatedSlots = [...newCenterForm.personalLessonSettings.dayTimeSlots];
+                                    const existingDayIndex = updatedSlots.findIndex(s => s.day === day);
+                                    
+                                    if (existingDayIndex >= 0) {
+                                      updatedSlots[existingDayIndex].timeSlots.push({ startTime, endTime });
+                                    } else {
+                                      updatedSlots.push({
+                                        day,
+                                        timeSlots: [{ startTime, endTime }]
+                                      });
+                                    }
+                                    
+                                    setNewCenterForm({
+                                      ...newCenterForm,
+                                      personalLessonSettings: {
+                                        ...newCenterForm.personalLessonSettings,
+                                        dayTimeSlots: updatedSlots
+                                      }
+                                    });
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  추가
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 자유수영 운영시간 */}
+                  <div className="border rounded p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h5 className="font-medium">자유수영 운영시간</h5>
+                        <p className="text-sm text-gray-500">요일별로 자유수영 가능 시간을 설정하세요</p>
+                      </div>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={newCenterForm.freeSwimSettings.enabled}
+                          onChange={e => {
+                            setNewCenterForm({
+                              ...newCenterForm,
+                              freeSwimSettings: {
+                                ...newCenterForm.freeSwimSettings,
+                                enabled: e.target.checked
+                              }
+                            });
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">활성화</span>
+                      </label>
+                    </div>
+                    {newCenterForm.freeSwimSettings.enabled && (
+                      <div className="space-y-4">
+                        {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                          const dayLabels: Record<string, string> = {
+                            monday: '월요일',
+                            tuesday: '화요일',
+                            wednesday: '수요일',
+                            thursday: '목요일',
+                            friday: '금요일',
+                            saturday: '토요일',
+                            sunday: '일요일'
+                          };
+                          const daySlot = newCenterForm.freeSwimSettings.dayTimeSlots.find(s => s.day === day);
+                          const timeSlots = daySlot?.timeSlots || [];
+
+                          return (
+                            <div key={day} className="border rounded p-3 bg-gray-50">
+                              <h6 className="font-medium mb-2">{dayLabels[day]}</h6>
+                              {timeSlots.length > 0 ? (
+                                <div className="space-y-2">
+                                  {timeSlots.map((slot, slotIndex) => (
+                                    <div key={slotIndex} className="flex items-center gap-2 bg-white p-2 rounded">
+                                      <span className="text-sm">{slot.startTime} ~ {slot.endTime}</span>
+                                      <Button
+                                        onClick={() => {
+                                          const updatedSlots = [...newCenterForm.freeSwimSettings.dayTimeSlots];
+                                          const dayIndex = updatedSlots.findIndex(s => s.day === day);
+                                          if (dayIndex >= 0) {
+                                            updatedSlots[dayIndex].timeSlots = updatedSlots[dayIndex].timeSlots.filter((_, i) => i !== slotIndex);
+                                            if (updatedSlots[dayIndex].timeSlots.length === 0) {
+                                              updatedSlots.splice(dayIndex, 1);
+                                            }
+                                          }
+                                          setNewCenterForm({
+                                            ...newCenterForm,
+                                            freeSwimSettings: {
+                                              ...newCenterForm.freeSwimSettings,
+                                              dayTimeSlots: updatedSlots
+                                            }
+                                          });
+                                        }}
+                                        variant="secondary"
+                                        className="text-red-600 hover:text-red-700 text-xs px-2 py-1"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-400">시간대가 설정되지 않았습니다</p>
+                              )}
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  type="time"
+                                  className="border rounded px-2 py-1 text-sm"
+                                  defaultValue="09:00"
+                                  id={`freeswim-${day}-start`}
+                                />
+                                <span className="self-center">~</span>
+                                <input
+                                  type="time"
+                                  className="border rounded px-2 py-1 text-sm"
+                                  defaultValue="18:00"
+                                  id={`freeswim-${day}-end`}
+                                />
+                                <Button
+                                  onClick={() => {
+                                    const startInput = document.getElementById(`freeswim-${day}-start`) as HTMLInputElement;
+                                    const endInput = document.getElementById(`freeswim-${day}-end`) as HTMLInputElement;
+                                    const startTime = startInput?.value || '09:00';
+                                    const endTime = endInput?.value || '18:00';
+                                    
+                                    const updatedSlots = [...newCenterForm.freeSwimSettings.dayTimeSlots];
+                                    const existingDayIndex = updatedSlots.findIndex(s => s.day === day);
+                                    
+                                    if (existingDayIndex >= 0) {
+                                      updatedSlots[existingDayIndex].timeSlots.push({ startTime, endTime });
+                                    } else {
+                                      updatedSlots.push({
+                                        day,
+                                        timeSlots: [{ startTime, endTime }]
+                                      });
+                                    }
+                                    
+                                    setNewCenterForm({
+                                      ...newCenterForm,
+                                      freeSwimSettings: {
+                                        ...newCenterForm.freeSwimSettings,
+                                        dayTimeSlots: updatedSlots
+                                      }
+                                    });
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  추가
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -3081,6 +3368,16 @@ function CenterInfoManagementPage() {
                       weekdaysClose: '22:00',
                       weekendsOpen: '08:00',
                       weekendsClose: '20:00',
+                      personalLessonSettings: {
+                        enabled: true,
+                        dayTimeSlots: [],
+                        cancellationPolicy: '24시간 전 취소 가능'
+                      },
+                      freeSwimSettings: {
+                        enabled: true,
+                        dayTimeSlots: [],
+                        cancellationPolicy: ''
+                      },
                       capacity: 50,
                       parkingAvailable: false,
                       parkingSpaces: 0
@@ -3140,6 +3437,16 @@ function CenterInfoManagementPage() {
                                 open: newCenterForm.weekendsOpen,
                                 close: newCenterForm.weekendsClose
                               }
+                            },
+                            personalLesson: {
+                              enabled: newCenterForm.personalLessonSettings.enabled,
+                              dayTimeSlots: newCenterForm.personalLessonSettings.dayTimeSlots,
+                              cancellationPolicy: newCenterForm.personalLessonSettings.cancellationPolicy
+                            },
+                            freeSwim: {
+                              enabled: newCenterForm.freeSwimSettings.enabled,
+                              dayTimeSlots: newCenterForm.freeSwimSettings.dayTimeSlots,
+                              cancellationPolicy: newCenterForm.freeSwimSettings.cancellationPolicy
                             },
                             capacity: newCenterForm.capacity,
                             parkingAvailable: newCenterForm.parkingAvailable,
