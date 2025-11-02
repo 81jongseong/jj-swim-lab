@@ -389,11 +389,11 @@ router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
       });
     }
 
-    // 센터 관리자는 자신의 센터만 수정 가능
-    if ((user.userType === 'centerAdmin' || user.userType === 'center-admin') && user.centerId !== id) {
+    // 센터 관리자는 자신의 센터만 수정 가능 (managedCenters 포함)
+    if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
       const centerAdminUser = await User.findById(user._id);
       const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
-      const hasAccess = managedCenters.some((c: any) => {
+      const hasAccess = user.centerId === id || managedCenters.some((c: any) => {
         const cId = c.toString ? c.toString() : c._id?.toString() || c;
         return cId === id;
       });
