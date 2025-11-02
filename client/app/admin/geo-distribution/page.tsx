@@ -815,10 +815,10 @@ export default function GeoDistributionPage() {
   // 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
   useEffect(() => {
     if (librariesLoaded) {
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType });
       fetchSpotsData();
     }
-  }, [librariesLoaded, memberType, selectedCenterId]);
+  }, [librariesLoaded, memberType]);
 
   // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
   useEffect(() => {
@@ -1145,27 +1145,6 @@ export default function GeoDistributionPage() {
               </div>
             </div>
 
-            {/* 센터 선택 필터 (centerAdmin인 경우 항상 표시) */}
-            {user?.userType === 'centerAdmin' && managedCenters.length > 0 && (
-              <label className="text-sm flex items-center gap-2">
-                센터:
-                <select 
-                  className="border rounded px-3 py-1 min-w-[150px]" 
-                  value={selectedCenterId || 'all'} 
-                  onChange={e => {
-                    const value = e.target.value;
-                    setSelectedCenterId(value === 'all' ? null : value);
-                  }}
-                >
-                  <option value="all">📊 전체 통계</option>
-                  {managedCenters.map((center) => (
-                    <option key={center._id} value={center._id}>
-                      {center.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
 
             {/* 유형 필터 */}
             <label className="text-sm flex items-center gap-2">
