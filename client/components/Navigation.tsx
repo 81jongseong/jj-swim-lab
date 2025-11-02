@@ -240,7 +240,7 @@ const userMenuStructure = {
       { href: '/admin/system', label: '📈 시스템 사용 통계' },
     ],
     business: [
-      { href: '/admin/center-management', label: '🏢 센터 관리' },
+      { href: '/admin/center-info', label: '🏢 센터 관리', description: '센터 정보 및 관리 통합' },
       { href: '/admin/center-statistics', label: '📊 센터 통계' },
       { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
       { href: '/admin/users', label: '👥 회원 관리' },

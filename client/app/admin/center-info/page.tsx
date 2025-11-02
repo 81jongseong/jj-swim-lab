@@ -1,9 +1,18 @@
+/**
+ * 🏢 JJ Swim Lab - 센터 정보 관리 페이지 (최고 관리자용)
+ * 
+ * @description 센터 정보 관리와 센터 관리를 통합한 페이지
+ * @연동되는 데이터: 센터 기본 정보, 센터 목록, 센터 통계
+ * @연동되는 파일: center-management-tab.tsx, hooks/useAuth.ts, components/withAuth.ts
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2 } from 'lucide-react';
+import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2, List, Settings } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
+import CenterManagementTab from './center-management-tab';
 
 interface CenterInfo {
   centerId: string;
@@ -61,6 +70,7 @@ interface CenterInfo {
 
 function CenterInfoManagement() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'info' | 'management'>('info');
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -148,14 +158,47 @@ function CenterInfoManagement() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          🏢 센터 정보 관리
+          🏢 센터 관리
         </h1>
         <p className="text-sm text-gray-600">
-          센터 소개글과 이용안내를 작성하고 관리하세요
+          센터 정보와 센터 관리를 통합하여 관리하세요
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 탭 네비게이션 */}
+      <div className="mb-6 border-b border-gray-200">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === 'info'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Settings className="w-4 h-4 inline mr-2" />
+            센터 정보 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('management')}
+            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === 'management'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <List className="w-4 h-4 inline mr-2" />
+            센터 관리
+          </button>
+        </div>
+      </div>
+
+      {/* 센터 관리 탭 */}
+      {activeTab === 'management' && <CenterManagementTab />}
+
+      {/* 센터 정보 관리 탭 */}
+      {activeTab === 'info' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 센터 기본 정보 */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
@@ -230,6 +273,8 @@ function CenterInfoManagement() {
           <p className="text-xs text-green-600">
             마지막 업데이트: {centerInfo.updatedAt.toLocaleString()}
           </p>
+        </div>
+      )}
         </div>
       )}
     </div>
