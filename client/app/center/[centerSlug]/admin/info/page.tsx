@@ -181,6 +181,16 @@ function CenterInfoManagementPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
+  // 센터 추가 모달 상태
+  const [showAddCenterModal, setShowAddCenterModal] = useState(false);
+  const [newCenterForm, setNewCenterForm] = useState({
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    description: ''
+  });
+  
   // 센터 정보
   const [centerName, setCenterName] = useState('');
   const [address, setAddress] = useState('');
@@ -753,6 +763,14 @@ function CenterInfoManagementPage() {
           </div>
           <div className="flex-shrink-0 self-start sm:self-center">
             <div className="flex flex-wrap gap-2">
+            {/* 센터 추가 버튼 - 항상 표시 */}
+            <Button
+              onClick={() => setShowAddCenterModal(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              센터 추가
+            </Button>
             {!isEditing ? (
               <Button
                 onClick={() => setIsEditing(true)}
