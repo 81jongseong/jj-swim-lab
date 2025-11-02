@@ -195,21 +195,12 @@ export default function CenterAdminGeoDistributionPage() {
 
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
-      
-      // 지도가 완전히 렌더링되고 WebGL 컨텍스트가 준비될 때까지 대기
-      // 'idle' 이벤트는 지도가 완전히 렌더링된 후 발생
-      map.once('idle', () => {
-        console.log('✅ 지도 idle 상태 - WebGL 컨텍스트 준비 완료');
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setMapLoaded(true);
-            // 추가 지연으로 Deck.gl이 완전히 초기화되도록 함
-            setTimeout(() => {
-              fetchSpotsData();
-            }, 800);
-          });
-        });
-      });
+      setMapLoaded(true);
+      // 관리자 페이지와 동일하게 간단하게 처리
+      // MapboxOverlay가 지도에 추가되면 자동으로 초기화됨
+      setTimeout(() => {
+        fetchSpotsData();
+      }, 300);
     });
 
     return () => {
