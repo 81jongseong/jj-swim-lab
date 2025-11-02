@@ -368,7 +368,16 @@ export default function CenterAdminGeoDistributionPage() {
 
       console.log(`🗺️ Deck.gl 레이어 생성: ${layerData.length}개 데이터 포인트`);
 
-      // Deck.gl 레이어 안전하게 생성
+      // 반경 계산 함수 (관리자 페이지와 동일한 방식)
+      const scaleRadius = (count: number): number => {
+        if (!count || count <= 0) return 50;
+        // 기본 블록 크기 153m 기준으로 스케일링
+        const baseRadius = 50; // 미터 단위
+        const scaled = baseRadius + Math.sqrt(count) * 10;
+        return Math.min(scaled, 200); // 최대 200m
+      };
+
+      // Deck.gl 레이어 안전하게 생성 (관리자 페이지와 동일한 방식)
       const layer = new ScatterplotLayer({
         id: 'spots-layer',
         data: layerData,
@@ -376,40 +385,41 @@ export default function CenterAdminGeoDistributionPage() {
         opacity: 0.8,
         stroked: true,
         filled: true,
-        radiusScale: 1,
-        radiusMinPixels: 5,
-        radiusMaxPixels: 50,
         lineWidthMinPixels: 1,
+        radiusUnits: 'meters', // 미터 단위 사용
         getPosition: (d: any) => {
-          const pos = d.position || [d.lng, d.lat];
-          // 좌표 유효성 검사
-          if (!Array.isArray(pos) || pos.length !== 2 || isNaN(pos[0]) || isNaN(pos[1])) {
-            console.warn('⚠️ 잘못된 position:', d);
-            return [126.9780, 37.5665]; // 기본값: 서울 중심부
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+            return [126.9780, 37.5665]; // 서울 중심부 (기본값)
           }
-          return pos;
+          return [d.lng, d.lat];
         },
         getRadius: (d: any) => {
-          const radius = Number(d.radius) || 10;
-          return Math.max(5, Math.min(50, radius));
+          if (!d || typeof d.totalApprox !== 'number') {
+            console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+            return 50; // 기본 크기 (미터)
+          }
+          return scaleRadius(d.totalApprox);
         },
         getFillColor: (d: any) => {
-          const color = d.fillColor || [153, 102, 255, 200];
-          if (!Array.isArray(color) || color.length < 4) {
+          if (!d || !d.dominantCenter) {
+            console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
             return [153, 102, 255, 200]; // 기본 색상
           }
-          return color;
+          const colors: Record<string, [number, number, number, number]> = {
+            'JJ Swim Lab': [255, 99, 132, 200],
+            '강남센터': [255, 99, 132, 200],
+            '홍대센터': [54, 162, 235, 200],
+            '송파센터': [255, 205, 86, 200],
+            '마포센터': [75, 192, 192, 200],
+          };
+          return colors[d.dominantCenter] || [153, 102, 255, 200];
         },
         getLineColor: [255, 255, 255, 200],
         onHover: (info: any) => {
           if (info && info.object) {
             setHoveredSpot(info.object);
           }
-        },
-        updateTriggers: {
-          getPosition: layerData.map(d => `${d.lat},${d.lng}`).join('|'),
-          getRadius: layerData.map(d => d.totalApprox).join('|'),
-          getFillColor: layerData.map(d => d.dominantCenter || '').join('|')
         }
       });
 
