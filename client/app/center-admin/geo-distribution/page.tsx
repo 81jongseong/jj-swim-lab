@@ -219,19 +219,28 @@ export default function CenterAdminGeoDistributionPage() {
         params.append('centerId', selectedCenterId);
       }
 
-      console.log('🔍 API 요청:', `/api/geo/aggregate?${params.toString()}`);
-      const response = await apiClient.get(`/api/geo/aggregate?${params.toString()}`);
+      const apiUrl = `/api/geo/aggregate?${params.toString()}`;
+      console.log('🔍 API 요청:', apiUrl);
+      const response = await apiClient.get(apiUrl);
       
       console.log('🗺️ 지도 데이터 응답:', {
         success: response.success,
-        dataExists: !!response.data,
+        hasData: !!response.data,
+        hasCells: !!response.data?.cells,
         cellsCount: response.data?.cells?.length || 0,
-        metadata: response.data?.metadata
+        metadata: response.data?.metadata,
+        fullResponse: response
       });
       
       if (response.success && response.data) {
         const cells = response.data.cells || [];
         console.log(`📍 수신된 셀 데이터: ${cells.length}개`);
+        
+        if (cells.length === 0) {
+          console.warn('⚠️ 셀 데이터가 비어있습니다. 서버 로그를 확인하세요:');
+          console.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}`);
+          console.warn(`  - metadata:`, response.data.metadata);
+        }
         
         const spotsData: Spot[] = cells
           .filter((cell: any) => {

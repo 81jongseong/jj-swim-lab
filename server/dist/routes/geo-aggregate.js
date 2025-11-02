@@ -80,25 +80,37 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         const { centerId, from, to, memberType } = req.query;
         const filter = {};
         if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
-            const managedCenters = user.centerAdminInfo?.managedCenters || [];
+            const centerAdminUser = await User_1.User.findById(user._id || user.id).select('centerAdminInfo centerId').lean();
+            const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+            console.log('🔍 센터 관리자 정보:', {
+                userId: user._id || user.id,
+                hasCenterId: !!centerAdminUser?.centerId,
+                managedCentersCount: managedCenters.length,
+                centerId: centerId || '없음'
+            });
             if (managedCenters.length > 0) {
-                if (centerId && managedCenters.some((c) => {
-                    const cId = c.toString ? c.toString() : c._id?.toString() || c;
-                    return cId === centerId;
-                })) {
+                const centerIds = managedCenters.map((c) => {
+                    return c.toString ? c.toString() : c._id?.toString() || c;
+                });
+                console.log(`  📍 관리하는 센터 ID 목록:`, centerIds);
+                if (centerId && centerIds.some((cId) => cId === centerId)) {
                     filter.centerId = centerId;
+                    console.log(`  ✅ 특정 센터 필터링: ${centerId}`);
                 }
-                else if (centerId === null || centerId === undefined || centerId === '') {
-                    const centerIds = managedCenters.map((c) => {
-                        return c.toString ? c.toString() : c._id?.toString() || c;
-                    });
-                    if (centerIds.length > 0) {
-                        filter.centerId = { $in: centerIds };
-                    }
+                else if (!centerId || centerId === 'all' || centerId === '') {
+                    filter.centerId = { $in: centerIds };
+                    console.log(`  ✅ 전체 센터 필터링: ${centerIds.length}개 센터`);
+                }
+                else {
+                    console.warn(`  ⚠️ 요청한 센터 ID(${centerId})가 관리하는 센터 목록에 없음`);
                 }
             }
-            else if (user.centerId) {
-                filter.centerId = user.centerId;
+            else if (centerAdminUser?.centerId) {
+                filter.centerId = centerAdminUser.centerId;
+                console.log(`  ✅ 기존 centerId 사용: ${centerAdminUser.centerId}`);
+            }
+            else {
+                console.warn('  ⚠️ 관리하는 센터가 없음');
             }
         }
         else if (centerId && user.userType === 'superAdmin') {

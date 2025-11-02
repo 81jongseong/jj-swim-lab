@@ -139,29 +139,41 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
 
     // centerAdmin은 자신의 센터(들)만 조회 가능
     if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
-      // 여러 센터를 관리하는 경우 처리
-      const managedCenters = user.centerAdminInfo?.managedCenters || [];
+      // DB에서 최신 사용자 정보 조회 (managedCenters를 포함하기 위해)
+      const centerAdminUser = await User.findById(user._id || user.id).select('centerAdminInfo centerId').lean();
+      const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+      
+      console.log('🔍 센터 관리자 정보:', {
+        userId: user._id || user.id,
+        hasCenterId: !!centerAdminUser?.centerId,
+        managedCentersCount: managedCenters.length,
+        centerId: centerId || '없음'
+      });
       
       if (managedCenters.length > 0) {
+        const centerIds = managedCenters.map((c: any) => {
+          return c.toString ? c.toString() : c._id?.toString() || c;
+        });
+        console.log(`  📍 관리하는 센터 ID 목록:`, centerIds);
+        
         // 쿼리 파라미터로 특정 센터를 지정한 경우
-        if (centerId && managedCenters.some((c: any) => {
-          const cId = c.toString ? c.toString() : c._id?.toString() || c;
-          return cId === centerId;
-        })) {
+        if (centerId && centerIds.some((cId: string) => cId === centerId)) {
           // 특정 센터만 조회
           filter.centerId = centerId;
-        } else if (centerId === null || centerId === undefined || centerId === '') {
+          console.log(`  ✅ 특정 센터 필터링: ${centerId}`);
+        } else if (!centerId || centerId === 'all' || centerId === '') {
           // centerId가 없으면 관리하는 모든 센터 포함 (전체 통계)
-          const centerIds = managedCenters.map((c: any) => {
-            return c.toString ? c.toString() : c._id?.toString() || c;
-          });
-          if (centerIds.length > 0) {
-            filter.centerId = { $in: centerIds };
-          }
+          filter.centerId = { $in: centerIds };
+          console.log(`  ✅ 전체 센터 필터링: ${centerIds.length}개 센터`);
+        } else {
+          console.warn(`  ⚠️ 요청한 센터 ID(${centerId})가 관리하는 센터 목록에 없음`);
         }
-      } else if (user.centerId) {
+      } else if (centerAdminUser?.centerId) {
         // managedCenters가 없으면 기존 centerId 사용 (하위 호환성)
-        filter.centerId = user.centerId;
+        filter.centerId = centerAdminUser.centerId;
+        console.log(`  ✅ 기존 centerId 사용: ${centerAdminUser.centerId}`);
+      } else {
+        console.warn('  ⚠️ 관리하는 센터가 없음');
       }
     } else if (centerId && user.userType === 'superAdmin') {
       // superAdmin은 모든 센터 접근 가능, centerId가 있으면 필터링
