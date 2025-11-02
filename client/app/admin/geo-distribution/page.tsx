@@ -612,19 +612,15 @@ export default function GeoDistributionPage() {
       if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters) {
         const centers = user.centerAdminInfo.managedCenters;
         // ObjectId 배열이면 이름을 가져와야 하지만, 일단 ID만 저장
-        setManagedCenters(centers.map((c: any) => ({
+        // TODO: 실제 센터 이름을 API에서 가져오기
+        const centersList = centers.map((c: any) => ({
           _id: c.toString ? c.toString() : c._id?.toString() || c,
           name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
-        })));
+        }));
+        setManagedCenters(centersList);
         
-        // 센터가 하나면 자동 선택
-        if (centers.length === 1) {
-          const centerId = centers[0].toString ? centers[0].toString() : centers[0]._id?.toString() || centers[0];
-          setSelectedCenterId(centerId);
-        } else if (centers.length > 1) {
-          // 여러 센터가 있으면 "모든 센터" 옵션 (null)
-          setSelectedCenterId(null);
-        }
+        // 초기값: "전체" (null) - 항상 전체 통계를 먼저 보여줌
+        setSelectedCenterId(null);
       }
     }
   }, [user, loading, router]);
@@ -1173,19 +1169,19 @@ export default function GeoDistributionPage() {
               </div>
             </div>
 
-            {/* 센터 선택 필터 (centerAdmin이고 여러 센터 관리하는 경우) */}
-            {user?.userType === 'centerAdmin' && managedCenters.length > 1 && (
+            {/* 센터 선택 필터 (centerAdmin인 경우 항상 표시) */}
+            {user?.userType === 'centerAdmin' && managedCenters.length > 0 && (
               <label className="text-sm flex items-center gap-2">
                 센터:
                 <select 
-                  className="border rounded px-3 py-1" 
+                  className="border rounded px-3 py-1 min-w-[150px]" 
                   value={selectedCenterId || 'all'} 
                   onChange={e => {
                     const value = e.target.value;
                     setSelectedCenterId(value === 'all' ? null : value);
                   }}
                 >
-                  <option value="all">모든 센터</option>
+                  <option value="all">📊 전체 통계</option>
                   {managedCenters.map((center) => (
                     <option key={center._id} value={center._id}>
                       {center.name}

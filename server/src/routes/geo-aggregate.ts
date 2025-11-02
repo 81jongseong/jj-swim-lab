@@ -139,12 +139,20 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       
       if (managedCenters.length > 0) {
         // 쿼리 파라미터로 특정 센터를 지정한 경우
-        if (centerId && managedCenters.some((c: any) => c.toString() === centerId || c._id?.toString() === centerId)) {
+        if (centerId && managedCenters.some((c: any) => {
+          const cId = c.toString ? c.toString() : c._id?.toString() || c;
+          return cId === centerId;
+        })) {
+          // 특정 센터만 조회
           filter.centerId = centerId;
-        } else {
-          // 관리하는 모든 센터 포함
-          const centerIds = managedCenters.map((c: any) => c.toString ? c.toString() : c._id?.toString() || c);
-          filter.centerId = { $in: centerIds };
+        } else if (centerId === null || centerId === undefined || centerId === '') {
+          // centerId가 없으면 관리하는 모든 센터 포함 (전체 통계)
+          const centerIds = managedCenters.map((c: any) => {
+            return c.toString ? c.toString() : c._id?.toString() || c;
+          });
+          if (centerIds.length > 0) {
+            filter.centerId = { $in: centerIds };
+          }
         }
       } else if (user.centerId) {
         // managedCenters가 없으면 기존 centerId 사용 (하위 호환성)
@@ -152,7 +160,10 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       }
     } else if (centerId && user.userType === 'superAdmin') {
       // superAdmin은 모든 센터 접근 가능, centerId가 있으면 필터링
-      filter.centerId = centerId;
+      // centerId가 없으면 모든 센터 조회 (필터 없음)
+      if (centerId !== 'all' && centerId !== null && centerId !== undefined && centerId !== '') {
+        filter.centerId = centerId;
+      }
     }
 
     // 가입 기간 필터
