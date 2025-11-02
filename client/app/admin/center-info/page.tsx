@@ -73,6 +73,18 @@ function CenterInfoManagement() {
   // 최고 관리자는 센터 관리 페이지로 리다이렉트, 센터 관리자는 센터 정보 관리만
   const isSuperAdmin = user?.userType === 'superAdmin';
   const isCenterAdmin = user?.userType === 'centerAdmin' || user?.userType === 'center-admin';
+  
+  // 디버깅: 센터 관리자 확인
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 [CenterInfo] 사용자 정보:', {
+        userType: user.userType,
+        isCenterAdmin,
+        hasManagedCenters: !!user.centerAdminInfo?.managedCenters,
+        managedCentersCount: user.centerAdminInfo?.managedCenters?.length || 0
+      });
+    }
+  }, [user, isCenterAdmin]);
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -267,8 +279,8 @@ function CenterInfoManagement() {
             </div>
           )}
 
-          {/* 센터 추가 버튼 - 항상 표시 */}
-          <div className="mb-6 flex justify-between items-center bg-white rounded-lg shadow p-4">
+          {/* 센터 추가 버튼 */}
+          <div className="mb-6 flex justify-between items-center">
             <h2 className="text-xl font-semibold">센터 정보</h2>
             <button
               onClick={() => setShowAddCenterModal(true)}
