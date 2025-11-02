@@ -433,6 +433,124 @@ router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
   }
 });
 
+// 센터 관리자 목록 조회
+router.get('/admins', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const centerAdmins = await User.find({ userType: 'centerAdmin' })
+      .select('name email phone centerAdminInfo')
+      .populate('centerAdminInfo.managedCenters', 'name')
+      .lean();
+
+    const adminsList = centerAdmins.map((admin: any) => ({
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      phone: admin.phone,
+      managedCenters: admin.centerAdminInfo?.managedCenters || [],
+      managedCentersCount: admin.centerAdminInfo?.managedCenters?.length || 0
+    }));
+
+    res.json({
+      success: true,
+      message: '센터 관리자 목록 조회 성공',
+      data: { admins: adminsList }
+    });
+  } catch (error) {
+    console.error('센터 관리자 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 관리자 목록 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+// 센터에 관리자 할당
+router.post('/centers/:centerId/assign-admin', authMiddleware, requireRole(['superAdmin', 'admin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { centerId } = req.params;
+    const { adminId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(centerId)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 센터 ID입니다.'
+      });
+    }
+
+    if (!adminId) {
+      return res.status(400).json({
+        success: false,
+        message: '관리자 ID가 필요합니다.'
+      });
+    }
+
+    // 센터 확인
+    const center = await SwimmingCenter.findById(centerId);
+    if (!center) {
+      return res.status(404).json({
+        success: false,
+        message: '센터를 찾을 수 없습니다.'
+      });
+    }
+
+    // 관리자 확인
+    const admin = await User.findById(adminId);
+    if (!admin || admin.userType !== 'centerAdmin') {
+      return res.status(404).json({
+        success: false,
+        message: '센터 관리자를 찾을 수 없습니다.'
+      });
+    }
+
+    // managedCenters 초기화
+    if (!admin.centerAdminInfo) {
+      admin.centerAdminInfo = {} as any;
+    }
+    if (!admin.centerAdminInfo.managedCenters) {
+      admin.centerAdminInfo.managedCenters = [];
+    }
+
+    // 이미 할당되어 있는지 확인
+    const alreadyAssigned = admin.centerAdminInfo.managedCenters.some(
+      (c: any) => c.toString() === centerId
+    );
+
+    if (alreadyAssigned) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 해당 센터가 할당되어 있습니다.'
+      });
+    }
+
+    // 센터 할당
+    admin.centerAdminInfo.managedCenters.push(new mongoose.Types.ObjectId(centerId));
+    await admin.save();
+
+    res.json({
+      success: true,
+      message: '센터 관리자 할당이 완료되었습니다.',
+      data: {
+        admin: {
+          _id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          managedCenters: admin.centerAdminInfo.managedCenters
+        },
+        center: {
+          _id: center._id,
+          name: center.name
+        }
+      }
+    });
+  } catch (error) {
+    console.error('센터 관리자 할당 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 관리자 할당 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 // 센터 삭제 (비활성화)
 router.delete('/:id', authMiddleware, requireRole(['superAdmin']), async (req: AuthRequest, res: Response) => {
   try {

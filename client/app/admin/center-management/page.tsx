@@ -172,6 +172,11 @@ export default function CenterManagement() {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+  
+  // 관리자 할당 관련 상태
+  const [showAssignAdminModal, setShowAssignAdminModal] = useState(false);
+  const [centerAdmins, setCenterAdmins] = useState<Array<{ _id: string; name: string; email: string; managedCentersCount: number }>>([]);
+  const [selectedAdminId, setSelectedAdminId] = useState<string>('');
 
   // 지역 데이터 (센터 통계 페이지와 동일)
   // 센터 데이터만 정의 (시/도, 시/군/구는 컴포넌트 내장)
@@ -747,8 +752,20 @@ export default function CenterManagement() {
                     </div>
                   </div>
                   
-                  {/* 센터 등급 관리 */}
+                  {/* 센터 관리자 할당 및 등급 관리 */}
                   <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCenter(center);
+                        setShowAssignAdminModal(true);
+                        setSelectedAdminId('');
+                      }}
+                      className="flex-1 px-3 py-2 text-xs font-medium bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition-colors"
+                      title="센터 관리자 할당"
+                    >
+                      👤 관리자 할당
+                    </button>
                     <div className="flex-1">
                       <select
                         onChange={(e) => {
@@ -931,6 +948,75 @@ export default function CenterManagement() {
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 관리자 할당 모달 */}
+      {showAssignAdminModal && selectedCenter && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  센터 관리자 할당
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAssignAdminModal(false);
+                    setSelectedAdminId('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="text-2xl">&times;</span>
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>{selectedCenter.name}</strong> 센터에 관리자를 할당합니다.
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  센터 관리자 선택
+                </label>
+                <select
+                  value={selectedAdminId}
+                  onChange={(e) => setSelectedAdminId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- 관리자 선택 --</option>
+                  {centerAdmins.map((admin) => (
+                    <option key={admin._id} value={admin._id}>
+                      {admin.name} ({admin.email}) - 관리 센터: {admin.managedCentersCount}개
+                    </option>
+                  ))}
+                </select>
+                {centerAdmins.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    등록된 센터 관리자가 없습니다. 새 관리자 계정을 먼저 생성해주세요.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowAssignAdminModal(false);
+                    setSelectedAdminId('');
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleAssignAdmin}
+                  disabled={!selectedAdminId}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  할당하기
                 </button>
               </div>
             </div>

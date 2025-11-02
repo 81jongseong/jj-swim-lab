@@ -119,6 +119,8 @@ export default function ApprovalsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCenter, setSelectedCenter] = useState<CenterRegistration | null>(null);
   const [showCenterModal, setShowCenterModal] = useState(false);
+  const [centerAdmins, setCenterAdmins] = useState<Array<{ _id: string; name: string; email: string; managedCentersCount: number }>>([]);
+  const [assignToExistingAdmin, setAssignToExistingAdmin] = useState<string>('');
 
   const fetchApprovals = async () => {
     try {
@@ -392,7 +394,7 @@ export default function ApprovalsPage() {
     );
   }
 
-  const handleApproval = async (id: string, action: 'approve' | 'reject') => {
+  const handleApproval = async (id: string, action: 'approve' | 'reject', adminId?: string) => {
     try {
       const approval = approvals.find(item => item.id === id);
       
@@ -428,7 +430,8 @@ export default function ApprovalsPage() {
         try {
           const response = action === 'approve' 
             ? await apiClient.post(endpoint, {
-                comments: '센터 등록이 승인되었습니다.'
+                comments: '센터 등록이 승인되었습니다.',
+                assignToExistingAdminId: adminId || assignToExistingAdmin || undefined // 기존 관리자에게 할당 (선택사항)
               })
             : await apiClient.post(endpoint, {
                 rejectionReason: '서류 미비',
@@ -745,7 +748,10 @@ export default function ApprovalsPage() {
                       <>
                         {approval.status !== 'approved' && (
                           <Button
-                            onClick={() => handleApproval(approval.id, 'approve')}
+                            onClick={() => {
+                              const adminId = assignToExistingAdmin || undefined;
+                              handleApproval(approval.id, 'approve', adminId);
+                            }}
                             variant="success"
                             size="sm"
                             fullWidth
@@ -997,6 +1003,32 @@ export default function ApprovalsPage() {
               )}
 
               <div className="mt-6 flex justify-end space-x-3">
+                {/* 기존 관리자에게 할당 옵션 (승인 시) */}
+                {selectedCenter.status !== 'approved' && (
+                  <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      기존 관리자에게 할당 (선택사항)
+                    </label>
+                    <select
+                      value={assignToExistingAdmin}
+                      onChange={(e) => setAssignToExistingAdmin(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="">-- 새 관리자 계정 생성 (기본) --</option>
+                      {centerAdmins.map((admin) => (
+                        <option key={admin._id} value={admin._id}>
+                          {admin.name} ({admin.email}) - 관리 센터: {admin.managedCentersCount}개
+                        </option>
+                      ))}
+                    </select>
+                    {assignToExistingAdmin && (
+                      <p className="text-xs text-blue-600 mt-2">
+                        💡 이 센터는 선택한 기존 관리자에게 추가됩니다.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <Button
                   onClick={() => setShowCenterModal(false)}
                   variant="secondary"
@@ -1008,8 +1040,9 @@ export default function ApprovalsPage() {
                   <>
                     <Button
                       onClick={() => {
-                        handleApproval(selectedCenter._id, 'approve');
+                        handleApproval(selectedCenter._id, 'approve', assignToExistingAdmin || undefined);
                         setShowCenterModal(false);
+                        setAssignToExistingAdmin(''); // 초기화
                       }}
                       variant="success"
                       size="md"
