@@ -275,8 +275,13 @@ router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
       }
     }
 
-    // SwimmingCenter 모델 사용 (실제 센터 데이터)
-    const center = await SwimmingCenter.findById(id).lean();
+    // SwimmingCenter 또는 Center 모델에서 센터 찾기 (managedCenters는 Center를 참조할 수 있음)
+    let center = await SwimmingCenter.findById(id).lean();
+    
+    // SwimmingCenter에서 찾지 못하면 Center 모델에서 찾기
+    if (!center) {
+      center = await Center.findById(id).lean();
+    }
 
     if (!center) {
       return res.status(404).json({
@@ -286,12 +291,14 @@ router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
     }
 
     // 센터 통계 정보 조회
+    const centerId = (center as any)._id;
+    const centerIdForStats = centerId?.toString ? centerId.toString() : centerId;
     const [userStats, recentActivity] = await Promise.all([
       User.aggregate([
-        { $match: { centerId: center._id } },
+        { $match: { centerId: new mongoose.Types.ObjectId(centerIdForStats) } },
         { $group: { _id: '$userType', count: { $sum: 1 } } }
       ]),
-      CenterRegistration.find({ createdCenterId: center._id })
+      CenterRegistration.find({ createdCenterId: new mongoose.Types.ObjectId(centerIdForStats) })
         .sort({ submittedAt: -1 })
         .limit(5)
         .populate('applicant.userId', 'name email')

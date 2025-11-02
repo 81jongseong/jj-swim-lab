@@ -170,19 +170,24 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
                 });
             }
         }
-        const center = await SwimmingCenter_1.SwimmingCenter.findById(id).lean();
+        let center = await SwimmingCenter_1.SwimmingCenter.findById(id).lean();
+        if (!center) {
+            center = await Center_1.Center.findById(id).lean();
+        }
         if (!center) {
             return res.status(404).json({
                 success: false,
                 message: '센터를 찾을 수 없습니다.'
             });
         }
+        const centerId = center._id;
+        const centerIdForStats = centerId?.toString ? centerId.toString() : centerId;
         const [userStats, recentActivity] = await Promise.all([
             User_1.User.aggregate([
-                { $match: { centerId: center._id } },
+                { $match: { centerId: new mongoose_1.default.Types.ObjectId(centerIdForStats) } },
                 { $group: { _id: '$userType', count: { $sum: 1 } } }
             ]),
-            CenterRegistration_1.default.find({ createdCenterId: center._id })
+            CenterRegistration_1.default.find({ createdCenterId: new mongoose_1.default.Types.ObjectId(centerIdForStats) })
                 .sort({ submittedAt: -1 })
                 .limit(5)
                 .populate('applicant.userId', 'name email')
@@ -265,13 +270,21 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
                 message: '유효하지 않은 ID입니다.'
             });
         }
-        if (user.userType === 'centerAdmin' && user.centerId !== id) {
-            return res.status(403).json({
-                success: false,
-                message: '접근 권한이 없습니다.'
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+            const centerAdminUser = await User_1.User.findById(user._id);
+            const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+            const hasAccess = user.centerId === id || managedCenters.some((c) => {
+                const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                return cId === id;
             });
+            if (!hasAccess) {
+                return res.status(403).json({
+                    success: false,
+                    message: '접근 권한이 없습니다.'
+                });
+            }
         }
-        if (user.userType === 'centerAdmin') {
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
             const allowedFields = ['description', 'contact', 'facilities', 'operatingHours', 'images'];
             const filteredData = {};
             allowedFields.forEach(field => {
@@ -506,11 +519,19 @@ router.get('/:id/users', auth_1.authMiddleware, (0, auth_1.requireRole)(['superA
                 message: '유효하지 않은 ID입니다.'
             });
         }
-        if (user.userType === 'centerAdmin' && user.centerId !== id) {
-            return res.status(403).json({
-                success: false,
-                message: '접근 권한이 없습니다.'
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+            const centerAdminUser = await User_1.User.findById(user._id);
+            const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+            const hasAccess = user.centerId === id || managedCenters.some((c) => {
+                const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                return cId === id;
             });
+            if (!hasAccess) {
+                return res.status(403).json({
+                    success: false,
+                    message: '접근 권한이 없습니다.'
+                });
+            }
         }
         const filter = { centerId: id };
         if (userType)
