@@ -260,11 +260,22 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     ];
 
     // 회원 데이터 조회
+    console.log('🔍 필터 조건:', JSON.stringify(filter, null, 2));
     const users = await User.find(filter)
       .select('address location centerId createdAt userType')
       .lean();
 
     console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리 (필터: ${memberType || '전체'})`);
+    
+    // 주소지/좌표 보유 현황 확인
+    const usersWithAddress = users.filter(u => u.address && u.address.trim() !== '');
+    const usersWithCoords = users.filter(u => u.location?.coordinates && Array.isArray(u.location.coordinates) && u.location.coordinates.length === 2);
+    const usersWithoutLocation = users.filter(u => !u.address && !u.location?.coordinates);
+    
+    console.log(`📊 회원 위치 정보 현황:`);
+    console.log(`  - 주소지 보유: ${usersWithAddress.length}명`);
+    console.log(`  - 좌표 보유: ${usersWithCoords.length}명`);
+    console.log(`  - 위치 정보 없음: ${usersWithoutLocation.length}명`);
 
     // 센터 정보 조회 (이름 매핑용) - SwimmingCenter 모델 사용
     const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
@@ -278,6 +289,10 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     // H3 셀 집계
     const h3Map: Map<string, any> = new Map();
 
+    let processedCount = 0;
+    let skippedNoCoords = 0;
+    let skippedInvalidCoords = 0;
+    
     for (const userItem of users) {
       let coords: { lat: number; lng: number } | null = null;
 
@@ -287,10 +302,16 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
           lng: userItem.location.coordinates[0],
           lat: userItem.location.coordinates[1]
         };
+        if (processedCount < 3) {
+          console.log(`  ✅ 좌표 사용: User ${userItem._id} → [${coords.lng}, ${coords.lat}]`);
+        }
       } 
       // 대체: address에서 지오코딩 (기존 회원 호환)
       else if (userItem.address) {
         coords = await geocodeAddress(userItem.address);
+        if (processedCount < 3) {
+          console.log(`  📍 지오코딩: User ${userItem._id}, 주소 "${userItem.address}" → [${coords?.lng}, ${coords?.lat}]`);
+        }
       }
       // 주소지도 없으면 센터 주소지 사용 (최후 수단)
       else if (userItem.centerId) {
@@ -303,16 +324,42 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
                 lng: center.location.coordinates[0],
                 lat: center.location.coordinates[1]
               };
+              if (processedCount < 3) {
+                console.log(`  🏢 센터 좌표 사용: User ${userItem._id}, Center ${userItem.centerId} → [${coords.lng}, ${coords.lat}]`);
+              }
             } else if (center.address) {
               coords = await geocodeAddress(center.address);
+              if (processedCount < 3) {
+                console.log(`  🏢 센터 주소 지오코딩: User ${userItem._id}, Center ${userItem.centerId}, 주소 "${center.address}" → [${coords?.lng}, ${coords?.lat}]`);
+              }
             }
           }
         } catch (error) {
           // 센터 주소지 조회 실패 시 무시
+          if (processedCount < 3) {
+            console.warn(`  ⚠️ 센터 조회 실패: User ${userItem._id}, Center ${userItem.centerId}`, error);
+          }
         }
       }
 
-      if (!coords) continue;
+      if (!coords) {
+        skippedNoCoords++;
+        if (skippedNoCoords <= 3) {
+          console.warn(`  ❌ 좌표 없음: User ${userItem._id}, 주소지: ${userItem.address || '없음'}, 센터: ${userItem.centerId || '없음'}`);
+        }
+        continue;
+      }
+      
+      // 좌표 유효성 검사
+      if (isNaN(coords.lat) || isNaN(coords.lng) || coords.lat === 0 || coords.lng === 0) {
+        skippedInvalidCoords++;
+        if (skippedInvalidCoords <= 3) {
+          console.warn(`  ⚠️ 잘못된 좌표: User ${userItem._id}, [${coords.lng}, ${coords.lat}]`);
+        }
+        continue;
+      }
+      
+      processedCount++;
 
       // H3 변환
       const h3Index = toH3(coords.lat, coords.lng, 8);
@@ -348,15 +395,43 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     cells = cells.filter(cell => cell.count >= K_THRESHOLD);
     const filteredCells = cells.length;
 
-    console.log(`🔒 k-익명성 필터링: ${totalCells}개 셀 → ${filteredCells}개 셀 (k≥${K_THRESHOLD})${isDevelopment ? ' (개발 모드: k=1)' : ''}`);
+    console.log(`\n📊 처리 결과:`);
+    console.log(`  - 총 회원 수: ${users.length}명`);
+    console.log(`  - 좌표 처리 완료: ${processedCount}명`);
+    console.log(`  - 좌표 없음으로 스킵: ${skippedNoCoords}명`);
+    console.log(`  - 잘못된 좌표로 스킵: ${skippedInvalidCoords}명`);
+    console.log(`  - H3 셀 개수: ${h3Map.size}개`);
+    
+    console.log(`\n🔒 k-익명성 필터링 전: ${totalCells}개 셀`);
+    if (totalCells > 0) {
+      const countDistribution: any = {};
+      cells.forEach((cell: any) => {
+        countDistribution[cell.count] = (countDistribution[cell.count] || 0) + 1;
+      });
+      console.log(`  - 셀별 회원 수 분포:`, countDistribution);
+    }
+    
+    cells = cells.filter(cell => cell.count >= K_THRESHOLD);
+    const filteredCells = cells.length;
+
+    console.log(`🔒 k-익명성 필터링 후: ${filteredCells}개 셀 (k≥${K_THRESHOLD})${isDevelopment ? ' (개발 모드: k=1)' : ''}`);
 
     // 노이즈 추가 및 반올림
     cells.forEach(cell => {
       cell.countApprox = addNoiseAndRound(cell.count, 1.0);
       // 원본 count 제거 (보안)
+      const originalCount = cell.count;
       delete cell.count;
       delete cell.centerCounts;
+      
+      if (cells.length <= 10) {
+        console.log(`  셀 [${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}]: 원본 ${originalCount}명 → 근사값 ${cell.countApprox}명`);
+      }
     });
+    
+    console.log(`\n📤 최종 응답:`);
+    console.log(`  - 총 셀 수: ${cells.length}개`);
+    console.log(`  - 총 회원 수 (근사값): ${cells.reduce((sum: number, c: any) => sum + c.countApprox, 0)}명`);
 
     // 감사 로그
     console.log(`📊 [GEO-AUDIT] User: ${user.userId}, Type: ${user.userType}, Filter: ${JSON.stringify({ centerId, from, to, memberType })}, Result: ${filteredCells} cells`);
@@ -368,7 +443,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
         totalCells,
         filteredCells,
         k: K_THRESHOLD,
-        privacyNotice: '본 데이터는 k-익명성(k≥5), 노이즈 주입, 5단위 반올림이 적용되었습니다.',
+        privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입, 5단위 반올림이 적용되었습니다.`,
       },
     });
   } catch (error) {
