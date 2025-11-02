@@ -254,21 +254,33 @@ export default function CenterAdminGeoDistributionPage() {
         
         const spotsData: Spot[] = cells
           .filter((cell: any) => {
-            const isValid = cell.lat && cell.lng && (cell.countApprox || 0) > 0;
+            // 더 엄격한 유효성 검사
+            const lat = Number(cell.lat);
+            const lng = Number(cell.lng);
+            const countApprox = Number(cell.countApprox);
+            const isValid = !isNaN(lat) && !isNaN(lng) && !isNaN(countApprox) && 
+                           lat !== 0 && lng !== 0 && countApprox > 0 &&
+                           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
             if (!isValid) {
-              console.warn('⚠️ 유효하지 않은 셀 필터링:', cell);
+              console.warn('⚠️ 유효하지 않은 셀 필터링:', cell, { lat, lng, countApprox });
             }
             return isValid;
           })
-          .map((cell: any) => ({
-            geohash: cell.h3Index || '',
-            lat: cell.lat || 0,
-            lng: cell.lng || 0,
-            totalApprox: cell.countApprox || 0,
-            dominantCenter: cell.centerName || '기타',
-            centers: cell.centers || [],
-            memberType: memberType === 'all' ? undefined : memberType
-          }));
+          .map((cell: any) => {
+            // 명시적으로 숫자로 변환하고 0 체크
+            const lat = Number(cell.lat);
+            const lng = Number(cell.lng);
+            const totalApprox = Number(cell.countApprox);
+            return {
+              geohash: cell.h3Index || cell.h3 || '',
+              lat: lat,
+              lng: lng,
+              totalApprox: totalApprox,
+              dominantCenter: cell.centerName || cell.dominantCenter || '기타',
+              centers: cell.centers || [],
+              memberType: memberType === 'all' ? undefined : memberType
+            };
+          });
 
         console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
         setSpots(spotsData);
@@ -418,18 +430,23 @@ export default function CenterAdminGeoDistributionPage() {
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
+    // 데이터 검증
+    console.log('📊 스팟 데이터 샘플:', spots.slice(0, 2).map(s => ({
+      lat: typeof s.lat, lng: typeof s.lng, totalApprox: typeof s.totalApprox,
+      latVal: s.lat, lngVal: s.lng, totalApproxVal: s.totalApprox
+    })));
+    
     const layer = buildSpotsLayer();
     console.log('📦 생성된 레이어:', layer);
+    console.log('📦 레이어 데이터:', layer?.props?.data?.length, '개');
     
-    // requestAnimationFrame으로 감싸서 렌더링 사이클에 맞춤
-    requestAnimationFrame(() => {
-      if (overlayRef.current && layer) {
-        overlayRef.current.setProps({
-          layers: [layer]
-        });
-        console.log('✅ 스팟 레이어 업데이트 완료');
-      }
-    });
+    // 관리자 페이지처럼 바로 호출 (requestAnimationFrame 제거)
+    if (overlayRef.current && layer) {
+      overlayRef.current.setProps({
+        layers: [layer]
+      });
+      console.log('✅ 스팟 레이어 업데이트 완료');
+    }
   }, [spots, currentZoom, buildSpotsLayer]);
 
   if (loading) {
