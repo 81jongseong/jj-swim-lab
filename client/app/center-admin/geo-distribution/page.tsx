@@ -195,7 +195,10 @@ export default function CenterAdminGeoDistributionPage() {
 
     map.on('load', () => {
       setMapLoaded(true);
-      fetchSpotsData();
+      // 지도가 완전히 로드된 후 짧은 지연 후 데이터 로드
+      setTimeout(() => {
+        fetchSpotsData();
+      }, 500);
     });
 
     return () => {
@@ -410,19 +413,44 @@ export default function CenterAdminGeoDistributionPage() {
         }
       });
 
-      // 레이어를 안전하게 설정 (약간의 지연 추가)
-      setTimeout(() => {
-        if (overlayRef.current) {
-          try {
-            overlayRef.current.setProps({
-              layers: [layer]
+      // 레이어를 안전하게 설정
+      if (overlayRef.current && mapInstanceRef.current) {
+        try {
+          // 먼저 기존 레이어 제거
+          overlayRef.current.setProps({
+            layers: []
+          });
+          
+          // WebGL 컨텍스트가 준비될 때까지 대기
+          const setLayerSafely = () => {
+            if (overlayRef.current && mapInstanceRef.current) {
+              try {
+                overlayRef.current.setProps({
+                  layers: [layer]
+                });
+                console.log('✅ Deck.gl 레이어 생성 완료');
+              } catch (err) {
+                console.error('❌ Deck.gl 레이어 설정 오류:', err);
+                // 레이어 설정 실패 시 빈 레이어로 설정
+                if (overlayRef.current) {
+                  overlayRef.current.setProps({
+                    layers: []
+                  });
+                }
+              }
+            }
+          };
+          
+          // requestAnimationFrame을 두 번 사용하여 WebGL 컨텍스트가 완전히 준비되도록 함
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setLayerSafely();
             });
-            console.log('✅ Deck.gl 레이어 생성 완료');
-          } catch (err) {
-            console.error('❌ Deck.gl 레이어 설정 오류:', err);
-          }
+          });
+        } catch (err) {
+          console.error('❌ Deck.gl 레이어 초기화 오류:', err);
         }
-      }, 100);
+      }
     } catch (error) {
       console.error('❌ Deck.gl 레이어 생성 오류:', error);
       overlayRef.current.setProps({
