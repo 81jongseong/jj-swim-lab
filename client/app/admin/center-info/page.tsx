@@ -79,10 +79,13 @@ function CenterInfoManagement() {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    // 센터 관리자만 센터 정보 로드 (최고 관리자는 센터 관리 탭만 사용)
+    if (user && isCenterAdmin) {
       loadCenterInfo();
+    } else if (user && isSuperAdmin) {
+      setIsLoading(false);
     }
-  }, [user]);
+  }, [user, isCenterAdmin, isSuperAdmin]);
 
   const loadCenterInfo = async () => {
     try {
@@ -161,45 +164,17 @@ function CenterInfoManagement() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          🏢 센터 관리
+          {isSuperAdmin ? '🏢 센터 관리' : '🏢 센터 정보 관리'}
         </h1>
         <p className="text-sm text-gray-600">
-          센터 정보와 센터 관리를 통합하여 관리하세요
+          {isSuperAdmin 
+            ? '모든 센터를 통합하여 관리하세요'
+            : '센터 소개글과 이용안내를 작성하고 관리하세요'}
         </p>
       </div>
 
-      {/* 탭 네비게이션 (최고 관리자만 센터 관리 탭 표시) */}
-      {isSuperAdmin && (
-        <div className="mb-6 border-b border-gray-200">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setActiveTab('info')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-                activeTab === 'info'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Settings className="w-4 h-4 inline mr-2" />
-              센터 정보 관리
-            </button>
-            <button
-              onClick={() => setActiveTab('management')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-                activeTab === 'management'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <List className="w-4 h-4 inline mr-2" />
-              센터 관리
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 센터 관리 탭 (최고 관리자 전용) */}
-      {isSuperAdmin && activeTab === 'management' && <CenterManagementTab />}
+      {/* 센터 관리 탭 (최고 관리자 전용) - 센터 정보 관리 탭 없음 (소유 센터가 없으므로) */}
+      {isSuperAdmin && <CenterManagementTab />}
 
       {/* 센터 정보 관리 탭 (센터 관리자만) */}
       {(isCenterAdmin && activeTab === 'info') && (
