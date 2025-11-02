@@ -595,32 +595,12 @@ export default function GeoDistributionPage() {
     }
   }, [selectedRegions]);
 
-  // 센터 선택 상태 (여러 센터 관리하는 경우)
-  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
-  const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
-
-  // 인증 확인 및 센터 목록 로드
+  // 인증 확인 - 최고 관리자만 접근
   useEffect(() => {
     if (!loading && user) {
-      // superAdmin 또는 centerAdmin만 허용
-      if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin') {
+      if (user.userType !== 'superAdmin') {
         router.push('/');
         return;
-      }
-
-      // centerAdmin인 경우 관리하는 센터 목록 로드
-      if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters) {
-        const centers = user.centerAdminInfo.managedCenters;
-        // ObjectId 배열이면 이름을 가져와야 하지만, 일단 ID만 저장
-        // TODO: 실제 센터 이름을 API에서 가져오기
-        const centersList = centers.map((c: any) => ({
-          _id: c.toString ? c.toString() : c._id?.toString() || c,
-          name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
-        }));
-        setManagedCenters(centersList);
-        
-        // 초기값: "전체" (null) - 항상 전체 통계를 먼저 보여줌
-        setSelectedCenterId(null);
       }
     }
   }, [user, loading, router]);
@@ -804,10 +784,6 @@ export default function GeoDistributionPage() {
         zoom: currentZoom.toString()
       });
 
-      // centerAdmin인 경우 센터 필터링 추가
-      if (user?.userType === 'centerAdmin' && selectedCenterId) {
-        params.append('centerId', selectedCenterId);
-      }
 
       const response = await fetch(`/api/geo/spots?${params}`, { cache: 'no-store' });
       const result = await response.json();

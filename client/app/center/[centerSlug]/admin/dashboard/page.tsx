@@ -56,6 +56,19 @@ const CenterAdminDashboard: React.FC = () => {
     pendingApprovals: 0,
     todayBookings: 0
   });
+  
+  // 여러 센터 관리 상태
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
+  const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
+  const [centerStats, setCenterStats] = useState<Record<string, CenterStats>>({});
+  const [allCentersStats, setAllCentersStats] = useState<CenterStats>({
+    totalMembers: 0,
+    activeInstructors: 0,
+    activeCourses: 0,
+    monthlyRevenue: 0,
+    pendingApprovals: 0,
+    todayBookings: 0
+  });
 
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([
     {
@@ -88,58 +101,115 @@ const CenterAdminDashboard: React.FC = () => {
     }
   ]);
 
+  // 관리하는 센터 목록 로드
+  useEffect(() => {
+    if (user?.centerAdminInfo?.managedCenters) {
+      const centers = user.centerAdminInfo.managedCenters;
+      const centersList = centers.map((c: any) => ({
+        _id: c.toString ? c.toString() : c._id?.toString() || c,
+        name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
+      }));
+      setManagedCenters(centersList);
+      setSelectedCenterId(null); // 초기값: 전체 통계
+    }
+  }, [user]);
+
+  // 센터별 통계 로드
   useEffect(() => {
     const loadCenterData = async () => {
+      if (!user) return;
+
       try {
         if (DEBUG) console.log('📊 센터 데이터 로드 중...');
         
-        const response = await fetch('http://localhost:5000/api/center-admin/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        // 관리하는 센터 목록
+        const managedCenters = user.centerAdminInfo?.managedCenters || [];
         
-        if (response.ok) {
-          const data = await response.json();
-          if (DEBUG) console.log('📡 대시보드 API 응답:', data);
-          
-          if (data.success && data.data) {
-            setStats({
-              totalMembers: data.data.totalMembers || 0,
-              activeInstructors: data.data.activeInstructors || 0,
-              activeCourses: data.data.activeCourses || 0,
-              monthlyRevenue: data.data.monthlyRevenue || 0,
-              pendingApprovals: data.data.pendingApprovals || 0,
-              todayBookings: data.data.todayBookings || 0
-            });
-            if (DEBUG) console.log('✅ 대시보드 통계 로드 성공:', data.data);
-          }
-        } else {
-          if (DEBUG) console.error('❌ 대시보드 API 호출 실패:', response.status);
-          setStats({
-            totalMembers: 0,
-            activeInstructors: 0,
-            activeCourses: 0,
-            monthlyRevenue: 0,
-            pendingApprovals: 0,
-            todayBookings: 0
+        if (managedCenters.length === 0) {
+          // 센터가 없으면 기본 API 호출
+          const response = await fetch('http://localhost:5000/api/center-admin/dashboard', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
           });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+              setStats({
+                totalMembers: data.data.totalMembers || 0,
+                activeInstructors: data.data.activeInstructors || 0,
+                activeCourses: data.data.activeCourses || 0,
+                monthlyRevenue: data.data.monthlyRevenue || 0,
+                pendingApprovals: data.data.pendingApprovals || 0,
+                todayBookings: data.data.todayBookings || 0
+              });
+            }
+          }
+          return;
         }
-      } catch (error) {
-        if (DEBUG) console.error('❌ 센터 데이터 로드 실패:', error);
-        setStats({
+
+        // 여러 센터가 있는 경우
+        const centerStatsMap: Record<string, CenterStats> = {};
+        let allStats: CenterStats = {
           totalMembers: 0,
           activeInstructors: 0,
           activeCourses: 0,
           monthlyRevenue: 0,
           pendingApprovals: 0,
           todayBookings: 0
-        });
+        };
+
+        // 각 센터별 통계 로드
+        for (const centerId of managedCenters) {
+          const cId = centerId.toString ? centerId.toString() : centerId._id?.toString() || centerId;
+          const response = await fetch(`http://localhost:5000/api/center-admin/dashboard?centerId=${cId}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+              const centerStat: CenterStats = {
+                totalMembers: data.data.totalMembers || 0,
+                activeInstructors: data.data.activeInstructors || 0,
+                activeCourses: data.data.activeCourses || 0,
+                monthlyRevenue: data.data.monthlyRevenue || 0,
+                pendingApprovals: data.data.pendingApprovals || 0,
+                todayBookings: data.data.todayBookings || 0
+              };
+              centerStatsMap[cId] = centerStat;
+              
+              // 전체 통계 합산
+              allStats.totalMembers += centerStat.totalMembers;
+              allStats.activeInstructors += centerStat.activeInstructors;
+              allStats.activeCourses += centerStat.activeCourses;
+              allStats.monthlyRevenue += centerStat.monthlyRevenue;
+              allStats.pendingApprovals += centerStat.pendingApprovals;
+              allStats.todayBookings += centerStat.todayBookings;
+            }
+          }
+        }
+
+        setCenterStats(centerStatsMap);
+        setAllCentersStats(allStats);
+        
+        // 선택된 센터가 없으면 전체 통계 표시, 있으면 해당 센터 통계 표시
+        if (!selectedCenterId) {
+          setStats(allStats);
+        } else {
+          setStats(centerStatsMap[selectedCenterId] || allStats);
+        }
+        
+      } catch (error) {
+        if (DEBUG) console.error('❌ 센터 데이터 로드 실패:', error);
       }
     };
 
     loadCenterData();
-  }, []);
+  }, [user, selectedCenterId]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {

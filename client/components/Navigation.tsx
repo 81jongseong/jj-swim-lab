@@ -203,6 +203,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
+      { href: '/center-admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
     ]
   },
   'center-admin': {
@@ -230,6 +231,7 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
+      { href: '/center-admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
     ]
   },
   superAdmin: {
@@ -240,7 +242,7 @@ const userMenuStructure = {
       { href: '/admin/system', label: '📈 시스템 사용 통계' },
     ],
     business: [
-      { href: '/admin/center-info', label: '🏢 센터 관리', description: '센터 정보 및 관리 통합' },
+      { href: '/admin/center-management', label: '🏢 센터 관리' },
       { href: '/admin/center-statistics', label: '📊 센터 통계' },
       { href: '/admin/approvals', label: '⏳ 센터 승인', description: '강사등록/센터등록 승인' },
       { href: '/admin/users', label: '👥 회원 관리' },

@@ -40,8 +40,31 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
     const centerAdmin = await User.findById(req.user._id);
     console.log('🔍 센터 관리자 정보:', centerAdmin);
     
-    // centerId 필드 또는 centerAdminInfo.managedCenters에서 센터 ID 가져오기
-    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    // 쿼리 파라미터에서 centerId 가져오기 (여러 센터 관리 시)
+    const queryCenterId = req.query.centerId as string;
+    let centerId: any;
+    
+    if (queryCenterId) {
+      // 특정 센터 ID가 제공된 경우
+      const managedCenters = centerAdmin?.centerAdminInfo?.managedCenters || [];
+      const isValidCenter = managedCenters.some((c: any) => {
+        const cId = c.toString ? c.toString() : c._id?.toString() || c;
+        return cId === queryCenterId;
+      });
+      
+      if (isValidCenter) {
+        centerId = queryCenterId;
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: '해당 센터를 관리할 권한이 없습니다.'
+        });
+      }
+    } else {
+      // centerId 필드 또는 centerAdminInfo.managedCenters에서 센터 ID 가져오기
+      centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    }
+    
     console.log('🏢 센터 ID:', centerId);
 
     if (!centerId) {

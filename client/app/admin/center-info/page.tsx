@@ -70,13 +70,24 @@ interface CenterInfo {
 
 function CenterInfoManagement() {
   const { user } = useAuth();
-  // 최고 관리자는 센터 관리 탭만, 센터 관리자는 센터 정보 관리 탭만 사용
+  // 최고 관리자는 센터 관리 페이지로 리다이렉트, 센터 관리자는 센터 정보 관리만
   const isSuperAdmin = user?.userType === 'superAdmin';
   const isCenterAdmin = user?.userType === 'centerAdmin' || user?.userType === 'center-admin';
-  const [activeTab, setActiveTab] = useState<'info' | 'management'>(isSuperAdmin ? 'management' : 'info');
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
+  const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [showAddCenterModal, setShowAddCenterModal] = useState(false);
+  const [selectedCenterId, setSelectedCenterId] = useState<string>('');
+  
+  // 새 센터 추가 폼 상태
+  const [newCenterForm, setNewCenterForm] = useState({
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    description: ''
+  });
 
   useEffect(() => {
     // 센터 관리자만 센터 정보 로드 (최고 관리자는 센터 관리 탭만 사용)
@@ -173,8 +184,18 @@ function CenterInfoManagement() {
         </p>
       </div>
 
-      {/* 센터 관리 탭 (최고 관리자 전용) - 센터 정보 관리 탭 없음 (소유 센터가 없으므로) */}
-      {isSuperAdmin && <CenterManagementTab />}
+      {/* 최고 관리자는 원래 센터 관리 페이지로 리다이렉트 */}
+      {isSuperAdmin && (
+        <div className="text-center py-12">
+          <p className="text-gray-600 mb-4">최고 관리자는 센터 관리 페이지를 사용하세요.</p>
+          <a 
+            href="/admin/center-management" 
+            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            센터 관리 페이지로 이동
+          </a>
+        </div>
+      )}
 
       {/* 센터 정보 관리 탭 (센터 관리자만) */}
       {(isCenterAdmin && activeTab === 'info') && (
