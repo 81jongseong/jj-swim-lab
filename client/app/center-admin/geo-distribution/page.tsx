@@ -363,6 +363,11 @@ export default function CenterAdminGeoDistributionPage() {
         console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
         return false;
       }
+      // 좌표 유효성 검사 추가
+      if (typeof s.lat !== 'number' || typeof s.lng !== 'number' || isNaN(s.lat) || isNaN(s.lng)) {
+        console.warn('⚠️ 유효하지 않은 좌표:', s);
+        return false;
+      }
       // 센터 관리자는 모든 스팟 데이터를 표시
       return true;
     });
@@ -375,6 +380,11 @@ export default function CenterAdminGeoDistributionPage() {
       totalApprox: s.totalApprox,
       dominantCenter: s.dominantCenter 
     })));
+    
+    // 스팟 위치 중복 확인 (관리자 페이지와 동일)
+    const positions = filteredSpots.map(s => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`);
+    const uniquePositions = new Set(positions);
+    console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
     
     return new ScatterplotLayer({
       id: 'spots',
