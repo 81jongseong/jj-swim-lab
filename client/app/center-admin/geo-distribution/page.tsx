@@ -195,14 +195,20 @@ export default function CenterAdminGeoDistributionPage() {
 
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
-      // 지도가 완전히 로드되고 WebGL 컨텍스트가 준비될 때까지 대기
-      setTimeout(() => {
-        setMapLoaded(true);
-        // 추가 지연으로 WebGL 컨텍스트가 완전히 준비되도록 함
-        setTimeout(() => {
-          fetchSpotsData();
-        }, 300);
-      }, 300);
+      
+      // WebGL 컨텍스트가 완전히 준비될 때까지 대기
+      // 여러 프레임을 기다려 Deck.gl이 완전히 초기화되도록 함
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setMapLoaded(true);
+            // 추가 지연으로 WebGL 컨텍스트가 완전히 준비되도록 함
+            setTimeout(() => {
+              fetchSpotsData();
+            }, 500);
+          });
+        });
+      });
     });
 
     return () => {
@@ -422,60 +428,35 @@ export default function CenterAdminGeoDistributionPage() {
 
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     
-    const layer = buildSpotsLayer();
-    if (!layer) {
-      console.log('⚠️ 레이어 생성 실패');
-      requestAnimationFrame(() => {
+    // 관리자 페이지와 동일한 간단한 패턴 사용
+    try {
+      const layer = buildSpotsLayer();
+      if (!layer) {
+        console.warn('⚠️ 레이어 생성 실패');
         if (overlayRef.current) {
-          overlayRef.current.setProps({
-            layers: []
-          });
+          overlayRef.current.setProps({ layers: [] });
         }
+        return;
+      }
+      
+      if (!overlayRef.current) {
+        console.warn('⚠️ overlayRef가 없음');
+        return;
+      }
+      
+      overlayRef.current.setProps({
+        layers: [layer]
       });
-      return;
-    }
-    
-    // 이전 레이어를 먼저 제거하고, 다음 프레임에서 새 레이어 추가
-    // 이렇게 하면 Deck.gl이 이전 레이어를 완전히 정리할 시간을 줌
-    if (overlayRef.current) {
-      try {
-        // 먼저 기존 레이어 제거
-        overlayRef.current.setProps({
-          layers: []
-        });
-        
-        // 다음 프레임에서 새 레이어 추가 (Deck.gl이 정리할 시간을 줌)
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            try {
-              if (!overlayRef.current) {
-                console.warn('⚠️ overlayRef가 없음');
-                return;
-              }
-              
-              // 레이어 재생성 (상태가 변경되었을 수 있으므로)
-              const newLayer = buildSpotsLayer();
-              if (!newLayer) {
-                console.warn('⚠️ 레이어 재생성 실패');
-                return;
-              }
-              
-              overlayRef.current.setProps({
-                layers: [newLayer]
-              });
-              console.log('✅ 스팟 레이어 업데이트 완료');
-            } catch (error) {
-              console.error('❌ 레이어 설정 오류:', error);
-              if (overlayRef.current) {
-                overlayRef.current.setProps({
-                  layers: []
-                });
-              }
-            }
-          });
-        });
-      } catch (error) {
-        console.error('❌ 레이어 제거 오류:', error);
+      
+      console.log('✅ 스팟 레이어 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 레이어 설정 오류:', error);
+      if (overlayRef.current) {
+        try {
+          overlayRef.current.setProps({ layers: [] });
+        } catch (clearError) {
+          console.error('❌ 레이어 제거 실패:', clearError);
+        }
       }
     }
   }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
