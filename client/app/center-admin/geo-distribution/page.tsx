@@ -287,25 +287,20 @@ export default function CenterAdminGeoDistributionPage() {
     }
   }, [librariesLoaded, mapLoaded, memberType, selectedCenterId, fetchSpotsData]);
 
-  // Deck.gl 레이어 업데이트
-  useEffect(() => {
-    if (!overlayRef.current || !mapLoaded || !librariesLoaded || !ScatterplotLayer) {
-      console.log('⏳ 레이어 조건 대기 중:', {
-        overlay: !!overlayRef.current,
-        mapLoaded,
-        librariesLoaded,
-        ScatterplotLayer: !!ScatterplotLayer
-      });
-      return;
-    }
-    
-    // spots가 비어있으면 레이어를 제거
-    if (!spots || spots.length === 0) {
-      console.log('⚠️ 스팟 데이터가 없어 레이어 제거');
-      overlayRef.current.setProps({
-        layers: []
-      });
-      return;
+  // 반경 계산 함수 (관리자 페이지와 동일한 방식)
+  const scaleRadius = useCallback((count: number): number => {
+    if (!count || count <= 0) return 50;
+    // 기본 블록 크기 153m 기준으로 스케일링
+    const baseRadius = 50; // 미터 단위
+    const scaled = baseRadius + Math.sqrt(count) * 10;
+    return Math.min(scaled, 200); // 최대 200m
+  }, []);
+
+  // 스팟 레이어 생성 함수 (관리자 페이지와 동일한 방식)
+  const buildSpotsLayer = useCallback(() => {
+    if (!ScatterplotLayer) {
+      console.warn('⚠️ ScatterplotLayer가 로드되지 않았습니다');
+      return null;
     }
 
     const validSpots = spots.filter((spot: Spot) => {
@@ -316,137 +311,93 @@ export default function CenterAdminGeoDistributionPage() {
       return isValid;
     });
 
-    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟 (전체 ${spots.length}개)`);
-
     if (validSpots.length === 0) {
-      console.log('⚠️ 유효한 스팟이 없어 레이어 제거');
-      overlayRef.current.setProps({
-        layers: []
-      });
-      return;
+      console.log('⚠️ 유효한 스팟이 없습니다');
+      return null;
     }
 
-    try {
-      // 데이터 형식 검증 및 변환
-      const layerData = validSpots.map((spot: Spot) => {
-        const totalApprox = Number(spot.totalApprox) || 1;
-        const lat = Number(spot.lat);
-        const lng = Number(spot.lng);
-        
-        if (isNaN(lat) || isNaN(lng)) {
-          console.warn('⚠️ 잘못된 좌표:', spot);
-          return null;
-        }
-        
-        return {
-          ...spot,
-          lat,
-          lng,
-          totalApprox,
-          position: [lng, lat],
-          radius: Math.max(5, Math.min(50, Math.sqrt(totalApprox) * 3)),
-          fillColor: (() => {
-            const colors: Record<string, [number, number, number, number]> = {
-              'JJ Swim Lab': [255, 99, 132, 200],
-              '강남센터': [255, 99, 132, 200],
-              '홍대센터': [54, 162, 235, 200],
-              '송파센터': [255, 205, 86, 200],
-              '마포센터': [75, 192, 192, 200],
-            };
-            return colors[spot.dominantCenter || ''] || [153, 102, 255, 200];
-          })()
-        };
-      }).filter((item): item is NonNullable<typeof item> => item !== null);
+    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟 (전체 ${spots.length}개)`);
 
-      if (layerData.length === 0) {
-        console.warn('⚠️ 유효한 레이어 데이터가 없습니다');
+    return new ScatterplotLayer({
+      id: 'spots-layer',
+      data: validSpots,
+      pickable: true,
+      opacity: 0.8,
+      stroked: true,
+      filled: true,
+      lineWidthMinPixels: 1,
+      radiusUnits: 'meters',
+      getPosition: (d: Spot) => {
+        if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+          return [126.9780, 37.5665]; // 서울 중심부 (기본값)
+        }
+        return [d.lng, d.lat];
+      },
+      getRadius: (d: Spot) => {
+        if (!d || typeof d.totalApprox !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+          return 50; // 기본 크기 (미터)
+        }
+        return scaleRadius(d.totalApprox);
+      },
+      getFillColor: (d: Spot) => {
+        if (!d || !d.dominantCenter) {
+          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
+          return [153, 102, 255, 200]; // 기본 색상
+        }
+        const colors: Record<string, [number, number, number, number]> = {
+          'JJ Swim Lab': [255, 99, 132, 200],
+          '강남센터': [255, 99, 132, 200],
+          '홍대센터': [54, 162, 235, 200],
+          '송파센터': [255, 205, 86, 200],
+          '마포센터': [75, 192, 192, 200],
+        };
+        return colors[d.dominantCenter] || [153, 102, 255, 200];
+      },
+      getLineColor: [255, 255, 255, 200],
+      onHover: (info: any) => {
+        if (info && info.object) {
+          setHoveredSpot(info.object);
+        }
+      }
+    });
+  }, [spots, scaleRadius, ScatterplotLayer]);
+
+  // Deck.gl 레이어 업데이트 (관리자 페이지와 동일한 방식)
+  useEffect(() => {
+    if (!overlayRef.current || !spots || !spots.length) {
+      console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
+        hasOverlay: !!overlayRef.current,
+        spotsLength: spots?.length || 0
+      });
+      if (overlayRef.current) {
         overlayRef.current.setProps({
           layers: []
         });
-        return;
       }
-
-      console.log(`🗺️ Deck.gl 레이어 생성: ${layerData.length}개 데이터 포인트`);
-
-      // 반경 계산 함수 (관리자 페이지와 동일한 방식)
-      const scaleRadius = (count: number): number => {
-        if (!count || count <= 0) return 50;
-        // 기본 블록 크기 153m 기준으로 스케일링
-        const baseRadius = 50; // 미터 단위
-        const scaled = baseRadius + Math.sqrt(count) * 10;
-        return Math.min(scaled, 200); // 최대 200m
-      };
-
-      // Deck.gl 레이어 안전하게 생성 (관리자 페이지와 동일한 방식)
-      const layer = new ScatterplotLayer({
-        id: 'spots-layer',
-        data: layerData,
-        pickable: true,
-        opacity: 0.8,
-        stroked: true,
-        filled: true,
-        lineWidthMinPixels: 1,
-        radiusUnits: 'meters', // 미터 단위 사용
-        getPosition: (d: any) => {
-          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-            console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
-            return [126.9780, 37.5665]; // 서울 중심부 (기본값)
-          }
-          return [d.lng, d.lat];
-        },
-        getRadius: (d: any) => {
-          if (!d || typeof d.totalApprox !== 'number') {
-            console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-            return 50; // 기본 크기 (미터)
-          }
-          return scaleRadius(d.totalApprox);
-        },
-        getFillColor: (d: any) => {
-          if (!d || !d.dominantCenter) {
-            console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
-            return [153, 102, 255, 200]; // 기본 색상
-          }
-          const colors: Record<string, [number, number, number, number]> = {
-            'JJ Swim Lab': [255, 99, 132, 200],
-            '강남센터': [255, 99, 132, 200],
-            '홍대센터': [54, 162, 235, 200],
-            '송파센터': [255, 205, 86, 200],
-            '마포센터': [75, 192, 192, 200],
-          };
-          return colors[d.dominantCenter] || [153, 102, 255, 200];
-        },
-        getLineColor: [255, 255, 255, 200],
-        onHover: (info: any) => {
-          if (info && info.object) {
-            setHoveredSpot(info.object);
-          }
-        }
-      });
-
-      // 레이어를 안전하게 설정 (관리자 페이지와 동일한 방식)
-      if (overlayRef.current) {
-        try {
-          overlayRef.current.setProps({
-            layers: [layer]
-          });
-          console.log('✅ Deck.gl 레이어 생성 완료');
-        } catch (err) {
-          console.error('❌ Deck.gl 레이어 설정 오류:', err);
-          // 레이어 설정 실패 시 빈 레이어로 설정
-          if (overlayRef.current) {
-            overlayRef.current.setProps({
-              layers: []
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Deck.gl 레이어 생성 오류:', error);
-      overlayRef.current.setProps({
-        layers: []
-      });
+      return;
     }
-  }, [spots, mapLoaded, librariesLoaded]);
+
+    console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
+    
+    const layer = buildSpotsLayer();
+    if (!layer) {
+      console.log('⚠️ 레이어 생성 실패');
+      if (overlayRef.current) {
+        overlayRef.current.setProps({
+          layers: []
+        });
+      }
+      return;
+    }
+    
+    overlayRef.current.setProps({
+      layers: [layer]
+    });
+    
+    console.log('✅ 스팟 레이어 업데이트 완료');
+  }, [spots, buildSpotsLayer]);
 
   if (loading) {
     return (
