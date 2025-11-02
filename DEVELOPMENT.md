@@ -1327,22 +1327,38 @@
 1. ✅ 데이터 타입 검증 강화 (`Number()` 변환 및 `isNaN` 체크)
 2. ✅ WebGL 컨텍스트 준비 확인 (`mapLoaded`, `librariesLoaded`, `ScatterplotLayer` 체크)
 3. ✅ 에러 처리 강화 (`try-catch` 블록 추가)
-4. ✅ 지도 로드 후 추가 지연 시간 부여 (총 600ms)
+4. ✅ 지도 로드 후 추가 지연 시간 부여 (총 600ms → 300ms로 단순화)
 5. ✅ `useCallback`으로 레이어 생성 로직 분리
 6. ✅ 관리자 페이지와 동일한 구조로 리팩토링
+7. ✅ 지도 `idle` 이벤트 대기 로직 추가 후 제거 (관리자 페이지와 동일하게)
+8. ✅ Deck 인스턴스 확인 로직 추가 후 제거 (MapboxOverlay가 자동 처리)
+9. ✅ ScatterplotLayer 설정을 관리자 페이지와 완전히 동일하게 맞춤
+10. ✅ 레이어 ID를 'spots-layer'에서 'spots'로 변경
+11. ✅ `onHover` 핸들러를 관리자 페이지와 동일한 형식으로 변경
 
 **현재 상태:**
-- 여전히 WebGL 초기화 오류 발생
-- 데이터는 정상적으로 수신되고 있음 (8개 스팟 확인)
-- 샘플 데이터: `{geohash: 'h3_8_3765_12692', lat: 37.655, lng: 126.925, totalApprox: 2, dominantCenter: '기타'}`
+- ⚠️ **진행 중**: 여전히 WebGL 초기화 오류 발생
+- ✅ 데이터는 정상적으로 수신되고 있음 (8개 스팟 확인)
+- ✅ 지도는 정상적으로 표시됨
+- ✅ 샘플 데이터: `{geohash: 'h3_8_3750_12693', lat: 37.505, lng: 126.935, totalApprox: 1, dominantCenter: '기타'}`
+- ✅ 레이어 생성과 업데이트 로직은 관리자 페이지와 동일
+- ❌ Deck.gl이 레이어를 초기화할 때 `attributes`가 `undefined` 오류 발생
+- ❌ 렌더링 시 `shaderInputs`가 `undefined` 오류 발생
+- ❌ `luma.gl: Link error during link-error: Vertex shader is not compiled.` 오류 발생
+
+**오류 분석:**
+- 오류 발생 시점: 레이어가 `setProps`로 추가된 직후, Deck.gl이 레이어를 초기화하려고 할 때
+- 오류 원인: Deck.gl의 WebGL 모델이 완전히 초기화되지 않은 상태에서 attribute layout을 읽으려고 시도
+- 관리자 페이지는 동일한 코드 패턴이지만 정상 작동 → 환경적 차이 가능성
 
 **추가 조사 필요:**
-- Deck.gl 버전과 MapLibre GL 버전 호환성 확인
+- Deck.gl 버전과 MapLibre GL 버전 호환성 확인 (관리자 페이지와 비교)
 - 브라우저의 WebGL 지원 상태 확인
-- 관리자 페이지가 작동하는 이유와 차이점 분석
-- MapboxOverlay 초기화 옵션 차이 확인
+- React StrictMode가 Deck.gl 초기화에 미치는 영향 확인
+- MapboxOverlay의 내부 초기화 타이밍 차이
+- 브라우저 콘솔의 WebGL 컨텍스트 손실 여부 확인
 
 **참고:**
 - 관리자 페이지 (`client/app/admin/geo-distribution/page.tsx`)는 정상 작동
-- 동일한 라이브러리와 유사한 구조 사용
-- 차이점: 관리자 페이지는 지역 선택 후 데이터 로드, center-admin은 자동 로드
+- 동일한 라이브러리와 거의 동일한 구조 사용 (코드가 완전히 일치)
+- 차이점: 관리자 페이지는 지역 선택 후 데이터 로드, center-admin은 자동 로드 (하지만 이건 로드 타이밍만 다를 뿐)
