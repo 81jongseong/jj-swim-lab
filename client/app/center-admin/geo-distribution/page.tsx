@@ -183,7 +183,12 @@ export default function CenterAdminGeoDistributionPage() {
 
     const overlay = new MapboxOverlay({
       interleaved: true,
-      layers: []
+      layers: [],
+      // 오류 처리 추가
+      onError: (error: any) => {
+        console.warn('⚠️ MapboxOverlay 오류 (무시됨):', error);
+        // 오류를 로그만 남기고 계속 진행
+      }
     });
     
     map.addControl(overlay);
