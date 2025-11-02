@@ -93,10 +93,16 @@ function round5(n: number): number {
 
 /**
  * 노이즈 추가 및 반올림
+ * 최소값 보장: 원본 count가 1 이상이면 최소 5로 보장 (5단위 반올림이므로)
  */
 function addNoiseAndRound(count: number, epsilon: number = 1.0): number {
   const noisy = count + laplaceNoise(epsilon);
   const rounded = round5(Math.max(0, noisy));
+  // 원본 count가 1 이상이면 최소 5로 보장 (5단위 반올림이므로 최소값은 5)
+  // 이렇게 하면 1명도 지도에 표시됨
+  if (count >= 1 && rounded === 0) {
+    return 5;
+  }
   return rounded;
 }
 
@@ -508,28 +514,19 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       }
     });
     
-    // 근사값이 0보다 큰 셀만 필터링 (지도에 표시되지 않는 셀 제거)
-    const validCells = cells.filter(cell => cell.countApprox > 0);
-    console.log(`\n📊 유효한 셀 필터링: ${cells.length}개 → ${validCells.length}개 (countApprox > 0)`);
-    if (cells.length !== validCells.length) {
-      const removedCount = cells.length - validCells.length;
-      console.log(`  ⚠️ ${removedCount}개 셀이 근사값 0으로 제거됨`);
-    }
-    
     console.log(`\n📤 최종 응답:`);
-    console.log(`  - 총 셀 수 (k-익명성 필터링 후): ${cells.length}개`);
-    console.log(`  - 유효한 셀 수 (countApprox > 0): ${validCells.length}개`);
-    console.log(`  - 총 회원 수 (근사값): ${validCells.reduce((sum: number, c: any) => sum + c.countApprox, 0)}명`);
+    console.log(`  - 총 셀 수: ${cells.length}개`);
+    console.log(`  - 총 회원 수 (근사값): ${cells.reduce((sum: number, c: any) => sum + c.countApprox, 0)}명`);
 
     // 감사 로그
-    console.log(`📊 [GEO-AUDIT] User: ${user.userId}, Type: ${user.userType}, Filter: ${JSON.stringify({ centerId, from, to, memberType })}, Result: ${validCells.length} cells`);
+    console.log(`📊 [GEO-AUDIT] User: ${user.userId}, Type: ${user.userType}, Filter: ${JSON.stringify({ centerId, from, to, memberType })}, Result: ${cells.length} cells`);
 
     res.json({
       success: true,
-      cells: validCells,
+      cells,
       metadata: {
         totalCells,
-        filteredCells: validCells.length,
+        filteredCells: cells.length,
         k: K_THRESHOLD,
         privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입, 5단위 반올림이 적용되었습니다.`,
       },
