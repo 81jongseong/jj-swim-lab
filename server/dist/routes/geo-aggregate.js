@@ -184,10 +184,6 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         else if (memberType) {
             filter.userType = memberType;
         }
-        filter.$or = [
-            { 'location.coordinates': { $exists: true, $ne: [] } },
-            { address: { $exists: true, $nin: ['', null] } }
-        ];
         console.log('🔍 필터 조건:', JSON.stringify(filter, null, 2));
         const users = await User_1.User.find(filter)
             .select('address location centerId createdAt userType')

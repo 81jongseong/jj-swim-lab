@@ -252,12 +252,13 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       filter.userType = memberType;
     }
 
-    // 🆕 위치 정보가 있는 회원만 조회 (location.coordinates 우선, address 대체)
-    // 주소지가 없으면 센터 주소지나 기본 주소지 사용
-    filter.$or = [
-      { 'location.coordinates': { $exists: true, $ne: [] } },
-      { address: { $exists: true, $nin: ['', null] } }
-    ];
+    // 위치 정보 필터 완화: 모든 회원을 조회한 후 좌표를 가져오도록 함
+    // (주소지가 없으면 센터 주소지를 사용하므로 모든 회원 조회)
+    // 필터는 나중에 위치 정보가 없으면 스킵하도록 처리
+    // filter.$or = [
+    //   { 'location.coordinates': { $exists: true, $ne: [] } },
+    //   { address: { $exists: true, $nin: ['', null] } }
+    // ];
 
     // 회원 데이터 조회
     console.log('🔍 필터 조건:', JSON.stringify(filter, null, 2));
