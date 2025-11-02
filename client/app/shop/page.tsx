@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Grid, List } from 'lucide-react';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -56,6 +57,7 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   const [showCart, setShowCart] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // 그리드 뷰 또는 2열 리스트 뷰
 
   const categories = [
     { value: 'all', label: '전체' },
@@ -397,6 +399,33 @@ export default function ShopPage() {
 
         {/* 필터 및 검색 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">상품 목록</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title="컴팩트 그리드 뷰"
+              >
+                <Grid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title="2열 레이아웃"
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <input
@@ -436,73 +465,147 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* 상품 목록 - 반응형 그리드 (화면 크기에 따라 자동 조정) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filteredProducts.map((product) => (
-            <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="p-3 pb-2">
-                <div className="relative mb-2">
-                  <div className="aspect-square bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
-                    {product.imageUrl ? (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-gray-400 text-2xl">🏊‍♂️</div>
-                    )}
-                  </div>
-                  {product.originalPrice && (
-                    <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">
-                      -{getDiscountRate(product)}%
+        {/* 상품 목록 */}
+        {viewMode === 'grid' ? (
+          /* 컴팩트 그리드 뷰 (반응형) */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {filteredProducts.map((product) => (
+              <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="p-3 pb-2">
+                  <div className="relative mb-2">
+                    <div className="aspect-square bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-2xl">🏊‍♂️</div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <CardTitle className="text-sm font-semibold line-clamp-2 mb-1 leading-tight">{product.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 space-y-2">
-                <p className="text-xs text-gray-600 line-clamp-2 min-h-[2rem]">{product.description}</p>
-
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-1.5 flex-wrap">
-                    <span className="text-base font-bold text-gray-900">
-                      {formatPrice(product.price)}원
-                    </span>
                     {product.originalPrice && (
-                      <span className="text-xs text-gray-500 line-through">
-                        {formatPrice(product.originalPrice)}
-                      </span>
+                      <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                        -{getDiscountRate(product)}%
+                      </div>
                     )}
                   </div>
+                  <CardTitle className="text-sm font-semibold line-clamp-2 mb-1 leading-tight">{product.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-2">
+                  <p className="text-xs text-gray-600 line-clamp-2 min-h-[2rem]">{product.description}</p>
 
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-0.5">
-                      <div className="flex text-yellow-400 text-xs">
-                        {'★'.repeat(Math.floor(product.rating))}
-                        {'☆'.repeat(5 - Math.floor(product.rating))}
-                      </div>
-                      <span className="text-gray-600">({product.reviewCount})</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-1.5 flex-wrap">
+                      <span className="text-base font-bold text-gray-900">
+                        {formatPrice(product.price)}원
+                      </span>
+                      {product.originalPrice && (
+                        <span className="text-xs text-gray-500 line-through">
+                          {formatPrice(product.originalPrice)}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-gray-500">
-                      {product.stock > 0 ? `${product.stock}개` : '품절'}
+
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-0.5">
+                        <div className="flex text-yellow-400 text-xs">
+                          {'★'.repeat(Math.floor(product.rating))}
+                          {'☆'.repeat(5 - Math.floor(product.rating))}
+                        </div>
+                        <span className="text-gray-600">({product.reviewCount})</span>
+                      </div>
+                      <div className="text-gray-500">
+                        {product.stock > 0 ? `${product.stock}개` : '품절'}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  onClick={() => addToCart(product)}
-                  disabled={product.stock === 0}
-                  variant="primary"
-                  size="sm"
-                  className="w-full text-xs py-1.5 h-auto"
-                >
-                  {product.stock === 0 ? '품절' : '장바구니 추가'}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <Button
+                    onClick={() => addToCart(product)}
+                    disabled={product.stock === 0}
+                    variant="primary"
+                    size="sm"
+                    className="w-full text-xs py-1.5 h-auto"
+                  >
+                    {product.stock === 0 ? '품절' : '장바구니 추가'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          /* 2열 레이아웃 (큰 카드) */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredProducts.map((product) => (
+              <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <div className="flex flex-col sm:flex-row">
+                  <div className="relative sm:w-48 flex-shrink-0">
+                    <div className="aspect-square sm:h-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-4xl">🏊‍♂️</div>
+                      )}
+                    </div>
+                    {product.originalPrice && (
+                      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                        -{getDiscountRate(product)}%
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-lg font-semibold mb-2">{product.name}</CardTitle>
+                      <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-2xl font-bold text-gray-900">
+                            {formatPrice(product.price)}원
+                          </span>
+                          {product.originalPrice && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(product.originalPrice)}원
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex text-yellow-400">
+                              {'★'.repeat(Math.floor(product.rating))}
+                              {'☆'.repeat(5 - Math.floor(product.rating))}
+                            </div>
+                            <span className="text-sm text-gray-600">({product.reviewCount})</span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            재고: {product.stock > 0 ? `${product.stock}개` : '품절'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock === 0}
+                        variant="primary"
+                        size="md"
+                        className="w-full mt-4"
+                      >
+                        {product.stock === 0 ? '품절' : '장바구니 추가'}
+                      </Button>
+                    </CardContent>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
