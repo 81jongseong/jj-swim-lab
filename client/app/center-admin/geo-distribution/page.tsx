@@ -429,91 +429,40 @@ export default function CenterAdminGeoDistributionPage() {
 
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     
-    // Deck 인스턴스와 WebGL 컨텍스트가 완전히 준비될 때까지 기다리는 헬퍼 함수
-    const waitForDeckReady = (retries = 0, maxRetries = 10): Promise<boolean> => {
-      return new Promise((resolve) => {
-        if (!overlayRef.current) {
-          console.warn('⚠️ overlayRef가 없음');
-          resolve(false);
-          return;
+    // 관리자 페이지와 동일한 간단한 패턴 사용
+    // MapboxOverlay는 내부적으로 Deck 초기화를 처리하므로 별도 확인 불필요
+    // 지도가 idle 상태이고 mapLoaded가 true이므로 이미 준비됨
+    try {
+      const layer = buildSpotsLayer();
+      if (!layer) {
+        console.warn('⚠️ 레이어 생성 실패');
+        if (overlayRef.current) {
+          overlayRef.current.setProps({ layers: [] });
         }
-        
-        const deck = (overlayRef.current as any)?.deck;
-        if (!deck) {
-          if (retries < maxRetries) {
-            setTimeout(() => {
-              waitForDeckReady(retries + 1, maxRetries).then(resolve);
-            }, 100);
-          } else {
-            console.warn('⚠️ Deck 인스턴스가 준비되지 않음 (최대 재시도 횟수 초과)');
-            resolve(false);
-          }
-          return;
-        }
-        
-        // Deck의 WebGL 디바이스가 준비되었는지 확인
-        const device = deck?.deviceManager?.defaultDevice;
-        if (!device) {
-          if (retries < maxRetries) {
-            setTimeout(() => {
-              waitForDeckReady(retries + 1, maxRetries).then(resolve);
-            }, 100);
-          } else {
-            console.warn('⚠️ WebGL 디바이스가 준비되지 않음');
-            resolve(false);
-          }
-          return;
-        }
-        
-        console.log('✅ Deck 인스턴스와 WebGL 디바이스 준비 완료');
-        resolve(true);
+        return;
+      }
+      
+      if (!overlayRef.current) {
+        console.warn('⚠️ overlayRef가 없음');
+        return;
+      }
+      
+      // MapboxOverlay는 내부적으로 적절한 타이밍에 레이어를 추가함
+      overlayRef.current.setProps({
+        layers: [layer]
       });
-    };
-    
-    // 렌더링 사이클과 동기화
-    requestAnimationFrame(() => {
-      requestAnimationFrame(async () => {
+      
+      console.log('✅ 스팟 레이어 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 레이어 설정 오류:', error);
+      if (overlayRef.current) {
         try {
-          const layer = buildSpotsLayer();
-          if (!layer) {
-            console.warn('⚠️ 레이어 생성 실패');
-            if (overlayRef.current) {
-              overlayRef.current.setProps({ layers: [] });
-            }
-            return;
-          }
-          
-          // Deck이 완전히 준비될 때까지 대기
-          const isReady = await waitForDeckReady();
-          if (!isReady) {
-            console.error('❌ Deck 준비 시간 초과');
-            return;
-          }
-          
-          if (!overlayRef.current) {
-            console.warn('⚠️ overlayRef가 없음');
-            return;
-          }
-          
-          // 추가 프레임 대기로 안정성 확보
-          requestAnimationFrame(() => {
-            overlayRef.current?.setProps({
-              layers: [layer]
-            });
-            console.log('✅ 스팟 레이어 업데이트 완료');
-          });
-        } catch (error) {
-          console.error('❌ 레이어 설정 오류:', error);
-          if (overlayRef.current) {
-            try {
-              overlayRef.current.setProps({ layers: [] });
-            } catch (clearError) {
-              console.error('❌ 레이어 제거 실패:', clearError);
-            }
-          }
+          overlayRef.current.setProps({ layers: [] });
+        } catch (clearError) {
+          console.error('❌ 레이어 제거 실패:', clearError);
         }
-      });
-    });
+      }
+    }
   }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
 
   if (loading) {
