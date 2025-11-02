@@ -196,16 +196,17 @@ export default function CenterAdminGeoDistributionPage() {
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
       
-      // WebGL 컨텍스트가 완전히 준비될 때까지 대기
-      // 여러 프레임을 기다려 Deck.gl이 완전히 초기화되도록 함
-      requestAnimationFrame(() => {
+      // 지도가 완전히 렌더링되고 WebGL 컨텍스트가 준비될 때까지 대기
+      // 'idle' 이벤트는 지도가 완전히 렌더링된 후 발생
+      map.once('idle', () => {
+        console.log('✅ 지도 idle 상태 - WebGL 컨텍스트 준비 완료');
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setMapLoaded(true);
-            // 추가 지연으로 WebGL 컨텍스트가 완전히 준비되도록 함
+            // 추가 지연으로 Deck.gl이 완전히 초기화되도록 함
             setTimeout(() => {
               fetchSpotsData();
-            }, 500);
+            }, 800);
           });
         });
       });
@@ -428,37 +429,55 @@ export default function CenterAdminGeoDistributionPage() {
 
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     
-    // 관리자 페이지와 동일한 간단한 패턴 사용
-    try {
-      const layer = buildSpotsLayer();
-      if (!layer) {
-        console.warn('⚠️ 레이어 생성 실패');
-        if (overlayRef.current) {
-          overlayRef.current.setProps({ layers: [] });
-        }
-        return;
-      }
-      
-      if (!overlayRef.current) {
-        console.warn('⚠️ overlayRef가 없음');
-        return;
-      }
-      
-      overlayRef.current.setProps({
-        layers: [layer]
-      });
-      
-      console.log('✅ 스팟 레이어 업데이트 완료');
-    } catch (error) {
-      console.error('❌ 레이어 설정 오류:', error);
-      if (overlayRef.current) {
+    // Deck 인스턴스가 준비될 때까지 기다린 후 레이어 추가
+    // requestAnimationFrame으로 렌더링 사이클과 동기화
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         try {
-          overlayRef.current.setProps({ layers: [] });
-        } catch (clearError) {
-          console.error('❌ 레이어 제거 실패:', clearError);
+          const layer = buildSpotsLayer();
+          if (!layer) {
+            console.warn('⚠️ 레이어 생성 실패');
+            if (overlayRef.current) {
+              overlayRef.current.setProps({ layers: [] });
+            }
+            return;
+          }
+          
+          if (!overlayRef.current) {
+            console.warn('⚠️ overlayRef가 없음');
+            return;
+          }
+          
+          // Deck 인스턴스가 있는지 확인 (MapboxOverlay가 준비되었는지)
+          const deck = (overlayRef.current as any)?.deck;
+          if (!deck) {
+            console.warn('⚠️ Deck 인스턴스가 아직 준비되지 않음. 다음 프레임에서 재시도');
+            setTimeout(() => {
+              if (overlayRef.current) {
+                overlayRef.current.setProps({ layers: [layer] });
+                console.log('✅ 스팟 레이어 업데이트 완료 (지연된 업데이트)');
+              }
+            }, 100);
+            return;
+          }
+          
+          overlayRef.current.setProps({
+            layers: [layer]
+          });
+          
+          console.log('✅ 스팟 레이어 업데이트 완료');
+        } catch (error) {
+          console.error('❌ 레이어 설정 오류:', error);
+          if (overlayRef.current) {
+            try {
+              overlayRef.current.setProps({ layers: [] });
+            } catch (clearError) {
+              console.error('❌ 레이어 제거 실패:', clearError);
+            }
+          }
         }
-      }
-    }
+      });
+    });
   }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
 
   if (loading) {
