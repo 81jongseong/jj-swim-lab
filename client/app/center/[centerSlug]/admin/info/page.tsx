@@ -184,10 +184,10 @@ function CenterInfoManagementPage() {
   // 센터 추가 모달 상태
   const [showAddCenterModal, setShowAddCenterModal] = useState(false);
   const [newCenterFormTab, setNewCenterFormTab] = useState<'basic' | 'pools' | 'facilities' | 'operating' | 'other'>('basic');
-  const [newPersonalLessonTimeSlot, setNewPersonalLessonTimeSlot] = useState({ startTime: '09:00', endTime: '18:00' });
-  const [newFreeSwimTimeSlot, setNewFreeSwimTimeSlot] = useState({ startTime: '09:00', endTime: '18:00' });
-  const [selectedPersonalLessonDays, setSelectedPersonalLessonDays] = useState<string[]>([]);
-  const [selectedFreeSwimDays, setSelectedFreeSwimDays] = useState<string[]>([]);
+  const [newPersonalLessonTimeSlotModal, setNewPersonalLessonTimeSlotModal] = useState({ startTime: '09:00', endTime: '18:00' });
+  const [newFreeSwimTimeSlotModal, setNewFreeSwimTimeSlotModal] = useState({ startTime: '09:00', endTime: '18:00' });
+  const [selectedPersonalLessonDaysModal, setSelectedPersonalLessonDaysModal] = useState<string[]>([]);
+  const [selectedFreeSwimDaysModal, setSelectedFreeSwimDaysModal] = useState<string[]>([]);
   const [newCenterForm, setNewCenterForm] = useState({
     name: '',
     address: '',
@@ -3051,8 +3051,8 @@ function CenterInfoManagementPage() {
                               <label className="block text-xs text-gray-600 mb-1">시작 시간</label>
                               <input
                                 type="time"
-                                value={newPersonalLessonTimeSlot.startTime}
-                                onChange={(e) => setNewPersonalLessonTimeSlot({ ...newPersonalLessonTimeSlot, startTime: e.target.value })}
+                                value={newPersonalLessonTimeSlotModal.startTime}
+                                onChange={(e) => setNewPersonalLessonTimeSlotModal({ ...newPersonalLessonTimeSlotModal, startTime: e.target.value })}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             </div>
@@ -3060,8 +3060,8 @@ function CenterInfoManagementPage() {
                               <label className="block text-xs text-gray-600 mb-1">종료 시간</label>
                               <input
                                 type="time"
-                                value={newPersonalLessonTimeSlot.endTime}
-                                onChange={(e) => setNewPersonalLessonTimeSlot({ ...newPersonalLessonTimeSlot, endTime: e.target.value })}
+                                value={newPersonalLessonTimeSlotModal.endTime}
+                                onChange={(e) => setNewPersonalLessonTimeSlotModal({ ...newPersonalLessonTimeSlotModal, endTime: e.target.value })}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             </div>
@@ -3078,7 +3078,7 @@ function CenterInfoManagementPage() {
                                 { value: 'saturday', label: '토' },
                                 { value: 'sunday', label: '일' }
                               ].map(day => {
-                                const isSelected = selectedPersonalLessonDays.includes(day.value);
+                                const isSelected = selectedPersonalLessonDaysModal.includes(day.value);
                                 
                                 return (
                                   <button
@@ -3086,9 +3086,9 @@ function CenterInfoManagementPage() {
                                     type="button"
                                     onClick={() => {
                                       if (isSelected) {
-                                        setSelectedPersonalLessonDays(selectedPersonalLessonDays.filter(d => d !== day.value));
+                                        setSelectedPersonalLessonDaysModal(selectedPersonalLessonDaysModal.filter(d => d !== day.value));
                                       } else {
-                                        setSelectedPersonalLessonDays([...selectedPersonalLessonDays, day.value]);
+                                        setSelectedPersonalLessonDaysModal([...selectedPersonalLessonDaysModal, day.value]);
                                       }
                                     }}
                                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -3106,22 +3106,22 @@ function CenterInfoManagementPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              const startTime = newPersonalLessonTimeSlot.startTime;
-                              const endTime = newPersonalLessonTimeSlot.endTime;
+                              const startTime = newPersonalLessonTimeSlotModal.startTime;
+                              const endTime = newPersonalLessonTimeSlotModal.endTime;
                               
                               if (!startTime || !endTime) {
                                 alert('시작 시간과 종료 시간을 모두 입력하세요.');
                                 return;
                               }
                               
-                              if (selectedPersonalLessonDays.length === 0) {
+                              if (selectedPersonalLessonDaysModal.length === 0) {
                                 alert('최소 1개 이상의 요일을 선택하세요.');
                                 return;
                               }
                               
                               const currentSlots = [...newCenterForm.personalLessonSettings.dayTimeSlots];
                               
-                              selectedPersonalLessonDays.forEach(dayValue => {
+                              selectedPersonalLessonDaysModal.forEach(dayValue => {
                                 const existingIndex = currentSlots.findIndex(d => d.day === dayValue);
                                 
                                 if (existingIndex >= 0) {
@@ -3148,8 +3148,8 @@ function CenterInfoManagementPage() {
                               });
                               
                               // 입력 필드 초기화
-                              setNewPersonalLessonTimeSlot({ startTime: '09:00', endTime: '18:00' });
-                              setSelectedPersonalLessonDays([]);
+                              setNewPersonalLessonTimeSlotModal({ startTime: '09:00', endTime: '18:00' });
+                              setSelectedPersonalLessonDaysModal([]);
                             }}
                             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
                           >
@@ -3332,8 +3332,8 @@ function CenterInfoManagementPage() {
                               <label className="block text-xs text-gray-600 mb-1">시작 시간</label>
                               <input
                                 type="time"
-                                value={newFreeSwimTimeSlot.startTime}
-                                onChange={(e) => setNewFreeSwimTimeSlot({ ...newFreeSwimTimeSlot, startTime: e.target.value })}
+                                value={newFreeSwimTimeSlotModal.startTime}
+                                onChange={(e) => setNewFreeSwimTimeSlotModal({ ...newFreeSwimTimeSlotModal, startTime: e.target.value })}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             </div>
@@ -3341,8 +3341,8 @@ function CenterInfoManagementPage() {
                               <label className="block text-xs text-gray-600 mb-1">종료 시간</label>
                               <input
                                 type="time"
-                                value={newFreeSwimTimeSlot.endTime}
-                                onChange={(e) => setNewFreeSwimTimeSlot({ ...newFreeSwimTimeSlot, endTime: e.target.value })}
+                                value={newFreeSwimTimeSlotModal.endTime}
+                                onChange={(e) => setNewFreeSwimTimeSlotModal({ ...newFreeSwimTimeSlotModal, endTime: e.target.value })}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                               />
                             </div>
@@ -3359,7 +3359,7 @@ function CenterInfoManagementPage() {
                                 { value: 'saturday', label: '토' },
                                 { value: 'sunday', label: '일' }
                               ].map(day => {
-                                const isSelected = selectedFreeSwimDays.includes(day.value);
+                                const isSelected = selectedFreeSwimDaysModal.includes(day.value);
                                 
                                 return (
                                   <button
@@ -3367,9 +3367,9 @@ function CenterInfoManagementPage() {
                                     type="button"
                                     onClick={() => {
                                       if (isSelected) {
-                                        setSelectedFreeSwimDays(selectedFreeSwimDays.filter(d => d !== day.value));
+                                        setSelectedFreeSwimDaysModal(selectedFreeSwimDaysModal.filter(d => d !== day.value));
                                       } else {
-                                        setSelectedFreeSwimDays([...selectedFreeSwimDays, day.value]);
+                                        setSelectedFreeSwimDaysModal([...selectedFreeSwimDaysModal, day.value]);
                                       }
                                     }}
                                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -3387,22 +3387,22 @@ function CenterInfoManagementPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              const startTime = newFreeSwimTimeSlot.startTime;
-                              const endTime = newFreeSwimTimeSlot.endTime;
+                              const startTime = newFreeSwimTimeSlotModal.startTime;
+                              const endTime = newFreeSwimTimeSlotModal.endTime;
                               
                               if (!startTime || !endTime) {
                                 alert('시작 시간과 종료 시간을 모두 입력하세요.');
                                 return;
                               }
                               
-                              if (selectedFreeSwimDays.length === 0) {
+                              if (selectedFreeSwimDaysModal.length === 0) {
                                 alert('최소 1개 이상의 요일을 선택하세요.');
                                 return;
                               }
                               
                               const currentSlots = [...newCenterForm.freeSwimSettings.dayTimeSlots];
                               
-                              selectedFreeSwimDays.forEach(dayValue => {
+                              selectedFreeSwimDaysModal.forEach(dayValue => {
                                 const existingIndex = currentSlots.findIndex(d => d.day === dayValue);
                                 
                                 if (existingIndex >= 0) {
@@ -3429,8 +3429,8 @@ function CenterInfoManagementPage() {
                               });
                               
                               // 입력 필드 초기화
-                              setNewFreeSwimTimeSlot({ startTime: '09:00', endTime: '18:00' });
-                              setSelectedFreeSwimDays([]);
+                              setNewFreeSwimTimeSlotModal({ startTime: '09:00', endTime: '18:00' });
+                              setSelectedFreeSwimDaysModal([]);
                             }}
                             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
                           >
