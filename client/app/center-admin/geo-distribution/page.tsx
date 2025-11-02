@@ -324,9 +324,50 @@ export default function CenterAdminGeoDistributionPage() {
     }
 
     try {
+      // 데이터 형식 검증 및 변환
+      const layerData = validSpots.map((spot: Spot) => {
+        const totalApprox = Number(spot.totalApprox) || 1;
+        const lat = Number(spot.lat);
+        const lng = Number(spot.lng);
+        
+        if (isNaN(lat) || isNaN(lng)) {
+          console.warn('⚠️ 잘못된 좌표:', spot);
+          return null;
+        }
+        
+        return {
+          ...spot,
+          lat,
+          lng,
+          totalApprox,
+          position: [lng, lat],
+          radius: Math.max(5, Math.min(50, Math.sqrt(totalApprox) * 3)),
+          fillColor: (() => {
+            const colors: Record<string, [number, number, number, number]> = {
+              'JJ Swim Lab': [255, 99, 132, 200],
+              '강남센터': [255, 99, 132, 200],
+              '홍대센터': [54, 162, 235, 200],
+              '송파센터': [255, 205, 86, 200],
+              '마포센터': [75, 192, 192, 200],
+            };
+            return colors[spot.dominantCenter || ''] || [153, 102, 255, 200];
+          })()
+        };
+      }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+      if (layerData.length === 0) {
+        console.warn('⚠️ 유효한 레이어 데이터가 없습니다');
+        overlayRef.current.setProps({
+          layers: []
+        });
+        return;
+      }
+
+      console.log(`🗺️ Deck.gl 레이어 생성: ${layerData.length}개 데이터 포인트`);
+
       const layer = new ScatterplotLayer({
         id: 'spots-layer',
-        data: validSpots,
+        data: layerData,
         pickable: true,
         opacity: 0.8,
         stroked: true,
@@ -335,27 +376,9 @@ export default function CenterAdminGeoDistributionPage() {
         radiusMinPixels: 5,
         radiusMaxPixels: 50,
         lineWidthMinPixels: 1,
-        getPosition: (d: Spot) => {
-          const pos = [d.lng, d.lat];
-          if (!d.lng || !d.lat || isNaN(d.lng) || isNaN(d.lat)) {
-            console.warn('⚠️ 잘못된 좌표:', d);
-          }
-          return pos;
-        },
-        getRadius: (d: Spot) => {
-          const radius = Math.max(5, Math.min(50, Math.sqrt(d.totalApprox || 1) * 3));
-          return radius;
-        },
-        getFillColor: (d: Spot) => {
-          const colors: Record<string, [number, number, number, number]> = {
-            'JJ Swim Lab': [255, 99, 132, 200],
-            '강남센터': [255, 99, 132, 200],
-            '홍대센터': [54, 162, 235, 200],
-            '송파센터': [255, 205, 86, 200],
-            '마포센터': [75, 192, 192, 200],
-          };
-          return colors[d.dominantCenter || ''] || [153, 102, 255, 200];
-        },
+        getPosition: (d: any) => d.position || [d.lng, d.lat],
+        getRadius: (d: any) => d.radius || 10,
+        getFillColor: (d: any) => d.fillColor || [153, 102, 255, 200],
         getLineColor: [255, 255, 255, 200],
         onHover: (info: any) => {
           setHoveredSpot(info.object || null);
