@@ -256,6 +256,10 @@ export default function GeoDistributionPage() {
   // 2단계 선택 상태
   const [selectedSido, setSelectedSido] = useState<string>('');
   const [showDistrictSelection, setShowDistrictSelection] = useState(false);
+  
+  // 센터 관리 상태 (centerAdmin용, 최고관리자는 사용하지 않음)
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
+  const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
 
   // 지역별 센터 매핑 초기화
   useEffect(() => {
@@ -815,10 +819,10 @@ export default function GeoDistributionPage() {
   // 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
   useEffect(() => {
     if (librariesLoaded) {
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType });
+      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
       fetchSpotsData();
     }
-  }, [librariesLoaded, memberType]);
+  }, [librariesLoaded, memberType, selectedCenterId]);
 
   // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
   useEffect(() => {
