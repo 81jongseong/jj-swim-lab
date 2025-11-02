@@ -43,7 +43,7 @@ import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
-import BookingManagementContent from '../../../center-admin/courses/booking-management-content';
+import BookingManagementContent from '@/app/center-admin/courses/booking-management-content';
 
 // Course 타입 정의 (서버 모델과 일치)
 type Course = {
