@@ -183,12 +183,33 @@ function CenterInfoManagementPage() {
   
   // 센터 추가 모달 상태
   const [showAddCenterModal, setShowAddCenterModal] = useState(false);
+  const [newCenterFormTab, setNewCenterFormTab] = useState<'basic' | 'pools' | 'facilities' | 'operating' | 'other'>('basic');
   const [newCenterForm, setNewCenterForm] = useState({
     name: '',
     address: '',
+    postalCode: '',
+    city: '',
+    province: '',
     phone: '',
     email: '',
-    description: ''
+    description: '',
+    pools: [] as Array<{
+      id: string;
+      type: 'main' | 'auxiliary';
+      length: number;
+      width: number;
+      depth: number;
+      laneCount?: number;
+      description?: string;
+    }>,
+    facilities: JSON.parse(JSON.stringify(FACILITY_TEMPLATES)) as FacilityDetail[],
+    weekdaysOpen: '06:00',
+    weekdaysClose: '22:00',
+    weekendsOpen: '08:00',
+    weekendsClose: '20:00',
+    capacity: 50,
+    parkingAvailable: false,
+    parkingSpaces: 0
   });
   
   // 센터 정보
@@ -2505,14 +2526,34 @@ function CenterInfoManagementPage() {
       {/* 센터 추가 모달 */}
       {showAddCenterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* 헤더 */}
+            <div className="p-6 border-b">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold">새 센터 추가</h3>
                 <button
                   onClick={() => {
                     setShowAddCenterModal(false);
-                    setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                    setNewCenterFormTab('basic');
+                    setNewCenterForm({
+                      name: '',
+                      address: '',
+                      postalCode: '',
+                      city: '',
+                      province: '',
+                      phone: '',
+                      email: '',
+                      description: '',
+                      pools: [],
+                      facilities: JSON.parse(JSON.stringify(FACILITY_TEMPLATES)),
+                      weekdaysOpen: '06:00',
+                      weekdaysClose: '22:00',
+                      weekendsOpen: '08:00',
+                      weekendsClose: '20:00',
+                      capacity: 50,
+                      parkingAvailable: false,
+                      parkingSpaces: 0
+                    });
                   }}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -2520,64 +2561,530 @@ function CenterInfoManagementPage() {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">센터명 *</label>
-                  <input
-                    type="text"
-                    value={newCenterForm.name}
-                    onChange={e => setNewCenterForm({ ...newCenterForm, name: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="센터명을 입력하세요"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
-                  <input
-                    type="text"
-                    value={newCenterForm.address}
-                    onChange={e => setNewCenterForm({ ...newCenterForm, address: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="주소를 입력하세요"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호 *</label>
-                  <input
-                    type="text"
-                    value={newCenterForm.phone}
-                    onChange={e => setNewCenterForm({ ...newCenterForm, phone: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="전화번호를 입력하세요"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
-                  <input
-                    type="email"
-                    value={newCenterForm.email}
-                    onChange={e => setNewCenterForm({ ...newCenterForm, email: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="이메일을 입력하세요"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-                  <textarea
-                    value={newCenterForm.description}
-                    onChange={e => setNewCenterForm({ ...newCenterForm, description: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    rows={4}
-                    placeholder="센터 설명을 입력하세요"
-                  />
-                </div>
+              {/* 탭 네비게이션 */}
+              <div className="flex gap-2 overflow-x-auto">
+                <button
+                  onClick={() => setNewCenterFormTab('basic')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    newCenterFormTab === 'basic' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  기본 정보
+                </button>
+                <button
+                  onClick={() => setNewCenterFormTab('pools')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    newCenterFormTab === 'pools' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  수영장 정보
+                </button>
+                <button
+                  onClick={() => setNewCenterFormTab('facilities')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    newCenterFormTab === 'facilities' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  시설 정보
+                </button>
+                <button
+                  onClick={() => setNewCenterFormTab('operating')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    newCenterFormTab === 'operating' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  운영시간
+                </button>
+                <button
+                  onClick={() => setNewCenterFormTab('other')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                    newCenterFormTab === 'other' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  기타 정보
+                </button>
               </div>
+            </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
+            {/* 탭 컨텐츠 */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {newCenterFormTab === 'basic' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">센터명 *</label>
+                    <input
+                      type="text"
+                      value={newCenterForm.name}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, name: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="센터명을 입력하세요"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">우편번호</label>
+                    <input
+                      type="text"
+                      value={newCenterForm.postalCode}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, postalCode: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="우편번호를 입력하세요"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
+                    <input
+                      type="text"
+                      value={newCenterForm.address}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, address: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="주소를 입력하세요"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">시/도</label>
+                      <input
+                        type="text"
+                        value={newCenterForm.province}
+                        onChange={e => setNewCenterForm({ ...newCenterForm, province: e.target.value })}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="시/도를 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">시/군/구</label>
+                      <input
+                        type="text"
+                        value={newCenterForm.city}
+                        onChange={e => setNewCenterForm({ ...newCenterForm, city: e.target.value })}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="시/군/구를 입력하세요"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">전화번호 *</label>
+                    <input
+                      type="text"
+                      value={newCenterForm.phone}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, phone: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
+                    <input
+                      type="email"
+                      value={newCenterForm.email}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, email: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      placeholder="이메일을 입력하세요"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                    <textarea
+                      value={newCenterForm.description}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, description: e.target.value })}
+                      className="w-full border rounded px-3 py-2"
+                      rows={4}
+                      placeholder="센터 설명을 입력하세요"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {newCenterFormTab === 'pools' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg font-semibold">수영장 정보</h4>
+                    <Button
+                      onClick={() => {
+                        setNewCenterForm({
+                          ...newCenterForm,
+                          pools: [
+                            ...newCenterForm.pools,
+                            {
+                              id: `pool-${Date.now()}`,
+                              type: 'main',
+                              length: 25,
+                              width: 12,
+                              depth: 1.5,
+                              laneCount: 5
+                            }
+                          ]
+                        });
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      수영장 추가
+                    </Button>
+                  </div>
+                  {newCenterForm.pools.map((pool, index) => (
+                    <div key={pool.id} className="border rounded p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h5 className="font-medium">수영장 {index + 1}</h5>
+                        <Button
+                          onClick={() => {
+                            setNewCenterForm({
+                              ...newCenterForm,
+                              pools: newCenterForm.pools.filter(p => p.id !== pool.id)
+                            });
+                          }}
+                          variant="secondary"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">유형 *</label>
+                          <select
+                            value={pool.type}
+                            onChange={e => {
+                              const updatedPools = [...newCenterForm.pools];
+                              updatedPools[index].type = e.target.value as 'main' | 'auxiliary';
+                              setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                            }}
+                            className="w-full border rounded px-3 py-2"
+                          >
+                            <option value="main">메인풀</option>
+                            <option value="auxiliary">보조풀</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">길이 (m) *</label>
+                          <input
+                            type="number"
+                            value={pool.length}
+                            onChange={e => {
+                              const updatedPools = [...newCenterForm.pools];
+                              updatedPools[index].length = parseFloat(e.target.value) || 0;
+                              setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                            }}
+                            className="w-full border rounded px-3 py-2"
+                            min="5"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">폭 (m) *</label>
+                          <input
+                            type="number"
+                            value={pool.width}
+                            onChange={e => {
+                              const updatedPools = [...newCenterForm.pools];
+                              updatedPools[index].width = parseFloat(e.target.value) || 0;
+                              setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                            }}
+                            className="w-full border rounded px-3 py-2"
+                            min="3"
+                            max="50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">깊이 (m) *</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={pool.depth}
+                            onChange={e => {
+                              const updatedPools = [...newCenterForm.pools];
+                              updatedPools[index].depth = parseFloat(e.target.value) || 0;
+                              setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                            }}
+                            className="w-full border rounded px-3 py-2"
+                            min="0.3"
+                            max="5"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">레인 수</label>
+                          <input
+                            type="number"
+                            value={pool.laneCount || ''}
+                            onChange={e => {
+                              const updatedPools = [...newCenterForm.pools];
+                              updatedPools[index].laneCount = parseInt(e.target.value) || undefined;
+                              setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                            }}
+                            className="w-full border rounded px-3 py-2"
+                            min="1"
+                            max="20"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                        <textarea
+                          value={pool.description || ''}
+                          onChange={e => {
+                            const updatedPools = [...newCenterForm.pools];
+                            updatedPools[index].description = e.target.value;
+                            setNewCenterForm({ ...newCenterForm, pools: updatedPools });
+                          }}
+                          className="w-full border rounded px-3 py-2"
+                          rows={2}
+                          placeholder="수영장 설명을 입력하세요"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {newCenterForm.pools.length === 0 && (
+                    <p className="text-gray-500 text-center py-8">수영장 정보를 추가해주세요</p>
+                  )}
+                </div>
+              )}
+
+              {newCenterFormTab === 'facilities' && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold">시설 정보</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {newCenterForm.facilities.map((facility, index) => (
+                      <div key={facility.name} className="border rounded p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={facility.enabled}
+                            onChange={e => {
+                              const updatedFacilities = [...newCenterForm.facilities];
+                              updatedFacilities[index].enabled = e.target.checked;
+                              setNewCenterForm({ ...newCenterForm, facilities: updatedFacilities });
+                            }}
+                            className="w-4 h-4"
+                          />
+                          <label className="font-medium">{facility.name}</label>
+                        </div>
+                        {facility.enabled && facility.details && (
+                          <div className="mt-2 space-y-2 pl-6">
+                            {facility.details.count !== undefined && (
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">개수</label>
+                                <input
+                                  type="number"
+                                  value={facility.details.count || ''}
+                                  onChange={e => {
+                                    const updatedFacilities = [...newCenterForm.facilities];
+                                    if (!updatedFacilities[index].details) {
+                                      updatedFacilities[index].details = {};
+                                    }
+                                    updatedFacilities[index].details!.count = parseInt(e.target.value) || undefined;
+                                    setNewCenterForm({ ...newCenterForm, facilities: updatedFacilities });
+                                  }}
+                                  className="w-full border rounded px-2 py-1 text-sm"
+                                  min="0"
+                                />
+                              </div>
+                            )}
+                            {facility.details.type && (
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">유형</label>
+                                <input
+                                  type="text"
+                                  value={facility.details.type || ''}
+                                  onChange={e => {
+                                    const updatedFacilities = [...newCenterForm.facilities];
+                                    if (!updatedFacilities[index].details) {
+                                      updatedFacilities[index].details = {};
+                                    }
+                                    updatedFacilities[index].details!.type = e.target.value;
+                                    setNewCenterForm({ ...newCenterForm, facilities: updatedFacilities });
+                                  }}
+                                  className="w-full border rounded px-2 py-1 text-sm"
+                                  placeholder={facility.details.type}
+                                />
+                              </div>
+                            )}
+                            {facility.details.description !== undefined && (
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">설명</label>
+                                <textarea
+                                  value={facility.details.description || ''}
+                                  onChange={e => {
+                                    const updatedFacilities = [...newCenterForm.facilities];
+                                    if (!updatedFacilities[index].details) {
+                                      updatedFacilities[index].details = {};
+                                    }
+                                    updatedFacilities[index].details!.description = e.target.value;
+                                    setNewCenterForm({ ...newCenterForm, facilities: updatedFacilities });
+                                  }}
+                                  className="w-full border rounded px-2 py-1 text-sm"
+                                  rows={2}
+                                  placeholder="설명을 입력하세요"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {newCenterFormTab === 'operating' && (
+                <div className="space-y-6">
+                  <h4 className="text-lg font-semibold">운영시간</h4>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h5 className="font-medium mb-3">평일 운영시간</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
+                          <input
+                            type="time"
+                            value={newCenterForm.weekdaysOpen}
+                            onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysOpen: e.target.value })}
+                            className="w-full border rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
+                          <input
+                            type="time"
+                            value={newCenterForm.weekdaysClose}
+                            onChange={e => setNewCenterForm({ ...newCenterForm, weekdaysClose: e.target.value })}
+                            className="w-full border rounded px-3 py-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="font-medium mb-3">주말 운영시간</h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">오픈 시간 *</label>
+                          <input
+                            type="time"
+                            value={newCenterForm.weekendsOpen}
+                            onChange={e => setNewCenterForm({ ...newCenterForm, weekendsOpen: e.target.value })}
+                            className="w-full border rounded px-3 py-2"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">마감 시간 *</label>
+                          <input
+                            type="time"
+                            value={newCenterForm.weekendsClose}
+                            onChange={e => setNewCenterForm({ ...newCenterForm, weekendsClose: e.target.value })}
+                            className="w-full border rounded px-3 py-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {newCenterFormTab === 'other' && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold">기타 정보</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">수용 인원 *</label>
+                    <input
+                      type="number"
+                      value={newCenterForm.capacity}
+                      onChange={e => setNewCenterForm({ ...newCenterForm, capacity: parseInt(e.target.value) || 0 })}
+                      className="w-full border rounded px-3 py-2"
+                      min="10"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={newCenterForm.parkingAvailable}
+                        onChange={e => setNewCenterForm({ ...newCenterForm, parkingAvailable: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <label className="font-medium">주차 가능</label>
+                    </div>
+                    {newCenterForm.parkingAvailable && (
+                      <div className="mt-2 pl-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">주차 대수</label>
+                        <input
+                          type="number"
+                          value={newCenterForm.parkingSpaces}
+                          onChange={e => setNewCenterForm({ ...newCenterForm, parkingSpaces: parseInt(e.target.value) || 0 })}
+                          className="w-full border rounded px-3 py-2"
+                          min="0"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 푸터 */}
+            <div className="p-6 border-t flex justify-between">
+              <div className="flex gap-2">
+                {newCenterFormTab !== 'basic' && (
+                  <Button
+                    onClick={() => {
+                      const tabs: Array<'basic' | 'pools' | 'facilities' | 'operating' | 'other'> = ['basic', 'pools', 'facilities', 'operating', 'other'];
+                      const currentIndex = tabs.indexOf(newCenterFormTab);
+                      if (currentIndex > 0) {
+                        setNewCenterFormTab(tabs[currentIndex - 1]);
+                      }
+                    }}
+                    variant="secondary"
+                  >
+                    이전
+                  </Button>
+                )}
+                {newCenterFormTab !== 'other' && (
+                  <Button
+                    onClick={() => {
+                      const tabs: Array<'basic' | 'pools' | 'facilities' | 'operating' | 'other'> = ['basic', 'pools', 'facilities', 'operating', 'other'];
+                      const currentIndex = tabs.indexOf(newCenterFormTab);
+                      if (currentIndex < tabs.length - 1) {
+                        setNewCenterFormTab(tabs[currentIndex + 1]);
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    다음
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-3">
                 <Button
                   onClick={() => {
                     setShowAddCenterModal(false);
-                    setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                    setNewCenterFormTab('basic');
+                    setNewCenterForm({
+                      name: '',
+                      address: '',
+                      postalCode: '',
+                      city: '',
+                      province: '',
+                      phone: '',
+                      email: '',
+                      description: '',
+                      pools: [],
+                      facilities: JSON.parse(JSON.stringify(FACILITY_TEMPLATES)),
+                      weekdaysOpen: '06:00',
+                      weekdaysClose: '22:00',
+                      weekendsOpen: '08:00',
+                      weekendsClose: '20:00',
+                      capacity: 50,
+                      parkingAvailable: false,
+                      parkingSpaces: 0
+                    });
                   }}
                   variant="secondary"
                 >
@@ -2586,6 +3093,18 @@ function CenterInfoManagementPage() {
                 <Button
                   onClick={async () => {
                     try {
+                      // 필수 필드 검증
+                      if (!newCenterForm.name || !newCenterForm.address || !newCenterForm.phone || !newCenterForm.email) {
+                        alert('필수 항목을 모두 입력해주세요.');
+                        setNewCenterFormTab('basic');
+                        return;
+                      }
+                      if (newCenterForm.pools.length === 0) {
+                        alert('최소 1개 이상의 수영장 정보를 입력해주세요.');
+                        setNewCenterFormTab('pools');
+                        return;
+                      }
+
                       const token = localStorage.getItem('token');
                       // 센터 등록 신청 API 호출
                       const response = await fetch('http://localhost:5000/api/center-registrations', {
@@ -2601,8 +3120,37 @@ function CenterInfoManagementPage() {
                           representativeEmail: newCenterForm.email,
                           representativePhone: newCenterForm.phone,
                           password: 'temp123!', // 임시 비밀번호 (나중에 변경해야 함)
-                          address: newCenterForm.address,
-                          description: newCenterForm.description
+                          address: {
+                            postalCode: newCenterForm.postalCode,
+                            address1: newCenterForm.address,
+                            address2: '',
+                            city: newCenterForm.city,
+                            province: newCenterForm.province
+                          },
+                          centerInfo: {
+                            description: newCenterForm.description,
+                            pools: newCenterForm.pools,
+                            facilities: newCenterForm.facilities.filter(f => f.enabled),
+                            operatingHours: {
+                              weekdays: {
+                                open: newCenterForm.weekdaysOpen,
+                                close: newCenterForm.weekdaysClose
+                              },
+                              weekends: {
+                                open: newCenterForm.weekendsOpen,
+                                close: newCenterForm.weekendsClose
+                              }
+                            },
+                            capacity: newCenterForm.capacity,
+                            parkingAvailable: newCenterForm.parkingAvailable,
+                            parkingSpaces: newCenterForm.parkingAvailable ? newCenterForm.parkingSpaces : undefined
+                          },
+                          applicant: {
+                            name: user?.name || '',
+                            email: newCenterForm.email,
+                            phone: newCenterForm.phone,
+                            position: '센터 관리자'
+                          }
                         })
                       });
 
@@ -2610,7 +3158,26 @@ function CenterInfoManagementPage() {
                       if (result.success) {
                         alert('센터 등록 신청이 완료되었습니다. 관리자 승인 후 이용하실 수 있습니다.');
                         setShowAddCenterModal(false);
-                        setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                        setNewCenterFormTab('basic');
+                        setNewCenterForm({
+                          name: '',
+                          address: '',
+                          postalCode: '',
+                          city: '',
+                          province: '',
+                          phone: '',
+                          email: '',
+                          description: '',
+                          pools: [],
+                          facilities: JSON.parse(JSON.stringify(FACILITY_TEMPLATES)),
+                          weekdaysOpen: '06:00',
+                          weekdaysClose: '22:00',
+                          weekendsOpen: '08:00',
+                          weekendsClose: '20:00',
+                          capacity: 50,
+                          parkingAvailable: false,
+                          parkingSpaces: 0
+                        });
                       } else {
                         alert(result.message || '센터 추가에 실패했습니다.');
                       }
@@ -2619,10 +3186,10 @@ function CenterInfoManagementPage() {
                       alert(error.response?.data?.message || '센터 추가 중 오류가 발생했습니다.');
                     }
                   }}
-                  disabled={!newCenterForm.name || !newCenterForm.address || !newCenterForm.phone || !newCenterForm.email}
+                  disabled={!newCenterForm.name || !newCenterForm.address || !newCenterForm.phone || !newCenterForm.email || newCenterForm.pools.length === 0}
                   className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  센터 추가
+                  센터 등록 신청
                 </Button>
               </div>
             </div>
