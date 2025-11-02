@@ -195,19 +195,17 @@ const userMenuStructure = {
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
-    support: [
+    community: [
       { href: '/center/default/admin/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/job-board', label: '💼 구인구직' },
-    ],
-    community: [
       { href: '/community', label: '💬 커뮤니티' },
-      { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     tools: [
       { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ]
   },
   'center-admin': {
@@ -227,19 +225,17 @@ const userMenuStructure = {
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
       { href: '/center/default/admin/branding', label: '🎨 사이트 테마 설정' },
     ],
-    support: [
+    community: [
       { href: '/center/default/admin/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/job-board', label: '💼 구인구직' },
-    ],
-    community: [
       { href: '/community', label: '💬 커뮤니티' },
-      { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ],
     tools: [
       { href: '/admin/swim-training-engine', label: '📅 주간 프로그램 생성' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/shop', label: '🛍️ 상점' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
     ]
   },
   superAdmin: {
@@ -330,17 +326,15 @@ const menuGrouping = {
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
-    { groupName: '💡 지원 & 안내', categories: ['support'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
-    { groupName: '🛠️ 도구', categories: ['tools'] },
+    { groupName: '🔗 추가 서비스', categories: ['tools'] },
   ],
   'center-admin': [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
     { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
-    { groupName: '💡 지원 & 안내', categories: ['support'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
-    { groupName: '🛠️ 도구', categories: ['tools'] },
+    { groupName: '🔗 추가 서비스', categories: ['tools'] },
   ],
   superAdmin: [
     { groupName: '🎯 핵심 관리', categories: ['core'] },
