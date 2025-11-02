@@ -252,16 +252,31 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                     console.log(`  ✅ 좌표 사용: User ${userItem._id} → [${coords.lng}, ${coords.lat}]`);
                 }
             }
-            else if (userItem.address) {
+            if (!coords && userItem.address && userItem.address.trim() !== '') {
                 coords = await geocodeAddress(userItem.address);
-                if (processedCount < 3) {
-                    console.log(`  📍 지오코딩: User ${userItem._id}, 주소 "${userItem.address}" → [${coords?.lng}, ${coords?.lat}]`);
+                if (coords) {
+                    if (processedCount < 3) {
+                        console.log(`  ✅ 지오코딩: User ${userItem._id}, 주소 "${userItem.address}" → [${coords.lng}, ${coords.lat}]`);
+                    }
+                }
+                else {
+                    if (processedCount < 3) {
+                        console.warn(`  ⚠️ 지오코딩 실패: User ${userItem._id}, 주소 "${userItem.address}"`);
+                    }
                 }
             }
-            else if (userItem.centerId) {
+            if (!coords && userItem.centerId) {
                 try {
                     const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
                     const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
+                    if (processedCount < 3) {
+                        console.log(`  🔍 센터 조회 시도: User ${userItem._id}, Center ${userItem.centerId}`);
+                        console.log(`     센터 조회 결과:`, center ? '성공' : '실패 (센터 없음)');
+                        if (center) {
+                            console.log(`     센터 주소지:`, center.address || '없음');
+                            console.log(`     센터 좌표:`, center.location?.coordinates || '없음');
+                        }
+                    }
                     if (center && !Array.isArray(center)) {
                         if (center.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
                             coords = {
@@ -269,20 +284,37 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                                 lat: center.location.coordinates[1]
                             };
                             if (processedCount < 3) {
-                                console.log(`  🏢 센터 좌표 사용: User ${userItem._id}, Center ${userItem.centerId} → [${coords.lng}, ${coords.lat}]`);
+                                console.log(`  ✅ 센터 좌표 사용: User ${userItem._id}, Center ${userItem.centerId} → [${coords.lng}, ${coords.lat}]`);
                             }
                         }
-                        else if (center.address) {
+                        else if (center.address && center.address.trim() !== '') {
                             coords = await geocodeAddress(center.address);
-                            if (processedCount < 3) {
-                                console.log(`  🏢 센터 주소 지오코딩: User ${userItem._id}, Center ${userItem.centerId}, 주소 "${center.address}" → [${coords?.lng}, ${coords?.lat}]`);
+                            if (coords) {
+                                if (processedCount < 3) {
+                                    console.log(`  ✅ 센터 주소 지오코딩: User ${userItem._id}, Center ${userItem.centerId}, 주소 "${center.address}" → [${coords.lng}, ${coords.lat}]`);
+                                }
                             }
+                            else {
+                                if (processedCount < 3) {
+                                    console.warn(`  ⚠️ 센터 주소 지오코딩 실패: User ${userItem._id}, Center ${userItem.centerId}, 주소 "${center.address}"`);
+                                }
+                            }
+                        }
+                        else {
+                            if (processedCount < 3) {
+                                console.warn(`  ⚠️ 센터에 주소지/좌표 없음: User ${userItem._id}, Center ${userItem.centerId}`);
+                            }
+                        }
+                    }
+                    else {
+                        if (processedCount < 3) {
+                            console.warn(`  ⚠️ 센터 조회 실패: User ${userItem._id}, Center ${userItem.centerId} - 센터를 찾을 수 없음`);
                         }
                     }
                 }
                 catch (error) {
                     if (processedCount < 3) {
-                        console.warn(`  ⚠️ 센터 조회 실패: User ${userItem._id}, Center ${userItem.centerId}`, error);
+                        console.error(`  ❌ 센터 조회 오류: User ${userItem._id}, Center ${userItem.centerId}`, error);
                     }
                 }
             }
