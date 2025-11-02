@@ -247,11 +247,12 @@ export default function BookingManagementContent() {
 
   const loadApprovals = async () => {
     try {
-      const response = await apiClient.get('/api/center-admin/approvals');
+      const response = await apiClient.get('/api/approvals');
       if (response.success) {
         setApprovals(response.data?.approvals || []);
       }
     } catch (error) {
+      // 404 오류는 조용히 처리 (엔드포인트가 없을 수 있음)
       if (DEBUG) console.error('승인 로드 실패:', error);
       setApprovals([]);
     }
