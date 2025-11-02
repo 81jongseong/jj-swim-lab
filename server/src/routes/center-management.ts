@@ -259,17 +259,24 @@ router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
       });
     }
 
-    // 센터 관리자는 자신의 센터만 조회 가능
-    if (user.userType === 'centerAdmin' && user.centerId !== id) {
-      return res.status(403).json({
-        success: false,
-        message: '접근 권한이 없습니다.'
+    // 센터 관리자는 자신의 센터만 조회 가능 (managedCenters 포함)
+    if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+      const centerAdminUser = await User.findById(user._id);
+      const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+      const hasAccess = user.centerId === id || managedCenters.some((c: any) => {
+        const cId = c.toString ? c.toString() : c._id?.toString() || c;
+        return cId === id;
       });
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: '접근 권한이 없습니다.'
+        });
+      }
     }
 
-    const center = await Center.findById(id)
-      .populate('createdBy', 'name email')
-      .populate('centerId', 'name email');
+    // SwimmingCenter 모델 사용 (실제 센터 데이터)
+    const center = await SwimmingCenter.findById(id).lean();
 
     if (!center) {
       return res.status(404).json({

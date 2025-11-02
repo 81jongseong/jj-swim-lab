@@ -98,11 +98,11 @@ export default function CenterAdminGeoDistributionPage() {
                 const centerId = c.toString ? c.toString() : c._id?.toString() || c;
                 // 센터 정보 조회
                 try {
-                  const response = await apiClient.get(`/api/centers/${centerId}`);
-                  if (response.success && response.data) {
+                  const response = await apiClient.get(`/api/center-management/${centerId}`);
+                  if (response.success && response.data?.center) {
                     return {
                       _id: centerId,
-                      name: response.data.name || `센터 ${centerId.substring(0, 8)}`
+                      name: response.data.center.name || `센터 ${centerId.substring(0, 8)}`
                     };
                   }
                 } catch (error) {

@@ -279,12 +279,15 @@ function CenterInfoManagement() {
             </div>
           )}
 
-          {/* 센터 추가 버튼 */}
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-xl font-semibold">센터 정보</h2>
+          {/* 센터 추가 버튼 - 항상 표시 */}
+          <div className="mb-6 flex justify-between items-center bg-white rounded-lg shadow p-4">
+            <h2 className="text-xl font-semibold text-gray-900">센터 정보</h2>
             <button
-              onClick={() => setShowAddCenterModal(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              onClick={() => {
+                console.log('🔍 [CenterInfo] 센터 추가 버튼 클릭');
+                setShowAddCenterModal(true);
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md"
             >
               <Plus className="w-4 h-4" />
               센터 추가

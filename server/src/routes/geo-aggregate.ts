@@ -191,13 +191,14 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
 
     console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);
 
-    // 센터 정보 조회 (이름 매핑용)
+    // 센터 정보 조회 (이름 매핑용) - SwimmingCenter 모델 사용
     const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
-    const centers = await Center.find({ _id: { $in: centerIds } })
+    const { SwimmingCenter } = await import('../models/SwimmingCenter');
+    const centers = await SwimmingCenter.find({ _id: { $in: centerIds } })
       .select('_id name')
       .lean();
     
-    const centerMap = new Map(centers.map(c => [c._id.toString(), c.name]));
+    const centerMap = new Map(centers.map((c: any) => [c._id.toString(), c.name || `센터 ${c._id.toString().substring(0, 8)}`]));
 
     // H3 셀 집계
     const h3Map: Map<string, any> = new Map();
