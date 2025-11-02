@@ -185,13 +185,23 @@ export default function CenterAdminGeoDistributionPage() {
       ]
     };
 
+    // 관리자 페이지와 완전히 동일한 지도 설정
     const map = new maplibregl.Map({
       container: mapRef.current,
       style,
-      center: [127.0276, 37.4979],
+      center: [127.0276, 37.4979], // 서울 강남구 중심
       zoom: 12,
       maxZoom: 18,
-      minZoom: 8
+      minZoom: 8,
+      pitch: 0,
+      bearing: 0,
+      scrollZoom: true,
+      boxZoom: true,
+      dragRotate: false,
+      dragPan: true,
+      keyboard: true,
+      doubleClickZoom: true,
+      touchZoomRotate: true
     });
 
     mapInstanceRef.current = map;
@@ -202,26 +212,21 @@ export default function CenterAdminGeoDistributionPage() {
       layers: []
     });
     
+    // MapboxOverlay를 지도에 추가
     map.addControl(overlay);
     overlayRef.current = overlay;
 
+    // 줌 레벨 변경 감지
     map.on('zoom', () => {
       setCurrentZoom(map.getZoom());
     });
 
-    // 지도 로딩 완료
+    // 지도 로딩 완료 - 관리자 페이지와 동일하게 단순 처리
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
-      // 'load' 이벤트만으로는 부족 - 'idle' 이벤트를 사용하여 완전한 렌더링 대기
-    });
-
-    // 지도가 완전히 렌더링되고 WebGL 컨텍스트가 준비된 후에만 데이터 로드
-    // 'idle' 이벤트는 모든 타일이 로드되고 렌더링이 완료된 후 발생
-    map.once('idle', () => {
-      console.log('✅ 지도 렌더링 완료 및 WebGL 컨텍스트 준비');
       setMapLoaded(true);
       
-      // 지도가 완전히 준비된 후 데이터 로드
+      // 관리자 페이지와 동일하게 바로 데이터 로드
       fetchSpotsData();
     });
 
@@ -392,52 +397,21 @@ export default function CenterAdminGeoDistributionPage() {
     const uniquePositions = new Set(positions);
     console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
     
-    // 데이터 유효성 최종 확인 및 변환
-    const validSpots = filteredSpots.filter(s => {
-      const valid = s && 
-        typeof s.lat === 'number' && !isNaN(s.lat) &&
-        typeof s.lng === 'number' && !isNaN(s.lng) &&
-        s.lat >= -90 && s.lat <= 90 &&
-        s.lng >= -180 && s.lng <= 180;
-      if (!valid) {
-        console.warn('⚠️ 유효하지 않은 좌표 필터링:', s);
-      }
-      return valid;
-    });
-    
-    console.log('✅ 최종 유효 스팟:', validSpots.length, '개 (필터링 전:', filteredSpots.length, '개)');
-    
-    if (validSpots.length === 0) {
-      console.warn('⚠️ 유효한 스팟이 없습니다');
-      return null;
-    }
-    
     return new ScatterplotLayer({
       id: 'spots',
-      data: validSpots,
+      data: filteredSpots,
       pickable: true,
-      // updateTriggers 추가 - 데이터 변경을 명시적으로 알림
-      updateTriggers: {
-        getPosition: [validSpots.length],
-        getFillColor: [validSpots.length],
-        getRadius: [currentZoom]
-      },
       getPosition: (d: Spot) => {
-        if (!d) {
-          console.warn('⚠️ 스팟 데이터가 null:', d);
-          return [126.9780, 37.5665];
+        if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+          return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
         }
-        const lng = Number(d.lng);
-        const lat = Number(d.lat);
-        if (isNaN(lng) || isNaN(lat)) {
-          console.warn('⚠️ 좌표가 숫자가 아님:', d);
-          return [126.9780, 37.5665];
-        }
-        return [lng, lat];
+        return [d.lng, d.lat];
       },
       getFillColor: (d: Spot) => {
         if (!d || !d.dominantCenter) {
-          return [128, 128, 128, 150];
+          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
+          return [128, 128, 128, 150]; // 기본 회색
         }
         const center = d.dominantCenter;
         const colors: Record<string, [number, number, number, number]> = {
@@ -451,9 +425,11 @@ export default function CenterAdminGeoDistributionPage() {
       },
       getRadius: (d: Spot) => {
         if (!d || typeof d.totalApprox !== 'number') {
-          return 50;
+          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+          return 50; // 기본 크기
         }
-        return scaleRadius(d.totalApprox, d.memberType);
+        const radius = scaleRadius(d.totalApprox, d.memberType);
+        return radius;
       },
       radiusUnits: 'meters',
       stroked: true,
@@ -473,91 +449,37 @@ export default function CenterAdminGeoDistributionPage() {
     });
   }, [spots, currentZoom, scaleRadius]);
 
-  // Deck.gl 레이어 업데이트 - 새로운 접근 방법
+  // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
   useEffect(() => {
-    // React StrictMode로 인한 이중 렌더링 방지
-    if (!mapLoaded || !overlayRef.current) {
+    if (!overlayRef.current || !spots || !spots.length) {
       console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
-        mapLoaded,
         hasOverlay: !!overlayRef.current,
         spotsLength: spots?.length || 0
       });
       return;
     }
 
-    if (!spots || !spots.length) {
-      // 데이터가 없을 때는 빈 레이어로 설정
-      overlayRef.current.setProps({ layers: [] });
-      return;
-    }
-
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
-    // 지도 인스턴스가 준비되었는지 확인
-    const map = mapInstanceRef.current;
-    if (!map) {
-      console.warn('⚠️ 지도 인스턴스가 없습니다');
+    const layer = buildSpotsLayer();
+    
+    // 레이어가 null이면 건너뛰기 (관리자 페이지에는 이 체크가 없지만 안전을 위해 추가)
+    if (!layer) {
+      console.warn('⚠️ 레이어 생성 실패 - 유효한 데이터가 없음');
+      overlayRef.current.setProps({ layers: [] });
       return;
     }
-
-    // 지도가 완전히 준비될 때까지 기다린 후 레이어 추가
-    const addLayerWhenReady = () => {
-      const layer = buildSpotsLayer();
-      
-      if (!layer) {
-        console.warn('⚠️ 레이어 생성 실패 - 유효한 데이터가 없음');
-        if (overlayRef.current) {
-          overlayRef.current.setProps({ layers: [] });
-        }
-        return;
-      }
-      
-      console.log('📦 생성된 레이어:', layer);
-      console.log('📦 레이어 데이터:', layer?.props?.data?.length, '개');
-      console.log('📦 레이어 props:', {
-        id: layer.props.id,
-        dataLength: layer.props.data?.length,
-        pickable: layer.props.pickable,
-        hasGetPosition: !!layer.props.getPosition,
-        hasGetFillColor: !!layer.props.getFillColor,
-        hasGetRadius: !!layer.props.getRadius
-      });
-      
-      if (overlayRef.current) {
-        try {
-          // 레이어를 빈 배열로 먼저 설정한 후 데이터 레이어 추가 (초기화 보장)
-          overlayRef.current.setProps({ layers: [] });
-          
-          // 다음 프레임에 실제 레이어 추가
-          requestAnimationFrame(() => {
-            if (overlayRef.current && layer) {
-              overlayRef.current.setProps({
-                layers: [layer]
-              });
-              console.log('✅ 스팟 레이어 업데이트 완료');
-            }
-          });
-        } catch (error) {
-          console.error('❌ 레이어 설정 실패:', error);
-        }
-      }
-    };
-
-    // 지도가 이미 idle 상태라면 바로 추가, 아니면 대기
-    if (map.loaded()) {
-      // 지도가 로드되었지만 WebGL 컨텍스트 완전 준비를 위해 대기
-      requestAnimationFrame(() => {
-        requestAnimationFrame(addLayerWhenReady);
-      });
-    } else {
-      map.once('idle', () => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(addLayerWhenReady);
-        });
-      });
-    }
-  }, [spots, currentZoom, buildSpotsLayer, mapLoaded]);
+    
+    console.log('📦 생성된 레이어:', layer);
+    
+    // 관리자 페이지와 완전히 동일하게 바로 호출
+    overlayRef.current.setProps({
+      layers: [layer]
+    });
+    
+    console.log('✅ 스팟 레이어 업데이트 완료');
+  }, [spots, currentZoom, buildSpotsLayer]);
 
   if (loading) {
     return (
