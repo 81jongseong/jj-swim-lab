@@ -252,10 +252,37 @@ export default function CenterAdminGeoDistributionPage() {
 
   // Deck.gl 레이어 업데이트
   useEffect(() => {
-    if (!overlayRef.current || !mapLoaded || !librariesLoaded || !ScatterplotLayer) return;
+    if (!overlayRef.current || !mapLoaded || !librariesLoaded || !ScatterplotLayer) {
+      console.log('⏳ 레이어 조건 대기 중:', {
+        overlay: !!overlayRef.current,
+        mapLoaded,
+        librariesLoaded,
+        ScatterplotLayer: !!ScatterplotLayer
+      });
+      return;
+    }
     
     // spots가 비어있으면 레이어를 제거
     if (!spots || spots.length === 0) {
+      console.log('⚠️ 스팟 데이터가 없어 레이어 제거');
+      overlayRef.current.setProps({
+        layers: []
+      });
+      return;
+    }
+
+    const validSpots = spots.filter((spot: Spot) => {
+      const isValid = spot.lat && spot.lng && spot.totalApprox > 0;
+      if (!isValid) {
+        console.warn('❌ 유효하지 않은 스팟:', spot);
+      }
+      return isValid;
+    });
+
+    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟`);
+
+    if (validSpots.length === 0) {
+      console.log('⚠️ 유효한 스팟이 없어 레이어 제거');
       overlayRef.current.setProps({
         layers: []
       });
@@ -265,19 +292,29 @@ export default function CenterAdminGeoDistributionPage() {
     try {
       const layer = new ScatterplotLayer({
         id: 'spots-layer',
-        data: spots.filter((spot: Spot) => spot.lat && spot.lng && spot.totalApprox > 0), // 유효한 데이터만
+        data: validSpots,
         pickable: true,
         opacity: 0.8,
         stroked: true,
         filled: true,
         radiusScale: 1,
-        radiusMinPixels: 3,
+        radiusMinPixels: 5,
         radiusMaxPixels: 50,
         lineWidthMinPixels: 1,
-        getPosition: (d: Spot) => [d.lng, d.lat],
-        getRadius: (d: Spot) => Math.max(3, Math.min(50, Math.sqrt(d.totalApprox || 1) * 2)),
+        getPosition: (d: Spot) => {
+          const pos = [d.lng, d.lat];
+          if (!d.lng || !d.lat || isNaN(d.lng) || isNaN(d.lat)) {
+            console.warn('⚠️ 잘못된 좌표:', d);
+          }
+          return pos;
+        },
+        getRadius: (d: Spot) => {
+          const radius = Math.max(5, Math.min(50, Math.sqrt(d.totalApprox || 1) * 3));
+          return radius;
+        },
         getFillColor: (d: Spot) => {
           const colors: Record<string, [number, number, number, number]> = {
+            'JJ Swim Lab': [255, 99, 132, 200],
             '강남센터': [255, 99, 132, 200],
             '홍대센터': [54, 162, 235, 200],
             '송파센터': [255, 205, 86, 200],
@@ -294,8 +331,10 @@ export default function CenterAdminGeoDistributionPage() {
       overlayRef.current.setProps({
         layers: [layer]
       });
+      
+      console.log('✅ Deck.gl 레이어 생성 완료');
     } catch (error) {
-      console.error('Deck.gl 레이어 생성 오류:', error);
+      console.error('❌ Deck.gl 레이어 생성 오류:', error);
       overlayRef.current.setProps({
         layers: []
       });

@@ -31,6 +31,7 @@
  */
 
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
 import Center from '../models/Center';
@@ -126,6 +127,10 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       });
     }
 
+    // k-익명성 임계값 설정 (개발 환경에서는 k=1, 프로덕션에서는 k=5)
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const K_THRESHOLD = isDevelopment ? 1 : 5;
+
     // 쿼리 파라미터 추출
     const { centerId, from, to, memberType } = req.query;
 
@@ -173,8 +178,77 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       if (to) filter.createdAt.$lte = new Date(to as string);
     }
 
-    // 회원 유형 필터
-    if (memberType) {
+    // 레슨 유형별 필터링
+    let userIds: mongoose.Types.ObjectId[] | null = null;
+    
+    if (memberType && ['group-lesson', 'personal-lesson', 'free-swim'].includes(memberType as string)) {
+      const { PersonalLesson } = await import('../models/PersonalLesson');
+      const { LaneRental } = await import('../models/LaneRental');
+      const { Course } = await import('../models/Course');
+      
+      if (memberType === 'personal-lesson') {
+        // 개인레슨 수강생 조회
+        const personalLessons = await PersonalLesson.find({
+          status: { $in: ['pending', 'approved', 'completed'] }
+        }).select('studentId').lean();
+        userIds = [...new Set(personalLessons.map((pl: any) => pl.studentId).filter(Boolean))];
+        console.log(`👤 개인레슨 수강생: ${userIds.length}명`);
+      } else if (memberType === 'free-swim') {
+        // 자유수영 이용자 조회
+        const laneRentals = await LaneRental.find({
+          status: { $in: ['pending', 'approved', 'completed'] }
+        }).select('userId').lean();
+        userIds = [...new Set(laneRentals.map((lr: any) => lr.userId).filter(Boolean))];
+        console.log(`🏊 자유수영 이용자: ${userIds.length}명`);
+      } else if (memberType === 'group-lesson') {
+        // 단체레슨 수강생 조회 (Course의 enrollments 또는 students 필드)
+        const courses = await Course.find({
+          isActive: true,
+          type: { $in: ['group', 'course'] }
+        }).select('enrollments students participants').lean();
+        userIds = [];
+        courses.forEach((course: any) => {
+          if (course.enrollments && Array.isArray(course.enrollments)) {
+            course.enrollments.forEach((enrollment: any) => {
+              const userId = enrollment.student || enrollment.userId || enrollment;
+              if (userId) userIds!.push(userId);
+            });
+          }
+          if (course.students && Array.isArray(course.students)) {
+            course.students.forEach((student: any) => {
+              const userId = student._id || student.id || student;
+              if (userId) userIds!.push(userId);
+            });
+          }
+          if (course.participants && Array.isArray(course.participants)) {
+            course.participants.forEach((participant: any) => {
+              const userId = participant._id || participant.id || participant;
+              if (userId) userIds!.push(userId);
+            });
+          }
+        });
+        userIds = [...new Set(userIds)];
+        console.log(`👥 단체레슨 수강생: ${userIds.length}명`);
+      }
+      
+      if (userIds && userIds.length > 0) {
+        filter._id = { $in: userIds };
+      } else {
+        // 해당 레슨 유형에 맞는 회원이 없으면 빈 배열 반환
+        res.json({
+          success: true,
+          cells: [],
+          metadata: {
+            totalCells: 0,
+            filteredCells: 0,
+            k: K_THRESHOLD,
+            privacyNotice: `해당 레슨 유형(${memberType})에 해당하는 회원이 없습니다.`
+          }
+        });
+        return;
+      }
+    } else if (memberType) {
+      // 기존 userType 필터 (student, instructor 등)
       filter.userType = memberType;
     }
 
@@ -190,7 +264,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       .select('address location centerId createdAt userType')
       .lean();
 
-    console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);
+    console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리 (필터: ${memberType || '전체'})`);
 
     // 센터 정보 조회 (이름 매핑용) - SwimmingCenter 모델 사용
     const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
@@ -267,9 +341,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       }
     }
 
-    // k-익명성 필터링 (개발 환경에서는 k=1, 프로덕션에서는 k=5)
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const K_THRESHOLD = isDevelopment ? 1 : 5;
+    // k-익명성 필터링 (K_THRESHOLD는 이미 상단에서 선언됨)
     let cells = Array.from(h3Map.values());
     const totalCells = cells.length;
     
