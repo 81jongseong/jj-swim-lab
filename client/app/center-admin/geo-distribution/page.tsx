@@ -295,112 +295,115 @@ export default function CenterAdminGeoDistributionPage() {
   }, [librariesLoaded, mapLoaded, memberType, selectedCenterId, fetchSpotsData]);
 
   // 반경 계산 함수 (관리자 페이지와 동일한 방식)
-  const scaleRadius = useCallback((count: number): number => {
-    if (!count || count <= 0) return 50;
-    // 기본 블록 크기 153m 기준으로 스케일링
-    const baseRadius = 50; // 미터 단위
-    const scaled = baseRadius + Math.sqrt(count) * 10;
-    return Math.min(scaled, 200); // 최대 200m
-  }, []);
+  const scaleRadius = useCallback((n: number, memberType?: string) => {
+    // 센터는 고정 크기 사용
+    if (memberType === 'center') {
+      if (currentZoom >= 15) {
+        return 25;
+      } else if (currentZoom >= 12) {
+        return 40;
+      } else if (currentZoom >= 10) {
+        return 60;
+      } else if (currentZoom >= 9) {
+        return 80;
+      } else {
+        return 100;
+      }
+    }
+    
+    // 일반 회원/강사/게스트는 줌 레벨에 따른 크기
+    let baseRadius: number;
+    
+    if (currentZoom >= 16) {
+      baseRadius = 30;
+    } else if (currentZoom >= 15) {
+      baseRadius = 50;
+    } else if (currentZoom >= 12) {
+      baseRadius = 100;
+    } else if (currentZoom >= 10) {
+      baseRadius = 200;
+    } else if (currentZoom >= 9) {
+      baseRadius = 500;
+    } else {
+      baseRadius = 1000;
+    }
+    
+    return baseRadius;
+  }, [currentZoom]);
 
-  // 스팟 레이어 생성 함수 (관리자 페이지와 동일한 방식)
+  // 스팟 레이어 생성 (관리자 페이지와 완전히 동일한 방식)
   const buildSpotsLayer = useCallback(() => {
-    if (!ScatterplotLayer) {
-      console.warn('⚠️ ScatterplotLayer가 로드되지 않았습니다');
-      return null;
-    }
-
-    // 데이터 타입 검증 및 정규화
-    const validSpots = spots
-      .map((spot: Spot) => {
-        // 모든 필드를 명시적으로 숫자로 변환
-        const lat = Number(spot.lat);
-        const lng = Number(spot.lng);
-        const totalApprox = Number(spot.totalApprox);
-        
-        if (isNaN(lat) || isNaN(lng) || isNaN(totalApprox)) {
-          console.warn('❌ 유효하지 않은 숫자 데이터:', spot);
-          return null;
+    // 관리자 페이지처럼 단순 필터링만 수행 (데이터 변환 없이)
+    const filteredSpots = spots.filter(s => {
+      // null/undefined 체크
+      if (!s || !s.dominantCenter) {
+        console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
+        return false;
+      }
+      // 센터 관리자는 모든 스팟 데이터를 표시
+      return true;
+    });
+    
+    console.log('🔧 스팟 레이어 생성:', filteredSpots.length, '개 스팟');
+    console.log('📍 스팟 위치 샘플:', filteredSpots.slice(0, 3).map(s => ({ 
+      geohash: s.geohash, 
+      lat: s.lat, 
+      lng: s.lng, 
+      totalApprox: s.totalApprox,
+      dominantCenter: s.dominantCenter 
+    })));
+    
+    return new ScatterplotLayer({
+      id: 'spots',
+      data: filteredSpots,
+      pickable: true,
+      getPosition: (d: Spot) => {
+        if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+          return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
         }
-        
-        if (totalApprox <= 0) {
-          return null;
+        return [d.lng, d.lat];
+      },
+      getFillColor: (d: Spot) => {
+        if (!d || !d.dominantCenter) {
+          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
+          return [128, 128, 128, 150]; // 기본 회색
         }
-        
-        return {
-          ...spot,
-          lat,
-          lng,
-          totalApprox,
-          dominantCenter: spot.dominantCenter || '기타'
+        const center = d.dominantCenter;
+        const colors: Record<string, [number, number, number, number]> = {
+          'JJ Swim Lab': [255, 99, 132, 200],
+          '강남센터': [255, 99, 132, 200],
+          '홍대센터': [54, 162, 235, 200],
+          '송파센터': [255, 205, 86, 200],
+          '마포센터': [75, 192, 192, 200],
         };
-      })
-      .filter((spot): spot is Spot => spot !== null);
-
-    if (validSpots.length === 0) {
-      console.log('⚠️ 유효한 스팟이 없습니다');
-      return null;
-    }
-
-    console.log(`🗺️ Deck.gl 레이어 생성: ${validSpots.length}개 유효 스팟 (전체 ${spots.length}개)`);
-    console.log('📊 샘플 스팟 데이터:', validSpots[0]);
-
-    try {
-      // 관리자 페이지와 동일한 레이어 설정 사용
-      return new ScatterplotLayer({
-        id: 'spots',
-        data: validSpots,
-        pickable: true,
-        getPosition: (d: Spot) => {
-          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-            console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
-            return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
-          }
-          return [d.lng, d.lat];
-        },
-        getFillColor: (d: Spot) => {
-          if (!d || !d.dominantCenter) {
-            console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
-            return [128, 128, 128, 150]; // 기본 회색
-          }
-          const center = d.dominantCenter;
-          const colors: Record<string, [number, number, number, number]> = {
-            'JJ Swim Lab': [255, 99, 132, 200],
-            '강남센터': [255, 99, 132, 200],
-            '홍대센터': [54, 162, 235, 200],
-            '송파센터': [255, 205, 86, 200],
-            '마포센터': [75, 192, 192, 200],
-          };
-          return colors[center] || [153, 102, 255, 200];
-        },
-        getRadius: (d: Spot) => {
-          if (!d || typeof d.totalApprox !== 'number') {
-            console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-            return 50; // 기본 크기
-          }
-          return scaleRadius(d.totalApprox);
-        },
-        radiusUnits: 'meters',
-        stroked: true,
-        getLineColor: [255, 255, 255, 255],
-        lineWidthMinPixels: 2,
-        onHover: ({ object, x, y }) => {
-          if (object) {
-            setHoveredSpot({
-              x,
-              y,
-              data: object
-            });
-          } else {
-            setHoveredSpot(null);
-          }
+        return colors[center] || [153, 102, 255, 200];
+      },
+      getRadius: (d: Spot) => {
+        if (!d || typeof d.totalApprox !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+          return 50; // 기본 크기
         }
-      });
-    } catch (error) {
-      console.error('❌ ScatterplotLayer 생성 오류:', error);
-      return null;
-    }
-  }, [spots, scaleRadius, ScatterplotLayer]);
+        const radius = scaleRadius(d.totalApprox, d.memberType);
+        return radius;
+      },
+      radiusUnits: 'meters',
+      stroked: true,
+      getLineColor: [255, 255, 255, 255],
+      lineWidthMinPixels: 2,
+      onHover: ({ object, x, y }) => {
+        if (object) {
+          setHoveredSpot({
+            x,
+            y,
+            data: object
+          });
+        } else {
+          setHoveredSpot(null);
+        }
+      }
+    });
+  }, [spots, currentZoom, scaleRadius]);
 
   // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
   useEffect(() => {
