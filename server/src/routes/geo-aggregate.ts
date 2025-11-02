@@ -132,10 +132,26 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     // 필터 조건 구성
     const filter: any = {};
 
-    // centerAdmin은 자신의 센터만 조회 가능
-    if (user.userType === 'centerAdmin' && user.centerId) {
-      filter.centerId = user.centerId;
-    } else if (centerId) {
+    // centerAdmin은 자신의 센터(들)만 조회 가능
+    if (user.userType === 'centerAdmin') {
+      // 여러 센터를 관리하는 경우 처리
+      const managedCenters = user.centerAdminInfo?.managedCenters || [];
+      
+      if (managedCenters.length > 0) {
+        // 쿼리 파라미터로 특정 센터를 지정한 경우
+        if (centerId && managedCenters.some((c: any) => c.toString() === centerId || c._id?.toString() === centerId)) {
+          filter.centerId = centerId;
+        } else {
+          // 관리하는 모든 센터 포함
+          const centerIds = managedCenters.map((c: any) => c.toString ? c.toString() : c._id?.toString() || c);
+          filter.centerId = { $in: centerIds };
+        }
+      } else if (user.centerId) {
+        // managedCenters가 없으면 기존 centerId 사용 (하위 호환성)
+        filter.centerId = user.centerId;
+      }
+    } else if (centerId && user.userType === 'superAdmin') {
+      // superAdmin은 모든 센터 접근 가능, centerId가 있으면 필터링
       filter.centerId = centerId;
     }
 

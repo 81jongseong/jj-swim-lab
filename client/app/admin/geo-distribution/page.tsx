@@ -595,11 +595,37 @@ export default function GeoDistributionPage() {
     }
   }, [selectedRegions]);
 
-  // 인증 확인
+  // 센터 선택 상태 (여러 센터 관리하는 경우)
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
+  const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
+
+  // 인증 확인 및 센터 목록 로드
   useEffect(() => {
-    if (!loading && (!user || user.userType !== 'superAdmin')) {
-      router.push('/');
-      return;
+    if (!loading && user) {
+      // superAdmin 또는 centerAdmin만 허용
+      if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin') {
+        router.push('/');
+        return;
+      }
+
+      // centerAdmin인 경우 관리하는 센터 목록 로드
+      if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters) {
+        const centers = user.centerAdminInfo.managedCenters;
+        // ObjectId 배열이면 이름을 가져와야 하지만, 일단 ID만 저장
+        setManagedCenters(centers.map((c: any) => ({
+          _id: c.toString ? c.toString() : c._id?.toString() || c,
+          name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
+        })));
+        
+        // 센터가 하나면 자동 선택
+        if (centers.length === 1) {
+          const centerId = centers[0].toString ? centers[0].toString() : centers[0]._id?.toString() || centers[0];
+          setSelectedCenterId(centerId);
+        } else if (centers.length > 1) {
+          // 여러 센터가 있으면 "모든 센터" 옵션 (null)
+          setSelectedCenterId(null);
+        }
+      }
     }
   }, [user, loading, router]);
 
@@ -782,6 +808,11 @@ export default function GeoDistributionPage() {
         zoom: currentZoom.toString()
       });
 
+      // centerAdmin인 경우 센터 필터링 추가
+      if (user?.userType === 'centerAdmin' && selectedCenterId) {
+        params.append('centerId', selectedCenterId);
+      }
+
       const response = await fetch(`/api/geo/spots?${params}`, { cache: 'no-store' });
       const result = await response.json();
       
@@ -812,10 +843,10 @@ export default function GeoDistributionPage() {
   // 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
   useEffect(() => {
     if (librariesLoaded) {
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType });
+      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
       fetchSpotsData();
     }
-  }, [librariesLoaded, memberType]);
+  }, [librariesLoaded, memberType, selectedCenterId]);
 
   // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
   useEffect(() => {
@@ -1141,6 +1172,28 @@ export default function GeoDistributionPage() {
                 )}
               </div>
             </div>
+
+            {/* 센터 선택 필터 (centerAdmin이고 여러 센터 관리하는 경우) */}
+            {user?.userType === 'centerAdmin' && managedCenters.length > 1 && (
+              <label className="text-sm flex items-center gap-2">
+                센터:
+                <select 
+                  className="border rounded px-3 py-1" 
+                  value={selectedCenterId || 'all'} 
+                  onChange={e => {
+                    const value = e.target.value;
+                    setSelectedCenterId(value === 'all' ? null : value);
+                  }}
+                >
+                  <option value="all">모든 센터</option>
+                  {managedCenters.map((center) => (
+                    <option key={center._id} value={center._id}>
+                      {center.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             {/* 유형 필터 */}
             <label className="text-sm flex items-center gap-2">
