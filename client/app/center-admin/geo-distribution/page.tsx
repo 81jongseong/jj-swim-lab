@@ -435,28 +435,49 @@ export default function CenterAdminGeoDistributionPage() {
       return;
     }
     
-    // requestAnimationFrame을 사용하여 렌더링 사이클과 동기화
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        try {
-          if (!overlayRef.current) {
-            console.warn('⚠️ overlayRef가 없음');
-            return;
-          }
-          overlayRef.current.setProps({
-            layers: [layer]
+    // 이전 레이어를 먼저 제거하고, 다음 프레임에서 새 레이어 추가
+    // 이렇게 하면 Deck.gl이 이전 레이어를 완전히 정리할 시간을 줌
+    if (overlayRef.current) {
+      try {
+        // 먼저 기존 레이어 제거
+        overlayRef.current.setProps({
+          layers: []
+        });
+        
+        // 다음 프레임에서 새 레이어 추가 (Deck.gl이 정리할 시간을 줌)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            try {
+              if (!overlayRef.current) {
+                console.warn('⚠️ overlayRef가 없음');
+                return;
+              }
+              
+              // 레이어 재생성 (상태가 변경되었을 수 있으므로)
+              const newLayer = buildSpotsLayer();
+              if (!newLayer) {
+                console.warn('⚠️ 레이어 재생성 실패');
+                return;
+              }
+              
+              overlayRef.current.setProps({
+                layers: [newLayer]
+              });
+              console.log('✅ 스팟 레이어 업데이트 완료');
+            } catch (error) {
+              console.error('❌ 레이어 설정 오류:', error);
+              if (overlayRef.current) {
+                overlayRef.current.setProps({
+                  layers: []
+                });
+              }
+            }
           });
-          console.log('✅ 스팟 레이어 업데이트 완료');
-        } catch (error) {
-          console.error('❌ 레이어 설정 오류:', error);
-          if (overlayRef.current) {
-            overlayRef.current.setProps({
-              layers: []
-            });
-          }
-        }
-      });
-    });
+        });
+      } catch (error) {
+        console.error('❌ 레이어 제거 오류:', error);
+      }
+    }
   }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
 
   if (loading) {
