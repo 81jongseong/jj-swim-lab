@@ -144,7 +144,7 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
 router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const { comments } = req.body;
+        const { comments, assignToExistingAdminId } = req.body;
         const user = req.user;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -333,12 +333,46 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
         await centerInfo.save();
         console.log('✅ CenterInfo 생성 완료:', centerInfo._id);
         let savedCenterAdmin;
-        if (existingCenterAdmin) {
+        if (assignToExistingAdminId && mongoose_1.default.Types.ObjectId.isValid(assignToExistingAdminId)) {
+            const existingAdmin = await User_1.User.findById(assignToExistingAdminId);
+            if (existingAdmin && existingAdmin.userType === 'centerAdmin') {
+                if (!existingAdmin.centerAdminInfo) {
+                    existingAdmin.centerAdminInfo = {};
+                }
+                if (!existingAdmin.centerAdminInfo.managedCenters) {
+                    existingAdmin.centerAdminInfo.managedCenters = [];
+                }
+                const alreadyAssigned = existingAdmin.centerAdminInfo.managedCenters.some((c) => c.toString() === savedSwimmingCenter._id.toString());
+                if (!alreadyAssigned) {
+                    existingAdmin.centerAdminInfo.managedCenters.push(savedSwimmingCenter._id);
+                    await existingAdmin.save();
+                    savedCenterAdmin = existingAdmin;
+                    console.log('✅ 기존 관리자에게 센터 추가:', savedCenterAdmin.email);
+                }
+                else {
+                    savedCenterAdmin = existingAdmin;
+                    console.log('ℹ️ 이미 해당 관리자에게 센터가 할당되어 있습니다.');
+                }
+            }
+            else {
+                return res.status(400).json({
+                    success: false,
+                    message: '유효하지 않은 관리자 ID입니다.'
+                });
+            }
+        }
+        else if (existingCenterAdmin) {
             existingCenterAdmin.centerId = savedSwimmingCenter._id;
             if (!existingCenterAdmin.centerAdminInfo) {
                 existingCenterAdmin.centerAdminInfo = {};
             }
-            existingCenterAdmin.centerAdminInfo.managedCenters = [savedSwimmingCenter._id];
+            if (!existingCenterAdmin.centerAdminInfo.managedCenters) {
+                existingCenterAdmin.centerAdminInfo.managedCenters = [];
+            }
+            const alreadyAssigned = existingCenterAdmin.centerAdminInfo.managedCenters.some((c) => c.toString() === savedSwimmingCenter._id.toString());
+            if (!alreadyAssigned) {
+                existingCenterAdmin.centerAdminInfo.managedCenters.push(savedSwimmingCenter._id);
+            }
             existingCenterAdmin.isActive = true;
             savedCenterAdmin = await existingCenterAdmin.save();
             console.log('✅ 센터 관리자 계정 재활성화:', savedCenterAdmin.email);

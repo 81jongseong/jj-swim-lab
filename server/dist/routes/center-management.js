@@ -146,7 +146,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'a
         });
     }
 });
-router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin']), async (req, res) => {
+router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const user = req.user;
@@ -156,15 +156,21 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
                 message: '유효하지 않은 ID입니다.'
             });
         }
-        if (user.userType === 'centerAdmin' && user.centerId !== id) {
-            return res.status(403).json({
-                success: false,
-                message: '접근 권한이 없습니다.'
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+            const centerAdminUser = await User_1.User.findById(user._id);
+            const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+            const hasAccess = user.centerId === id || managedCenters.some((c) => {
+                const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                return cId === id;
             });
+            if (!hasAccess) {
+                return res.status(403).json({
+                    success: false,
+                    message: '접근 권한이 없습니다.'
+                });
+            }
         }
-        const center = await Center_1.Center.findById(id)
-            .populate('createdBy', 'name email')
-            .populate('centerId', 'name email');
+        const center = await SwimmingCenter_1.SwimmingCenter.findById(id).lean();
         if (!center) {
             return res.status(404).json({
                 success: false,
@@ -248,7 +254,7 @@ router.patch('/:id/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
         });
     }
 });
-router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin']), async (req, res) => {
+router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
@@ -297,6 +303,104 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         res.status(500).json({
             success: false,
             message: '센터 정보 수정 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.get('/admins', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+    try {
+        const centerAdmins = await User_1.User.find({ userType: 'centerAdmin' })
+            .select('name email phone centerAdminInfo')
+            .populate('centerAdminInfo.managedCenters', 'name')
+            .lean();
+        const adminsList = centerAdmins.map((admin) => ({
+            _id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            phone: admin.phone,
+            managedCenters: admin.centerAdminInfo?.managedCenters || [],
+            managedCentersCount: admin.centerAdminInfo?.managedCenters?.length || 0
+        }));
+        res.json({
+            success: true,
+            message: '센터 관리자 목록 조회 성공',
+            data: { admins: adminsList }
+        });
+    }
+    catch (error) {
+        console.error('센터 관리자 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 관리자 목록 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.post('/centers/:centerId/assign-admin', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
+    try {
+        const { centerId } = req.params;
+        const { adminId } = req.body;
+        if (!mongoose_1.default.Types.ObjectId.isValid(centerId)) {
+            return res.status(400).json({
+                success: false,
+                message: '유효하지 않은 센터 ID입니다.'
+            });
+        }
+        if (!adminId) {
+            return res.status(400).json({
+                success: false,
+                message: '관리자 ID가 필요합니다.'
+            });
+        }
+        const center = await SwimmingCenter_1.SwimmingCenter.findById(centerId);
+        if (!center) {
+            return res.status(404).json({
+                success: false,
+                message: '센터를 찾을 수 없습니다.'
+            });
+        }
+        const admin = await User_1.User.findById(adminId);
+        if (!admin || admin.userType !== 'centerAdmin') {
+            return res.status(404).json({
+                success: false,
+                message: '센터 관리자를 찾을 수 없습니다.'
+            });
+        }
+        if (!admin.centerAdminInfo) {
+            admin.centerAdminInfo = {};
+        }
+        if (!admin.centerAdminInfo.managedCenters) {
+            admin.centerAdminInfo.managedCenters = [];
+        }
+        const alreadyAssigned = admin.centerAdminInfo.managedCenters.some((c) => c.toString() === centerId);
+        if (alreadyAssigned) {
+            return res.status(400).json({
+                success: false,
+                message: '이미 해당 센터가 할당되어 있습니다.'
+            });
+        }
+        admin.centerAdminInfo.managedCenters.push(new mongoose_1.default.Types.ObjectId(centerId));
+        await admin.save();
+        res.json({
+            success: true,
+            message: '센터 관리자 할당이 완료되었습니다.',
+            data: {
+                admin: {
+                    _id: admin._id,
+                    name: admin.name,
+                    email: admin.email,
+                    managedCenters: admin.centerAdminInfo.managedCenters
+                },
+                center: {
+                    _id: center._id,
+                    name: center.name
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('센터 관리자 할당 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 관리자 할당 중 오류가 발생했습니다.'
         });
     }
 });
@@ -391,7 +495,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
 });
-router.get('/:id/users', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin']), async (req, res) => {
+router.get('/:id/users', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { userType, page = 1, limit = 10 } = req.query;

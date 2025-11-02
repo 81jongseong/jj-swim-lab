@@ -247,7 +247,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'admin']), async (req
 });
 
 // 특정 센터 상세 정보 조회
-router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const user = req.user!;
@@ -376,7 +376,7 @@ router.patch('/:id/status', authMiddleware, requireRole(['superAdmin', 'admin'])
 });
 
 // 센터 정보 수정
-router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -390,15 +390,23 @@ router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
     }
 
     // 센터 관리자는 자신의 센터만 수정 가능
-    if (user.userType === 'centerAdmin' && user.centerId !== id) {
-      return res.status(403).json({
-        success: false,
-        message: '접근 권한이 없습니다.'
+    if ((user.userType === 'centerAdmin' || user.userType === 'center-admin') && user.centerId !== id) {
+      const centerAdminUser = await User.findById(user._id);
+      const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+      const hasAccess = managedCenters.some((c: any) => {
+        const cId = c.toString ? c.toString() : c._id?.toString() || c;
+        return cId === id;
       });
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: '접근 권한이 없습니다.'
+        });
+      }
     }
 
     // 센터 관리자는 제한된 필드만 수정 가능
-    if (user.userType === 'centerAdmin') {
+    if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
       const allowedFields = ['description', 'contact', 'facilities', 'operatingHours', 'images'];
       const filteredData: any = {};
       allowedFields.forEach(field => {
@@ -662,7 +670,7 @@ router.get('/stats/overview', authMiddleware, requireRole(['superAdmin', 'admin'
 });
 
 // 센터별 사용자 목록 조회
-router.get('/:id/users', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin']), async (req: AuthRequest, res: Response) => {
+router.get('/:id/users', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmin', 'center-admin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { userType, page = 1, limit = 10 } = req.query;
@@ -675,12 +683,20 @@ router.get('/:id/users', authMiddleware, requireRole(['superAdmin', 'admin', 'ce
       });
     }
 
-    // 센터 관리자는 자신의 센터만 조회 가능
-    if (user.userType === 'centerAdmin' && user.centerId !== id) {
-      return res.status(403).json({
-        success: false,
-        message: '접근 권한이 없습니다.'
+    // 센터 관리자는 자신의 센터만 조회 가능 (managedCenters 포함)
+    if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+      const centerAdminUser = await User.findById(user._id);
+      const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+      const hasAccess = user.centerId === id || managedCenters.some((c: any) => {
+        const cId = c.toString ? c.toString() : c._id?.toString() || c;
+        return cId === id;
       });
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: '접근 권한이 없습니다.'
+        });
+      }
     }
 
     const filter: any = { centerId: id };

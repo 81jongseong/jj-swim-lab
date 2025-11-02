@@ -48,7 +48,27 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
     try {
         const centerAdmin = await User_1.User.findById(req.user._id);
         console.log('🔍 센터 관리자 정보:', centerAdmin);
-        const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        const queryCenterId = req.query.centerId;
+        let centerId;
+        if (queryCenterId) {
+            const managedCenters = centerAdmin?.centerAdminInfo?.managedCenters || [];
+            const isValidCenter = managedCenters.some((c) => {
+                const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                return cId === queryCenterId;
+            });
+            if (isValidCenter) {
+                centerId = queryCenterId;
+            }
+            else {
+                return res.status(403).json({
+                    success: false,
+                    message: '해당 센터를 관리할 권한이 없습니다.'
+                });
+            }
+        }
+        else {
+            centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+        }
         console.log('🏢 센터 ID:', centerId);
         if (!centerId) {
             return res.status(400).json({

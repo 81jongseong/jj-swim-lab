@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -46,7 +69,7 @@ function addNoiseAndRound(count, epsilon = 1.0) {
 router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
-        if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin') {
+        if (user.userType !== 'superAdmin' && user.userType !== 'centerAdmin' && user.userType !== 'center-admin') {
             return res.status(403).json({
                 success: false,
                 message: '지리적 분포 조회 권한이 없습니다.',
@@ -54,11 +77,32 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         }
         const { centerId, from, to, memberType } = req.query;
         const filter = {};
-        if (user.userType === 'centerAdmin' && user.centerId) {
-            filter.centerId = user.centerId;
+        if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+            const managedCenters = user.centerAdminInfo?.managedCenters || [];
+            if (managedCenters.length > 0) {
+                if (centerId && managedCenters.some((c) => {
+                    const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                    return cId === centerId;
+                })) {
+                    filter.centerId = centerId;
+                }
+                else if (centerId === null || centerId === undefined || centerId === '') {
+                    const centerIds = managedCenters.map((c) => {
+                        return c.toString ? c.toString() : c._id?.toString() || c;
+                    });
+                    if (centerIds.length > 0) {
+                        filter.centerId = { $in: centerIds };
+                    }
+                }
+            }
+            else if (user.centerId) {
+                filter.centerId = user.centerId;
+            }
         }
-        else if (centerId) {
-            filter.centerId = centerId;
+        else if (centerId && user.userType === 'superAdmin') {
+            if (centerId !== 'all' && centerId !== null && centerId !== undefined && centerId !== '') {
+                filter.centerId = centerId;
+            }
         }
         if (from || to) {
             filter.createdAt = {};
@@ -79,10 +123,11 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             .lean();
         console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리`);
         const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
-        const centers = await Center_1.default.find({ _id: { $in: centerIds } })
+        const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
+        const centers = await SwimmingCenter.find({ _id: { $in: centerIds } })
             .select('_id name')
             .lean();
-        const centerMap = new Map(centers.map(c => [c._id.toString(), c.name]));
+        const centerMap = new Map(centers.map((c) => [c._id.toString(), c.name || `센터 ${c._id.toString().substring(0, 8)}`]));
         const h3Map = new Map();
         for (const userItem of users) {
             let coords = null;
