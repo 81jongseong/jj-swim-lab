@@ -365,6 +365,7 @@ export default function CenterAdminGeoDistributionPage() {
 
       console.log(`🗺️ Deck.gl 레이어 생성: ${layerData.length}개 데이터 포인트`);
 
+      // Deck.gl 레이어 안전하게 생성
       const layer = new ScatterplotLayer({
         id: 'spots-layer',
         data: layerData,
@@ -376,20 +377,52 @@ export default function CenterAdminGeoDistributionPage() {
         radiusMinPixels: 5,
         radiusMaxPixels: 50,
         lineWidthMinPixels: 1,
-        getPosition: (d: any) => d.position || [d.lng, d.lat],
-        getRadius: (d: any) => d.radius || 10,
-        getFillColor: (d: any) => d.fillColor || [153, 102, 255, 200],
+        getPosition: (d: any) => {
+          const pos = d.position || [d.lng, d.lat];
+          // 좌표 유효성 검사
+          if (!Array.isArray(pos) || pos.length !== 2 || isNaN(pos[0]) || isNaN(pos[1])) {
+            console.warn('⚠️ 잘못된 position:', d);
+            return [126.9780, 37.5665]; // 기본값: 서울 중심부
+          }
+          return pos;
+        },
+        getRadius: (d: any) => {
+          const radius = Number(d.radius) || 10;
+          return Math.max(5, Math.min(50, radius));
+        },
+        getFillColor: (d: any) => {
+          const color = d.fillColor || [153, 102, 255, 200];
+          if (!Array.isArray(color) || color.length < 4) {
+            return [153, 102, 255, 200]; // 기본 색상
+          }
+          return color;
+        },
         getLineColor: [255, 255, 255, 200],
         onHover: (info: any) => {
-          setHoveredSpot(info.object || null);
+          if (info && info.object) {
+            setHoveredSpot(info.object);
+          }
+        },
+        updateTriggers: {
+          getPosition: layerData.map(d => `${d.lat},${d.lng}`).join('|'),
+          getRadius: layerData.map(d => d.totalApprox).join('|'),
+          getFillColor: layerData.map(d => d.dominantCenter || '').join('|')
         }
       });
 
-      overlayRef.current.setProps({
-        layers: [layer]
-      });
-      
-      console.log('✅ Deck.gl 레이어 생성 완료');
+      // 레이어를 안전하게 설정 (약간의 지연 추가)
+      setTimeout(() => {
+        if (overlayRef.current) {
+          try {
+            overlayRef.current.setProps({
+              layers: [layer]
+            });
+            console.log('✅ Deck.gl 레이어 생성 완료');
+          } catch (err) {
+            console.error('❌ Deck.gl 레이어 설정 오류:', err);
+          }
+        }
+      }, 100);
     } catch (error) {
       console.error('❌ Deck.gl 레이어 생성 오류:', error);
       overlayRef.current.setProps({
