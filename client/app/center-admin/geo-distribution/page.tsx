@@ -341,35 +341,24 @@ export default function CenterAdminGeoDistributionPage() {
     console.log('📊 샘플 스팟 데이터:', validSpots[0]);
 
     try {
+      // 관리자 페이지와 동일한 레이어 설정 사용
       return new ScatterplotLayer({
-        id: 'spots-layer',
+        id: 'spots',
         data: validSpots,
         pickable: true,
-        opacity: 0.8,
-        stroked: true,
-        filled: true,
-        lineWidthMinPixels: 1,
-        radiusUnits: 'meters',
         getPosition: (d: Spot) => {
-          // 타입 검증 강화
-          const lng = Number(d.lng);
-          const lat = Number(d.lat);
-          if (isNaN(lng) || isNaN(lat)) {
-            console.warn('⚠️ 잘못된 좌표:', d);
-            return [126.9780, 37.5665]; // 서울 중심부 (기본값)
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+            return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
           }
-          return [lng, lat];
-        },
-        getRadius: (d: Spot) => {
-          const count = Number(d.totalApprox);
-          if (isNaN(count) || count <= 0) {
-            console.warn('⚠️ 잘못된 totalApprox:', d);
-            return 50; // 기본 크기 (미터)
-          }
-          return scaleRadius(count);
+          return [d.lng, d.lat];
         },
         getFillColor: (d: Spot) => {
-          const center = d.dominantCenter || '기타';
+          if (!d || !d.dominantCenter) {
+            console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
+            return [128, 128, 128, 150]; // 기본 회색
+          }
+          const center = d.dominantCenter;
           const colors: Record<string, [number, number, number, number]> = {
             'JJ Swim Lab': [255, 99, 132, 200],
             '강남센터': [255, 99, 132, 200],
@@ -379,10 +368,26 @@ export default function CenterAdminGeoDistributionPage() {
           };
           return colors[center] || [153, 102, 255, 200];
         },
-        getLineColor: [255, 255, 255, 200],
-        onHover: (info: any) => {
-          if (info && info.object) {
-            setHoveredSpot(info.object);
+        getRadius: (d: Spot) => {
+          if (!d || typeof d.totalApprox !== 'number') {
+            console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+            return 50; // 기본 크기
+          }
+          return scaleRadius(d.totalApprox);
+        },
+        radiusUnits: 'meters',
+        stroked: true,
+        getLineColor: [255, 255, 255, 255],
+        lineWidthMinPixels: 2,
+        onHover: ({ object, x, y }) => {
+          if (object) {
+            setHoveredSpot({
+              x,
+              y,
+              data: object
+            });
+          } else {
+            setHoveredSpot(null);
           }
         }
       });
