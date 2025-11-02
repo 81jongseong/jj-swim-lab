@@ -179,9 +179,10 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     }
 
     // 🆕 위치 정보가 있는 회원만 조회 (location.coordinates 우선, address 대체)
+    // 주소지가 없으면 센터 주소지나 기본 주소지 사용
     filter.$or = [
       { 'location.coordinates': { $exists: true, $ne: [] } },
-      { address: { $exists: true, $ne: '' } }
+      { address: { $exists: true, $nin: ['', null] } }
     ];
 
     // 회원 데이터 조회
@@ -212,12 +213,27 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
           lng: userItem.location.coordinates[0],
           lat: userItem.location.coordinates[1]
         };
-        console.log('✅ GeoJSON 좌표 사용:', coords);
       } 
       // 대체: address에서 지오코딩 (기존 회원 호환)
       else if (userItem.address) {
         coords = await geocodeAddress(userItem.address);
-        console.log('⚠️ 주소 → 지오코딩:', userItem.address, coords);
+      }
+      // 주소지도 없으면 센터 주소지 사용 (최후 수단)
+      else if (userItem.centerId) {
+        try {
+          const { SwimmingCenter } = await import('../models/SwimmingCenter');
+          const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
+          if (center?.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
+            coords = {
+              lng: center.location.coordinates[0],
+              lat: center.location.coordinates[1]
+            };
+          } else if (center?.address) {
+            coords = await geocodeAddress(center.address);
+          }
+        } catch (error) {
+          // 센터 주소지 조회 실패 시 무시
+        }
       }
 
       if (!coords) continue;
@@ -249,15 +265,16 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       }
     }
 
-    // k-익명성 필터링 (k=5)
-    const K_THRESHOLD = 5;
+    // k-익명성 필터링 (개발 환경에서는 k=1, 프로덕션에서는 k=5)
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const K_THRESHOLD = isDevelopment ? 1 : 5;
     let cells = Array.from(h3Map.values());
     const totalCells = cells.length;
     
     cells = cells.filter(cell => cell.count >= K_THRESHOLD);
     const filteredCells = cells.length;
 
-    console.log(`🔒 k-익명성 필터링: ${totalCells}개 셀 → ${filteredCells}개 셀 (k≥${K_THRESHOLD})`);
+    console.log(`🔒 k-익명성 필터링: ${totalCells}개 셀 → ${filteredCells}개 셀 (k≥${K_THRESHOLD})${isDevelopment ? ' (개발 모드: k=1)' : ''}`);
 
     // 노이즈 추가 및 반올림
     cells.forEach(cell => {

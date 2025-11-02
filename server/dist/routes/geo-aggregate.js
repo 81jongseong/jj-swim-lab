@@ -116,7 +116,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         }
         filter.$or = [
             { 'location.coordinates': { $exists: true, $ne: [] } },
-            { address: { $exists: true, $ne: '' } }
+            { address: { $exists: true, $nin: ['', null] } }
         ];
         const users = await User_1.User.find(filter)
             .select('address location centerId createdAt userType')
@@ -136,11 +136,26 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                     lng: userItem.location.coordinates[0],
                     lat: userItem.location.coordinates[1]
                 };
-                console.log('✅ GeoJSON 좌표 사용:', coords);
             }
             else if (userItem.address) {
                 coords = await geocodeAddress(userItem.address);
-                console.log('⚠️ 주소 → 지오코딩:', userItem.address, coords);
+            }
+            else if (userItem.centerId) {
+                try {
+                    const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
+                    const center = await SwimmingCenter.findById(userItem.centerId).select('address location').lean();
+                    if (center?.location?.coordinates && Array.isArray(center.location.coordinates) && center.location.coordinates.length === 2) {
+                        coords = {
+                            lng: center.location.coordinates[0],
+                            lat: center.location.coordinates[1]
+                        };
+                    }
+                    else if (center?.address) {
+                        coords = await geocodeAddress(center.address);
+                    }
+                }
+                catch (error) {
+                }
             }
             if (!coords)
                 continue;
@@ -168,12 +183,13 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                 });
             }
         }
-        const K_THRESHOLD = 5;
+        const isDevelopment = process.env.NODE_ENV !== 'production';
+        const K_THRESHOLD = isDevelopment ? 1 : 5;
         let cells = Array.from(h3Map.values());
         const totalCells = cells.length;
         cells = cells.filter(cell => cell.count >= K_THRESHOLD);
         const filteredCells = cells.length;
-        console.log(`🔒 k-익명성 필터링: ${totalCells}개 셀 → ${filteredCells}개 셀 (k≥${K_THRESHOLD})`);
+        console.log(`🔒 k-익명성 필터링: ${totalCells}개 셀 → ${filteredCells}개 셀 (k≥${K_THRESHOLD})${isDevelopment ? ' (개발 모드: k=1)' : ''}`);
         cells.forEach(cell => {
             cell.countApprox = addNoiseAndRound(cell.count, 1.0);
             delete cell.count;
