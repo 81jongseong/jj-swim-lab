@@ -402,69 +402,32 @@ export default function CenterAdminGeoDistributionPage() {
     }
   }, [spots, scaleRadius, ScatterplotLayer]);
 
-  // Deck.gl 레이어 업데이트 (관리자 페이지와 동일한 방식)
+  // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
   useEffect(() => {
-    // WebGL 컨텍스트와 라이브러리가 준비되지 않았으면 건너뜀
-    if (!overlayRef.current || !mapLoaded || !librariesLoaded || !ScatterplotLayer) {
-      console.log('⏳ 레이어 조건 대기 중:', {
+    if (!overlayRef.current || !spots || !spots.length) {
+      console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
         hasOverlay: !!overlayRef.current,
-        mapLoaded,
-        librariesLoaded,
-        ScatterplotLayer: !!ScatterplotLayer
-      });
-      return;
-    }
-
-    if (!spots || !spots.length) {
-      console.log('⚠️ 스팟 데이터가 없어 레이어 제거');
-      // 비동기로 레이어 제거하여 렌더링 사이클 중 충돌 방지
-      requestAnimationFrame(() => {
-        if (overlayRef.current) {
-          overlayRef.current.setProps({
-            layers: []
-          });
-        }
+        spotsLength: spots?.length || 0
       });
       return;
     }
 
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
+    console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
-    // 관리자 페이지와 동일한 간단한 패턴 사용
-    // MapboxOverlay는 내부적으로 Deck 초기화를 처리하므로 별도 확인 불필요
-    // 지도가 idle 상태이고 mapLoaded가 true이므로 이미 준비됨
-    try {
-      const layer = buildSpotsLayer();
-      if (!layer) {
-        console.warn('⚠️ 레이어 생성 실패');
-        if (overlayRef.current) {
-          overlayRef.current.setProps({ layers: [] });
-        }
-        return;
+    const layer = buildSpotsLayer();
+    console.log('📦 생성된 레이어:', layer);
+    
+    // requestAnimationFrame으로 감싸서 렌더링 사이클에 맞춤
+    requestAnimationFrame(() => {
+      if (overlayRef.current && layer) {
+        overlayRef.current.setProps({
+          layers: [layer]
+        });
+        console.log('✅ 스팟 레이어 업데이트 완료');
       }
-      
-      if (!overlayRef.current) {
-        console.warn('⚠️ overlayRef가 없음');
-        return;
-      }
-      
-      // MapboxOverlay는 내부적으로 적절한 타이밍에 레이어를 추가함
-      overlayRef.current.setProps({
-        layers: [layer]
-      });
-      
-      console.log('✅ 스팟 레이어 업데이트 완료');
-    } catch (error) {
-      console.error('❌ 레이어 설정 오류:', error);
-      if (overlayRef.current) {
-        try {
-          overlayRef.current.setProps({ layers: [] });
-        } catch (clearError) {
-          console.error('❌ 레이어 제거 실패:', clearError);
-        }
-      }
-    }
-  }, [spots, buildSpotsLayer, mapLoaded, librariesLoaded, ScatterplotLayer]);
+    });
+  }, [spots, currentZoom, buildSpotsLayer]);
 
   if (loading) {
     return (
