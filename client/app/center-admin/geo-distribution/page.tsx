@@ -209,13 +209,19 @@ export default function CenterAdminGeoDistributionPage() {
       setCurrentZoom(map.getZoom());
     });
 
+    // 지도 로딩 완료
     map.on('load', () => {
       console.log('🗺️ VWorld 지도 로딩 완료');
+      // 'load' 이벤트만으로는 부족 - 'idle' 이벤트를 사용하여 완전한 렌더링 대기
+    });
+
+    // 지도가 완전히 렌더링되고 WebGL 컨텍스트가 준비된 후에만 데이터 로드
+    // 'idle' 이벤트는 모든 타일이 로드되고 렌더링이 완료된 후 발생
+    map.once('idle', () => {
+      console.log('✅ 지도 렌더링 완료 및 WebGL 컨텍스트 준비');
       setMapLoaded(true);
       
-      // 관리자 페이지와 동일하게 간단하게 처리
-      // MapboxOverlay가 지도에 추가되면 자동으로 초기화됨
-      // 지도가 완전히 로드된 후 데이터를 가져옴
+      // 지도가 완전히 준비된 후 데이터 로드
       fetchSpotsData();
     });
 
@@ -438,7 +444,7 @@ export default function CenterAdminGeoDistributionPage() {
     });
   }, [spots, currentZoom, scaleRadius]);
 
-  // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
+  // Deck.gl 레이어 업데이트 - 새로운 접근 방법
   useEffect(() => {
     // React StrictMode로 인한 이중 렌더링 방지
     if (!mapLoaded || !overlayRef.current) {
@@ -459,15 +465,45 @@ export default function CenterAdminGeoDistributionPage() {
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
-    const layer = buildSpotsLayer();
-    console.log('📦 생성된 레이어:', layer);
-    
-    // 관리자 페이지와 완전히 동일하게 바로 호출 (timeout 제거)
-    overlayRef.current.setProps({
-      layers: [layer]
-    });
-    
-    console.log('✅ 스팟 레이어 업데이트 완료');
+    // 지도 인스턴스가 준비되었는지 확인
+    const map = mapInstanceRef.current;
+    if (!map) {
+      console.warn('⚠️ 지도 인스턴스가 없습니다');
+      return;
+    }
+
+    // 지도가 완전히 준비될 때까지 기다린 후 레이어 추가
+    // 'idle' 이벤트를 사용하여 WebGL 컨텍스트가 완전히 준비된 후 추가
+    const addLayerWhenReady = () => {
+      const layer = buildSpotsLayer();
+      console.log('📦 생성된 레이어:', layer);
+      console.log('📦 레이어 데이터:', layer?.props?.data?.length, '개');
+      
+      if (overlayRef.current) {
+        try {
+          overlayRef.current.setProps({
+            layers: [layer]
+          });
+          console.log('✅ 스팟 레이어 업데이트 완료');
+        } catch (error) {
+          console.error('❌ 레이어 설정 실패:', error);
+        }
+      }
+    };
+
+    // 지도가 이미 idle 상태라면 바로 추가, 아니면 대기
+    if (map.loaded()) {
+      // 지도가 로드되었지만 한 프레임 더 기다려 WebGL 컨텍스트 완전 준비
+      requestAnimationFrame(() => {
+        requestAnimationFrame(addLayerWhenReady);
+      });
+    } else {
+      map.once('idle', () => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(addLayerWhenReady);
+        });
+      });
+    }
   }, [spots, currentZoom, buildSpotsLayer, mapLoaded]);
 
   if (loading) {
