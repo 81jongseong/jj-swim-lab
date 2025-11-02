@@ -443,13 +443,25 @@ export default function CenterAdminGeoDistributionPage() {
     
     const layer = buildSpotsLayer();
     console.log('📦 생성된 레이어:', layer);
+    console.log('📦 레이어 props.data:', layer?.props?.data?.length, '개');
+    console.log('📦 레이어 props.data 샘플:', layer?.props?.data?.slice(0, 1));
     
-    // 관리자 페이지와 동일하게 바로 호출
-    overlayRef.current.setProps({
-      layers: [layer]
-    });
+    // Deck.gl이 준비될 때까지 약간의 지연 후 레이어 추가
+    // WebGL 컨텍스트가 완전히 준비되도록 함
+    const timeoutId = setTimeout(() => {
+      if (overlayRef.current && layer) {
+        try {
+          overlayRef.current.setProps({
+            layers: [layer]
+          });
+          console.log('✅ 스팟 레이어 업데이트 완료');
+        } catch (error) {
+          console.error('❌ 레이어 설정 실패:', error);
+        }
+      }
+    }, 100);
     
-    console.log('✅ 스팟 레이어 업데이트 완료');
+    return () => clearTimeout(timeoutId);
   }, [spots, currentZoom, buildSpotsLayer]);
 
   if (loading) {
