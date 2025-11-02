@@ -391,9 +391,6 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     // k-익명성 필터링 (K_THRESHOLD는 이미 상단에서 선언됨)
     let cells = Array.from(h3Map.values());
     const totalCells = cells.length;
-    
-    cells = cells.filter(cell => cell.count >= K_THRESHOLD);
-    const filteredCells = cells.length;
 
     console.log(`\n📊 처리 결과:`);
     console.log(`  - 총 회원 수: ${users.length}명`);

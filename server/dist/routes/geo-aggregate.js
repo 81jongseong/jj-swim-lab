@@ -296,8 +296,6 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         }
         let cells = Array.from(h3Map.values());
         const totalCells = cells.length;
-        cells = cells.filter(cell => cell.count >= K_THRESHOLD);
-        const filteredCells = cells.length;
         console.log(`\n📊 처리 결과:`);
         console.log(`  - 총 회원 수: ${users.length}명`);
         console.log(`  - 좌표 처리 완료: ${processedCount}명`);
