@@ -323,44 +323,46 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* 상점 통계 카드 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <StatCard
-            title="오늘의 매출"
-            value="₩2,450,000"
-            icon="💰"
-            color="green"
-            subtitle="일일 매출액"
-            change={{ value: 18.5, type: 'increase' }}
-          />
-          <StatCard
-            title="결제 전환율"
-            value="67%"
-            icon="📊"
-            color="blue"
-            subtitle="장바구니→결제율"
-            change={{ value: 5.2, type: 'increase' }}
-          />
-          <StatCard
-            title="인기 브랜드"
-            value="아레나"
-            icon="🏆"
-            color="purple"
-            subtitle="최고 판매 브랜드"
-            change={{ value: 22.3, type: 'increase' }}
-          />
-          <StatCard
-            title="재고 부족"
-            value="3개"
-            icon="⚠️"
-            color="orange"
-            subtitle="품절 위험 상품"
-            change={{ value: -15.7, type: 'decrease' }}
-          />
-        </div>
-
-        {/* 관리자 전용 상세 통계 */}
+        {/* 최고 관리자 전용 통계 카드 */}
         {user?.userType === 'superAdmin' && (
+          <>
+          {/* 상점 통계 카드 */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <StatCard
+              title="오늘의 매출"
+              value="₩2,450,000"
+              icon="💰"
+              color="green"
+              subtitle="일일 매출액"
+              change={{ value: 18.5, type: 'increase' }}
+            />
+            <StatCard
+              title="결제 전환율"
+              value="67%"
+              icon="📊"
+              color="blue"
+              subtitle="장바구니→결제율"
+              change={{ value: 5.2, type: 'increase' }}
+            />
+            <StatCard
+              title="인기 브랜드"
+              value="아레나"
+              icon="🏆"
+              color="purple"
+              subtitle="최고 판매 브랜드"
+              change={{ value: 22.3, type: 'increase' }}
+            />
+            <StatCard
+              title="재고 부족"
+              value="3개"
+              icon="⚠️"
+              color="orange"
+              subtitle="품절 위험 상품"
+              change={{ value: -15.7, type: 'decrease' }}
+            />
+          </div>
+
+          {/* 관리자 전용 상세 통계 */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <StatCard
               title="브랜드별 매출"
@@ -395,6 +397,7 @@ export default function ShopPage() {
               change={{ value: -3.2, type: 'decrease' }}
             />
           </div>
+          </>
         )}
 
         {/* 필터 및 검색 */}
