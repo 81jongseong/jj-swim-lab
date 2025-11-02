@@ -2501,6 +2501,134 @@ function CenterInfoManagementPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 센터 추가 모달 */}
+      {showAddCenterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">새 센터 추가</h3>
+                <button
+                  onClick={() => {
+                    setShowAddCenterModal(false);
+                    setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">센터명 *</label>
+                  <input
+                    type="text"
+                    value={newCenterForm.name}
+                    onChange={e => setNewCenterForm({ ...newCenterForm, name: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="센터명을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
+                  <input
+                    type="text"
+                    value={newCenterForm.address}
+                    onChange={e => setNewCenterForm({ ...newCenterForm, address: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="주소를 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호 *</label>
+                  <input
+                    type="text"
+                    value={newCenterForm.phone}
+                    onChange={e => setNewCenterForm({ ...newCenterForm, phone: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="전화번호를 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
+                  <input
+                    type="email"
+                    value={newCenterForm.email}
+                    onChange={e => setNewCenterForm({ ...newCenterForm, email: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="이메일을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                  <textarea
+                    value={newCenterForm.description}
+                    onChange={e => setNewCenterForm({ ...newCenterForm, description: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    rows={4}
+                    placeholder="센터 설명을 입력하세요"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button
+                  onClick={() => {
+                    setShowAddCenterModal(false);
+                    setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                  }}
+                  variant="secondary"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      // 센터 등록 신청 API 호출
+                      const response = await fetch('http://localhost:5000/api/center-registrations', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                          centerName: newCenterForm.name,
+                          businessNumber: `BIZ-${Date.now()}`, // 임시 사업자등록번호
+                          representativeName: user?.name || '',
+                          representativeEmail: newCenterForm.email,
+                          representativePhone: newCenterForm.phone,
+                          password: 'temp123!', // 임시 비밀번호 (나중에 변경해야 함)
+                          address: newCenterForm.address,
+                          description: newCenterForm.description
+                        })
+                      });
+
+                      const result = await response.json();
+                      if (result.success) {
+                        alert('센터 등록 신청이 완료되었습니다. 관리자 승인 후 이용하실 수 있습니다.');
+                        setShowAddCenterModal(false);
+                        setNewCenterForm({ name: '', address: '', phone: '', email: '', description: '' });
+                      } else {
+                        alert(result.message || '센터 추가에 실패했습니다.');
+                      }
+                    } catch (error: any) {
+                      console.error('센터 추가 오류:', error);
+                      alert(error.response?.data?.message || '센터 추가 중 오류가 발생했습니다.');
+                    }
+                  }}
+                  disabled={!newCenterForm.name || !newCenterForm.address || !newCenterForm.phone || !newCenterForm.email}
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  센터 추가
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
