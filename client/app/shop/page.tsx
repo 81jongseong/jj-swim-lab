@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -436,55 +437,56 @@ export default function ShopPage() {
         </div>
 
         {/* 상품 목록 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {filteredProducts.map((product) => (
-            <div key={product._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-              <div className="p-4">
-                <div className="relative mb-4">
-                  <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+            <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="p-3 pb-2">
+                <div className="relative mb-2">
+                  <div className="aspect-square bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-gray-400 text-4xl">🏊‍♂️</div>
+                      <div className="text-gray-400 text-2xl">🏊‍♂️</div>
                     )}
                   </div>
                   {product.originalPrice && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                    <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">
                       -{getDiscountRate(product)}%
                     </div>
                   )}
                 </div>
+                <CardTitle className="text-sm font-semibold line-clamp-2 mb-1 leading-tight">{product.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 space-y-2">
+                <p className="text-xs text-gray-600 line-clamp-2 min-h-[2rem]">{product.description}</p>
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
-
-                <div className="mb-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-1.5 flex-wrap">
+                    <span className="text-base font-bold text-gray-900">
                       {formatPrice(product.price)}원
                     </span>
                     {product.originalPrice && (
-                      <span className="text-sm text-gray-500 line-through">
-                        {formatPrice(product.originalPrice)}원
+                      <span className="text-xs text-gray-500 line-through">
+                        {formatPrice(product.originalPrice)}
                       </span>
                     )}
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-1">
-                    <div className="flex text-yellow-400">
-                      {'★'.repeat(Math.floor(product.rating))}
-                      {'☆'.repeat(5 - Math.floor(product.rating))}
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-0.5">
+                      <div className="flex text-yellow-400 text-xs">
+                        {'★'.repeat(Math.floor(product.rating))}
+                        {'☆'.repeat(5 - Math.floor(product.rating))}
+                      </div>
+                      <span className="text-gray-600">({product.reviewCount})</span>
                     </div>
-                    <span className="text-sm text-gray-600">({product.reviewCount})</span>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    재고: {product.stock}개
+                    <div className="text-gray-500">
+                      {product.stock > 0 ? `${product.stock}개` : '품절'}
+                    </div>
                   </div>
                 </div>
 
@@ -492,13 +494,13 @@ export default function ShopPage() {
                   onClick={() => addToCart(product)}
                   disabled={product.stock === 0}
                   variant="primary"
-                  size="md"
-                  className="w-full"
+                  size="sm"
+                  className="w-full text-xs py-1.5 h-auto"
                 >
                   {product.stock === 0 ? '품절' : '장바구니 추가'}
                 </Button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
