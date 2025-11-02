@@ -89,19 +89,51 @@ function CenterInfoManagement() {
     description: ''
   });
 
-  // 관리하는 센터 목록 로드
+  // 관리하는 센터 목록 로드 (DB에서 센터 이름 가져오기)
   useEffect(() => {
-    if (user && isCenterAdmin && user.centerAdminInfo?.managedCenters) {
-      const centers = user.centerAdminInfo.managedCenters;
-      const centersList = centers.map((c: any) => ({
-        _id: c.toString ? c.toString() : c._id?.toString() || c,
-        name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
-      }));
-      setManagedCenters(centersList);
-      if (centersList.length > 0) {
-        setSelectedCenterId(centersList[0]._id);
+    const loadManagedCenters = async () => {
+      if (user && isCenterAdmin && user.centerAdminInfo?.managedCenters) {
+        const centers = user.centerAdminInfo.managedCenters;
+        try {
+          // 각 센터 ID로 DB에서 센터 정보 조회
+          const centersList = await Promise.all(
+            centers.map(async (c: any) => {
+              const centerId = c.toString ? c.toString() : c._id?.toString() || c;
+              try {
+                // 센터 정보 API 호출
+                const response = await apiClient.get(`/api/center-management/${centerId}`);
+                if (response.success && response.data?.center) {
+                  return {
+                    _id: centerId,
+                    name: response.data.center.name || `센터 ${centerId}`
+                  };
+                }
+              } catch (error) {
+                console.error(`센터 ${centerId} 정보 조회 실패:`, error);
+              }
+              // API 호출 실패 시 ID만 사용
+              return {
+                _id: centerId,
+                name: c.name || `센터 ${centerId}`
+              };
+            })
+          );
+          setManagedCenters(centersList.filter(c => c !== null));
+          if (centersList.length > 0) {
+            setSelectedCenterId(centersList[0]._id);
+          }
+        } catch (error) {
+          console.error('관리 센터 목록 로드 실패:', error);
+          // 실패 시 기본값 사용
+          const centersList = centers.map((c: any) => ({
+            _id: c.toString ? c.toString() : c._id?.toString() || c,
+            name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
+          }));
+          setManagedCenters(centersList);
+        }
       }
-    }
+    };
+    loadManagedCenters();
   }, [user, isCenterAdmin]);
 
   useEffect(() => {

@@ -90,15 +90,37 @@ export default function CenterAdminGeoDistributionPage() {
 
       // 관리하는 센터 목록 로드
       if (user.centerAdminInfo?.managedCenters) {
-        const centers = user.centerAdminInfo.managedCenters;
-        const centersList = centers.map((c: any) => ({
-          _id: c.toString ? c.toString() : c._id?.toString() || c,
-          name: c.name || `센터 ${c.toString ? c.toString() : c._id?.toString() || c}`
-        }));
-        setManagedCenters(centersList);
-        
-        // 초기값: "전체 통계" (null)
-        setSelectedCenterId(null);
+        const loadCentersWithNames = async () => {
+          try {
+            const centers = user.centerAdminInfo.managedCenters;
+            const centersList = await Promise.all(
+              centers.map(async (c: any) => {
+                const centerId = c.toString ? c.toString() : c._id?.toString() || c;
+                // 센터 정보 조회
+                try {
+                  const response = await apiClient.get(`/api/centers/${centerId}`);
+                  if (response.success && response.data) {
+                    return {
+                      _id: centerId,
+                      name: response.data.name || `센터 ${centerId.substring(0, 8)}`
+                    };
+                  }
+                } catch (error) {
+                  console.warn(`센터 ${centerId} 정보 조회 실패:`, error);
+                }
+                return {
+                  _id: centerId,
+                  name: `센터 ${centerId.substring(0, 8)}`
+                };
+              })
+            );
+            setManagedCenters(centersList);
+            setSelectedCenterId(null); // 초기값: "전체 통계"
+          } catch (error) {
+            console.error('센터 목록 로드 오류:', error);
+          }
+        };
+        loadCentersWithNames();
       }
     }
   }, [user, loading, router]);
