@@ -423,42 +423,21 @@ export default function CenterAdminGeoDistributionPage() {
         }
       });
 
-      // 레이어를 안전하게 설정
-      if (overlayRef.current && mapInstanceRef.current) {
+      // 레이어를 안전하게 설정 (관리자 페이지와 동일한 방식)
+      if (overlayRef.current) {
         try {
-          // 먼저 기존 레이어 제거
           overlayRef.current.setProps({
-            layers: []
+            layers: [layer]
           });
-          
-          // WebGL 컨텍스트가 준비될 때까지 대기
-          const setLayerSafely = () => {
-            if (overlayRef.current && mapInstanceRef.current) {
-              try {
-                overlayRef.current.setProps({
-                  layers: [layer]
-                });
-                console.log('✅ Deck.gl 레이어 생성 완료');
-              } catch (err) {
-                console.error('❌ Deck.gl 레이어 설정 오류:', err);
-                // 레이어 설정 실패 시 빈 레이어로 설정
-                if (overlayRef.current) {
-                  overlayRef.current.setProps({
-                    layers: []
-                  });
-                }
-              }
-            }
-          };
-          
-          // requestAnimationFrame을 두 번 사용하여 WebGL 컨텍스트가 완전히 준비되도록 함
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              setLayerSafely();
-            });
-          });
+          console.log('✅ Deck.gl 레이어 생성 완료');
         } catch (err) {
-          console.error('❌ Deck.gl 레이어 초기화 오류:', err);
+          console.error('❌ Deck.gl 레이어 설정 오류:', err);
+          // 레이어 설정 실패 시 빈 레이어로 설정
+          if (overlayRef.current) {
+            overlayRef.current.setProps({
+              layers: []
+            });
+          }
         }
       }
     } catch (error) {
