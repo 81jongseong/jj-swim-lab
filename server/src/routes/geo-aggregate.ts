@@ -508,19 +508,28 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       }
     });
     
+    // 근사값이 0보다 큰 셀만 필터링 (지도에 표시되지 않는 셀 제거)
+    const validCells = cells.filter(cell => cell.countApprox > 0);
+    console.log(`\n📊 유효한 셀 필터링: ${cells.length}개 → ${validCells.length}개 (countApprox > 0)`);
+    if (cells.length !== validCells.length) {
+      const removedCount = cells.length - validCells.length;
+      console.log(`  ⚠️ ${removedCount}개 셀이 근사값 0으로 제거됨`);
+    }
+    
     console.log(`\n📤 최종 응답:`);
-    console.log(`  - 총 셀 수: ${cells.length}개`);
-    console.log(`  - 총 회원 수 (근사값): ${cells.reduce((sum: number, c: any) => sum + c.countApprox, 0)}명`);
+    console.log(`  - 총 셀 수 (k-익명성 필터링 후): ${cells.length}개`);
+    console.log(`  - 유효한 셀 수 (countApprox > 0): ${validCells.length}개`);
+    console.log(`  - 총 회원 수 (근사값): ${validCells.reduce((sum: number, c: any) => sum + c.countApprox, 0)}명`);
 
     // 감사 로그
-    console.log(`📊 [GEO-AUDIT] User: ${user.userId}, Type: ${user.userType}, Filter: ${JSON.stringify({ centerId, from, to, memberType })}, Result: ${filteredCells} cells`);
+    console.log(`📊 [GEO-AUDIT] User: ${user.userId}, Type: ${user.userType}, Filter: ${JSON.stringify({ centerId, from, to, memberType })}, Result: ${validCells.length} cells`);
 
     res.json({
       success: true,
-      cells,
+      cells: validCells,
       metadata: {
         totalCells,
-        filteredCells,
+        filteredCells: validCells.length,
         k: K_THRESHOLD,
         privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입, 5단위 반올림이 적용되었습니다.`,
       },
