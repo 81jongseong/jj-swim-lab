@@ -74,7 +74,7 @@ export default function CenterAdminGeoDistributionPage() {
   const [currentZoom, setCurrentZoom] = useState(12);
   
   // 필터 상태
-  const [memberType, setMemberType] = useState<'all' | 'student' | 'instructor' | 'guest'>('all');
+  const [memberType, setMemberType] = useState<'all' | 'group-lesson' | 'personal-lesson' | 'free-swim'>('all');
   
   // 센터 관리 상태
   const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
@@ -348,7 +348,7 @@ export default function CenterAdminGeoDistributionPage() {
                     setSelectedCenterId(value === 'all' ? null : value);
                   }}
                 >
-                  <option value="all">📊 전체 통계</option>
+                  <option value="all">📊 전체 센터 회원</option>
                   {managedCenters.map((center) => (
                     <option key={center._id} value={center._id}>
                       {center.name}
@@ -367,9 +367,9 @@ export default function CenterAdminGeoDistributionPage() {
                 onChange={e => setMemberType(e.target.value as any)}
               >
                 <option value="all">전체</option>
-                <option value="student">회원</option>
-                <option value="instructor">강사</option>
-                <option value="guest">게스트</option>
+                <option value="group-lesson">단체레슨</option>
+                <option value="personal-lesson">개인레슨</option>
+                <option value="free-swim">자유수영</option>
               </select>
             </label>
 
