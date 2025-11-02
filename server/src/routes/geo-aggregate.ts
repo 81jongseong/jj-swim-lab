@@ -93,16 +93,12 @@ function round5(n: number): number {
 
 /**
  * 노이즈 추가 및 반올림
- * 최소값 보장: 원본 count가 1 이상이면 최소 5로 보장 (5단위 반올림이므로)
+ * 프라이버시를 위해 노이즈만 추가하고 정수로 반올림 (5단위 반올림 제거)
  */
 function addNoiseAndRound(count: number, epsilon: number = 1.0): number {
   const noisy = count + laplaceNoise(epsilon);
-  const rounded = round5(Math.max(0, noisy));
-  // 원본 count가 1 이상이면 최소 5로 보장 (5단위 반올림이므로 최소값은 5)
-  // 이렇게 하면 1명도 지도에 표시됨
-  if (count >= 1 && rounded === 0) {
-    return 5;
-  }
+  // 최소값 보장: 원본 count가 1 이상이면 최소 1로 보장
+  const rounded = Math.max(1, Math.round(Math.max(0, noisy)));
   return rounded;
 }
 
@@ -528,7 +524,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
         totalCells,
         filteredCells: cells.length,
         k: K_THRESHOLD,
-        privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입, 5단위 반올림이 적용되었습니다.`,
+        privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입이 적용되었습니다.`,
       },
     });
   } catch (error) {

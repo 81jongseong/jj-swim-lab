@@ -64,10 +64,7 @@ function round5(n) {
 }
 function addNoiseAndRound(count, epsilon = 1.0) {
     const noisy = count + laplaceNoise(epsilon);
-    const rounded = round5(Math.max(0, noisy));
-    if (count >= 1 && rounded === 0) {
-        return 5;
-    }
+    const rounded = Math.max(1, Math.round(Math.max(0, noisy)));
     return rounded;
 }
 router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
@@ -408,7 +405,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                 totalCells,
                 filteredCells: cells.length,
                 k: K_THRESHOLD,
-                privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입, 5단위 반올림이 적용되었습니다.`,
+                privacyNotice: `본 데이터는 k-익명성(k≥${K_THRESHOLD}), 노이즈 주입이 적용되었습니다.`,
             },
         });
     }
