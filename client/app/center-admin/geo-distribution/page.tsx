@@ -429,10 +429,50 @@ export default function CenterAdminGeoDistributionPage() {
 
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     
-    // Deck 인스턴스가 준비될 때까지 기다린 후 레이어 추가
-    // requestAnimationFrame으로 렌더링 사이클과 동기화
+    // Deck 인스턴스와 WebGL 컨텍스트가 완전히 준비될 때까지 기다리는 헬퍼 함수
+    const waitForDeckReady = (retries = 0, maxRetries = 10): Promise<boolean> => {
+      return new Promise((resolve) => {
+        if (!overlayRef.current) {
+          console.warn('⚠️ overlayRef가 없음');
+          resolve(false);
+          return;
+        }
+        
+        const deck = (overlayRef.current as any)?.deck;
+        if (!deck) {
+          if (retries < maxRetries) {
+            setTimeout(() => {
+              waitForDeckReady(retries + 1, maxRetries).then(resolve);
+            }, 100);
+          } else {
+            console.warn('⚠️ Deck 인스턴스가 준비되지 않음 (최대 재시도 횟수 초과)');
+            resolve(false);
+          }
+          return;
+        }
+        
+        // Deck의 WebGL 디바이스가 준비되었는지 확인
+        const device = deck?.deviceManager?.defaultDevice;
+        if (!device) {
+          if (retries < maxRetries) {
+            setTimeout(() => {
+              waitForDeckReady(retries + 1, maxRetries).then(resolve);
+            }, 100);
+          } else {
+            console.warn('⚠️ WebGL 디바이스가 준비되지 않음');
+            resolve(false);
+          }
+          return;
+        }
+        
+        console.log('✅ Deck 인스턴스와 WebGL 디바이스 준비 완료');
+        resolve(true);
+      });
+    };
+    
+    // 렌더링 사이클과 동기화
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
         try {
           const layer = buildSpotsLayer();
           if (!layer) {
@@ -443,29 +483,25 @@ export default function CenterAdminGeoDistributionPage() {
             return;
           }
           
+          // Deck이 완전히 준비될 때까지 대기
+          const isReady = await waitForDeckReady();
+          if (!isReady) {
+            console.error('❌ Deck 준비 시간 초과');
+            return;
+          }
+          
           if (!overlayRef.current) {
             console.warn('⚠️ overlayRef가 없음');
             return;
           }
           
-          // Deck 인스턴스가 있는지 확인 (MapboxOverlay가 준비되었는지)
-          const deck = (overlayRef.current as any)?.deck;
-          if (!deck) {
-            console.warn('⚠️ Deck 인스턴스가 아직 준비되지 않음. 다음 프레임에서 재시도');
-            setTimeout(() => {
-              if (overlayRef.current) {
-                overlayRef.current.setProps({ layers: [layer] });
-                console.log('✅ 스팟 레이어 업데이트 완료 (지연된 업데이트)');
-              }
-            }, 100);
-            return;
-          }
-          
-          overlayRef.current.setProps({
-            layers: [layer]
+          // 추가 프레임 대기로 안정성 확보
+          requestAnimationFrame(() => {
+            overlayRef.current?.setProps({
+              layers: [layer]
+            });
+            console.log('✅ 스팟 레이어 업데이트 완료');
           });
-          
-          console.log('✅ 스팟 레이어 업데이트 완료');
         } catch (error) {
           console.error('❌ 레이어 설정 오류:', error);
           if (overlayRef.current) {
