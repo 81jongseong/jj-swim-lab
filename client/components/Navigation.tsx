@@ -184,12 +184,8 @@ const userMenuStructure = {
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
-      { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
       { href: '/center/default/admin/reports', label: '📊 센터 통계' },
       { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
-    ],
-    transactions: [
-      { href: '/center/default/admin/manage', label: '📋 예약·결제 관리', description: '예약/결제/승인 통합 관리' },
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
@@ -217,9 +213,6 @@ const userMenuStructure = {
       { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
       { href: '/center/default/admin/reports', label: '📊 센터 통계' },
       { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
-    ],
-    transactions: [
-      { href: '/center/default/admin/manage', label: '📋 예약·결제 관리', description: '예약/결제/승인 통합 관리' },
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
@@ -324,14 +317,12 @@ const menuGrouping = {
   ],
   centerAdmin: [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
-    { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
     { groupName: '🔗 추가 서비스', categories: ['tools'] },
   ],
   'center-admin': [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },
-    { groupName: '📋 예약·결제 관리', categories: ['transactions'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
     { groupName: '🔗 추가 서비스', categories: ['tools'] },
