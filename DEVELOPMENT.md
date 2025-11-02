@@ -529,6 +529,32 @@
 
 ## 🐛 브랜딩 설정 미리보기 및 API 엔드포인트 오류 (2025-01-31)
 
+### ❌ 지도에 회원 분포가 표시되지 않는 문제 (해결됨)
+**문제**: 회원 분포도 지도에 아무것도 표시되지 않음
+- 회원 데이터에 주소지가 없을 수 있음
+- k-익명성 필터링이 너무 엄격함
+- 프론트엔드 렌더링 문제
+
+**원인**: 
+- 회원 데이터에 `address` 또는 `location.coordinates` 필드가 없음
+- k-익명성 임계값이 k=5로 설정되어 있어 작은 그룹이 필터링됨
+- 디버깅 로그 부족으로 문제 추적이 어려움
+
+**해결 방법** (2025-01-XX):
+1. 개발 환경에서 k-익명성 임계값을 k=1로 낮춤
+2. 회원 주소지가 없으면 센터 주소지를 사용하도록 폴백 로직 추가
+3. 레슨 유형별 필터링 구현:
+   - `group-lesson`: Course 모델의 수강생
+   - `personal-lesson`: PersonalLesson 모델의 수강생
+   - `free-swim`: LaneRental 모델의 이용자
+4. 프론트엔드에 상세 로깅 추가하여 디버깅 개선
+5. Deck.gl 레이어 생성 시 유효성 검사 강화
+
+**관련 파일**:
+- `server/src/routes/geo-aggregate.ts` (레슨 유형 필터링 및 k-익명성 조정)
+- `client/app/center-admin/geo-distribution/page.tsx` (디버깅 로그 추가)
+- `server/scripts/add-address-to-users.js` (주소지 추가 스크립트)
+
 ### ❌ 센터 조회 404 오류 (해결됨)
 **문제**: 센터 관리자가 `managedCenters`에 있는 센터를 조회할 때 404 오류 발생
 - `GET /api/center-management/:id`에서 센터를 찾을 수 없음
