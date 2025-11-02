@@ -129,17 +129,32 @@ export default function CenterAdminGeoDistributionPage() {
   useEffect(() => {
     const loadLibraries = async () => {
       try {
-        maplibregl = (await import('maplibre-gl')).default;
-        const deckGl = await import('@deck.gl/mapbox');
-        const coreLayers = await import('@deck.gl/layers');
+        console.log('📦 라이브러리 로딩 시작...');
         
+        maplibregl = (await import('maplibre-gl')).default;
+        console.log('✅ maplibre-gl 로딩 완료');
+        
+        const deckGl = await import('@deck.gl/mapbox');
+        console.log('✅ @deck.gl/mapbox 로딩 완료:', Object.keys(deckGl));
+        
+        const coreLayers = await import('@deck.gl/layers');
+        console.log('✅ @deck.gl/layers 로딩 완료:', Object.keys(coreLayers));
+
+        // Deck.gl 컴포넌트 설정
         MapboxOverlay = deckGl.MapboxOverlay;
         ScatterplotLayer = coreLayers.ScatterplotLayer;
         
+        console.log('✅ MapboxOverlay 설정:', !!MapboxOverlay);
+        console.log('✅ ScatterplotLayer 설정:', !!ScatterplotLayer);
+
+        // CSS 로딩 (타입 선언 오류 무시)
+        // @ts-ignore
         await import('maplibre-gl/dist/maplibre-gl.css');
+
+        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
         setLibrariesLoaded(true);
       } catch (error) {
-        console.error('라이브러리 로딩 실패:', error);
+        console.error('🚨 라이브러리 로딩 실패:', error);
       }
     };
 

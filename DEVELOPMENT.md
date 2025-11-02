@@ -1341,7 +1341,9 @@
 - ✅ 데이터는 정상적으로 수신되고 있음 (8개 스팟 확인)
 - ✅ 지도는 정상적으로 표시됨
 - ✅ 샘플 데이터: `{geohash: 'h3_8_3750_12693', lat: 37.505, lng: 126.935, totalApprox: 1, dominantCenter: '기타'}`
-- ✅ 레이어 생성과 업데이트 로직은 관리자 페이지와 동일
+- ✅ 레이어 생성과 업데이트 로직은 관리자 페이지와 완전히 동일
+- ✅ 레이어 props에는 데이터가 있음 (`📦 레이어 데이터: 8 개`)
+- ⚠️ 레이어 `count`는 0으로 표시됨 (초기화 시점에 Deck.gl이 데이터를 인식하지 못함)
 - ❌ Deck.gl이 레이어를 초기화할 때 `attributes`가 `undefined` 오류 발생
 - ❌ 렌더링 시 `shaderInputs`가 `undefined` 오류 발생
 - ❌ `luma.gl: Link error during link-error: Vertex shader is not compiled.` 오류 발생
@@ -1349,6 +1351,8 @@
 **오류 분석:**
 - 오류 발생 시점: 레이어가 `setProps`로 추가된 직후, Deck.gl이 레이어를 초기화하려고 할 때
 - 오류 원인: Deck.gl의 WebGL 모델이 완전히 초기화되지 않은 상태에서 attribute layout을 읽으려고 시도
+- 중요한 발견: 레이어 props에는 데이터가 있지만(`📦 레이어 데이터: 8 개`), 레이어 `count`는 0
+- 이것은 Deck.gl이 레이어를 생성할 때는 데이터가 있지만, WebGL 모델 초기화 시점에 데이터를 인식하지 못한다는 의미
 - 관리자 페이지는 동일한 코드 패턴이지만 정상 작동 → 환경적 차이 가능성
 
 **추가 조사 필요:**
