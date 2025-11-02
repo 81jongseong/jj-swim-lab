@@ -273,7 +273,32 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     // ];
 
     // 회원 데이터 조회
-    console.log('🔍 필터 조건:', JSON.stringify(filter, null, 2));
+    console.log('🔍 최종 필터 조건:', JSON.stringify(filter, null, 2));
+    
+    // 필터를 MongoDB 쿼리로 변환할 때 ObjectId 처리
+    if (filter.centerId && typeof filter.centerId === 'object' && filter.centerId.$in) {
+      filter.centerId.$in = filter.centerId.$in.map((id: any) => {
+        if (typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)) {
+          return new mongoose.Types.ObjectId(id);
+        }
+        return id;
+      });
+      console.log(`  📝 centerId.$in ObjectId 변환 완료: ${filter.centerId.$in.length}개`);
+    } else if (filter.centerId && typeof filter.centerId === 'string' && mongoose.Types.ObjectId.isValid(filter.centerId)) {
+      filter.centerId = new mongoose.Types.ObjectId(filter.centerId);
+      console.log(`  📝 centerId ObjectId 변환 완료: ${filter.centerId}`);
+    }
+    
+    if (filter._id && typeof filter._id === 'object' && filter._id.$in) {
+      filter._id.$in = filter._id.$in.map((id: any) => {
+        if (typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)) {
+          return new mongoose.Types.ObjectId(id);
+        }
+        return id;
+      });
+      console.log(`  📝 _id.$in ObjectId 변환 완료: ${filter._id.$in.length}개`);
+    }
+    
     const users = await User.find(filter)
       .select('address location centerId createdAt userType')
       .lean();

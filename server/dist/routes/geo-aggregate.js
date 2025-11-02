@@ -27,6 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const Center_1 = __importDefault(require("../models/Center"));
@@ -196,7 +197,29 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         else if (memberType) {
             filter.userType = memberType;
         }
-        console.log('🔍 필터 조건:', JSON.stringify(filter, null, 2));
+        console.log('🔍 최종 필터 조건:', JSON.stringify(filter, null, 2));
+        if (filter.centerId && typeof filter.centerId === 'object' && filter.centerId.$in) {
+            filter.centerId.$in = filter.centerId.$in.map((id) => {
+                if (typeof id === 'string' && mongoose_1.default.Types.ObjectId.isValid(id)) {
+                    return new mongoose_1.default.Types.ObjectId(id);
+                }
+                return id;
+            });
+            console.log(`  📝 centerId.$in ObjectId 변환 완료: ${filter.centerId.$in.length}개`);
+        }
+        else if (filter.centerId && typeof filter.centerId === 'string' && mongoose_1.default.Types.ObjectId.isValid(filter.centerId)) {
+            filter.centerId = new mongoose_1.default.Types.ObjectId(filter.centerId);
+            console.log(`  📝 centerId ObjectId 변환 완료: ${filter.centerId}`);
+        }
+        if (filter._id && typeof filter._id === 'object' && filter._id.$in) {
+            filter._id.$in = filter._id.$in.map((id) => {
+                if (typeof id === 'string' && mongoose_1.default.Types.ObjectId.isValid(id)) {
+                    return new mongoose_1.default.Types.ObjectId(id);
+                }
+                return id;
+            });
+            console.log(`  📝 _id.$in ObjectId 변환 완료: ${filter._id.$in.length}개`);
+        }
         const users = await User_1.User.find(filter)
             .select('address location centerId createdAt userType')
             .lean();
