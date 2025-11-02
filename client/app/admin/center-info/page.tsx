@@ -70,7 +70,10 @@ interface CenterInfo {
 
 function CenterInfoManagement() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'info' | 'management'>('info');
+  // 최고 관리자는 센터 관리 탭만, 센터 관리자는 센터 정보 관리 탭만 사용
+  const isSuperAdmin = user?.userType === 'superAdmin';
+  const isCenterAdmin = user?.userType === 'centerAdmin' || user?.userType === 'center-admin';
+  const [activeTab, setActiveTab] = useState<'info' | 'management'>(isSuperAdmin ? 'management' : 'info');
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -165,39 +168,41 @@ function CenterInfoManagement() {
         </p>
       </div>
 
-      {/* 탭 네비게이션 */}
-      <div className="mb-6 border-b border-gray-200">
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setActiveTab('info')}
-            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-              activeTab === 'info'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Settings className="w-4 h-4 inline mr-2" />
-            센터 정보 관리
-          </button>
-          <button
-            onClick={() => setActiveTab('management')}
-            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-              activeTab === 'management'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <List className="w-4 h-4 inline mr-2" />
-            센터 관리
-          </button>
+      {/* 탭 네비게이션 (최고 관리자만 센터 관리 탭 표시) */}
+      {isSuperAdmin && (
+        <div className="mb-6 border-b border-gray-200">
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'info'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-4 h-4 inline mr-2" />
+              센터 정보 관리
+            </button>
+            <button
+              onClick={() => setActiveTab('management')}
+              className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'management'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <List className="w-4 h-4 inline mr-2" />
+              센터 관리
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 센터 관리 탭 */}
-      {activeTab === 'management' && <CenterManagementTab />}
+      {/* 센터 관리 탭 (최고 관리자 전용) */}
+      {isSuperAdmin && activeTab === 'management' && <CenterManagementTab />}
 
-      {/* 센터 정보 관리 탭 */}
-      {activeTab === 'info' && (
+      {/* 센터 정보 관리 탭 (센터 관리자만) */}
+      {(isCenterAdmin && activeTab === 'info') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 센터 기본 정보 */}
         <div className="bg-white rounded-lg shadow p-6">
