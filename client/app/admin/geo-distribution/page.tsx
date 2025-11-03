@@ -31,11 +31,13 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { getAddressFromGeohash, getBlockCenterCoordinates } from '../../../lib/utils/address-utils';
 
 // 동적 import로 SSR 문제 방지 및 성능 최적화
 let maplibregl: any;
 let MapboxOverlay: any;
 let ScatterplotLayer: any;
+let TextLayer: any;
 
 // 지연 로딩을 위한 상태 (컴포넌트 내부로 이동)
 
@@ -241,6 +243,7 @@ export default function GeoDistributionPage() {
   const [mapLoaded, setMapLoaded] = useState(false); // 지도 로딩 상태
   const [loadingData, setLoadingData] = useState(false); // 초기 로딩 비활성화
   const [hoveredSpot, setHoveredSpot] = useState<any>(null);
+  const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
   const [librariesLoaded, setLibrariesLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(12);
   
@@ -627,9 +630,11 @@ export default function GeoDistributionPage() {
         // Deck.gl 컴포넌트 설정
         MapboxOverlay = deckGl.MapboxOverlay;
         ScatterplotLayer = coreLayers.ScatterplotLayer;
+        TextLayer = coreLayers.TextLayer;
         
         console.log('✅ MapboxOverlay 설정:', !!MapboxOverlay);
         console.log('✅ ScatterplotLayer 설정:', !!ScatterplotLayer);
+        console.log('✅ TextLayer 설정:', !!TextLayer);
 
         // CSS 로딩 (타입 선언 오류 무시)
         // @ts-ignore
@@ -795,14 +800,22 @@ export default function GeoDistributionPage() {
       console.log('📊 스팟 데이터 응답:', result);
 
       if (result.success) {
+        console.log('📦 API 응답 데이터:', {
+          spotsCount: result.data.spots?.length || 0,
+          spots: result.data.spots?.slice(0, 3),
+          metadata: result.data.metadata
+        });
+        
         setSpots(result.data.spots);
         setMetadata(result.data.metadata);
         
-        // 센터 목록 업데이트 (중복 제거)
-        const centers = Array.from(new Set(result.data.spots.map((s: Spot) => s.dominantCenter))) as string[];
-        console.log('🏢 센터 목록 (중복 제거):', centers);
+        // 센터 목록 업데이트 (중복 제거, "기타" 제외)
+        const allCenters = Array.from(new Set(result.data.spots.map((s: Spot) => s.dominantCenter))) as string[];
+        const centers = allCenters.filter(c => c !== '기타'); // "기타" 센터 제외
+        console.log('🏢 센터 목록 (중복 제거):', allCenters);
+        console.log('🏢 활성 센터 (기타 제외):', centers);
         setCenterList(centers);
-        setActiveCenters(new Set(centers));
+        setActiveCenters(new Set(centers)); // "기타"는 activeCenters에 포함하지 않음
         
         console.log('✅ 스팟 데이터 로딩 완료:', result.data.spots.length, '개 스팟');
         console.log('📊 스팟 통계:', result.data.metadata);
@@ -882,13 +895,17 @@ export default function GeoDistributionPage() {
 
   // 스팟 레이어 생성
   const buildSpotsLayer = useCallback(() => {
+    // ⚠️ 중요: 필터링 시 "기타" 센터 제외 (센터별 색상 구분을 위해)
+    // - activeCenters에 포함된 센터만 표시
+    // - "기타"는 색상 구분이 없으므로 제외
     const filteredSpots = spots.filter(s => {
       // null/undefined 체크
       if (!s || !s.dominantCenter) {
         console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
         return false;
       }
-      return s.dominantCenter === '기타' || activeCenters.has(s.dominantCenter);
+      // activeCenters에 포함된 센터만 표시 ("기타" 제외)
+      return activeCenters.has(s.dominantCenter) && s.dominantCenter !== '기타';
     });
     
     console.log('🔧 스팟 레이어 생성:', filteredSpots.length, '개 스팟');
@@ -901,12 +918,39 @@ export default function GeoDistributionPage() {
       dominantCenter: s.dominantCenter 
     })));
     
-    // 스팟 위치 중복 확인
+    // 스팟 위치 중복 확인 및 겹침 방지 데이터 준비
     const positions = filteredSpots.map(s => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`);
     const uniquePositions = new Set(positions);
     console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
     
-    return new ScatterplotLayer({
+    // ✅ 겹침 방지: 같은 위치의 스팟들을 약간 분산시키기 위한 맵 생성
+    const positionCountMap = new Map<string, number>();
+    filteredSpots.forEach((spot) => {
+      const posKey = `${spot.lat.toFixed(6)},${spot.lng.toFixed(6)}`;
+      positionCountMap.set(posKey, (positionCountMap.get(posKey) || 0) + 1);
+    });
+    
+    // 위치별 인덱스 추적 (동일 위치의 여러 스팟 분산용)
+    const positionIndexMap = new Map<string, number>();
+    
+    // ✅ 상대적 크기 스케일링: 현재 화면에 표시된 스팟들 중 최소/최대 회원 수 기준
+    // - 줌 아웃 시 숫자가 커져도 상대적으로 표현 (가장 큰 스팟 = 최대 크기, 가장 작은 스팟 = 최소 크기)
+    const memberCounts = filteredSpots.map(s => s.totalApprox || 0).filter(c => c > 0);
+    const minCount = memberCounts.length > 0 ? Math.min(...memberCounts) : 30;
+    const maxCount = memberCounts.length > 0 ? Math.max(...memberCounts) : 300;
+    const minRadius = 30; // 최소 스팟 크기 (미터)
+    const maxRadius = 300; // 최대 스팟 크기 (미터)
+    
+    // 첫 로그에만 상대적 스케일링 정보 출력
+    if (filteredSpots.length > 0) {
+      console.log(`📊 상대적 크기 스케일링: 회원 수 ${minCount}~${maxCount}명 → 크기 ${minRadius}~${maxRadius}m`);
+    }
+    
+    // 첫 3개 스팟만 로그 출력 (전체 로그는 너무 많음)
+    let loggedCount = 0;
+    
+    // 스팟 레이어 생성
+    const spotsLayer = new ScatterplotLayer({
       id: 'spots',
       data: filteredSpots,
       pickable: true,
@@ -915,28 +959,92 @@ export default function GeoDistributionPage() {
           console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
           return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
         }
+        
+        // ✅ 겹침 방지: 같은 위치에 여러 스팟이 있을 때 약간 분산
+        const posKey = `${d.lat.toFixed(6)},${d.lng.toFixed(6)}`;
+        const countAtPosition = positionCountMap.get(posKey) || 1;
+        const currentIndex = positionIndexMap.get(posKey) || 0;
+        
+        // 같은 위치에 여러 스팟이 있는 경우만 약간 분산 (최대 15m 이내)
+        if (countAtPosition > 1) {
+          const angle = (currentIndex / countAtPosition) * 2 * Math.PI;
+          const offsetDistance = Math.min(15, 5 * countAtPosition); // 스팟 개수에 비례하여 최대 15m
+          const offsetLat = (offsetDistance / 111320) * Math.sin(angle);
+          const offsetLng = (offsetDistance / (111320 * Math.cos(d.lat * Math.PI / 180))) * Math.cos(angle);
+          
+          // 인덱스 증가 (다음 스팟을 위한)
+          positionIndexMap.set(posKey, currentIndex + 1);
+          
+          return [d.lng + offsetLng, d.lat + offsetLat];
+        }
+        
+        // 단일 스팟은 원래 위치 사용
+        // ⚠️ 중요: API에서 이미 계산된 블록 중심 좌표를 사용
         return [d.lng, d.lat];
       },
       getFillColor: (d: Spot) => {
+        // ⚠️ 중요: 색상은 센터별 고정 색상만 사용 (회원 수와 무관)
+        // - dominantCenter만 사용하여 센터별 색상 결정
+        // - 회원 수(totalApprox)는 색상에 영향을 주지 않음
         if (!d || !d.dominantCenter) {
           console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
           return [128, 128, 128, 150]; // 기본 회색
         }
+        // 센터별 고정 색상 사용 (회원 수와 무관)
         const color = getCenterColor(d.dominantCenter, true);
-        console.log('🎨 스팟 색상:', d.dominantCenter, color);
+        if (loggedCount < 3) {
+          console.log('🎨 스팟 색상 (센터별 고정):', d.dominantCenter, '→', color, '(회원 수:', d.totalApprox, '명과 무관)');
+          loggedCount++;
+        }
         return color;
       },
-             getRadius: (d: Spot) => {
-               if (!d || typeof d.totalApprox !== 'number') {
-                 console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-                 return 50; // 기본 크기
-               }
-               const radius = scaleRadius(d.totalApprox, d.memberType);
-               const blockSizeMeters = 153; // 기본 블록 크기
-                console.log('📏 스팟 크기:', d.totalApprox, '명 →', radius.toFixed(1), 'm (줌', currentZoom.toFixed(1), '지도비율맞춤, 겹치지않는크기)', d.memberType);
-               return radius;
-             },
-      radiusUnits: 'meters',
+      getRadius: (d: Spot) => {
+        // ✅ 화면상 픽셀 크기 고정 (줌 레벨 무관) - 제곱근 스케일링으로 배수 관계 완화
+        // - 화면에서 보이는 원의 크기는 항상 고정된 픽셀 크기로 표시
+        // - 줌 레벨에 상관없이 화면상에서 같은 크기 유지
+        // - 회원 수에 따라 상대적 크기 표현 (제곱근 스케일링으로 배수보다 부드럽게)
+        if (!d || typeof d.totalApprox !== 'number') {
+          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+          return 18; // 최소 픽셀 크기 반환
+        }
+        
+        const memberCount = d.totalApprox || minCount;
+        
+        // ✅ 제곱근 스케일링으로 배수 관계 완화 (50명과 10명의 차이가 5배가 아닌 더 부드럽게)
+        // 최소/최대 픽셀 크기 조정 (최소 크기 증가, 차이 완화)
+        const minPixels = 18; // 최소 크기 증가 (이전 8px → 18px)
+        const maxPixels = 38; // 최대 크기 감소 (이전 50px → 38px) - 차이 완화
+        
+        let radiusPixels: number;
+        if (maxCount === minCount) {
+          // 모든 스팟이 같은 회원 수인 경우 중간 크기 반환
+          radiusPixels = (minPixels + maxPixels) / 2;
+        } else {
+          // 제곱근 스케일링: memberCount의 제곱근을 사용하여 배수 관계 완화
+          // 예: 10명 → sqrt(10) ≈ 3.16, 50명 → sqrt(50) ≈ 7.07 (비율: 약 2.24배)
+          // 선형 스케일링: 10명 → 1.0, 50명 → 5.0 (비율: 5배) ← 이전 방식
+          const sqrtMin = Math.sqrt(Math.max(1, minCount)); // 최소값의 제곱근
+          const sqrtMax = Math.sqrt(Math.max(1, maxCount)); // 최대값의 제곱근
+          const sqrtCurrent = Math.sqrt(Math.max(1, memberCount)); // 현재값의 제곱근
+          
+          // 제곱근 값을 픽셀 범위로 매핑
+          const ratio = (sqrtCurrent - sqrtMin) / (sqrtMax - sqrtMin);
+          radiusPixels = minPixels + ratio * (maxPixels - minPixels);
+        }
+        
+        // 범위 제한 (안전장치)
+        radiusPixels = Math.max(minPixels, Math.min(maxPixels, radiusPixels));
+        
+        // 첫 3개만 로그 출력
+        const index = filteredSpots.indexOf(d);
+        if (index >= 0 && index < 3) {
+          console.log(`📏 스팟 크기: ${d.totalApprox}명 → ${radiusPixels.toFixed(1)}px (제곱근 스케일링, ${minCount}~${maxCount}명 범위)`);
+        }
+        return radiusPixels;
+      },
+      radiusUnits: 'pixels', // ✅ 픽셀 단위로 고정 (줌 레벨과 무관하게 화면상 크기 일정)
+      radiusMinPixels: 12, // 최소 픽셀 크기 보장 (작은 스팟도 보이도록) - 증가
+      radiusMaxPixels: 45, // 최대 픽셀 크기 제한 - 감소하여 차이 완화
       stroked: true,
       getLineColor: [255, 255, 255, 255],
       lineWidthMinPixels: 2,
@@ -947,15 +1055,95 @@ export default function GeoDistributionPage() {
             y,
             data: object
           });
+          // Geohash를 한글 주소로 변환
+          if (object.geohash) {
+            getAddressFromGeohash(object.geohash)
+              .then(address => setHoveredAddress(address))
+              .catch(() => setHoveredAddress(null));
+          } else {
+            setHoveredAddress(null);
+          }
         } else {
           setHoveredSpot(null);
+          setHoveredAddress(null);
         }
       }
     });
+    
+    // 회원 수를 표시하는 TextLayer 생성 (가독성 개선)
+    // ⚠️ 작은 스팟(회원 수 적음)은 숫자 표시 안 함 - 겹침 방지
+    const textSpots = filteredSpots.filter(s => {
+      const memberCount = s.totalApprox || 0;
+      // 최소 단위는 1명이므로 1명 이상 모두 표시
+      return memberCount >= 1; // 최소 1명 이상만 숫자 표시
+    });
+    
+    if (TextLayer && textSpots.length > 0) {
+      // ✅ 텍스트 가독성 향상: 외곽선 효과 (어두운 배경 레이어 + 밝은 텍스트 레이어)
+      // 1단계: 어두운 외곽선 레이어 (배경)
+      const textBackgroundLayer = new TextLayer({
+        id: 'spots-text-background',
+        data: textSpots,
+        pickable: false,
+        getPosition: (d: Spot) => {
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            return [126.9780, 37.5665];
+          }
+          return [d.lng, d.lat];
+        },
+        getText: (d: Spot) => String(d.totalApprox || 0),
+        getColor: [0, 0, 0, 220], // 검은색 반투명 (외곽선 효과)
+        getSize: 18, // 배경은 조금 더 크게
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 'bold',
+        sizeScale: 1,
+        sizeMaxPixels: 24,
+        sizeMinPixels: 14,
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'center',
+        characterSet: 'auto'
+      });
+      
+      // 2단계: 밝은 텍스트 레이어 (전면)
+      const textForegroundLayer = new TextLayer({
+        id: 'spots-text-foreground',
+        data: textSpots,
+        pickable: false,
+        getPosition: (d: Spot) => {
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            return [126.9780, 37.5665];
+          }
+          return [d.lng, d.lat];
+        },
+        getText: (d: Spot) => String(d.totalApprox || 0),
+        getColor: [255, 255, 255, 255], // 흰색 텍스트
+        getSize: 16, // 텍스트 크기 증가
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 'bold',
+        sizeScale: 1,
+        sizeMaxPixels: 22,
+        sizeMinPixels: 14,
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'center',
+        characterSet: 'auto'
+      });
+      
+      return [spotsLayer, textBackgroundLayer, textForegroundLayer];
+    }
+    
+    return spotsLayer;
   }, [spots, activeCenters, currentZoom, scaleRadius]);
 
   // 스팟 레이어 업데이트
   useEffect(() => {
+    console.log('🔍 스팟 레이어 업데이트 체크:', {
+      hasOverlay: !!overlayRef.current,
+      spotsLength: spots?.length || 0,
+      spots: spots?.slice(0, 3),
+      activeCentersSize: activeCenters?.size || 0,
+      activeCenters: Array.from(activeCenters || [])
+    });
+
     if (!overlayRef.current || !spots || !spots.length) {
       console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
         hasOverlay: !!overlayRef.current,
@@ -967,13 +1155,106 @@ export default function GeoDistributionPage() {
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     console.log('🎯 활성 센터:', Array.from(activeCenters));
+    const sampleSpots = spots.slice(0, 5).map(s => ({
+      geohash: s.geohash,
+      lat: s.lat,
+      lng: s.lng,
+      totalApprox: s.totalApprox,
+      dominantCenter: s.dominantCenter,
+      coordinates: `[${s.lng}, ${s.lat}]`,
+      centers: s.centers || []
+    }));
+    console.log('📊 원본 스팟 샘플 (전체):', sampleSpots);
+    console.log('📊 강남센터 스팟만 필터:', sampleSpots.filter(s => s.dominantCenter === '강남센터'));
+    const mapInstance = mapInstanceRef.current;
+    console.log('🗺️ 지도 중심점:', mapInstance ? [mapInstance.getCenter().lng, mapInstance.getCenter().lat] : '지도 없음');
+    console.log('🔍 지도 줌 레벨:', mapInstance ? mapInstance.getZoom() : '지도 없음');
     
     const layer = buildSpotsLayer();
     console.log('📦 생성된 레이어:', layer);
     
-    overlayRef.current.setProps({
-      layers: [layer]
-    });
+    // 레이어가 배열인지 단일인지 확인
+    const layers = Array.isArray(layer) ? layer : [layer];
+    const spotsLayer = layers.find((l: any) => l?.id === 'spots');
+    const textLayer = layers.find((l: any) => l?.id === 'spots-text');
+    
+    console.log('📊 스팟 레이어 데이터 개수:', spotsLayer?.props?.data?.length || 0);
+    console.log('📊 텍스트 레이어 데이터 개수:', textLayer?.props?.data?.length || 0);
+    
+    if (spotsLayer?.props?.data?.length > 0) {
+      const layerDataSample = spotsLayer.props.data.slice(0, 3).map((d: Spot) => ({
+        lat: d.lat,
+        lng: d.lng,
+        totalApprox: d.totalApprox,
+        dominantCenter: d.dominantCenter
+      }));
+      console.log('📊 스팟 레이어 데이터 샘플:', layerDataSample);
+    }
+    
+    // 레이어 속성 상세 확인
+    if (spotsLayer) {
+      console.log('🔍 스팟 레이어 속성:', {
+        id: spotsLayer.id,
+        pickable: spotsLayer.props?.pickable,
+        radiusUnits: spotsLayer.props?.radiusUnits,
+        stroked: spotsLayer.props?.stroked,
+        hasGetPosition: typeof spotsLayer.props?.getPosition === 'function',
+        hasGetFillColor: typeof spotsLayer.props?.getFillColor === 'function',
+        hasGetRadius: typeof spotsLayer.props?.getRadius === 'function'
+      });
+    }
+    
+    // buildSpotsLayer는 배열을 반환 ([spotsLayer, textLayer])
+    const layersArray = Array.isArray(layer) ? layer : [layer];
+    
+    console.log('📦 전달할 레이어 개수:', layersArray.length);
+    console.log('📦 레이어 상세 정보:', layersArray.map((l: any) => ({
+      id: l?.id,
+      type: l?.constructor?.name,
+      dataLength: l?.props?.data?.length || 0,
+      hasData: !!l?.props?.data
+    })));
+    
+    // MapboxOverlay에 레이어 전달
+    try {
+      overlayRef.current.setProps({
+        layers: layersArray
+      });
+      
+      console.log('✅ 레이어 setProps 호출 완료');
+      
+      // Deck.gl이 레이어를 처리할 시간을 주고 확인 (이중 requestAnimationFrame)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // MapboxOverlay의 내부 Deck 인스턴스 확인
+          const deckInstance = overlayRef.current?.deck;
+          if (deckInstance) {
+            const layerManager = deckInstance.layerManager;
+            const layers = layerManager?.layers || [];
+            console.log('📋 Deck.gl 레이어 목록:', layers.map((l: any) => ({
+              id: l.id,
+              count: l.count,
+              lifecycle: l.lifecycle,
+              props: {
+                dataLength: l.props?.data?.length || 0
+              }
+            })));
+            
+            // 레이어가 비어있으면 경고
+            if (layers.length === 0) {
+              console.warn('⚠️ Deck.gl 레이어가 등록되지 않았습니다. MapboxOverlay 초기화 확인 필요.');
+            }
+          } else {
+            // Deck 인스턴스 초기화 지연은 정상적인 현상 (타이밍 이슈)
+            // 레이어는 이미 setProps로 설정되었으므로 렌더링은 정상 작동함
+            // 경고는 디버깅 목적이므로 주석 처리하거나 레벨을 낮춤
+            // console.warn('⚠️ Deck 인스턴스를 찾을 수 없습니다. overlayRef.current?.deck:', overlayRef.current?.deck);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('❌ 레이어 설정 오류:', error);
+    }
     
     console.log('✅ 스팟 레이어 업데이트 완료');
   }, [spots, activeCenters, memberType, currentZoom, buildSpotsLayer]);
@@ -1286,7 +1567,7 @@ export default function GeoDistributionPage() {
             }}
           >
             <div className="font-semibold mb-1">
-              📍 집계 구역: {hoveredSpot.data.geohash} ({metadata?.administrativeUnit || '동 단위'})
+              📍 집계 구역: {hoveredAddress || hoveredSpot.data.geohash} ({metadata?.administrativeUnit || '동 단위'})
             </div>
             <div className="text-sm text-blue-600 mb-2">
               🏠 해당 구역 내 총 인원: <strong>약 {hoveredSpot.data.totalApprox}명 (익명처리)</strong>

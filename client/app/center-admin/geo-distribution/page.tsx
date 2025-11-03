@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
+import { getAddressFromGeohash, getBlockCenterCoordinates } from '../../../lib/utils/address-utils';
 
 // 동적 import로 SSR 문제 방지
 let maplibregl: any;
@@ -70,6 +71,7 @@ export default function CenterAdminGeoDistributionPage() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [hoveredSpot, setHoveredSpot] = useState<any>(null);
+  const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
   const [librariesLoaded, setLibrariesLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(12);
   
@@ -392,10 +394,33 @@ export default function CenterAdminGeoDistributionPage() {
       dominantCenter: s.dominantCenter 
     })));
     
-    // 스팟 위치 중복 확인 (관리자 페이지와 동일)
+    // 스팟 위치 중복 확인 및 겹침 방지 데이터 준비
     const positions = filteredSpots.map(s => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`);
     const uniquePositions = new Set(positions);
     console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
+    
+    // ✅ 겹침 방지: 같은 위치의 스팟들을 약간 분산시키기 위한 맵 생성
+    const positionCountMap = new Map<string, number>();
+    filteredSpots.forEach((spot) => {
+      const posKey = `${spot.lat.toFixed(6)},${spot.lng.toFixed(6)}`;
+      positionCountMap.set(posKey, (positionCountMap.get(posKey) || 0) + 1);
+    });
+    
+    // 위치별 인덱스 추적 (동일 위치의 여러 스팟 분산용)
+    const positionIndexMap = new Map<string, number>();
+    
+    // ✅ 상대적 크기 스케일링: 현재 화면에 표시된 스팟들 중 최소/최대 회원 수 기준
+    // - 줌 아웃 시 숫자가 커져도 상대적으로 표현 (가장 큰 스팟 = 최대 크기, 가장 작은 스팟 = 최소 크기)
+    const memberCounts = filteredSpots.map(s => s.totalApprox || 0).filter(c => c > 0);
+    const minCount = memberCounts.length > 0 ? Math.min(...memberCounts) : 30;
+    const maxCount = memberCounts.length > 0 ? Math.max(...memberCounts) : 300;
+    const minRadius = 30; // 최소 스팟 크기 (미터)
+    const maxRadius = 300; // 최대 스팟 크기 (미터)
+    
+    // 첫 로그에만 상대적 스케일링 정보 출력
+    if (filteredSpots.length > 0) {
+      console.log(`📊 상대적 크기 스케일링: 회원 수 ${minCount}~${maxCount}명 → 크기 ${minRadius}~${maxRadius}m`);
+    }
     
     return new ScatterplotLayer({
       id: 'spots',
@@ -406,8 +431,30 @@ export default function CenterAdminGeoDistributionPage() {
           console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
           return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
         }
+        
+        // ✅ 겹침 방지: 같은 위치에 여러 스팟이 있을 때 약간 분산
+        const posKey = `${d.lat.toFixed(6)},${d.lng.toFixed(6)}`;
+        const countAtPosition = positionCountMap.get(posKey) || 1;
+        const currentIndex = positionIndexMap.get(posKey) || 0;
+        
+        // 같은 위치에 여러 스팟이 있는 경우만 약간 분산 (최대 15m 이내)
+        if (countAtPosition > 1) {
+          const angle = (currentIndex / countAtPosition) * 2 * Math.PI;
+          const offsetDistance = Math.min(15, 5 * countAtPosition); // 스팟 개수에 비례하여 최대 15m
+          const offsetLat = (offsetDistance / 111320) * Math.sin(angle);
+          const offsetLng = (offsetDistance / (111320 * Math.cos(d.lat * Math.PI / 180))) * Math.cos(angle);
+          
+          // 인덱스 증가 (다음 스팟을 위한)
+          positionIndexMap.set(posKey, currentIndex + 1);
+          
+          return [d.lng + offsetLng, d.lat + offsetLat];
+        }
+        
+        // 단일 스팟은 원래 위치 사용
+        // ⚠️ 중요: API에서 이미 계산된 블록 중심 좌표를 사용
         return [d.lng, d.lat];
       },
+      
       getFillColor: (d: Spot) => {
         if (!d || !d.dominantCenter) {
           console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
@@ -424,14 +471,45 @@ export default function CenterAdminGeoDistributionPage() {
         return colors[center] || [153, 102, 255, 200];
       },
       getRadius: (d: Spot) => {
+        // ✅ 화면상 픽셀 크기 고정 (줌 레벨 무관) - 제곱근 스케일링으로 배수 관계 완화
+        // - 화면에서 보이는 원의 크기는 항상 고정된 픽셀 크기로 표시
+        // - 줌 레벨에 상관없이 화면상에서 같은 크기 유지
+        // - 회원 수에 따라 상대적 크기 표현 (제곱근 스케일링으로 배수보다 부드럽게)
         if (!d || typeof d.totalApprox !== 'number') {
           console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-          return 50; // 기본 크기
+          return 18; // 최소 픽셀 크기 반환
         }
-        const radius = scaleRadius(d.totalApprox, d.memberType);
-        return radius;
+        
+        const memberCount = d.totalApprox || minCount;
+        
+        // ✅ 제곱근 스케일링으로 배수 관계 완화 (50명과 10명의 차이가 5배가 아닌 더 부드럽게)
+        // 최소/최대 픽셀 크기 조정 (최소 크기 증가, 차이 완화)
+        const minPixels = 18; // 최소 크기 증가 (이전 8px → 18px)
+        const maxPixels = 38; // 최대 크기 감소 (이전 50px → 38px) - 차이 완화
+        
+        let radiusPixels: number;
+        if (maxCount === minCount) {
+          // 모든 스팟이 같은 회원 수인 경우 중간 크기 반환
+          radiusPixels = (minPixels + maxPixels) / 2;
+        } else {
+          // 제곱근 스케일링: memberCount의 제곱근을 사용하여 배수 관계 완화
+          // 예: 10명 → sqrt(10) ≈ 3.16, 50명 → sqrt(50) ≈ 7.07 (비율: 약 2.24배)
+          // 선형 스케일링: 10명 → 1.0, 50명 → 5.0 (비율: 5배) ← 이전 방식
+          const sqrtMin = Math.sqrt(Math.max(1, minCount)); // 최소값의 제곱근
+          const sqrtMax = Math.sqrt(Math.max(1, maxCount)); // 최대값의 제곱근
+          const sqrtCurrent = Math.sqrt(Math.max(1, memberCount)); // 현재값의 제곱근
+          
+          // 제곱근 값을 픽셀 범위로 매핑
+          const ratio = (sqrtCurrent - sqrtMin) / (sqrtMax - sqrtMin);
+          radiusPixels = minPixels + ratio * (maxPixels - minPixels);
+        }
+        
+        // 범위 제한 (안전장치)
+        radiusPixels = Math.max(minPixels, Math.min(maxPixels, radiusPixels));
+        
+        return radiusPixels;
       },
-      radiusUnits: 'meters',
+      radiusUnits: 'pixels', // ✅ 픽셀 단위로 고정 (줌 레벨과 무관하게 화면상 크기 일정)
       stroked: true,
       getLineColor: [255, 255, 255, 255],
       lineWidthMinPixels: 2,
@@ -442,11 +520,83 @@ export default function CenterAdminGeoDistributionPage() {
             y,
             data: object
           });
+          // Geohash를 한글 주소로 변환
+          if (object.geohash) {
+            getAddressFromGeohash(object.geohash)
+              .then(address => setHoveredAddress(address))
+              .catch(() => setHoveredAddress(null));
+          } else {
+            setHoveredAddress(null);
+          }
         } else {
           setHoveredSpot(null);
+          setHoveredAddress(null);
         }
       }
     });
+    
+    // 회원 수를 표시하는 TextLayer 생성 (가독성 개선)
+    // ✅ 최소 단위 1명으로 변경되어 1명 이상 모두 표시
+    const textSpots = filteredSpots.filter(s => {
+      const memberCount = s.totalApprox || 0;
+      // 최소 단위는 1명이므로 1명 이상 모두 표시
+      return memberCount >= 1; // 최소 1명 이상만 숫자 표시
+    });
+    
+    if (TextLayer && textSpots.length > 0) {
+      // ✅ 텍스트 가독성 향상: 외곽선 효과 (어두운 배경 레이어 + 밝은 텍스트 레이어)
+      // 1단계: 어두운 외곽선 레이어 (배경)
+      const textBackgroundLayer = new TextLayer({
+        id: 'spots-text-background',
+        data: textSpots,
+        pickable: false,
+        getPosition: (d: Spot) => {
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            return [126.9780, 37.5665];
+          }
+          return [d.lng, d.lat];
+        },
+        getText: (d: Spot) => String(d.totalApprox || 0),
+        getColor: [0, 0, 0, 220], // 검은색 반투명 (외곽선 효과)
+        getSize: 18, // 배경은 조금 더 크게
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 'bold',
+        sizeScale: 1,
+        sizeMaxPixels: 24,
+        sizeMinPixels: 14,
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'center',
+        characterSet: 'auto'
+      });
+      
+      // 2단계: 밝은 텍스트 레이어 (전면)
+      const textForegroundLayer = new TextLayer({
+        id: 'spots-text-foreground',
+        data: textSpots,
+        pickable: false,
+        getPosition: (d: Spot) => {
+          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
+            return [126.9780, 37.5665];
+          }
+          return [d.lng, d.lat];
+        },
+        getText: (d: Spot) => String(d.totalApprox || 0),
+        getColor: [255, 255, 255, 255], // 흰색 텍스트
+        getSize: 16, // 텍스트 크기 증가
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 'bold',
+        sizeScale: 1,
+        sizeMaxPixels: 22,
+        sizeMinPixels: 14,
+        getTextAnchor: 'middle',
+        getAlignmentBaseline: 'center',
+        characterSet: 'auto'
+      });
+      
+      return [spotsLayer, textBackgroundLayer, textForegroundLayer];
+    }
+    
+    return spotsLayer;
   }, [spots, currentZoom, scaleRadius]);
 
   // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
@@ -462,20 +612,23 @@ export default function CenterAdminGeoDistributionPage() {
     console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
     console.log('🗺️ 현재 줌 레벨:', currentZoom);
     
-    const layer = buildSpotsLayer();
+    const layers = buildSpotsLayer();
     
     // 레이어가 null이면 건너뛰기 (관리자 페이지에는 이 체크가 없지만 안전을 위해 추가)
-    if (!layer) {
+    if (!layers) {
       console.warn('⚠️ 레이어 생성 실패 - 유효한 데이터가 없음');
       overlayRef.current.setProps({ layers: [] });
       return;
     }
     
-    console.log('📦 생성된 레이어:', layer);
+    // layers는 배열일 수도 있고 단일 레이어일 수도 있음
+    const layersArray = Array.isArray(layers) ? layers : [layers];
+    
+    console.log('📦 생성된 레이어:', layersArray.length, '개');
     
     // 관리자 페이지와 완전히 동일하게 바로 호출
     overlayRef.current.setProps({
-      layers: [layer]
+      layers: layersArray
     });
     
     console.log('✅ 스팟 레이어 업데이트 완료');
@@ -570,10 +723,17 @@ export default function CenterAdminGeoDistributionPage() {
           {/* 툴팁 */}
           {hoveredSpot && (
             <div className="absolute bg-white p-3 rounded-lg shadow-lg border border-gray-200 pointer-events-none z-10"
-                 style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                 style={{ left: hoveredSpot.x + 15, top: hoveredSpot.y + 15 }}>
               <div className="text-sm">
-                <div className="font-semibold">{hoveredSpot.dominantCenter}</div>
-                <div>예상 회원 수: {hoveredSpot.totalApprox}명</div>
+                <div className="font-semibold mb-1">
+                  📍 집계 구역: {hoveredAddress || hoveredSpot.data?.geohash || '알 수 없음'}
+                </div>
+                <div className="text-blue-600 mb-1">
+                  🏠 센터: <strong>{hoveredSpot.data?.dominantCenter || hoveredSpot.dominantCenter}</strong>
+                </div>
+                <div className="text-gray-700">
+                  예상 회원 수: <strong>약 {hoveredSpot.data?.totalApprox || hoveredSpot.totalApprox}명 (익명처리)</strong>
+                </div>
               </div>
             </div>
           )}

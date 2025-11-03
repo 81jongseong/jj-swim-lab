@@ -32,6 +32,9 @@ importers:
       '@deck.gl/geo-layers':
         specifier: ^9.0.0
         version: 9.2.2(@deck.gl/core@9.2.2)(@deck.gl/extensions@9.2.2(@deck.gl/core@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@deck.gl/layers@9.2.2(@deck.gl/core@9.2.2)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@deck.gl/mesh-layers@9.2.2(@deck.gl/core@9.2.2)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/gltf@9.2.2(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@loaders.gl/core@4.3.4)(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
+      '@deck.gl/layers':
+        specifier: ^9.0.0
+        version: 9.2.2(@deck.gl/core@9.2.2)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
       '@deck.gl/mapbox':
         specifier: ^9.0.0
         version: 9.2.2(@deck.gl/core@9.2.2)(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@math.gl/web-mercator@4.1.0)
