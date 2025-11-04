@@ -63,14 +63,110 @@ function getDefaultAddress(lat: number, lng: number): string {
 
 /**
  * Geohash를 한글 주소로 변환
+ * @param geohash - Geohash 문자열
+ * @param zoomLevel - 현재 줌 레벨 (주소 단위 조정용, 선택적)
  */
-export async function getAddressFromGeohash(geohash: string): Promise<string | null> {
+export async function getAddressFromGeohash(geohash: string, zoomLevel?: number): Promise<string | null> {
   try {
     const { latitude, longitude } = ngeohash.decode(geohash);
-    return await getAddressFromCoordinates(latitude, longitude);
+    const fullAddress = await getAddressFromCoordinates(latitude, longitude);
+    
+    if (!fullAddress) return null;
+    
+    // 줌 레벨에 따라 주소 단위 조정
+    if (zoomLevel !== undefined) {
+      return adjustAddressByZoomLevel(fullAddress, zoomLevel);
+    }
+    
+    return fullAddress;
   } catch (error) {
     console.error('❌ Geohash 주소 변환 오류:', error);
     return null;
+  }
+}
+
+/**
+ * 줌 레벨에 따라 주소 단위 조정
+ * ⚠️ 개인정보 보호를 위해 항상 마지막 단위를 제거한 주소만 표시
+ * - 도로명 주소(현주소)와 지번 주소(구주소) 모두 지원
+ * - 줌 레벨이 낮을수록(줌 아웃) 더 큰 단위만 표시
+ * - 줌 레벨이 높을수록(줌 인) 더 상세한 주소 표시 (하지만 마지막 단위는 항상 제거)
+ */
+function adjustAddressByZoomLevel(address: string, zoomLevel: number): string {
+  // 서울특별시, 서울시 제거
+  let adjusted = address.replace(/^서울특별시\s*/, '').replace(/^서울시\s*/, '');
+  
+  // ⚠️ 개인정보 보호: 번지, 상세 주소 등 마지막 단위 제거
+  // 번지수 제거 (예: "123번지", "123-45번지")
+  adjusted = adjusted.replace(/\s+[0-9-]+번지.*$/, '');
+  
+  // 도로명 주소 처리: 숫자만 있는 경우 제거 (예: "테헤란로 123" → "테헤란로")
+  // 하지만 "길" 단위는 유지 (예: "테헤란로 123길" → "테헤란로 123길")
+  // 숫자만 있는 마지막 단위 제거 (예: "123", "123-45")
+  adjusted = adjusted.replace(/\s+[0-9-]+(?![가-힣])$/, '');
+  
+  // 지번 주소에서 상세 주소 제거 (예: "123", "123-45", "123-45가")
+  // 단, "길"로 끝나는 경우는 유지 (도로명 주소의 길 단위)
+  if (!adjusted.match(/[가-힣]+길$/)) {
+    adjusted = adjusted.replace(/\s+[0-9-]+[가-힣]?$/, '');
+  }
+  
+  // 줌 레벨에 따른 주소 단위 조정
+  // ⚠️ 개인정보 보호: 번지는 항상 제거, 하지만 도로명 주소의 "길" 단위까지는 표시 가능
+  // ✅ 실질 데이터 주소가 들어가면 더 상세한 주소 표시 가능
+  if (zoomLevel <= 11) {
+    // 줌 아웃 (스팟이 합쳐짐) → 구 단위만 표시
+    // 예: "강남구"
+    const guMatch = adjusted.match(/^([가-힣]+구)/);
+    if (guMatch) {
+      return guMatch[1]; // "강남구"
+    }
+    return adjusted.split(' ')[0] || adjusted; // 첫 번째 단어만
+  } else if (zoomLevel <= 13) {
+    // 중간 줌 → 구/도로명 또는 구/동 단위 표시 (더 상세하게)
+    // 예: "강남구 테헤란로" 또는 "강남구 서초동"
+    
+    // 도로명 주소 패턴 (예: "강남구 테헤란로", "강남구 테헤란로 123길")
+    const roadMatch = adjusted.match(/^([가-힣]+구)\s+([가-힣]+로)(?:\s+[가-힣]+길)?/);
+    if (roadMatch) {
+      return roadMatch[0]; // "강남구 테헤란로" 또는 "강남구 테헤란로 123길"
+    }
+    
+    // 동 단위 주소 패턴 (예: "강남구 서초동")
+    const dongMatch = adjusted.match(/^([가-힣]+구)\s+([가-힣]+동)/);
+    if (dongMatch) {
+      return dongMatch[0]; // "강남구 서초동"
+    }
+    
+    const guMatch = adjusted.match(/^([가-힣]+구)/);
+    if (guMatch) {
+      return guMatch[1]; // "강남구"
+    }
+    return adjusted.split(' ').slice(0, 2).join(' ') || adjusted; // 처음 2개 단어
+  } else {
+    // 줌 인 (스팟이 분리됨) → 구/도로명/길 또는 구/동 단위 표시 (번지 제거, 더 상세하게)
+    // 예: "강남구 테헤란로 123길" 또는 "강남구 서초동"
+    // ✅ 실질 데이터 주소가 들어가면 더 상세한 주소 표시 가능
+    
+    // 도로명 주소 패턴 (예: "강남구 테헤란로", "강남구 테헤란로 123길")
+    // ⚠️ "길" 단위까지는 표시 가능 (개인정보 보호를 위해 번지만 제거)
+    const roadMatch = adjusted.match(/^([가-힣]+구)\s+([가-힣]+로)(?:\s+[가-힣]+길)?/);
+    if (roadMatch) {
+      return roadMatch[0]; // "강남구 테헤란로" 또는 "강남구 테헤란로 123길"
+    }
+    
+    // 동 단위 주소 패턴 (예: "강남구 서초동")
+    // 동 단위는 그대로 유지 (개인정보 보호)
+    const dongMatch = adjusted.match(/^([가-힣]+구)\s+([가-힣]+동)/);
+    if (dongMatch) {
+      return dongMatch[0]; // "강남구 서초동"
+    }
+    
+    const guMatch = adjusted.match(/^([가-힣]+구)/);
+    if (guMatch) {
+      return guMatch[1]; // "강남구"
+    }
+    return adjusted; // 이미 마지막 단위 제거됨
   }
 }
 

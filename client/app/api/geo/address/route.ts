@@ -55,8 +55,29 @@ export async function GET(request: NextRequest) {
     if (data?.response?.status === 'OK' && data?.response?.result) {
       const result = data.response.result[0];
       if (result) {
-        // 도로명 주소 우선, 없으면 지번 주소
-        const address = result.text || result.zipcode || null;
+        // ✅ 구주소(지번 주소)와 현주소(도로명 주소) 모두 확인
+        // 도로명 주소 우선, 없으면 지번 주소 사용
+        // result.text: 도로명 주소 (현주소)
+        // result.parsed: 지번 주소 정보 (구주소)
+        // result.zipcode: 우편번호
+        
+        let address = result.text || null; // 도로명 주소 (현주소) 우선
+        
+        // 도로명 주소가 없으면 지번 주소 사용 (구주소)
+        if (!address && result.parsed) {
+          const parsed = result.parsed;
+          const parts = [];
+          if (parsed.sido) parts.push(parsed.sido);
+          if (parsed.sigungu) parts.push(parsed.sigungu);
+          if (parsed.dong) parts.push(parsed.dong);
+          if (parsed.ri) parts.push(parsed.ri);
+          if (parts.length > 0) {
+            address = parts.join(' ');
+          }
+        }
+        
+        // zipcode는 우편번호이므로 주소로 사용하지 않음
+        
         if (address) {
           return NextResponse.json({
             success: true,
@@ -108,4 +129,6 @@ function getDefaultAddress(lat: number, lng: number): string {
   // 기본값
   return `서울특별시 (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
 }
+
+
 

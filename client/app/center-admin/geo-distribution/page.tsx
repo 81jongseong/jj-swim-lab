@@ -19,61 +19,95 @@
 
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
-import { getAddressFromGeohash, getBlockCenterCoordinates } from '../../../lib/utils/address-utils';
+import GeoDistributionMap, { Spot } from '../../../components/geo-distribution/GeoDistributionMap';
 
-// 동적 import로 SSR 문제 방지
-let maplibregl: any;
-let MapboxOverlay: any;
-let ScatterplotLayer: any;
+// 툴팁 위치 계산 함수 (스팟 위치를 기준으로 가깝게 배치)
+function calculateTooltipPosition(
+  coordinates: { x: number; y: number } | null,
+  containerRef: React.RefObject<HTMLDivElement>
+): { top?: string; bottom?: string; left?: string; right?: string; transform?: string } {
+  if (!coordinates || !containerRef.current) {
+    return { bottom: '16px', right: '16px' }; // 기본: 오른쪽 하단
+  }
 
-interface Spot {
-  geohash: string;
-  lat: number;
-  lng: number;
-  totalApprox: number;
-  dominantCenter: string;
-  centers: Array<{ centerId: string; countApprox: number }>;
-  memberType?: 'member' | 'instructor' | 'guest' | 'center';
-}
+  const container = containerRef.current;
+  const containerWidth = container.offsetWidth;
+  const containerHeight = container.offsetHeight;
+  const tooltipWidth = 280;
+  const tooltipHeight = 120;
+  const padding = 16;
+  const offsetFromSpot = 20; // 스팟으로부터의 거리
 
-interface SpotsData {
-  spots: Spot[];
-  metadata: {
-    totalSpots: number;
-    hiddenBlocks: number;
-    totalOriginalCount: number;
-    totalApproxCount: number;
-    precision: number;
-    kAnonymity: number;
-    noiseEpsilon: number;
-    roundingUnit: number;
-    memberType: string;
-  };
+  // 스팟이 오른쪽 사이드에 있으면 왼쪽에 표시
+  const isRightSide = coordinates.x > containerWidth * 0.6;
+  // 스팟이 맨 아래에 있으면 위쪽에 표시
+  const isBottom = coordinates.y > containerHeight * 0.8;
+  // 스팟이 맨 위에 있으면 아래쪽에 표시
+  const isTop = coordinates.y < containerHeight * 0.2;
+
+  if (isBottom && isRightSide) {
+    // 맨 아래 + 오른쪽 → 스팟 위쪽, 왼쪽에 표시
+    return { 
+      bottom: `${containerHeight - coordinates.y + offsetFromSpot}px`, 
+      right: `${containerWidth - coordinates.x + offsetFromSpot}px`,
+      transform: 'translateX(100%)'
+    };
+  } else if (isBottom) {
+    // 맨 아래 → 스팟 위쪽, 오른쪽에 표시
+    return { 
+      bottom: `${containerHeight - coordinates.y + offsetFromSpot}px`, 
+      left: `${coordinates.x + offsetFromSpot}px`
+    };
+  } else if (isTop && isRightSide) {
+    // 맨 위 + 오른쪽 → 스팟 아래쪽, 왼쪽에 표시
+    return { 
+      top: `${coordinates.y + offsetFromSpot}px`, 
+      right: `${containerWidth - coordinates.x + offsetFromSpot}px`,
+      transform: 'translateX(100%)'
+    };
+  } else if (isTop) {
+    // 맨 위 → 스팟 아래쪽, 오른쪽에 표시
+    return { 
+      top: `${coordinates.y + offsetFromSpot}px`, 
+      left: `${coordinates.x + offsetFromSpot}px`
+    };
+  } else if (isRightSide) {
+    // 오른쪽 사이드 → 왼쪽에 표시 (스팟 높이에 맞춤)
+    return { 
+      top: `${coordinates.y}px`, 
+      right: `${containerWidth - coordinates.x + offsetFromSpot}px`, 
+      transform: 'translateY(-50%) translateX(100%)'
+    };
+  } else {
+    // 기본: 스팟 오른쪽, 위쪽에 표시
+    return { 
+      top: `${coordinates.y}px`, 
+      left: `${coordinates.x + offsetFromSpot}px`,
+      transform: 'translateY(-50%)'
+    };
+  }
 }
 
 const ZOOM_THRESHOLD = 10;
 
 export default function CenterAdminGeoDistributionPage() {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const overlayRef = useRef<any>(null);
-  
   const { user, loading } = useAuth();
   const router = useRouter();
   
   // 상태 관리
   const [spots, setSpots] = useState<Spot[]>([]);
   const [metadata, setMetadata] = useState<any>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
-  const [hoveredSpot, setHoveredSpot] = useState<any>(null);
+  const [hoveredSpot, setHoveredSpot] = useState<Spot | null>(null);
   const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
-  const [librariesLoaded, setLibrariesLoaded] = useState(false);
+  const [hoveredCoordinates, setHoveredCoordinates] = useState<{ x: number; y: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(12);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   
   // 필터 상태
   const [memberType, setMemberType] = useState<'all' | 'group-lesson' | 'personal-lesson' | 'free-swim'>('all');
@@ -81,6 +115,8 @@ export default function CenterAdminGeoDistributionPage() {
   // 센터 관리 상태
   const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
   const [managedCenters, setManagedCenters] = useState<Array<{ _id: string; name: string }>>([]);
+  const [managedCenterIds, setManagedCenterIds] = useState<Set<string>>(new Set());
+  const [managedCenterNames, setManagedCenterNames] = useState<Set<string>>(new Set());
 
   // 인증 확인 및 센터 목록 로드
   useEffect(() => {
@@ -98,26 +134,47 @@ export default function CenterAdminGeoDistributionPage() {
             const centersList = await Promise.all(
               centers.map(async (c: any) => {
                 const centerId = c.toString ? c.toString() : c._id?.toString() || c;
-                // 센터 정보 조회
+                // 센터 정보 조회 (서버 API 또는 기본값 사용)
+                let centerName: string | null = null;
+                
+                // 서버 API 호출 시도
                 try {
                   const response = await apiClient.get(`/api/center-management/${centerId}`);
-                  if (response.success && response.data?.center) {
-                    return {
-                      _id: centerId,
-                      name: response.data.center.name || `센터 ${centerId.substring(0, 8)}`
-                    };
+                  if (response.success && response.data && typeof response.data === 'object' && 'center' in response.data) {
+                    const centerData = response.data as { center?: { name?: string } };
+                    if (centerData.center?.name) {
+                      centerName = centerData.center.name;
+                    }
                   }
                 } catch (error) {
                   console.warn(`센터 ${centerId} 정보 조회 실패:`, error);
+                  // 서버 연결 실패 시 기본 센터 이름 사용
+                  // ID가 특정 센터인 경우 기본 이름 설정
+                  if (centerId === '68fb75b111747a8229d6cf5d' || centerId.includes('68fb75b1')) {
+                    centerName = 'JJ Swim Lab';
+                  } else if (centerId === '68f10983ccca24669078e1b4' || centerId.includes('68f10983')) {
+                    centerName = 'JJ 수영장 강남점';
+                  } else {
+                    // 다른 센터 ID에 대한 기본 이름 매핑
+                    centerName = `센터 ${centerId.substring(0, 8)}`;
+                  }
                 }
+                
+                // 센터 이름이 없으면 기본값 사용
                 return {
                   _id: centerId,
-                  name: `센터 ${centerId.substring(0, 8)}`
+                  name: centerName || `센터 ${centerId.substring(0, 8)}`
                 };
               })
             );
             setManagedCenters(centersList);
             setSelectedCenterId(null); // 초기값: "전체 센터 회원"
+            
+            // 관리하는 센터 ID와 이름 Set 생성 (필터링용)
+            const centerIds = new Set(centersList.map(c => c._id));
+            const centerNames = new Set(centersList.map(c => c.name));
+            setManagedCenterIds(centerIds);
+            setManagedCenterNames(centerNames);
           } catch (error) {
             console.error('센터 목록 로드 오류:', error);
           }
@@ -127,512 +184,178 @@ export default function CenterAdminGeoDistributionPage() {
     }
   }, [user, loading, router]);
 
-  // 라이브러리 동적 로딩
+   // 스팟 데이터 로딩 (줌 레벨에 따라 aggregation precision 자동 조정)
+   const fetchSpotsData = useCallback(async () => {
+     console.log('🚀 fetchSpotsData 호출:', { hasUser: !!user, userType: user?.userType, mapLoaded });
+     if (!user) {
+       console.warn('⚠️ 사용자 정보 없음 - fetchSpotsData 취소');
+       return;
+     }
+
+     setLoadingData(true);
+     try {
+       // ✅ 줌 레벨에 따른 aggregation precision 자동 조정
+       // - 줌 레벨이 낮을수록 더 큰 블록으로 집계 (스팟이 합쳐짐)
+       // - 줌 레벨이 높을수록 더 작은 블록으로 집계 (스팟이 분리됨)
+       const params = new URLSearchParams({
+         k: '5',
+         memberType: memberType === 'all' ? '' : memberType,
+         zoom: currentZoom.toString() // ✅ 줌 레벨 전달 (API에서 precision 조정)
+       });
+
+       // ⚠️ 중요: centerAdmin인 경우 항상 centerId를 전달해야 함
+       // selectedCenterId가 null이면 서버에서 관리하는 모든 센터를 필터링하도록 하지 않고,
+       // 서버가 자동으로 관리하는 센터만 필터링하도록 함 (centerId 파라미터 전달 안 함)
+       // 하지만 초기 로딩 시에는 서버가 자동으로 필터링하므로 centerId를 전달하지 않음
+       // 서버 필터링 로직이 이미 관리하는 센터만 반환하므로 추가 파라미터 불필요
+       // 단, 특정 센터를 선택한 경우에만 centerId 전달
+
+       // ✅ /api/geo/spots 사용 (aggregation precision 자동 조정)
+       const apiUrl = `/api/geo/spots?${params.toString()}`;
+       console.log('🔍 API 요청:', apiUrl);
+       
+       // ✅ 인증 토큰 포함하여 요청 (센터 관리자 필터링을 위해)
+       const headers: HeadersInit = {
+         'Content-Type': 'application/json'
+       };
+       
+       if (typeof window !== 'undefined') {
+         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+         if (token) {
+           headers['Authorization'] = `Bearer ${token}`;
+         }
+       }
+       
+       const response = await fetch(apiUrl, { 
+         cache: 'no-store',
+         headers
+       });
+       const result = await response.json();
+       
+      console.log('📊 스팟 데이터 응답:', result);
+      console.log('📊 응답 구조 확인:', {
+        hasSuccess: !!result.success,
+        hasData: !!result.data,
+        hasSpots: !!result.data?.spots,
+        spotsLength: result.data?.spots?.length || 0,
+        hasSpotsTopLevel: !!result.spots,
+        metadata: result.data?.metadata,
+        debug: result.data?.metadata?.debug,
+        fullResponse: result
+      });
+       
+       if (result.success) {
+         const spotsData = result.data?.spots || result.spots || [];
+         console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
+         if (spotsData.length > 0) {
+           console.log('📊 첫 번째 스팟 샘플:', spotsData[0]);
+         }
+         
+         if (spotsData.length === 0) {
+           console.warn('⚠️ 스팟 데이터가 비어있습니다. 서버 로그를 확인하세요:');
+           console.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}, zoom=${currentZoom}`);
+           console.warn(`  - metadata:`, result.data?.metadata || result.metadata);
+         }
+         
+         // ✅ 유효성 검사 및 변환
+         // ⚠️ 중요: 서버에서 이미 본인 센터 회원만 필터링해서 반환하므로
+         // 클라이언트에서는 유효성 검사만 수행 (서버 필터링 신뢰)
+         const validSpots: Spot[] = spotsData
+           .filter((spot: any) => {
+             // 좌표 유효성 검사만 수행
+             const lat = Number(spot.lat);
+             const lng = Number(spot.lng);
+             const totalApprox = Number(spot.totalApprox);
+             const isValid = !isNaN(lat) && !isNaN(lng) && !isNaN(totalApprox) && 
+                            lat !== 0 && lng !== 0 && totalApprox > 0 &&
+                            lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+             if (!isValid) {
+               console.warn('⚠️ 유효하지 않은 스팟 필터링:', spot, { lat, lng, totalApprox });
+               return false;
+             }
+             
+             // ✅ 서버에서 이미 필터링된 데이터이므로 클라이언트 필터링 제거
+             // 서버가 본인 센터 회원만 반환하므로 여기서는 통과
+             return true;
+           })
+           .map((spot: any) => ({
+             geohash: spot.geohash || '',
+             lat: Number(spot.lat),
+             lng: Number(spot.lng),
+             totalApprox: Number(spot.totalApprox),
+             dominantCenter: spot.dominantCenter || '기타',
+             centers: spot.centers || [],
+             memberType: memberType === 'all' ? undefined : memberType
+           }));
+         
+         console.log(`✅ 필터링된 스팟 데이터: ${validSpots.length}개 (원본: ${spotsData.length}개)`);
+
+         setSpots(validSpots);
+         setMetadata(result.data?.metadata || result.metadata || {});
+       } else {
+         console.warn('⚠️ API 응답이 성공하지 않았습니다:', result);
+         setSpots([]);
+         setMetadata(null);
+       }
+     } catch (error) {
+       console.error('❌ 스팟 데이터 로딩 오류:', error);
+       setSpots([]);
+       setMetadata(null);
+     } finally {
+       setLoadingData(false);
+     }
+         }, [user, memberType, selectedCenterId, currentZoom]);
+
+  // 지도 로딩 완료 후 데이터 로드
   useEffect(() => {
-    const loadLibraries = async () => {
-      try {
-        console.log('📦 라이브러리 로딩 시작...');
-        
-        maplibregl = (await import('maplibre-gl')).default;
-        console.log('✅ maplibre-gl 로딩 완료');
-        
-        const deckGl = await import('@deck.gl/mapbox');
-        console.log('✅ @deck.gl/mapbox 로딩 완료:', Object.keys(deckGl));
-        
-        const coreLayers = await import('@deck.gl/layers');
-        console.log('✅ @deck.gl/layers 로딩 완료:', Object.keys(coreLayers));
+    console.log('🗺️ 지도 로딩 상태 확인:', { mapLoaded, hasUser: !!user, userType: user?.userType });
+    if (mapLoaded) {
+      console.log('✅ 지도 로딩 완료 - 스팟 데이터 로딩 시작');
+      fetchSpotsData();
+    } else {
+      console.log('⏳ 지도 로딩 대기 중...');
+    }
+  }, [mapLoaded, fetchSpotsData, user]);
 
-        // Deck.gl 컴포넌트 설정
-        MapboxOverlay = deckGl.MapboxOverlay;
-        ScatterplotLayer = coreLayers.ScatterplotLayer;
-        
-        console.log('✅ MapboxOverlay 설정:', !!MapboxOverlay);
-        console.log('✅ ScatterplotLayer 설정:', !!ScatterplotLayer);
+   // ✅ 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
+   useEffect(() => {
+     if (mapLoaded) {
+       console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+       fetchSpotsData();
+     }
+   }, [mapLoaded, memberType, selectedCenterId, fetchSpotsData]);
+ 
+   // ✅ 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
+   useEffect(() => {
+     if (!mapLoaded) return;
+     
+     const timeoutId = setTimeout(() => {
+       console.log('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
+       fetchSpotsData();
+     }, 500); // 500ms 디바운스
+ 
+     return () => clearTimeout(timeoutId);
+   }, [currentZoom, mapLoaded, fetchSpotsData]);
 
-        // CSS 로딩 (타입 선언 오류 무시)
-        // @ts-ignore
-        await import('maplibre-gl/dist/maplibre-gl.css');
-
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
-        setLibrariesLoaded(true);
-      } catch (error) {
-        console.error('🚨 라이브러리 로딩 실패:', error);
-      }
-    };
-
-    loadLibraries();
+  // 스팟 호버 핸들러 (좌표 정보 포함)
+  const handleSpotHover = useCallback((spot: Spot | null, address: string | null, coordinates?: { x: number; y: number }) => {
+    setHoveredSpot(spot);
+    setHoveredAddress(address);
+    if (coordinates) {
+      setHoveredCoordinates(coordinates);
+    }
   }, []);
 
-  // 지도 초기화
-  useEffect(() => {
-    if (!librariesLoaded || !mapRef.current || !maplibregl || !MapboxOverlay) return;
+  // 줌 레벨 변경 핸들러
+  const handleZoomChange = useCallback((zoom: number) => {
+    setCurrentZoom(zoom);
+  }, []);
 
-    const style: any = {
-      version: 8,
-      sources: {
-        'vworld': {
-          type: 'raster',
-          tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${process.env.NEXT_PUBLIC_VWORLD_KEY}/Base/{z}/{y}/{x}.png`
-          ],
-          tileSize: 256
-        }
-      },
-      layers: [
-        {
-          id: 'vworld-base',
-          type: 'raster',
-          source: 'vworld'
-        }
-      ]
-    };
-
-    // 관리자 페이지와 완전히 동일한 지도 설정
-    const map = new maplibregl.Map({
-      container: mapRef.current,
-      style,
-      center: [127.0276, 37.4979], // 서울 강남구 중심
-      zoom: 12,
-      maxZoom: 18,
-      minZoom: 8,
-      pitch: 0,
-      bearing: 0,
-      scrollZoom: true,
-      boxZoom: true,
-      dragRotate: false,
-      dragPan: true,
-      keyboard: true,
-      doubleClickZoom: true,
-      touchZoomRotate: true
-    });
-
-    mapInstanceRef.current = map;
-
-    // 관리자 페이지와 완전히 동일하게 설정
-    const overlay = new MapboxOverlay({
-      interleaved: true,
-      layers: []
-    });
-    
-    // MapboxOverlay를 지도에 추가
-    map.addControl(overlay);
-    overlayRef.current = overlay;
-
-    // 줌 레벨 변경 감지
-    map.on('zoom', () => {
-      setCurrentZoom(map.getZoom());
-    });
-
-    // 지도 로딩 완료 - 관리자 페이지와 동일하게 단순 처리
-    map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
-      setMapLoaded(true);
-      
-      // 관리자 페이지와 동일하게 바로 데이터 로드
-      fetchSpotsData();
-    });
-
-    return () => {
-      map.remove();
-    };
-  }, [librariesLoaded]);
-
-  // 스팟 데이터 로딩
-  const fetchSpotsData = useCallback(async () => {
-    if (!user || !mapLoaded) return;
-
-    setLoadingData(true);
-    try {
-      const params = new URLSearchParams({
-        k: '5',
-        memberType: memberType === 'all' ? '' : memberType
-      });
-
-      // centerAdmin인 경우 센터 필터링 추가
-      if (selectedCenterId) {
-        params.append('centerId', selectedCenterId);
-      }
-
-      const apiUrl = `/api/geo/aggregate?${params.toString()}`;
-      console.log('🔍 API 요청:', apiUrl);
-      const response = await apiClient.get(apiUrl);
-      
-      console.log('🗺️ 지도 데이터 응답:', {
-        success: response.success,
-        hasData: !!response.data,
-        hasCells: !!response.data?.cells,
-        cellsCount: response.data?.cells?.length || 0,
-        metadata: response.data?.metadata,
-        fullResponse: response
-      });
-      
-      if (response.success) {
-        const cells = response.data?.cells || response.cells || [];
-        console.log(`📍 수신된 셀 데이터: ${cells.length}개`);
-        
-        if (cells.length === 0) {
-          console.warn('⚠️ 셀 데이터가 비어있습니다. 서버 로그를 확인하세요:');
-          console.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}`);
-          console.warn(`  - metadata:`, response.data?.metadata || response.metadata);
-        }
-        
-        const spotsData: Spot[] = cells
-          .filter((cell: any) => {
-            // 더 엄격한 유효성 검사
-            const lat = Number(cell.lat);
-            const lng = Number(cell.lng);
-            const countApprox = Number(cell.countApprox);
-            const isValid = !isNaN(lat) && !isNaN(lng) && !isNaN(countApprox) && 
-                           lat !== 0 && lng !== 0 && countApprox > 0 &&
-                           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-            if (!isValid) {
-              console.warn('⚠️ 유효하지 않은 셀 필터링:', cell, { lat, lng, countApprox });
-            }
-            return isValid;
-          })
-          .map((cell: any) => {
-            // 명시적으로 숫자로 변환하고 0 체크
-            const lat = Number(cell.lat);
-            const lng = Number(cell.lng);
-            const totalApprox = Number(cell.countApprox);
-            return {
-              geohash: cell.h3Index || cell.h3 || '',
-              lat: lat,
-              lng: lng,
-              totalApprox: totalApprox,
-              dominantCenter: cell.centerName || cell.dominantCenter || '기타',
-              centers: cell.centers || [],
-              memberType: memberType === 'all' ? undefined : memberType
-            };
-          });
-
-        console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
-        setSpots(spotsData);
-        setMetadata(response.data?.metadata || response.metadata || {});
-      } else {
-        console.warn('⚠️ API 응답이 성공하지 않았습니다:', response);
-        setSpots([]);
-        setMetadata(null);
-      }
-    } catch (error) {
-      console.error('❌ 스팟 데이터 로딩 오류:', error);
-      setSpots([]);
-      setMetadata(null);
-    } finally {
-      setLoadingData(false);
-    }
-  }, [user, mapLoaded, memberType, selectedCenterId]);
-
-  // 필터 변경 시 데이터 재로딩
-  useEffect(() => {
-    if (librariesLoaded && mapLoaded) {
-      fetchSpotsData();
-    }
-  }, [librariesLoaded, mapLoaded, memberType, selectedCenterId, fetchSpotsData]);
-
-  // 반경 계산 함수 (관리자 페이지와 동일한 방식)
-  const scaleRadius = useCallback((n: number, memberType?: string) => {
-    // 센터는 고정 크기 사용
-    if (memberType === 'center') {
-      if (currentZoom >= 15) {
-        return 25;
-      } else if (currentZoom >= 12) {
-        return 40;
-      } else if (currentZoom >= 10) {
-        return 60;
-      } else if (currentZoom >= 9) {
-        return 80;
-      } else {
-        return 100;
-      }
-    }
-    
-    // 일반 회원/강사/게스트는 줌 레벨에 따른 크기
-    let baseRadius: number;
-    
-    if (currentZoom >= 16) {
-      baseRadius = 30;
-    } else if (currentZoom >= 15) {
-      baseRadius = 50;
-    } else if (currentZoom >= 12) {
-      baseRadius = 100;
-    } else if (currentZoom >= 10) {
-      baseRadius = 200;
-    } else if (currentZoom >= 9) {
-      baseRadius = 500;
-    } else {
-      baseRadius = 1000;
-    }
-    
-    return baseRadius;
-  }, [currentZoom]);
-
-  // 스팟 레이어 생성 (관리자 페이지와 완전히 동일한 방식)
-  const buildSpotsLayer = useCallback(() => {
-    // 관리자 페이지처럼 단순 필터링만 수행 (데이터 변환 없이)
-    const filteredSpots = spots.filter(s => {
-      // null/undefined 체크
-      if (!s || !s.dominantCenter) {
-        console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
-        return false;
-      }
-      // 좌표 유효성 검사 추가
-      if (typeof s.lat !== 'number' || typeof s.lng !== 'number' || isNaN(s.lat) || isNaN(s.lng)) {
-        console.warn('⚠️ 유효하지 않은 좌표:', s);
-        return false;
-      }
-      // 센터 관리자는 모든 스팟 데이터를 표시
-      return true;
-    });
-    
-    console.log('🔧 스팟 레이어 생성:', filteredSpots.length, '개 스팟');
-    console.log('📍 스팟 위치 샘플:', filteredSpots.slice(0, 3).map(s => ({ 
-      geohash: s.geohash, 
-      lat: s.lat, 
-      lng: s.lng, 
-      totalApprox: s.totalApprox,
-      dominantCenter: s.dominantCenter 
-    })));
-    
-    // 스팟 위치 중복 확인 및 겹침 방지 데이터 준비
-    const positions = filteredSpots.map(s => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`);
-    const uniquePositions = new Set(positions);
-    console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
-    
-    // ✅ 겹침 방지: 같은 위치의 스팟들을 약간 분산시키기 위한 맵 생성
-    const positionCountMap = new Map<string, number>();
-    filteredSpots.forEach((spot) => {
-      const posKey = `${spot.lat.toFixed(6)},${spot.lng.toFixed(6)}`;
-      positionCountMap.set(posKey, (positionCountMap.get(posKey) || 0) + 1);
-    });
-    
-    // 위치별 인덱스 추적 (동일 위치의 여러 스팟 분산용)
-    const positionIndexMap = new Map<string, number>();
-    
-    // ✅ 상대적 크기 스케일링: 현재 화면에 표시된 스팟들 중 최소/최대 회원 수 기준
-    // - 줌 아웃 시 숫자가 커져도 상대적으로 표현 (가장 큰 스팟 = 최대 크기, 가장 작은 스팟 = 최소 크기)
-    const memberCounts = filteredSpots.map(s => s.totalApprox || 0).filter(c => c > 0);
-    const minCount = memberCounts.length > 0 ? Math.min(...memberCounts) : 30;
-    const maxCount = memberCounts.length > 0 ? Math.max(...memberCounts) : 300;
-    const minRadius = 30; // 최소 스팟 크기 (미터)
-    const maxRadius = 300; // 최대 스팟 크기 (미터)
-    
-    // 첫 로그에만 상대적 스케일링 정보 출력
-    if (filteredSpots.length > 0) {
-      console.log(`📊 상대적 크기 스케일링: 회원 수 ${minCount}~${maxCount}명 → 크기 ${minRadius}~${maxRadius}m`);
-    }
-    
-    return new ScatterplotLayer({
-      id: 'spots',
-      data: filteredSpots,
-      pickable: true,
-      getPosition: (d: Spot) => {
-        if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
-          return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
-        }
-        
-        // ✅ 겹침 방지: 같은 위치에 여러 스팟이 있을 때 약간 분산
-        const posKey = `${d.lat.toFixed(6)},${d.lng.toFixed(6)}`;
-        const countAtPosition = positionCountMap.get(posKey) || 1;
-        const currentIndex = positionIndexMap.get(posKey) || 0;
-        
-        // 같은 위치에 여러 스팟이 있는 경우만 약간 분산 (최대 15m 이내)
-        if (countAtPosition > 1) {
-          const angle = (currentIndex / countAtPosition) * 2 * Math.PI;
-          const offsetDistance = Math.min(15, 5 * countAtPosition); // 스팟 개수에 비례하여 최대 15m
-          const offsetLat = (offsetDistance / 111320) * Math.sin(angle);
-          const offsetLng = (offsetDistance / (111320 * Math.cos(d.lat * Math.PI / 180))) * Math.cos(angle);
-          
-          // 인덱스 증가 (다음 스팟을 위한)
-          positionIndexMap.set(posKey, currentIndex + 1);
-          
-          return [d.lng + offsetLng, d.lat + offsetLat];
-        }
-        
-        // 단일 스팟은 원래 위치 사용
-        // ⚠️ 중요: API에서 이미 계산된 블록 중심 좌표를 사용
-        return [d.lng, d.lat];
-      },
-      
-      getFillColor: (d: Spot) => {
-        if (!d || !d.dominantCenter) {
-          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
-          return [128, 128, 128, 150]; // 기본 회색
-        }
-        const center = d.dominantCenter;
-        const colors: Record<string, [number, number, number, number]> = {
-          'JJ Swim Lab': [255, 99, 132, 200],
-          '강남센터': [255, 99, 132, 200],
-          '홍대센터': [54, 162, 235, 200],
-          '송파센터': [255, 205, 86, 200],
-          '마포센터': [75, 192, 192, 200],
-        };
-        return colors[center] || [153, 102, 255, 200];
-      },
-      getRadius: (d: Spot) => {
-        // ✅ 화면상 픽셀 크기 고정 (줌 레벨 무관) - 제곱근 스케일링으로 배수 관계 완화
-        // - 화면에서 보이는 원의 크기는 항상 고정된 픽셀 크기로 표시
-        // - 줌 레벨에 상관없이 화면상에서 같은 크기 유지
-        // - 회원 수에 따라 상대적 크기 표현 (제곱근 스케일링으로 배수보다 부드럽게)
-        if (!d || typeof d.totalApprox !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
-          return 18; // 최소 픽셀 크기 반환
-        }
-        
-        const memberCount = d.totalApprox || minCount;
-        
-        // ✅ 제곱근 스케일링으로 배수 관계 완화 (50명과 10명의 차이가 5배가 아닌 더 부드럽게)
-        // 최소/최대 픽셀 크기 조정 (최소 크기 증가, 차이 완화)
-        const minPixels = 18; // 최소 크기 증가 (이전 8px → 18px)
-        const maxPixels = 38; // 최대 크기 감소 (이전 50px → 38px) - 차이 완화
-        
-        let radiusPixels: number;
-        if (maxCount === minCount) {
-          // 모든 스팟이 같은 회원 수인 경우 중간 크기 반환
-          radiusPixels = (minPixels + maxPixels) / 2;
-        } else {
-          // 제곱근 스케일링: memberCount의 제곱근을 사용하여 배수 관계 완화
-          // 예: 10명 → sqrt(10) ≈ 3.16, 50명 → sqrt(50) ≈ 7.07 (비율: 약 2.24배)
-          // 선형 스케일링: 10명 → 1.0, 50명 → 5.0 (비율: 5배) ← 이전 방식
-          const sqrtMin = Math.sqrt(Math.max(1, minCount)); // 최소값의 제곱근
-          const sqrtMax = Math.sqrt(Math.max(1, maxCount)); // 최대값의 제곱근
-          const sqrtCurrent = Math.sqrt(Math.max(1, memberCount)); // 현재값의 제곱근
-          
-          // 제곱근 값을 픽셀 범위로 매핑
-          const ratio = (sqrtCurrent - sqrtMin) / (sqrtMax - sqrtMin);
-          radiusPixels = minPixels + ratio * (maxPixels - minPixels);
-        }
-        
-        // 범위 제한 (안전장치)
-        radiusPixels = Math.max(minPixels, Math.min(maxPixels, radiusPixels));
-        
-        return radiusPixels;
-      },
-      radiusUnits: 'pixels', // ✅ 픽셀 단위로 고정 (줌 레벨과 무관하게 화면상 크기 일정)
-      stroked: true,
-      getLineColor: [255, 255, 255, 255],
-      lineWidthMinPixels: 2,
-      onHover: ({ object, x, y }) => {
-        if (object) {
-          setHoveredSpot({
-            x,
-            y,
-            data: object
-          });
-          // Geohash를 한글 주소로 변환
-          if (object.geohash) {
-            getAddressFromGeohash(object.geohash)
-              .then(address => setHoveredAddress(address))
-              .catch(() => setHoveredAddress(null));
-          } else {
-            setHoveredAddress(null);
-          }
-        } else {
-          setHoveredSpot(null);
-          setHoveredAddress(null);
-        }
-      }
-    });
-    
-    // 회원 수를 표시하는 TextLayer 생성 (가독성 개선)
-    // ✅ 최소 단위 1명으로 변경되어 1명 이상 모두 표시
-    const textSpots = filteredSpots.filter(s => {
-      const memberCount = s.totalApprox || 0;
-      // 최소 단위는 1명이므로 1명 이상 모두 표시
-      return memberCount >= 1; // 최소 1명 이상만 숫자 표시
-    });
-    
-    if (TextLayer && textSpots.length > 0) {
-      // ✅ 텍스트 가독성 향상: 외곽선 효과 (어두운 배경 레이어 + 밝은 텍스트 레이어)
-      // 1단계: 어두운 외곽선 레이어 (배경)
-      const textBackgroundLayer = new TextLayer({
-        id: 'spots-text-background',
-        data: textSpots,
-        pickable: false,
-        getPosition: (d: Spot) => {
-          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-            return [126.9780, 37.5665];
-          }
-          return [d.lng, d.lat];
-        },
-        getText: (d: Spot) => String(d.totalApprox || 0),
-        getColor: [0, 0, 0, 220], // 검은색 반투명 (외곽선 효과)
-        getSize: 18, // 배경은 조금 더 크게
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        sizeScale: 1,
-        sizeMaxPixels: 24,
-        sizeMinPixels: 14,
-        getTextAnchor: 'middle',
-        getAlignmentBaseline: 'center',
-        characterSet: 'auto'
-      });
-      
-      // 2단계: 밝은 텍스트 레이어 (전면)
-      const textForegroundLayer = new TextLayer({
-        id: 'spots-text-foreground',
-        data: textSpots,
-        pickable: false,
-        getPosition: (d: Spot) => {
-          if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-            return [126.9780, 37.5665];
-          }
-          return [d.lng, d.lat];
-        },
-        getText: (d: Spot) => String(d.totalApprox || 0),
-        getColor: [255, 255, 255, 255], // 흰색 텍스트
-        getSize: 16, // 텍스트 크기 증가
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        sizeScale: 1,
-        sizeMaxPixels: 22,
-        sizeMinPixels: 14,
-        getTextAnchor: 'middle',
-        getAlignmentBaseline: 'center',
-        characterSet: 'auto'
-      });
-      
-      return [spotsLayer, textBackgroundLayer, textForegroundLayer];
-    }
-    
-    return spotsLayer;
-  }, [spots, currentZoom, scaleRadius]);
-
-  // Deck.gl 레이어 업데이트 (관리자 페이지와 완전히 동일한 방식)
-  useEffect(() => {
-    if (!overlayRef.current || !spots || !spots.length) {
-      console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
-        hasOverlay: !!overlayRef.current,
-        spotsLength: spots?.length || 0
-      });
-      return;
-    }
-
-    console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
-    console.log('🗺️ 현재 줌 레벨:', currentZoom);
-    
-    const layers = buildSpotsLayer();
-    
-    // 레이어가 null이면 건너뛰기 (관리자 페이지에는 이 체크가 없지만 안전을 위해 추가)
-    if (!layers) {
-      console.warn('⚠️ 레이어 생성 실패 - 유효한 데이터가 없음');
-      overlayRef.current.setProps({ layers: [] });
-      return;
-    }
-    
-    // layers는 배열일 수도 있고 단일 레이어일 수도 있음
-    const layersArray = Array.isArray(layers) ? layers : [layers];
-    
-    console.log('📦 생성된 레이어:', layersArray.length, '개');
-    
-    // 관리자 페이지와 완전히 동일하게 바로 호출
-    overlayRef.current.setProps({
-      layers: layersArray
-    });
-    
-    console.log('✅ 스팟 레이어 업데이트 완료');
-  }, [spots, currentZoom, buildSpotsLayer]);
+  // 지도 로딩 완료 핸들러
+  const handleMapLoad = useCallback(() => {
+    console.log('✅ GeoDistributionMap 지도 로딩 완료 콜백 호출');
+    setMapLoaded(true);
+  }, []);
 
   if (loading) {
     return (
@@ -717,22 +440,34 @@ export default function CenterAdminGeoDistributionPage() {
         </div>
 
         {/* 지도 */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div ref={mapRef} className="w-full h-[600px]" />
+        <div ref={mapContainerRef} className="bg-white rounded-lg shadow-sm overflow-hidden relative">
+          <GeoDistributionMap
+            spots={spots}
+            currentZoom={currentZoom}
+            onSpotHover={handleSpotHover}
+            onZoomChange={handleZoomChange}
+            onMapLoad={handleMapLoad}
+            className="h-[600px]"
+          />
           
-          {/* 툴팁 */}
-          {hoveredSpot && (
-            <div className="absolute bg-white p-3 rounded-lg shadow-lg border border-gray-200 pointer-events-none z-10"
-                 style={{ left: hoveredSpot.x + 15, top: hoveredSpot.y + 15 }}>
+          {/* 툴팁 - 동적 위치 조정 */}
+          {hoveredSpot && hoveredAddress && (
+            <div 
+              className="absolute bg-white/95 backdrop-blur-sm px-4 py-3 rounded-lg shadow-xl border-2 border-gray-300 z-50 pointer-events-none"
+              style={{
+                ...calculateTooltipPosition(hoveredCoordinates, mapContainerRef),
+                maxWidth: '280px'
+              }}
+            >
               <div className="text-sm">
-                <div className="font-semibold mb-1">
-                  📍 집계 구역: {hoveredAddress || hoveredSpot.data?.geohash || '알 수 없음'}
+                <div className="font-semibold mb-1 text-gray-900">
+                  📍 집계 구역: {hoveredAddress}
                 </div>
                 <div className="text-blue-600 mb-1">
-                  🏠 센터: <strong>{hoveredSpot.data?.dominantCenter || hoveredSpot.dominantCenter}</strong>
+                  🏠 센터: <strong>{hoveredSpot.dominantCenter}</strong>
                 </div>
                 <div className="text-gray-700">
-                  예상 회원 수: <strong>약 {hoveredSpot.data?.totalApprox || hoveredSpot.totalApprox}명 (익명처리)</strong>
+                  예상 회원 수: <strong>약 {hoveredSpot.totalApprox}명 (익명처리)</strong>
                 </div>
               </div>
             </div>

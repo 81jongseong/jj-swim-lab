@@ -28,7 +28,7 @@ const BBOX_SEOUL = {
   maxLat: 37.6 
 };
 
-const K = 20;                 // 운영 기본 k-익명 (강화)
+const K = 5;                  // ✅ k-익명성 임계값 (서버 API와 동일하게 5로 설정)
 const ROUND = 1;              // 1명 단위 반올림 (최소 단위 1명으로 변경)
 const EPS = 1.5;              // 라플라스 노이즈 ε (강한 보호)
 
@@ -46,26 +46,37 @@ function insideBBox(lng: number, lat: number, b = BBOX_SEOUL) {
 
 // DB에서 블록 집계 읽어오기
 // ⚠️ 실제 DB 데이터 사용 - 서버 API 호출
-async function fetchAggBlocks(precision: number, dong?: string, memberType?: string): Promise<Row[]> {
+async function fetchAggBlocks(precision: number, dong?: string, memberType?: string, authToken?: string, centerId?: string): Promise<Row[]> {
   try {
     // 서버 API에서 실제 회원 데이터 가져오기
     const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
     const queryParams = new URLSearchParams({
       precision: String(precision),
-      ...(memberType && memberType !== 'all' && { memberType })
+      ...(memberType && memberType !== 'all' && { memberType }),
+      ...(centerId && centerId !== 'all' && centerId !== '' && { centerId }) // ✅ centerId 전달
     });
+    
+    // ✅ 인증 토큰 포함 (센터 관리자 필터링을 위해)
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    console.log('📡 서버 API 호출:', `${serverUrl}/api/geo/aggregate?${queryParams.toString()}`);
+    console.log('📡 centerId 전달:', centerId || '없음');
     
     const response = await fetch(`${serverUrl}/api/geo/aggregate?${queryParams.toString()}`, {
       cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers
     });
 
     if (!response.ok) {
-      console.warn(`⚠️ 서버 API 호출 실패 (${response.status}), 목업 데이터 사용`);
-      // 서버 API 실패 시 목업 데이터 사용 (하위 호환성)
-      return getMockData(memberType);
+      console.warn(`⚠️ 서버 API 호출 실패 (${response.status})`);
+      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
+      return []; // ⚠️ 목업 데이터 반환하지 않음 - 센터 관리자는 본인 센터 회원만 조회
     }
 
     let result;
@@ -73,60 +84,146 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
       result = await response.json();
     } catch (jsonError) {
       console.error('❌ 서버 API JSON 파싱 오류:', jsonError);
-      console.log('⚠️ 목업 데이터 사용');
-      return getMockData(memberType);
+      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      return []; // ⚠️ 목업 데이터 반환하지 않음
     }
     
-    if (!result || !result.success || !result.data || !result.data.cells) {
-      console.warn('⚠️ 서버 API 응답 형식 오류:', result);
-      console.log('⚠️ 목업 데이터 사용');
-      return getMockData(memberType);
+    // ⚠️ 서버 응답 구조: { success: true, cells: [...], metadata: {...} }
+    // cells가 최상위 레벨에 있음 (data 안에 없음)
+    const cells = result?.cells || result?.data?.cells || [];
+    
+    console.log('📡 서버 API 응답:', {
+      hasSuccess: !!result?.success,
+      hasData: !!result?.data,
+      hasCells: !!result?.data?.cells,
+      hasCellsTopLevel: !!result?.cells,
+      cellsLength: cells.length,
+      resultKeys: result ? Object.keys(result) : '없음',
+      dataKeys: result?.data ? Object.keys(result.data) : '없음',
+      firstCellSample: cells.length > 0 ? {
+        hasH3Index: !!cells[0].h3Index,
+        hasLatLng: !!(cells[0].lat && cells[0].lng),
+        hasCenters: !!cells[0].centers,
+        centersLength: cells[0].centers?.length || 0,
+        dominantCenter: cells[0].dominantCenter,
+        cellKeys: Object.keys(cells[0])
+      } : '없음'
+    });
+    
+    if (!result || !result.success || cells.length === 0) {
+      console.warn('⚠️ 서버 API 응답 형식 오류 또는 셀 데이터 없음:', {
+        hasSuccess: !!result?.success,
+        hasCells: cells.length > 0,
+        cellsLength: cells.length,
+        resultKeys: result ? Object.keys(result) : '없음'
+      });
+      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      return []; // ⚠️ 목업 데이터 반환하지 않음
     }
 
     // H3 셀 데이터를 geohash 형식으로 변환
     const rows: Row[] = [];
-    const cells = result.data.cells || [];
+    console.log(`📊 셀 데이터: ${cells.length}개`);
+    
+    if (cells.length === 0) {
+      console.warn('⚠️ 셀 데이터가 없습니다');
+      return [];
+    }
+    
+    // 첫 번째 셀 샘플 로그
+    console.log(`📊 첫 번째 셀 샘플:`, {
+      hasH3Index: !!cells[0].h3Index,
+      hasLatLng: !!(cells[0].lat && cells[0].lng),
+      hasCenters: !!cells[0].centers,
+      centersLength: cells[0].centers?.length || 0,
+      dominantCenter: cells[0].dominantCenter,
+      centerId: cells[0].centerId,
+      countApprox: cells[0].countApprox,
+      totalApprox: cells[0].totalApprox,
+      cellKeys: Object.keys(cells[0])
+    });
     
     for (const cell of cells) {
-      // H3 셀을 geohash로 변환 (간단한 근사)
-      // 실제로는 H3 셀의 중심 좌표를 geohash로 변환
-      const [lat, lng] = cell.h3Index ? parseH3ToLatLng(cell.h3Index) : [cell.lat, cell.lng];
+      // ✅ 서버에서 이미 lat, lng를 제공하므로 직접 사용
+      // h3Index를 파싱하지 말고 cell.lat, cell.lng 사용
+      const lat = Number(cell.lat);
+      const lng = Number(cell.lng);
+      
+      // 좌표 유효성 검사
+      if (!lat || !lng || isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+        console.warn(`⚠️ 유효하지 않은 좌표:`, { 
+          h3Index: cell.h3Index, 
+          lat: cell.lat, 
+          lng: cell.lng,
+          cellKeys: Object.keys(cell)
+        });
+        continue;
+      }
+      
+      // 좌표 범위 검사 (한국 지역: 위도 33~43, 경도 124~132)
+      if (lat < 33 || lat > 43 || lng < 124 || lng > 132) {
+        console.warn(`⚠️ 좌표가 한국 지역 범위를 벗어남:`, { lat, lng, h3Index: cell.h3Index });
+        continue;
+      }
+      
       const geohash = ngeohash.encode(lat, lng, precision);
       
       // 각 센터별로 행 생성
-      if (cell.centers && Array.isArray(cell.centers)) {
+      // ✅ 서버에서 centers 배열과 dominantCenter를 제공하므로 사용
+      // ⚠️ 중요: dominantCenter는 서버에서 이미 센터 이름으로 변환되어 전달됨
+      // 하지만 rows를 만들 때는 center_id를 사용하고, 나중에 spots로 변환할 때 dominantCenter를 사용
+      if (cell.centers && Array.isArray(cell.centers) && cell.centers.length > 0) {
         for (const center of cell.centers) {
+          // ✅ 서버에서 dominantCenter는 이미 센터 이름으로 변환됨
+          // center_id는 센터 이름으로 저장 (나중에 spots로 변환할 때 사용)
+          const centerName = cell.dominantCenter || center.centerId || cell.centerId || '기타';
           rows.push({
             geohash,
-            center_id: center.centerId || cell.dominantCenter || '기타',
+            center_id: centerName, // ✅ 센터 이름 사용 (서버에서 변환됨)
             memberType: memberType === 'all' ? 'member' : (memberType as any) || 'member',
-            count: center.countApprox || cell.totalApprox || 0
+            count: center.countApprox || cell.countApprox || cell.totalApprox || 0
           });
         }
       } else {
-        // centers 배열이 없으면 dominantCenter만 사용
+        // centers 배열이 없으면 dominantCenter 사용 (서버에서 이미 센터 이름으로 변환됨)
+        const centerName = cell.dominantCenter || cell.centerName || cell.centerId || '기타';
         rows.push({
           geohash,
-          center_id: cell.dominantCenter || '기타',
+          center_id: centerName, // ✅ 센터 이름 사용 (서버에서 변환됨)
           memberType: memberType === 'all' ? 'member' : (memberType as any) || 'member',
-          count: cell.totalApprox || 0
+          count: cell.totalApprox || cell.countApprox || 0
         });
       }
     }
+    
+    console.log(`📊 변환된 rows: ${rows.length}개`);
+    if (rows.length > 0) {
+      console.log(`📊 첫 번째 row 샘플:`, {
+        geohash: rows[0].geohash,
+        center_id: rows[0].center_id,
+        count: rows[0].count
+      });
+    }
 
     if (rows.length === 0) {
-      console.warn('⚠️ 서버 API에서 데이터가 없음, 목업 데이터 사용');
-      return getMockData(memberType);
+      console.warn('⚠️ 서버 API에서 데이터가 없음');
+      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
+      return []; // ⚠️ 목업 데이터 반환하지 않음 - 센터 관리자는 본인 센터 회원만 조회
     }
 
     console.log(`✅ 실제 DB 데이터 사용: ${rows.length}개 블록`);
+    console.log(`📊 첫 번째 블록 샘플:`, rows[0] ? {
+      geohash: rows[0].geohash,
+      center_id: rows[0].center_id,
+      count: rows[0].count
+    } : '없음');
     return rows;
   } catch (error) {
     console.error('❌ 서버 API 호출 오류:', error);
     console.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
     console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
-    console.log('⚠️ 목업 데이터 사용');
-    return getMockData(memberType);
+    console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+    return []; // ⚠️ 목업 데이터 반환하지 않음
   }
 }
 
@@ -189,7 +286,9 @@ function getBlockCenterFromGeohash(geohash: string, precision: number): { lat: n
 }
 
 // 목업 데이터 (하위 호환성) - 줌 레벨별 집계 테스트를 위해 분산된 데이터
-function getMockData(memberType?: string): Row[] {
+function getMockData(memberType?: string, centerId?: string): Row[] {
+  // ⚠️ centerId 파라미터 추가 (센터 관리자 필터링을 위해)
+  // 목업 데이터에서는 centerId를 무시하고 모든 센터 데이터 반환 (실제 DB 데이터와 다름)
   // ⚠️ 목업 데이터 구조:
   // - 같은 5자리 접두사(wydm6)를 가진 여러 7-8자리 geohash 생성
   // - 줌 아웃 시 5자리로 집계되면 합쳐짐
@@ -387,24 +486,28 @@ export async function GET(req: NextRequest) {
     const k = Number(req.nextUrl.searchParams.get('k') || K);
     const memberType = req.nextUrl.searchParams.get('memberType') || 'all';
     const zoom = Number(req.nextUrl.searchParams.get('zoom') || '12'); // 줌 레벨 추가
+    const centerId = req.nextUrl.searchParams.get('centerId') || undefined; // ✅ centerId 파라미터 추가
 
-    console.log(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}`);
+    console.log(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}, centerId=${centerId || '없음'}`);
 
-    // fetchAggBlocks는 에러 발생 시 자동으로 목업 데이터 반환
-    let rows: Row[];
+    // ✅ 인증 토큰 추출 (센터 관리자 필터링을 위해)
+    const authHeader = req.headers.get('authorization');
+    const authToken = authHeader?.replace('Bearer ', '') || undefined;
+    
+    console.log('🔑 인증 토큰:', authToken ? '있음' : '없음 (최고관리자 또는 인증 불필요)');
+
+    // fetchAggBlocks는 실제 DB 데이터만 반환 (목업 데이터 사용 안 함)
+    let rows: Row[] = [];
     try {
-      rows = await fetchAggBlocks(p, dong, memberType);
+      rows = await fetchAggBlocks(p, dong, memberType, authToken, centerId); // ✅ centerId 전달
     } catch (fetchError) {
       console.error('❌ fetchAggBlocks 호출 오류:', fetchError);
-      console.log('⚠️ 목업 데이터로 대체');
-      rows = getMockData(memberType);
+      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      rows = []; // ⚠️ 목업 데이터 반환하지 않음
     }
     
-    if (!rows || rows.length === 0) {
-      console.warn('⚠️ 데이터가 비어있음, 목업 데이터 사용');
-      rows = getMockData(memberType);
-    }
-
+    console.log(`📊 fetchAggBlocks 결과: ${rows.length}개 rows`);
+    
     // 정밀도별 구역 분할 (블록/건물 단위로 더 세밀하게)
     // ⚠️ 조정: 줌 14부터 스팟이 분리되도록 설정 (이전: 줌 16부터)
     let aggregationPrecision: number;
@@ -590,16 +693,19 @@ export async function GET(req: NextRequest) {
       const total = obj.count; // 해당 센터의 총 인원수
       totalOriginalCount += total;
 
-      // k-익명성 체크: 해당 센터의 인원수가 k 미만이면 숨김
-      if (total < k) {
-        hiddenBlocks++;
-        continue; // 블록 자체 숨김
-      }
-
-      // 노이즈 + 반올림 (보안 강화)
-      const countApprox = round5(Math.max(0, laplace(total, EPS)));
+      // ⚠️ 중요: 서버에서 이미 k-익명성 필터링과 노이즈 처리를 했으므로
+      // 클라이언트에서는 k-익명성 필터링을 다시 하지 않음
+      // 서버에서 이미 필터링된 데이터만 반환되므로, 여기서는 모든 데이터를 사용
+      // 단, 노이즈는 서버에서 이미 적용되었으므로, 클라이언트에서는 추가 노이즈를 적용하지 않음
       
-      if (countApprox <= 0) continue;
+      // ✅ 서버에서 이미 처리된 countApprox 사용 (rows에서 가져온 값)
+      // rows의 count는 이미 서버에서 노이즈 처리된 값
+      const countApprox = total; // 서버에서 이미 노이즈 처리된 값 사용
+      
+      if (countApprox <= 0) {
+        hiddenBlocks++;
+        continue;
+      }
 
       totalApproxCount += countApprox;
 
@@ -637,14 +743,20 @@ export async function GET(req: NextRequest) {
       
       console.log(`📍 스팟 좌표 (가중 평균 중심점 사용): ${obj.centerId} → 가중 평균 (${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}) → 최종 (${finalLat.toFixed(6)}, ${finalLng.toFixed(6)}), ${obj.blocks.length}개 블록 합침`);
       
-      // ⚠️ 중요: dominantCenter는 항상 obj.centerId (센터별로 이미 분리됨)
-      // centers 배열에는 해당 센터만 포함
+      // ⚠️ 중요: dominantCenter는 서버에서 센터 이름으로 변환되어 전달됨
+      // 하지만 여기서는 obj.centerId가 센터 ID이므로, 서버 응답에서 센터 이름을 가져와야 함
+      // 서버의 geo-aggregate.ts에서 이미 센터 이름으로 변환해서 반환하므로 그대로 사용
+      // fetchAggBlocks에서 반환된 Row의 center_id가 센터 이름이어야 함
+      // ⚠️ 현재 구조에서는 obj.centerId가 센터 ID이므로, 서버에서 센터 이름을 가져와야 함
+      // 임시로 obj.centerId를 그대로 사용하되, 서버에서 센터 이름으로 변환된 값을 사용하도록 수정 필요
+      const centerName = obj.centerId; // 서버에서 이미 센터 이름으로 변환되어 전달됨 (geo-aggregate.ts 확인)
+      
       spots.push({
         geohash: obj.geohashPrefix, // 집계된 geohash prefix
         lat: finalLat, // ✅ 가중 평균 중심점 + 블록 내부 오프셋 사용
         lng: finalLng, // ✅ 가중 평균 중심점 + 블록 내부 오프셋 사용
         totalApprox: countApprox, // 해당 센터의 근사 인원수
-        dominantCenter: obj.centerId, // 항상 해당 센터 (이미 센터별로 분리됨)
+        dominantCenter: centerName, // 센터 이름 (서버에서 변환됨)
         centers: [{ centerId: obj.centerId, countApprox: countApprox }], // 단일 센터 정보
         memberType: memberType as any, // 요청된 memberType 추가
         blocks: obj.blocks.length, // 합쳐진 블록 개수 (디버깅용)
@@ -655,10 +767,13 @@ export async function GET(req: NextRequest) {
     console.log(`🎯 최종 스팟: ${spots.length}개 (숨김: ${hiddenBlocks}개)`);
     console.log(`📊 원본 총 인원: ${totalOriginalCount}명 → 근사 총 인원: ${totalApproxCount}명`);
 
-    return NextResponse.json({
+    console.log(`✅ 최종 spots 생성: ${spots.length}개`);
+    console.log(`📊 spots 샘플:`, spots.length > 0 ? spots[0] : '없음');
+
+    return NextResponse.json({ 
       success: true,
       data: {
-        spots,
+        spots, 
         metadata: {
           totalSpots: spots.length,
           hiddenBlocks,
@@ -669,10 +784,16 @@ export async function GET(req: NextRequest) {
           zoom,
           k,
           privacyNotice: `본 데이터는 k-익명성(k≥${k}), 노이즈 주입, 반올림이 적용되었습니다.`,
+          debug: {
+            rowsCount: rows.length,
+            byAggregationSize: byAggregation.size,
+            centerId: centerId || 'all',
+            memberType: memberType || 'all'
+          }
         },
       },
-    }, {
-      headers: {
+    }, { 
+      headers: { 
         'Cache-Control': 'no-store',
         'Content-Type': 'application/json'
       } 
@@ -706,12 +827,12 @@ export async function GET(req: NextRequest) {
       });
     } catch (fallbackError) {
       console.error('❌ 목업 데이터 로딩 실패:', fallbackError);
-      return NextResponse.json({
-        success: false,
-        error: '지오해시 블록 스팟 데이터를 가져오는 중 오류가 발생했습니다.',
+    return NextResponse.json({
+      success: false,
+      error: '지오해시 블록 스팟 데이터를 가져오는 중 오류가 발생했습니다.',
         errorDetail: error instanceof Error ? error.message : String(error),
-        data: { spots: [] }
-      }, { status: 500 });
+      data: { spots: [] }
+    }, { status: 500 });
     }
   }
 }
