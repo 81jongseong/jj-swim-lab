@@ -292,6 +292,14 @@ router.get('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
         const settingsData = {
             _id: center._id,
             centerId: center._id,
+            geoDistributionVisibility: center.geoDistributionVisibility || {
+                isPublic: false,
+                showToOtherCenterAdmins: false,
+                showToInstructors: false,
+                showToMembers: false,
+                lastUpdated: new Date(),
+                updatedBy: userId
+            },
             bookingSettings: {
                 advanceBookingDays: 7,
                 maxBookingPerUser: 3,
@@ -379,15 +387,29 @@ router.put('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
                 message: '센터 정보를 찾을 수 없습니다.'
             });
         }
-        const updatedCenter = await Center_1.Center.findByIdAndUpdate(center._id, {
-            updatedAt: new Date(),
-            updatedBy: userId
-        }, { new: true });
+        const updateData = {
+            updatedAt: new Date()
+        };
+        if (settingsData.geoDistributionVisibility) {
+            updateData.geoDistributionVisibility = {
+                isPublic: settingsData.geoDistributionVisibility.isPublic || false,
+                showToOtherCenterAdmins: settingsData.geoDistributionVisibility.showToOtherCenterAdmins || false,
+                showToInstructors: settingsData.geoDistributionVisibility.showToInstructors || false,
+                showToMembers: settingsData.geoDistributionVisibility.showToMembers || false,
+                lastUpdated: new Date(),
+                updatedBy: userId
+            };
+        }
+        if (settingsData.settings) {
+            updateData.settings = { ...center.settings, ...settingsData.settings };
+        }
+        const updatedCenter = await Center_1.Center.findByIdAndUpdate(center._id, updateData, { new: true });
         res.json({
             success: true,
             message: '센터 설정이 성공적으로 업데이트되었습니다!',
             data: {
                 ...settingsData,
+                geoDistributionVisibility: updatedCenter.geoDistributionVisibility,
                 updatedAt: new Date()
             }
         });

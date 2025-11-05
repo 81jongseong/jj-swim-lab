@@ -74,6 +74,7 @@
 
 import Link from 'next/link';
 import { useAuth } from 'hooks/useAuth';
+import UserMenu from './common/UserMenu';
 
 export default function SimpleNavigation() {
   const { user } = useAuth();
@@ -150,17 +151,12 @@ export default function SimpleNavigation() {
           {/* 사용자 메뉴 및 액션 */}
           <div className="flex items-center space-x-4">
             {user ? (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {user.name?.charAt(0) || 'U'}
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-gray-700">{user.name}님</span>
-                <button className="text-sm text-gray-700 hover:text-red-600 transition-colors">
-                  로그아웃
-                </button>
-              </div>
+              <UserMenu 
+                showUserType={false}
+                size="md"
+                logoutVariant="text"
+                className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200"
+              />
             ) : (
               <div className="flex items-center space-x-3">
                 <Link

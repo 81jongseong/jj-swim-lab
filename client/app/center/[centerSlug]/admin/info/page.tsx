@@ -49,7 +49,8 @@ import {
   Waves,
   Clock,
   Settings,
-  Users
+  Users,
+  MapPin
 } from 'lucide-react';
 
 // 수영장 정보 인터페이스
@@ -287,6 +288,16 @@ function CenterInfoManagementPage() {
     cancellationPolicy: ''
   });
   
+  // ⭐ 회원분포도 공개 여부 설정
+  const [geoDistributionVisibility, setGeoDistributionVisibility] = useState({
+    isPublic: false,
+    showToOtherCenterAdmins: false,
+    showToOwnInstructors: false,
+    showToOtherInstructors: false,
+    showToOwnMembers: false,
+    showToOtherMembers: false
+  });
+  
   // 새 시간대 입력 상태 (개인레슨용)
   const [newTimeSlot, setNewTimeSlot] = useState({
     startTime: '09:00',
@@ -440,6 +451,18 @@ function CenterInfoManagementPage() {
               enabled: centerData.availabilitySettings.personalLesson.enabled || true,
               dayTimeSlots: dayTimeSlots.length > 0 ? dayTimeSlots : [],
               cancellationPolicy: centerData.availabilitySettings.personalLesson.cancellationPolicy || '24시간 전 취소 가능'
+            });
+          }
+          
+          // ⭐ 회원분포도 공개 여부 설정 로드
+          if (centerData.geoDistributionVisibility) {
+            setGeoDistributionVisibility({
+              isPublic: centerData.geoDistributionVisibility.isPublic || false,
+              showToOtherCenterAdmins: centerData.geoDistributionVisibility.showToOtherCenterAdmins || false,
+              showToOwnInstructors: centerData.geoDistributionVisibility.showToOwnInstructors || false,
+              showToOtherInstructors: centerData.geoDistributionVisibility.showToOtherInstructors || false,
+              showToOwnMembers: centerData.geoDistributionVisibility.showToOwnMembers || false,
+              showToOtherMembers: centerData.geoDistributionVisibility.showToOtherMembers || false
             });
           }
           
@@ -720,6 +743,15 @@ function CenterInfoManagementPage() {
             advanceBookingDays: 14,
             cancellationPolicy: freeSwimSettings?.cancellationPolicy || ''
           }
+        },
+        // ⭐ 회원분포도 공개 여부 설정 저장
+        geoDistributionVisibility: {
+          isPublic: geoDistributionVisibility.isPublic,
+          showToOtherCenterAdmins: geoDistributionVisibility.showToOtherCenterAdmins,
+          showToOwnInstructors: geoDistributionVisibility.showToOwnInstructors,
+          showToOtherInstructors: geoDistributionVisibility.showToOtherInstructors,
+          showToOwnMembers: geoDistributionVisibility.showToOwnMembers,
+          showToOtherMembers: geoDistributionVisibility.showToOtherMembers
         }
       };
 
@@ -1914,7 +1946,196 @@ function CenterInfoManagementPage() {
             )}
           </div>
         </CardContent>
-        </Card>
+      </Card>
+
+      {/* ⭐ 회원분포도 공개 여부 설정 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MapPin className="h-5 w-5 mr-2" />
+            회원분포도 공개 여부 설정
+          </CardTitle>
+          <CardDescription>센터의 회원분포도를 다른 사용자에게 공개할지 설정합니다</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 전체 공개 여부 */}
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <div>
+              <h4 className="font-medium text-gray-900">전체 공개</h4>
+              <p className="text-sm text-gray-600">모든 사용자(센터 관리자, 강사, 회원)에게 공개</p>
+            </div>
+            <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="checkbox"
+                checked={geoDistributionVisibility.isPublic}
+                onChange={(e) => {
+                  if (!isEditing) return;
+                  setGeoDistributionVisibility({
+                    ...geoDistributionVisibility,
+                    isPublic: e.target.checked
+                  });
+                }}
+                disabled={!isEditing}
+                className="sr-only peer"
+              />
+              <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                !isEditing 
+                  ? 'bg-gray-100 cursor-not-allowed' 
+                  : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+              }`}></div>
+            </label>
+          </div>
+
+          {/* 세부 공개 설정 */}
+          {!geoDistributionVisibility.isPublic && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-3">세부 공개 설정</h4>
+              
+              <div className="space-y-3">
+                {/* 다른 센터 관리자에게 공개 */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <h5 className="font-medium text-gray-900">다른 센터 관리자에게 공개</h5>
+                    <p className="text-xs text-gray-600">다른 센터 관리자가 회원분포도를 볼 수 있습니다</p>
+                  </div>
+                  <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={geoDistributionVisibility.showToOtherCenterAdmins}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setGeoDistributionVisibility({
+                          ...geoDistributionVisibility,
+                          showToOtherCenterAdmins: e.target.checked
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                      !isEditing 
+                        ? 'bg-gray-100 cursor-not-allowed' 
+                        : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                    }`}></div>
+                  </label>
+                </div>
+
+                {/* 우리 센터 강사에게 공개 */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <h5 className="font-medium text-gray-900">우리 센터 강사에게 공개</h5>
+                    <p className="text-xs text-gray-600">우리 센터 소속 강사가 회원분포도를 볼 수 있습니다</p>
+                  </div>
+                  <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={geoDistributionVisibility.showToOwnInstructors}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setGeoDistributionVisibility({
+                          ...geoDistributionVisibility,
+                          showToOwnInstructors: e.target.checked
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                      !isEditing 
+                        ? 'bg-gray-100 cursor-not-allowed' 
+                        : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                    }`}></div>
+                  </label>
+                </div>
+
+                {/* 다른 센터 강사에게 공개 */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <h5 className="font-medium text-gray-900">다른 센터 강사에게 공개</h5>
+                    <p className="text-xs text-gray-600">다른 센터 소속 강사가 회원분포도를 볼 수 있습니다</p>
+                  </div>
+                  <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={geoDistributionVisibility.showToOtherInstructors}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setGeoDistributionVisibility({
+                          ...geoDistributionVisibility,
+                          showToOtherInstructors: e.target.checked
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                      !isEditing 
+                        ? 'bg-gray-100 cursor-not-allowed' 
+                        : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                    }`}></div>
+                  </label>
+                </div>
+
+                {/* 우리 센터 회원에게 공개 */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <h5 className="font-medium text-gray-900">우리 센터 회원에게 공개</h5>
+                    <p className="text-xs text-gray-600">우리 센터 소속 회원이 회원분포도를 볼 수 있습니다</p>
+                  </div>
+                  <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={geoDistributionVisibility.showToOwnMembers}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setGeoDistributionVisibility({
+                          ...geoDistributionVisibility,
+                          showToOwnMembers: e.target.checked
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                      !isEditing 
+                        ? 'bg-gray-100 cursor-not-allowed' 
+                        : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                    }`}></div>
+                  </label>
+                </div>
+
+                {/* 다른 센터 회원에게 공개 */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div>
+                    <h5 className="font-medium text-gray-900">다른 센터 회원에게 공개</h5>
+                    <p className="text-xs text-gray-600">다른 센터 소속 회원이 회원분포도를 볼 수 있습니다</p>
+                  </div>
+                  <label className={`relative inline-flex items-center ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input
+                      type="checkbox"
+                      checked={geoDistributionVisibility.showToOtherMembers}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setGeoDistributionVisibility({
+                          ...geoDistributionVisibility,
+                          showToOtherMembers: e.target.checked
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                      !isEditing 
+                        ? 'bg-gray-100 cursor-not-allowed' 
+                        : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                    }`}></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ⭐ 급수 관리 */}
       <LevelManagement

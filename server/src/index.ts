@@ -224,6 +224,7 @@ import exercisePrescriptionRoutes from './routes/exercise-prescription';
 import healthInputRoutes from './routes/health-input';
 import swimEngineRoutes from './routes/swim-engine';
 import geoAggregateRoutes from './routes/geo-aggregate';
+import geoDistributionVisibilityRoutes from './routes/geo-distribution-visibility';
 import swimProgramsRoutes from './routes/swim-programs';
 import swimProgramCompletionsRoutes from './routes/swim-program-completions';
 import swimProgramDayConditionRoutes from './routes/swim-program-day-condition';
@@ -554,6 +555,7 @@ app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
 app.use('/api/health', healthInputRoutes);
 app.use('/api/swim-engine', swimEngineRoutes);
 app.use('/api/geo', geoAggregateRoutes);
+app.use('/api/geo-distribution-visibility', geoDistributionVisibilityRoutes);
 app.use('/api/swim-programs', swimProgramsRoutes);
 app.use('/api/swim-programs', swimProgramCompletionsRoutes); // 완료율 관련 라우트
 app.use('/api/swim-programs', swimProgramDayConditionRoutes); // 당일 컨디션 입력 라우트

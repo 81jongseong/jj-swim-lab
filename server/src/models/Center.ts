@@ -150,6 +150,17 @@ export interface ICenter extends Document {
       updatedBy: mongoose.Types.ObjectId;
     };
   };
+  // 회원분포도 공개 설정
+  geoDistributionVisibility?: {
+    isPublic: boolean; // 다른 센터 관리자/강사/회원에게 공개 여부 (기본값: false)
+    showToOtherCenterAdmins: boolean; // 다른 센터 관리자에게 공개 여부
+    showToOwnInstructors: boolean; // 우리 센터 강사에게 공개 여부
+    showToOtherInstructors: boolean; // 다른 센터 강사에게 공개 여부
+    showToOwnMembers: boolean; // 우리 센터 회원에게 공개 여부
+    showToOtherMembers: boolean; // 다른 센터 회원에게 공개 여부
+    lastUpdated?: Date;
+    updatedBy?: mongoose.Types.ObjectId;
+  };
   // 센터 설정 (브랜딩, 테마 등)
   settings?: {
     theme?: {
@@ -383,6 +394,17 @@ const centerSchema = new Schema<ICenter>({
       lastUpdated: { type: Date, default: Date.now },
       updatedBy: { type: Schema.Types.ObjectId, ref: 'User' }
     }
+  },
+  // 회원분포도 공개 설정
+  geoDistributionVisibility: {
+    isPublic: { type: Boolean, default: false }, // 기본값: 비공개
+    showToOtherCenterAdmins: { type: Boolean, default: false },
+    showToOwnInstructors: { type: Boolean, default: false },
+    showToOtherInstructors: { type: Boolean, default: false },
+    showToOwnMembers: { type: Boolean, default: false },
+    showToOtherMembers: { type: Boolean, default: false },
+    lastUpdated: { type: Date, default: Date.now },
+    updatedBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
   // 센터 설정 (브랜딩, 테마 등)
   settings: {

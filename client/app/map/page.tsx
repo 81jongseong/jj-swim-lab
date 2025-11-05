@@ -15,7 +15,7 @@ import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
-import RegionSelector from '@/components/map/RegionSelector';
+import RegionSelector, { CITIES_BY_PROVINCE } from '@/components/map/RegionSelector';
 import ModernButton from '@/components/map/ModernButton';
 import FilterOptions from '@/components/map/FilterOptions';
 
@@ -1132,6 +1132,21 @@ export default function MapPage() {
                   newRegions.add(district);
                 }
                 setSelectedRegions(newRegions);
+              }}
+              onSelectAll={() => {
+                if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
+                  const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
+                  const newRegions = new Set(selectedRegions);
+                  
+                  if (allDistrictsSelected) {
+                    // 모두 해제
+                    CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
+                  } else {
+                    // 모두 선택
+                    CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
+                  }
+                  setSelectedRegions(newRegions);
+                }
               }}
               onClose={() => {
                 setShowDistrictSelection(false);

@@ -80,14 +80,23 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         const K_THRESHOLD = isDevelopment ? 1 : 5;
         const { centerId, from, to, memberType } = req.query;
         const filter = {};
+        let updatedUser = user;
         if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
-            const centerAdminUser = await User_1.User.findById(user._id || user.id).select('centerAdminInfo centerId').lean();
+            const centerAdminUser = await User_1.User.findById(user._id || user.id).select('centerAdminInfo centerId userType').lean();
             const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
+            updatedUser = {
+                ...user,
+                centerAdminInfo: centerAdminUser?.centerAdminInfo || user.centerAdminInfo,
+                centerId: centerAdminUser?.centerId || user.centerId
+            };
+            const managedCenterIds = managedCenters.map((c) => c.toString ? c.toString() : c._id?.toString() || c);
             console.log('🔍 센터 관리자 정보:', {
                 userId: user._id || user.id,
                 hasCenterId: !!centerAdminUser?.centerId,
                 managedCentersCount: managedCenters.length,
-                centerId: centerId || '없음'
+                managedCenterIds: managedCenterIds,
+                centerId: centerId || '없음',
+                userType: user.userType
             });
             if (managedCenters.length > 0) {
                 const centerIds = managedCenters.map((c) => {
@@ -198,6 +207,12 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             filter.userType = memberType;
         }
         console.log('🔍 최종 필터 조건:', JSON.stringify(filter, null, 2));
+        console.log('🔍 사용자 정보:', {
+            userType: user.userType,
+            userId: user._id || user.id,
+            isCenterAdmin: user.userType === 'centerAdmin' || user.userType === 'center-admin',
+            hasManagedCenters: !!updatedUser.centerAdminInfo?.managedCenters?.length
+        });
         if (filter.centerId && typeof filter.centerId === 'object' && filter.centerId.$in) {
             filter.centerId.$in = filter.centerId.$in.map((id) => {
                 if (typeof id === 'string' && mongoose_1.default.Types.ObjectId.isValid(id)) {
@@ -224,6 +239,14 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             .select('address location centerId createdAt userType')
             .lean();
         console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리 (필터: ${memberType || '전체'})`);
+        if (users.length > 0 && users.length <= 10) {
+            console.log(`📍 조회된 회원 샘플 (센터 ID):`, users.slice(0, 5).map((u) => ({
+                userId: u._id,
+                centerId: u.centerId?.toString(),
+                hasAddress: !!u.address,
+                hasCoords: !!u.location?.coordinates
+            })));
+        }
         const usersWithAddress = users.filter(u => u.address && u.address.trim() !== '');
         const usersWithCoords = users.filter(u => u.location?.coordinates && Array.isArray(u.location.coordinates) && u.location.coordinates.length === 2);
         const usersWithoutLocation = users.filter(u => !u.address && !u.location?.coordinates);
@@ -233,10 +256,62 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         console.log(`  - 위치 정보 없음: ${usersWithoutLocation.length}명`);
         const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
         const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
-        const centers = await SwimmingCenter.find({ _id: { $in: centerIds } })
-            .select('_id name')
+        const centers = await Center_1.default.find({ _id: { $in: centerIds } })
+            .select('_id name geoDistributionVisibility')
             .lean();
         const centerMap = new Map(centers.map((c) => [c._id.toString(), c.name || `센터 ${c._id.toString().substring(0, 8)}`]));
+        const canViewCenterDistribution = (centerId, viewerUser) => {
+            if (viewerUser.userType === 'superAdmin') {
+                return true;
+            }
+            if (viewerUser.userType === 'centerAdmin' || viewerUser.userType === 'center-admin') {
+                const managedCenters = viewerUser.centerAdminInfo?.managedCenters || [];
+                const viewerCenterId = viewerUser.centerId;
+                const centerIdStr = centerId.toString();
+                const isManaged = managedCenters.some((c) => {
+                    const cId = c.toString ? c.toString() : c._id?.toString() || c;
+                    return cId === centerIdStr;
+                }) || (viewerCenterId && viewerCenterId.toString() === centerIdStr);
+                if (isManaged) {
+                    return true;
+                }
+            }
+            const center = centers.find((c) => c._id.toString() === centerId.toString());
+            if (!center || !center.geoDistributionVisibility) {
+                return false;
+            }
+            const visibility = center.geoDistributionVisibility;
+            const viewerType = viewerUser.userType;
+            if (visibility.isPublic) {
+                return true;
+            }
+            if (viewerType === 'centerAdmin' || viewerType === 'center-admin') {
+                return visibility.showToOtherCenterAdmins || false;
+            }
+            else if (viewerType === 'instructor') {
+                const viewerCenterId = viewerUser.centerId?.toString();
+                const centerIdStr = centerId.toString();
+                const isOwnCenter = viewerCenterId === centerIdStr;
+                if (isOwnCenter) {
+                    return visibility.showToOwnInstructors || false;
+                }
+                else {
+                    return visibility.showToOtherInstructors || false;
+                }
+            }
+            else if (viewerType === 'member' || viewerType === 'student') {
+                const viewerCenterId = viewerUser.centerId?.toString();
+                const centerIdStr = centerId.toString();
+                const isOwnCenter = viewerCenterId === centerIdStr;
+                if (isOwnCenter) {
+                    return visibility.showToOwnMembers || false;
+                }
+                else {
+                    return visibility.showToOtherMembers || false;
+                }
+            }
+            return false;
+        };
         const h3Map = new Map();
         let processedCount = 0;
         let skippedNoCoords = 0;
@@ -343,6 +418,10 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             }
             processedCount++;
             const h3Index = toH3(coords.lat, coords.lng, 8);
+            const userCenterId = userItem.centerId?.toString();
+            if (userCenterId && !canViewCenterDistribution(userCenterId, updatedUser)) {
+                continue;
+            }
             if (h3Map.has(h3Index)) {
                 const cell = h3Map.get(h3Index);
                 cell.count += 1;
@@ -389,9 +468,37 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
             cell.countApprox = addNoiseAndRound(cell.count, 1.0);
             const originalCount = cell.count;
             delete cell.count;
+            if (cell.centerCounts && Object.keys(cell.centerCounts).length > 0) {
+                const totalCount = Object.values(cell.centerCounts).reduce((sum, count) => sum + count, 0);
+                cell.centers = Object.entries(cell.centerCounts).map(([centerId, count]) => {
+                    const ratio = Number(count) / Number(totalCount);
+                    const centerApprox = Math.max(1, Math.round(Number(cell.countApprox) * ratio));
+                    return {
+                        centerId: centerId,
+                        countApprox: centerApprox
+                    };
+                });
+                const dominantCenterEntry = Object.entries(cell.centerCounts).reduce((max, [id, count]) => {
+                    return count > (max[1] || 0) ? [id, count] : max;
+                }, ['기타', 0]);
+                const dominantCenterId = dominantCenterEntry[0];
+                cell.dominantCenter = centerMap.get(dominantCenterId) || dominantCenterId;
+            }
+            else if (cell.centerId) {
+                const centerIdStr = cell.centerId.toString();
+                cell.centers = [{
+                        centerId: centerIdStr,
+                        countApprox: cell.countApprox
+                    }];
+                cell.dominantCenter = centerMap.get(centerIdStr) || centerIdStr;
+            }
+            else {
+                cell.centers = [];
+                cell.dominantCenter = '기타';
+            }
             delete cell.centerCounts;
             if (cells.length <= 10) {
-                console.log(`  셀 [${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}]: 원본 ${originalCount}명 → 근사값 ${cell.countApprox}명`);
+                console.log(`  셀 [${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}]: 원본 ${originalCount}명 → 근사값 ${cell.countApprox}명, 센터: ${cell.dominantCenter}`);
             }
         });
         console.log(`\n📤 최종 응답:`);

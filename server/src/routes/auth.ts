@@ -109,6 +109,127 @@ import { LoginLog } from '../models/LoginLog';
 
 const router: Router = Router();
 
+// 인증 코드 저장 (메모리 저장소 - 프로덕션에서는 Redis 사용 권장)
+const phoneVerificationCodes = new Map<string, { code: string; expiresAt: number }>();
+
+// 전화번호 인증 코드 생성 (6자리)
+function generateVerificationCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// 전화번호 인증 코드 발송 (SMS 발송 API)
+/**
+ * 📱 전화번호 인증 코드 발송
+ * 
+ * 실제 SMS 발송은 외부 서비스 연동 필요 (예: Twilio, AWS SNS, 알리고 등)
+ * 현재는 콘솔에 출력 (개발용)
+ */
+router.post('/send-verification-code', async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ 
+        success: false,
+        error: '전화번호를 입력해주세요.' 
+      });
+    }
+
+    // 전화번호 형식 정규화
+    const extractNumbers = (phoneNum: string) => phoneNum.replace(/\D/g, '');
+    const normalizedPhone = extractNumbers(phone);
+
+    if (normalizedPhone.length < 10 || normalizedPhone.length > 11) {
+      return res.status(400).json({ 
+        success: false,
+        error: '올바른 전화번호를 입력해주세요.' 
+      });
+    }
+
+    // 인증 코드 생성
+    const code = generateVerificationCode();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5분 유효
+
+    // 인증 코드 저장 (전화번호는 정규화된 형식으로 저장)
+    phoneVerificationCodes.set(normalizedPhone, { code, expiresAt });
+
+    // TODO: 실제 SMS 발송 API 연동
+    // 예시: await sendSMS(phone, `JJ Swim Lab 인증번호: ${code}`);
+    console.log(`📱 [개발용] ${phone}로 인증 코드 발송: ${code}`);
+
+    return res.status(200).json({
+      success: true,
+      message: '인증 코드가 발송되었습니다.',
+      // 개발 환경에서는 코드 반환 (프로덕션에서는 제거)
+      ...(process.env.NODE_ENV === 'development' && { code })
+    });
+  } catch (error: any) {
+    console.error('인증 코드 발송 오류:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: '인증 코드 발송에 실패했습니다.' 
+    });
+  }
+});
+
+// 전화번호 인증 코드 검증
+router.post('/verify-phone-code', async (req: Request, res: Response) => {
+  try {
+    const { phone, code } = req.body;
+
+    if (!phone || !code) {
+      return res.status(400).json({ 
+        success: false,
+        error: '전화번호와 인증 코드를 입력해주세요.' 
+      });
+    }
+
+    // 전화번호 형식 정규화
+    const extractNumbers = (phoneNum: string) => phoneNum.replace(/\D/g, '');
+    const normalizedPhone = extractNumbers(phone);
+
+    // 저장된 인증 코드 확인
+    const stored = phoneVerificationCodes.get(normalizedPhone);
+
+    if (!stored) {
+      return res.status(400).json({ 
+        success: false,
+        error: '인증 코드가 만료되었거나 발송되지 않았습니다.' 
+      });
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      phoneVerificationCodes.delete(normalizedPhone);
+      return res.status(400).json({ 
+        success: false,
+        error: '인증 코드가 만료되었습니다. 다시 발송해주세요.' 
+      });
+    }
+
+    if (stored.code !== code) {
+      return res.status(400).json({ 
+        success: false,
+        error: '인증 코드가 일치하지 않습니다.' 
+      });
+    }
+
+    // 인증 성공 - 인증 코드 삭제 (1회용)
+    phoneVerificationCodes.delete(normalizedPhone);
+
+    return res.status(200).json({
+      success: true,
+      message: '전화번호 인증이 완료되었습니다.',
+      verified: true
+    });
+  } catch (error: any) {
+    console.error('인증 코드 검증 오류:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: '인증 코드 검증에 실패했습니다.' 
+    });
+  }
+});
+
 // 회원가입
 /**
  * 🔐 사용자 회원가입 엔드포인트
@@ -131,35 +252,189 @@ const router: Router = Router();
  */
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { userId, name, email, password, phone, address, userType, location } = req.body;
+    const { userId, name, email, password, phone, address, userType, location, phoneVerified } = req.body;
 
-    // 필수 필드 검증
-    if (!userId || !name || !email || !password) {
-      return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
+    // 필수 필드 검증 (소셜 로그인인 경우 password는 선택)
+    if (!name || !email) {
+      return res.status(400).json({ 
+        success: false,
+        error: '필수 필드가 누락되었습니다.',
+        required: ['name', 'email']
+      });
+    }
+    
+    // 일반 회원가입인 경우 비밀번호 필수
+    if (!req.body.provider && !password) {
+      return res.status(400).json({ 
+        success: false,
+        error: '비밀번호는 필수입니다.',
+        required: ['password']
+      });
+    }
+
+    // 소셜 로그인인 경우: 기존 계정에 소셜 로그인 정보 연결 (계정 병합)
+    if (req.body.provider && req.body.providerId) {
+      const existingUser = await User.findOne({ email });
+      
+      if (existingUser) {
+        // 같은 이메일로 기존 계정이 있으면 소셜 로그인 정보만 연결
+        const alreadyConnected = existingUser.socialAccounts?.some(
+          (acc: any) => acc.provider === req.body.provider && acc.providerId === req.body.providerId
+        );
+        
+        if (alreadyConnected) {
+          return res.status(400).json({ 
+            success: false,
+            error: '이미 연결된 소셜 계정입니다.' 
+          });
+        }
+        
+        // 기존 계정에 소셜 로그인 정보 추가
+        if (!existingUser.socialAccounts) {
+          existingUser.socialAccounts = [];
+        }
+        existingUser.socialAccounts.push({
+          provider: req.body.provider,
+          providerId: req.body.providerId,
+          connectedAt: new Date()
+        });
+        
+        await existingUser.save();
+        
+        // JWT 토큰 생성
+        const tokenPayload = {
+          id: existingUser._id,
+          userId: existingUser._id,
+          userType: existingUser.userType,
+          email: existingUser.email,
+          name: existingUser.name,
+          permissions: existingUser.centerAdminInfo?.permissions || existingUser.superAdminInfo?.systemPermissions || [],
+          memberships: [
+            ...(existingUser.centerAdminInfo?.managedCenters || []).map((cid: any) => ({ centerId: cid, role: 'centerAdmin' })),
+            ...(existingUser.instructorInfo?.assignedCenters || []).map((cid: any) => ({ centerId: cid, role: 'instructor' })),
+            ...(existingUser.centerId ? [{ centerId: existingUser.centerId, role: existingUser.userType }] : [])
+          ],
+          defaultCenterId: existingUser.centerId || (existingUser.centerAdminInfo?.managedCenters?.[0])
+        };
+        
+        const token = jwt.sign(
+          tokenPayload,
+          process.env.JWT_SECRET || 'fallback-secret',
+          { 
+            expiresIn: '24h',
+            issuer: 'jj-swim-lab',
+            audience: 'jj-swim-lab-users'
+          }
+        );
+        
+        return res.status(200).json({
+          success: true,
+          message: '소셜 계정이 기존 계정에 연결되었습니다.',
+          token,
+          user: {
+            id: existingUser._id,
+            userId: existingUser.userId,
+            name: existingUser.name,
+            email: existingUser.email,
+            userType: existingUser.userType
+          }
+        });
+      }
+      
+      // 기존 계정이 없으면 새로 생성 (소셜 로그인 전용 userId 생성)
+      const finalUserId = `${req.body.provider}_${req.body.providerId}`;
+      
+      // userId 중복 확인
+      const existingUserId = await User.findOne({ userId: finalUserId });
+      if (existingUserId) {
+        return res.status(400).json({ 
+          success: false,
+          error: '이미 사용 중인 ID입니다.' 
+        });
+      }
+    }
+    
+    // 일반 회원가입 처리
+    // userId 생성 로직
+    let finalUserId: string;
+    if (userId) {
+      finalUserId = userId;
+    } else {
+      // 일반 회원가입: email 사용
+      finalUserId = email;
     }
 
     // userId 중복 확인
-    const existingUserId = await User.findOne({ userId });
+    const existingUserId = await User.findOne({ userId: finalUserId });
     if (existingUserId) {
-      return res.status(400).json({ error: '이미 사용 중인 ID입니다.' });
+      return res.status(400).json({ 
+        success: false,
+        error: '이미 사용 중인 ID입니다.' 
+      });
     }
 
-    // 이메일 중복 확인
+    // 이메일 중복 확인 (일반 회원가입만)
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: '이미 등록된 이메일입니다.' });
+      return res.status(400).json({ 
+        success: false,
+        error: '이미 등록된 이메일입니다. 소셜 로그인을 사용하시거나 비밀번호를 찾아주세요.' 
+      });
     }
 
-    // 비밀번호 해시화
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // 전화번호 필수 (1인 1계정 보장을 위해)
+    if (!phone || phone.trim() === '') {
+      return res.status(400).json({ 
+        success: false,
+        error: '전화번호는 필수입니다.' 
+      });
+    }
+
+    // 전화번호 인증 확인 (소셜 로그인 제외, 선택 사항으로 변경)
+    // TODO: 프로덕션에서는 전화번호 인증을 필수로 변경 권장
+    // if (!req.body.provider && !phoneVerified) {
+    //   return res.status(400).json({ 
+    //     success: false,
+    //     error: '전화번호 인증이 필요합니다. 인증 코드를 발송하고 인증해주세요.' 
+    //   });
+    // }
+
+    // 전화번호 형식 정규화: 숫자만 추출
+    const extractNumbers = (phoneNum: string) => phoneNum.replace(/\D/g, '');
+    const normalizedPhone = extractNumbers(phone);
+    
+    // 모든 사용자의 전화번호를 숫자만 추출하여 비교
+    const allUsers = await User.find({ phone: { $ne: '', $exists: true } }).select('phone');
+    const duplicatePhone = allUsers.find((u: any) => {
+      if (!u.phone) return false;
+      return extractNumbers(u.phone) === normalizedPhone;
+    });
+    
+    if (duplicatePhone) {
+      return res.status(400).json({ 
+        success: false,
+        error: '이미 등록된 전화번호입니다. 한 사람당 하나의 계정만 가입 가능합니다.' 
+      });
+    }
+
+    // 비밀번호 해시화 (소셜 로그인인 경우 비밀번호 없음)
+    let hashedPassword: string | undefined;
+    if (password) {
+      const saltRounds = 12;
+      hashedPassword = await bcrypt.hash(password, saltRounds);
+    } else if (!req.body.provider) {
+      // 일반 회원가입인데 비밀번호가 없으면 에러
+      return res.status(400).json({ 
+        success: false,
+        error: '비밀번호는 필수입니다.' 
+      });
+    }
 
     // 사용자 생성
     const userData: any = {
-      userId,
+      userId: finalUserId,
       name,
       email,
-      password: hashedPassword,
       phone,
       address,
       // 서버 스키마(enum)와 일치하도록 기본값 및 값 보정
@@ -167,6 +442,20 @@ router.post('/signup', async (req: Request, res: Response) => {
         ? userType
         : 'student'
     };
+    
+    // 비밀번호 설정 (소셜 로그인인 경우 undefined)
+    if (hashedPassword) {
+      userData.password = hashedPassword;
+    }
+    
+    // 소셜 로그인 정보 추가
+    if (req.body.provider && req.body.providerId) {
+      userData.socialAccounts = [{
+        provider: req.body.provider,
+        providerId: req.body.providerId,
+        connectedAt: new Date()
+      }];
+    }
 
     // 🆕 위치 정보 추가 (있는 경우)
     if (location && location.coordinates && location.coordinates.length === 2) {
@@ -179,9 +468,19 @@ router.post('/signup', async (req: Request, res: Response) => {
 
     // 사용자 타입별 추가 필드
     if (userData.userType === 'instructor') {
-      userData.experience = req.body.experience || '';
-      userData.certifications = req.body.certifications || [];
-      userData.specialties = req.body.specialties || [];
+      // instructorInfo 객체 형태로 받기
+      const instructorInfo = req.body.instructorInfo || {};
+      userData.instructorInfo = {
+        experience: instructorInfo.experience || instructorInfo.teachingExperiences?.[0]?.centerName ? 
+          instructorInfo.teachingExperiences.map((exp: any) => `${exp.centerName} (${exp.startDate} ~ ${exp.endDate})`).join(', ') : 
+          (req.body.experience || ''),
+        certifications: instructorInfo.certificates?.map((cert: any) => cert.name) || instructorInfo.certifications || req.body.certifications || [],
+        specialties: instructorInfo.specialties || req.body.specialties || [],
+        availableRegions: instructorInfo.availableRegions || [],
+        introduction: instructorInfo.introduction || req.body.introduction || '',
+        certificates: instructorInfo.certificates || [],
+        teachingExperiences: instructorInfo.teachingExperiences || []
+      };
     } else if (userData.userType === 'centerAdmin') {
       userData.centerAdminInfo = {
         managedCenters: req.body.managedCenters || [],
@@ -221,6 +520,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     );
 
     return res.status(201).json({
+      success: true,
       message: '회원가입이 완료되었습니다.',
       token,
       user: {
@@ -231,9 +531,16 @@ router.post('/signup', async (req: Request, res: Response) => {
         userType: user.userType
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('회원가입 오류:', error);
-    return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    // 더 자세한 에러 메시지 제공
+    const errorMessage = error.message || '서버 오류가 발생했습니다.';
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({ 
+      success: false,
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

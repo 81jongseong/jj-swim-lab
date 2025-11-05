@@ -1,3 +1,15 @@
+/**
+ * 회원가입 페이지
+ * 
+ * 연동되는 데이터:
+ * - 개인정보: 이름, 이메일, 비밀번호, 전화번호, 생년월일, 성별, 주소
+ * - 학생 정보: 건강 정보, 운동 정보
+ * - 강사 정보: 자격증 정보, 경력, 전문 분야, 근무 가능 지역
+ * 
+ * 연동되는 파일:
+ * - RegionSelector: 지역 선택 컴포넌트
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -16,6 +28,22 @@ import {
   Target,
   EyeOff
 } from 'lucide-react';
+import RegionSelector, { CITIES_BY_PROVINCE } from '@/components/map/RegionSelector';
+
+
+interface Certificate {
+  name: string;
+  issuer: string;
+  certificateNumber: string;
+  acquiredDate: string;
+}
+
+interface TeachingExperience {
+  centerName: string;
+  startDate: string;
+  endDate: string;
+  workType: string;
+}
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -53,12 +81,8 @@ export default function SignupPage() {
     fitnessGoals: '',
     availableTime: '',
     
-    // 강사용 자격증 정보
-    certifications: '',
-    teachingExperience: '',
+    // 강사용 정보
     specialties: '',
-    availableCenters: '',
-    hourlyRate: '',
     introduction: '',
     
     // 약관 동의
@@ -70,6 +94,33 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<any>({});
+
+  // 자격증 정보 (강사용)
+  const [certificates, setCertificates] = useState<Certificate[]>([
+    { name: '', issuer: '', certificateNumber: '', acquiredDate: '' }
+  ]);
+
+  // 강의 경험 정보 (강사용)
+  const [teachingExperiences, setTeachingExperiences] = useState<TeachingExperience[]>([
+    { centerName: '', startDate: '', endDate: '', workType: '' }
+  ]);
+
+  // 근무 가능 지역 (강사용)
+  const [selectedSido, setSelectedSido] = useState('');
+  const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
+  const [showDistrictSelection, setShowDistrictSelection] = useState(false);
+
+  // 약관 동의 팝업
+  const [showTermsPopup, setShowTermsPopup] = useState(false);
+  const [currentTermsType, setCurrentTermsType] = useState<'terms' | 'privacy'>('terms');
+
+  // 전화번호 인증 상태
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeError, setCodeError] = useState('');
 
   const totalSteps = 5;
 
@@ -85,38 +136,27 @@ export default function SignupPage() {
     };
   }, []);
 
-  // 🆕 주소 → 위도/경도 변환 (VWorld Geocoding API)
+  // 🆕 주소 → 위도/경도 변환 (Next.js API Route를 통해 프록시)
   const getCoordinatesFromAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const key = process.env.NEXT_PUBLIC_VWORLD_KEY;
-      if (!key) {
-        console.warn('⚠️ VWorld API 키가 없습니다. 기본 좌표를 사용합니다.');
-        return null;
+      // Next.js API Route를 통해 프록시 호출 (CORS 문제 해결)
+      const response = await fetch(`/api/geo/coordinates?address=${encodeURIComponent(address)}`);
+      
+      if (!response.ok) {
+        throw new Error(`좌표 변환 API 오류: ${response.status}`);
       }
 
-      const url = new URL('https://api.vworld.kr/req/address');
-      url.searchParams.set('service', 'address');
-      url.searchParams.set('request', 'getCoord');
-      url.searchParams.set('version', '2.0');
-      url.searchParams.set('crs', 'EPSG:4326');
-      url.searchParams.set('type', 'ROAD');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('key', key);
-      url.searchParams.set('address', address);
-
-      const response = await fetch(url.toString());
       const data = await response.json();
 
-      const point = data?.response?.result?.point;
-      if (!point) {
-        console.warn('⚠️ 주소에서 좌표를 찾을 수 없습니다:', address);
-        return null;
+      if (data?.success && data?.lat && data?.lng) {
+        return {
+          lat: data.lat,
+          lng: data.lng
+        };
       }
 
-      return {
-        lng: Number(point.x),
-        lat: Number(point.y)
-      };
+      console.warn('⚠️ 주소에서 좌표를 찾을 수 없습니다:', address);
+      return null;
     } catch (error) {
       console.error('❌ 좌표 변환 오류:', error);
       return null;
@@ -175,6 +215,8 @@ export default function SignupPage() {
         newErrors.confirmPassword = '비밀번호가 일치하지 않습니다';
       }
       if (!formData.phone) newErrors.phone = '전화번호를 입력해주세요';
+      // 전화번호 인증은 선택 사항 (향후 필수로 변경 가능)
+      // if (formData.accountType && !phoneVerified) newErrors.phone = '전화번호 인증이 필요합니다.';
     }
 
     if (step === 2) {
@@ -190,10 +232,11 @@ export default function SignupPage() {
         if (!formData.exerciseExperience) newErrors.exerciseExperience = '운동 경험을 선택해주세요';
         if (!formData.preferredSwimmingStyle) newErrors.preferredSwimmingStyle = '선호하는 수영 스타일을 선택해주세요';
       } else if (formData.accountType === 'instructor') {
-        if (!formData.certifications) newErrors.certifications = '자격증 정보를 입력해주세요';
-        if (!formData.teachingExperience) newErrors.teachingExperience = '강의 경험을 입력해주세요';
+        const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.certificateNumber && cert.acquiredDate);
+        if (validCertificates.length === 0) newErrors.certifications = '자격증 정보를 최소 1개 이상 입력해주세요';
+        const validExperiences = teachingExperiences.filter(exp => exp.centerName && exp.startDate && exp.endDate && exp.workType);
+        if (validExperiences.length === 0) newErrors.teachingExperience = '강의 경험을 최소 1개 이상 입력해주세요';
         if (!formData.specialties) newErrors.specialties = '전문 분야를 입력해주세요';
-        if (!formData.hourlyRate) newErrors.hourlyRate = '시급을 입력해주세요';
       }
     }
 
@@ -201,7 +244,7 @@ export default function SignupPage() {
       if (formData.accountType === 'student') {
         // 학생용 추가 정보 검증
       } else if (formData.accountType === 'instructor') {
-        if (!formData.availableCenters) newErrors.availableCenters = '근무 가능 센터를 입력해주세요';
+        if (selectedRegions.size === 0) newErrors.availableRegions = '근무 가능 지역을 최소 1개 이상 선택해주세요';
         if (!formData.introduction) newErrors.introduction = '자기소개를 입력해주세요';
       }
     }
@@ -218,11 +261,15 @@ export default function SignupPage() {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(currentStep + 1);
+      // 다음 단계로 이동 시 최상단으로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrev = () => {
     setCurrentStep(currentStep - 1);
+    // 이전 단계로 이동 시 최상단으로 스크롤
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async () => {
@@ -240,7 +287,8 @@ export default function SignupPage() {
         birthDate: formData.birthDate,
         gender: formData.gender,
         address: formData.address,
-        userType: formData.accountType
+        userType: formData.accountType,
+        phoneVerified: phoneVerified
       };
 
       // 🆕 위도/경도 추가 (있는 경우)
@@ -261,10 +309,13 @@ export default function SignupPage() {
           emergencyPhone: formData.emergencyPhone
         };
       } else if (formData.accountType === 'instructor') {
+        const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.certificateNumber && cert.acquiredDate);
+        const validExperiences = teachingExperiences.filter(exp => exp.centerName && exp.startDate && exp.endDate && exp.workType);
         requestData.instructorInfo = {
-          certifications: formData.certifications.split(',').map(c => c.trim()).filter(Boolean),
-          experience: formData.teachingExperience,
-          specialties: formData.specialties.split(',').map(s => s.trim()).filter(Boolean)
+          certificates: validCertificates,
+          teachingExperiences: validExperiences,
+          specialties: formData.specialties.split(',').map(s => s.trim()).filter(Boolean),
+          availableRegions: Array.from(selectedRegions)
         };
       }
 
@@ -280,11 +331,19 @@ export default function SignupPage() {
 
       const result = await response.json();
 
+      if (!response.ok) {
+        // 에러 응답 처리
+        console.error('❌ 회원가입 에러 응답:', result);
+        alert(`회원가입 실패: ${result.error || result.message || '알 수 없는 오류'}`);
+        return;
+      }
+
       if (result.success) {
         alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
         window.location.href = '/auth/login';
       } else {
-        alert(result.message || '회원가입에 실패했습니다.');
+        console.error('❌ 회원가입 실패:', result);
+        alert(`회원가입 실패: ${result.error || result.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
       console.error('❌ 회원가입 오류:', error);
@@ -299,6 +358,21 @@ export default function SignupPage() {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">기본 정보</h2>
             
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                계정 유형 *
+              </label>
+              <select
+                value={formData.accountType}
+                onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="student">수강생</option>
+                <option value="instructor">강사</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">계정 유형을 먼저 선택해주세요</p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4 inline mr-2" />
@@ -390,32 +464,118 @@ export default function SignupPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Phone className="w-4 h-4 inline mr-2" />
-                전화번호 *
+                전화번호 * {phoneVerified && <span className="text-green-600 text-xs">✓ 인증 완료</span>}
+                <span className="text-xs text-gray-500 ml-2">(인증은 선택 사항)</span>
               </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.phone ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="전화번호를 입력하세요"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    setPhoneVerified(false);
+                    setCodeSent(false);
+                    setVerificationCode('');
+                  }}
+                  disabled={phoneVerified}
+                  className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.phone ? 'border-red-500' : 'border-gray-300'
+                  } ${phoneVerified ? 'bg-gray-100' : ''}`}
+                  placeholder="010-1234-5678"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!formData.phone) {
+                      setCodeError('전화번호를 입력해주세요.');
+                      return;
+                    }
+                    setSendingCode(true);
+                    setCodeError('');
+                    try {
+                      const response = await fetch('http://localhost:5000/api/auth/send-verification-code', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: formData.phone })
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        setCodeSent(true);
+                        // 개발 환경에서 인증 코드 표시 (서버에서 code를 반환한 경우)
+                        if (result.code) {
+                          alert(`[개발용] 인증 코드: ${result.code}`);
+                        }
+                      } else {
+                        setCodeError(result.error || '인증 코드 발송에 실패했습니다.');
+                      }
+                    } catch (error) {
+                      setCodeError('인증 코드 발송 중 오류가 발생했습니다.');
+                    } finally {
+                      setSendingCode(false);
+                    }
+                  }}
+                  disabled={sendingCode || phoneVerified || !formData.phone}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {sendingCode ? '발송 중...' : '인증 코드 발송'}
+                </button>
+              </div>
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                계정 유형 *
-              </label>
-              <select
-                value={formData.accountType}
-                onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="student">수강생</option>
-                <option value="instructor">강사</option>
-              </select>
+              
+              {codeSent && !phoneVerified && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    인증 코드 입력
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => {
+                        setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                        setCodeError('');
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="6자리 인증 코드"
+                      maxLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (verificationCode.length !== 6) {
+                          setCodeError('인증 코드 6자리를 입력해주세요.');
+                          return;
+                        }
+                        setVerifyingCode(true);
+                        setCodeError('');
+                        try {
+                          const response = await fetch('http://localhost:5000/api/auth/verify-phone-code', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phone: formData.phone, code: verificationCode })
+                          });
+                          const result = await response.json();
+                          if (result.success) {
+                            setPhoneVerified(true);
+                            setCodeError('');
+                          } else {
+                            setCodeError(result.error || '인증 코드가 일치하지 않습니다.');
+                          }
+                        } catch (error) {
+                          setCodeError('인증 코드 검증 중 오류가 발생했습니다.');
+                        } finally {
+                          setVerifyingCode(false);
+                        }
+                      }}
+                      disabled={verifyingCode || verificationCode.length !== 6}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {verifyingCode ? '확인 중...' : '인증 확인'}
+                    </button>
+                  </div>
+                  {codeError && <p className="text-red-500 text-sm mt-1">{codeError}</p>}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -600,37 +760,221 @@ export default function SignupPage() {
               </>
             ) : (
               <>
+                {/* 자격증 정보 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <CheckCircle className="w-4 h-4 inline mr-2" />
-                    자격증 정보 *
-                  </label>
-                  <textarea
-                    value={formData.certifications}
-                    onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.certifications ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    rows={3}
-                    placeholder="보유 자격증을 입력하세요 (예: 수영지도사 2급, 생존수영지도사 등)"
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <CheckCircle className="w-4 h-4 inline mr-2" />
+                      자격증 정보 *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCertificates([...certificates, { name: '', issuer: '', certificateNumber: '', acquiredDate: '' }])}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      + 자격증 추가
+                    </button>
+                  </div>
+                  
+                  {certificates.map((cert, index) => (
+                    <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold text-gray-700">자격증 #{index + 1}</h3>
+                        {certificates.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setCertificates(certificates.filter((_, i) => i !== index))}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            ✕ 제거
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            자격증 이름 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={cert.name}
+                            onChange={(e) => {
+                              const updated = [...certificates];
+                              updated[index] = { ...updated[index], name: e.target.value };
+                              setCertificates(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="예: 생활체육지도자 수영 2급"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            발급 기관 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={cert.issuer}
+                            onChange={(e) => {
+                              const updated = [...certificates];
+                              updated[index] = { ...updated[index], issuer: e.target.value };
+                              setCertificates(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="예: 대한수영연맹"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            자격증 번호 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={cert.certificateNumber}
+                            onChange={(e) => {
+                              const updated = [...certificates];
+                              updated[index] = { ...updated[index], certificateNumber: e.target.value };
+                              setCertificates(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="예: SW-2024-12345"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            취득일 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={cert.acquiredDate}
+                            onChange={(e) => {
+                              const updated = [...certificates];
+                              updated[index] = { ...updated[index], acquiredDate: e.target.value };
+                              setCertificates(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
                   {errors.certifications && <p className="text-red-500 text-sm mt-1">{errors.certifications}</p>}
                 </div>
 
+                {/* 강의 경험 정보 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Activity className="w-4 h-4 inline mr-2" />
-                    강의 경험 *
-                  </label>
-                  <textarea
-                    value={formData.teachingExperience}
-                    onChange={(e) => setFormData({ ...formData, teachingExperience: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.teachingExperience ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    rows={3}
-                    placeholder="강의 경험을 입력하세요 (예: 5년 경력, 어린이 수영 강사 등)"
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <Activity className="w-4 h-4 inline mr-2" />
+                      강의 경험 *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setTeachingExperiences([...teachingExperiences, { centerName: '', startDate: '', endDate: '', workType: '' }])}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      + 경험 추가
+                    </button>
+                  </div>
+                  
+                  {teachingExperiences.map((exp, index) => (
+                    <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold text-gray-700">경험 #{index + 1}</h3>
+                        {teachingExperiences.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setTeachingExperiences(teachingExperiences.filter((_, i) => i !== index))}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            ✕ 제거
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            센터명 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={exp.centerName}
+                            onChange={(e) => {
+                              const updated = [...teachingExperiences];
+                              updated[index] = { ...updated[index], centerName: e.target.value };
+                              setTeachingExperiences(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="예: 강남 수영센터"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            근무 형태 <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={exp.workType}
+                            onChange={(e) => {
+                              const updated = [...teachingExperiences];
+                              updated[index] = { ...updated[index], workType: e.target.value };
+                              setTeachingExperiences(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          >
+                            <option value="">선택하세요</option>
+                            <option value="full-time">정규직</option>
+                            <option value="part-time">파트타임</option>
+                            <option value="contract">계약직</option>
+                            <option value="freelance">프리랜서</option>
+                            <option value="intern">인턴</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            시작 날짜 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={exp.startDate}
+                            onChange={(e) => {
+                              const updated = [...teachingExperiences];
+                              updated[index] = { ...updated[index], startDate: e.target.value };
+                              setTeachingExperiences(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            종료 날짜 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={exp.endDate}
+                            onChange={(e) => {
+                              const updated = [...teachingExperiences];
+                              updated[index] = { ...updated[index], endDate: e.target.value };
+                              setTeachingExperiences(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
                   {errors.teachingExperience && <p className="text-red-500 text-sm mt-1">{errors.teachingExperience}</p>}
                 </div>
 
@@ -651,22 +995,6 @@ export default function SignupPage() {
                   {errors.specialties && <p className="text-red-500 text-sm mt-1">{errors.specialties}</p>}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Activity className="w-4 h-4 inline mr-2" />
-                    시급 (원) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.hourlyRate}
-                    onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.hourlyRate ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="시급을 입력하세요"
-                  />
-                  {errors.hourlyRate && <p className="text-red-500 text-sm mt-1">{errors.hourlyRate}</p>}
-                </div>
               </>
             )}
           </div>
@@ -746,18 +1074,57 @@ export default function SignupPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <MapPin className="w-4 h-4 inline mr-2" />
-                    근무 가능 센터 *
+                    근무 가능 지역 *
                   </label>
-                  <textarea
-                    value={formData.availableCenters}
-                    onChange={(e) => setFormData({ ...formData, availableCenters: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.availableCenters ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    rows={3}
-                    placeholder="근무 가능한 센터를 입력하세요 (예: 강남센터, 송파센터 등)"
+                  <RegionSelector
+                    selectedSido={selectedSido}
+                    selectedRegions={selectedRegions}
+                    showDistrictSelection={showDistrictSelection}
+                    onSidoSelect={(sido) => {
+                      if (sido === '전국') {
+                        setSelectedRegions(new Set(['전국']));
+                        setSelectedSido('');
+                        setShowDistrictSelection(false);
+                      } else {
+                        setSelectedSido(sido);
+                        setShowDistrictSelection(true);
+                        setSelectedRegions(new Set());
+                      }
+                    }}
+                    onDistrictToggle={(district) => {
+                      const newRegions = new Set(selectedRegions);
+                      if (newRegions.has(district)) {
+                        newRegions.delete(district);
+                        if (newRegions.size === 0) {
+                          setSelectedSido('');
+                          setShowDistrictSelection(false);
+                        }
+                      } else {
+                        newRegions.add(district);
+                      }
+                      setSelectedRegions(newRegions);
+                    }}
+                    onSelectAll={() => {
+                      if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
+                        const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
+                        const newRegions = new Set(selectedRegions);
+                        
+                        if (allDistrictsSelected) {
+                          // 모두 해제
+                          CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
+                        } else {
+                          // 모두 선택
+                          CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
+                        }
+                        setSelectedRegions(newRegions);
+                      }
+                    }}
+                    onClose={() => {
+                      setShowDistrictSelection(false);
+                      setSelectedSido('');
+                    }}
                   />
-                  {errors.availableCenters && <p className="text-red-500 text-sm mt-1">{errors.availableCenters}</p>}
+                  {errors.availableRegions && <p className="text-red-500 text-sm mt-1">{errors.availableRegions}</p>}
                 </div>
 
                 <div>
@@ -787,31 +1154,69 @@ export default function SignupPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">약관 동의</h2>
             
             <div className="space-y-4">
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="agreeTerms"
-                  checked={formData.agreeTerms}
-                  onChange={(e) => setFormData({ ...formData, agreeTerms: e.target.checked })}
-                  className={`mt-1 mr-3 ${errors.agreeTerms ? 'border-red-500' : ''}`}
-                />
-                <label htmlFor="agreeTerms" className="text-sm text-gray-700">
-                  <span className="text-red-500">*</span> 이용약관에 동의합니다
-                </label>
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center flex-1">
+                  <input
+                    type="checkbox"
+                    id="agreeTerms"
+                    checked={formData.agreeTerms}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      if (!formData.agreeTerms) {
+                        setCurrentTermsType('terms');
+                        setShowTermsPopup(true);
+                      }
+                    }}
+                    className={`mt-1 mr-3 ${errors.agreeTerms ? 'border-red-500' : ''} ${formData.agreeTerms ? '' : 'cursor-not-allowed opacity-50'}`}
+                    readOnly
+                  />
+                  <label htmlFor="agreeTerms" className="text-sm font-medium text-gray-900">
+                    서비스 이용약관 동의 <span className="text-red-600">*</span>
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentTermsType('terms');
+                    setShowTermsPopup(true);
+                  }}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                >
+                  👁️ 보기
+                </button>
               </div>
               {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
 
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="agreePrivacy"
-                  checked={formData.agreePrivacy}
-                  onChange={(e) => setFormData({ ...formData, agreePrivacy: e.target.checked })}
-                  className={`mt-1 mr-3 ${errors.agreePrivacy ? 'border-red-500' : ''}`}
-                />
-                <label htmlFor="agreePrivacy" className="text-sm text-gray-700">
-                  <span className="text-red-500">*</span> 개인정보처리방침에 동의합니다
-                </label>
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center flex-1">
+                  <input
+                    type="checkbox"
+                    id="agreePrivacy"
+                    checked={formData.agreePrivacy}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      if (!formData.agreePrivacy) {
+                        setCurrentTermsType('privacy');
+                        setShowTermsPopup(true);
+                      }
+                    }}
+                    className={`mt-1 mr-3 ${errors.agreePrivacy ? 'border-red-500' : ''} ${formData.agreePrivacy ? '' : 'cursor-not-allowed opacity-50'}`}
+                    readOnly
+                  />
+                  <label htmlFor="agreePrivacy" className="text-sm font-medium text-gray-900">
+                    개인정보 처리방침 동의 <span className="text-red-600">*</span>
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentTermsType('privacy');
+                    setShowTermsPopup(true);
+                  }}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                >
+                  👁️ 보기
+                </button>
               </div>
               {errors.agreePrivacy && <p className="text-red-500 text-sm">{errors.agreePrivacy}</p>}
             </div>
@@ -902,6 +1307,241 @@ export default function SignupPage() {
           )}
         </div>
       </div>
+
+      {/* 약관 팝업 */}
+      {showTermsPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">
+                {currentTermsType === 'terms' && '서비스 이용약관'}
+                {currentTermsType === 'privacy' && '개인정보 처리방침'}
+              </h3>
+              <button
+                onClick={() => setShowTermsPopup(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {currentTermsType === 'terms' && (
+                <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+                  <h4 className="font-bold text-base">제1조 (목적)</h4>
+                  <p>본 약관은 JJ Swim Lab(이하 &quot;회사&quot;)이 제공하는 수영 교육 관리 플랫폼 서비스(이하 &quot;서비스&quot;)의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+                  
+                  <h4 className="font-bold text-base">제2조 (정의)</h4>
+                  <ol className="list-decimal ml-5 space-y-1">
+                    <li>&quot;서비스&quot;란 회사가 제공하는 AI 기반 수영 교육 관리, 회원 관리, 진도 추적 등의 플랫폼을 의미합니다.</li>
+                    <li>&quot;일반 회원&quot;이란 본 약관에 동의하고 개인 자격으로 서비스를 이용하는 학생 및 강사를 의미합니다.</li>
+                    <li>&quot;센터 회원&quot;이란 본 약관에 동의하고 센터 등록을 신청한 수영장 센터(사업자)를 의미합니다.</li>
+                    <li>&quot;계정&quot;이란 회원의 식별과 서비스 이용을 위해 회원이 설정한 이메일과 비밀번호의 조합을 의미합니다.</li>
+                    <li>&quot;민감정보&quot;는 「개인정보 보호법」 제23조에 따른 건강정보, 질환정보, 컨디션 등을 의미합니다.</li>
+                  </ol>
+                  
+                  <h4 className="font-bold text-base">제3조 (약관의 효력 및 변경)</h4>
+                  <ol className="list-decimal ml-5 space-y-1">
+                    <li>본 약관은 서비스를 이용하고자 하는 모든 회원에게 그 효력이 발생합니다.</li>
+                    <li>회사는 필요한 경우 관련 법령을 위배하지 않는 범위 내에서 본 약관을 변경할 수 있습니다.</li>
+                    <li>회사는 약관을 개정하는 경우 적용일자 및 개정사유를 명시하여 적용일 30일 전부터 서비스 초기화면, 공지사항 및 전자우편, 앱 푸시 등으로 알립니다.</li>
+                    <li>회원에게 불리한 변경의 경우, 회사는 개별 통지하며, 회원은 변경 약관 적용일 전까지 동의를 거부하고 위약금 없이 계약을 해지할 수 있습니다.</li>
+                    <li>변경된 약관에 동의하지 않는 회원은 서비스 이용이 제한되거나 계약이 해지될 수 있습니다.</li>
+                  </ol>
+                  
+                  <h4 className="font-bold text-base">제4조 (서비스의 제공)</h4>
+                  <p>회사는 다음과 같은 서비스를 제공합니다:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>AI 기반 맞춤형 수영 프로그램 생성</li>
+                    <li>회원 건강 정보 및 진도 관리</li>
+                    <li>강사-학생 매칭 및 평가 시스템</li>
+                    <li>3D 영법 뷰어 및 학습 도구</li>
+                    <li>실시간 알림 및 진도 공유</li>
+                  </ul>
+                  
+                  <h4 className="font-bold text-base">제5조 (회원 가입 및 승인)</h4>
+                  <ol className="list-decimal ml-5 space-y-1">
+                    <li>회원 가입은 신청인이 온라인으로 필요한 정보를 기입하고 본 약관에 동의함으로써 이루어집니다.</li>
+                    <li>회사는 신청 내용을 검토한 후 승인 여부를 결정합니다.</li>
+                    <li>다음 각 호에 해당하는 경우 회사는 승인을 거부하거나 유보할 수 있습니다:
+                      <ul className="list-disc ml-5 mt-1">
+                        <li>허위 정보를 기재한 경우</li>
+                        <li>기타 회사가 정한 승인 기준을 충족하지 못한 경우</li>
+                      </ul>
+                    </li>
+                  </ol>
+                  
+                  <h4 className="font-bold text-base">제6조 (개인정보보호)</h4>
+                  <p>회사는 관련 법령이 정하는 바에 따라 회원의 개인정보를 보호하기 위해 노력합니다. 개인정보의 보호 및 이용에 대해서는 별도의 개인정보 처리방침을 적용합니다.</p>
+                  
+                  <h4 className="font-bold text-base">제7조 (손해배상 및 면책)</h4>
+                  <ol className="list-decimal ml-5 space-y-1">
+                    <li><strong>면책 사유</strong>: 회사는 다음 각 호의 사유로 인한 서비스 중단, 장애, 데이터 손실에 대해 책임을 지지 않습니다:
+                      <ul className="list-disc ml-5 mt-1">
+                        <li>천재지변, 전쟁, 파업, 정부 명령 등 불가항력</li>
+                        <li>IDC/클라우드 사업자, 전기통신사업자, PG사, 메시지 대행사 등 제3자 서비스 장애</li>
+                        <li>회원의 귀책사유(ID/PW 유출, 약관 위반, 부정 사용 등)</li>
+                        <li>회원 환경(기기, 네트워크, 브라우저)의 문제</li>
+                      </ul>
+                    </li>
+                    <li><strong>손해배상 범위 제한</strong>:
+                      <ul className="list-disc ml-5 mt-1">
+                        <li>회사의 고의 또는 중과실이 없는 한, <strong>회사의 배상 책임은 해당 회원이 최근 12개월간 납부한 서비스 이용료 총액을 한도</strong>로 합니다</li>
+                        <li>무료 플랜, 체험, 프로모션 이용 회원에 대한 배상 한도는 <strong>10만 원</strong>으로 합니다</li>
+                        <li>간접손해, 특별손해, 결과적 손해, 징벌적 손해, 일실이익 등은 배상 범위에서 제외됩니다</li>
+                      </ul>
+                    </li>
+                  </ol>
+                  
+                  <h4 className="font-bold text-base">제8조 (분쟁 해결 및 관할)</h4>
+                  <ol className="list-decimal ml-5 space-y-1">
+                    <li>본 약관의 준거법은 대한민국 법령으로 합니다.</li>
+                    <li>서비스 이용과 관련한 분쟁은 서울중앙지방법원을 관할법원으로 합니다.</li>
+                  </ol>
+                  
+                  <p className="text-xs text-gray-500 mt-6">
+                    <strong>시행일:</strong> 2025년 10월 15일<br/>
+                    <strong>버전:</strong> v1.1
+                  </p>
+                </div>
+              )}
+
+              {currentTermsType === 'privacy' && (
+                <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+                  <h4 className="font-bold text-base">1. 개인정보의 수집 및 이용 목적</h4>
+                  <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>회원 가입 및 계정 관리</li>
+                    <li>서비스 제공 및 계약 이행</li>
+                    <li>요금 결제 및 정산</li>
+                    <li>고객 문의 및 불만 처리</li>
+                    <li>서비스 개선 및 통계 분석</li>
+                  </ul>
+                  
+                  <h4 className="font-bold text-base">2. 수집하는 개인정보 항목</h4>
+                  <p><strong>일반 정보 (필수):</strong></p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>계정: 이메일, 비밀번호</li>
+                    <li>개인 정보: 이름, 전화번호, 생년월일, 성별, 주소</li>
+                    <li>이용 내역: 접속 로그, 서비스 이용 기록</li>
+                    <li>결제 정보: 결제 토큰, 영수증 정보</li>
+                  </ul>
+                  <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded mt-2">
+                    ⚠️ <strong>민감정보(건강정보)</strong>는 별도 동의를 통해 수집됩니다.
+                  </p>
+                  
+                  <h4 className="font-bold text-base">3. 개인정보의 보유 및 이용 기간</h4>
+                  <p>회사는 원칙적으로 개인정보 수집 및 이용목적이 달성된 후에는 해당 정보를 지체없이 파기합니다. 단, 관련 법령에 따라 일정 기간 보관해야 하는 정보는 법령이 정한 기간 동안 보관합니다:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>계약 또는 청약철회 등에 관한 기록: 5년</li>
+                    <li>대금결제 및 재화 등의 공급에 관한 기록: 5년</li>
+                    <li>소비자 불만 또는 분쟁처리에 관한 기록: 3년</li>
+                  </ul>
+                  
+                  <h4 className="font-bold text-base">4. 개인정보 처리 위탁</h4>
+                  <p>회사는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리를 위탁합니다:</p>
+                  <table className="w-full text-xs border mt-2">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border p-2">수탁자</th>
+                        <th className="border p-2">위탁 업무</th>
+                        <th className="border p-2">보유 기간</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border p-2">AWS Korea / AWS Singapore</td>
+                        <td className="border p-2">클라우드 호스팅, 데이터 백업</td>
+                        <td className="border p-2">계약 종료 시까지</td>
+                      </tr>
+                      <tr>
+                        <td className="border p-2">메시지 발송 대행사</td>
+                        <td className="border p-2">이메일/SMS/알림톡 발송</td>
+                        <td className="border p-2">발송 즉시 파기</td>
+                      </tr>
+                      <tr>
+                        <td className="border p-2">결제대행사(PG)</td>
+                        <td className="border p-2">결제 처리</td>
+                        <td className="border p-2">5년 (전자상거래법)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  <h4 className="font-bold text-base">5. 개인정보의 국외 이전</h4>
+                  <p>회사는 서비스 제공을 위해 다음과 같이 개인정보를 국외로 이전합니다:</p>
+                  <table className="w-full text-xs border mt-2">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border p-2">이전받는 자</th>
+                        <th className="border p-2">국가</th>
+                        <th className="border p-2">이전 항목</th>
+                        <th className="border p-2">목적</th>
+                        <th className="border p-2">보유 기간</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border p-2">Amazon Web Services (AWS)</td>
+                        <td className="border p-2">싱가포르</td>
+                        <td className="border p-2">전체 서비스 데이터</td>
+                        <td className="border p-2">클라우드 호스팅</td>
+                        <td className="border p-2">계약 종료 시까지</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p className="text-xs mt-2">※ 이전 일시: 실시간 상시 전송 / 이전 방법: 암호화된 네트워크 전송(TLS)</p>
+                  
+                  <h4 className="font-bold text-base">6. 이용자의 권리</h4>
+                  <p>이용자는 다음의 권리를 행사할 수 있습니다:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>개인정보 열람, 정정, 삭제 요구</li>
+                    <li>개인정보 처리 정지 요구</li>
+                    <li>동의 철회 (회원 탈퇴)</li>
+                    <li>행사 방법: 앱 내 설정 메뉴 또는 privacy@jjswimlab.com으로 요청</li>
+                    <li>답변 기한: 접수 후 10일 이내</li>
+                  </ul>
+                  
+                  <h4 className="font-bold text-base">7. 개인정보보호책임자</h4>
+                  <p>개인정보 처리에 관한 업무를 총괄하는 개인정보보호책임자:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>성명: 개인정보보호책임자</li>
+                    <li>직책: DPO (Data Protection Officer)</li>
+                    <li>이메일: privacy@jjswimlab.com</li>
+                    <li>전화: 02-1234-5678</li>
+                  </ul>
+                  
+                  <p className="text-xs text-gray-500 mt-6">
+                    <strong>시행일:</strong> 2025년 10월 15일<br/>
+                    <strong>버전:</strong> v1.1
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t flex justify-end space-x-3">
+              <button
+                onClick={() => setShowTermsPopup(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => {
+                  if (currentTermsType === 'terms') {
+                    setFormData({ ...formData, agreeTerms: true });
+                  } else if (currentTermsType === 'privacy') {
+                    setFormData({ ...formData, agreePrivacy: true });
+                  }
+                  setShowTermsPopup(false);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                동의합니다
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

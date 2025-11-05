@@ -229,6 +229,16 @@ const centerSchema = new mongoose_1.Schema({
             updatedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }
         }
     },
+    geoDistributionVisibility: {
+        isPublic: { type: Boolean, default: false },
+        showToOtherCenterAdmins: { type: Boolean, default: false },
+        showToOwnInstructors: { type: Boolean, default: false },
+        showToOtherInstructors: { type: Boolean, default: false },
+        showToOwnMembers: { type: Boolean, default: false },
+        showToOtherMembers: { type: Boolean, default: false },
+        lastUpdated: { type: Date, default: Date.now },
+        updatedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }
+    },
     settings: {
         type: mongoose_1.Schema.Types.Mixed,
         default: {}

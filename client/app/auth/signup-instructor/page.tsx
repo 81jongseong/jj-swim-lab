@@ -3,12 +3,13 @@
  * 
  * 연동되는 데이터:
  * - 개인정보: 이름, 이메일, 비밀번호, 전화번호
- * - 소속 센터: 센터 선택
- * - 자격사항: 자격증 이름, 발급기관, 취득일
+ * - 근무 가능 지역: 시/도, 구/군 선택
+ * - 자격사항: 자격증 이름, 발급기관, 자격증 번호, 취득일
  * 
  * 연동되는 파일:
  * - useAuth: 인증 관리
  * - apiClient: API 통신
+ * - RegionSelector: 지역 선택 컴포넌트
  */
 
 'use client';
@@ -17,10 +18,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
 import Link from 'next/link';
+import RegionSelector, { CITIES_BY_PROVINCE } from '../../../components/map/RegionSelector';
 
 interface Certificate {
   name: string;
   issuer: string;
+  certificateNumber: string;
   acquiredDate: string;
 }
 
@@ -36,24 +39,19 @@ export default function InstructorSignupPage() {
     password: '',
     passwordConfirm: '',
     phone: '',
-    centerId: '',
     bio: '',
     specialties: [] as string[],
     experience: ''
   });
 
+  // 근무 가능 지역
+  const [selectedSido, setSelectedSido] = useState('');
+  const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
+  const [showDistrictSelection, setShowDistrictSelection] = useState(false);
+
   // 자격증 정보
   const [certificates, setCertificates] = useState<Certificate[]>([
-    { name: '', issuer: '', acquiredDate: '' }
-  ]);
-
-  // 센터 목록 (실제로는 API에서 가져옴)
-  const [centers] = useState([
-    { id: '1', name: '강남센터' },
-    { id: '2', name: '서초센터' },
-    { id: '3', name: '송파센터' },
-    { id: '4', name: '수원센터' },
-    { id: '5', name: '성남센터' }
+    { name: '', issuer: '', certificateNumber: '', acquiredDate: '' }
   ]);
 
   // 전문 분야 옵션
@@ -83,7 +81,7 @@ export default function InstructorSignupPage() {
   };
 
   const addCertificate = () => {
-    setCertificates([...certificates, { name: '', issuer: '', acquiredDate: '' }]);
+    setCertificates([...certificates, { name: '', issuer: '', certificateNumber: '', acquiredDate: '' }]);
   };
 
   const removeCertificate = (index: number) => {
@@ -107,13 +105,13 @@ export default function InstructorSignupPage() {
       return;
     }
 
-    if (!formData.centerId) {
-      setError('소속 센터를 선택해주세요.');
+    if (selectedRegions.size === 0) {
+      setError('근무 가능 지역을 최소 1개 이상 선택해주세요.');
       return;
     }
 
     // 최소 하나의 자격증 정보 확인
-    const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.acquiredDate);
+    const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.certificateNumber && cert.acquiredDate);
     if (validCertificates.length === 0) {
       setError('최소 하나의 자격증 정보를 입력해주세요.');
       return;
@@ -126,6 +124,7 @@ export default function InstructorSignupPage() {
         ...formData,
         userType: 'instructor',
         certificates: validCertificates,
+        availableRegions: Array.from(selectedRegions),
         status: 'pending' // 강사는 승인 대기 상태로 시작
       });
 
@@ -243,29 +242,58 @@ export default function InstructorSignupPage() {
               </div>
             </div>
 
-            {/* 소속 센터 */}
+            {/* 근무 가능 지역 */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">🏢 소속 센터</h2>
+              <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">📍 근무 가능 지역</h2>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  센터 선택 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="centerId"
-                  value={formData.centerId}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">센터를 선택해주세요</option>
-                  {centers.map(center => (
-                    <option key={center.id} value={center.id}>
-                      {center.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <RegionSelector
+                selectedSido={selectedSido}
+                selectedRegions={selectedRegions}
+                showDistrictSelection={showDistrictSelection}
+                onSidoSelect={(sido) => {
+                  if (sido === '전국') {
+                    setSelectedRegions(new Set(['전국']));
+                    setSelectedSido('');
+                    setShowDistrictSelection(false);
+                  } else {
+                    setSelectedSido(sido);
+                    setShowDistrictSelection(true);
+                    setSelectedRegions(new Set());
+                  }
+                }}
+                onDistrictToggle={(district) => {
+                  const newRegions = new Set(selectedRegions);
+                  if (newRegions.has(district)) {
+                    newRegions.delete(district);
+                    if (newRegions.size === 0) {
+                      setSelectedSido('');
+                      setShowDistrictSelection(false);
+                    }
+                  } else {
+                    newRegions.add(district);
+                  }
+                  setSelectedRegions(newRegions);
+                }}
+                onSelectAll={() => {
+                  if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
+                    const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
+                    const newRegions = new Set(selectedRegions);
+                    
+                    if (allDistrictsSelected) {
+                      // 모두 해제
+                      CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
+                    } else {
+                      // 모두 선택
+                      CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
+                    }
+                    setSelectedRegions(newRegions);
+                  }
+                }}
+                onClose={() => {
+                  setShowDistrictSelection(false);
+                  setSelectedSido('');
+                }}
+              />
             </div>
 
             {/* 자격 사항 */}
@@ -322,6 +350,19 @@ export default function InstructorSignupPage() {
                         placeholder="예: 대한수영연맹"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      자격증 번호 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={cert.certificateNumber}
+                      onChange={(e) => handleCertificateChange(index, 'certificateNumber', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="예: SW-2024-12345"
+                    />
                   </div>
 
                   <div>
@@ -418,7 +459,8 @@ export default function InstructorSignupPage() {
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>• 강사 등록 신청 후 관리자 승인이 필요합니다.</li>
                 <li>• 승인 완료 시 이메일로 안내를 드립니다.</li>
-                <li>• 자격증은 최소 1개 이상 등록해주세요.</li>
+                <li>• 자격증은 최소 1개 이상 등록해주세요. (자격증 이름, 발급기관, 자격증 번호, 취득일 모두 필수)</li>
+                <li>• 근무 가능 지역을 최소 1개 이상 선택해주세요.</li>
                 <li>• 허위 정보 등록 시 승인이 거부될 수 있습니다.</li>
               </ul>
             </div>

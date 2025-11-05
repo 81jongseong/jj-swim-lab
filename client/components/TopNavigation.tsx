@@ -78,6 +78,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from 'hooks/useAuth';
+import UserMenu from './common/UserMenu';
+import UserProfile from './common/UserProfile';
 
 interface NavigationItem {
   name: string;
@@ -269,19 +271,27 @@ export default function TopNavigation() {
           ))}
         </div>
 
-        {/* 사용자 정보 및 모바일 메뉴 버튼 - 컴팩트하게 */}
-        <div className="flex items-center space-x-2">
-          {/* 사용자 프로필 */}
+        {/* 사용자 정보 및 모바일 메뉴 버튼 - 가시성 개선 */}
+        <div className="flex items-center space-x-3">
+          {/* 사용자 메뉴 - 가시성 개선 (더 강조된 스타일) */}
           {user && (
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-xs">
-                  {user.name?.charAt(0) || 'U'}
-                </span>
-              </div>
-              <span className="text-sm font-medium text-gray-700 hidden lg:block">
-                {user.name?.length > 8 ? `${user.name.substring(0, 8)}...` : user.name}님
-              </span>
+            <div className="hidden lg:flex">
+              <UserMenu 
+                showUserType={true}
+                size="md"
+                logoutVariant="text"
+                className="bg-white px-4 py-2.5 rounded-lg shadow-lg border-2 border-gray-300 hover:border-blue-500 hover:shadow-xl transition-all"
+              />
+            </div>
+          )}
+
+          {/* 모바일: 사용자 프로필만 표시 */}
+          {user && (
+            <div className="lg:hidden flex items-center space-x-2">
+              <UserProfile 
+                showName={false}
+                size="sm"
+              />
             </div>
           )}
 
@@ -289,7 +299,7 @@ export default function TopNavigation() {
           <div className="lg:hidden">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
               aria-label="메뉴 열기/닫기"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

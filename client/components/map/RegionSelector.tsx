@@ -12,8 +12,6 @@
 
 'use client';
 
-import ModernButton from './ModernButton';
-
 interface RegionSelectorProps {
   selectedSido: string;
   selectedRegions: Set<string>;
@@ -21,6 +19,7 @@ interface RegionSelectorProps {
   onSidoSelect: (sido: string) => void;
   onDistrictToggle: (district: string) => void;
   onClose: () => void;
+  onSelectAll?: () => void;
 }
 
 const PROVINCES = [
@@ -44,7 +43,7 @@ const PROVINCES = [
   { id: '제주특별자치도', name: '🏝️ 제주', special: false }
 ];
 
-const CITIES_BY_PROVINCE: Record<string, string[]> = {
+export const CITIES_BY_PROVINCE: Record<string, string[]> = {
   '서울특별시': ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'],
   '경기도': ['수원시', '성남시', '고양시', '용인시', '부천시', '안산시', '안양시', '남양주시', '화성시', '평택시', '의정부시', '시흥시', '파주시', '김포시', '광명시', '광주시', '군포시', '하남시', '오산시', '양주시'],
   '부산광역시': ['중구', '서구', '동구', '영도구', '부산진구', '동래구', '남구', '북구', '해운대구', '사하구', '금정구', '강서구', '연제구', '수영구', '사상구', '기장군'],
@@ -70,8 +69,39 @@ export default function RegionSelector({
   showDistrictSelection,
   onSidoSelect,
   onDistrictToggle,
-  onClose
+  onClose,
+  onSelectAll
 }: RegionSelectorProps) {
+  // 모든 구/군 선택 여부 확인
+  const allDistrictsSelected = selectedSido && CITIES_BY_PROVINCE[selectedSido] 
+    ? CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city))
+    : false;
+  
+  // 모두 선택/해제 핸들러
+  const handleSelectAll = () => {
+    if (onSelectAll) {
+      onSelectAll();
+    } else {
+      // 기본 동작: 모든 구/군 선택 또는 해제
+      if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
+        if (allDistrictsSelected) {
+          // 모두 해제
+          CITIES_BY_PROVINCE[selectedSido].forEach(city => {
+            if (selectedRegions.has(city)) {
+              onDistrictToggle(city);
+            }
+          });
+        } else {
+          // 모두 선택
+          CITIES_BY_PROVINCE[selectedSido].forEach(city => {
+            if (!selectedRegions.has(city)) {
+              onDistrictToggle(city);
+            }
+          });
+        }
+      }
+    }
+  };
   return (
     <div>
       {/* 1단계: 시/도 선택 */}
@@ -111,12 +141,24 @@ export default function RegionSelector({
               <span className="text-2xl">🏘️</span>
               {selectedSido} 구/군 선택
             </h4>
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              ✕ 닫기
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSelectAll}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  allDistrictsSelected
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {allDistrictsSelected ? '✓ 모두 선택됨' : '전체 선택'}
+              </button>
+              <button
+                onClick={onClose}
+                className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                ✕ 닫기
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {CITIES_BY_PROVINCE[selectedSido].map((city) => (
@@ -144,20 +186,65 @@ export default function RegionSelector({
             선택된 지역 ({selectedRegions.size}개)
           </h4>
           <div className="flex flex-wrap gap-2">
-            {Array.from(selectedRegions).map((region) => (
-              <span
-                key={region}
-                className="inline-flex items-center px-4 py-2 bg-white text-blue-700 font-semibold text-sm rounded-lg shadow-sm border border-blue-300"
-              >
-                {region}
-                <button
-                  onClick={() => onDistrictToggle(region)}
-                  className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
+            {(() => {
+              // 시/도의 모든 구/군이 선택되었는지 확인하고 "전지역"으로 표시
+              const displayRegions: string[] = [];
+              const processedSidos = new Set<string>();
+              
+              // 각 시/도에 대해 모든 구/군이 선택되었는지 확인
+              for (const [sido, districts] of Object.entries(CITIES_BY_PROVINCE)) {
+                if (districts.every(district => selectedRegions.has(district)) && 
+                    districts.length > 0) {
+                  // 모든 구/군이 선택된 경우 "전지역"으로 표시
+                  displayRegions.push(`${sido} 전지역`);
+                  processedSidos.add(sido);
+                  // 해당 시/도의 모든 구/군을 processedSidos에 추가하여 중복 방지
+                  districts.forEach(district => processedSidos.add(district));
+                }
+              }
+              
+              // 전지역이 아닌 개별 지역만 추가
+              Array.from(selectedRegions).forEach(region => {
+                if (!processedSidos.has(region)) {
+                  displayRegions.push(region);
+                }
+              });
+              
+              return displayRegions.map((region, idx) => {
+                // "전지역"인 경우 삭제 버튼을 다르게 처리
+                const isFullRegion = region.includes(' 전지역');
+                const regionName = isFullRegion ? region : region;
+                
+                return (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-4 py-2 bg-white text-blue-700 font-semibold text-sm rounded-lg shadow-sm border border-blue-300"
+                  >
+                    {regionName}
+                    <button
+                      onClick={() => {
+                        if (isFullRegion) {
+                          // 전지역인 경우 모든 구/군 제거
+                          const sido = region.replace(' 전지역', '');
+                          if (CITIES_BY_PROVINCE[sido]) {
+                            CITIES_BY_PROVINCE[sido].forEach(city => {
+                              if (selectedRegions.has(city)) {
+                                onDistrictToggle(city);
+                              }
+                            });
+                          }
+                        } else {
+                          onDistrictToggle(region);
+                        }
+                      }}
+                      className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                );
+              });
+            })()}
           </div>
         </div>
       )}

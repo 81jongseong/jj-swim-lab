@@ -168,6 +168,16 @@ export interface ICenter extends Document {
             updatedBy: mongoose.Types.ObjectId;
         };
     };
+    geoDistributionVisibility?: {
+        isPublic: boolean;
+        showToOtherCenterAdmins: boolean;
+        showToOwnInstructors: boolean;
+        showToOtherInstructors: boolean;
+        showToOwnMembers: boolean;
+        showToOtherMembers: boolean;
+        lastUpdated?: Date;
+        updatedBy?: mongoose.Types.ObjectId;
+    };
     settings?: {
         theme?: {
             primaryColor?: string;

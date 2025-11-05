@@ -101,6 +101,12 @@ interface IUser extends mongoose.Document {
   password: string;
   phone: string;
   address: string;
+  // 소셜 로그인 정보 (같은 이메일로 여러 소셜 로그인 연결 가능)
+  socialAccounts?: Array<{
+    provider: 'kakao' | 'naver' | 'google' | 'facebook';
+    providerId: string;
+    connectedAt: Date;
+  }>;
   location?: {
     type: 'Point';
     coordinates: [number, number]; // [경도, 위도]
@@ -419,12 +425,29 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false, // 소셜 로그인 사용자는 비밀번호가 없을 수 있음
   },
+  // 소셜 로그인 정보 (같은 이메일로 여러 소셜 로그인 연결 가능)
+  socialAccounts: [{
+    provider: {
+      type: String,
+      enum: ['kakao', 'naver', 'google', 'facebook'],
+      required: true
+    },
+    providerId: {
+      type: String,
+      required: true
+    },
+    connectedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   phone: {
     type: String,
     required: false,
     default: '',
+    // 전화번호는 중복 체크를 위해 인덱스 추가 (unique는 아님 - 가족이 같은 번호 사용 가능하지만, 실제로는 1인 1계정을 위해 체크)
   },
   address: {
     type: String,

@@ -140,16 +140,28 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     const filter: any = {};
 
     // centerAdmin은 자신의 센터(들)만 조회 가능
+    // ⚠️ 최신 사용자 정보를 조회하여 user 객체 업데이트 (공개 여부 체크를 위해)
+    let updatedUser = user;
     if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
       // DB에서 최신 사용자 정보 조회 (managedCenters를 포함하기 위해)
-      const centerAdminUser = await User.findById(user._id || user.id).select('centerAdminInfo centerId').lean();
+      const centerAdminUser = await User.findById(user._id || user.id).select('centerAdminInfo centerId userType').lean();
       const managedCenters = centerAdminUser?.centerAdminInfo?.managedCenters || [];
       
+      // user 객체 업데이트 (공개 여부 체크를 위해)
+      updatedUser = {
+        ...user,
+        centerAdminInfo: centerAdminUser?.centerAdminInfo || user.centerAdminInfo,
+        centerId: centerAdminUser?.centerId || user.centerId
+      };
+      
+      const managedCenterIds = managedCenters.map((c: any) => c.toString ? c.toString() : c._id?.toString() || c);
       console.log('🔍 센터 관리자 정보:', {
         userId: user._id || user.id,
         hasCenterId: !!centerAdminUser?.centerId,
         managedCentersCount: managedCenters.length,
-        centerId: centerId || '없음'
+        managedCenterIds: managedCenterIds,
+        centerId: centerId || '없음',
+        userType: user.userType
       });
       
       if (managedCenters.length > 0) {
@@ -202,24 +214,86 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       
       if (memberType === 'personal-lesson') {
         // 개인레슨 수강생 조회
-        const personalLessons = await PersonalLesson.find({
+        // ⚠️ 중요: centerId 필터가 이미 설정되어 있으면, 해당 센터의 개인레슨 수강생만 조회
+        const personalLessonFilter: any = {
           status: { $in: ['pending', 'approved', 'completed'] }
-        }).select('studentId').lean();
-        userIds = [...new Set(personalLessons.map((pl: any) => pl.studentId).filter(Boolean))];
-        console.log(`👤 개인레슨 수강생: ${userIds.length}명`);
+        };
+        
+        // centerId 필터가 있으면 PersonalLesson에도 적용
+        // PersonalLesson의 studentId와 매칭되는 User의 centerId를 확인
+        if (filter.centerId) {
+          const centerUsers = await User.find(filter).select('_id').lean();
+          const centerUserIds = centerUsers.map((u: any) => u._id);
+          
+          if (centerUserIds.length > 0) {
+            personalLessonFilter.studentId = { $in: centerUserIds };
+          } else {
+            userIds = [];
+            console.log(`👤 개인레슨 수강생: 0명 (해당 센터에 회원 없음)`);
+          }
+        }
+        
+        if (userIds === null || (userIds.length > 0 && userIds.length !== undefined)) {
+          const personalLessons = await PersonalLesson.find(personalLessonFilter).select('studentId').lean();
+          userIds = [...new Set(personalLessons.map((pl: any) => pl.studentId).filter(Boolean))];
+          console.log(`👤 개인레슨 수강생: ${userIds.length}명`);
+        } else if (userIds && userIds.length === 0) {
+          console.log(`👤 개인레슨 수강생: 0명 (이미 필터링됨)`);
+        }
       } else if (memberType === 'free-swim') {
         // 자유수영 이용자 조회
-        const laneRentals = await LaneRental.find({
+        // ⚠️ 중요: centerId 필터가 이미 설정되어 있으면, 해당 센터의 자유수영 이용자만 조회
+        const laneRentalFilter: any = {
           status: { $in: ['pending', 'approved', 'completed'] }
-        }).select('userId').lean();
-        userIds = [...new Set(laneRentals.map((lr: any) => lr.userId).filter(Boolean))];
-        console.log(`🏊 자유수영 이용자: ${userIds.length}명`);
+        };
+        
+        // centerId 필터가 있으면 LaneRental에도 적용
+        // LaneRental 모델에 centerId 필드가 있는지 확인 필요
+        // 일단 centerId 필터가 있으면 User를 먼저 필터링한 후 해당 userId들만 조회
+        if (filter.centerId) {
+          // filter.centerId가 $in 배열인 경우도 처리
+          const centerUserFilter: any = {};
+          if (typeof filter.centerId === 'object' && filter.centerId.$in) {
+            centerUserFilter.centerId = filter.centerId;
+          } else {
+            centerUserFilter.centerId = filter.centerId;
+          }
+          
+          // centerId 필터가 있으면, 해당 센터의 회원들만 조회
+          // LaneRental의 userId와 매칭되는 User의 centerId를 확인
+          const centerUsers = await User.find(centerUserFilter).select('_id').lean();
+          const centerUserIds = centerUsers.map((u: any) => u._id);
+          
+          if (centerUserIds.length > 0) {
+            laneRentalFilter.userId = { $in: centerUserIds };
+          } else {
+            // 해당 센터에 회원이 없으면 빈 배열
+            userIds = [];
+            console.log(`🏊 자유수영 이용자: 0명 (해당 센터에 회원 없음)`);
+          }
+        }
+        
+        if (userIds === null || (userIds.length > 0 && userIds.length !== undefined)) {
+          const laneRentals = await LaneRental.find(laneRentalFilter).select('userId').lean();
+          userIds = [...new Set(laneRentals.map((lr: any) => lr.userId).filter(Boolean))];
+          console.log(`🏊 자유수영 이용자: ${userIds.length}명`);
+        } else if (userIds && userIds.length === 0) {
+          console.log(`🏊 자유수영 이용자: 0명 (이미 필터링됨)`);
+        }
       } else if (memberType === 'group-lesson') {
         // 단체레슨 수강생 조회 (Course의 enrollments 또는 students 필드)
-        const courses = await Course.find({
+        // ⚠️ 중요: centerId 필터가 이미 설정되어 있으면, 해당 센터의 단체레슨 수강생만 조회
+        const courseFilter: any = {
           isActive: true,
           type: { $in: ['group', 'course'] }
-        }).select('enrollments students participants').lean();
+        };
+        
+        // centerId 필터가 있으면 Course에도 적용
+        if (filter.centerId) {
+          courseFilter.centerId = filter.centerId;
+        }
+        
+        const courses = await Course.find(courseFilter).select('enrollments students participants').lean();
         userIds = [];
         courses.forEach((course: any) => {
           if (course.enrollments && Array.isArray(course.enrollments)) {
@@ -242,11 +316,33 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
           }
         });
         userIds = [...new Set(userIds)];
+        
+        // centerId 필터가 있으면 해당 센터의 회원만 필터링
+        if (filter.centerId && userIds.length > 0) {
+          // filter.centerId가 $in 배열인 경우도 처리
+          const centerUserFilter: any = { _id: { $in: userIds } };
+          if (typeof filter.centerId === 'object' && filter.centerId.$in) {
+            centerUserFilter.centerId = filter.centerId;
+          } else {
+            centerUserFilter.centerId = filter.centerId;
+          }
+          
+          const centerUsers = await User.find(centerUserFilter).select('_id').lean();
+          userIds = centerUsers.map((u: any) => u._id);
+        }
+        
         console.log(`👥 단체레슨 수강생: ${userIds.length}명`);
       }
       
       if (userIds && userIds.length > 0) {
+        // ⚠️ 중요: filter.centerId와 filter._id를 동시에 사용하면 AND 조건이 됨
+        // 하지만 userIds는 이미 해당 센터의 회원만 포함하므로, filter.centerId는 제거해야 함
+        // 그렇지 않으면 필터 조건이 너무 엄격해져서 회원이 조회되지 않을 수 있음
+        const originalCenterId = filter.centerId;
         filter._id = { $in: userIds };
+        // ⚠️ userIds는 이미 해당 센터의 회원만 포함하므로 centerId 필터 제거
+        delete filter.centerId;
+        console.log(`  🔧 memberType 필터링: ${userIds.length}명의 userId 사용, centerId 필터 제거 (원본: ${originalCenterId})`);
       } else {
         // 해당 레슨 유형에 맞는 회원이 없으면 빈 배열 반환
         res.json({
@@ -276,6 +372,12 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
 
     // 회원 데이터 조회
     console.log('🔍 최종 필터 조건:', JSON.stringify(filter, null, 2));
+    console.log('🔍 사용자 정보:', {
+      userType: user.userType,
+      userId: user._id || user.id,
+      isCenterAdmin: user.userType === 'centerAdmin' || user.userType === 'center-admin',
+      hasManagedCenters: !!updatedUser.centerAdminInfo?.managedCenters?.length
+    });
     
     // 필터를 MongoDB 쿼리로 변환할 때 ObjectId 처리
     if (filter.centerId && typeof filter.centerId === 'object' && filter.centerId.$in) {
@@ -306,6 +408,26 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       .lean();
 
     console.log(`📍 지리적 분포 조회: ${users.length}명의 회원 데이터 처리 (필터: ${memberType || '전체'})`);
+    console.log(`📍 필터 조건 상세:`, {
+      centerId: filter.centerId,
+      _id: filter._id ? (filter._id.$in ? `${filter._id.$in.length}개 userId` : filter._id) : '없음',
+      userType: filter.userType || '없음',
+      hasAddressFilter: !!filter.$or
+    });
+    if (users.length > 0 && users.length <= 10) {
+      console.log(`📍 조회된 회원 샘플 (센터 ID):`, users.slice(0, 5).map((u: any) => ({
+        userId: u._id,
+        centerId: u.centerId?.toString(),
+        hasAddress: !!u.address,
+        hasCoords: !!u.location?.coordinates
+      })));
+    } else if (users.length === 0) {
+      console.warn(`⚠️ 조회된 회원이 없습니다. 필터 조건을 확인하세요:`, JSON.stringify(filter, null, 2));
+      // 필터 조건으로 실제로 몇 명의 회원이 있는지 확인
+      const totalUsers = await User.countDocuments({});
+      const centerUsers = filter.centerId ? await User.countDocuments({ centerId: filter.centerId }) : 0;
+      console.warn(`⚠️ 전체 회원 수: ${totalUsers}명, 필터된 센터 회원 수: ${centerUsers}명`);
+    }
     
     // 주소지/좌표 보유 현황 확인
     const usersWithAddress = users.filter(u => u.address && u.address.trim() !== '');
@@ -317,14 +439,88 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     console.log(`  - 좌표 보유: ${usersWithCoords.length}명`);
     console.log(`  - 위치 정보 없음: ${usersWithoutLocation.length}명`);
 
-    // 센터 정보 조회 (이름 매핑용) - SwimmingCenter 모델 사용
+    // 센터 정보 조회 (이름 매핑 및 공개 여부 확인용)
     const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
     const { SwimmingCenter } = await import('../models/SwimmingCenter');
-    const centers = await SwimmingCenter.find({ _id: { $in: centerIds } })
-      .select('_id name')
+    
+    // 회원분포도 공개 여부를 포함하여 센터 정보 조회
+    const centers = await Center.find({ _id: { $in: centerIds } })
+      .select('_id name geoDistributionVisibility')
       .lean();
     
     const centerMap = new Map(centers.map((c: any) => [c._id.toString(), c.name || `센터 ${c._id.toString().substring(0, 8)}`]));
+    
+    // 회원분포도 공개 여부 확인 함수
+    const canViewCenterDistribution = (centerId: string, viewerUser: any): boolean => {
+      // 최고관리자는 항상 볼 수 있음
+      if (viewerUser.userType === 'superAdmin') {
+        return true;
+      }
+      
+      // 센터관리자는 본인 센터는 항상 볼 수 있음
+      if (viewerUser.userType === 'centerAdmin' || viewerUser.userType === 'center-admin') {
+        const managedCenters = viewerUser.centerAdminInfo?.managedCenters || [];
+        const viewerCenterId = viewerUser.centerId;
+        const centerIdStr = centerId.toString();
+        
+        // 본인이 관리하는 센터인지 확인
+        const isManaged = managedCenters.some((c: any) => {
+          const cId = c.toString ? c.toString() : c._id?.toString() || c;
+          return cId === centerIdStr;
+        }) || (viewerCenterId && viewerCenterId.toString() === centerIdStr);
+        
+        if (isManaged) {
+          return true; // 본인 센터는 항상 볼 수 있음
+        }
+      }
+      
+      // 다른 센터의 경우 공개 여부 확인
+      const center = centers.find((c: any) => c._id.toString() === centerId.toString());
+      if (!center || !center.geoDistributionVisibility) {
+        return false; // 공개 설정이 없으면 비공개로 간주
+      }
+      
+      const visibility = center.geoDistributionVisibility;
+      const viewerType = viewerUser.userType;
+      
+      // 전체 공개 여부 확인
+      if (visibility.isPublic) {
+        return true;
+      }
+      
+      // 사용자 유형별 공개 여부 확인
+      if (viewerType === 'centerAdmin' || viewerType === 'center-admin') {
+        return visibility.showToOtherCenterAdmins || false;
+      } else if (viewerType === 'instructor') {
+        // 강사인 경우: 우리 센터 강사인지 다른 센터 강사인지 확인
+        const viewerCenterId = viewerUser.centerId?.toString();
+        const centerIdStr = centerId.toString();
+        const isOwnCenter = viewerCenterId === centerIdStr;
+        
+        if (isOwnCenter) {
+          // 우리 센터 강사
+          return visibility.showToOwnInstructors || false;
+        } else {
+          // 다른 센터 강사
+          return visibility.showToOtherInstructors || false;
+        }
+      } else if (viewerType === 'member' || viewerType === 'student') {
+        // 회원인 경우: 우리 센터 회원인지 다른 센터 회원인지 확인
+        const viewerCenterId = viewerUser.centerId?.toString();
+        const centerIdStr = centerId.toString();
+        const isOwnCenter = viewerCenterId === centerIdStr;
+        
+        if (isOwnCenter) {
+          // 우리 센터 회원
+          return visibility.showToOwnMembers || false;
+        } else {
+          // 다른 센터 회원
+          return visibility.showToOtherMembers || false;
+        }
+      }
+      
+      return false; // 기본값: 비공개
+    };
 
     // H3 셀 집계
     const h3Map: Map<string, any> = new Map();
@@ -448,6 +644,13 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       // H3 변환
       const h3Index = toH3(coords.lat, coords.lng, 8);
 
+      // 회원분포도 공개 여부 확인: 해당 센터의 데이터를 볼 수 있는지 체크
+      const userCenterId = userItem.centerId?.toString();
+      if (userCenterId && !canViewCenterDistribution(userCenterId, updatedUser)) {
+        // 공개되지 않은 센터 데이터는 스킵 (최고관리자와 본인 센터 관리자는 제외)
+        continue;
+      }
+      
       if (h3Map.has(h3Index)) {
         const cell = h3Map.get(h3Index);
         cell.count += 1;
@@ -503,10 +706,49 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       // 원본 count 제거 (보안)
       const originalCount = cell.count;
       delete cell.count;
+      
+      // ✅ centers 배열 생성 (클라이언트에서 사용)
+      // centerCounts를 centers 배열로 변환 (센터 ID와 countApprox 포함)
+      if (cell.centerCounts && Object.keys(cell.centerCounts).length > 0) {
+        const totalCount = Object.values(cell.centerCounts).reduce((sum: number, count: any) => sum + count, 0);
+        cell.centers = Object.entries(cell.centerCounts).map(([centerId, count]: [string, any]) => {
+          // 각 센터의 비율에 따라 countApprox 분배
+          const ratio = Number(count) / Number(totalCount);
+          const centerApprox = Math.max(1, Math.round(Number(cell.countApprox) * ratio));
+          return {
+            centerId: centerId,
+            countApprox: centerApprox
+          };
+        });
+        
+        // ✅ dominantCenter 설정 (가장 많은 회원을 가진 센터)
+        // ⚠️ 중요: centerId를 센터 이름으로 변환하여 반환 (클라이언트 필터링을 위해)
+        const dominantCenterEntry = Object.entries(cell.centerCounts).reduce((max: any, [id, count]: [string, any]) => {
+          return count > (max[1] || 0) ? [id, count] : max;
+        }, ['기타', 0]);
+        const dominantCenterId = dominantCenterEntry[0];
+        // 센터 ID를 센터 이름으로 변환 (centerMap 사용)
+        cell.dominantCenter = centerMap.get(dominantCenterId) || dominantCenterId; // 센터 이름 사용
+      } else if (cell.centerId) {
+        // centerCounts가 없는 경우 (단일 센터)
+        const centerIdStr = cell.centerId.toString();
+        cell.centers = [{
+          centerId: centerIdStr,
+          countApprox: cell.countApprox
+        }];
+        // 센터 ID를 센터 이름으로 변환 (centerMap 사용)
+        cell.dominantCenter = centerMap.get(centerIdStr) || centerIdStr; // 센터 이름 사용
+      } else {
+        // 센터 정보가 없는 경우
+        cell.centers = [];
+        cell.dominantCenter = '기타';
+      }
+      
+      // centerCounts 제거 (보안, centers 배열로 변환 완료)
       delete cell.centerCounts;
       
       if (cells.length <= 10) {
-        console.log(`  셀 [${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}]: 원본 ${originalCount}명 → 근사값 ${cell.countApprox}명`);
+        console.log(`  셀 [${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}]: 원본 ${originalCount}명 → 근사값 ${cell.countApprox}명, 센터: ${cell.dominantCenter}`);
       }
     });
     

@@ -809,21 +809,24 @@ export default function Navigation() {
               <>
                 <div className="hidden md:flex items-center space-x-4 flex-nowrap">
                   <div 
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg flex-shrink-0"
-                    style={{ backgroundColor: secondaryColor ? `${secondaryColor}40` : '#f9fafb' }}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg flex-shrink-0 shadow-md"
+                    style={{ backgroundColor: secondaryColor ? `${secondaryColor}40` : 'rgba(255, 255, 255, 0.95)' }}
                   >
                   <NotificationsBell />
                 </div>
                   <div 
-                    className="flex items-center space-x-3 px-4 py-2 rounded-lg whitespace-nowrap flex-shrink-0 bg-white/20"
+                    className="flex items-center space-x-3 px-4 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 bg-white/95 backdrop-blur-sm shadow-lg border border-white/20"
                   >
-                    <span className="text-sm font-medium text-white">{userName}님</span>
-                    <span className="text-xs text-white/60">|</span>
+                    <span className="text-sm font-bold text-gray-900 drop-shadow-sm">{userName}님</span>
+                    <span className="text-xs text-gray-400 font-medium">|</span>
                   <button
                     onClick={handleLogout}
-                      className="text-sm text-white hover:text-red-200 transition-colors font-medium"
+                      className="text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-md transition-all font-bold flex items-center space-x-1"
                   >
-                    로그아웃
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>로그아웃</span>
                   </button>
                   </div>
                 </div>
@@ -891,11 +894,14 @@ export default function Navigation() {
               {renderMenuGroups(true)}
               
               {!loading && isLoggedIn ? (
-                <div className="px-4 py-2 border-t border-gray-200">
-                  <div className="text-sm text-gray-700 mb-2">
-                    {userName}님 환영합니다
+                <div className="px-4 py-3 border-t-2 border-gray-300 bg-gradient-to-r from-gray-50 to-blue-50 rounded-b-lg">
+                  <div className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
+                    <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md">
+                      {userName?.charAt(0) || 'U'}
+                    </span>
+                    <span>{userName}님 환영합니다</span>
                   </div>
-                  <div className="flex items-center space-x-2 mb-2">
+                  <div className="flex items-center space-x-2 mb-3">
                     <NotificationsBell />
                   </div>
                   <button
@@ -903,9 +909,12 @@ export default function Navigation() {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors"
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 text-sm font-bold text-red-600 hover:text-white hover:bg-red-600 border-2 border-red-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
                   >
-                    로그아웃
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>로그아웃</span>
                   </button>
                 </div>
               ) : !loading ? (

@@ -113,6 +113,7 @@ const exercise_prescription_1 = __importDefault(require("./routes/exercise-presc
 const health_input_1 = __importDefault(require("./routes/health-input"));
 const swim_engine_1 = __importDefault(require("./routes/swim-engine"));
 const geo_aggregate_1 = __importDefault(require("./routes/geo-aggregate"));
+const geo_distribution_visibility_1 = __importDefault(require("./routes/geo-distribution-visibility"));
 const swim_programs_1 = __importDefault(require("./routes/swim-programs"));
 const swim_program_completions_1 = __importDefault(require("./routes/swim-program-completions"));
 const swim_program_day_condition_1 = __importDefault(require("./routes/swim-program-day-condition"));
@@ -386,6 +387,7 @@ app.use('/api/exercise-prescription', exercise_prescription_1.default);
 app.use('/api/health', health_input_1.default);
 app.use('/api/swim-engine', swim_engine_1.default);
 app.use('/api/geo', geo_aggregate_1.default);
+app.use('/api/geo-distribution-visibility', geo_distribution_visibility_1.default);
 app.use('/api/swim-programs', swim_programs_1.default);
 app.use('/api/swim-programs', swim_program_completions_1.default);
 app.use('/api/swim-programs', swim_program_day_condition_1.default);
