@@ -24,6 +24,10 @@ import express from 'express';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { errorHandler } from '../utils/errorHandler';
 import logger from '../utils/logger';
+import { User } from '../models/User';
+import { Course } from '../models/Course';
+import { Booking } from '../models/Booking';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -37,32 +41,94 @@ router.get('/dashboard', authMiddleware, requirePermission('canManageCourses'), 
     const instructorId = (req as any).user?._id;
     logger.info(`🏊‍♂️ 강사 대시보드 조회 요청: ${instructorId}`);
 
-    // 임시 데이터 반환
+    if (!instructorId) {
+      return res.status(400).json({
+        success: false,
+        message: '강사 ID가 없습니다.'
+      });
+    }
+
+    // 실제 DB에서 강사 정보 조회
+    const instructor = await User.findById(instructorId).lean();
+    if (!instructor) {
+      return res.status(404).json({
+        success: false,
+        message: '강사를 찾을 수 없습니다.'
+      });
+    }
+
+    const instructorInfo = instructor.instructorInfo || {};
+    const centerId = instructor.centerId || instructorInfo.assignedCenters?.[0];
+
+    // 강사가 담당하는 과정 목록 조회
+    const courses = await Course.find({
+      $or: [
+        { instructorId: new mongoose.Types.ObjectId(instructorId) },
+        { instructor: new mongoose.Types.ObjectId(instructorId) }
+      ],
+      ...(centerId ? { centerId: new mongoose.Types.ObjectId(centerId) } : {})
+    })
+    .populate('enrolledStudents.student', 'name email')
+    .lean();
+
+    const activeCourses = courses.filter(c => c.status === 'active' || !c.status);
+    
+    // 총 학생 수 계산 (중복 제거)
+    const allStudentIds = new Set<string>();
+    courses.forEach(course => {
+      if (course.enrolledStudents) {
+        course.enrolledStudents.forEach((enrollment: any) => {
+          const studentId = enrollment.student?._id?.toString() || enrollment.student?.toString() || enrollment.studentId?.toString();
+          if (studentId) {
+            allStudentIds.add(studentId);
+          }
+        });
+      }
+      if (course.students) {
+        course.students.forEach((studentId: any) => {
+          const id = studentId?._id?.toString() || studentId?.toString();
+          if (id) {
+            allStudentIds.add(id);
+          }
+        });
+      }
+    });
+
+    // 오늘의 예약 조회
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayBookings = await Booking.find({
+      instructorId: new mongoose.Types.ObjectId(instructorId),
+      date: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    })
+    .populate('studentId', 'name email')
+    .populate('courseId', 'name')
+    .lean()
+    .sort({ startTime: 1 });
+
+    // 실제 DB 데이터 반환
     const dashboardData = {
       stats: {
-        totalStudents: 25,
-        activeCourses: 3,
-        todayBookings: 5,
-        averageRating: 4.8,
-        totalHours: 120,
-        monthlyRevenue: 2400000,
+        totalStudents: allStudentIds.size || instructorInfo.currentStudents || 0,
+        activeCourses: activeCourses.length || 0,
+        todayBookings: todayBookings.length || 0,
+        averageRating: instructorInfo.rating || 0,
+        totalHours: instructorInfo.totalClasses ? instructorInfo.totalClasses * 1 : 0, // 가정: 수업당 1시간
+        monthlyRevenue: instructorInfo.salaryInfo?.amount ? (instructorInfo.salaryInfo.amount / 4) : 0, // 월급을 4주로 나눈 값
       },
-      upcomingBookings: [
-        {
-          id: 'booking1',
-          studentName: '김학생',
-          courseName: '자유형 기초반',
-          time: '14:00',
-          status: 'confirmed',
-        },
-        {
-          id: 'booking2',
-          studentName: '이학생',
-          courseName: '배영 중급반',
-          time: '15:00',
-          status: 'confirmed',
-        },
-      ],
+      upcomingBookings: todayBookings.slice(0, 10).map((booking: any) => ({
+        id: booking._id?.toString() || booking.id,
+        studentName: booking.studentId?.name || '학생 이름 없음',
+        courseName: booking.courseId?.name || booking.courseName || '수업 이름 없음',
+        time: booking.startTime || booking.time || '',
+        status: booking.status || 'pending',
+      })),
     };
 
     res.status(200).json({
@@ -70,7 +136,7 @@ router.get('/dashboard', authMiddleware, requirePermission('canManageCourses'), 
       message: '강사 대시보드 조회 성공',
       data: dashboardData,
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`❌ 강사 대시보드 조회 중 오류 발생: ${error.message}`);
     errorHandler(error, req, res, () => {});
   }
@@ -86,44 +152,56 @@ router.get('/courses', authMiddleware, requirePermission('canManageCourses'), as
     const instructorId = (req as any).user?._id;
     logger.info(`📚 강사 강의 목록 조회 요청: ${instructorId}`);
 
-    // 임시 데이터 반환
-    const courses = [
-      {
-        id: 'course1',
-        name: '자유형 기초반',
-        level: 'beginner',
-        currentStudents: 8,
-        maxStudents: 10,
-        startDate: '2025-01-01',
-        endDate: '2025-03-31',
-        status: 'active',
-        totalSessions: 24,
-        completedSessions: 8,
-        progress: 33,
-        location: '1층 메인풀',
-      },
-      {
-        id: 'course2',
-        name: '배영 중급반',
-        level: 'intermediate',
-        currentStudents: 6,
-        maxStudents: 8,
-        startDate: '2025-01-15',
-        endDate: '2025-04-15',
-        status: 'active',
-        totalSessions: 20,
-        completedSessions: 5,
-        progress: 25,
-        location: '2층 보조풀',
-      },
-    ];
+    if (!instructorId) {
+      return res.status(400).json({
+        success: false,
+        message: '강사 ID가 없습니다.'
+      });
+    }
+
+    // 실제 DB에서 강사가 담당하는 과정 조회
+    const instructor = await User.findById(instructorId).lean();
+    const centerId = instructor?.centerId || instructor?.instructorInfo?.assignedCenters?.[0];
+
+    const dbCourses = await Course.find({
+      $or: [
+        { instructorId: new mongoose.Types.ObjectId(instructorId) },
+        { instructor: new mongoose.Types.ObjectId(instructorId) }
+      ],
+      ...(centerId ? { centerId: new mongoose.Types.ObjectId(centerId) } : {})
+    })
+    .populate('enrolledStudents.student', 'name email')
+    .lean()
+    .sort({ createdAt: -1 });
+
+    // 데이터 변환
+    const courses = dbCourses.map((course: any) => {
+      const enrolledStudents = course.enrolledStudents || [];
+      const students = course.students || [];
+      const currentStudents = enrolledStudents.length || students.length || 0;
+
+      return {
+        id: course._id?.toString() || course.id,
+        name: course.name || course.title || '수업 이름 없음',
+        level: course.level || 'beginner',
+        currentStudents,
+        maxStudents: course.maxStudents || course.maxEnrollment || 10,
+        startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : '',
+        endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : '',
+        status: course.status || 'active',
+        totalSessions: course.totalSessions || course.sessions?.length || 0,
+        completedSessions: course.completedSessions || 0,
+        progress: course.totalSessions ? Math.round((course.completedSessions || 0) / course.totalSessions * 100) : 0,
+        location: course.location || course.poolType || '위치 미지정',
+      };
+    });
 
     res.status(200).json({
       success: true,
       message: '강사 강의 목록 조회 성공',
       data: courses,
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`❌ 강사 강의 목록 조회 중 오류 발생: ${error.message}`);
     errorHandler(error, req, res, () => {});
   }

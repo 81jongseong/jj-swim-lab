@@ -105,6 +105,39 @@
 
 ## 오류 및 해결 방법
 
+### 2025-01-XX: 여러 파일에서 중복 코드로 인한 컴파일 오류
+**문제**: 
+- `client/app/instructor/courses/page.tsx`: 파일 끝부분에 중복된 코드가 여러 번 반복되어 있음 (520줄 이후)
+- `client/components/NotificationsBell.tsx`: 함수가 끝난 후(226줄) 중복 코드가 반복되어 있음 (914줄까지)
+- `client/components/center-admin/CourseDetailModal.tsx`: 함수가 끝난 후(321줄) 주석과 import가 다시 시작되어 중복됨
+- `server/src/routes/instructor.ts`: `export default router;` 이후(210줄) 중복 코드가 반복되어 있음 (678줄까지)
+- `server/src/routes/center-admin.ts`: `export default router;` 이후(3296줄) 중복 코드가 반복되어 있음 (3447줄까지)
+
+**원인**:
+- 파일 편집 과정에서 코드가 중복되어 추가됨
+- JSX 파서/TypeScript 컴파일러가 중복된 코드를 파싱하지 못함
+- `ModuleBuildError: Module build failed (from ...next-swc-loader.js): Error: × Expression expected` 오류 발생
+- `TSError: ⨯ Unable to compile TypeScript: error TS1128: Declaration or statement expected` 오류 발생
+
+**해결 방법**:
+1. 각 파일을 정리하여 중복 코드 제거
+   - `instructor/courses/page.tsx`: 520줄까지만 유지, 캘린더 기능 제거
+   - `NotificationsBell.tsx`: 226줄까지만 유지
+   - `CourseDetailModal.tsx`: 321줄까지만 유지
+   - `server/src/routes/instructor.ts`: 210줄까지만 유지
+   - `server/src/routes/center-admin.ts`: 3296줄까지만 유지
+2. 빌드 캐시 삭제
+   - 클라이언트: `cd client && Remove-Item -Recurse -Force .next`
+   - 서버: TypeScript 컴파일 오류는 캐시 없이도 발생하므로 파일 정리만으로 해결
+3. 개발 서버 재시작
+
+**추가 확인사항**:
+- 파일이 정상적으로 끝나는지 확인
+- `export default` 문이 한 번만 있는지 확인
+- JSX 구조가 올바른지 확인
+- 함수나 컴포넌트가 중복 정의되지 않았는지 확인
+- `try-catch` 블록이 올바르게 닫혔는지 확인
+
 ### 2025-01-XX: 서버 연결 오류 (ERR_CONNECTION_REFUSED)
 **문제**: 
 - 클라이언트에서 `http://localhost:5000/api/job-board/applications/my` 호출 시 `ERR_CONNECTION_REFUSED` 오류 발생
