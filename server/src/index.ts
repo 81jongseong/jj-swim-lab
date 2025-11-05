@@ -215,6 +215,7 @@ import advancedAIRoutes from './routes/advancedAI';
 import instructorHistoryRoutes from './routes/instructorHistory';
 import socialCommunityRoutes from './routes/socialCommunity';
 import communityPostsRoutes from './routes/community-posts';
+import jobBoardRoutes from './routes/job-board';
 import aiTrainingPlanRoutes from './routes/aiTrainingPlan';
 import aiInjuryPredictionRoutes from './routes/aiInjuryPrediction';
 import aiPerformancePredictionRoutes from './routes/aiPerformancePrediction';
@@ -248,6 +249,7 @@ import './models/HealthAssessment';
 import './models/User';
 import './models/Checklist';
 import './models/Center';
+import './models/JobApplication';
 import './models/InstructorHistory';
 import './models/Community';
 
@@ -565,6 +567,7 @@ app.use('/api/group-programs', groupProgramsRoutes); // 단체반 프로그램 �
 app.use('/api/unified-program', unifiedProgramRoutes); // 통합 프로그램 생성 라우트
 app.use('/api/my-programs', myProgramsRoutes); // 내 프로그램 조회 라우트 (회원용)
 app.use('/api/community-posts', communityPostsRoutes); // ⭐ 추가
+app.use('/api/job-board', jobBoardRoutes); // 구인구직 지원 API
 app.use('/api/example', exampleRoutes); // ⭐ 추가
 app.use('/api/geo-aggregate', geoAggregateRoutes); // ⭐ 추가
 app.use('/api/notice', noticeRoutes); // ⭐ 추가

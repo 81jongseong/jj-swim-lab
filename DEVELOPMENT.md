@@ -102,3 +102,24 @@
 - **겹침 방지 (2025-01-XX 업데이트)**:
   - 같은 위치에 여러 스팟이 있을 경우 원형으로 약간 분산 (최대 15m 이내)
   - 스팟 개수에 비례하여 분산 거리 조정 (5m × 개수, 최대 15m)
+
+## 오류 및 해결 방법
+
+### 2025-01-XX: 서버 연결 오류 (ERR_CONNECTION_REFUSED)
+**문제**: 
+- 클라이언트에서 `http://localhost:5000/api/job-board/applications/my` 호출 시 `ERR_CONNECTION_REFUSED` 오류 발생
+- `Failed to fetch` 오류 발생
+- WebSocket 연결 실패
+
+**원인**:
+- 서버가 실행되지 않았거나 접근할 수 없는 상태
+
+**해결 방법**:
+1. 서버를 실행: `cd server && npm run dev`
+2. 서버가 정상적으로 시작되었는지 확인 (포트 5000에서 리스닝 중인지 확인)
+3. 서버 로그에서 오류가 없는지 확인
+4. 만약 포트가 다르다면 클라이언트의 API 호출 URL을 확인
+
+**추가 확인사항**:
+- `server/src/routes/job-board.ts` 라우트가 `server/src/index.ts`에 등록되어 있는지 확인
+- `server/src/models/JobApplication.ts` 모델이 `server/src/index.ts`에 import되어 있는지 확인

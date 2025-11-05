@@ -11,44 +11,10 @@
 
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
+import { CommunityPost } from '../models/Community';
 import mongoose from 'mongoose';
 
 const router = Router();
-
-// CommunityPost 모델 (간단한 스키마)
-const CommunityPostSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  author: {
-    name: { type: String, required: true },
-    userId: { type: String, required: true }
-  },
-  category: { 
-    type: String, 
-    enum: ['tip', 'question', 'review', 'meetup', 'event', 'general'],
-    default: 'general'
-  },
-  likes: { type: Number, default: 0 },
-  comments: { type: Number, default: 0 },
-  isBlinded: { type: Boolean, default: false },
-  warnings: { type: Number, default: 0 },
-  reportCount: { type: Number, default: 0 },
-  meetupDetails: {
-    location: String,
-    date: String,
-    time: String,
-    strokeType: String,
-    distance: String,
-    pace: String,
-    maxParticipants: Number,
-    currentParticipants: { type: Number, default: 0 },
-    cost: Number,
-    level: String,
-    participants: [{ userId: String, userName: String, joinedAt: Date }]
-  }
-}, { timestamps: true });
-
-const CommunityPost = mongoose.models.CommunityPost || mongoose.model('CommunityPost', CommunityPostSchema);
 
 /**
  * GET /api/community/posts
@@ -56,13 +22,26 @@ const CommunityPost = mongoose.models.CommunityPost || mongoose.model('Community
  */
 router.get('/posts', async (req: Request, res: Response) => {
   try {
-    const posts = await CommunityPost.find()
+    const { roomType } = req.query;
+    
+    const filter: any = {};
+    if (roomType) {
+      filter.roomType = roomType;
+    }
+
+    const posts = await CommunityPost.find(filter)
+      .populate('authorId', 'name email')
+      .populate({
+        path: 'roomSpecific.jobBoard.centerId',
+        select: 'name',
+        model: mongoose.models.Center || mongoose.models.SwimmingCenter || 'Center'
+      })
       .sort({ createdAt: -1 })
       .limit(100);
 
     res.json({
       success: true,
-      posts: posts
+      data: posts
     });
   } catch (error) {
     console.error('게시글 조회 오류:', error);
@@ -79,10 +58,10 @@ router.get('/posts', async (req: Request, res: Response) => {
  */
 router.post('/posts', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { title, content, category, meetupDetails } = req.body;
+    const { title, content, roomType, roomSpecific } = req.body;
     const user = (req as any).user;
 
-    console.log('📝 게시글 작성 요청:', { title, category, user: user?.name });
+    console.log('📝 게시글 작성 요청:', { title, roomType, user: user?.name });
 
     if (!user) {
       return res.status(401).json({ 
@@ -91,28 +70,76 @@ router.post('/posts', authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    const newPost = new CommunityPost({
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '제목과 내용은 필수입니다.' 
+      });
+    }
+
+    // job_board 타입인 경우 roomSpecific.jobBoard 필수
+    if (roomType === 'job_board' && !roomSpecific?.jobBoard) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '구인구직 게시글은 jobBoard 정보가 필요합니다.' 
+      });
+    }
+
+    // authorRole 변환: center-admin -> centerAdmin
+    let authorRole = user.userType || 'student';
+    if (authorRole === 'center-admin') {
+      authorRole = 'centerAdmin';
+    }
+
+    const postData: any = {
       title,
       content,
-      category: category || 'general',
-      author: {
-        name: user.name || '익명',
-        userId: user._id?.toString() || user.id?.toString() || 'unknown'
-      },
-      meetupDetails: category === 'meetup' ? {
-        ...meetupDetails,
-        currentParticipants: meetupDetails?.currentParticipants || 0,
-        participants: meetupDetails?.participants || []
-      } : undefined
-    });
+      roomType: roomType || 'chat',
+      authorId: user._id || user.id,
+      authorName: user.name || '익명',
+      authorRole: authorRole,
+      roomSpecific: roomSpecific || {}
+    };
 
+    // job_board인 경우 centerId 설정 (centerAdmin인 경우)
+    if (roomType === 'job_board' && roomSpecific?.jobBoard) {
+      if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
+        // centerAdmin의 경우 자신의 센터 ID 설정
+        if (user.centerId) {
+          postData.roomSpecific.jobBoard.centerId = user.centerId;
+        } else if (user.memberships && user.memberships.length > 0) {
+          // memberships에서 centerId 찾기
+          const centerMembership = user.memberships.find((m: any) => m.role === 'centerAdmin');
+          if (centerMembership) {
+            postData.roomSpecific.jobBoard.centerId = centerMembership.centerId;
+          }
+        }
+      }
+      
+      // status 기본값 설정
+      if (!postData.roomSpecific.jobBoard.status) {
+        postData.roomSpecific.jobBoard.status = 'open';
+      }
+    }
+
+    const newPost = new CommunityPost(postData);
     await newPost.save();
+
+    // populate로 관련 정보 포함
+    await newPost.populate('authorId', 'name email');
+    if (roomType === 'job_board' && newPost.roomSpecific?.jobBoard?.centerId) {
+      await newPost.populate({
+        path: 'roomSpecific.jobBoard.centerId',
+        select: 'name',
+        model: mongoose.models.Center || mongoose.models.SwimmingCenter || 'Center'
+      });
+    }
 
     console.log('✅ 게시글 생성 성공:', newPost._id);
 
     res.json({
       success: true,
-      post: newPost,
+      data: newPost,
       message: '게시글이 작성되었습니다.'
     });
   } catch (error: any) {
@@ -125,22 +152,15 @@ router.post('/posts', authMiddleware, async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/community/posts/:id
- * 게시글 삭제 (최고 관리자 전용)
+ * PUT /api/community/posts/:id
+ * 게시글 수정
  */
-router.delete('/posts/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/posts/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    
-    // 최고 관리자 권한 확인
-    if (user.userType !== 'superAdmin') {
-      return res.status(403).json({ 
-        success: false, 
-        message: '삭제 권한이 없습니다.' 
-      });
-    }
+    const { title, content, roomSpecific } = req.body;
 
-    const post = await CommunityPost.findByIdAndDelete(req.params.id);
+    const post = await CommunityPost.findById(req.params.id);
 
     if (!post) {
       return res.status(404).json({ 
@@ -148,6 +168,80 @@ router.delete('/posts/:id', authMiddleware, async (req: Request, res: Response) 
         message: '게시글을 찾을 수 없습니다.' 
       });
     }
+
+    // 권한 확인: 작성자 또는 최고 관리자만 수정 가능
+    const isAuthor = post.authorId.toString() === (user._id || user.id).toString();
+    const isSuperAdmin = user.userType === 'superAdmin';
+
+    if (!isAuthor && !isSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '수정 권한이 없습니다.' 
+      });
+    }
+
+    // 수정할 필드 업데이트
+    if (title) post.title = title;
+    if (content) post.content = content;
+    if (roomSpecific) {
+      post.roomSpecific = { ...post.roomSpecific, ...roomSpecific };
+    }
+
+    await post.save();
+
+    // populate로 관련 정보 포함
+    await post.populate('authorId', 'name email');
+    if (post.roomType === 'job_board' && post.roomSpecific?.jobBoard?.centerId) {
+      await post.populate({
+        path: 'roomSpecific.jobBoard.centerId',
+        select: 'name',
+        model: mongoose.models.Center || mongoose.models.SwimmingCenter || 'Center'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: post,
+      message: '게시글이 수정되었습니다.'
+    });
+  } catch (error: any) {
+    console.error('게시글 수정 오류:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || '게시글 수정 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+/**
+ * DELETE /api/community/posts/:id
+ * 게시글 삭제 (작성자 또는 최고 관리자)
+ */
+router.delete('/posts/:id', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+
+    const post = await CommunityPost.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '게시글을 찾을 수 없습니다.' 
+      });
+    }
+
+    // 권한 확인: 작성자 또는 최고 관리자만 삭제 가능
+    const isAuthor = post.authorId.toString() === (user._id || user.id).toString();
+    const isSuperAdmin = user.userType === 'superAdmin';
+
+    if (!isAuthor && !isSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: '삭제 권한이 없습니다.' 
+      });
+    }
+
+    await CommunityPost.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
@@ -180,7 +274,7 @@ router.post('/posts/:id/blind', authMiddleware, async (req: Request, res: Respon
 
     const post = await CommunityPost.findByIdAndUpdate(
       req.params.id,
-      { isBlinded: true },
+      { isHidden: true },
       { new: true }
     );
 
@@ -223,7 +317,7 @@ router.post('/posts/:id/unblind', authMiddleware, async (req: Request, res: Resp
 
     const post = await CommunityPost.findByIdAndUpdate(
       req.params.id,
-      { isBlinded: false },
+      { isHidden: false },
       { new: true }
     );
 

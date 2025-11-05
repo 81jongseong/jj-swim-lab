@@ -13,6 +13,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2, List, Settings, X } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
 import CenterManagementTab from './center-management-tab';
+import { apiClient } from '../../../utils/api';
 
 interface CenterInfo {
   centerId: string;
@@ -371,7 +372,6 @@ function CenterInfoManagement() {
           </p>
         </div>
       )}
-        </div>
 
       {/* 센터 추가 모달 */}
       {showAddCenterModal && (

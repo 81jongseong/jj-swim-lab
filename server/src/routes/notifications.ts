@@ -15,7 +15,8 @@ const router = express.Router();
 // 알림 목록 조회
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user._id || user.id || user.userId;
     const { page = 1, limit = 20, type, priority, isRead } = req.query;
 
     const query: any = { userId };
@@ -57,7 +58,8 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 // 읽지 않은 알림 개수 조회
 router.get('/unread-count', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user._id || user.id || user.userId;
     const count = await Notification.countDocuments({ userId, isRead: false });
 
     res.json({
@@ -77,7 +79,8 @@ router.get('/unread-count', authMiddleware, async (req: Request, res: Response) 
 // 알림 읽음 처리
 router.put('/:id/read', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user._id || user.id || user.userId;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -117,7 +120,8 @@ router.put('/:id/read', authMiddleware, async (req: Request, res: Response) => {
 // 모든 알림 읽음 처리
 router.put('/read-all', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user._id || user.id || user.userId;
 
     const result = await Notification.updateMany(
       { userId, isRead: false },
@@ -142,7 +146,8 @@ router.put('/read-all', authMiddleware, async (req: Request, res: Response) => {
 // 알림 삭제
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
+    const userId = user._id || user.id || user.userId;
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {

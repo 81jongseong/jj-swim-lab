@@ -113,15 +113,64 @@
 import { useEffect, useRef, useState } from 'react';
 
 export interface AppNotification {
+  _id?: string;
   type: string;
+  title?: string;
   message: string;
   createdAt?: string;
+  isRead?: boolean;
+  priority?: string;
+  data?: any;
 }
 
 export function useNotifications(userId?: string) {
   const socketRef = useRef<any>(null);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
+  // API에서 알림 가져오기
+  useEffect(() => {
+    if (!userId || typeof window === 'undefined') return;
+    
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch('http://localhost:5000/api/notifications?limit=20', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data?.notifications) {
+            setNotifications(result.data.notifications.map((n: any) => ({
+              _id: n._id,
+              type: n.type,
+              title: n.title,
+              message: n.message,
+              createdAt: n.createdAt,
+              isRead: n.isRead,
+              priority: n.priority,
+              data: n.data
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('알림 조회 실패:', error);
+      }
+    };
+    
+    fetchNotifications();
+    
+    // 주기적으로 알림 새로고침 (30초마다)
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
+
+  // WebSocket 연결
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const base = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';

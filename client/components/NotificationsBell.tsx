@@ -102,11 +102,11 @@ export default function NotificationsBell() {
               <div className="p-3 text-sm text-gray-600">새 알림이 없습니다.</div>
             )}
             {notifications.map((n, idx) => (
-              <div key={idx} className="p-3 border-b last:border-b-0">
-                <div className="text-sm font-medium text-gray-900">{n.type}</div>
+              <div key={n._id || idx} className={`p-3 border-b last:border-b-0 ${!n.isRead ? 'bg-blue-50' : ''}`}>
+                <div className="text-sm font-semibold text-gray-900">{n.title || n.type}</div>
                 <div className="text-sm text-gray-700">{n.message}</div>
                 {n.createdAt && (
-                  <div className="text-xs text-gray-500 mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">{new Date(n.createdAt).toLocaleString('ko-KR')}</div>
                 )}
               </div>
             ))}

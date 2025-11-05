@@ -341,6 +341,33 @@ interface IUser extends mongoose.Document {
         bufferTime?: number; // 레슨 간 휴식 시간 (분)
       };
     };
+    availableRegions?: string[]; // 근무 가능 지역
+    introduction?: string; // 자기소개
+    photo?: string; // 프로필 사진
+    // 프로필 커스터마이징 (job-board에서 표시용)
+    profileCustomization?: {
+      theme?: 'default' | 'blue' | 'green' | 'purple' | 'orange' | 'custom';
+      primaryColor?: string; // 커스텀 테마일 때 사용
+      secondaryColor?: string; // 커스텀 테마일 때 사용
+      layout?: 'compact' | 'standard' | 'detailed';
+      showPhoto?: boolean;
+      showCertifications?: boolean;
+      showExperience?: boolean;
+      showSpecialties?: boolean;
+      showRegions?: boolean;
+    };
+    certificates?: Array<{
+      name: string;
+      issuer: string;
+      certificateNumber: string;
+      acquiredDate: string;
+    }>;
+    teachingExperiences?: Array<{
+      centerName: string;
+      startDate: string;
+      endDate: string;
+      workType: string;
+    }>;
   };
   centerAdminInfo?: {
     managedCenters?: mongoose.Types.ObjectId[];
@@ -722,7 +749,33 @@ const userSchema = new mongoose.Schema({
       totalStudents: { type: Number, default: 0 },
       leaveReason: { type: String, default: '' },
       memo: { type: String, default: '' }
-    }]
+    }],
+    // 🆕 근무 가능 지역
+    availableRegions: [{ type: String }],
+    // 🆕 자기소개
+    introduction: { type: String, default: '' },
+    // 🆕 프로필 사진
+    photo: { type: String },
+    // 🆕 프로필 커스터마이징 (job-board에서 표시용)
+    profileCustomization: {
+      theme: {
+        type: String,
+        enum: ['default', 'blue', 'green', 'purple', 'orange', 'custom'],
+        default: 'default'
+      },
+      primaryColor: { type: String },
+      secondaryColor: { type: String },
+      layout: {
+        type: String,
+        enum: ['compact', 'standard', 'detailed'],
+        default: 'standard'
+      },
+      showPhoto: { type: Boolean, default: true },
+      showCertifications: { type: Boolean, default: true },
+      showExperience: { type: Boolean, default: true },
+      showSpecialties: { type: Boolean, default: true },
+      showRegions: { type: Boolean, default: true }
+    }
   },
   // 센터 관리자 전용 필드
   centerAdminInfo: {
