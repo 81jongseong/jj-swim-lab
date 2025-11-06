@@ -40,13 +40,27 @@ const personalLessonSchema = new mongoose_1.Schema({
         ref: 'Center',
         required: true
     },
+    requestedCenterId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Center'
+    },
+    isExternalMember: {
+        type: Boolean,
+        default: false
+    },
     date: {
         type: Date,
         required: true
     },
-    time: {
+    startTime: {
         type: String,
         required: true
+    },
+    endTime: {
+        type: String
+    },
+    time: {
+        type: String
     },
     duration: {
         type: Number,
@@ -78,6 +92,30 @@ const personalLessonSchema = new mongoose_1.Schema({
         required: true,
         default: 0
     },
+    instructorFee: {
+        type: Number,
+        default: 0
+    },
+    laneRentalFee: {
+        type: Number,
+        default: 0
+    },
+    platformFee: {
+        type: Number,
+        default: 0
+    },
+    totalAmount: {
+        type: Number,
+        default: 0
+    },
+    paymentId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Payment'
+    },
+    isExternalInstructor: {
+        type: Boolean,
+        default: false
+    },
     specialRequests: {
         type: String
     },
@@ -89,9 +127,32 @@ const personalLessonSchema = new mongoose_1.Schema({
     assignedLane: {
         type: Number,
         default: 1
+    },
+    laneRentalId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'LaneRental'
+    },
+    poolType: {
+        type: String,
+        enum: ['mainPool', 'kidsPool', 'auxiliaryPool'],
+        default: 'mainPool'
+    },
+    locationStatus: {
+        type: String,
+        enum: ['pending', 'confirmed', 'rejected'],
+        default: 'pending'
+    },
+    locationNotes: {
+        type: String
     }
 }, {
     timestamps: true
+});
+personalLessonSchema.pre('save', function (next) {
+    if (this.startTime && !this.time) {
+        this.time = this.startTime;
+    }
+    next();
 });
 const PersonalLesson = mongoose_1.default.model('PersonalLesson', personalLessonSchema);
 exports.PersonalLesson = PersonalLesson;

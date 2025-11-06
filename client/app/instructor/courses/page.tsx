@@ -21,9 +21,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { BookOpen, Users, Calendar, Star, Eye, Search } from 'lucide-react';
+import { BookOpen, Users, Calendar, Star, Eye, Search, List } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
+import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 
 interface Course {
   _id: string;
@@ -44,6 +45,8 @@ interface Course {
   enrolledStudents: number;
   rating: number;
   status: 'active' | 'inactive' | 'draft';
+  isPersonalLesson?: boolean; // ⭐ 개인레슨 여부
+  courseType?: 'group' | 'personal' | 'freeSwim'; // ⭐ 강의 타입
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +58,7 @@ function InstructorCoursesManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailCourse, setDetailCourse] = useState<Course | null>(null);
 
@@ -108,10 +112,11 @@ function InstructorCoursesManagement() {
           };
 
           let schedule: { dayOfWeek: number; startTime: string; endTime: string }[] = [];
-          if (course.schedule && Array.isArray(course.schedule)) {
+          if (course.schedule && Array.isArray(course.schedule) && course.schedule.length > 0) {
             schedule = course.schedule.map((sch: any) => {
-              const dayEnglish = sch.day || sch.dayOfWeek || '';
-              const dayNumber = dayMap[dayEnglish.toLowerCase()] || 1;
+              // 서버에서 day 필드로 오는 경우 (영어: 'monday', 'tuesday' 등)
+              const dayEnglish = (sch.day || sch.dayOfWeek || '').toLowerCase();
+              const dayNumber = dayMap[dayEnglish] || 1;
               const startTime = sch.startTime || '09:00';
               const endTime = sch.endTime || '10:00';
               
@@ -122,6 +127,12 @@ function InstructorCoursesManagement() {
               };
             });
           }
+          
+          console.log('📅 강의 schedule 변환:', {
+            courseName: course.name,
+            originalSchedule: course.schedule,
+            convertedSchedule: schedule
+          });
 
           return {
             _id: course.id || course._id?.toString() || '',
@@ -136,8 +147,12 @@ function InstructorCoursesManagement() {
             instructorName: user.name || '강사',
             schedule,
             enrolledStudents: course.currentStudents || 0,
+            enrolledStudentsList: course.enrolledStudents || [], // ⭐ 실제 수강생 목록 (DB 데이터)
+            tags: course.tags || [], // ⭐ 실제 태그 정보 (DB 데이터)
             rating: course.rating || 0,
             status: course.status || 'active',
+            isPersonalLesson: course.isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+            courseType: course.courseType || 'group', // ⭐ 강의 타입 추가 (group, personal, freeSwim)
             createdAt: course.createdAt ? new Date(course.createdAt) : new Date(),
             updatedAt: course.updatedAt ? new Date(course.updatedAt) : new Date()
           };
@@ -224,6 +239,10 @@ function InstructorCoursesManagement() {
       7: '일'
     };
 
+    // ⭐ 실제 DB 데이터 사용
+    const enrolledStudentsList = (course as any).enrolledStudentsList || [];
+    const tags = (course as any).tags || [];
+
     return {
       _id: course._id,
       name: course.name,
@@ -242,12 +261,14 @@ function InstructorCoursesManagement() {
       })),
       status: course.status,
       createdAt: course.createdAt,
-      tags: [course.category],
-      enrolledStudents: Array.from({ length: course.enrolledStudents }, (_, i) => ({
-        studentId: `student-${i}`,
-        studentName: `학생 ${i + 1}`,
-        status: 'active' as const
-      }))
+      tags: tags.length > 0 ? tags : [course.category], // ⭐ DB 태그 사용, 없으면 category 사용
+      enrolledStudents: enrolledStudentsList.length > 0 
+        ? enrolledStudentsList // ⭐ 실제 DB 수강생 목록 사용
+        : Array.from({ length: course.enrolledStudents }, (_, i) => ({
+            studentId: `student-${i}`,
+            studentName: `학생 ${i + 1}`,
+            status: 'active' as const
+          }))
     };
   };
 
@@ -363,7 +384,78 @@ function InstructorCoursesManagement() {
         </div>
       </div>
 
-      {filteredCourses.length > 0 ? (
+      {/* 뷰 모드 토글 */}
+      <div className="flex justify-end items-center mb-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              viewMode === 'calendar'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            캘린더 뷰
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <List className="w-4 h-4 mr-2" />
+            리스트 뷰
+          </button>
+        </div>
+      </div>
+
+      {/* 캘린더 뷰 */}
+      {viewMode === 'calendar' && (
+        <WeeklyCalendar
+          courses={filteredCourses.map(course => ({
+            _id: course._id,
+            name: course.name,
+            description: course.description,
+            level: course.level,
+            duration: course.duration,
+            maxStudents: course.maxStudents,
+            currentStudents: course.enrolledStudents,
+            instructorId: course.instructorId,
+            instructorName: course.instructorName,
+            price: course.price,
+            schedule: course.schedule.map(sch => {
+              const dayLabel = getDayOfWeekLabel(sch.dayOfWeek);
+              const dayMap: { [key: string]: string } = {
+                '월': 'monday',
+                '화': 'tuesday',
+                '수': 'wednesday',
+                '목': 'thursday',
+                '금': 'friday',
+                '토': 'saturday',
+                '일': 'sunday'
+              };
+              return {
+                dayOfWeek: dayLabel,
+                day: dayMap[dayLabel] || dayLabel.toLowerCase(),
+                startTime: sch.startTime,
+                endTime: sch.endTime
+              };
+            }),
+            status: course.status,
+            tags: (course as any).tags || [course.category], // ⭐ 실제 DB 태그 사용
+            isPersonalLesson: (course as any).isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+            courseType: (course as any).courseType || 'group' // ⭐ 강의 타입 추가 (group, personal, freeSwim)
+          }))}
+          onCourseClick={handleViewDetail}
+        />
+      )}
+
+      {/* 리스트 뷰 */}
+      {viewMode === 'list' && (
+        filteredCourses.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCourses.map((course) => (
             <div 
@@ -459,6 +551,7 @@ function InstructorCoursesManagement() {
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">검색 결과가 없습니다.</p>
         </div>
+      )
       )}
 
       <CourseDetailModal

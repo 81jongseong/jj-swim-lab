@@ -1342,91 +1342,136 @@ function JobBoardPage() {
 
               {/* 지원 관리 버튼 */}
               <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    try {
-                      const token = localStorage.getItem('token');
-                      const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Authorization': `Bearer ${token}`,
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          status: 'document_passed',
-                          interviewDate: selectedApplication.interviewDate,
-                          interviewTime: selectedApplication.interviewTime,
-                          interviewLocation: selectedApplication.interviewLocation
-                        })
-                      });
+                {selectedApplication.status === 'applied' && (
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            status: 'document_passed'
+                          })
+                        });
 
-                      if (!response.ok) {
-                        throw new Error('서류 통과 처리에 실패했습니다.');
+                        if (!response.ok) {
+                          throw new Error('서류 통과 처리에 실패했습니다.');
+                        }
+
+                        const result = await response.json();
+                        if (result.success) {
+                          alert('서류 통과 처리되었습니다.');
+                          await fetchApplications();
+                          setShowApplicationDetailModal(false);
+                          setSelectedApplication(null);
+                        }
+                      } catch (error: any) {
+                        console.error('서류 통과 처리 실패:', error);
+                        alert(error.message || '서류 통과 처리에 실패했습니다.');
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    서류 통과
+                  </Button>
+                )}
+                {selectedApplication.status === 'document_passed' && (
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      if (!selectedApplication.interviewDate) {
+                        alert('면접 날짜를 먼저 설정해주세요.');
+                        return;
                       }
 
-                      const result = await response.json();
-                      if (result.success) {
-                        alert('서류 통과 처리되었습니다.');
-                        await fetchApplications();
-                        setShowApplicationDetailModal(false);
-                        setSelectedApplication(null);
-                      }
-                    } catch (error: any) {
-                      console.error('서류 통과 처리 실패:', error);
-                      alert(error.message || '서류 통과 처리에 실패했습니다.');
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  서류 통과
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={async () => {
-                    if (!selectedApplication.interviewDate) {
-                      alert('면접 날짜를 먼저 설정해주세요.');
-                      return;
-                    }
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            status: 'interview_scheduled',
+                            interviewDate: selectedApplication.interviewDate,
+                            interviewTime: selectedApplication.interviewTime,
+                            interviewLocation: selectedApplication.interviewLocation
+                          })
+                        });
 
-                    try {
-                      const token = localStorage.getItem('token');
-                      const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Authorization': `Bearer ${token}`,
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          status: 'interview_scheduled',
-                          interviewDate: selectedApplication.interviewDate,
-                          interviewTime: selectedApplication.interviewTime,
-                          interviewLocation: selectedApplication.interviewLocation
-                        })
-                      });
+                        if (!response.ok) {
+                          throw new Error('면접 일정 설정에 실패했습니다.');
+                        }
 
-                      if (!response.ok) {
-                        throw new Error('면접 일정 설정에 실패했습니다.');
+                        const result = await response.json();
+                        if (result.success) {
+                          alert('면접 일정이 설정되었고 강사에게 알림이 전송되었습니다.');
+                          await fetchApplications();
+                          setShowApplicationDetailModal(false);
+                          setSelectedApplication(null);
+                        }
+                      } catch (error: any) {
+                        console.error('면접 일정 설정 실패:', error);
+                        alert(error.message || '면접 일정 설정에 실패했습니다.');
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    면접 일정 설정
+                  </Button>
+                )}
+                {selectedApplication.status === 'interview_passed' && (
+                  <Button
+                    variant="primary"
+                    onClick={async () => {
+                      if (!confirm('정말 이 강사를 채용하시겠습니까? 채용하면 센터에 소속되어 반배정 및 강의 시스템을 이용할 수 있습니다.')) {
+                        return;
                       }
 
-                      const result = await response.json();
-                      if (result.success) {
-                        alert('면접 일정이 설정되었고 강사에게 알림이 전송되었습니다.');
-                        await fetchApplications();
-                        setShowApplicationDetailModal(false);
-                        setSelectedApplication(null);
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}/hire`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            contractType: 'full-time' // 기본값, 필요시 선택 가능하도록 수정 가능
+                          })
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.message || '채용 처리에 실패했습니다.');
+                        }
+
+                        const result = await response.json();
+                        if (result.success) {
+                          alert('강사가 채용되었습니다. 강사에게 알림이 전송되었습니다.');
+                          await fetchApplications();
+                          setShowApplicationDetailModal(false);
+                          setSelectedApplication(null);
+                        }
+                      } catch (error: any) {
+                        console.error('채용 처리 실패:', error);
+                        alert(error.message || '채용 처리에 실패했습니다.');
                       }
-                    } catch (error: any) {
-                      console.error('면접 일정 설정 실패:', error);
-                      alert(error.message || '면접 일정 설정에 실패했습니다.');
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Calendar className="w-4 h-4" />
-                  면접 일정 설정
-                </Button>
+                    }}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    채용하기
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1712,4 +1757,5 @@ function JobBoardPage() {
 }
 
 export default withAuth(JobBoardPage, { requireTypes: ['superAdmin', 'centerAdmin', 'instructor'] });
+
 

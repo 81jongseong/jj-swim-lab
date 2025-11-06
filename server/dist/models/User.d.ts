@@ -30,6 +30,11 @@ interface IUser extends mongoose.Document {
     password: string;
     phone: string;
     address: string;
+    socialAccounts?: Array<{
+        provider: 'kakao' | 'naver' | 'google' | 'facebook';
+        providerId: string;
+        connectedAt: Date;
+    }>;
     location?: {
         type: 'Point';
         coordinates: [number, number];
@@ -248,6 +253,32 @@ interface IUser extends mongoose.Document {
                 bufferTime?: number;
             };
         };
+        availableRegions?: string[];
+        introduction?: string;
+        photo?: string;
+        profileCustomization?: {
+            theme?: 'default' | 'blue' | 'green' | 'purple' | 'orange' | 'custom';
+            primaryColor?: string;
+            secondaryColor?: string;
+            layout?: 'compact' | 'standard' | 'detailed';
+            showPhoto?: boolean;
+            showCertifications?: boolean;
+            showExperience?: boolean;
+            showSpecialties?: boolean;
+            showRegions?: boolean;
+        };
+        certificates?: Array<{
+            name: string;
+            issuer: string;
+            certificateNumber: string;
+            acquiredDate: string;
+        }>;
+        teachingExperiences?: Array<{
+            centerName: string;
+            startDate: string;
+            endDate: string;
+            workType: string;
+        }>;
     };
     centerAdminInfo?: {
         managedCenters?: mongoose.Types.ObjectId[];

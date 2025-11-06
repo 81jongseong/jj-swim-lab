@@ -128,40 +128,42 @@ export function useNotifications(userId?: string) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // API에서 알림 가져오기
-  useEffect(() => {
+  const fetchNotifications = async () => {
     if (!userId || typeof window === 'undefined') return;
     
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        const response = await fetch('http://localhost:5000/api/notifications?limit=20', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data?.notifications) {
-            setNotifications(result.data.notifications.map((n: any) => ({
-              _id: n._id,
-              type: n.type,
-              title: n.title,
-              message: n.message,
-              createdAt: n.createdAt,
-              isRead: n.isRead,
-              priority: n.priority,
-              data: n.data
-            })));
-          }
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch('http://localhost:5000/api/notifications?limit=20', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {
-        console.error('알림 조회 실패:', error);
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.notifications) {
+          setNotifications(result.data.notifications.map((n: any) => ({
+            _id: n._id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            createdAt: n.createdAt,
+            isRead: n.isRead,
+            priority: n.priority,
+            data: n.data
+          })));
+        }
       }
-    };
+    } catch (error) {
+      console.error('알림 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!userId || typeof window === 'undefined') return;
     
     fetchNotifications();
     
@@ -206,8 +208,20 @@ export function useNotifications(userId?: string) {
     };
   }, [userId]);
 
-  return { notifications };
+  return { notifications, refreshNotifications: fetchNotifications };
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

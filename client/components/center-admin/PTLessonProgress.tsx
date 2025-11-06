@@ -237,6 +237,9 @@ export default function PTLessonProgress({
 
   const handleCourseClick = async (e: React.MouseEvent | React.KeyboardEvent, course: CourseGroup) => {
     console.log('카드 클릭됨:', course);
+    console.log('🔍 현재 선택한 강사 ID (props):', instructorId);
+    console.log('🔍 수업의 담당 강사 ID (course):', course.instructorId);
+    
     setSelectedCourse(course);
     
     // 과정 상세 정보 조회
@@ -275,6 +278,19 @@ export default function PTLessonProgress({
           instructorActive
         });
         
+        // 기존 강사인지 확인 (현재 선택한 강사와 동일한지)
+        const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+        const courseInstructorIdStr = currentInstructorId?.toString() || String(currentInstructorId || '');
+        const isCurrentInstructor = propsInstructorIdStr === courseInstructorIdStr;
+        
+        console.log('🔍 기존 강사 비교:', {
+          propsInstructorIdStr,
+          courseInstructorIdStr,
+          isCurrentInstructor,
+          propsInstructorId: instructorId,
+          courseInstructorId: currentInstructorId
+        });
+        
         setEditForm({
           courseName: currentCourseName,
           instructorId: currentInstructorId,
@@ -283,6 +299,13 @@ export default function PTLessonProgress({
         setOriginalInstructorId(currentInstructorId);
         setOriginalCourseName(currentCourseName);
         setShowEditModal(true);
+        
+        console.log('✅ 수업 수정 모달 열기:', {
+          currentInstructorId,
+          instructorId,
+          isCurrentInstructor,
+          courseName: currentCourseName
+        });
       } else {
         console.error('과정 정보를 찾을 수 없습니다.');
         alert('과정 정보를 불러올 수 없습니다.');
@@ -295,6 +318,18 @@ export default function PTLessonProgress({
   const handleSaveChanges = async () => {
     if (!selectedCourse) return;
     
+    // 기존 강사의 수업인 경우 강사 변경 불가
+    const currentInstructorIdStr = selectedCourse.instructorId?.toString() || '';
+    const instructorIdStr = instructorId?.toString() || '';
+    const isCurrentInstructorCourse = currentInstructorIdStr === instructorIdStr;
+    const editInstructorIdStr = editForm.instructorId?.toString() || '';
+    const selectedInstructorIdStr = selectedCourse.instructorId?.toString() || '';
+    
+    if (isCurrentInstructorCourse && editInstructorIdStr !== selectedInstructorIdStr) {
+      alert('기존 강사의 수업은 담당 강사를 변경할 수 없습니다.');
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       
@@ -303,8 +338,14 @@ export default function PTLessonProgress({
       if (editForm.courseName !== originalCourseName) {
         updateData.name = editForm.courseName;
       }
-      if (editForm.instructorId && editForm.instructorId !== originalInstructorId) {
+      // 기존 강사가 아닌 경우에만 강사 변경 허용
+      const originalInstructorIdStr = originalInstructorId?.toString() || '';
+      if (!isCurrentInstructorCourse && editForm.instructorId && editInstructorIdStr !== originalInstructorIdStr) {
         updateData.instructorId = editForm.instructorId;
+      } else if (isCurrentInstructorCourse && editInstructorIdStr !== selectedInstructorIdStr) {
+        // 기존 강사의 수업에서 강사 변경 시도 시
+        alert('기존 강사의 수업은 담당 강사를 변경할 수 없습니다.');
+        return;
       }
       
       if (Object.keys(updateData).length > 0) {
@@ -335,6 +376,15 @@ export default function PTLessonProgress({
   const handleBulkChange = async () => {
     if (!bulkChangeForm.oldInstructorId || !bulkChangeForm.newInstructorId) {
       alert('기존 강사와 새 강사를 모두 선택해주세요.');
+      return;
+    }
+
+    // 현재 선택한 강사는 기존 강사로 선택할 수 없음
+    const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+    const oldInstructorIdStr = bulkChangeForm.oldInstructorId?.toString() || String(bulkChangeForm.oldInstructorId || '');
+    
+    if (oldInstructorIdStr === propsInstructorIdStr) {
+      alert('현재 선택한 강사는 기존 강사로 선택할 수 없습니다. 다른 강사를 선택해주세요.');
       return;
     }
 
@@ -417,7 +467,7 @@ export default function PTLessonProgress({
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                PT 수업 관리 - {selectedDate.replace(/-/g, '.')}
+                PT 수업 관리 - {selectedDate.replace(/\-/g, '.')}
               </h2>
               <p className="text-sm text-gray-600">
                 총 {courseGroups.length}개의 수업 과정
@@ -576,23 +626,71 @@ export default function PTLessonProgress({
               </div>
 
               {/* 담당 강사 변경 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  담당 강사
-                </label>
-                <select
-                  value={editForm.instructorId}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, instructorId: e.target.value }))}
-                  className="w-full border rounded-lg p-3"
-                >
-                  <option value="">강사 선택</option>
-                  {instructors.map((instructor) => (
-                    <option key={instructor._id} value={instructor._id}>
-                      {instructor.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {(() => {
+                // 기존 강사인지 확인 (현재 선택한 강사와 동일한지)
+                const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+                const courseInstructorIdStr = selectedCourse?.instructorId?.toString() || String(selectedCourse?.instructorId || '');
+                const editFormInstructorIdStr = editForm.instructorId?.toString() || String(editForm.instructorId || '');
+                
+                const isCurrentInstructor = propsInstructorIdStr === courseInstructorIdStr;
+                
+                console.log('🔍 담당 강사 드롭다운 상태 (모달 렌더링):', {
+                  propsInstructorIdStr,
+                  courseInstructorIdStr,
+                  editFormInstructorIdStr,
+                  isCurrentInstructor,
+                  selectedCourseInstructorId: selectedCourse?.instructorId,
+                  propsInstructorId: instructorId,
+                  editFormInstructorId: editForm.instructorId
+                });
+                
+                return (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      담당 강사
+                      {isCurrentInstructor && (
+                        <span className="text-xs text-gray-500 ml-2">(기존 강사는 수정할 수 없습니다)</span>
+                      )}
+                    </label>
+                    <select
+                      value={editForm.instructorId}
+                      onChange={(e) => {
+                        // 기존 강사의 수업인 경우 변경 불가
+                        if (isCurrentInstructor) {
+                          console.log('⚠️ 기존 강사의 수업은 변경할 수 없습니다.');
+                          e.preventDefault();
+                          return;
+                        }
+                        setEditForm(prev => ({ ...prev, instructorId: e.target.value }));
+                      }}
+                      disabled={isCurrentInstructor}
+                      className={`w-full border rounded-lg p-3 ${
+                        isCurrentInstructor ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                      }`}
+                      style={isCurrentInstructor ? { pointerEvents: 'none' } : {}}
+                    >
+                      <option value="">강사 선택</option>
+                      {instructors.map((instructor) => {
+                        const instructorIdStr = instructor._id?.toString() || String(instructor._id || '');
+                        const isThisInstructor = instructorIdStr === propsInstructorIdStr;
+                        return (
+                          <option key={instructor._id} value={instructor._id}>
+                            {instructor.name} {isCurrentInstructor && isThisInstructor ? '(기존 강사)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {isCurrentInstructor && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        이 수업은 현재 선택한 강사({instructors.find(i => {
+                          const idStr = i._id?.toString() || String(i._id || '');
+                          return idStr === propsInstructorIdStr;
+                        })?.name || '강사'})의 수업이므로 담당 강사를 변경할 수 없습니다.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 버튼 */}
               <div className="flex justify-end space-x-3 pt-4 border-t">
@@ -634,28 +732,94 @@ export default function PTLessonProgress({
             </div>
 
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  기존 강사
-                </label>
-                <select
-                  value={bulkChangeForm.oldInstructorId}
-                  onChange={(e) => setBulkChangeForm(prev => ({ ...prev, oldInstructorId: e.target.value }))}
-                  className="w-full border rounded-lg p-3"
-                >
-                  <option value="">기존 강사 선택</option>
-                  {instructors.map((instructor) => (
-                    <option key={instructor._id} value={instructor._id}>
-                      {instructor.name} {instructor.isActive === false ? '(비활성)' : ''}
-                    </option>
-                  ))}
-                </select>
-                {bulkChangeForm.oldInstructorId && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {courseGroups.filter(c => c.instructorId === bulkChangeForm.oldInstructorId).length}개의 반이 변경됩니다.
-                  </p>
-                )}
-              </div>
+              {(() => {
+                const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+                const selectedIdStr = bulkChangeForm.oldInstructorId?.toString() || String(bulkChangeForm.oldInstructorId || '');
+                const isCurrentInstructorSelected = selectedIdStr === propsInstructorIdStr && selectedIdStr !== '';
+                const currentInstructor = instructors.find(i => {
+                  const idStr = i._id?.toString() || String(i._id || '');
+                  return idStr === propsInstructorIdStr;
+                });
+                
+                return (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      기존 강사
+                      {isCurrentInstructorSelected && (
+                        <span className="text-xs text-gray-500 ml-2">(현재 선택한 강사는 변경할 수 없습니다)</span>
+                      )}
+                    </label>
+                    {isCurrentInstructorSelected && currentInstructor && (
+                      <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-semibold text-blue-900">
+                              현재 선택된 기존 강사: {currentInstructor.name}
+                            </span>
+                            {currentInstructor.isActive === false && (
+                              <span className="text-xs text-gray-500 ml-2">(비활성)</span>
+                            )}
+                          </div>
+                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                            변경 불가
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <select
+                      value={bulkChangeForm.oldInstructorId}
+                      onChange={(e) => {
+                        const selectedIdStr = e.target.value?.toString() || String(e.target.value || '');
+                        const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+                        
+                        // 현재 선택한 강사는 선택할 수 없음
+                        if (selectedIdStr === propsInstructorIdStr) {
+                          console.log('⚠️ 현재 선택한 강사는 기존 강사로 선택할 수 없습니다.');
+                          return;
+                        }
+                        setBulkChangeForm(prev => ({ ...prev, oldInstructorId: e.target.value }));
+                      }}
+                      disabled={isCurrentInstructorSelected}
+                      className={`w-full border rounded-lg p-3 ${
+                        isCurrentInstructorSelected ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                      }`}
+                      style={isCurrentInstructorSelected ? { pointerEvents: 'none' } : {}}
+                    >
+                      <option value="">기존 강사 선택</option>
+                      {instructors.map((instructor) => {
+                        const instructorIdStr = instructor._id?.toString() || String(instructor._id || '');
+                        const propsInstructorIdStr = instructorId?.toString() || String(instructorId || '');
+                        const isCurrentInstructor = instructorIdStr === propsInstructorIdStr;
+                        
+                        return (
+                          <option 
+                            key={instructor._id} 
+                            value={instructor._id}
+                            disabled={isCurrentInstructor}
+                            style={isCurrentInstructor ? { backgroundColor: '#f3f4f6', color: '#9ca3af' } : {}}
+                          >
+                            {instructor.name} {instructor.isActive === false ? '(비활성)' : ''} {isCurrentInstructor ? '(현재 선택한 강사 - 변경 불가)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {bulkChangeForm.oldInstructorId && !isCurrentInstructorSelected && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {courseGroups.filter(c => {
+                          const courseInstructorIdStr = c.instructorId?.toString() || String(c.instructorId || '');
+                          const selectedIdStr = bulkChangeForm.oldInstructorId?.toString() || String(bulkChangeForm.oldInstructorId || '');
+                          return courseInstructorIdStr === selectedIdStr;
+                        }).length}개의 반이 변경됩니다.
+                      </p>
+                    )}
+                    {isCurrentInstructorSelected && (
+                      <p className="text-xs text-red-500 mt-1">
+                        현재 선택한 강사는 기존 강사로 선택할 수 없습니다. 다른 강사를 선택해주세요.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

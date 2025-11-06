@@ -26,18 +26,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Video = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const videoSchema = new mongoose_1.Schema({
-    owner: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
-    filename: { type: String, required: true },
-    originalName: { type: String, required: true },
-    mimetype: { type: String, required: true },
-    size: { type: Number, required: true },
-    path: { type: String, required: true },
+    owner: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    ownerCenterId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Center' },
+    youtubeUrl: { type: String, required: true },
+    title: { type: String },
+    description: { type: String },
+    visibility: {
+        myCenterInstructors: { type: Boolean, default: false },
+        allInstructors: { type: Boolean, default: false },
+        myCenterMembers: { type: Boolean, default: false },
+        allMembers: { type: Boolean, default: false }
+    },
+    feedbacks: [{
+            reviewer: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+            reviewerType: { type: String, enum: ['instructor', 'member'], required: true },
+            reviewerCenterId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Center' },
+            content: { type: String, required: true },
+            rating: { type: Number, min: 1, max: 5 },
+            createdAt: { type: Date, default: Date.now }
+        }],
     status: { type: String, enum: ['pending', 'reviewed'], default: 'pending' },
     analysisResult: mongoose_1.Schema.Types.Mixed,
     feedback: { type: String },
     reviewedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
     reviewedAt: { type: Date },
-    visibility: { type: String, enum: ['private', 'center', 'public'], default: 'private' },
     reviews: [{
             reviewedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
             feedback: { type: String },
@@ -47,6 +59,8 @@ const videoSchema = new mongoose_1.Schema({
         }],
 }, { timestamps: true });
 videoSchema.index({ owner: 1, createdAt: -1 });
+videoSchema.index({ ownerCenterId: 1, createdAt: -1 });
+videoSchema.index({ 'visibility.allMembers': 1, createdAt: -1 });
 exports.Video = mongoose_1.default.model('Video', videoSchema);
 exports.default = exports.Video;
 //# sourceMappingURL=Video.js.map

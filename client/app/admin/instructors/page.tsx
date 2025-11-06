@@ -35,58 +35,87 @@ function InstructorsManagement() {
   const loadInstructors = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempInstructors: Instructor[] = [
-        {
-          _id: '1',
-          name: '김강사',
-          email: 'instructor1@example.com',
-          phone: '010-1234-5678',
-          experience: 5,
-          rating: 4.8,
-          specialties: ['자유형', '배영', '접영'],
-          certifications: ['수영지도자 1급', 'CPR 자격증'],
-          status: 'active',
-          joinedAt: new Date('2023-01-15'),
-          totalStudents: 45,
-          totalClasses: 120
-        },
-        {
-          _id: '2',
-          name: '이코치',
-          email: 'instructor2@example.com',
-          phone: '010-2345-6789',
-          experience: 8,
-          rating: 4.9,
-          specialties: ['평영', '접영', '종합'],
-          certifications: ['수영지도자 1급', '수상안전요원', 'CPR 자격증'],
-          status: 'active',
-          joinedAt: new Date('2022-06-10'),
-          totalStudents: 67,
-          totalClasses: 200
-        },
-        {
-          _id: '3',
-          name: '박트레이너',
-          email: 'instructor3@example.com',
-          phone: '010-3456-7890',
-          experience: 3,
-          rating: 4.5,
-          specialties: ['자유형', '초급자 지도'],
-          certifications: ['수영지도자 2급', 'CPR 자격증'],
-          status: 'pending',
-          joinedAt: new Date('2024-01-01'),
-          totalStudents: 12,
-          totalClasses: 30
+      
+      // 실제 DB에서 강사 데이터 가져오기
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('토큰이 없습니다.');
+        setInstructors([]);
+        return;
+      }
+
+      // API 호출 - 모든 강사 조회 (admin 권한)
+      const response = await fetch('http://localhost:5000/api/users?userType=instructor&limit=100', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      ];
-      // ⭐ 가나다순 정렬
-      const sortedInstructors = tempInstructors.sort((a, b) => 
-        a.name.localeCompare(b.name, 'ko-KR')
-      );
-      setInstructors(sortedInstructors);
+      });
+
+      if (!response.ok) {
+        throw new Error(`강사 목록 조회 실패: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // API 응답 구조에 따라 데이터 변환
+        const instructorsList = result.data.users || result.data.instructors || result.data || [];
+        
+        const mappedInstructors: Instructor[] = instructorsList.map((instructor: any) => {
+          const instructorInfo = instructor.instructorInfo || {};
+          const certifications = instructorInfo.certifications || [];
+          
+          // certifications가 배열인 경우 처리
+          let certList: string[] = [];
+          if (Array.isArray(certifications)) {
+            certList = certifications.map((cert: any) => {
+              if (typeof cert === 'string') {
+                return cert;
+              } else if (cert && cert.name) {
+                return `${cert.name}${cert.issuer ? ` (${cert.issuer})` : ''}${cert.certificateNumber ? ` - ${cert.certificateNumber}` : ''}`;
+              }
+              return '';
+            }).filter(Boolean);
+          }
+
+          // 경력 계산 (hiredAt 또는 createdAt 기준)
+          const hiredDate = instructorInfo.hiredAt 
+            ? new Date(instructorInfo.hiredAt) 
+            : (instructor.createdAt ? new Date(instructor.createdAt) : new Date());
+          const experienceYears = Math.floor((new Date().getTime() - hiredDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+
+          return {
+            _id: instructor._id?.toString() || instructor.id?.toString() || '',
+            name: instructor.name || '이름 없음',
+            email: instructor.email || '',
+            phone: instructor.phone || '',
+            experience: experienceYears || 0,
+            rating: instructorInfo.rating || instructor.rating || 0,
+            specialties: instructorInfo.specialties || [],
+            certifications: certList,
+            status: instructor.isActive === false ? 'inactive' : (instructorInfo.status || 'active'),
+            joinedAt: hiredDate,
+            totalStudents: instructorInfo.currentStudents || 0,
+            totalClasses: instructorInfo.totalClasses || 0
+          };
+        });
+
+        // 가나다순 정렬
+        const sortedInstructors = mappedInstructors.sort((a, b) => 
+          a.name.localeCompare(b.name, 'ko-KR')
+        );
+        
+        setInstructors(sortedInstructors);
+        console.log('✅ 강사 데이터 로드 완료:', sortedInstructors.length, '명');
+      } else {
+        console.warn('강사 데이터가 없습니다.');
+        setInstructors([]);
+      }
     } catch (error) {
       console.error('강사 목록 로드 실패:', error);
+      setInstructors([]);
     } finally {
       setIsLoading(false);
     }
@@ -280,6 +309,179 @@ function InstructorsManagement() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>
+                    <p className="text-xs text-gray-500">담당 학생</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-gray-900">{instructor.totalClasses}</p>
+                    <p className="text-xs text-gray-500">진행 수업</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredInstructors.length === 0 && (
+        <div className="text-center py-12">
+          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default withAuth(InstructorsManagement, { 
+  requireTypes: ['centerAdmin', 'superAdmin'] 
+});
                 <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                   <div className="text-center">
                     <p className="text-lg font-semibold text-gray-900">{instructor.totalStudents}</p>

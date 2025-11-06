@@ -70,25 +70,88 @@ const InstructorDashboard: React.FC = () => {
   useEffect(() => {
     const loadInstructorData = async () => {
       try {
-        // 실제 API 호출 로직
+        if (!user || !user._id) {
+          console.warn('사용자 정보가 없습니다.');
+          return;
+        }
+
         console.log('강사 데이터 로드 중...');
         
-        // 임시 데이터 설정
-        setStats({
-          totalStudents: 25,
-          activeCourses: 8,
-          todayBookings: 12,
-          weeklyRevenue: 1500000,
-          averageRating: 4.8,
-          completedSessions: 156
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('토큰이 없습니다.');
+          return;
+        }
+
+        // 실제 API 호출 - 강사 대시보드 데이터 가져오기
+        const dashboardResponse = await fetch('http://localhost:5000/api/instructor/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
+
+        if (dashboardResponse.ok) {
+          const dashboardResult = await dashboardResponse.json();
+          console.log('📊 강사 대시보드 API 응답:', dashboardResult);
+          
+          if (dashboardResult.success && dashboardResult.data) {
+            const dashboardData = dashboardResult.data;
+            const statsData = dashboardData.stats || {};
+            const upcomingBookings = dashboardData.upcomingBookings || [];
+            
+            // 실제 DB 데이터로 설정
+            setStats({
+              totalStudents: statsData.totalStudents || 0,
+              activeCourses: statsData.activeCourses || 0,
+              todayBookings: statsData.todayBookings || 0,
+              weeklyRevenue: statsData.monthlyRevenue ? (statsData.monthlyRevenue / 4) : 0, // 월급을 4주로 나눈 값
+              averageRating: statsData.averageRating || 0,
+              completedSessions: statsData.totalHours || 0
+            });
+
+            // 실제 예약 데이터로 업데이트
+            if (upcomingBookings.length > 0) {
+              const activities: RecentActivity[] = upcomingBookings.slice(0, 5).map((booking: any, index: number) => ({
+                id: booking.id || `booking-${index}`,
+                type: booking.status === 'confirmed' ? 'booking' : 'info',
+                student: booking.studentName || '학생',
+                course: booking.courseName || '수업',
+                time: booking.time || '시간 미정',
+                status: booking.status === 'confirmed' ? 'success' : 'info'
+              }));
+              setRecentActivities(activities);
+            }
+
+            console.log('✅ 강사 데이터 로드 완료 (DB 데이터):', {
+              stats: statsData,
+              bookings: upcomingBookings.length
+            });
+          } else {
+            throw new Error('대시보드 데이터 형식이 올바르지 않습니다.');
+          }
+        } else {
+          const errorData = await dashboardResponse.json().catch(() => ({ message: 'API 호출 실패' }));
+          throw new Error(errorData.message || `API 호출 실패: ${dashboardResponse.status}`);
+        }
       } catch (error) {
         console.error('강사 데이터 로드 실패:', error);
+        // 에러 발생 시 기본값 설정
+        setStats({
+          totalStudents: 0,
+          activeCourses: 0,
+          todayBookings: 0,
+          weeklyRevenue: 0,
+          averageRating: 0,
+          completedSessions: 0
+        });
       }
     };
 
-    loadInstructorData();
-  }, []);
+    if (user) {
+      loadInstructorData();
+    }
+  }, [user]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -266,13 +329,6 @@ const InstructorDashboard: React.FC = () => {
           >
             <BookOpen className="h-6 w-6 mb-2 text-gray-600" />
             <span className="text-sm font-medium text-gray-700">강습법 관리</span>
-          </button>
-          <button 
-            className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            onClick={() => window.location.href = '/instructor/schedule'}
-          >
-            <Clock className="h-6 w-6 mb-2 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">일정 관리</span>
           </button>
         </div>
       </div>

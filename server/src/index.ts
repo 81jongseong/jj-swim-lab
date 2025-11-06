@@ -141,6 +141,7 @@ import runPipelineRoutes from './routes/runPipeline';
 import centerAdminInstructorStatsRoutes from './routes/center-admin-instructor-stats';
 import personalLessonRoutes from './routes/personal-lessons';
 import laneRentalRoutes from './routes/lane-rentals';
+import settlementRoutes from './routes/settlements';
 import authRoutes from './routes/auth';
 import dashboardRoutes from './routes/dashboard';
 import userRoutes from './routes/users';
@@ -514,6 +515,7 @@ app.use('/api/center-admin', centerAdminInstructorStatsRoutes);
 app.use('/api/center-admin/bookings', bookingRoutes);
 app.use('/api/personal-lessons', personalLessonRoutes);
 app.use('/api/lane-rentals', laneRentalRoutes);
+app.use('/api/settlements', settlementRoutes); // ⭐ 정산 관리 API
 app.use('/api/member-bulk-import', memberBulkImportRoutes);
 app.use('/api/student', studentRoutes);
 // AI 라우트들 정상화
@@ -700,6 +702,7 @@ import './models/TeachingMethod';
 import './models/Video';
 import './models/PersonalLesson';
 import './models/LaneRental';
+import './models/Settlement';
 import './models/Complaint';
 import './models/PersonalProgramAdjustment';
 import './models/SwimCondition';

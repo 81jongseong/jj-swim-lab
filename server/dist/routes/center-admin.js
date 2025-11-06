@@ -1063,7 +1063,7 @@ router.post('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, r
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const { name, description, level, maxStudents, price, isPersonalLesson, courseType, startDate, endDate, schedule, lanes, poolType } = req.body;
+        const { name, description, level, maxStudents, price, isPersonalLesson, courseType, startDate, endDate, schedule, lanes, poolType, tags } = req.body;
         if (!name || !description || !level || !maxStudents || price === undefined) {
             return res.status(400).json({
                 success: false,
@@ -1095,6 +1095,7 @@ router.post('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, r
             schedule,
             lanes,
             poolType,
+            tags: tags || [],
             enrolledStudents: [],
             createdAt: new Date(),
             updatedAt: new Date()

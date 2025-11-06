@@ -197,7 +197,34 @@ const instructorImageUpload = multer({
 // ===== 기본 센터 목록 조회 =====
 
 /**
- * 모든 센터 목록 조회
+ * ⭐ 외부 회원용 센터 목록 조회 (공개 API)
+ * GET /api/centers/public
+ */
+router.get('/public', async (req: Request, res: Response) => {
+  try {
+    const centers = await Center.find({ isActive: true })
+      .select('name location contactInfo facilities province city gu dong poolConfiguration createdAt')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      message: '센터 목록 조회 성공',
+      data: {
+        centers,
+        total: centers.length
+      }
+    });
+  } catch (error) {
+    console.error('센터 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '센터 목록 조회 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+/**
+ * 모든 센터 목록 조회 (인증 필요)
  * GET /api/centers
  */
 router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {

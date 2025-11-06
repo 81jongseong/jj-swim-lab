@@ -180,10 +180,33 @@ router.get('/courses', authMiddleware, requirePermission('canManageCourses'), as
       const students = course.students || [];
       const currentStudents = enrolledStudents.length || students.length || 0;
 
+      // ⭐ 실제 수강생 정보 변환
+      const enrolledStudentsData = enrolledStudents.map((enrollment: any) => ({
+        studentId: enrollment.student?._id?.toString() || enrollment.student?.toString() || '',
+        studentName: enrollment.student?.name || '이름 없음',
+        status: enrollment.status || 'active',
+        enrolledAt: enrollment.enrolledAt || null,
+        completedAt: enrollment.completedAt || null
+      }));
+
+      // ⭐ courseType 결정: isPersonalLesson이면 'personal', category가 '자유수영'이면 'freeSwim', 그 외는 'group'
+      let courseType: 'group' | 'personal' | 'freeSwim' = 'group';
+      if (course.isPersonalLesson) {
+        courseType = 'personal';
+      } else if (course.category === '자유수영' || course.category === 'freeSwim' || course.courseType === 'freeSwim') {
+        courseType = 'freeSwim';
+      } else if (course.courseType) {
+        courseType = course.courseType;
+      }
+
       return {
         id: course._id?.toString() || course.id,
         name: course.name || course.title || '수업 이름 없음',
+        description: course.description || '',
         level: course.level || 'beginner',
+        category: course.category || course.tags?.[0] || '자유형',
+        duration: course.duration || 60,
+        price: course.price || 0,
         currentStudents,
         maxStudents: course.maxStudents || course.maxEnrollment || 10,
         startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : '',
@@ -193,6 +216,14 @@ router.get('/courses', authMiddleware, requirePermission('canManageCourses'), as
         completedSessions: course.completedSessions || 0,
         progress: course.totalSessions ? Math.round((course.completedSessions || 0) / course.totalSessions * 100) : 0,
         location: course.location || course.poolType || '위치 미지정',
+        schedule: course.schedule || [], // ⭐ schedule 정보 추가
+        tags: course.tags || [], // ⭐ tags 정보 추가 (DB에서 가져온 실제 태그)
+        rating: course.rating || 0,
+        enrolledStudents: enrolledStudentsData, // ⭐ 실제 수강생 정보 추가
+        isPersonalLesson: course.isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+        courseType: courseType, // ⭐ 강의 타입 추가 (group, personal, freeSwim)
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
       };
     });
 

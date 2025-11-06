@@ -22,8 +22,23 @@ const userSchema = new mongoose_1.default.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: false,
     },
+    socialAccounts: [{
+            provider: {
+                type: String,
+                enum: ['kakao', 'naver', 'google', 'facebook'],
+                required: true
+            },
+            providerId: {
+                type: String,
+                required: true
+            },
+            connectedAt: {
+                type: Date,
+                default: Date.now
+            }
+        }],
     phone: {
         type: String,
         required: false,
@@ -279,7 +294,29 @@ const userSchema = new mongoose_1.default.Schema({
                 totalStudents: { type: Number, default: 0 },
                 leaveReason: { type: String, default: '' },
                 memo: { type: String, default: '' }
-            }]
+            }],
+        availableRegions: [{ type: String }],
+        introduction: { type: String, default: '' },
+        photo: { type: String },
+        profileCustomization: {
+            theme: {
+                type: String,
+                enum: ['default', 'blue', 'green', 'purple', 'orange', 'custom'],
+                default: 'default'
+            },
+            primaryColor: { type: String },
+            secondaryColor: { type: String },
+            layout: {
+                type: String,
+                enum: ['compact', 'standard', 'detailed'],
+                default: 'standard'
+            },
+            showPhoto: { type: Boolean, default: true },
+            showCertifications: { type: Boolean, default: true },
+            showExperience: { type: Boolean, default: true },
+            showSpecialties: { type: Boolean, default: true },
+            showRegions: { type: Boolean, default: true }
+        }
     },
     centerAdminInfo: {
         managedCenters: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Center' }],

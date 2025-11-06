@@ -10,7 +10,8 @@ const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user._id || user.id || user.userId;
         const { page = 1, limit = 20, type, priority, isRead } = req.query;
         const query = { userId };
         if (type)
@@ -49,7 +50,8 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/unread-count', auth_1.authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user._id || user.id || user.userId;
         const count = await Notification_1.Notification.countDocuments({ userId, isRead: false });
         res.json({
             success: true,
@@ -67,7 +69,8 @@ router.get('/unread-count', auth_1.authMiddleware, async (req, res) => {
 });
 router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user._id || user.id || user.userId;
         const { id } = req.params;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -101,7 +104,8 @@ router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
 });
 router.put('/read-all', auth_1.authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user._id || user.id || user.userId;
         const result = await Notification_1.Notification.updateMany({ userId, isRead: false }, { isRead: true });
         res.json({
             success: true,
@@ -120,7 +124,8 @@ router.put('/read-all', auth_1.authMiddleware, async (req, res) => {
 });
 router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user._id || user.id || user.userId;
         const { id } = req.params;
         if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
             return res.status(400).json({

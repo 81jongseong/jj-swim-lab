@@ -133,8 +133,8 @@ function CenterInstructorsManagement() {
       if (DEBUG) console.log('🔍 현재 로그인한 사용자:', user);
       if (DEBUG) console.log('🔍 사용자 센터 ID:', user?.centerId);
       
-      // 실제 API 연동
-      const response = await apiClient.get('/api/center-admin/instructors');
+      // 실제 API 연동 (모든 강사 조회를 위해 limit을 크게 설정)
+      const response = await apiClient.get('/api/center-admin/instructors?limit=1000');
       if (DEBUG) console.log('📡 전체 응답:', response);
       
       // response = { success, message, data: { instructors, pagination } }

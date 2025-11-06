@@ -25,17 +25,29 @@
 import mongoose, { Document } from 'mongoose';
 export interface IVideo extends Document {
     owner?: mongoose.Types.ObjectId;
-    filename: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-    path: string;
-    status: 'pending' | 'reviewed';
+    ownerCenterId?: mongoose.Types.ObjectId;
+    youtubeUrl: string;
+    title?: string;
+    description?: string;
+    visibility: {
+        myCenterInstructors: boolean;
+        allInstructors: boolean;
+        myCenterMembers: boolean;
+        allMembers: boolean;
+    };
+    feedbacks: {
+        reviewer: mongoose.Types.ObjectId;
+        reviewerType: 'instructor' | 'member';
+        reviewerCenterId?: mongoose.Types.ObjectId;
+        content: string;
+        rating?: number;
+        createdAt: Date;
+    }[];
+    status?: 'pending' | 'reviewed';
     analysisResult?: any;
     feedback?: string;
     reviewedBy?: mongoose.Types.ObjectId;
     reviewedAt?: Date;
-    visibility?: 'private' | 'center' | 'public';
     reviews?: {
         reviewedBy: mongoose.Types.ObjectId;
         feedback?: string;

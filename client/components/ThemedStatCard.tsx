@@ -36,7 +36,7 @@ export default function ThemedStatCard({ title, value, icon, color = 'blue', des
 
   return (
     <Card
-      className={`${v.bg} ${v.border} border-2 ${v.hoverBg} ${v.hoverBorder} transition-all hover:shadow-lg ${isClickable ? 'cursor-pointer' : ''} ${className || ''}`}
+      className={`${v.bg} ${v.border} border-2 ${v.hoverBg} ${v.hoverBorder} transition-all hover:shadow-lg hover:-translate-y-1 ${isClickable ? 'cursor-pointer' : ''} ${className || ''}`}
       onClick={isClickable ? handleClick : undefined}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

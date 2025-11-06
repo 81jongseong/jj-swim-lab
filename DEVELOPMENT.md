@@ -1,5 +1,13 @@
 # 🚧 JJ Swim Lab 개발 문서
 
+## 📋 향후 점검 사항
+
+### 예약 관리 (회원계정 작업 시 점검 필요)
+- ⚠️ **예약 관리 기능은 회원계정 작업 시 점검 필요**
+- 회원계정에서 예약 관리 기능이 제대로 작동하는지 확인
+- 회원이 예약을 조회, 수정, 취소할 수 있는지 확인
+- 예약 상태 변경 권한 확인
+
 ## 회원 분포도 시각화 정책
 
 **회원 분포도 시각화 정책 (2025-11-02):**
@@ -107,10 +115,11 @@
 
 ### 2025-01-XX: 여러 파일에서 중복 코드로 인한 컴파일 오류
 **문제**: 
-- `client/app/instructor/courses/page.tsx`: 파일 끝부분에 중복된 코드가 여러 번 반복되어 있음 (520줄 이후)
+- `client/app/instructor/courses/page.tsx`: `export default withAuth(...)` 이후(479줄) 중복 코드가 반복되어 있음 (580줄까지)
+- `client/app/instructor/dashboard/page.tsx`: `export default InstructorDashboard;` 이후(346줄) JSX 코드가 중복되어 반복됨 (473줄까지)
 - `client/components/NotificationsBell.tsx`: 함수가 끝난 후(226줄) 중복 코드가 반복되어 있음 (914줄까지)
 - `client/components/center-admin/CourseDetailModal.tsx`: 함수가 끝난 후(321줄) 주석과 import가 다시 시작되어 중복됨
-- `server/src/routes/instructor.ts`: `export default router;` 이후(210줄) 중복 코드가 반복되어 있음 (678줄까지)
+- `server/src/routes/instructor.ts`: `export default router;` 이후(210줄) 중복 코드가 반복되어 있음 (255줄까지, try-catch 블록이 잘못된 구조로 중복됨)
 - `server/src/routes/center-admin.ts`: `export default router;` 이후(3296줄) 중복 코드가 반복되어 있음 (3447줄까지)
 
 **원인**:
@@ -121,10 +130,11 @@
 
 **해결 방법**:
 1. 각 파일을 정리하여 중복 코드 제거
-   - `instructor/courses/page.tsx`: 520줄까지만 유지, 캘린더 기능 제거
+   - `instructor/courses/page.tsx`: 479줄까지만 유지, `export default withAuth(...)` 이후 모든 중복 코드 제거
+   - `instructor/dashboard/page.tsx`: 346줄까지만 유지, `export default InstructorDashboard;` 이후 모든 중복 코드 제거
    - `NotificationsBell.tsx`: 226줄까지만 유지
    - `CourseDetailModal.tsx`: 321줄까지만 유지
-   - `server/src/routes/instructor.ts`: 210줄까지만 유지
+   - `server/src/routes/instructor.ts`: 210줄까지만 유지, `export default router;` 이후 모든 중복 코드 제거
    - `server/src/routes/center-admin.ts`: 3296줄까지만 유지
 2. 빌드 캐시 삭제
    - 클라이언트: `cd client && Remove-Item -Recurse -Force .next`
@@ -156,3 +166,91 @@
 **추가 확인사항**:
 - `server/src/routes/job-board.ts` 라우트가 `server/src/index.ts`에 등록되어 있는지 확인
 - `server/src/models/JobApplication.ts` 모델이 `server/src/index.ts`에 import되어 있는지 확인
+
+## 외부 강사 개인레슨 통합 결제 및 자동 정산 시스템
+
+### 2025-11-06: 외부 강사 개인레슨 통합 결제 시스템 구현
+
+**구현 목적**:
+- 외부 회원이 다른 센터에서 외부 강사와 개인레슨을 받을 수 있도록 지원
+- 레인대여 + 개인레슨 + 플랫폼 수수료를 통합 결제로 관리
+- 강사-회원 간 직접 결제 방지, 플랫폼을 통한 모든 거래 처리
+- 완전 자동화된 정산 시스템으로 경쟁력 확보
+
+**구현 내용**:
+
+1. **PersonalLesson 모델 확장** (`server/src/models/PersonalLesson.ts`):
+   - `isExternalInstructor`: 외부 강사 여부
+   - `instructorFee`: 강사 수업료
+   - `laneRentalFee`: 레인대여 비용
+   - `platformFee`: 플랫폼 수수료 (강사 수업료의 10%)
+   - `totalAmount`: 총 결제 금액
+   - `paymentId`: 결제 ID (Payment 모델 참조)
+
+2. **외부 개인레슨 요청 API 개선** (`server/src/routes/personal-lessons.ts`):
+   - 강사 선택 기능 추가 (`instructorId`)
+   - 외부 강사 여부 자동 판단 (해당 센터 소속이 아닌 경우)
+   - 가격 자동 계산:
+     - 강사 수업료: 강사 설정에서 가져오거나 기본값 8만원
+     - 레인대여 비용: 시간당 2만원 (기본값)
+     - 플랫폼 수수료: 강사 수업료의 10%
+   - 총 결제 금액 자동 계산
+
+3. **통합 결제 API** (`server/src/routes/personal-lessons.ts`):
+   - `POST /api/personal-lessons/:id/payment`: 결제 생성
+   - `POST /api/personal-lessons/:id/payment/complete`: 결제 완료 처리
+
+4. **자동 정산 시스템**:
+   - **Settlement 모델** (`server/src/models/Settlement.ts`):
+     - 강사, 센터, 플랫폼별 정산 내역 저장
+     - 정산 기간별 자동 집계
+     - 정산 상태 추적 (대기/처리중/완료/실패)
+   
+   - **정산 서비스** (`server/src/services/settlementService.ts`):
+     - `createSettlementItem()`: 결제 완료 시 자동으로 정산 항목 생성
+     - `processSettlements()`: 정산 실행 (매월 자동 실행)
+     - `getSettlementStats()`: 정산 통계 조회
+   
+   - **정산 API** (`server/src/routes/settlements.ts`):
+     - `GET /api/settlements`: 정산 목록 조회 (권한별 필터링)
+     - `GET /api/settlements/:id`: 정산 상세 조회
+     - `GET /api/settlements/stats/overview`: 정산 통계 조회
+     - `POST /api/settlements/process`: 정산 처리 (관리자만)
+
+**정산 프로세스**:
+1. 개인레슨 결제 완료 → 자동으로 정산 대기 항목 생성
+   - 강사 정산: `instructorFee - platformFee`
+   - 센터 정산: `laneRentalFee`
+   - 플랫폼 수수료: `platformFee`
+2. 매월 정산 실행 → 대기 중인 정산 항목들을 일괄 처리
+3. 정산 완료 → 강사/센터에게 정산 금액 지급 (은행 API 연동 필요)
+
+**시스템 매리트**:
+1. **프리미엄 고객층 타겟팅**:
+   - 레슨 퀄리티를 중시하는 성인 상급자, 마스터즈, 입시생, 특기생 준비생
+   - "내가 원하는 시간, 장소, 강사" 조건 충족 가능
+   - 강사 매칭 + 레인 보장이 강력한 매리트
+
+2. **센터 입장에서 Win-Win**:
+   - 평소 놀고 있는 레인을 강사가 빌려 쓰는 구조 → 센터 수익 창출
+   - 외부 강사는 공간만 쓰고 수익 일부를 센터와 플랫폼에 나눔
+
+3. **완전 자동화된 정산 시스템**:
+   - 강사: 본인 수익 자동 계산 + 플랫폼 수수료 자동 공제 + 센터 레인료 자동 배분
+   - 센터: 강사/회원 정산 이슈 없음, 보고서만 확인
+   - 회원: 가격 명확 + 퀄리티 있는 강사 선택 가능
+   - 단 1회 결제로 모든 정산 완료 → 경쟁 플랫폼 압도 가능
+
+**API 엔드포인트**:
+- `POST /api/personal-lessons/external-request`: 외부 개인레슨 요청
+- `POST /api/personal-lessons/:id/payment`: 결제 생성
+- `POST /api/personal-lessons/:id/payment/complete`: 결제 완료
+- `GET /api/settlements`: 정산 목록 조회
+- `GET /api/settlements/:id`: 정산 상세 조회
+- `GET /api/settlements/stats/overview`: 정산 통계
+- `POST /api/settlements/process`: 정산 처리 (관리자)
+
+**추가 확인사항**:
+- `server/src/models/Settlement.ts` 모델이 `server/src/index.ts`에 import되어 있는지 확인
+- `server/src/routes/settlements.ts` 라우트가 `server/src/index.ts`에 등록되어 있는지 확인
+- 정산 스케줄링 (매월 자동 실행)은 별도 cron job 또는 스케줄러로 구현 필요

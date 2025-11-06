@@ -503,23 +503,42 @@ router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthR
       });
     }
 
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { page = 1, limit = 1000, search = '' } = req.query; // ⭐ limit을 크게 설정하여 모든 강사 조회
     const skip = (Number(page) - 1) * Number(limit);
 
+    // ⭐ 강사 조회: centerId 또는 instructorInfo.assignedCenters에 포함된 강사
+    const centerIdObj = new mongoose.Types.ObjectId(centerId);
     const query: any = {
       userType: 'instructor',
-      centerId: new mongoose.Types.ObjectId(centerId)
+      $or: [
+        { centerId: centerIdObj },
+        { 'instructorInfo.assignedCenters': centerIdObj }
+      ]
     };
+
+    // ⭐ 검색 조건이 있으면 $and로 추가 (기존 $or 조건과 함께 사용)
+    if (search) {
+      query.$and = [
+        {
+          $or: [
+            { centerId: centerIdObj },
+            { 'instructorInfo.assignedCenters': centerIdObj }
+          ]
+        },
+        {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+          ]
+        }
+      ];
+      // $or는 $and가 있으면 무시되므로 제거
+      delete query.$or;
+    }
 
     console.log('🔍 검색 조건:', query);
 
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
-    }
-
+    // ⭐ isActive 필터 제거 - 모든 강사 조회 (비활성 포함)
     const instructors = await User.find(query)
       .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
       .lean()
@@ -1307,7 +1326,8 @@ router.post('/courses', authMiddleware, requireCenterAdmin, async (req: AuthRequ
       endDate,
       schedule,
       lanes,
-      poolType
+      poolType,
+      tags // ⭐ 태그 정보 추가
     } = req.body;
 
     // 필수 필드 검증
@@ -1343,6 +1363,7 @@ router.post('/courses', authMiddleware, requireCenterAdmin, async (req: AuthRequ
       schedule,
       lanes,
       poolType,
+      tags: tags || [], // ⭐ 태그 정보 추가
       enrolledStudents: [],
       createdAt: new Date(),
       updatedAt: new Date()

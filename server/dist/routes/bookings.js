@@ -27,6 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const PersonalLesson_1 = require("../models/PersonalLesson");
 const LaneRental_1 = require("../models/LaneRental");
 const User_1 = require("../models/User");
@@ -35,7 +36,114 @@ const role_1 = require("../middleware/role");
 const laneAllocationService_1 = require("../services/laneAllocationService");
 const router = express_1.default.Router();
 router.use(auth_1.authMiddleware);
-router.use(role_1.requireCenterAdmin);
+router.use(role_1.requireInstructorOrAdmin);
+router.get('/', async (req, res) => {
+    try {
+        const user = req.user;
+        const { status, date, type } = req.query;
+        let centerId = user.centerId;
+        if (!centerId && user.userType === 'instructor') {
+            const userDoc = await User_1.User.findById(user._id || user.id);
+            centerId = userDoc?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+        }
+        if (!centerId) {
+            return res.status(400).json({
+                success: false,
+                message: '센터 정보를 찾을 수 없습니다.'
+            });
+        }
+        const centerIdObj = typeof centerId === 'string' ? new mongoose_1.default.Types.ObjectId(centerId) : centerId;
+        const personalLessonQuery = { centerId: centerIdObj };
+        const laneRentalQuery = { centerId: centerIdObj };
+        if (status && status !== 'all') {
+            personalLessonQuery.status = status;
+            laneRentalQuery.status = status;
+        }
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+            personalLessonQuery.date = { $gte: startDate, $lt: endDate };
+            laneRentalQuery.date = { $gte: startDate, $lt: endDate };
+        }
+        if (user.userType === 'instructor') {
+            personalLessonQuery.instructorId = user._id || user.id;
+        }
+        const personalLessons = type === 'lane-rental' ? [] : await PersonalLesson_1.PersonalLesson.find({
+            ...personalLessonQuery,
+            startTime: { $exists: true, $ne: null, $ne: '' }
+        })
+            .populate('studentId', 'name email phone')
+            .populate('instructorId', 'name email phone')
+            .sort({ date: -1, startTime: 1 });
+        const laneRentals = (type === 'personal-lesson' || user.userType === 'instructor') ? [] : await LaneRental_1.LaneRental.find({
+            ...laneRentalQuery,
+            startTime: { $exists: true, $ne: null, $ne: '' }
+        })
+            .populate('userId', 'name email phone')
+            .sort({ date: -1, startTime: 1 });
+        const bookings = [
+            ...personalLessons.map((lesson) => ({
+                _id: lesson._id,
+                type: 'personal-lesson',
+                student: lesson.studentId,
+                instructor: lesson.instructorId,
+                date: lesson.date,
+                startTime: lesson.startTime || lesson.time,
+                endTime: lesson.endTime,
+                duration: lesson.duration,
+                status: lesson.status,
+                lessonType: lesson.lessonType,
+                skillLevel: lesson.skillLevel,
+                goals: lesson.goals,
+                notes: lesson.notes,
+                poolType: lesson.poolType || 'mainPool',
+                laneNumber: lesson.assignedLane,
+                createdAt: lesson.createdAt
+            })),
+            ...laneRentals.map((rental) => ({
+                _id: rental._id,
+                type: 'lane-rental',
+                user: rental.userId,
+                date: rental.date,
+                startTime: rental.startTime,
+                endTime: rental.endTime,
+                duration: rental.duration,
+                status: rental.status,
+                laneNumber: rental.laneNumber,
+                poolType: rental.poolType,
+                purpose: rental.purpose,
+                notes: rental.notes,
+                price: rental.price,
+                paymentStatus: rental.paymentStatus,
+                createdAt: rental.createdAt
+            }))
+        ].sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateA !== dateB)
+                return dateB - dateA;
+            return (a.startTime || '').localeCompare(b.startTime || '');
+        });
+        res.json({
+            success: true,
+            message: '예약 목록 조회 성공',
+            data: {
+                bookings,
+                total: bookings.length,
+                personalLessons: personalLessons.length,
+                laneRentals: laneRentals.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('예약 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || '서버 오류가 발생했습니다.'
+        });
+    }
+});
 router.get('/dashboard', async (req, res) => {
     try {
         console.log('📊 대시보드 요청 받음:', {
@@ -144,6 +252,53 @@ router.get('/personal-lessons', async (req, res) => {
     catch (error) {
         console.error('개인레슨 조회 오류:', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+});
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let { status } = req.body;
+        if (status === 'confirmed') {
+            status = 'approved';
+        }
+        const validStatuses = ['pending', 'approved', 'rejected', 'completed', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: `유효하지 않은 상태 값입니다: ${status}`
+            });
+        }
+        const personalLesson = await PersonalLesson_1.PersonalLesson.findById(id);
+        if (personalLesson) {
+            personalLesson.status = status;
+            await personalLesson.save();
+            return res.json({
+                success: true,
+                message: '예약 상태가 변경되었습니다.',
+                data: personalLesson
+            });
+        }
+        const laneRental = await LaneRental_1.LaneRental.findById(id);
+        if (laneRental) {
+            laneRental.status = status;
+            await laneRental.save();
+            return res.json({
+                success: true,
+                message: '예약 상태가 변경되었습니다.',
+                data: laneRental
+            });
+        }
+        return res.status(404).json({
+            success: false,
+            message: '예약을 찾을 수 없습니다.'
+        });
+    }
+    catch (error) {
+        console.error('예약 상태 변경 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || '서버 오류가 발생했습니다.'
+        });
     }
 });
 router.patch('/personal-lessons/:id/status', async (req, res) => {

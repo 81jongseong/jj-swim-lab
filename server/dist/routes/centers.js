@@ -111,6 +111,28 @@ const instructorImageUpload = (0, multer_1.default)({
         }
     }
 });
+router.get('/public', async (req, res) => {
+    try {
+        const centers = await Center_1.Center.find({ isActive: true })
+            .select('name location contactInfo facilities province city gu dong poolConfiguration createdAt')
+            .sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            message: '센터 목록 조회 성공',
+            data: {
+                centers,
+                total: centers.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('센터 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '센터 목록 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'centerAdmin', 'instructor']), async (req, res) => {
     try {
         console.log('🔍 센터 목록 조회 요청:', req.user?.userType);

@@ -363,43 +363,96 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
 });
-router.post('/', auth_1.authMiddleware, upload.single('file'), async (req, res) => {
+router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
-        const file = req.file;
-        if (!file)
-            return res.status(400).json({ error: '파일이 필요합니다.' });
+        const user = req.user;
+        const { youtubeUrl, title, description, visibility } = req.body;
+        if (!youtubeUrl) {
+            return res.status(400).json({ error: '유튜브 링크가 필요합니다.' });
+        }
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+        if (!youtubeRegex.test(youtubeUrl)) {
+            return res.status(400).json({ error: '올바른 유튜브 링크를 입력해주세요.' });
+        }
+        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const ownerCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || null;
+        const visibilitySettings = {
+            myCenterInstructors: visibility?.myCenterInstructors || false,
+            allInstructors: visibility?.allInstructors || false,
+            myCenterMembers: visibility?.myCenterMembers || false,
+            allMembers: visibility?.allMembers || false
+        };
+        if (!Object.values(visibilitySettings).some(v => v === true)) {
+            return res.status(400).json({ error: '최소 하나의 공개 범위를 선택해주세요.' });
+        }
         const doc = await Video_1.Video.create({
-            owner: req.user?._id,
-            filename: file.filename,
-            originalName: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            path: file.path,
+            owner: user._id,
+            ownerCenterId,
+            youtubeUrl,
+            title: title || '제목 없음',
+            description: description || '',
+            visibility: visibilitySettings,
             status: 'pending',
         });
-        res.status(201).json({ id: doc._id, url: `/api/uploads/${doc._id}` });
+        res.status(201).json({
+            success: true,
+            message: '동영상이 등록되었습니다.',
+            data: { id: doc._id, url: `/api/uploads/${doc._id}` }
+        });
     }
     catch (error) {
-        res.status(500).json({ error: '업로드에 실패했습니다.' });
+        console.error('동영상 등록 오류:', error);
+        res.status(500).json({ error: error.message || '동영상 등록에 실패했습니다.' });
     }
 });
 router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const video = await Video_1.Video.findById(req.params.id)
             .populate('owner', 'name userId')
+            .populate('ownerCenterId', 'name')
+            .populate('feedbacks.reviewer', 'name userId userType')
+            .populate('feedbacks.reviewerCenterId', 'name')
             .populate('reviewedBy', 'name userId');
-        if (!video)
-            return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
-        const user = req.user;
-        const isOwner = video.owner?.toString() === user._id.toString();
-        const isPrivileged = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
-        if (!isOwner && !isPrivileged && video.visibility !== 'public') {
-            return res.status(403).json({ error: '접근 권한이 없습니다.' });
+        if (!video) {
+            return res.status(404).json({ error: '동영상을 찾을 수 없습니다.' });
         }
-        res.json(video);
+        const user = req.user;
+        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+        const isOwner = video.owner?.toString() === user._id.toString();
+        const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
+        const isSameCenter = video.ownerCenterId?.toString() === userCenterId?.toString();
+        let canAccess = false;
+        if (isOwner) {
+            canAccess = true;
+        }
+        else if (isInstructor) {
+            if (video.visibility.allInstructors) {
+                canAccess = true;
+            }
+            else if (video.visibility.myCenterInstructors && isSameCenter) {
+                canAccess = true;
+            }
+        }
+        else {
+            if (video.visibility.allMembers) {
+                canAccess = true;
+            }
+            else if (video.visibility.myCenterMembers && isSameCenter) {
+                canAccess = true;
+            }
+        }
+        if (!canAccess) {
+            return res.status(403).json({ error: '이 동영상에 접근할 권한이 없습니다.' });
+        }
+        res.json({
+            success: true,
+            data: video
+        });
     }
     catch (error) {
-        res.status(500).json({ error: '조회에 실패했습니다.' });
+        console.error('동영상 조회 오류:', error);
+        res.status(500).json({ error: error.message || '조회에 실패했습니다.' });
     }
 });
 router.get('/:id/download', auth_1.authMiddleware, async (req, res) => {
@@ -419,6 +472,66 @@ router.get('/:id/download', auth_1.authMiddleware, async (req, res) => {
         res.status(500).json({ error: '다운로드에 실패했습니다.' });
     }
 });
+router.post('/:id/feedback', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        const { content, rating } = req.body;
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({ error: '피드백 내용을 입력해주세요.' });
+        }
+        const video = await Video_1.Video.findById(req.params.id);
+        if (!video) {
+            return res.status(404).json({ error: '동영상을 찾을 수 없습니다.' });
+        }
+        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+        const isOwner = video.owner?.toString() === user._id.toString();
+        const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
+        const isSameCenter = video.ownerCenterId?.toString() === userCenterId?.toString();
+        let canAccess = false;
+        if (isOwner) {
+            canAccess = true;
+        }
+        else if (isInstructor) {
+            if (video.visibility.allInstructors) {
+                canAccess = true;
+            }
+            else if (video.visibility.myCenterInstructors && isSameCenter) {
+                canAccess = true;
+            }
+        }
+        else {
+            if (video.visibility.allMembers) {
+                canAccess = true;
+            }
+            else if (video.visibility.myCenterMembers && isSameCenter) {
+                canAccess = true;
+            }
+        }
+        if (!canAccess) {
+            return res.status(403).json({ error: '이 동영상에 피드백을 남길 권한이 없습니다.' });
+        }
+        const feedback = {
+            reviewer: user._id,
+            reviewerType: isInstructor ? 'instructor' : 'member',
+            reviewerCenterId: userCenterId,
+            content: content.trim(),
+            rating: rating ? Math.min(5, Math.max(1, Number(rating))) : undefined,
+            createdAt: new Date()
+        };
+        video.feedbacks.push(feedback);
+        await video.save();
+        res.status(201).json({
+            success: true,
+            message: '피드백이 등록되었습니다.',
+            data: feedback
+        });
+    }
+    catch (error) {
+        console.error('피드백 추가 오류:', error);
+        res.status(500).json({ error: error.message || '피드백 등록에 실패했습니다.' });
+    }
+});
 router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { status = 'reviewed', feedback, analysisResult, visibility } = req.body;
@@ -427,7 +540,6 @@ router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['ins
             status,
             feedback,
             analysisResult,
-            visibility,
             reviewedBy: req.user._id,
             reviewedAt: now,
             $push: { reviews: { reviewedBy: req.user._id, feedback, analysisResult, visibility, reviewedAt: now } }
@@ -444,17 +556,61 @@ router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['ins
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
-        const { status, page = 1, limit = 10 } = req.query;
+        const { status, page = 1, limit = 10, myVideos = 'false' } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        const filter = { owner: user._id };
+        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+        const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
+        let filter = {};
+        if (myVideos === 'true') {
+            filter.owner = user._id;
+        }
+        else {
+            const orConditions = [];
+            orConditions.push({ owner: user._id });
+            if (isInstructor) {
+                orConditions.push({ 'visibility.allInstructors': true });
+                if (userCenterId) {
+                    orConditions.push({
+                        'visibility.myCenterInstructors': true,
+                        ownerCenterId: userCenterId
+                    });
+                }
+            }
+            orConditions.push({ 'visibility.allMembers': true });
+            if (userCenterId) {
+                orConditions.push({
+                    'visibility.myCenterMembers': true,
+                    ownerCenterId: userCenterId
+                });
+            }
+            filter.$or = orConditions;
+        }
         if (status)
             filter.status = status;
-        const items = await Video_1.Video.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
+        const items = await Video_1.Video.find(filter)
+            .populate('owner', 'name userId')
+            .populate('ownerCenterId', 'name')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
         const total = await Video_1.Video.countDocuments(filter);
-        res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
+        res.json({
+            success: true,
+            data: {
+                items,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    pages: Math.ceil(total / Number(limit))
+                }
+            }
+        });
     }
     catch (error) {
-        res.status(500).json({ error: '목록 조회에 실패했습니다.' });
+        console.error('동영상 목록 조회 오류:', error);
+        res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
     }
 });
 router.get('/admin/review-queue/list', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
@@ -464,7 +620,12 @@ router.get('/admin/review-queue/list', auth_1.authMiddleware, (0, auth_1.require
         const filter = {};
         if (status)
             filter.status = status;
-        const items = await Video_1.Video.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
+        const items = await Video_1.Video.find(filter)
+            .populate('owner', 'name userId')
+            .populate('ownerCenterId', 'name')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
         const total = await Video_1.Video.countDocuments(filter);
         res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
     }

@@ -38,19 +38,146 @@
  */
 
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { PersonalLesson } from '../models/PersonalLesson';
 import { LaneRental } from '../models/LaneRental';
 import { User } from '../models/User';
 import { SwimmingCenter } from '../models/SwimmingCenter';
 import { authMiddleware } from '../middleware/auth';
-import { requireCenterAdmin } from '../middleware/role';
+import { requireInstructorOrAdmin } from '../middleware/role';
 import { LaneAllocationService } from '../services/laneAllocationService';
 
 const router = express.Router();
 
-// 모든 라우트에 인증 및 센터 관리자 권한 적용
+// 모든 라우트에 인증 및 강사/관리자 권한 적용
 router.use(authMiddleware);
-router.use(requireCenterAdmin);
+router.use(requireInstructorOrAdmin);
+
+// ⭐ 예약 목록 조회 (개인레슨 + 레인대여 통합)
+router.get('/', async (req: any, res: Response) => {
+  try {
+    const user = req.user;
+    const { status, date, type } = req.query;
+    
+    // 센터 ID 가져오기 (강사 또는 센터 관리자)
+    let centerId = user.centerId;
+    
+    // 강사인 경우 instructorInfo에서 센터 ID 가져오기
+    if (!centerId && user.userType === 'instructor') {
+      const userDoc = await User.findById(user._id || user.id);
+      centerId = userDoc?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+    }
+    
+    if (!centerId) {
+      return res.status(400).json({
+        success: false,
+        message: '센터 정보를 찾을 수 없습니다.'
+      });
+    }
+    
+    // 쿼리 조건 (centerId를 ObjectId로 변환)
+    const centerIdObj = typeof centerId === 'string' ? new mongoose.Types.ObjectId(centerId) : centerId;
+    const personalLessonQuery: any = { centerId: centerIdObj };
+    const laneRentalQuery: any = { centerId: centerIdObj };
+    
+    if (status && status !== 'all') {
+      personalLessonQuery.status = status;
+      laneRentalQuery.status = status;
+    }
+    
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 1);
+      personalLessonQuery.date = { $gte: startDate, $lt: endDate };
+      laneRentalQuery.date = { $gte: startDate, $lt: endDate };
+    }
+    
+    // ⭐ 강사인 경우 자신에게 배정된 개인레슨만 조회
+    if (user.userType === 'instructor') {
+      personalLessonQuery.instructorId = user._id || user.id;
+    }
+    
+    // 개인레슨 조회 (startTime이 있는 데이터만)
+    const personalLessons = type === 'lane-rental' ? [] : await PersonalLesson.find({
+      ...personalLessonQuery,
+      startTime: { $exists: true, $ne: null, $ne: '' }
+    })
+      .populate('studentId', 'name email phone')
+      .populate('instructorId', 'name email phone')
+      .sort({ date: -1, startTime: 1 });
+    
+    // ⭐ 강사인 경우 레인대여는 조회하지 않음 (센터 관리자만 처리)
+    // 레인대여 조회 (startTime이 있는 데이터만, 강사는 제외)
+    const laneRentals = (type === 'personal-lesson' || user.userType === 'instructor') ? [] : await LaneRental.find({
+      ...laneRentalQuery,
+      startTime: { $exists: true, $ne: null, $ne: '' }
+    })
+      .populate('userId', 'name email phone')
+      .sort({ date: -1, startTime: 1 });
+    
+    // 통합 예약 목록 생성
+    const bookings = [
+      ...personalLessons.map((lesson: any) => ({
+        _id: lesson._id,
+        type: 'personal-lesson',
+        student: lesson.studentId,
+        instructor: lesson.instructorId,
+        date: lesson.date,
+        startTime: lesson.startTime || lesson.time,
+        endTime: lesson.endTime,
+        duration: lesson.duration,
+        status: lesson.status,
+        lessonType: lesson.lessonType,
+        skillLevel: lesson.skillLevel,
+        goals: lesson.goals,
+        notes: lesson.notes,
+        poolType: lesson.poolType || 'mainPool',
+        laneNumber: lesson.assignedLane,
+        createdAt: lesson.createdAt
+      })),
+      ...laneRentals.map((rental: any) => ({
+        _id: rental._id,
+        type: 'lane-rental',
+        user: rental.userId,
+        date: rental.date,
+        startTime: rental.startTime,
+        endTime: rental.endTime,
+        duration: rental.duration,
+        status: rental.status,
+        laneNumber: rental.laneNumber,
+        poolType: rental.poolType,
+        purpose: rental.purpose,
+        notes: rental.notes,
+        price: rental.price,
+        paymentStatus: rental.paymentStatus,
+        createdAt: rental.createdAt
+      }))
+    ].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      if (dateA !== dateB) return dateB - dateA;
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+    
+    res.json({
+      success: true,
+      message: '예약 목록 조회 성공',
+      data: {
+        bookings,
+        total: bookings.length,
+        personalLessons: personalLessons.length,
+        laneRentals: laneRentals.length
+      }
+    });
+  } catch (error: any) {
+    console.error('예약 목록 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || '서버 오류가 발생했습니다.'
+    });
+  }
+});
 
 // 예약 현황 대시보드 조회
 router.get('/dashboard', async (req: any, res: Response) => {
@@ -185,6 +312,62 @@ router.get('/personal-lessons', async (req: any, res: Response) => {
   } catch (error) {
     console.error('개인레슨 조회 오류:', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// ⭐ 예약 상태 변경 (통합 엔드포인트)
+router.put('/:id', async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    let { status } = req.body;
+    
+    // status 값 변환 (confirmed -> approved)
+    if (status === 'confirmed') {
+      status = 'approved';
+    }
+    
+    // 유효한 status 값 확인
+    const validStatuses = ['pending', 'approved', 'rejected', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `유효하지 않은 상태 값입니다: ${status}`
+      });
+    }
+    
+    // 개인레슨인지 레인대여인지 확인
+    const personalLesson = await PersonalLesson.findById(id);
+    if (personalLesson) {
+      personalLesson.status = status;
+      await personalLesson.save();
+      return res.json({
+        success: true,
+        message: '예약 상태가 변경되었습니다.',
+        data: personalLesson
+      });
+    }
+    
+    const laneRental = await LaneRental.findById(id);
+    if (laneRental) {
+      laneRental.status = status;
+      await laneRental.save();
+      return res.json({
+        success: true,
+        message: '예약 상태가 변경되었습니다.',
+        data: laneRental
+      });
+    }
+    
+    return res.status(404).json({
+      success: false,
+      message: '예약을 찾을 수 없습니다.'
+    });
+  } catch (error: any) {
+    console.error('예약 상태 변경 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || '서버 오류가 발생했습니다.'
+    });
   }
 });
 

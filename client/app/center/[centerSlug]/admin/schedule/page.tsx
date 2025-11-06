@@ -1,13 +1,20 @@
 /**
  * 센터 운영 스케줄 설정 페이지
  * 
+ * 📋 **페이지 목적**
+ * - 센터 관리자: 센터 운영 스케줄 관리
+ * - 외부 회원: 개인레슨 요청 (장소 섭외 포함)
+ * 
  * 연동 컴포넌트:
  * - client/components/center-admin/ScheduleCalendar.tsx (스케줄 캘린더)
  * - client/components/center-admin/ScheduleList.tsx (스케줄 목록)
  * - client/components/center-admin/ScheduleModal.tsx (스케줄 추가/수정 모달)
+ * - client/components/center-admin/ExternalPersonalLessonRequestModal.tsx (외부 회원 개인레슨 요청 모달)
  * 
  * 연동 데이터:
  * - 센터 운영 시간, 강사별 스케줄, 단체 수업 시간표
+ * - GET /api/centers/public - 센터 목록 조회
+ * - POST /api/personal-lessons/external-request - 외부 회원 개인레슨 요청
  */
 
 'use client';
@@ -15,9 +22,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
-import { Calendar, List, Plus, Clock, Users, Settings } from 'lucide-react';
+import { Calendar, List, Plus, Clock, Users, Settings, UserPlus } from 'lucide-react';
 import ScheduleCalendar from '@/components/center-admin/ScheduleCalendar';
 import ScheduleModal from '@/components/center-admin/ScheduleModal';
+import ExternalPersonalLessonRequestModal from '@/components/center-admin/ExternalPersonalLessonRequestModal';
 
 interface ScheduleItem {
   _id: string;
@@ -59,15 +67,15 @@ function CenterScheduleManagement() {
   const [centerSchedule, setCenterSchedule] = useState<CenterSchedule | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 권한 확인 - 페이지 렌더링 전에 체크
-  // center@swim.com 계정도 센터 관리자로 인식
+  // 권한 확인 - 센터 관리자 또는 외부 회원(학생) 모두 접근 가능
   const isCenterAdmin = user && (
     ['centerAdmin', 'center-admin', 'superAdmin'].includes(user.userType) ||
     user.email === 'center@swim.com'
   );
+  const isExternalMember = user && user.userType === 'student' && !user.centerId;
   
-  if (!isCenterAdmin) {
-    // 권한이 없는 사용자는 게스트 버전의 화면으로 리다이렉트
+  // 센터 관리자도 아니고 외부 회원도 아니면 접근 불가
+  if (!isCenterAdmin && !isExternalMember) {
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
@@ -76,6 +84,7 @@ function CenterScheduleManagement() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showExternalRequestModal, setShowExternalRequestModal] = useState(false); // ⭐ 외부 회원 개인레슨 요청 모달
   const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -238,6 +247,37 @@ function CenterScheduleManagement() {
     }
   };
 
+  // ⭐ 외부 회원 개인레슨 요청 처리
+  const handleExternalRequest = async (data: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/personal-lessons/external-request', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('개인레슨 요청이 완료되었습니다. 센터 승인을 기다려주세요.');
+        setShowExternalRequestModal(false);
+        // 필요시 스케줄 목록 새로고침
+        if (isCenterAdmin) {
+          await loadSchedules();
+        }
+      } else {
+        alert(result.message || '개인레슨 요청에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('외부 회원 개인레슨 요청 실패:', error);
+      alert('개인레슨 요청 중 오류가 발생했습니다.');
+    }
+  };
+
   const filteredSchedules = schedules.filter(schedule => {
     const typeMatch = filterType === 'all' || schedule.type === filterType;
     const statusMatch = filterStatus === 'all' || schedule.status === filterStatus;
@@ -272,13 +312,26 @@ function CenterScheduleManagement() {
               ✅ 센터 운영 스케줄 설정 페이지가 로드되었습니다!
             </div>
           </div>
-          <button
-            onClick={handleAddSchedule}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            스케줄 추가
-          </button>
+          <div className="flex items-center space-x-3">
+            {isExternalMember && (
+              <button
+                onClick={() => setShowExternalRequestModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+              >
+                <UserPlus className="w-5 h-5 mr-2" />
+                개인레슨 요청
+              </button>
+            )}
+            {isCenterAdmin && (
+              <button
+                onClick={handleAddSchedule}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                스케줄 추가
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -523,21 +576,32 @@ function CenterScheduleManagement() {
       )}
 
       {/* 스케줄 추가/수정 모달 */}
-      <ScheduleModal
-        isOpen={showScheduleModal}
-        onClose={() => {
-          setShowScheduleModal(false);
-          setEditingSchedule(null);
-        }}
-        onSave={handleSaveSchedule}
-        editingSchedule={editingSchedule}
-        selectedDate={selectedDate}
-        selectedTime={selectedDate ? '09:00' : undefined}
-      />
+      {isCenterAdmin && (
+        <ScheduleModal
+          isOpen={showScheduleModal}
+          onClose={() => {
+            setShowScheduleModal(false);
+            setEditingSchedule(null);
+          }}
+          onSave={handleSaveSchedule}
+          editingSchedule={editingSchedule}
+          selectedDate={selectedDate}
+          selectedTime={selectedDate ? '09:00' : undefined}
+        />
+      )}
+
+      {/* ⭐ 외부 회원 개인레슨 요청 모달 */}
+      {isExternalMember && (
+        <ExternalPersonalLessonRequestModal
+          isOpen={showExternalRequestModal}
+          onClose={() => setShowExternalRequestModal(false)}
+          onSubmit={handleExternalRequest}
+        />
+      )}
     </div>
   );
 }
 
 export default withAuth(CenterScheduleManagement, { 
-  requireTypes: ['centerAdmin', 'superAdmin'] 
+  requireTypes: ['centerAdmin', 'superAdmin', 'student'] // ⭐ 외부 회원(학생)도 접근 가능
 });

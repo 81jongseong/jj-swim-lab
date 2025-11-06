@@ -114,12 +114,13 @@ export default function CommunityPage() {
     }
   });
 
-  // 탭 기반 카테고리 구조로 개선 (번개모임 추가)
+  // 탭 기반 카테고리 구조로 개선 (번개모임, 기술 피드백 추가)
   const categories = [
     { value: 'all', label: '전체', icon: '🏠', description: '모든 게시글' },
     { value: 'tip', label: '팁', icon: '💡', description: '수영 꿀팁 공유' },
     { value: 'question', label: 'Q&A', icon: '❓', description: '궁금한 것들' },
     { value: 'review', label: '후기', icon: '⭐', description: '수강 후기' },
+    { value: 'video-feedback', label: '기술 피드백', icon: '🎥', description: '동영상 기술 피드백' },
     { value: 'meetup', label: '번개모임', icon: '⚡', description: '즉석 수영 모임' },
     { value: 'event', label: '이벤트', icon: '🎉', description: '대회 & 행사' },
     { value: 'complaint', label: '민원', icon: '📢', description: '민원 접수 및 관리' },
@@ -716,24 +717,41 @@ export default function CommunityPage() {
         {/* 탭 기반 카테고리 구분 - 개선된 UI */}
         <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
           <div className="grid grid-cols-3 lg:grid-cols-7 gap-2">
-            {categories.map(category => (
-              <Button
-                key={category.value}
-                onClick={() => setSelectedCategory(category.value)}
-                variant={selectedCategory === category.value ? 'primary' : 'outline'}
-                size="lg"
-                className={`flex flex-col items-center gap-2 px-3 py-4 rounded-lg font-medium transition-all duration-200 ${
-                  selectedCategory === category.value
-                    ? 'shadow-lg transform scale-105'
-                    : 'hover:bg-gray-200 hover:text-gray-900'
-                }`}
-              >
-                <span className="text-2xl">{category.icon}</span>
-                <span className="text-sm font-medium text-center">
-                  {category.label}
-                </span>
-              </Button>
-            ))}
+            {categories.map(category => {
+              // 기술 피드백 카테고리는 별도 페이지로 이동
+              if (category.value === 'video-feedback') {
+                return (
+                  <a
+                    key={category.value}
+                    href="/video-feedback"
+                    className="flex flex-col items-center gap-2 px-3 py-4 rounded-lg font-medium transition-all duration-200 bg-white border-2 border-gray-300 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-400"
+                  >
+                    <span className="text-2xl">{category.icon}</span>
+                    <span className="text-sm font-medium text-center">
+                      {category.label}
+                    </span>
+                  </a>
+                );
+              }
+              return (
+                <Button
+                  key={category.value}
+                  onClick={() => setSelectedCategory(category.value)}
+                  variant={selectedCategory === category.value ? 'primary' : 'outline'}
+                  size="lg"
+                  className={`flex flex-col items-center gap-2 px-3 py-4 rounded-lg font-medium transition-all duration-200 ${
+                    selectedCategory === category.value
+                      ? 'shadow-lg transform scale-105'
+                      : 'hover:bg-gray-200 hover:text-gray-900'
+                  }`}
+                >
+                  <span className="text-2xl">{category.icon}</span>
+                  <span className="text-sm font-medium text-center">
+                    {category.label}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
         </div>
 

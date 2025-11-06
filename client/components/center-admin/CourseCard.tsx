@@ -75,7 +75,7 @@ export default function CourseCard({ course, levelName, onEdit, onDelete, onAssi
   const theme = statusThemes[course.status] || levelThemes[course.level] || levelThemes.beginner;
 
   return (
-    <Card className={`border-2 ${theme.border} ${theme.bg} ${theme.hoverBg} ${theme.hoverBorder} hover:shadow-lg transition-all`}>
+    <Card className={`border-2 ${theme.border} ${theme.bg} ${theme.hoverBg} ${theme.hoverBorder} hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer`}>
       <CardContent className="p-4">
         {/* 상단 헤더 */}
         <div className="flex items-start justify-between">
