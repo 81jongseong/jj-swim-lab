@@ -142,8 +142,7 @@ const userMenuStructure = {
     ],
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
-      { href: '/instructor/schedule', label: '📅 일정 관리' },
-      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 수영 프로그램' },
+      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
     reports: [
@@ -154,7 +153,6 @@ const userMenuStructure = {
       { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
       { href: '/instructor/health/students', label: '👥 학생별 건강정보' },
       { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
-      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
       { href: '/instructor/health/history', label: '📋 프로그램 이력 관리' },
       { href: '/instructor/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
@@ -311,7 +309,6 @@ const menuGrouping = {
   ],
   instructor: [
     { groupName: '🏠 기본 메뉴', categories: ['main'] },
-    { groupName: '📋 체크리스트 관리', categories: ['checklist'] },
     { groupName: '👥 수강생 관리', categories: ['students'] },
     { groupName: '🏥 건강정보 관리', categories: ['health'] },
     { groupName: '🏢 센터 정보', categories: ['center'] },

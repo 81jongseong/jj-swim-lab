@@ -254,3 +254,109 @@
 - `server/src/models/Settlement.ts` 모델이 `server/src/index.ts`에 import되어 있는지 확인
 - `server/src/routes/settlements.ts` 라우트가 `server/src/index.ts`에 등록되어 있는지 확인
 - 정산 스케줄링 (매월 자동 실행)은 별도 cron job 또는 스케줄러로 구현 필요
+
+### 2025-11-09: 정산 자동화 & 보고서 시스템 강화
+- Settlement 모델에 `statusHistory` 추가, 상태 변경 이력 자동 기록
+- 정산 상태 업데이트 API (`PATCH /api/settlements/:id/status`) 및 Excel/PDF 보고서 엔드포인트 추가
+- `node-cron` 기반 월간/주간 자동 정산 스케줄러 초기화 (`server/src/jobs/settlementScheduler.ts`)
+- Excel(`exceljs`), PDF(`pdfkit`) 보고서 생성 서비스 추가 (`server/src/services/settlementReportService.ts`)
+- 최고관리자/센터관리자 전용 상태 변경 권한 및 이력 기록 제공
+
+### 2025-11-09: 강사 담당 회원 관리 고도화
+- 회원 공개 범위를 `publicFields` 기반으로 분기, 비공개 항목 안내 메시지 처리
+- 최고관리자 체크리스트 템플릿 + 센터 오버라이드 + 강사 체크 상태 로컬 상태 설계
+- 회원 상세에 레벨별 안전 체크리스트 UI 및 체크 토글 추가 (추후 API 연동 예정)
+- 건강 정보/가이드라인에서 비공개 데이터일 경우 메시지 노출, 가이드라인 접근 제한 처리
+
+### 2025-11-09: 서버/클라이언트 빌드 오류 정리
+**문제**:
+- `server/src/models/Settlement.ts`: `recipientTypeModel` 필드가 인터페이스에 선언되지 않아 `tsc` 오류 발생
+- `server/src/routes/bookings.ts`: `startTime` 필터에 `$ne`가 중복 선언되어 `An object literal cannot have multiple properties with the same name` 오류 발생
+- `server/src/routes/community-posts.ts`: `CommunityService` 미사용 및 `meetupDetails` 참조로 인한 타입 오류 다수
+- `server/src/routes/uploads.ts`: 동영상 `visibility`를 문자열로 비교하여 타입 불일치, 피드백 작성 시 `reviewerType`이 string으로 처리되어 컴파일 실패
+- `server/src/routes/instructor.ts`: `instructorInfo`에 없는 필드를 직접 참조하여 컴파일 오류 발생
+- `server/src/services/settlementReportService.ts`: `recipientId`가 `ObjectId`일 때 `.name` 접근으로 타입 오류 발생
+- `client/app/admin/instructors/page.tsx`: `export default` 뒤에 JSX가 중복으로 남아 Next.js 빌드 실패 (`Unexpected token div`)
+
+**해결 방법**:
+1. Settlement 모델/서비스
+   - `recipientTypeModel`을 `ISettlement` 인터페이스에 추가하고 모든 생성 로직에서 필수 값으로 지정
+   - 리포트 생성 서비스에서 수령자 이름을 안전하게 파싱하는 `getRecipientDisplay()` 헬퍼 추가
+2. 예약 라우트
+   - `startTime` 필터를 `$exists` + `$nin: [null, '']` 구조로 교체하여 중복 키 제거
+3. 커뮤니티 라우트
+   - `CommunityService.getInstance()`를 사용하도록 수정하고, 번개모임 참가 API를 서비스 레이어 호출로 통합
+4. 업로드 라우트
+   - 공개 범위 검증을 boolean 필드 기반으로 정리하고, 다운로드 시 파일 경로 유효성 검사 추가
+   - 피드백 작성 시 `reviewerType`을 `'instructor' | 'member'` 리터럴로 명시
+5. 강사 라우트
+   - `instructorInfo` 접근 전 `const instructorStats: any`를 정의해 안전하게 참조
+6. 클라이언트 중복 코드 정리
+   - `client/app/admin/instructors/page.tsx`의 중복 JSX 블록 삭제 후 단일 `export default`만 유지
+7. 전체 확인
+   - 서버 `pnpm run build`, 클라이언트 `pnpm run build`를 재실행해 오류가 없는지 검증
+
+**추가 확인 사항**:
+- 추후 비슷한 편집 오류 발생 시 `DEVELOPMENT.md`의 해당 섹션을 참고하여 중복 코드 및 타입 선언을 먼저 점검
+- 빌드 오류 발생 시 서버/클라이언트 각각 `pnpm run build`를 통해 빠르게 재현 후 수정 사항을 문서에 기록
+
+### 2025-11-09: Next.js 404/500 프리렌더 오류
+**현상**:
+- `client` 디렉터리에서 `pnpm run build` 실행 시 404/500 페이지 프리렌더링 단계에서 `Cannot find module './6989.js'` 오류 발생
+- `_error: /404`, `_error: /500` 경로에서 export 실패
+
+**원인/해결**:
+- 이전 빌드 산출물(특히 `.next/server/chunks` 하위)이 부분적으로 남아 있어, 일부 청크가 루트에서 참조되지 못함
+- `pnpm run clean`(스크립트에 포함된 `rimraf .next out`) 후 연속 두 차례 `pnpm run build` 수행 시 재현되지 않음
+- Windows 환경에서 빌드 과정 중 파일 잠금이 걸린 상태에서 중단된 경우 동일 증상이 발생할 수 있으므로, 빌드 전 `.next` 폴더 삭제 및 재시도가 필요
+
+**추가 확인 사항**:
+- 커스텀 `next.config.js` 변경 없이도 빌드가 안정적으로 통과하는지 2회 이상 확인 완료 (2025-11-09)
+- 404/500 페이지는 기본 `app/not-found.tsx`, `app/error.tsx`로 정상 동작함
+
+## 🔍 자동 헬스 체크 (2025. 11. 9. 오전 11:43:52)
+
+- 총 검사: 435개
+- 통과: 553개
+- 실패: 1개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+### 2025-11-09: 강사용 네비게이션 중복 메뉴 정리
+**문제**:
+- 강사용 메뉴에서 `/instructor/swim-training-plan` 페이지가 `수영 프로그램`, `맞춤형 수영 계획` 두 이름으로 중복 노출되어 혼란을 초래함
+
+**해결 방법**:
+1. `client/components/Navigation.tsx`에서 `수강생 관리` 그룹 내 중복 항목을 제거
+2. 건강정보 메뉴 그룹에서만 `🏊‍♂️ 맞춤형 수영 계획`으로 노출되도록 통일
+
+**추가 확인사항**:
+- 강사용 내비게이션 전체에서 동일 페이지가 중복 표시되지 않는지 다시 확인
+- 페이지 타이틀과 메뉴명이 일치하는지 확인
+
+### 2025-11-09: 예약/일정 메뉴 통합 및 체크리스트 그룹 제거
+**문제**:
+- 강사용 네비게이션에서 `/instructor/bookings`와 `/instructor/schedule`이 동일 페이지를 가리키면서 메뉴가 중복 노출
+- `📋 체크리스트 관리` 그룹명이 실사용 카테고리가 없어 빈 섹션으로 표시됨
+
+**해결 방법**:
+1. `client/components/Navigation.tsx`에서 `students` 카테고리 내 `📅 일정 관리` 항목을 제거하여 예약 관리 단일 메뉴로 통합
+2. 메뉴 그룹 정의에서 `📋 체크리스트 관리` 섹션을 삭제해 빈 그룹 노출을 방지
+
+**추가 확인사항**:
+- 내비게이션 렌더링 시 빈 그룹이나 중복 메뉴가 더 이상 없는지 재확인
+- 예약 관리 페이지 링크가 정상 작동하는지 확인
+
