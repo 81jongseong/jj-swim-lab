@@ -360,3 +360,20 @@
 - 내비게이션 렌더링 시 빈 그룹이나 중복 메뉴가 더 이상 없는지 재확인
 - 예약 관리 페이지 링크가 정상 작동하는지 확인
 
+### 2025-11-10: 기존 관리자 페이지 ESLint 오류
+**문제**:
+- `pnpm --filter client run lint` 실행 시 `app/admin/center-management/page.tsx`, `app/admin/instructors/page.tsx`, `app/center/[centerSlug]/admin/layout.tsx` 등 관리자 전용 페이지에서 ESLint 오류가 다수 발생
+- `handleAssignAdmin` 미정의, 비어 있는 블록, 구문 오류, 바이너리 백업 파일 포함 등으로 인해 린트가 실패
+
+**해결 방법/현황**:
+1. 해당 관리자 페이지들은 금일 작업 범위와 무관하여 즉시 수정하지 않음
+2. 추후 관리자 영역 리팩터링 시
+   - `handleAssignAdmin` 등 누락된 핸들러 구현 여부 확인
+   - 비어 있는 블록을 제거하거나 TODO 주석으로 대체
+   - `page_backup.tsx` 등 백업 파일을 정식 컴포넌트로 이전하거나 ESLint 제외 설정 검토
+3. 오늘 작업 관련 페이지(`instructor/*`, `student/my-group-program`)에서는 추가 ESLint 경고 없음
+
+**추가 확인사항**:
+- 린트 실행 시 관리자 영역에서 동일 오류가 반복되는지 주기적으로 점검
+- 관리자 페이지 리팩터링 일정 수립 후 본 항목을 업데이트
+

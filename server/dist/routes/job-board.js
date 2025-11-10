@@ -212,6 +212,38 @@ router.put('/applications/:id', auth_1.authMiddleware, async (req, res) => {
         }
         if (status) {
             application.status = status;
+            if (status === 'hired' || status === 'accepted' || status === 'final_passed' || status === 'interview_passed') {
+                const applicant = application.applicantId;
+                const applicantId = applicant._id || applicant;
+                let centerId = post.roomSpecific?.jobBoard?.centerId;
+                if (centerId && typeof centerId === 'object' && centerId._id) {
+                    centerId = centerId._id;
+                }
+                else if (centerId && typeof centerId === 'object') {
+                    centerId = centerId;
+                }
+                centerId = centerId?.toString ? centerId.toString() : centerId;
+                if (centerId) {
+                    const instructor = await User_1.User.findById(applicantId);
+                    if (instructor && instructor.userType === 'instructor') {
+                        instructor.centerId = new mongoose_1.default.Types.ObjectId(centerId);
+                        if (!instructor.instructorInfo) {
+                            instructor.instructorInfo = {};
+                        }
+                        const assignedCenters = instructor.instructorInfo.assignedCenters || [];
+                        if (!assignedCenters.includes(centerId)) {
+                            assignedCenters.push(new mongoose_1.default.Types.ObjectId(centerId));
+                            instructor.instructorInfo.assignedCenters = assignedCenters;
+                        }
+                        await instructor.save();
+                        console.log('✅ 강사 계정에 centerId 설정 완료:', {
+                            instructorId: instructor._id,
+                            instructorName: instructor.name,
+                            centerId: centerId
+                        });
+                    }
+                }
+            }
         }
         if (interviewDate) {
             application.interviewDate = new Date(interviewDate);
@@ -484,6 +516,137 @@ router.get('/applications/:id', auth_1.authMiddleware, async (req, res) => {
         res.status(500).json({
             success: false,
             message: '지원 상세 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.post('/applications/sync-instructors', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: '인증이 필요합니다.'
+            });
+        }
+        if (user.userType !== 'centerAdmin' && user.userType !== 'center-admin' && user.userType !== 'superAdmin') {
+            return res.status(403).json({
+                success: false,
+                message: '권한이 없습니다.'
+            });
+        }
+        const passedApplications = await JobApplication_1.JobApplication.find({
+            status: { $in: ['final_passed', 'interview_passed', 'hired', 'accepted'] }
+        })
+            .populate({
+            path: 'postId',
+            select: 'title roomSpecific'
+        })
+            .populate({
+            path: 'applicantId',
+            select: 'name email userType centerId instructorInfo'
+        });
+        const results = [];
+        let successCount = 0;
+        let errorCount = 0;
+        for (const application of passedApplications) {
+            try {
+                const applicant = application.applicantId;
+                const applicantId = applicant._id || applicant;
+                const post = application.postId;
+                let centerId = post?.roomSpecific?.jobBoard?.centerId || application.centerId;
+                if (centerId && typeof centerId === 'object' && centerId._id) {
+                    centerId = centerId._id;
+                }
+                else if (centerId && typeof centerId === 'object') {
+                    centerId = centerId;
+                }
+                centerId = centerId?.toString ? centerId.toString() : centerId;
+                if (!centerId) {
+                    results.push({
+                        applicationId: application._id,
+                        applicantName: applicant.name,
+                        status: 'skipped',
+                        reason: '센터 ID 없음'
+                    });
+                    continue;
+                }
+                const instructor = await User_1.User.findById(applicantId);
+                if (!instructor || instructor.userType !== 'instructor') {
+                    results.push({
+                        applicationId: application._id,
+                        applicantName: applicant.name,
+                        status: 'skipped',
+                        reason: '강사 계정 아님'
+                    });
+                    continue;
+                }
+                const centerIdObj = new mongoose_1.default.Types.ObjectId(centerId);
+                let updated = false;
+                if (!instructor.centerId || instructor.centerId.toString() !== centerId) {
+                    instructor.centerId = centerIdObj;
+                    updated = true;
+                }
+                if (!instructor.instructorInfo) {
+                    instructor.instructorInfo = {};
+                }
+                const assignedCenters = instructor.instructorInfo.assignedCenters || [];
+                const centerIdStr = centerIdObj.toString();
+                if (!assignedCenters.some((c) => c.toString() === centerIdStr)) {
+                    assignedCenters.push(centerIdObj);
+                    instructor.instructorInfo.assignedCenters = assignedCenters;
+                    updated = true;
+                }
+                if (updated) {
+                    await instructor.save();
+                    successCount++;
+                    results.push({
+                        applicationId: application._id,
+                        applicantName: instructor.name,
+                        status: 'success',
+                        centerId: centerId
+                    });
+                    console.log('✅ 강사 계정 동기화 완료:', {
+                        instructorId: instructor._id,
+                        instructorName: instructor.name,
+                        centerId: centerId
+                    });
+                }
+                else {
+                    results.push({
+                        applicationId: application._id,
+                        applicantName: instructor.name,
+                        status: 'already_synced',
+                        centerId: centerId
+                    });
+                }
+            }
+            catch (error) {
+                errorCount++;
+                results.push({
+                    applicationId: application._id,
+                    applicantName: application.applicantId?.name || '알 수 없음',
+                    status: 'error',
+                    error: error.message
+                });
+                console.error('❌ 강사 계정 동기화 오류:', error);
+            }
+        }
+        res.json({
+            success: true,
+            message: `동기화 완료: 성공 ${successCount}건, 오류 ${errorCount}건`,
+            data: {
+                total: passedApplications.length,
+                success: successCount,
+                errors: errorCount,
+                results
+            }
+        });
+    }
+    catch (error) {
+        console.error('강사 계정 동기화 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || '동기화 중 오류가 발생했습니다.'
         });
     }
 });

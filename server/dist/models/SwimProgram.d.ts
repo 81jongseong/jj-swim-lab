@@ -73,6 +73,7 @@ export interface ISwimProgram extends Document {
             duration: number;
             distance: number;
             intensity: string;
+            status?: 'scheduled' | 'postponed' | 'skipped';
             blocks: Array<{
                 type: string;
                 description: string;
@@ -112,6 +113,7 @@ export interface ISwimProgram extends Document {
         dayOfWeek: string;
         condition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired';
         hasPain: boolean;
+        rpe?: number;
         adjustedPace?: string;
         adjustedRest?: string;
         notes?: string;

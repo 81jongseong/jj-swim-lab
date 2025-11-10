@@ -1,1 +1,1 @@
-{"version":3,"file":"job-board.d.ts","sourceRoot":"","sources":["../../src/routes/job-board.ts"],"names":[],"mappings":"AAyBA,OAAO,gBAAgB,CAAC;AAExB,QAAA,MAAM,MAAM,4CAAW,CAAC;AAylBxB,eAAe,MAAM,CAAC"}
+{"version":3,"file":"job-board.d.ts","sourceRoot":"","sources":["../../src/routes/job-board.ts"],"names":[],"mappings":"AAyBA,OAAO,gBAAgB,CAAC;AAExB,QAAA,MAAM,MAAM,4CAAW,CAAC;AAwxBxB,eAAe,MAAM,CAAC"}

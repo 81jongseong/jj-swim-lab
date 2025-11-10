@@ -10,6 +10,8 @@ import mongoose from 'mongoose';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
+import { Booking } from '../models/Booking';
+import { Course } from '../models/Course';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
@@ -291,10 +293,90 @@ router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'c
     const { studentId, category, level } = req.query;
 
     // 강사가 담당하는 학생들 조회
+    const instructorObjectId = mongoose.Types.ObjectId.isValid(instructorId)
+      ? new mongoose.Types.ObjectId(instructorId)
+      : null;
+
+    const studentMatchConditions: any[] = [
+      { 'instructorInfo.assignedInstructor': instructorId },
+      { 'studentInfo.instructorId': instructorId },
+      { 'studentInfo.assignedInstructor': instructorId },
+      { 'studentInfo.assignedInstructors': instructorId },
+      { 'studentInfo.assignedInstructors.instructor': instructorId },
+      { 'studentInfo.assignedInstructors.instructorId': instructorId },
+      { assignedInstructor: instructorId }
+    ];
+
+    if (instructorObjectId) {
+      studentMatchConditions.push(
+        { 'instructorInfo.assignedInstructor': instructorObjectId },
+        { 'studentInfo.instructorId': instructorObjectId },
+        { 'studentInfo.assignedInstructor': instructorObjectId },
+        { 'studentInfo.assignedInstructors': instructorObjectId },
+        { 'studentInfo.assignedInstructors.instructor': instructorObjectId },
+        { 'studentInfo.assignedInstructors.instructorId': instructorObjectId },
+        { assignedInstructor: instructorObjectId }
+      );
+    }
+
     const students = await User.find({
       userType: 'student',
-      'instructorInfo.assignedInstructor': instructorId
+      $or: studentMatchConditions
     });
+
+    const studentDocs = [...students];
+
+    if (instructorObjectId) {
+      const additionalStudentIds = new Set<string>();
+
+      const bookingStudentIds = await Booking.distinct('studentId', {
+        instructorId: instructorObjectId
+      });
+      bookingStudentIds
+        .filter((id: any) => id)
+        .forEach((id: any) => additionalStudentIds.add(id.toString()));
+
+      const instructorCourses = await Course.find({
+        $or: [
+          { instructorId: instructorObjectId },
+          { instructor: instructorObjectId }
+        ]
+      })
+        .select('enrolledStudents studentIds students')
+        .lean();
+
+      instructorCourses.forEach((course: any) => {
+        const enrolled = course?.enrolledStudents || [];
+        enrolled.forEach((entry: any) => {
+          if (entry?.student) {
+            const id = entry.student._id || entry.student;
+            if (id) additionalStudentIds.add(id.toString());
+          }
+        });
+        const studentIds = course?.studentIds || course?.students || [];
+        studentIds.forEach((id: any) => {
+          if (id) additionalStudentIds.add(id.toString());
+        });
+      });
+
+      const existingIds = new Set(studentDocs.map((doc) => doc._id.toString()));
+      const missingIds = Array.from(additionalStudentIds).filter((id) => !existingIds.has(id));
+
+      if (missingIds.length > 0) {
+        const extraStudents = await User.find({
+          userType: 'student',
+          _id: { $in: missingIds }
+        });
+        studentDocs.push(...extraStudents);
+      }
+    }
+
+    if (!studentDocs || studentDocs.length === 0) {
+      console.warn('⚠️ 담당 학생 없음', {
+        instructorId,
+        matchConditions: studentMatchConditions
+      });
+    }
 
     if (studentId) {
       // 특정 학생의 진도만 조회
@@ -309,7 +391,7 @@ router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'c
     }
 
     // 모든 학생의 진도 조회
-    const studentIds = students.map(s => s._id);
+    const studentIds = studentDocs.map(s => s._id);
     let query: any = { studentId: { $in: studentIds } };
 
     // 필터 적용
@@ -334,8 +416,18 @@ router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'c
       .populate('studentId', 'name email')
       .sort({ updatedAt: -1 });
 
+    const studentSummaries = studentDocs.map(student => ({
+      _id: student._id,
+      name: student.name,
+      email: student.email,
+      centerId: student.centerId,
+      studentInfo: student.studentInfo,
+      instructorInfo: student.instructorInfo
+    }));
+
     res.json({
       success: true,
+      students: studentSummaries,
       data: progressData
     });
   } catch (error) {

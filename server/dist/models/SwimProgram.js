@@ -105,6 +105,11 @@ const SwimProgramSchema = new mongoose_1.Schema({
                 duration: { type: Number },
                 distance: { type: Number },
                 intensity: { type: String },
+                status: {
+                    type: String,
+                    enum: ['scheduled', 'postponed', 'skipped'],
+                    default: 'scheduled'
+                },
                 dayCondition: {
                     condition: {
                         type: String,
@@ -167,6 +172,7 @@ const SwimProgramSchema = new mongoose_1.Schema({
                 required: true
             },
             hasPain: { type: Boolean, default: false },
+            rpe: { type: Number, min: 1, max: 10 },
             adjustedPace: { type: String },
             adjustedRest: { type: String },
             notes: { type: String },

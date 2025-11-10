@@ -416,19 +416,34 @@ router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req
                 message: '관리하는 센터가 없습니다.'
             });
         }
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { page = 1, limit = 1000, search = '' } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
+        const centerIdObj = new mongoose_1.default.Types.ObjectId(centerId);
         const query = {
             userType: 'instructor',
-            centerId: new mongoose_1.default.Types.ObjectId(centerId)
+            $or: [
+                { centerId: centerIdObj },
+                { 'instructorInfo.assignedCenters': centerIdObj }
+            ]
         };
-        console.log('🔍 검색 조건:', query);
         if (search) {
-            query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+            query.$and = [
+                {
+                    $or: [
+                        { centerId: centerIdObj },
+                        { 'instructorInfo.assignedCenters': centerIdObj }
+                    ]
+                },
+                {
+                    $or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } }
+                    ]
+                }
             ];
+            delete query.$or;
         }
+        console.log('🔍 검색 조건:', query);
         const instructors = await User_1.User.find(query)
             .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
             .lean()

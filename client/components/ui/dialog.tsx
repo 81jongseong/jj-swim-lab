@@ -120,3 +120,67 @@ export {
   DialogTitle,
   DialogDescription,
 }
+
+export const HealthDialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 flex w-[92vw] max-w-2xl max-h-[80vh] translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-xl border bg-white shadow-xl",
+        className
+      )}
+      {...props}
+    >
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {children}
+      </div>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+HealthDialogContent.displayName = 'HealthDialogContent'
+
+export const HealthDialogHeader = ({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-6 py-4 sticky top-0 z-10",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+)
+HealthDialogHeader.displayName = 'HealthDialogHeader'
+
+export const HealthDialogBody = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn("flex-1 overflow-y-auto px-6 py-4 space-y-6", className)}
+    {...props}
+  />
+)
+HealthDialogBody.displayName = 'HealthDialogBody'
+
+export const HealthDialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-6 py-3 sticky bottom-0 z-10",
+      className
+    )}
+    {...props}
+  />
+)
+HealthDialogFooter.displayName = 'HealthDialogFooter'

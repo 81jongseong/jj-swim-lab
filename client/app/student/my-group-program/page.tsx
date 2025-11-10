@@ -14,14 +14,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import apiClient from '../../../utils/api';
-import { calculatePersonalAdjustment, calculateAdjustedPace, getStrokeName } from '../../../lib/swimlab/utils/personalAdjustmentCalculator';
+import { useAuth } from '@/hooks/useAuth';
+import apiClient from '@/utils/api';
+import { calculatePersonalAdjustment, getStrokeName } from '@/lib/swimlab/utils/personalAdjustmentCalculator';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 interface Program {
   _id: string;
-  groupClassName: string;
+  groupClassName?: string;
   programType: string;
+  programScope?: 'individual' | 'group';
+  programSource?: 'individual' | 'group';
+  displayName: string;
   params: any;
   content: {
     summary: string;
@@ -30,8 +52,19 @@ interface Program {
     totalMeters: number;
     sessions: any[];
   };
+  executionHistory?: Array<{
+    date: string;
+    dayOfWeek: string;
+    condition: ConditionValue;
+    hasPain: boolean;
+    rpe?: number;
+    notes?: string;
+    completed?: boolean;
+  }>;
   createdAt: string;
 }
+
+type ConditionValue = 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired';
 
 export default function MyGroupProgramPage() {
   const { user } = useAuth();
@@ -39,6 +72,16 @@ export default function MyGroupProgramPage() {
   const [selectedProgram, setSelectedProgram] = useState<any | null>(null);
   const [adjustment, setAdjustment] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [rpeDialog, setRpeDialog] = useState<{
+    programId: string;
+    sessionIndex: number;
+    sessionDay: string;
+    sessionDate?: string;
+  } | null>(null);
+  const [rpeValue, setRpeValue] = useState<number>(6);
+  const [rpeCondition, setRpeCondition] = useState<ConditionValue>('normal');
+  const [rpeNotes, setRpeNotes] = useState('');
+  const [rpeSubmitting, setRpeSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -86,6 +129,92 @@ export default function MyGroupProgramPage() {
       
       console.log(`🎯 ${user.name}님 조정사항:`, personalAdj);
       setAdjustment(personalAdj);
+    }
+  };
+
+  const conditionOptions: Array<{ value: ConditionValue; label: string }> = [
+    { value: 'very_good', label: '컨디션 매우 좋음' },
+    { value: 'good', label: '컨디션 좋음' },
+    { value: 'normal', label: '보통' },
+    { value: 'tired', label: '피곤함' },
+    { value: 'very_tired', label: '매우 피곤함' }
+  ];
+
+  const getConditionLabel = (value: string | undefined) =>
+    conditionOptions.find((option) => option.value === value)?.label || '보통';
+
+  const getExecutionRecord = (program: Program, session: any) => {
+    if (!program.executionHistory || program.executionHistory.length === 0) {
+      return undefined;
+    }
+    return program.executionHistory.find((record) => {
+      if (session.date && record.date) {
+        return record.date === session.date;
+      }
+      return record.dayOfWeek === session.day;
+    });
+  };
+
+  const updateProgramExecutionHistory = (programId: string, executionHistory: any[]) => {
+    setPrograms((prev) =>
+      prev.map((program) =>
+        program._id === programId ? { ...program, executionHistory } : program
+      )
+    );
+    setSelectedProgram((prev) =>
+      prev && prev._id === programId ? { ...prev, executionHistory } : prev
+    );
+  };
+
+  const openRpeDialog = (program: Program, sessionIndex: number) => {
+    const session = program.content.sessions[sessionIndex];
+    const existing = getExecutionRecord(program, session);
+
+    setRpeValue(existing?.rpe ?? 6);
+    setRpeCondition(existing?.condition ?? 'normal');
+    setRpeNotes(existing?.notes ?? '');
+    setRpeDialog({
+      programId: program._id,
+      sessionIndex,
+      sessionDay: session.day,
+      sessionDate: session.date
+    });
+  };
+
+  const handleSubmitRpe = async () => {
+    if (!rpeDialog) return;
+
+    try {
+      setRpeSubmitting(true);
+      const program = programs.find((p) => p._id === rpeDialog.programId);
+      if (!program) {
+        throw new Error('프로그램 정보를 찾을 수 없습니다.');
+      }
+      const today = new Date().toISOString().slice(0, 10);
+
+      const payload = {
+        date: rpeDialog.sessionDate || today,
+        dayOfWeek: rpeDialog.sessionDay,
+        condition: rpeCondition,
+        rpe: rpeValue,
+        notes: rpeNotes,
+        completed: true
+      };
+
+      const response = await apiClient.patch<any>(
+        `/api/swim-programs/${rpeDialog.programId}/execution`,
+        payload
+      );
+
+      if (response?.executionHistory) {
+        updateProgramExecutionHistory(rpeDialog.programId, response.executionHistory);
+      }
+
+      setRpeDialog(null);
+    } catch (error) {
+      console.error('RPE 기록 저장 실패:', error);
+    } finally {
+      setRpeSubmitting(false);
     }
   };
 
@@ -156,7 +285,9 @@ export default function MyGroupProgramPage() {
                       <span className="text-lg">
                         {program.programSource === 'group' ? '📚' : '🏊'}
                       </span>
-                      <div className="font-semibold text-gray-900">{program.displayName}</div>
+                      <div className="font-semibold text-gray-900">
+                        {program.displayName || program.groupClassName || program.athleteName || '개인 프로그램'}
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600">
                       {new Date(program.createdAt).toLocaleDateString('ko-KR')}
@@ -315,21 +446,70 @@ export default function MyGroupProgramPage() {
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-4">📅 세션 목록</h3>
                   <div className="space-y-3">
-                    {selectedProgram.content.sessions.map((session, idx) => (
-                      <div key={idx} className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-all">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-semibold text-gray-900">
-                            {session.day} {session.date && `(${session.date})`}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {session.distance}m | {session.duration}분
-                          </span>
+                    {selectedProgram.content.sessions.map((session, idx) => {
+                      const executionRecord = getExecutionRecord(selectedProgram, session);
+                      return (
+                        <div
+                          key={idx}
+                          className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-all space-y-3"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="font-semibold text-gray-900">
+                                {session.day} {session.date && `(${session.date})`}
+                              </span>
+                              {session.themeDesc && (
+                                <p className="text-sm text-gray-600 mt-1">{session.themeDesc}</p>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              {session.distance}m | {session.duration}분
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                              <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                예정 강도: {session.intensity || '---'}
+                              </span>
+                              {session.status === 'postponed' && (
+                                <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                  연기된 세션
+                                </span>
+                              )}
+                              {session.status === 'skipped' && (
+                                <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">
+                                  생략된 세션
+                                </span>
+                              )}
+                              {executionRecord?.rpe && (
+                                <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                  RPE {executionRecord.rpe}/10
+                                </span>
+                              )}
+                              {executionRecord?.condition && (
+                                <span className="px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                                  {getConditionLabel(executionRecord.condition)}
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRpeDialog(selectedProgram, idx)}
+                            >
+                              {executionRecord?.rpe ? 'RPE 수정' : 'RPE 기록'}
+                            </Button>
+                          </div>
+
+                          {executionRecord?.notes && (
+                            <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-700">
+                              {executionRecord.notes}
+                            </div>
+                          )}
                         </div>
-                        {session.themeDesc && (
-                          <p className="text-sm text-gray-600">{session.themeDesc}</p>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </>
@@ -337,6 +517,71 @@ export default function MyGroupProgramPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!rpeDialog} onOpenChange={(open) => (open ? null : setRpeDialog(null))}>
+        <DialogContent className="bg-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>세션 RPE 기록</DialogTitle>
+            <DialogDescription>
+              해당 세션을 마친 뒤 느낀 운동 강도를 1~10 사이로 기록해주세요. 이 정보는 강사님이 프로그램을 조정하는 데 사용됩니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm text-gray-700">
+                RPE 값 <span className="font-semibold text-blue-600">{rpeValue}/10</span>
+              </Label>
+              <Slider
+                value={[rpeValue]}
+                min={1}
+                max={10}
+                step={1}
+                className="mt-3"
+                onValueChange={(value) => setRpeValue(value[0] ?? 6)}
+              />
+              <div className="mt-2 text-xs text-gray-500">
+                1은 매우 쉬움, 10은 한계에 가까운 운동을 의미합니다.
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-700">오늘 컨디션</Label>
+              <Select value={rpeCondition} onValueChange={(value) => setRpeCondition(value as ConditionValue)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="컨디션 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {conditionOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-700">메모 (선택)</Label>
+              <Textarea
+                value={rpeNotes}
+                onChange={(event) => setRpeNotes(event.target.value)}
+                placeholder="컨디션이나 느낀 점을 자유롭게 기록해주세요."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4">
+            <Button variant="outline" onClick={() => setRpeDialog(null)} disabled={rpeSubmitting}>
+              취소
+            </Button>
+            <Button onClick={handleSubmitRpe} disabled={rpeSubmitting}>
+              {rpeSubmitting ? '저장 중...' : '저장'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

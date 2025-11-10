@@ -77,6 +77,7 @@ export interface ISwimProgram extends Document {
       duration: number;
       distance: number;
       intensity: string;
+      status?: 'scheduled' | 'postponed' | 'skipped';
       blocks: Array<{
         type: string;
         description: string;
@@ -122,6 +123,7 @@ export interface ISwimProgram extends Document {
     dayOfWeek: string;
     condition: 'very_good' | 'good' | 'normal' | 'tired' | 'very_tired';
     hasPain: boolean;
+    rpe?: number;
     adjustedPace?: string;
     adjustedRest?: string;
     notes?: string;
@@ -216,6 +218,11 @@ const SwimProgramSchema = new Schema<ISwimProgram>({
       duration: { type: Number },
       distance: { type: Number },
       intensity: { type: String },
+      status: {
+        type: String,
+        enum: ['scheduled', 'postponed', 'skipped'],
+        default: 'scheduled'
+      },
       // 🌤️ 당일 컨디션 (실행 전 입력)
       dayCondition: {
         condition: { 
@@ -285,6 +292,7 @@ const SwimProgramSchema = new Schema<ISwimProgram>({
       required: true
     },
     hasPain: { type: Boolean, default: false },
+    rpe: { type: Number, min: 1, max: 10 },
     adjustedPace: { type: String },
     adjustedRest: { type: String },
     notes: { type: String },

@@ -35,13 +35,16 @@ const router = express.Router();
  */
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { 
-      athleteId, 
-      athleteName, 
-      centerId, 
-      programType, 
-      params, 
-      content, 
+    const {
+      athleteId,
+      athleteName,
+      centerId,
+      programType,
+      programScope,
+      groupClassId,
+      groupClassName,
+      params,
+      content,
       usedMethodIds,
       useTeachingMethod // 강습법 기반 생성 플래그
     } = req.body;
@@ -147,12 +150,16 @@ router.post('/', authMiddleware, async (req, res) => {
       });
     }
     
-    // 프로그램 생성
+    const scope = programScope || (groupClassId ? 'group' : 'individual');
+
     const program = new SwimProgram({
       athleteId,
       athleteName,
+      groupClassId,
+      groupClassName,
       centerId,
       programType: programType || 'weekly',
+      programScope: scope,
       params,
       content,
       usedMethodIds: usedMethodIds || [],
@@ -300,22 +307,23 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.patch('/:id/execution', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      date, 
-      dayOfWeek, 
-      condition, 
-      hasPain, 
-      adjustedPace, 
-      adjustedRest, 
-      notes, 
-      completed 
+    const {
+      date,
+      dayOfWeek,
+      condition,
+      hasPain,
+      adjustedPace,
+      adjustedRest,
+      notes,
+      completed,
+      rpe
     } = req.body;
-    
-    // 필수 필드 검증
-    if (!date || !dayOfWeek || !condition) {
+
+    // 필수 값 검증 (날짜/요일 필수, 컨디션 미입력 시 기본값 사용)
+    if (!date || !dayOfWeek) {
       return res.status(400).json({ 
         error: '필수 필드가 누락되었습니다.',
-        required: ['date', 'dayOfWeek', 'condition']
+        required: ['date', 'dayOfWeek']
       });
     }
     
@@ -333,8 +341,9 @@ router.patch('/:id/execution', authMiddleware, async (req, res) => {
     const executionRecord = {
       date,
       dayOfWeek,
-      condition,
+      condition: condition || 'normal',
       hasPain: hasPain || false,
+      rpe: typeof rpe === 'number' ? rpe : undefined,
       adjustedPace,
       adjustedRest,
       notes,

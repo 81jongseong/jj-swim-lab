@@ -8,6 +8,8 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const LearningProgress_1 = require("../models/LearningProgress");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const User_1 = require("../models/User");
+const Booking_1 = require("../models/Booking");
+const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
@@ -254,10 +256,73 @@ router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole
     try {
         const instructorId = req.user.id;
         const { studentId, category, level } = req.query;
+        const instructorObjectId = mongoose_1.default.Types.ObjectId.isValid(instructorId)
+            ? new mongoose_1.default.Types.ObjectId(instructorId)
+            : null;
+        const studentMatchConditions = [
+            { 'instructorInfo.assignedInstructor': instructorId },
+            { 'studentInfo.instructorId': instructorId },
+            { 'studentInfo.assignedInstructor': instructorId },
+            { 'studentInfo.assignedInstructors': instructorId },
+            { 'studentInfo.assignedInstructors.instructor': instructorId },
+            { 'studentInfo.assignedInstructors.instructorId': instructorId },
+            { assignedInstructor: instructorId }
+        ];
+        if (instructorObjectId) {
+            studentMatchConditions.push({ 'instructorInfo.assignedInstructor': instructorObjectId }, { 'studentInfo.instructorId': instructorObjectId }, { 'studentInfo.assignedInstructor': instructorObjectId }, { 'studentInfo.assignedInstructors': instructorObjectId }, { 'studentInfo.assignedInstructors.instructor': instructorObjectId }, { 'studentInfo.assignedInstructors.instructorId': instructorObjectId }, { assignedInstructor: instructorObjectId });
+        }
         const students = await User_1.User.find({
             userType: 'student',
-            'instructorInfo.assignedInstructor': instructorId
+            $or: studentMatchConditions
         });
+        const studentDocs = [...students];
+        if (instructorObjectId) {
+            const additionalStudentIds = new Set();
+            const bookingStudentIds = await Booking_1.Booking.distinct('studentId', {
+                instructorId: instructorObjectId
+            });
+            bookingStudentIds
+                .filter((id) => id)
+                .forEach((id) => additionalStudentIds.add(id.toString()));
+            const instructorCourses = await Course_1.Course.find({
+                $or: [
+                    { instructorId: instructorObjectId },
+                    { instructor: instructorObjectId }
+                ]
+            })
+                .select('enrolledStudents studentIds students')
+                .lean();
+            instructorCourses.forEach((course) => {
+                const enrolled = course?.enrolledStudents || [];
+                enrolled.forEach((entry) => {
+                    if (entry?.student) {
+                        const id = entry.student._id || entry.student;
+                        if (id)
+                            additionalStudentIds.add(id.toString());
+                    }
+                });
+                const studentIds = course?.studentIds || course?.students || [];
+                studentIds.forEach((id) => {
+                    if (id)
+                        additionalStudentIds.add(id.toString());
+                });
+            });
+            const existingIds = new Set(studentDocs.map((doc) => doc._id.toString()));
+            const missingIds = Array.from(additionalStudentIds).filter((id) => !existingIds.has(id));
+            if (missingIds.length > 0) {
+                const extraStudents = await User_1.User.find({
+                    userType: 'student',
+                    _id: { $in: missingIds }
+                });
+                studentDocs.push(...extraStudents);
+            }
+        }
+        if (!studentDocs || studentDocs.length === 0) {
+            console.warn('⚠️ 담당 학생 없음', {
+                instructorId,
+                matchConditions: studentMatchConditions
+            });
+        }
         if (studentId) {
             const progress = await LearningProgress_1.LearningProgress.find({ studentId })
                 .populate('teachingMethodId', 'name description category level steps tips')
@@ -267,7 +332,7 @@ router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole
                 data: progress
             });
         }
-        const studentIds = students.map(s => s._id);
+        const studentIds = studentDocs.map(s => s._id);
         let query = { studentId: { $in: studentIds } };
         if (category && category !== 'all') {
             const teachingMethods = await TeachingMethod_1.TeachingMethod.find({ category });
@@ -288,8 +353,17 @@ router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole
             .populate('teachingMethodId', 'name description category level steps tips')
             .populate('studentId', 'name email')
             .sort({ updatedAt: -1 });
+        const studentSummaries = studentDocs.map(student => ({
+            _id: student._id,
+            name: student.name,
+            email: student.email,
+            centerId: student.centerId,
+            studentInfo: student.studentInfo,
+            instructorInfo: student.instructorInfo
+        }));
         res.json({
             success: true,
+            students: studentSummaries,
             data: progressData
         });
     }

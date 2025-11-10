@@ -22,6 +22,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
 import { Users, Heart, AlertTriangle, CheckCircle, XCircle, Info, Eye } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface MemberHealthInfo {
   id: string;
@@ -47,6 +49,7 @@ const InstructorStudentsPage: React.FC = () => {
   const [members, setMembers] = useState<MemberHealthInfo[]>([]);
   const [selectedMember, setSelectedMember] = useState<MemberHealthInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // 샘플 데이터 (실제로는 API에서 가져옴)
   useEffect(() => {
@@ -577,17 +580,22 @@ const InstructorStudentsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 회원 목록 */}
           <div className="lg:col-span-1">
-            <div className="p-6 bg-white rounded-lg shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">회원 목록</h3>
-              <div className="space-y-3">
+            <Card className="border border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">회원 목록</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 {members.map((member) => (
                   <button
                     key={member.id}
-                    onClick={() => setSelectedMember(member)}
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setIsDetailModalOpen(true);
+                    }}
                     className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
                       selectedMember?.id === member.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-50 shadow'
+                        : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/40'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -606,8 +614,8 @@ const InstructorStudentsPage: React.FC = () => {
                     </p>
                   </button>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* 회원 상세 정보 */}
@@ -615,9 +623,11 @@ const InstructorStudentsPage: React.FC = () => {
             {selectedMember ? (
               <div className="space-y-6">
                 {/* 기본 정보 */}
-                <div className="p-6 bg-white rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900">기본 정보</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">이름</label>
                       <p className="text-gray-900">{selectedMember.name}</p>
@@ -638,17 +648,16 @@ const InstructorStudentsPage: React.FC = () => {
                          selectedMember.swimmingExperience === 'intermediate' ? '중급' : '고급'}
                       </p>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* 건강정보 */}
-                <div className="p-6 bg-white rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Heart className="h-5 w-5 mr-2" />
-                    건강정보
-                  </h3>
-                  
-                  <div className="space-y-4">
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardHeader className="flex flex-row items-center gap-2">
+                    <Heart className="h-5 w-5 text-red-500" />
+                    <CardTitle className="text-lg font-semibold text-gray-900">건강정보</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     {/* 관절별 질환 */}
                     {selectedMember.jointConditions.length > 0 && (
                       <div>
@@ -700,163 +709,274 @@ const InstructorStudentsPage: React.FC = () => {
                         </p>
                       </div>
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* 수영법별 구체적 동작 가이드라인 */}
-                <div className="p-6 bg-white rounded-lg shadow">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <AlertTriangle className="h-5 w-5 mr-2" />
-                    수영법별 구체적 동작 가이드라인
-                  </h3>
-                  
-                  <div className="space-y-6">
+                <Card className="border border-gray-200 shadow-sm">
+                  <CardHeader className="flex flex-row items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    <CardTitle className="text-lg font-semibold text-gray-900">수영법별 구체적 동작 가이드라인</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     {getSwimmingGuidanceForConditions(selectedMember.jointConditions).map((guidance) => (
-                      <div key={guidance.stroke} className="bg-white p-6 rounded-lg border-2">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-xl font-semibold text-gray-900 capitalize">{guidance.stroke}</h4>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSafetyColor(guidance.level)}`}>
-                            {getSafetyIcon(guidance.level)}
-                            <span className="ml-2">
-                              {guidance.level === 'safe' ? '안전' :
-                               guidance.level === 'caution' ? '주의' :
-                               guidance.level === 'avoid' ? '피하기' : '금지'}
+                      <Card key={guidance.stroke} className="border-2 border-gray-100 transition-all hover:border-primary/40">
+                        <CardContent className="p-6 space-y-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-xl font-semibold text-gray-900 capitalize">{guidance.stroke}</h4>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSafetyColor(guidance.level)}`}>
+                              {getSafetyIcon(guidance.level)}
+                              <span className="ml-2">
+                                {guidance.level === 'safe' ? '안전' :
+                                 guidance.level === 'caution' ? '주의' :
+                                 guidance.level === 'avoid' ? '피하기' : '금지'}
+                              </span>
                             </span>
-                          </span>
-                        </div>
-                        
-                        <p className="text-gray-700 mb-4 font-medium">{guidance.reason}</p>
-                        
-                        {/* 의학적 근거 및 상세 설명 */}
-                        {guidance.medicalEvidence && (
-                          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
-                              <Info className="h-4 w-4 mr-2" />
-                              📚 의학적 근거 및 출처
-                            </h5>
-                            <div className="mb-3">
-                              <h6 className="font-medium text-blue-700 mb-2">주요 참고 문헌:</h6>
-                              <ul className="text-sm text-blue-600 space-y-1">
-                                {guidance.medicalEvidence.map((evidence, index) => (
-                                  <li key={index} className="flex items-start">
-                                    <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                    {evidence}
-                                  </li>
-                                ))}
-                              </ul>
+                          </div>
+                          
+                          <p className="text-gray-700 mb-4 font-medium">{guidance.reason}</p>
+                          
+                          {/* 의학적 근거 및 상세 설명 */}
+                          {guidance.medicalEvidence && (
+                            <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
+                                <Info className="h-4 w-4 mr-2" />
+                                📚 의학적 근거 및 출처
+                              </h5>
+                              <div className="mb-3">
+                                <h6 className="font-medium text-blue-700 mb-2">주요 참고 문헌:</h6>
+                                <ul className="text-sm text-blue-600 space-y-1">
+                                  {guidance.medicalEvidence.map((evidence, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                      {evidence}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              {guidance.detailedExplanation && (
+                                <div>
+                                  <h6 className="font-medium text-blue-700 mb-2">상세 설명:</h6>
+                                  <p className="text-sm text-blue-600 leading-relaxed">
+                                    {guidance.detailedExplanation}
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            {guidance.detailedExplanation && (
-                              <div>
-                                <h6 className="font-medium text-blue-700 mb-2">상세 설명:</h6>
-                                <p className="text-sm text-blue-600 leading-relaxed">
-                                  {guidance.detailedExplanation}
-                                </p>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* 허용된 동작 */}
+                            {guidance.allowedMovements.length > 0 && (
+                              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <h5 className="font-semibold text-green-800 mb-3 flex items-center">
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  ✅ 허용된 동작
+                                </h5>
+                                <ul className="space-y-2">
+                                  {guidance.allowedMovements.map((movement, index) => (
+                                    <li key={index} className="text-sm text-green-700 flex items-start">
+                                      <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                      {movement}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            {/* 금지된 동작 */}
+                            {guidance.prohibitedMovements.length > 0 && (
+                              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <h5 className="font-semibold text-red-800 mb-3 flex items-center">
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  ❌ 금지된 동작
+                                </h5>
+                                <ul className="space-y-2">
+                                  {guidance.prohibitedMovements.map((movement, index) => (
+                                    <li key={index} className="text-sm text-red-700 flex items-start">
+                                      <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                      {movement}
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
                             )}
                           </div>
-                        )}
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* 허용된 동작 */}
-                          {guidance.allowedMovements.length > 0 && (
-                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                              <h5 className="font-semibold text-green-800 mb-3 flex items-center">
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                ✅ 허용된 동작
+                          
+                          {/* 수정된 동작 */}
+                          {guidance.modifications.length > 0 && (
+                            <div className="mt-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                              <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                                <Info className="h-4 w-4 mr-2" />
+                                ⚠️ 수정된 동작
                               </h5>
                               <ul className="space-y-2">
-                                {guidance.allowedMovements.map((movement, index) => (
-                                  <li key={index} className="text-sm text-green-700 flex items-start">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                    {movement}
+                                {guidance.modifications.map((modification, index) => (
+                                  <li key={index} className="text-sm text-yellow-700 flex items-start">
+                                    <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                    {modification}
                                   </li>
                                 ))}
                               </ul>
                             </div>
                           )}
                           
-                          {/* 금지된 동작 */}
-                          {guidance.prohibitedMovements.length > 0 && (
-                            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                              <h5 className="font-semibold text-red-800 mb-3 flex items-center">
-                                <XCircle className="h-4 w-4 mr-2" />
-                                ❌ 금지된 동작
+                          {/* 대안 영법 */}
+                          {guidance.alternatives.length > 0 && (
+                            <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
+                                <Info className="h-4 w-4 mr-2" />
+                                🔄 대안 영법
                               </h5>
-                              <ul className="space-y-2">
-                                {guidance.prohibitedMovements.map((movement, index) => (
-                                  <li key={index} className="text-sm text-red-700 flex items-start">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                    {movement}
-                                  </li>
+                              <div className="flex flex-wrap gap-2">
+                                {guidance.alternatives.map((alternative, index) => (
+                                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                    {alternative}
+                                  </span>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
-                        </div>
-                        
-                        {/* 수정된 동작 */}
-                        {guidance.modifications.length > 0 && (
-                          <div className="mt-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                            <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
-                              <Info className="h-4 w-4 mr-2" />
-                              ⚠️ 수정된 동작
-                            </h5>
-                            <ul className="space-y-2">
-                              {guidance.modifications.map((modification, index) => (
-                                <li key={index} className="text-sm text-yellow-700 flex items-start">
-                                  <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                  {modification}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {/* 대안 영법 */}
-                        {guidance.alternatives.length > 0 && (
-                          <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <h5 className="font-semibold text-blue-800 mb-3 flex items-center">
-                              <Info className="h-4 w-4 mr-2" />
-                              🔄 대안 영법
-                            </h5>
-                            <div className="flex flex-wrap gap-2">
-                              {guidance.alternatives.map((alternative, index) => (
-                                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                  {alternative}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  {/* 강사 지도 권장사항 */}
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">강사 지도 권장사항</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• 수영 전 충분한 워밍업 (10-15분) 필수</li>
-                      <li>• 통증 발생 시 즉시 중단하고 의료진 상담 권유</li>
-                      <li>• 점진적 거리 증가로 안전한 운동량 조절</li>
-                      <li>• 수영 후 스트레칭으로 근육 긴장 완화</li>
-                      <li>• 정기적인 건강 상태 확인 및 업데이트</li>
-                    </ul>
-                  </div>
+                {/* 강사 지도 권장사항 */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">강사 지도 권장사항</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• 수영 전 충분한 워밍업 (10-15분) 필수</li>
+                    <li>• 통증 발생 시 즉시 중단하고 의료진 상담 권유</li>
+                    <li>• 점진적 거리 증가로 안전한 운동량 조절</li>
+                    <li>• 수영 후 스트레칭으로 근육 긴장 완화</li>
+                    <li>• 정기적인 건강 상태 확인 및 업데이트</li>
+                  </ul>
                 </div>
               </div>
             ) : (
-              <div className="p-12 text-center bg-white rounded-lg shadow">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">회원을 선택하세요</h3>
-                <p className="text-gray-600">
-                  왼쪽 목록에서 회원을 선택하면 건강정보와 수영 가이드라인을 확인할 수 있습니다.
-                </p>
-              </div>
+              <Card className="border border-gray-200 shadow-sm flex flex-col items-center justify-center h-full text-center py-12">
+                <CardContent className="flex flex-col items-center">
+                  <Users className="h-12 w-12 text-blue-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900">회원을 선택해주세요</h3>
+                  <p className="text-gray-600 mt-2">회원 목록에서 건강 정보를 확인하고 싶은 회원을 선택하면 상세 정보가 표시됩니다.</p>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
       </div>
+      <Dialog open={isDetailModalOpen && !!selectedMember} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl bg-white max-h-[80vh] overflow-y-auto">
+          {selectedMember && (
+            <div className="space-y-6">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-semibold text-gray-900">{selectedMember.name}</DialogTitle>
+                <DialogDescription>
+                  {selectedMember.email} · {selectedMember.phone}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">수영 경험</label>
+                  <p className="text-gray-900">
+                    {selectedMember.swimmingExperience === 'beginner' ? '초보자' :
+                     selectedMember.swimmingExperience === 'basic' ? '기초' :
+                     selectedMember.swimmingExperience === 'intermediate' ? '중급' : '고급'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">최종 업데이트</label>
+                  <p className="text-gray-900">{selectedMember.lastUpdated}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <section>
+                  <h4 className="font-semibold text-gray-900 mb-2">관절별 질환</h4>
+                  {selectedMember.jointConditions.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMember.jointConditions.map((condition) => (
+                        <span key={condition} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
+                          {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">등록된 관절 질환이 없습니다.</p>
+                  )}
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-900 mb-2">심혈관 질환</h4>
+                  {selectedMember.cardiovascularConditions.filter(c => c !== 'none').length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMember.cardiovascularConditions.filter(c => c !== 'none').map((condition) => (
+                        <span key={condition} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                          {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">등록된 심혈관 질환이 없습니다.</p>
+                  )}
+                </section>
+
+                <section>
+                  <h4 className="font-semibold text-gray-900 mb-2">대사 질환</h4>
+                  {selectedMember.metabolicConditions.filter(c => c !== 'none').length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMember.metabolicConditions.filter(c => c !== 'none').map((condition) => (
+                        <span key={condition} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                          {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">등록된 대사 질환이 없습니다.</p>
+                  )}
+                </section>
+
+                {selectedMember.medicalHistory && (
+                  <section>
+                    <h4 className="font-semibold text-gray-900 mb-2">의료 이력</h4>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
+                      {selectedMember.medicalHistory}
+                    </p>
+                  </section>
+                )}
+
+                <section>
+                  <h4 className="font-semibold text-gray-900 mb-2">수영법 안전도 요약</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
+                      const safety = getSwimmingGuidanceForConditions(selectedMember.jointConditions)
+                        .find((guidance) => guidance.stroke === stroke);
+                      return (
+                        <div key={stroke} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700 capitalize">{stroke}</span>
+                            {safety ? (
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getSafetyColor(safety.level)}`}>
+                                {getSafetyIcon(safety.level)}
+                                <span className="ml-2 capitalize">{safety.level}</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-500">정보 없음</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

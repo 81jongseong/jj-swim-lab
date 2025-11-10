@@ -11,7 +11,7 @@ const teachingMethodToProgramConverter_1 = require("../utils/teachingMethodToPro
 const router = express_1.default.Router();
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { athleteId, athleteName, centerId, programType, params, content, usedMethodIds, useTeachingMethod } = req.body;
+        const { athleteId, athleteName, centerId, programType, programScope, groupClassId, groupClassName, params, content, usedMethodIds, useTeachingMethod } = req.body;
         const user = await User_1.User.findById(athleteId);
         if (!user) {
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
@@ -79,11 +79,15 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 required: ['athleteId', 'athleteName', 'params', 'content']
             });
         }
+        const scope = programScope || (groupClassId ? 'group' : 'individual');
         const program = new SwimProgram_1.default({
             athleteId,
             athleteName,
+            groupClassId,
+            groupClassName,
             centerId,
             programType: programType || 'weekly',
+            programScope: scope,
             params,
             content,
             usedMethodIds: usedMethodIds || [],
@@ -189,11 +193,11 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
 router.patch('/:id/execution', auth_1.authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, dayOfWeek, condition, hasPain, adjustedPace, adjustedRest, notes, completed } = req.body;
-        if (!date || !dayOfWeek || !condition) {
+        const { date, dayOfWeek, condition, hasPain, adjustedPace, adjustedRest, notes, completed, rpe } = req.body;
+        if (!date || !dayOfWeek) {
             return res.status(400).json({
                 error: '필수 필드가 누락되었습니다.',
-                required: ['date', 'dayOfWeek', 'condition']
+                required: ['date', 'dayOfWeek']
             });
         }
         const program = await SwimProgram_1.default.findById(id);
@@ -204,8 +208,9 @@ router.patch('/:id/execution', auth_1.authMiddleware, async (req, res) => {
         const executionRecord = {
             date,
             dayOfWeek,
-            condition,
+            condition: condition || 'normal',
             hasPain: hasPain || false,
+            rpe: typeof rpe === 'number' ? rpe : undefined,
             adjustedPace,
             adjustedRest,
             notes,

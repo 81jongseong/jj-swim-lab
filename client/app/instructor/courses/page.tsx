@@ -22,6 +22,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Users, Calendar, Star, Eye, Search, List } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
@@ -291,278 +292,265 @@ function InstructorCoursesManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">강의 관리</h1>
-        <p className="text-gray-600">강의 목록을 확인하고 관리하세요.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <BookOpen className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 강의</p>
-              <p className="text-2xl font-bold text-gray-900">{courses.length}개</p>
-            </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <Card className="border border-gray-200">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <CardTitle className="text-3xl font-bold text-gray-900">강의 관리</CardTitle>
+            <p className="text-gray-600 mt-2">강의 목록을 확인하고 관리하세요.</p>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Users className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 수강생</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {courses.reduce((sum, course) => sum + course.enrolledStudents, 0)}명
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">활성 강의</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {courses.filter(c => c.status === 'active').length}개
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Star className="w-8 h-8 text-yellow-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">평균 평점</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {courses.length > 0 
-                  ? (courses.reduce((sum, c) => sum + c.rating, 0) / courses.length).toFixed(1)
-                  : '0.0'
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="강의명, 설명, 카테고리로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${viewMode === 'calendar' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
             >
-              <option value="">모든 레벨</option>
-              <option value="beginner">초급</option>
-              <option value="intermediate">중급</option>
-              <option value="advanced">고급</option>
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <Calendar className="w-4 h-4" />
+              캘린더 뷰
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${viewMode === 'list' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
             >
-              <option value="">모든 상태</option>
-              <option value="active">활성</option>
-              <option value="inactive">비활성</option>
-              <option value="draft">임시저장</option>
-            </select>
+              <List className="w-4 h-4" />
+              리스트 뷰
+            </button>
           </div>
-        </div>
-      </div>
-
-      {/* 뷰 모드 토글 */}
-      <div className="flex justify-end items-center mb-6">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setViewMode('calendar')}
-            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
-              viewMode === 'calendar'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            캘린더 뷰
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
-              viewMode === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <List className="w-4 h-4 mr-2" />
-            리스트 뷰
-          </button>
-        </div>
-      </div>
-
-      {/* 캘린더 뷰 */}
-      {viewMode === 'calendar' && (
-        <WeeklyCalendar
-          courses={filteredCourses.map(course => ({
-            _id: course._id,
-            name: course.name,
-            description: course.description,
-            level: course.level,
-            duration: course.duration,
-            maxStudents: course.maxStudents,
-            currentStudents: course.enrolledStudents,
-            instructorId: course.instructorId,
-            instructorName: course.instructorName,
-            price: course.price,
-            schedule: course.schedule.map(sch => {
-              const dayLabel = getDayOfWeekLabel(sch.dayOfWeek);
-              const dayMap: { [key: string]: string } = {
-                '월': 'monday',
-                '화': 'tuesday',
-                '수': 'wednesday',
-                '목': 'thursday',
-                '금': 'friday',
-                '토': 'saturday',
-                '일': 'sunday'
-              };
-              return {
-                dayOfWeek: dayLabel,
-                day: dayMap[dayLabel] || dayLabel.toLowerCase(),
-                startTime: sch.startTime,
-                endTime: sch.endTime
-              };
-            }),
-            status: course.status,
-            tags: (course as any).tags || [course.category], // ⭐ 실제 DB 태그 사용
-            isPersonalLesson: (course as any).isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
-            courseType: (course as any).courseType || 'group' // ⭐ 강의 타입 추가 (group, personal, freeSwim)
-          }))}
-          onCourseClick={handleViewDetail}
-        />
-      )}
-
-      {/* 리스트 뷰 */}
-      {viewMode === 'list' && (
-        filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredCourses.map((course) => (
-            <div 
-              key={course._id} 
-              className="bg-white rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleViewDetail(course)}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{course.name}</h3>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
-                  </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(course.status)}`}>
-                    {getStatusLabel(course.status)}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">레벨</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(course.level)}`}>
-                      {getLevelLabel(course.level)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">카테고리</span>
-                    <span className="text-sm font-medium text-gray-900">{course.category}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">수강료</span>
-                    <span className="text-sm font-medium text-gray-900">{course.price.toLocaleString()}원</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">수강생</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {course.enrolledStudents}/{course.maxStudents}명
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">평점</span>
-                    <div className="flex items-center">
-                      <div className="flex mr-1">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < Math.floor(course.rating) 
-                                ? 'text-yellow-400 fill-current' 
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600">({course.rating})</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-sm text-gray-600">수업 일정</span>
-                    <div className="mt-1 space-y-1">
-                      {course.schedule.map((schedule, index) => (
-                        <div key={index} className="text-xs text-gray-500">
-                          {getDayOfWeekLabel(schedule.dayOfWeek)} {schedule.startTime}-{schedule.endTime}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewDetail(course);
-                      }}
-                      className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      상세보기
-                    </button>
-                  </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <BookOpen className="w-8 h-8 text-blue-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">총 강의</p>
+                  <p className="text-2xl font-bold text-gray-900">{courses.length}개</p>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">검색 결과가 없습니다.</p>
-        </div>
-      )
-      )}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Users className="w-8 h-8 text-green-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">총 수강생</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {courses.reduce((sum, course) => sum + course.enrolledStudents, 0)}명
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Calendar className="w-8 h-8 text-purple-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">활성 강의</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {courses.filter(c => c.status === 'active').length}개
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Star className="w-8 h-8 text-yellow-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">평균 평점</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {courses.length > 0 
+                      ? (courses.reduce((sum, c) => sum + c.rating, 0) / courses.length).toFixed(1)
+                      : '0.0'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <CourseDetailModal
-        isOpen={showDetailModal}
-        onClose={() => {
-          setShowDetailModal(false);
-          setDetailCourse(null);
-        }}
-        course={detailCourse ? convertCourseForDetail(detailCourse) : null}
-        levelName={detailCourse ? getLevelName(detailCourse.level) : undefined}
-      />
+          {/* 검색 및 필터 */}
+          <Card className="border border-gray-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">검색 및 필터</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="강의명, 설명, 카테고리로 검색..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={levelFilter}
+                    onChange={(e) => setLevelFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">모든 레벨</option>
+                    <option value="beginner">초급</option>
+                    <option value="intermediate">중급</option>
+                    <option value="advanced">고급</option>
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">모든 상태</option>
+                    <option value="active">활성</option>
+                    <option value="inactive">비활성</option>
+                    <option value="draft">임시저장</option>
+                  </select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 뷰 모드에 따른 콘텐츠 */}
+          <Card className="border border-gray-200">
+            <CardContent className="space-y-6">
+              {viewMode === 'calendar' ? (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900">주간 캘린더</h2>
+                  <WeeklyCalendar
+                    courses={filteredCourses.map(course => ({
+                      _id: course._id,
+                      name: course.name,
+                      description: course.description,
+                      level: course.level,
+                      duration: course.duration,
+                      maxStudents: course.maxStudents,
+                      currentStudents: course.enrolledStudents,
+                      instructorId: course.instructorId,
+                      instructorName: course.instructorName,
+                      price: course.price,
+                      schedule: course.schedule.map(sch => {
+                        const dayLabel = getDayOfWeekLabel(sch.dayOfWeek);
+                        const dayMap: { [key: string]: string } = {
+                          '월': 'monday',
+                          '화': 'tuesday',
+                          '수': 'wednesday',
+                          '목': 'thursday',
+                          '금': 'friday',
+                          '토': 'saturday',
+                          '일': 'sunday'
+                        };
+                        return {
+                          dayOfWeek: dayLabel,
+                          day: dayMap[dayLabel] || dayLabel.toLowerCase(),
+                          startTime: sch.startTime,
+                          endTime: sch.endTime
+                        };
+                      }),
+                      status: course.status,
+                      tags: (course as any).tags || [course.category], // ⭐ 실제 DB 태그 사용
+                      isPersonalLesson: (course as any).isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
+                      courseType: (course as any).courseType || 'group' // ⭐ 강의 타입 추가 (group, personal, freeSwim)
+                    }))}
+                    onCourseClick={handleViewDetail}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900">강의 목록</h2>
+                  {filteredCourses.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      검색 조건에 해당하는 강의가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {filteredCourses.map(course => (
+                        <Card
+                          key={course._id}
+                          className="border border-blue-100 bg-gradient-to-br from-white to-blue-50 transition-all hover:border-primary/40 hover:shadow-lg cursor-pointer"
+                          onClick={() => handleViewDetail(course)}
+                        >
+                          <CardContent className="p-6 space-y-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">{course.name}</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(course.status)}`}>
+                                    {getStatusLabel(course.status)}
+                                  </span>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
+                                    {getLevelLabel(course.level)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Users className="w-4 h-4 text-blue-500" />
+                                <span>{course.enrolledStudents}/{course.maxStudents}</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {course.description || '강의 설명이 등록되지 않았습니다.'}
+                            </p>
+                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                              <div className="space-y-1">
+                                <p className="font-medium text-gray-500">강사</p>
+                                <p>{course.instructorName}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-medium text-gray-500">강의 시간</p>
+                                <p>{course.duration}분</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-medium text-gray-500">평점</p>
+                                <p className="flex items-center gap-1">
+                                  <Star className="w-4 h-4 text-yellow-500" />
+                                  {course.rating.toFixed(1)}
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-medium text-gray-500">등록 수강생</p>
+                                <p>{course.enrolledStudents}명</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-purple-500" />
+                                <span>
+                                  {course.schedule
+                                    .map(schedule => `${['일','월','화','수','목','금','토'][schedule.dayOfWeek - 1] || '월'} ${schedule.startTime}`)
+                                    .join(', ')}
+                                </span>
+                              </div>
+                              <button
+                                className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleViewDetail(course);
+                                }}
+                              >
+                                <Eye className="w-4 h-4" /> 상세 보기
+                              </button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <CourseDetailModal
+            isOpen={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setDetailCourse(null);
+            }}
+            course={detailCourse ? convertCourseForDetail(detailCourse) : null}
+            levelName={detailCourse ? getLevelName(detailCourse.level) : undefined}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
