@@ -62,6 +62,8 @@ type StudentSummary = {
   groupClassName?: string;
   groupMemberCount?: number;
   isGroupRepresentative?: boolean;
+  receivesPersonalLesson?: boolean;
+  groupMemberships?: string[];
 };
 
 type GroupClassSummary = {
@@ -70,6 +72,9 @@ type GroupClassSummary = {
   level?: string;
   students: StudentSummary[];
   activeCount: number;
+  durationMinutes?: number;
+  schedule?: Array<{ dayOfWeek: number; startTime?: string; endTime?: string }>;
+  centerId?: string;
 };
 
 type PlanBlock = {
@@ -128,6 +133,8 @@ type WeeklyPlan = {
   scope?: 'individual' | 'group';
   groupClassId?: string;
   representativeStudentId?: string;
+  groupMembers?: StudentSummary[];
+  healthWarnings?: string[];
 };
 
 type StatusMessage = {
@@ -175,6 +182,86 @@ const safeId = () =>
     : Math.random().toString(36).slice(2);
 
 const unique = <T,>(items: T[]) => Array.from(new Set(items));
+
+const resolveStudentId = (candidate: any): string | null => {
+  if (!candidate) return null;
+  if (typeof candidate === 'string') return candidate;
+  if (candidate._id) return candidate._id.toString();
+  if (candidate.id) return candidate.id.toString();
+  if (candidate.student) return resolveStudentId(candidate.student);
+  if (candidate.studentId) return resolveStudentId(candidate.studentId);
+  return null;
+};
+
+const resolveStudentEntry = (
+  candidate: any,
+  studentMap: Map<string, StudentSummary>
+): { student: StudentSummary; status: string } | null => {
+  const id = resolveStudentId(candidate);
+  if (!id) return null;
+  const student = studentMap.get(id);
+  if (!student) return null;
+  const status = candidate?.status || candidate?.progressStatus || 'active';
+  return { student, status };
+};
+
+const translateConditionKey = (key: string): string => {
+  const map: Record<string, string> = {
+    cardiovascular: '심혈관',
+    respiratory: '호흡기',
+    musculoskeletal: '근골격',
+    diabetes: '당뇨',
+    hypertension: '고혈압',
+    asthma: '천식',
+    other: '기타'
+  };
+  return map[key] || key;
+};
+
+const collectStudentConditions = (student: StudentSummary): string[] => {
+  const profile = student.studentInfo?.healthProfile || {};
+  const chronic = Array.isArray(profile.chronicConditions) ? profile.chronicConditions : [];
+  const allergies = Array.isArray(profile.allergies) ? profile.allergies : [];
+  const swimmingRelated = profile.swimmingRelatedConditions || {};
+
+  const flagged = Object.entries(swimmingRelated)
+    .filter(([, value]) => value)
+    .map(([key]) => translateConditionKey(key));
+
+  return unique([...chronic, ...allergies, ...flagged].filter(Boolean));
+};
+
+const buildGroupHealthWarnings = (students: StudentSummary[]): string[] => {
+  return students
+    .map((student) => {
+      const conditions = collectStudentConditions(student);
+      if (conditions.length === 0) return null;
+      return `${student.name}: ${conditions.join(', ')} — 강도는 80% 이하로 조절하고 이상 징후 시 즉시 휴식 안내`;
+    })
+    .filter((warning): warning is string => Boolean(warning));
+};
+
+const buildIndividualWarnings = (student: StudentSummary): string[] => {
+  const conditions = collectStudentConditions(student);
+  if (conditions.length === 0) return [];
+  return conditions.map((condition) =>
+    `${condition} 관련 증상 발생 시 강도를 즉시 낮추고 휴식을 취하도록 안내하세요.`
+  );
+};
+
+const buildGroupRepresentativeStudent = (group: GroupClassSummary): StudentSummary => {
+  const firstMember = group.students[0];
+  return {
+    _id: group._id,
+    name: group.className,
+    displayName: group.className,
+    groupClassName: group.className,
+    groupMemberCount: group.activeCount,
+    centerId: group.centerId,
+    studentInfo: firstMember?.studentInfo || {},
+    instructorInfo: firstMember?.instructorInfo || {}
+  } as StudentSummary;
+};
 
 const clampCssPace = (value?: number) => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
@@ -527,7 +614,9 @@ const convertExistingProgramToPlan = (program: any, student: StudentSummary): We
     summary: program?.content?.summary || '',
     planExplanation: program?.content?.planExplanation || '',
     sessions,
-    usedMethodIds: program?.usedMethodIds || []
+    usedMethodIds: program?.usedMethodIds || [],
+    groupMembers: program?.content?.groupMembers || [],
+    healthWarnings: program?.content?.healthWarnings || []
   };
 
   plan.summary = plan.summary || buildPlanSummary(student, plan);
@@ -575,7 +664,9 @@ const buildSavePayload = (plan: WeeklyPlan, student: StudentSummary) => {
     planExplanation: plan.planExplanation,
     totalDuration: plan.weeklyTargetMinutes,
     totalMeters: plan.totalMeters,
-    sessions
+    sessions,
+    groupMembers: plan.groupMembers || [],
+    healthWarnings: plan.healthWarnings || []
   };
 
   return {
@@ -587,6 +678,70 @@ const buildSavePayload = (plan: WeeklyPlan, student: StudentSummary) => {
     params,
     content,
     usedMethodIds: plan.usedMethodIds
+  };
+};
+
+const buildGroupSavePayload = (plan: WeeklyPlan, group: GroupClassSummary) => {
+  const sessionDuration = plan.sessionDurationMinutes || 60;
+  const params = {
+    startDate: plan.startDate,
+    daysPerWeek: plan.weeklyFrequency,
+    selectedDays: plan.sessions.map((session) => session.day),
+    sessionDuration: sessionDuration,
+    pool: plan.poolLength,
+    mainStrokes: plan.strokesAllowed,
+    excludedStrokes: plan.strokesAvoid,
+    cssPer100: plan.css,
+    goal: plan.goal
+  };
+
+  const sessions = plan.sessions.map((session) => ({
+    day: session.day,
+    themeDesc: session.themeDesc,
+    duration: Number(session.duration) || 0,
+    distance: Number(session.distance) || 0,
+    status: session.status || 'scheduled',
+    intensity: [session.intensity.primary, session.intensity.secondary].filter(Boolean).join(' | '),
+    blocks: session.blocks.map((block) => ({
+      type: block.type,
+      description: block.description,
+      duration: Number(block.duration) || 0,
+      distance: Number(block.distance) || 0,
+      whyPace: block.whyPace,
+      whyRest: block.whyRest,
+      whySet: block.whySet,
+      evidenceKeys: block.evidenceKeys || []
+    }))
+  }));
+
+  const groupMembers = (plan.groupMembers && plan.groupMembers.length > 0
+    ? plan.groupMembers
+    : group.students
+  ).map((member) => ({
+    studentId: member._id,
+    name: member.name,
+    email: member.email
+  }));
+
+  const content = {
+    summary: plan.summary,
+    planExplanation: plan.planExplanation,
+    totalDuration: plan.weeklyTargetMinutes,
+    totalMeters: plan.totalMeters,
+    sessions,
+    groupMembers,
+    healthWarnings: plan.healthWarnings || []
+  };
+
+  return {
+    groupClassId: group._id,
+    programData: {
+      programType: 'weekly',
+      programScope: 'group',
+      params,
+      content,
+      usedMethodIds: plan.usedMethodIds
+    }
   };
 };
 
@@ -662,7 +817,107 @@ const generatePlanForStudent = (
 
   plan.summary = buildPlanSummary(student, plan);
   plan.planExplanation = buildDefaultPlanExplanation(sessions);
+  plan.scope = 'individual';
+  plan.healthWarnings = buildIndividualWarnings(student);
 
+  return plan;
+};
+
+const generatePlanForGroup = (group: GroupClassSummary): WeeklyPlan => {
+  const representative = group.students[0];
+  const swimmingProfile = representative?.studentInfo?.swimmingProfile || {};
+  const fitnessProfile = representative?.studentInfo?.healthProfile || {};
+
+  const frequencyFromSchedule = Array.isArray(group.schedule) && group.schedule.length > 0
+    ? group.schedule.length
+    : undefined;
+  const frequency = Math.max(1, frequencyFromSchedule || swimmingProfile.weeklyFrequency || 3);
+  const sessionDuration = Math.max(30, group.durationMinutes || swimmingProfile.sessionDuration || 60);
+  const goal = fitnessProfile.fitnessGoals?.[0] || '기초 체력 유지';
+  const startDate = new Date().toISOString().slice(0, 10);
+
+  const preferredDays: string[] = (() => {
+    if (Array.isArray(group.schedule) && group.schedule.length > 0) {
+      const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      return group.schedule
+        .map((item) => dayNames[(item.dayOfWeek ?? 0) % 7])
+        .filter((value, index, arr) => value && arr.indexOf(value) === index);
+    }
+    if (swimmingProfile.preferredDays && swimmingProfile.preferredDays.length > 0) {
+      return swimmingProfile.preferredDays;
+    }
+    return DEFAULT_DAYS;
+  })();
+
+  const strokesAllowed = normalizeStrokeList(swimmingProfile.preferredStrokes || swimmingProfile.mainStrokes || ['freestyle']);
+  const strokesAvoid = normalizeStrokeList(swimmingProfile.excludedStrokes || []);
+  const css = extractCss(swimmingProfile.cssProfile || swimmingProfile.css || {});
+  const poolLength = swimmingProfile.poolLength || 25;
+  const level = mapLevelToEngine(representative?.studentInfo?.currentLevel || representative?.studentInfo?.swimmingLevel || 'beginner');
+
+  const sessions: PlanSession[] = [];
+  for (let i = 0; i < frequency; i++) {
+    const day = preferredDays[i % preferredDays.length];
+    const enginePlan = generateTimeBasedProgram({
+      targetMinutes: sessionDuration,
+      css100: css,
+      poolLen: poolLength,
+      goal,
+      level,
+      strokesAllowed: strokesAllowed as StrokeKey[],
+      strokesAvoid,
+      conditionIds: [],
+      dayCondition: 'normal',
+      hasPain: false,
+      weeklyFrequency: frequency,
+      intensityPercent: swimmingProfile.intensityPercent || 1,
+      cssMeasurementPoolLength: swimmingProfile.cssMeasurementPoolLength || poolLength
+    });
+
+    sessions.push(convertEnginePlanToSession(day, goal, enginePlan, i));
+  }
+
+  const totals = recalcPlanTotals(sessions);
+  const pseudoStudent = buildGroupRepresentativeStudent(group);
+
+  const plan: WeeklyPlan = {
+    goal,
+    level,
+    startDate,
+    weeklyTargetMinutes: sessionDuration * frequency,
+    weeklyFrequency: frequency,
+    sessionDurationMinutes: sessionDuration,
+    totalMeters: totals.totalDistance,
+    actualDurationMinutes: totals.totalMinutes,
+    poolLength,
+    strokesAllowed,
+    strokesAvoid,
+    css,
+    conditionIds: [],
+    summary: '',
+    planExplanation: '',
+    sessions,
+    usedMethodIds: unique(sessions.flatMap((session) => session.usedMethodIds || [])),
+    scope: 'group',
+    groupClassId: group._id,
+    groupMembers: group.students,
+    healthWarnings: buildGroupHealthWarnings(group.students)
+  };
+
+  plan.summary = buildPlanSummary(pseudoStudent, plan);
+  plan.planExplanation = buildDefaultPlanExplanation(sessions);
+
+  return plan;
+};
+
+const convertExistingGroupProgramToPlan = (program: any, group: GroupClassSummary): WeeklyPlan => {
+  const pseudoStudent = buildGroupRepresentativeStudent(group);
+  const plan = convertExistingProgramToPlan(program, pseudoStudent);
+  plan.scope = 'group';
+  plan.groupClassId = group._id;
+  plan.groupMembers = group.students;
+  plan.healthWarnings = buildGroupHealthWarnings(group.students);
+  plan.conditionIds = [];
   return plan;
 };
 
@@ -673,7 +928,7 @@ function SwimTrainingPlanPage() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState<string | null>(null);
 
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedTarget, setSelectedTarget] = useState<{ type: 'individual' | 'group'; id: string } | null>(null);
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
   const [existingProgramId, setExistingProgramId] = useState<string | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
@@ -691,17 +946,22 @@ function SwimTrainingPlanPage() {
         if (rawStudents.length === 0) {
           setStudents([]);
           setGroupClasses([]);
-          setSelectedStudentId(null);
           return;
         }
-        const formatted: StudentSummary[] = rawStudents.map((student: any) => ({
-          _id: student._id || student.id,
-          name: student.name || '이름 없음',
-          email: student.email,
-          centerId: student.centerId,
-          studentInfo: student.studentInfo,
-          instructorInfo: student.instructorInfo
-        }));
+        const formatted: StudentSummary[] = rawStudents.map((student: any) => {
+          const summary: StudentSummary = {
+            _id: student._id || student.id,
+            name: student.name || '이름 없음',
+            email: student.email,
+            centerId: student.centerId,
+            studentInfo: student.studentInfo,
+            instructorInfo: student.instructorInfo,
+            displayName: student.name || '이름 없음',
+            receivesPersonalLesson: false,
+            groupMemberships: []
+          };
+          return summary;
+        });
 
         const studentMap = new Map<string, StudentSummary>();
         formatted.forEach((student) => {
@@ -710,81 +970,145 @@ function SwimTrainingPlanPage() {
           }
         });
 
-        const membersToHide = new Set<string>();
         const groupSummaries: GroupClassSummary[] = [];
+        const groupMemberIds = new Set<string>();
+        const personalLessonStudentIds = new Set<string>();
+
+        const collectCourseEntries = (course: any) => {
+          const entries: { student: StudentSummary; status: string }[] = [];
+          const seen = new Set<string>();
+
+          const pushCandidate = (candidate: any) => {
+            const entry = resolveStudentEntry(candidate, studentMap);
+            if (entry && entry.student && entry.student._id && !seen.has(entry.student._id)) {
+              seen.add(entry.student._id);
+              entries.push(entry);
+            }
+          };
+
+          const enrolled = Array.isArray(course.enrolledStudents) ? course.enrolledStudents : [];
+          enrolled.forEach(pushCandidate);
+
+          const studentRefs = Array.isArray(course.students) ? course.students : [];
+          studentRefs.forEach(pushCandidate);
+
+          return entries;
+        };
 
         try {
-          const groupResponse = await apiClient.get<any>('/api/group-classes?status=active&limit=200');
-          const groupData = groupResponse?.data?.groupClasses || groupResponse?.groupClasses || [];
+          const coursesResponse = await apiClient.get<any>('/api/instructor/courses');
+          const courseList = Array.isArray(coursesResponse?.data)
+            ? coursesResponse.data
+            : Array.isArray(coursesResponse)
+              ? coursesResponse
+              : [];
 
-          groupData.forEach((group: any) => {
-            if (!group || !group._id || !Array.isArray(group.students)) {
-              return;
+          courseList.forEach((course: any) => {
+            const courseId = (course.id || course._id || course.courseId || '').toString();
+            const courseName = course.name || course.title || '단체반';
+            const courseTypeRaw = course.courseType || course.type;
+            const normalizedType = course.isPersonalLesson ? 'personal' : (courseTypeRaw || 'group');
+            const memberEntries = collectCourseEntries(course);
+
+            if (course.isPersonalLesson || normalizedType === 'personal') {
+              memberEntries.forEach(({ student }) => {
+                if (student?._id) {
+                  personalLessonStudentIds.add(student._id);
+                  student.receivesPersonalLesson = true;
+                }
+              });
             }
 
-            const memberEntries = group.students
-              .map((entry: any) => {
-                if (!entry) return null;
-                const rawUserId = entry.userId;
-                let mappedId: string | null = null;
-                if (rawUserId && typeof rawUserId === 'object') {
-                  mappedId = rawUserId._id?.toString?.() || rawUserId.id?.toString?.() || rawUserId.toString?.() || null;
-                } else if (rawUserId) {
-                  mappedId = rawUserId.toString();
-                }
-                if (!mappedId) return null;
-                const student = studentMap.get(mappedId);
-                return student ? { student, status: entry.status } : null;
-              })
-              .filter((entry): entry is { student: StudentSummary; status?: string } => Boolean(entry));
+            if (normalizedType !== 'group') {
+              return;
+            }
 
             if (memberEntries.length === 0) {
               return;
             }
 
-            const representativeEntry = memberEntries.find((entry) => (entry.status || 'active') === 'active') || memberEntries[0];
-            const representative = representativeEntry.student;
-
-            representative.displayName = group.className || representative.name;
-            representative.groupClassId = group._id.toString();
-            representative.groupClassName = group.className;
-            representative.groupMemberCount = memberEntries.length;
-            representative.isGroupRepresentative = true;
-
-            memberEntries.forEach((entry) => {
-              if (entry.student._id !== representative._id) {
-                membersToHide.add(entry.student._id);
+            memberEntries.forEach(({ student }) => {
+              if (!student?._id) return;
+              groupMemberIds.add(student._id);
+              student.groupMemberships = student.groupMemberships || [];
+              if (!student.groupMemberships.includes(courseName)) {
+                student.groupMemberships.push(courseName);
               }
             });
 
+            const schedule: Array<{ dayOfWeek: number; startTime?: string; endTime?: string }> = Array.isArray(course.schedule)
+              ? course.schedule.map((sch: any) => {
+                  const dayValue = sch.dayOfWeek ?? sch.day;
+                  const dayMap: Record<string, number> = {
+                    sunday: 0,
+                    monday: 1,
+                    tuesday: 2,
+                    wednesday: 3,
+                    thursday: 4,
+                    friday: 5,
+                    saturday: 6
+                  };
+                  const dayNumber = typeof dayValue === 'number'
+                    ? dayValue
+                    : dayMap[(dayValue || '').toString().toLowerCase()] ?? 0;
+                  return {
+                    dayOfWeek: dayNumber,
+                    startTime: sch.startTime,
+                    endTime: sch.endTime
+                  };
+                })
+              : [];
+
+            const centerIdValue = (() => {
+              if (course.centerId) {
+                return typeof course.centerId === 'string' ? course.centerId : course.centerId.toString?.() || undefined;
+              }
+              if (course.center && (course.center._id || typeof course.center === 'string')) {
+                return typeof course.center === 'string' ? course.center : course.center._id?.toString?.();
+              }
+              return undefined;
+            })();
+
             groupSummaries.push({
-              _id: group._id.toString(),
-              className: group.className,
-              level: group.level,
+              _id: courseId,
+              className: courseName,
+              level: course.level,
               students: memberEntries.map((entry) => entry.student),
-              activeCount: memberEntries.length
+              activeCount: memberEntries.length,
+              durationMinutes: course.duration || course.classInfo?.duration || 60,
+              schedule,
+              centerId: centerIdValue
             });
           });
         } catch (groupError) {
-          console.warn('단체반 정보 조회 실패:', groupError);
+          console.warn('단체반(강의) 정보 조회 실패:', groupError);
         }
 
-        const filteredStudents = formatted.filter((student) => !membersToHide.has(student._id));
+        const filteredIndividuals = formatted.filter((student) => {
+          if (!student._id) return false;
+          if (!groupMemberIds.has(student._id)) return true;
+          return personalLessonStudentIds.has(student._id);
+        });
 
         setGroupClasses(groupSummaries);
-        setStudents(filteredStudents);
-        setSelectedStudentId((prev) => {
-          if (prev && filteredStudents.some((student) => student._id === prev)) {
-            return prev;
+        setStudents(filteredIndividuals);
+        setSelectedTarget((prev) => {
+          let next = prev;
+          if (prev?.type === 'individual' && !filteredIndividuals.some((student) => student._id === prev.id)) {
+            next = null;
           }
-          return filteredStudents.length > 0 ? filteredStudents[0]._id : null;
+          if (prev?.type === 'group' && !groupSummaries.some((group) => group._id === prev.id)) {
+            next = null;
+          }
+
+          return next;
         });
       } catch (error) {
         console.error('학생 목록 조회 실패:', error);
         setStudentsError('담당 학생 목록을 불러오는 중 오류가 발생했습니다.');
         setStudents([]);
         setGroupClasses([]);
-        setSelectedStudentId(null);
+        setSelectedTarget(null);
       } finally {
         setStudentsLoading(false);
       }
@@ -794,12 +1118,29 @@ function SwimTrainingPlanPage() {
   }, [hasUserType]);
 
   const selectedStudent = useMemo(
-    () => students.find((student) => student._id === selectedStudentId) || null,
-    [students, selectedStudentId]
+    () => (selectedTarget?.type === 'individual'
+      ? students.find((student) => student._id === selectedTarget.id) || null
+      : null),
+    [selectedTarget, students]
   );
 
+  const selectedGroup = useMemo(
+    () => (selectedTarget?.type === 'group'
+      ? groupClasses.find((group) => group._id === selectedTarget.id) || null
+      : null),
+    [selectedTarget, groupClasses]
+  );
+
+  const handleSelectIndividual = (studentId: string) => {
+    setSelectedTarget({ type: 'individual', id: studentId });
+  };
+
+  const handleSelectGroup = (groupId: string) => {
+    setSelectedTarget({ type: 'group', id: groupId });
+  };
+
   useEffect(() => {
-    if (!selectedStudent) {
+    if (!selectedTarget) {
       setPlan(null);
       setExistingProgramId(null);
       return;
@@ -810,48 +1151,104 @@ function SwimTrainingPlanPage() {
         setPlanLoading(true);
         setStatusMessage(null);
 
-        const response = await apiClient.get<any>(
-          `/api/swim-programs/athlete/${selectedStudent._id}?limit=1`
-        );
+        if (selectedTarget.type === 'individual') {
+          if (!selectedStudent) {
+            setPlan(null);
+            setExistingProgramId(null);
+            return;
+          }
 
-        if (response?.count > 0 && response?.programs?.length > 0) {
-          const existingProgram = response.programs[0];
-          const restoredPlan = convertExistingProgramToPlan(existingProgram, selectedStudent);
-          setPlan(restoredPlan);
-          setExistingProgramId(existingProgram._id);
-          setStatusMessage({ type: 'info', message: '기존에 저장된 프로그램을 불러왔습니다.' });
+          const response = await apiClient.get<any>(
+            `/api/swim-programs/athlete/${selectedStudent._id}?limit=1`
+          );
+
+          if (response?.count > 0 && response?.programs?.length > 0) {
+            const existingProgram = response.programs[0];
+            const restoredPlan = convertExistingProgramToPlan(existingProgram, selectedStudent);
+            restoredPlan.scope = 'individual';
+            restoredPlan.healthWarnings = buildIndividualWarnings(selectedStudent);
+            setPlan(restoredPlan);
+            setExistingProgramId(existingProgram._id);
+            setStatusMessage({ type: 'info', message: '기존에 저장된 프로그램을 불러왔습니다.' });
+          } else {
+            const generatedPlan = generatePlanForStudent(selectedStudent);
+            generatedPlan.scope = 'individual';
+            generatedPlan.healthWarnings = buildIndividualWarnings(selectedStudent);
+            setPlan(generatedPlan);
+            setExistingProgramId(null);
+            setStatusMessage({ type: 'info', message: '엔진으로 새 주간 프로그램을 생성했습니다.' });
+          }
         } else {
-          const generatedPlan = generatePlanForStudent(selectedStudent);
-          setPlan(generatedPlan);
-          setExistingProgramId(null);
-          setStatusMessage({ type: 'info', message: '엔진으로 새 주간 프로그램을 생성했습니다.' });
+          if (!selectedGroup) {
+            setPlan(null);
+            setExistingProgramId(null);
+            return;
+          }
+
+          const response = await apiClient.get<any>(`/api/group-programs/${selectedGroup._id}`);
+          const programs = response?.data?.programs || response?.programs || [];
+
+          if (Array.isArray(programs) && programs.length > 0) {
+            const existingProgram = programs[0];
+            const groupPlan = convertExistingGroupProgramToPlan(existingProgram, selectedGroup);
+            setPlan(groupPlan);
+            setExistingProgramId(existingProgram._id);
+            setStatusMessage({ type: 'info', message: '단체반 공통 프로그램을 불러왔습니다.' });
+          } else {
+            const generatedGroupPlan = generatePlanForGroup(selectedGroup);
+            setPlan(generatedGroupPlan);
+            setExistingProgramId(null);
+            setStatusMessage({ type: 'info', message: '단체반 기본 프로그램을 새로 생성했습니다.' });
+          }
         }
       } catch (error) {
         console.error('프로그램 불러오기 실패:', error);
-        const generatedPlan = generatePlanForStudent(selectedStudent);
-        setPlan(generatedPlan);
-        setExistingProgramId(null);
-        setStatusMessage({ type: 'error', message: '기존 프로그램을 불러오지 못해 새 프로그램을 생성했습니다.' });
+
+        if (selectedTarget.type === 'individual' && selectedStudent) {
+          const fallbackPlan = generatePlanForStudent(selectedStudent);
+          fallbackPlan.scope = 'individual';
+          fallbackPlan.healthWarnings = buildIndividualWarnings(selectedStudent);
+          setPlan(fallbackPlan);
+          setExistingProgramId(null);
+          setStatusMessage({ type: 'error', message: '기존 프로그램을 불러오지 못해 새 프로그램을 생성했습니다.' });
+        } else if (selectedTarget.type === 'group' && selectedGroup) {
+          const fallbackGroupPlan = generatePlanForGroup(selectedGroup);
+          setPlan(fallbackGroupPlan);
+          setExistingProgramId(null);
+          setStatusMessage({ type: 'error', message: '단체반 프로그램을 불러오지 못해 기본 프로그램을 생성했습니다.' });
+        } else {
+          setPlan(null);
+          setExistingProgramId(null);
+        }
       } finally {
         setPlanLoading(false);
       }
     };
 
     loadPlan();
-  }, [selectedStudent]);
-
-  const handleSelectStudent = (studentId: string) => {
-    setSelectedStudentId(studentId);
-  };
+  }, [selectedTarget, selectedStudent, selectedGroup]);
 
   const handleRegeneratePlan = () => {
-    if (!selectedStudent || !plan) return;
+    if (!plan || !selectedTarget) return;
+
+    if (selectedTarget.type === 'group') {
+      if (!selectedGroup) return;
+      const regeneratedGroup = generatePlanForGroup(selectedGroup);
+      setPlan(regeneratedGroup);
+      setExistingProgramId(null);
+      setStatusMessage({ type: 'info', message: '단체반 공통 프로그램을 재생성했습니다.' });
+      return;
+    }
+
+    if (!selectedStudent) return;
     const regenerated = generatePlanForStudent(selectedStudent, {
       frequency: plan.weeklyFrequency,
       sessionDuration: plan.sessionDurationMinutes,
       goal: plan.goal,
       startDate: plan.startDate
     });
+    regenerated.scope = 'individual';
+    regenerated.healthWarnings = buildIndividualWarnings(selectedStudent);
     setPlan(regenerated);
     setExistingProgramId(null);
     setStatusMessage({ type: 'info', message: '엔진으로 새 프로그램을 재생성했습니다.' });
@@ -879,8 +1276,11 @@ function SwimTrainingPlanPage() {
         updated.summary = String(value);
       }
 
-      if (selectedStudent) {
-        updated.summary = buildPlanSummary(selectedStudent, updated);
+      const summaryContext = updated.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+      if (summaryContext) {
+        updated.summary = buildPlanSummary(summaryContext, updated);
       }
       return updated;
     });
@@ -910,7 +1310,10 @@ function SwimTrainingPlanPage() {
         }
         return session;
       });
-      return recalcPlanAfterSessionChange(prev, sessions, selectedStudent);
+      const summaryContext = prev.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+      return recalcPlanAfterSessionChange(prev, sessions, summaryContext || undefined);
     });
   };
 
@@ -983,12 +1386,12 @@ function SwimTrainingPlanPage() {
           return { ...block, [field]: value };
         });
         const recalculatedSession = { ...session, blocks: updatedBlocks };
-        const metrics = recalcSessionMetrics(recalculatedSession);
-        recalculatedSession.distance = metrics.totalDistance;
-        recalculatedSession.duration = metrics.totalMinutes;
         return applyCssIntensityToSession(recalculatedSession);
       });
-      return recalcPlanAfterSessionChange(prev, sessions, selectedStudent);
+      const summaryContext = prev.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+      return recalcPlanAfterSessionChange(prev, sessions, summaryContext || undefined);
     });
   };
 
@@ -1007,12 +1410,12 @@ function SwimTrainingPlanPage() {
         };
         const updatedBlocks = [...session.blocks, newBlock];
         const recalculatedSession = { ...session, blocks: updatedBlocks };
-        const metrics = recalcSessionMetrics(recalculatedSession);
-        recalculatedSession.distance = metrics.totalDistance;
-        recalculatedSession.duration = metrics.totalMinutes;
         return applyCssIntensityToSession(recalculatedSession);
       });
-      return recalcPlanAfterSessionChange(prev, sessions, selectedStudent);
+      const summaryContext = prev.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+      return recalcPlanAfterSessionChange(prev, sessions, summaryContext || undefined);
     });
   };
 
@@ -1024,17 +1427,17 @@ function SwimTrainingPlanPage() {
         if (session.id !== sessionId) return session;
         const updatedBlocks = session.blocks.filter((_, idx) => idx !== blockIndex);
         const recalculatedSession = { ...session, blocks: updatedBlocks };
-        const metrics = recalcSessionMetrics(recalculatedSession);
-        recalculatedSession.distance = metrics.totalDistance;
-        recalculatedSession.duration = metrics.totalMinutes;
         return applyCssIntensityToSession(recalculatedSession);
       });
-      return recalcPlanAfterSessionChange(prev, sessions, selectedStudent);
+      const summaryContext = prev.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+      return recalcPlanAfterSessionChange(prev, sessions, summaryContext || undefined);
     });
   };
 
   const generateSessionForDay = (day: string, index: number): PlanSession | null => {
-    if (!selectedStudent || !plan) return null;
+    if (!plan) return null;
     const sanitizedDay = day.replace(/\s*\(.*?\)\s*$/, '');
 
     try {
@@ -1046,7 +1449,7 @@ function SwimTrainingPlanPage() {
         level: plan.level,
         strokesAllowed: plan.strokesAllowed as StrokeKey[],
         strokesAvoid: plan.strokesAvoid,
-        conditionIds: plan.conditionIds,
+        conditionIds: plan.scope === 'group' ? [] : plan.conditionIds,
         dayCondition: 'normal',
         hasPain: false,
         weeklyFrequency: plan.weeklyFrequency,
@@ -1125,17 +1528,67 @@ function SwimTrainingPlanPage() {
         }
       }
 
-      return recalcPlanAfterSessionChange(prev, sessions, selectedStudent);
+      const summaryContext = prev.scope === 'group'
+        ? (selectedGroup ? buildGroupRepresentativeStudent(selectedGroup) : null)
+        : selectedStudent;
+
+      return recalcPlanAfterSessionChange(prev, sessions, summaryContext || undefined);
     });
   };
 
   const handleSavePlan = async () => {
-    if (!plan || !selectedStudent) return;
+    if (!plan || !selectedTarget) return;
     try {
       setIsSaving(true);
       setStatusMessage(null);
+
+      if (plan.scope === 'group') {
+        if (!selectedGroup) {
+          setStatusMessage({ type: 'error', message: '단체반 정보를 찾을 수 없습니다. 다시 시도해주세요.' });
+          return;
+        }
+
+        const groupPayload = buildGroupSavePayload(plan, selectedGroup);
+        let response;
+
+        if (existingProgramId) {
+          response = await apiClient.put<any>(`/api/swim-programs/${existingProgramId}`, {
+            content: groupPayload.programData.content,
+            params: groupPayload.programData.params,
+            usedMethodIds: groupPayload.programData.usedMethodIds
+          });
+
+          if (response?.success === false || response?.error) {
+            throw new Error(response?.error || '단체반 프로그램 수정 중 오류가 발생했습니다.');
+          }
+
+          setStatusMessage({ type: 'success', message: '단체반 프로그램이 수정되었습니다.' });
+        } else {
+          response = await apiClient.post<any>('/api/group-programs', groupPayload);
+
+          if (response?.success === false || response?.error) {
+            throw new Error(response?.error || '단체반 프로그램 저장 중 오류가 발생했습니다.');
+          }
+
+          const createdId = response?.data?.programId || response?.programId;
+          if (createdId) {
+            setExistingProgramId(createdId);
+          }
+
+          setStatusMessage({
+            type: 'success',
+            message: response?.message || '단체반 프로그램이 저장되었습니다.'
+          });
+        }
+
+        return;
+      }
+
+      if (!selectedStudent) return;
+
       const payload = buildSavePayload(plan, selectedStudent);
       let response;
+
       if (existingProgramId) {
         response = await apiClient.put<any>(`/api/swim-programs/${existingProgramId}`, {
           content: payload.content,
@@ -1195,62 +1648,110 @@ function SwimTrainingPlanPage() {
               {studentsLoading && (
                 <div className="flex items-center justify-center py-6 text-gray-500">
                   <Loader2 className="h-5 w-5 animate-spin mr-2" /> 학생 정보를 불러오는 중입니다...
-                      </div>
+                </div>
               )}
               {studentsError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
                   {studentsError}
+                </div>
+              )}
+
+              {groupClasses.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">단체반</p>
+                  <div className="space-y-2">
+                    {groupClasses.map((group) => {
+                      const isActive = selectedTarget?.type === 'group' && selectedTarget.id === group._id;
+                      const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+                      const daySummary = group.schedule && group.schedule.length > 0
+                        ? group.schedule
+                            .map((sch) => weekdayLabels[(sch.dayOfWeek ?? 0) % 7])
+                            .filter((value, index, arr) => value && arr.indexOf(value) === index)
+                            .join(', ')
+                        : null;
+                      return (
+                        <button
+                          key={group._id}
+                          onClick={() => handleSelectGroup(group._id)}
+                          className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${
+                            isActive
+                              ? 'border-purple-500 bg-purple-50 shadow-sm'
+                              : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50/40'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-gray-900">{group.className}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                                {group.activeCount}명
+                              </span>
+                              {isActive && (
+                                <span className="text-xs px-2 py-0.5 bg-purple-600 text-white rounded-full">선택됨</span>
+                              )}
+                            </div>
                           </div>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            {group.level && <div>레벨: {group.level}</div>}
+                            {group.durationMinutes && <div>회당 {group.durationMinutes}분</div>}
+                            {daySummary && <div>요일: {daySummary}</div>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
-              {!studentsLoading && students.length === 0 && (
-                <div className="text-sm text-gray-500 py-4 text-center">
-                  아직 담당 학생이 등록되어 있지 않습니다.
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">개인 회원</p>
+                {!studentsLoading && students.length === 0 && (
+                  <div className="text-sm text-gray-500 py-4 text-center">
+                    아직 담당 학생이 등록되어 있지 않습니다.
+                  </div>
+                )}
+                {students.map((student) => {
+                  const isActive = selectedTarget?.type === 'individual' && selectedTarget.id === student._id;
+                  const levelLabel = student.studentInfo?.currentLevel || student.studentInfo?.swimmingLevel;
+                  const goalLabel = student.studentInfo?.healthProfile?.fitnessGoals?.[0];
+                  const groupAffiliations = groupClasses
+                    .filter((group) => group.students.some((member) => member._id === student._id))
+                    .map((group) => group.className);
+                  return (
+                    <button
+                      key={student._id}
+                      onClick={() => handleSelectIndividual(student._id)}
+                      className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${
+                        isActive
+                          ? 'border-blue-500 bg-blue-50 shadow-sm'
+                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-gray-900">{student.name}</span>
+                        <div className="flex items-center gap-2">
+                          {student.receivesPersonalLesson && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                              개인레슨
+                            </span>
+                          )}
+                          {groupAffiliations.length > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                              단체반 {groupAffiliations.join(', ')}
+                            </span>
+                          )}
+                          {isActive && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded-full">선택됨</span>
+                          )}
                         </div>
-              )}
-              {students.map((student) => {
-                const isActive = student._id === selectedStudentId;
-                const levelLabel = student.studentInfo?.currentLevel || student.studentInfo?.swimmingLevel;
-                const goalLabel = student.studentInfo?.healthProfile?.fitnessGoals?.[0];
-                return (
-                  <button 
-                    key={student._id}
-                    onClick={() => handleSelectStudent(student._id)}
-                    className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${
-                      isActive
-                        ? 'border-blue-500 bg-blue-50 shadow-sm'
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-gray-900">{student.displayName || student.name}</span>
-                      <div className="flex items-center gap-2">
-                        {student.groupClassName && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                            단체반 {student.groupMemberCount ?? 0}명
-                          </span>
-                        )}
-                        {isActive && (
-                          <span className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded-full">선택됨</span>
-                        )}
                       </div>
-                    </div>
-                    <div className="text-xs text-gray-600 space-y-1">
-                      {student.groupClassName ? (
-                        <>
-                          <div>대표 회원: {student.name}</div>
-                          {levelLabel && <div>레벨: {levelLabel}</div>}
-                          {goalLabel && <div>목표: {goalLabel}</div>}
-                        </>
-                      ) : (
-                        <>
-                          {levelLabel && <div>레벨: {levelLabel}</div>}
-                          {goalLabel && <div>목표: {goalLabel}</div>}
-                        </>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="text-xs text-gray-600 space-y-1">
+                        {levelLabel && <div>레벨: {levelLabel}</div>}
+                        {goalLabel && <div>목표: {goalLabel}</div>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
 
@@ -1263,21 +1764,25 @@ function SwimTrainingPlanPage() {
               </Card>
             )}
 
-            {!planLoading && !selectedStudent && (
+            {!planLoading && !plan && (
               <Card className="border border-dashed border-gray-300 bg-white">
                 <CardContent className="py-16 text-center text-gray-500">
-                  프로그램을 확인할 학생을 선택해주세요.
+                  {selectedTarget
+                    ? '프로그램 데이터를 불러오지 못했습니다. 다시 시도해주세요.'
+                    : '프로그램을 확인할 대상을 선택해주세요.'}
                 </CardContent>
               </Card>
             )}
 
-            {!planLoading && selectedStudent && plan && (
+            {!planLoading && plan && (
               <>
                 <Card className="border border-gray-200 shadow-sm">
                   <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="space-y-2">
                       <CardTitle className="text-xl font-semibold text-gray-900">
-                        {(selectedStudent.displayName || selectedStudent.name)} 주간 프로그램 요약
+                        {plan.scope === 'group'
+                          ? `${selectedGroup?.className || '단체반'} 공통 프로그램`
+                          : `${selectedStudent?.name || '회원'} 주간 프로그램 요약`}
                       </CardTitle>
                       <div className="text-sm text-gray-600 space-y-1">
                         <div className="flex items-center gap-2">
@@ -1287,13 +1792,18 @@ function SwimTrainingPlanPage() {
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-amber-500" />
                           주 {plan.weeklyFrequency}회 · 회당 {Math.round(plan.sessionDurationMinutes)}분 · 목표 {plan.weeklyTargetMinutes}분
-                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
                           <Dumbbell className="h-4 w-4 text-emerald-500" />
                           목표: {plan.goal} · 레벨: {plan.level}
                         </div>
+                        {plan.scope === 'group' && selectedGroup && (
+                          <div className="flex items-center gap-2 text-purple-700">
+                            <Users className="h-4 w-4" /> 구성원 {selectedGroup.activeCount}명
+                          </div>
+                        )}
                       </div>
-                </div>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
@@ -1309,9 +1819,9 @@ function SwimTrainingPlanPage() {
                         className="flex items-center gap-2"
                       >
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        저장하기
+                        {plan.scope === 'group' ? '단체반 저장하기' : '저장하기'}
                       </Button>
-                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {statusMessage && (
@@ -1333,6 +1843,30 @@ function SwimTrainingPlanPage() {
                       </div>
                     )}
 
+                    {plan.healthWarnings && plan.healthWarnings.length > 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-900 space-y-1">
+                        <p className="font-semibold">건강 유의사항</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          {plan.healthWarnings.map((warning, index) => (
+                            <li key={`${warning}-${index}`}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {plan.scope === 'group' && selectedGroup && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-900 space-y-1">
+                        <p className="font-semibold">단체반 구성원</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedGroup.students.map((member) => (
+                            <span key={member._id} className="px-2 py-1 rounded-full bg-white border border-purple-200">
+                              {member.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <label className="space-y-1 text-sm">
                         <span className="text-gray-600">시작 날짜</span>
@@ -1347,19 +1881,19 @@ function SwimTrainingPlanPage() {
                         <span className="text-gray-600">주간 빈도(회)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {plan.weeklyFrequency}
-                      </div>
+                        </div>
                       </label>
                       <label className="space-y-1 text-sm">
                         <span className="text-gray-600">세션당 목표 시간(분)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {Math.round(plan.sessionDurationMinutes)}
-                      </div>
+                        </div>
                       </label>
                       <label className="space-y-1 text-sm">
                         <span className="text-gray-600">주간 총 목표 시간(분)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {Math.round(plan.weeklyTargetMinutes)}
-                      </div>
+                        </div>
                       </label>
                     </div>
 

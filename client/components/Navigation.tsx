@@ -143,6 +143,7 @@ const userMenuStructure = {
     students: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
       { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
+      { href: '/instructor/progress', label: '📈 진행 · 출석 관리' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
     reports: [
@@ -151,7 +152,6 @@ const userMenuStructure = {
     ],
     health: [
       { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
-      { href: '/instructor/health/students', label: '👥 학생별 건강정보' },
       { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
       { href: '/instructor/health/history', label: '📋 프로그램 이력 관리' },
       { href: '/instructor/exercise-calculator', label: '⚡ 운동량 계산기' },
