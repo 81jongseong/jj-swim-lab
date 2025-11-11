@@ -5,7 +5,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 import { LaneRental } from '../models/LaneRental';
 import { User } from '../models/User';
 import { LaneAllocationService } from '../services/laneAllocationService';

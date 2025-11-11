@@ -1,5 +1,4 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { cache } from '../middleware/cache';
 import { logInfo, logError } from '../utils/logger';
@@ -152,7 +151,7 @@ router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin
     const allItems: any[] = [];
     let stepOrder = 1;
     
-    teachingMethods.forEach((method, methodIndex) => {
+    teachingMethods.forEach((method) => {
       method.steps.forEach((step: string, stepIndex: number) => {
         allItems.push({
           stepName: step,

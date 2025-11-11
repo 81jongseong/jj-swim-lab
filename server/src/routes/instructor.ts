@@ -57,7 +57,7 @@ router.get('/dashboard', authMiddleware, requirePermission('canManageCourses'), 
       });
     }
 
-    const instructorInfo = instructor.instructorInfo || {};
+    const instructorInfo = (instructor as any).instructorInfo || {};
     const centerId = instructor.centerId || instructorInfo.assignedCenters?.[0];
 
     // 강사가 담당하는 과정 목록 조회

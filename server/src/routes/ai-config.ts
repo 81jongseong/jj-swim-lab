@@ -566,6 +566,8 @@ router.get('/templates/list', authMiddleware, requirePermission('aiConfigManagem
 router.post('/lesson-plan', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
     const { swimmingLevel, goals, availableDays, preferredDuration } = req.body;
+    void availableDays;
+    void preferredDuration;
     
     // 사용자의 현재 진도율을 데이터베이스에서 조회
     const user = await User.findById(req.user._id);
@@ -693,6 +695,7 @@ function calculateExpectedProgress(currentProgress: number, difficulty: string):
 
 // AI 추천사항 생성 함수
 function generateAIRecommendations(currentProgress: number, level: string, goals: string[]): string[] {
+  void level;
   const recommendations = [];
   
   if (currentProgress < 30) {
@@ -837,6 +840,7 @@ function calculateRecommendedPracticeTime(currentProgress: number): string {
 
 // 집중 영역 생성 함수
 function generateFocusAreas(currentProgress: number, level: string): string[] {
+  void level;
   const focusAreas = [];
   
   if (currentProgress < 30) {

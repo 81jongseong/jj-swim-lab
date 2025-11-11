@@ -121,6 +121,24 @@ export interface IAIEvaluationResult extends Document {
       };
     };
   };
+  analysisResult?: {
+    overallScore: number;
+    categoryScores: {
+      posture: number;
+      breathing: number;
+      movement: number;
+      efficiency: number;
+    };
+    levelAssessment: string;
+    strengths: string[];
+    weaknesses: string[];
+    improvementAreas: string[];
+    historicalContext?: {
+      averageProgress: number;
+      sessionsAnalyzed: number;
+      latestChecklistDate: Date | null;
+    };
+  };
   
   // 성과 지표
   performance: {
@@ -411,6 +429,24 @@ const AIEvaluationResultSchema = new Schema<IAIEvaluationResult>({
           feedback: { type: String, required: true }
         }
       }
+    }
+  },
+  analysisResult: {
+    overallScore: { type: Number, required: true, min: 0, max: 100 },
+    categoryScores: {
+      posture: { type: Number, required: true, min: 0, max: 100 },
+      breathing: { type: Number, required: true, min: 0, max: 100 },
+      movement: { type: Number, required: true, min: 0, max: 100 },
+      efficiency: { type: Number, required: true, min: 0, max: 100 }
+    },
+    levelAssessment: { type: String, required: true },
+    strengths: [{ type: String, required: true }],
+    weaknesses: [{ type: String, required: true }],
+    improvementAreas: [{ type: String, required: true }],
+    historicalContext: {
+      averageProgress: { type: Number },
+      sessionsAnalyzed: { type: Number },
+      latestChecklistDate: { type: Date }
     }
   },
   performance: {

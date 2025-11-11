@@ -14,10 +14,8 @@
 
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import InstructorEvaluationCriteria, { IInstructorEvaluationCriteria } from '../models/InstructorEvaluationCriteria';
-import InstructorEvaluationResult, { IInstructorEvaluationResult } from '../models/InstructorEvaluationResult';
-import { User } from '../models/User';
-import Center from '../models/Center';
+import InstructorEvaluationCriteria from '../models/InstructorEvaluationCriteria';
+import InstructorEvaluationResult from '../models/InstructorEvaluationResult';
 
 const router = express.Router();
 
@@ -290,7 +288,7 @@ router.post('/submit', authMiddleware, async (req: Request, res: Response) => {
     } = req.body;
     
     // 평가 결과 문서 조회 또는 생성
-    let evaluationResult = await InstructorEvaluationResult.findById(evaluationResultId);
+    const evaluationResult = await InstructorEvaluationResult.findById(evaluationResultId);
     
     if (!evaluationResult) {
       return res.status(404).json({

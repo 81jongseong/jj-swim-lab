@@ -278,8 +278,15 @@ export const errorHandler = (
       500,
       ErrorCode.INTERNAL_SERVER_ERROR,
       ErrorSeverity.HIGH,
-      { originalError: error.name }
+      {
+        originalError: error,
+        stack: error.stack
+      }
     );
+  }
+
+  if (res.headersSent) {
+    return next(appError);
   }
 
   // 에러 로깅

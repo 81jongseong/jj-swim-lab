@@ -72,13 +72,13 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import validator from 'validator';
 
 // ValidationChain 타입 정의
 export type ValidationChain = (req: Request, res: Response, next: NextFunction) => void;
 
 // validationResult 함수 정의
-export const validationResult = (req: Request) => {
+export const validationResult = (_req: Request) => {
+  void _req;
   return {
     isEmpty: () => true,
     array: () => []
@@ -86,28 +86,56 @@ export const validationResult = (req: Request) => {
 };
 
 // body, param, query 함수 정의 (간단한 버전)
-export const body = (field: string) => {
+export const body = (_field: string) => {
+  void _field;
   const chain = {
     isEmail: () => chain,
-    isLength: (options?: any) => chain,
-    matches: (pattern: any) => chain,
-    custom: (fn: any) => chain,
+    isLength: (_options?: any) => {
+      void _options;
+      return chain;
+    },
+    matches: (_pattern: any) => {
+      void _pattern;
+      return chain;
+    },
+    custom: (_fn: any) => {
+      void _fn;
+      return chain;
+    },
     trim: () => chain,
     escape: () => chain,
     optional: () => chain,
     isNumeric: () => chain,
     isURL: () => chain,
     normalizeEmail: () => chain,
-    withMessage: (msg: any) => chain,
-    isInt: (options?: any) => chain,
-    isFloat: (options?: any) => chain,
+    withMessage: (_msg: any) => {
+      void _msg;
+      return chain;
+    },
+    isInt: (_options?: any) => {
+      void _options;
+      return chain;
+    },
+    isFloat: (_options?: any) => {
+      void _options;
+      return chain;
+    },
     isString: () => chain,
-    isIn: (values: any) => chain,
-    isArray: (options?: any) => chain,
+    isIn: (_values: any) => {
+      void _values;
+      return chain;
+    },
+    isArray: (_options?: any) => {
+      void _options;
+      return chain;
+    },
     isObject: () => chain,
     isBoolean: () => chain,
     isMongoId: () => chain,
-    isMobilePhone: (locale: any) => chain,
+    isMobilePhone: (_locale: any) => {
+      void _locale;
+      return chain;
+    },
     notEmpty: () => chain,
     isISO8601: () => chain,
     toInt: () => chain,
@@ -117,20 +145,34 @@ export const body = (field: string) => {
   return chain;
 };
 
-export const param = (field: string) => {
+export const param = (_field: string) => {
+  void _field;
   const chain = {
     isMongoId: () => chain,
-    isLength: (options?: any) => chain,
-    withMessage: (msg: any) => chain
+    isLength: (_options?: any) => {
+      void _options;
+      return chain;
+    },
+    withMessage: (_msg: any) => {
+      void _msg;
+      return chain;
+    }
   };
   return chain;
 };
 
-export const query = (field: string) => {
+export const query = (_field: string) => {
+  void _field;
   const chain = {
     optional: () => chain,
-    isInt: (options?: any) => chain,
-    withMessage: (msg: any) => chain,
+    isInt: (_options?: any) => {
+      void _options;
+      return chain;
+    },
+    withMessage: (_msg: any) => {
+      void _msg;
+      return chain;
+    },
     toInt: () => chain
   };
   return chain;
@@ -326,7 +368,7 @@ export const commonValidations = {
           if (!allowedDomains.some(domain => url.hostname.includes(domain))) {
             throw new Error('허용되지 않은 도메인입니다.');
           }
-        } catch (error) {
+        } catch {
           throw new Error('유효하지 않은 URL입니다.');
         }
         
@@ -668,7 +710,7 @@ export const businessValidations = {
   // 코스 일정 중복 검사
   checkCourseScheduleConflict: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { instructorId, startDate, startTime, endTime, courseId } = req.body;
+      const { instructorId, startDate, startTime, endTime } = req.body;
       
       if (!instructorId || !startDate || !startTime || !endTime) {
         return next();

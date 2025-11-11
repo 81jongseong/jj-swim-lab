@@ -54,7 +54,6 @@
 
 import express from 'express';
 import { Request, Response } from 'express';
-import mongoose from 'mongoose';
 import multer from 'multer';
 import path from 'path';
 import { authMiddleware } from '../middleware/auth';
@@ -295,7 +294,7 @@ router.post('/images',
       const updatedImages = [...(center.images || []), ...imageUrls];
 
       // 센터 정보 업데이트
-      const updatedCenter = await Center.findByIdAndUpdate(
+      await Center.findByIdAndUpdate(
         center._id,
         { 
           images: updatedImages,
@@ -372,7 +371,7 @@ router.delete('/images/:imageUrl', authMiddleware, requireRole(['centerAdmin', '
     const updatedImages = (center.images || []).filter(img => !img.includes(filename));
 
     // 센터 정보 업데이트
-    const updatedCenter = await Center.findByIdAndUpdate(
+    await Center.findByIdAndUpdate(
       center._id,
       { 
         images: updatedImages,

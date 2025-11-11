@@ -1,5 +1,4 @@
-import { spawn, ChildProcess } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import path from 'path';
 
 export interface SpawnOptions {
@@ -192,7 +191,7 @@ export class SpawnProc {
             return blenderPath;
           }
         } catch (error) {
-          // 파일 시스템 접근 실패 시 다음 경로 시도
+          console.debug('Blender 경로 확인 실패', { blenderPath, error });
           continue;
         }
       }
@@ -214,6 +213,7 @@ export class SpawnProc {
       await fs.access(filePath);
       return true;
     } catch (error) {
+      console.debug('파일 접근 실패', { filePath, error });
       return false;
     }
   }
@@ -226,7 +226,7 @@ export class SpawnProc {
       const fs = require('fs').promises;
       await fs.mkdir(dirPath, { recursive: true });
     } catch (error) {
-      // 디렉토리가 이미 존재하는 경우 무시
+      console.debug('디렉토리 생성 실패 또는 이미 존재', { dirPath, error });
     }
   }
 

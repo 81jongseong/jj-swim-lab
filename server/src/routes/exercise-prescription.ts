@@ -342,7 +342,7 @@ router.put('/:prescriptionId/adjust', authMiddleware, async (req, res) => {
     const previousPrescription = { ...prescription.currentPrescription };
     
     // 조정 적용
-    let newPrescription = { ...prescription.currentPrescription };
+    const newPrescription = { ...prescription.currentPrescription };
     
     if (manualAdjustment) {
       // 수동 조정

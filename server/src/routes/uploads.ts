@@ -612,11 +612,22 @@ router.get('/:id/download', authMiddleware, async (req: Request, res: Response) 
     const user = (req as any).user;
     const isOwner = video.owner?.toString() === user._id.toString();
     const isPrivileged = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
-    if (!isOwner && !isPrivileged && video.visibility !== 'public') {
+    const hasPublicVisibility = Boolean(video.visibility?.allMembers || video.visibility?.allInstructors);
+
+    if (!isOwner && !isPrivileged && !hasPublicVisibility) {
       return res.status(403).json({ error: '다운로드 권한이 없습니다.' });
     }
-    res.download(video.path, video.originalName);
+
+    const filePath = (video as any).path;
+    const originalName = (video as any).originalName || 'video.mp4';
+
+    if (!filePath) {
+      return res.status(400).json({ error: '파일 경로가 설정되지 않았습니다.' });
+    }
+
+    res.download(filePath, originalName);
   } catch (error) {
+    console.error('다운로드 오류:', error);
     res.status(500).json({ error: '다운로드에 실패했습니다.' });
   }
 });
@@ -706,6 +717,7 @@ router.patch('/:id/review', authMiddleware, requireRole(['instructor', 'centerAd
     if (!video) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
     res.json(video);
   } catch (error) {
+    console.error('리뷰 업데이트 오류:', error);
     res.status(500).json({ error: '리뷰 업데이트에 실패했습니다.' });
   }
 });
@@ -721,7 +733,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
     const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
     
-    let filter: any = {};
+    const filter: any = {};
     
     // 내 동영상만 보기
     if (myVideos === 'true') {
@@ -803,6 +815,7 @@ router.get('/admin/review-queue/list', authMiddleware, requireRole(['instructor'
     const total = await Video.countDocuments(filter);
     res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
   } catch (error) {
+    console.error('리뷰 큐 조회 오류:', error);
     res.status(500).json({ error: '리뷰 큐 조회에 실패했습니다.' });
   }
 });

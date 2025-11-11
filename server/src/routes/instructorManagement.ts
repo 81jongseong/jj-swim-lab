@@ -74,7 +74,6 @@ import { auth as authMiddleware } from '../middleware/auth';
 import { roleMiddleware } from '../middleware/role';
 import { User } from '../models/User';
 import { Center } from '../models/Center';
-import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
 import { Checklist } from '../models/Checklist';
 import { HealthData } from '../models/HealthData';

@@ -103,7 +103,11 @@ export function applyJointCondition(conditionId: string): ConditionRuleResult {
   let cautionCount = 0;
   
   strokes.forEach(stroke => {
-    const guidance = condition.swimmingGuidance[stroke];
+    const guidance = condition.swimmingGuidance?.[stroke];
+    if (!guidance) {
+      result.strokeAdjustments[stroke] = { avoid: false, reduceVolume: false, volumePct: 1.0 };
+      return;
+    }
     
     if (guidance.level === 'avoid') {
       result.strokeAdjustments[stroke] = { avoid: true, reduceVolume: false, volumePct: 0 };
@@ -113,7 +117,7 @@ export function applyJointCondition(conditionId: string): ConditionRuleResult {
       cautionCount++;
       
       // 동작 제한을 drillRestrictions에 추가
-      result.drillRestrictions.push(...guidance.prohibitedMovements);
+      result.drillRestrictions.push(...(guidance.prohibitedMovements || []));
     } else {
       result.strokeAdjustments[stroke] = { avoid: false, reduceVolume: false, volumePct: 1.0 };
     }
@@ -462,7 +466,10 @@ export function aggregateConditionRules(
   
   // 🫁 염소 민감성 (특수 처리)
   if (conditionIds.includes('chlorine_sensitivity')) {
-    rules.push(applyChlorineSensitivity());
+    const chlorineRule = applyChlorineSensitivity();
+    if (chlorineRule) {
+      rules.push(chlorineRule);
+    }
   }
   
   // 🫁 천식 (특수 처리)

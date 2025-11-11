@@ -21,7 +21,7 @@ router.get('/', authMiddleware, async (req: any, res: any) => {
       data: { reports },
       count: reports.length 
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -31,7 +31,7 @@ router.get('/admin', authMiddleware, async (req: any, res: any) => {
   try {
     const { limit = 50, status, type } = req.query;
     
-    let filter: any = {};
+    const filter: any = {};
     if (status && status !== 'all') filter.status = status;
     if (type && type !== 'all') filter.type = type;
     

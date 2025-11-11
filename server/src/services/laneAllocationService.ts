@@ -15,7 +15,7 @@ export class LaneAllocationService {
    */
   static async adjustLanesForPersonalLesson(personalLessonData: any) {
     try {
-      const { date, time, centerId, rentalCount = 1, dayName } = personalLessonData;
+      const { date, time, centerId, dayName } = personalLessonData;
       
       // 요일 정규화 함수
       const normalizeDayName = (day: string): string => {
@@ -107,9 +107,6 @@ export class LaneAllocationService {
       // ⚠️ 개인레슨은 항상 1레인을 사용
       const personalLessonLane = 1;
       
-      // 1레인을 사용 중인 것으로 간주하고 다른 레인을 순차적으로 조정
-      const usedLanes = new Set<number>([personalLessonLane]);
-      
       console.log(`🔍 개인레슨 레인: ${personalLessonLane}`);
       
       // 1레인과 겹치는 강습과정들을 찾아서 순차적으로 밀어냄
@@ -121,7 +118,7 @@ export class LaneAllocationService {
       console.log(`🔍 1레인과 충돌하는 강습과정: ${coursesWithLane1.length}개`);
 
       // 레인 조정: 1레인을 사용하는 강습과정들을 순차적으로 밀어냄
-      let currentAvailableLanes = [2, 3, 4, 5, 6]; // 1레인 제외한 사용 가능한 레인
+      const currentAvailableLanes = [2, 3, 4, 5, 6]; // 1레인 제외한 사용 가능한 레인
       let nextLaneIndex = 0; // 다음에 사용할 레인의 인덱스
       
       // 각 강습과정의 레인을 조정 - 개인레슨을 피해서 밀어냄
@@ -228,8 +225,6 @@ export class LaneAllocationService {
           if (isConflicting) {
             // 충돌하는 스케줄 항목의 레인 정보 업데이트
             const scheduleCurrentLanes = scheduleItem.lanes?.assignedLanes || currentLanes;
-            const scheduleOriginalLanes = scheduleItem.lanes?.originalAssignedLanes || scheduleCurrentLanes;
-            
             console.log(`🔧 레인 조정 적용:`, {
               courseName: course.name,
               day: scheduleItem.day,

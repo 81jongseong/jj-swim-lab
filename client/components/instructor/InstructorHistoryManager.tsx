@@ -467,21 +467,21 @@ export const InstructorHistoryManager: React.FC<InstructorHistoryManagerProps> =
 
                     <div className="bg-yellow-50 rounded-lg p-6 text-center">
                       <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-yellow-600">{centerDashboard.expiringCerts.length}</div>
+                      <div className="text-2xl font-bold text-yellow-600">{centerDashboard.expiringCerts?.length ?? 0}</div>
                       <div className="text-sm text-gray-600">만료 예정</div>
                     </div>
                   </div>
                 )}
 
                 {/* 만료 예정 자격증 알림 */}
-                {centerDashboard?.expiringCerts.length > 0 && (
+                {(centerDashboard?.expiringCerts?.length ?? 0) > 0 && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <h3 className="font-medium text-yellow-800 mb-3 flex items-center">
                       <AlertTriangle className="h-5 w-5 mr-2" />
-                      만료 예정 자격증 ({centerDashboard.expiringCerts.length}개)
+                      만료 예정 자격증 ({centerDashboard?.expiringCerts?.length ?? 0}개)
                     </h3>
                     <div className="space-y-2">
-                      {centerDashboard.expiringCerts.slice(0, 5).map((cert: any, index: number) => (
+                      {(centerDashboard?.expiringCerts ?? []).slice(0, 5).map((cert: any, index: number) => (
                         <div key={index} className="flex justify-between items-center text-sm">
                           <span>{cert.instructorName} - {cert.certificationName}</span>
                           <span className="text-yellow-700 font-medium">

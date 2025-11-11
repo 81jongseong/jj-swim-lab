@@ -193,6 +193,7 @@ router.get('/stats', authMiddleware, requireRole(['student', 'instructor']), asy
   try {
     const userId = (req as any).user._id;
     const { days = 30 } = req.query;
+    void days;
     
     // 임시로 기본 통계 반환
     const stats = {

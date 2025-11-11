@@ -20,7 +20,6 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
 import { LessonTicket } from '../models/LessonTicket';
 import { Booking } from '../models/Booking';
-import mongoose from 'mongoose';
 
 interface AuthRequest extends Request {
   user?: any;

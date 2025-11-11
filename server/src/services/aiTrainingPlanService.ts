@@ -390,6 +390,7 @@ export class AITrainingPlanService {
    * 권장 훈련 기간 계산
    */
   private static calculateRecommendedDuration(goalAnalysis: any, profileAnalysis: any): number {
+    void profileAnalysis;
     let duration = goalAnalysis.timeframe;
     
     // 최소/최대 기간 제한
@@ -422,6 +423,7 @@ export class AITrainingPlanService {
   private static generateIntensityProgression(duration: number, profileAnalysis: any, goalAnalysis: any): number[] {
     const progression = [];
     const baseIntensity = profileAnalysis.fitnessLevel / 100 * 10; // 1-10 스케일
+    void goalAnalysis;
     
     for (let week = 1; week <= duration; week++) {
       let intensity = baseIntensity;
@@ -836,6 +838,7 @@ export class AITrainingPlanService {
   }
   
   private static generateExpectedImprovement(week: number, goal: TrainingGoal): string {
+    void goal;
     if (week <= 2) return '기초 적응 및 동작 익히기';
     if (week <= 4) return '체력 및 기술 향상 시작';
     if (week <= 8) return '눈에 띄는 실력 향상';

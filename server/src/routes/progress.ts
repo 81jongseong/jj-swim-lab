@@ -65,8 +65,6 @@
 
 import * as express from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
-import { cache } from '../middleware/cache';
-import { logInfo, logError } from '../utils/logger';
 import { Progress } from '../models/Progress';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
@@ -76,19 +74,6 @@ import mongoose from 'mongoose';
 
 interface AuthRequest extends express.Request {
   user?: any;
-}
-
-interface CompletedStep {
-  methodId: string;
-  stepName: string;
-  completedAt: Date;
-  notes: string;
-}
-
-interface ProgressData {
-  percentage: number;
-  completedSteps: CompletedStep[];
-  notes: string;
 }
 
 const router: express.Router = express.Router();
@@ -393,8 +378,6 @@ router.get('/instructor/:instructorId/stats', authMiddleware, requireRole(['inst
 // 7. 강사 스케줄 최적화 (강사만)
 router.get('/schedule-optimization', authMiddleware, requireRole(['instructor']), async (req: AuthRequest, res: express.Response) => {
   try {
-    const instructor = await User.findById((req as any).user._id);
-    
     // 강사 스케줄 분석 및 최적화 제안
     const scheduleAnalysis = {
       currentSchedule: {

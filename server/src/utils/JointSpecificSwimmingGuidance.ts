@@ -411,8 +411,8 @@ export class JointSpecificSwimmingGuidance {
     }
     
     const safeStrokes = Object.entries(guidance.swimmingGuidance)
-      .filter(([_, safety]) => safety.safetyLevel === 'safe')
-      .map(([stroke, _]) => stroke);
+      .filter(([, safety]) => safety.safetyLevel === 'safe')
+      .map(([stroke]) => stroke);
     
     return safeStrokes.length > 0 ? safeStrokes : ['elementary_backstroke'];
   }
@@ -431,7 +431,7 @@ export class JointSpecificSwimmingGuidance {
     }
     
     return Object.entries(guidance.swimmingGuidance)
-      .filter(([_, safety]) => safety.safetyLevel === 'prohibited')
-      .map(([stroke, _]) => stroke);
+      .filter(([, safety]) => safety.safetyLevel === 'prohibited')
+      .map(([stroke]) => stroke);
   }
 }

@@ -407,7 +407,7 @@ exerciseDataSchema.statics.getUserStats = async function(userId: string, days: n
 // 정적 메서드: AI 추천 생성
 exerciseDataSchema.statics.generateAIRecommendations = async function(userId: string) {
   const userStats = await (this.constructor as any).getUserStats(userId, 7); // 최근 7일
-  const recentSessions = await this.find({ userId })
+  await this.find({ userId })
     .sort({ startTime: -1 })
     .limit(5);
   

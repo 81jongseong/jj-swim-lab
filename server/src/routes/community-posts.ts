@@ -350,6 +350,7 @@ router.post('/posts/:id/warn', authMiddleware, async (req: Request, res: Respons
   try {
     const user = (req as any).user;
     const { authorId, reason } = req.body;
+    void authorId;
     
     // 최고 관리자 권한 확인
     if (user.userType !== 'superAdmin') {
@@ -406,7 +407,9 @@ router.post('/posts/:id/join', authMiddleware, async (req: Request, res: Respons
       });
     }
 
-    if (!post.meetupDetails) {
+    const meetupDetails = (post as any).meetupDetails;
+
+    if (!meetupDetails) {
       return res.status(400).json({ 
         success: false, 
         message: '번개모임 게시글이 아닙니다.' 
@@ -414,7 +417,7 @@ router.post('/posts/:id/join', authMiddleware, async (req: Request, res: Respons
     }
 
     // 이미 참가 중인지 확인
-    const alreadyJoined = post.meetupDetails.participants?.some(p => p.userId === userId);
+    const alreadyJoined = meetupDetails.participants?.some((participant: any) => participant.userId === userId);
     if (alreadyJoined) {
       return res.status(400).json({ 
         success: false, 
@@ -423,7 +426,7 @@ router.post('/posts/:id/join', authMiddleware, async (req: Request, res: Respons
     }
 
     // 정원 확인
-    if (post.meetupDetails.currentParticipants >= post.meetupDetails.maxParticipants) {
+    if (meetupDetails.currentParticipants >= meetupDetails.maxParticipants) {
       return res.status(400).json({ 
         success: false, 
         message: '모집 인원이 마감되었습니다.' 
@@ -431,16 +434,18 @@ router.post('/posts/:id/join', authMiddleware, async (req: Request, res: Respons
     }
 
     // 참가자 추가
-    if (!post.meetupDetails.participants) {
-      post.meetupDetails.participants = [];
+    if (!meetupDetails.participants) {
+      meetupDetails.participants = [];
     }
     
-    post.meetupDetails.participants.push({
+    meetupDetails.participants.push({
       userId,
       userName,
       joinedAt: new Date()
     });
-    post.meetupDetails.currentParticipants = (post.meetupDetails.currentParticipants || 0) + 1;
+    meetupDetails.currentParticipants = (meetupDetails.currentParticipants || 0) + 1;
+
+    (post as any).meetupDetails = meetupDetails;
 
     await post.save();
 

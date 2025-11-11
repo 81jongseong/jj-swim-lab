@@ -374,9 +374,10 @@ export class AdvancedAIService {
 
   // Private 헬퍼 메서드들
   private async extractBasicPose(videoData: Buffer): Promise<any> {
+    void videoData;
     // MediaPipe 포즈 추출 시뮬레이션
     return {
-      landmarks: Array.from({ length: 33 }, (_, i) => ({
+      landmarks: Array.from({ length: 33 }, () => ({
         x: Math.random(),
         y: Math.random(),
         z: Math.random(),
@@ -386,6 +387,7 @@ export class AdvancedAIService {
   }
 
   private async calculate3DPose(basicPose: any): Promise<any> {
+    void basicPose;
     // 3D 좌표 계산 시뮬레이션
     return {
       head: { x: 0.5, y: 0.8, z: 0.5, confidence: 0.9 },
@@ -437,11 +439,14 @@ export class AdvancedAIService {
   }
 
   private async analyzeStrokeSpecific(pose3D: any, strokeType: string): Promise<any> {
+    void strokeType;
     // 영법별 전문 분석
     return pose3D;
   }
 
   private async analyzeTechnique(strokeAnalysis: any, strokeType: string): Promise<TechniqueScore> {
+    void strokeAnalysis;
+    void strokeType;
     return {
       overall: 82,
       armTechnique: 85,
@@ -457,6 +462,7 @@ export class AdvancedAIService {
   }
 
   private async analyzeEfficiency(strokeAnalysis: any): Promise<EfficiencyScore> {
+    void strokeAnalysis;
     return {
       overall: 78,
       energyWaste: 0.22,
@@ -468,6 +474,7 @@ export class AdvancedAIService {
   }
 
   private async analyzeRhythm(strokeAnalysis: any): Promise<RhythmAnalysis> {
+    void strokeAnalysis;
     return {
       consistency: 0.85,
       strokeTiming: 0.8,
@@ -478,6 +485,7 @@ export class AdvancedAIService {
   }
 
   private async analyzeBreathing(strokeAnalysis: any): Promise<BreathingAnalysis> {
+    void strokeAnalysis;
     return {
       frequency: 3, // 3스트로크마다 호흡
       timing: 0.8,
@@ -492,6 +500,8 @@ export class AdvancedAIService {
     technique: TechniqueScore,
     efficiency: EfficiencyScore
   ): Promise<Recommendation[]> {
+    void userId;
+    void efficiency;
     const recommendations: Recommendation[] = [];
 
     // 기술적 개선사항
@@ -542,21 +552,25 @@ export class AdvancedAIService {
 
   // 학습 패턴 분석 헬퍼 메서드들
   private async getLearningHistory(userId: string): Promise<any[]> {
+    void userId;
     // 실제 구현에서는 데이터베이스에서 학습 히스토리를 가져옴
     return [];
   }
 
   private determineLearningStyle(history: any[]): 'visual' | 'kinesthetic' | 'auditory' | 'mixed' {
+    void history;
     // 학습 히스토리 분석을 통한 학습 스타일 결정
     return 'visual';
   }
 
   private calculateProgressRate(history: any[]): number {
+    void history;
     // 진도율 계산
     return 0.75;
   }
 
   private analyzeSkillAreas(history: any[]): { strongAreas: string[]; challengingAreas: string[] } {
+    void history;
     return {
       strongAreas: ['자유형 팔 동작', '호흡 리듬'],
       challengingAreas: ['킥 동작', '턴 기술']
@@ -564,22 +578,27 @@ export class AdvancedAIService {
   }
 
   private analyzeMotivationFactors(history: any[]): string[] {
+    void history;
     return ['성과 시각화', '목표 달성', '동료와의 경쟁'];
   }
 
   private findOptimalTrainingTime(history: any[]): string {
+    void history;
     return '오후 6-8시';
   }
 
   private calculateAttentionSpan(history: any[]): number {
+    void history;
     return 25; // 분
   }
 
   private calculateRetentionRate(history: any[]): number {
+    void history;
     return 0.85;
   }
 
   private determinePreferredFeedbackType(history: any[]): 'immediate' | 'delayed' | 'summary' {
+    void history;
     return 'immediate';
   }
 
@@ -601,16 +620,21 @@ export class AdvancedAIService {
   }
 
   private async analyzeRepetitiveMotionRisks(userId: string): Promise<RiskFactor[]> {
+    void userId;
     // 반복 동작 위험 분석
     return [];
   }
 
   private async analyzeFatigueRisks(userId: string): Promise<RiskFactor[]> {
+    void userId;
     // 피로도 기반 위험 분석
     return [];
   }
 
   private calculateOverallRiskLevel(risks: RiskFactor[]): 'low' | 'medium' | 'high' | 'critical' {
+    if (risks.length === 0) {
+      return 'low';
+    }
     const avgSeverity = risks.reduce((sum, risk) => sum + risk.severity, 0) / risks.length;
     
     if (avgSeverity >= 8) return 'critical';
@@ -628,11 +652,14 @@ export class AdvancedAIService {
   }
 
   private setMonitoringPoints(risks: RiskFactor[]): string[] {
+    void risks;
     return ['어깨 가동범위', '허리 유연성', '무릎 안정성'];
   }
 
   // 훈련 계획 생성 헬퍼 메서드들
   private async setPersonalizedGoals(userId: string, currentLevel: string): Promise<any> {
+    void userId;
+    void currentLevel;
     return {
       shortTerm: ['자유형 25m 연속 완주', '호흡 리듬 개선'],
       longTerm: ['자유형 100m 완주', '다양한 영법 습득'],
@@ -645,16 +672,23 @@ export class AdvancedAIService {
   }
 
   private generateWeeklyPlans(goals: any, approach: string, pattern: LearningPattern): any[] {
-    return Array.from({ length: 12 }, (_, week) => ({
-      week: week + 1,
-      focus: week < 4 ? '기초 기술' : week < 8 ? '기술 향상' : '실전 적용',
-      sessions: 3,
-      duration: '60분',
-      exercises: [`주차 ${week + 1} 맞춤 운동`]
-    }));
+    void goals;
+    void approach;
+    void pattern;
+    return Array.from({ length: 12 }, (_unused, week) => {
+      void _unused;
+      return {
+        week: week + 1,
+        focus: week < 4 ? '기초 기술' : week < 8 ? '기술 향상' : '실전 적용',
+        sessions: 3,
+        duration: '60분',
+        exercises: [`주차 ${week + 1} 맞춤 운동`]
+      };
+    });
   }
 
   private setAssessmentCriteria(goals: any): any {
+    void goals;
     return {
       frequency: '매주',
       metrics: ['기술 점수', '지구력', '효율성'],

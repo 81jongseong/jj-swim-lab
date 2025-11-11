@@ -410,7 +410,7 @@ const convertEnginePlanToSession = (
 const recalcPlanAfterSessionChange = (
   plan: WeeklyPlan,
   sessions: PlanSession[],
-  student?: StudentSummary
+  student?: StudentSummary | null
 ) => {
   const sessionsWithCss = sessions.map(applyCssIntensityToSession);
   const totals = recalcPlanTotals(sessionsWithCss);
@@ -853,8 +853,16 @@ function SwimTrainingPlanPage() {
             return { ...block, duration: num };
           }
           if (field === 'restSec') {
-            const num = Number(value) || 0;
-            return { ...block, restSec: num };
+            const restValue = Number(value) || 0;
+            const parsed = parseSetDescription(block.description, restValue);
+            return {
+              ...block,
+              restSec: restValue,
+              distance: parsed.totalDistance || block.distance,
+              duration: parsed.totalMinutes ? Number(parsed.totalMinutes.toFixed(2)) : block.duration,
+              pacePer100Seconds: parsed.pacePer100Seconds,
+              paceDisplay: parsed.paceDisplay
+            };
           }
           if (field === 'rpe') {
             const num = Number(value) || 0;
@@ -865,18 +873,6 @@ function SwimTrainingPlanPage() {
             return {
               ...block,
               description: value,
-              distance: parsed.totalDistance || block.distance,
-              duration: parsed.totalMinutes ? Number(parsed.totalMinutes.toFixed(2)) : block.duration,
-              pacePer100Seconds: parsed.pacePer100Seconds,
-              paceDisplay: parsed.paceDisplay
-            };
-          }
-          if (field === 'restSec') {
-            const restValue = Number(value) || 0;
-            const parsed = parseSetDescription(block.description, restValue);
-            return {
-              ...block,
-              restSec: restValue,
               distance: parsed.totalDistance || block.distance,
               duration: parsed.totalMinutes ? Number(parsed.totalMinutes.toFixed(2)) : block.duration,
               pacePer100Seconds: parsed.pacePer100Seconds,
@@ -1233,21 +1229,21 @@ function SwimTrainingPlanPage() {
                         <span className="text-gray-600">주간 빈도(회)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {plan.weeklyFrequency}
-                          </div>
+                      </div>
                       </label>
                       <label className="space-y-1 text-sm">
                         <span className="text-gray-600">세션당 목표 시간(분)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {Math.round(plan.sessionDurationMinutes)}
-                                  </div>
+                      </div>
                       </label>
                       <label className="space-y-1 text-sm">
                         <span className="text-gray-600">주간 총 목표 시간(분)</span>
                         <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                           {Math.round(plan.weeklyTargetMinutes)}
-                              </div>
+                      </div>
                       </label>
-                            </div>
+                    </div>
 
                     <label className="space-y-1 text-sm">
                       <span className="text-gray-600">주간 요약</span>
@@ -1277,7 +1273,7 @@ function SwimTrainingPlanPage() {
                     <CardHeader className="flex flex-col gap-3">
                       <div className="flex flex-col gap-3">
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-                          <div>
+                            <div>
                             <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                               <span className="text-blue-600">세션 {sessionIndex + 1}</span>
                               <input
@@ -1299,7 +1295,7 @@ function SwimTrainingPlanPage() {
                             {session.status === 'postponed' && (
                               <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                                 연기됨
-                              </span>
+                                    </span>
                             )}
                             {session.status === 'skipped' && (
                               <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 border border-red-200">
@@ -1329,20 +1325,20 @@ function SwimTrainingPlanPage() {
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          </div>
-                        </div>
+                                  </div>
+                              </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                           <div className="px-2 py-1 bg-amber-50 text-amber-700 rounded-full">
                             {session.distance.toLocaleString()}m
-                          </div>
+                            </div>
                           <div className="px-2 py-1 bg-sky-50 text-sky-700 rounded-full">
                             예상 {Math.round(session.duration)}분
-                          </div>
+                                </div>
                           <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded-full">
                             {session.focus.join(', ')}
-                          </div>
-                        </div>
-                      </div>
+                                  </div>
+                              </div>
+                            </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1358,15 +1354,15 @@ function SwimTrainingPlanPage() {
                           <span className="text-gray-600">강도/가이드 (CSS)</span>
                           <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-800">
                             {session.intensity.primary || 'CSS 데이터 없음'}
-                              </div>
+                                    </div>
                         </label>
                         <label className="space-y-1 text-sm">
                           <span className="text-gray-600">보조 지표</span>
                           <div className="w-full border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-700">
                             {session.intensity.secondary || '---'}
-                          </div>
+                                </div>
                         </label>
-                    </div>
+                              </div>
 
                       {session.warnings && session.warnings.length > 0 && (
                         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
@@ -1374,9 +1370,9 @@ function SwimTrainingPlanPage() {
                             <div key={idx} className="flex items-start gap-2">
                               <AlertCircle className="h-4 w-4 mt-0.5" />
                               <span>{warning}</span>
-                                    </div>
-                                  ))}
-                      </div>
+                        </div>
+                      ))}
+                    </div>
                     )}
 
                       <div className="space-y-3">
@@ -1399,7 +1395,7 @@ function SwimTrainingPlanPage() {
                                       <span className="text-xs uppercase tracking-wide text-gray-500">
                                         {block.type || 'SET'}
                                       </span>
-                                    </div>
+                        </div>
                                     <div className="flex flex-wrap gap-2 text-[11px] font-medium">
                                       {block.zone && (
                                         <span className={`px-2 py-1 rounded-full ${meta.chipClass}`}>Zone {block.zone}</span>
@@ -1418,16 +1414,16 @@ function SwimTrainingPlanPage() {
                                       <span className="px-2 py-1 rounded-full bg-white/70 text-gray-700 border border-white/60">
                                         휴식 {block.restSec ?? 0}초
                                       </span>
-                                    </div>
-                                  </div>
-                                </div>
+                    </div>
+                  </div>
+                </div>
                                 <button
                                   onClick={() => handleRemoveBlock(session.id, blockIndex)}
                                   className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
                                 >
                                   <Trash2 className="h-3 w-3" /> 제거
                                 </button>
-                              </div>
+              </div>
 
                               <label className="mt-4 block space-y-1 text-sm">
                                 <span className="text-gray-600">세트 설명</span>
@@ -1487,7 +1483,7 @@ function SwimTrainingPlanPage() {
                                     className="w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </label>
-                              </div>
+          </div>
 
                               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                 <label className="space-y-1">
@@ -1506,7 +1502,7 @@ function SwimTrainingPlanPage() {
                                     className="w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </label>
-                              </div>
+                    </div>
 
                               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                                 <label className="space-y-1">
@@ -1536,8 +1532,8 @@ function SwimTrainingPlanPage() {
                                     className="w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </label>
-                              </div>
-                            </div>
+                      </div>
+                      </div>
                           );
                         })}
                       </div>
@@ -1565,6 +1561,8 @@ function SwimTrainingPlanPage() {
 }
 
 export default withAuth(SwimTrainingPlanPage, { requireTypes: ['instructor', 'superAdmin'] });
+
+
 
 
 

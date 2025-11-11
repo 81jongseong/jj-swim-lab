@@ -4,9 +4,6 @@
  */
 
 import express from 'express';
-import mongoose from 'mongoose';
-import { User } from '../models/User';
-import { Course } from '../models/Course';
 
 const router = express.Router();
 

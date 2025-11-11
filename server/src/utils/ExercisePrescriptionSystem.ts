@@ -150,6 +150,11 @@ export interface DynamicAdjustment {
   newPrescription: ExercisePrescription;
   reasoning: string[];
   confidence: number; // 조정 신뢰도 (0-1)
+  insights: {
+    completionRate: number;
+    perceivedExertion: number;
+    difficultyTrend: number;
+  };
 }
 
 export class ExercisePrescriptionSystem {
@@ -338,35 +343,39 @@ export class ExercisePrescriptionSystem {
     let calculationMethod: IntensityCalculationMethod;
     
     switch (method) {
-      case 'karvonen':
+      case 'karvonen': {
         // Karvonen Formula (심박수 예비량법)
         const hrReserve = actualMaxHR - restingHR;
         targetHR = restingHR + (hrReserve * adjustedIntensity);
         calculationMethod = 'karvonen';
         break;
-        
-      case 'max_hr_percentage':
+      }
+
+      case 'max_hr_percentage': {
         // 최대 심박수 백분율법
         targetHR = actualMaxHR * adjustedIntensity;
         calculationMethod = 'max_hr_percentage';
         break;
-        
-      case 'vo2_max_percentage':
+      }
+
+      case 'vo2_max_percentage': {
         // VO2 Max 백분율법 (추정)
         const estimatedVO2Max = this.estimateVO2Max(additionalData);
         const targetVO2 = estimatedVO2Max * adjustedIntensity;
         targetHR = this.convertVO2ToHeartRate(targetVO2, actualMaxHR, restingHR);
         calculationMethod = 'vo2_max_percentage';
         break;
-        
-      case 'rpe_based':
+      }
+
+      case 'rpe_based': {
         // 자각적 운동강도 기반
         const rpeScale = Math.round(adjustedIntensity * 10);
         targetHR = this.convertRPEToHeartRate(rpeScale, actualMaxHR, restingHR);
         calculationMethod = 'rpe_based';
         break;
-        
-      case 'hybrid':
+      }
+
+      case 'hybrid': {
         // 하이브리드 방법 (여러 방법의 평균)
         const karvonenHR = restingHR + ((actualMaxHR - restingHR) * adjustedIntensity);
         const maxHRPercentage = actualMaxHR * adjustedIntensity;
@@ -374,7 +383,8 @@ export class ExercisePrescriptionSystem {
         targetHR = (karvonenHR + maxHRPercentage + rpeHR) / 3;
         calculationMethod = 'hybrid';
         break;
-        
+      }
+
       case 'ai_adaptive':
         // AI 적응형 알고리즘
         targetHR = this.calculateAIAdaptiveIntensity(
@@ -382,12 +392,13 @@ export class ExercisePrescriptionSystem {
         );
         calculationMethod = 'ai_adaptive';
         break;
-        
-      default:
+
+      default: {
         // 기본값: Karvonen
         const defaultHRReserve = actualMaxHR - restingHR;
         targetHR = restingHR + (defaultHRReserve * adjustedIntensity);
         calculationMethod = 'karvonen';
+      }
     }
     
     // VO2 Max 정보 계산 (추정)
@@ -533,30 +544,77 @@ export class ExercisePrescriptionSystem {
   }
   
   /**
+   * 사용자 프로필 기반 처방 생성
+   */
+  static async buildPrescriptionForUser(
+    userId: string,
+    options: {
+      exerciseHistory?: ExerciseHistory[];
+      overrideHealthData?: Record<string, any>;
+    } = {}
+  ) {
+    const [user, healthData] = await Promise.all([
+      User.findById(userId).lean(),
+      HealthData.findOne({ studentId: userId }).lean()
+    ]);
+
+    if (!user || (!healthData && !options.overrideHealthData)) {
+      throw new Error('처방을 생성할 사용자 또는 건강 데이터를 찾을 수 없습니다.');
+    }
+
+    const mergedHealthData = {
+      ...(healthData || {}),
+      ...(options.overrideHealthData || {})
+    };
+
+    const healthGrade = this.classifyHealthGrade(mergedHealthData, user);
+    const prescription = this.generateExercisePrescription(
+      healthGrade,
+      mergedHealthData,
+      user,
+      options.exerciseHistory
+    );
+
+    return {
+      healthGrade,
+      prescription
+    };
+  }
+  
+  /**
    * 운동 이력 기반 동적 조정
    */
   static calculateHistoryBasedAdjustment(history: ExerciseHistory[]): DynamicAdjustment {
+    const recentSessions = history.slice(-3);
+    const completionRateSum = recentSessions.reduce((sum, session) =>
+      sum + (session.actualPerformance.completionRate || 0), 0);
+    const exertionSum = recentSessions.reduce((sum, session) =>
+      sum + (session.actualPerformance.perceivedExertion || 0), 0);
+    const diffSum = recentSessions.reduce((sum, session) => {
+      const difficultyScore = session.feedback.difficulty === 'too_easy' ? 1 :
+                             session.feedback.difficulty === 'appropriate' ? 0 : -1;
+      return sum + difficultyScore;
+    }, 0);
+
+    const completionDenominator = recentSessions.length || 1;
+    const avgCompletionRate = completionRateSum / completionDenominator;
+    const avgPerceivedExertion = exertionSum / completionDenominator;
+    const avgDifficulty = diffSum / completionDenominator;
+
     if (history.length < 3) {
       return {
         adjustmentType: 'maintain',
         adjustmentAmount: 0,
         newPrescription: {} as ExercisePrescription,
         reasoning: ['충분한 운동 이력이 없어 현재 강도 유지'],
-        confidence: 0.3
+        confidence: 0.3,
+        insights: {
+          completionRate: Math.round(avgCompletionRate),
+          perceivedExertion: parseFloat(avgPerceivedExertion.toFixed(1)),
+          difficultyTrend: parseFloat(avgDifficulty.toFixed(2))
+        }
       };
     }
-    
-    // 최근 3회 운동 분석
-    const recentSessions = history.slice(-3);
-    const avgCompletionRate = recentSessions.reduce((sum, session) => 
-      sum + session.actualPerformance.completionRate, 0) / 3;
-    const avgPerceivedExertion = recentSessions.reduce((sum, session) => 
-      sum + session.actualPerformance.perceivedExertion, 0) / 3;
-    const avgDifficulty = recentSessions.reduce((sum, session) => {
-      const difficultyScore = session.feedback.difficulty === 'too_easy' ? 1 : 
-                             session.feedback.difficulty === 'appropriate' ? 0 : -1;
-      return sum + difficultyScore;
-    }, 0) / 3;
     
     let adjustmentType: 'increase' | 'maintain' | 'decrease' = 'maintain';
     let adjustmentAmount = 0;
@@ -597,13 +655,20 @@ export class ExercisePrescriptionSystem {
       adjustmentAmount = Math.max(adjustmentAmount, 8);
       reasoning.push('높은 피로도로 인한 강도 감소');
     }
+
+    reasoning.push(`평균 RPE ${avgPerceivedExertion.toFixed(1)} 수준을 기록했습니다.`);
     
     return {
       adjustmentType,
       adjustmentAmount: Math.min(adjustmentAmount, 20), // 최대 20% 조정
       newPrescription: {} as ExercisePrescription, // 실제 처방은 별도 생성
       reasoning,
-      confidence: Math.min(0.9, 0.5 + (history.length * 0.1))
+      confidence: Math.min(0.9, 0.5 + (history.length * 0.1)),
+      insights: {
+        completionRate: Math.round(avgCompletionRate),
+        perceivedExertion: parseFloat(avgPerceivedExertion.toFixed(1)),
+        difficultyTrend: parseFloat(avgDifficulty.toFixed(2))
+      }
     };
   }
   
@@ -702,6 +767,15 @@ export class ExercisePrescriptionSystem {
       adaptiveIntensity *= 1.2;
     } else if (healthGrade.exerciseHistory === 'none') {
       adaptiveIntensity *= 0.7;
+    }
+
+    if (data?.recentFatigueScore !== undefined) {
+      adaptiveIntensity *= 1 - Math.min(0.3, data.recentFatigueScore * 0.05);
+    }
+    if (data?.performanceTrend === 'up') {
+      adaptiveIntensity *= 1.05;
+    } else if (data?.performanceTrend === 'down') {
+      adaptiveIntensity *= 0.9;
     }
     
     // 최종 심박수 계산

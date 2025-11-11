@@ -27,7 +27,7 @@ import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 
-interface Course {
+interface InstructorCourse {
   _id: string;
   name: string;
   description: string;
@@ -54,14 +54,14 @@ interface Course {
 
 function InstructorCoursesManagement() {
   const { user } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<InstructorCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [detailCourse, setDetailCourse] = useState<Course | null>(null);
+  const [detailCourse, setDetailCourse] = useState<InstructorCourse | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -101,7 +101,7 @@ function InstructorCoursesManagement() {
       console.log('📚 강사 강의 목록 API 응답:', result);
 
       if (result.success && result.data) {
-        const coursesData: Course[] = result.data.map((course: any) => {
+        const coursesData: InstructorCourse[] = result.data.map((course: any) => {
           const dayMap: { [key: string]: number } = {
             'monday': 1,
             'tuesday': 2,
@@ -224,12 +224,12 @@ function InstructorCoursesManagement() {
     return days[index] || '일';
   };
 
-  const handleViewDetail = (course: Course) => {
+  const handleViewDetail = (course: InstructorCourse) => {
     setDetailCourse(course);
     setShowDetailModal(true);
   };
 
-  const convertCourseForDetail = (course: Course): any => {
+  const convertCourseForDetail = (course: InstructorCourse): any => {
     const dayMap: { [key: number]: string } = {
       1: '월',
       2: '화',
@@ -417,7 +417,11 @@ function InstructorCoursesManagement() {
                 <>
                   <h2 className="text-xl font-semibold text-gray-900">주간 캘린더</h2>
                   <WeeklyCalendar
-                    courses={filteredCourses.map(course => ({
+                    courses={filteredCourses.map(course => {
+                      const calendarStatus: 'active' | 'inactive' | 'full' =
+                        course.status === 'draft' ? 'inactive' : course.status;
+
+                      return {
                       _id: course._id,
                       name: course.name,
                       description: course.description,
@@ -446,12 +450,18 @@ function InstructorCoursesManagement() {
                           endTime: sch.endTime
                         };
                       }),
-                      status: course.status,
+                      status: calendarStatus,
                       tags: (course as any).tags || [course.category], // ⭐ 실제 DB 태그 사용
                       isPersonalLesson: (course as any).isPersonalLesson || false, // ⭐ 개인레슨 여부 추가
                       courseType: (course as any).courseType || 'group' // ⭐ 강의 타입 추가 (group, personal, freeSwim)
-                    }))}
-                    onCourseClick={handleViewDetail}
+                    };
+                    })}
+                    onCourseClick={(course) => {
+                      const matched = courses.find((item) => item._id === course._id);
+                      if (matched) {
+                        handleViewDetail(matched);
+                      }
+                    }}
                   />
                 </>
               ) : (

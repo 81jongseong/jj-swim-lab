@@ -101,7 +101,7 @@
  * 7. 응답 데이터 반환 및 로깅
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { EvaluationCriteria, AIEvaluationResult } from '../models/AIEvaluationCriteria';
 import ExerciseRecommendation from '../models/ExerciseRecommendation';

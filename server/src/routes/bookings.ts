@@ -42,7 +42,6 @@ import mongoose from 'mongoose';
 import { PersonalLesson } from '../models/PersonalLesson';
 import { LaneRental } from '../models/LaneRental';
 import { User } from '../models/User';
-import { SwimmingCenter } from '../models/SwimmingCenter';
 import { authMiddleware } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
 import { LaneAllocationService } from '../services/laneAllocationService';
@@ -101,7 +100,7 @@ router.get('/', async (req: any, res: Response) => {
     // 개인레슨 조회 (startTime이 있는 데이터만)
     const personalLessons = type === 'lane-rental' ? [] : await PersonalLesson.find({
       ...personalLessonQuery,
-      startTime: { $exists: true, $ne: null, $ne: '' }
+      startTime: { $exists: true, $nin: [null, ''] }
     })
       .populate('studentId', 'name email phone')
       .populate('instructorId', 'name email phone')
@@ -111,7 +110,7 @@ router.get('/', async (req: any, res: Response) => {
     // 레인대여 조회 (startTime이 있는 데이터만, 강사는 제외)
     const laneRentals = (type === 'personal-lesson' || user.userType === 'instructor') ? [] : await LaneRental.find({
       ...laneRentalQuery,
-      startTime: { $exists: true, $ne: null, $ne: '' }
+      startTime: { $exists: true, $nin: [null, ''] }
     })
       .populate('userId', 'name email phone')
       .sort({ date: -1, startTime: 1 });
@@ -283,7 +282,7 @@ router.get('/personal-lessons', async (req: any, res: Response) => {
     const centerId = req.user.centerId;
     const { status, date, instructor } = req.query;
     
-    let query: any = { centerId };
+    const query: any = { centerId };
     
     if (status) {
       query.status = status;
@@ -427,7 +426,7 @@ router.get('/lane-rentals', async (req: any, res: Response) => {
     const centerId = req.user.centerId;
     const { status, date } = req.query;
     
-    let query: any = { centerId };
+    const query: any = { centerId };
     
     if (status) {
       query.status = status;
@@ -460,6 +459,7 @@ router.patch('/lane-rentals/:id/status', async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
+    void notes;
     
     const laneRental = await LaneRental.findById(id);
     if (!laneRental) {
@@ -530,7 +530,7 @@ router.get('/statistics', async (req: any, res: Response) => {
     const { period = 'week' } = req.query;
     
     let startDate: Date;
-    let endDate: Date = new Date();
+    const endDate: Date = new Date();
     
     switch (period) {
       case 'week':
@@ -880,7 +880,7 @@ router.get('/my-bookings', async (req: Request, res: Response) => {
 
     // 개인레슨 조회
     if (!type || type === 'personal-lessons') {
-      let query: any = { student: userId };
+      const query: any = { student: userId };
       if (status && status !== 'all') {
         query.status = status;
       }
@@ -892,7 +892,7 @@ router.get('/my-bookings', async (req: Request, res: Response) => {
 
     // 레인대여 조회
     if (!type || type === 'lane-rentals') {
-      let query: any = { renter: userId };
+      const query: any = { renter: userId };
       if (status && status !== 'all') {
         query.status = status;
       }

@@ -28,7 +28,7 @@
  * - 상태: ✅ 완성
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { CenterSchedule } from '../models/CenterSchedule';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';

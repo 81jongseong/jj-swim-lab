@@ -18,7 +18,7 @@
  * - 최고관리자: 모든 센터 설정 가능
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import Center from '../models/Center';
 import { User } from '../models/User';

@@ -24,6 +24,8 @@ const videoStorage = multer.diskStorage({
   }
 });
 
+void videoStorage;
+
 // Multer 설정 - 3D 모델 파일 업로드
 const modelStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -39,6 +41,8 @@ const modelStorage = multer.diskStorage({
     cb(null, `model-${timestamp}-${Math.floor(Math.random() * 1000000000)}${ext}`);
   }
 });
+
+void modelStorage;
 
 const upload = multer({
   storage: multer.memoryStorage(), // 메모리 스토리지 사용

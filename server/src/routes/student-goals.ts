@@ -5,7 +5,7 @@
  * @author JJ Swim Lab
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import mongoose from 'mongoose';
 import { StudentGoal } from '../models/StudentGoal';
 import { TeachingMethod } from '../models/TeachingMethod';
@@ -20,7 +20,7 @@ router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: 
     const studentId = req.user.id;
     const { status, priority } = req.query;
 
-    let query: any = { studentId };
+    const query: any = { studentId };
 
     if (status) query.status = status;
     if (priority) query.priority = priority;

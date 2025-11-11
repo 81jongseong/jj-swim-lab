@@ -103,10 +103,8 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
-import Center from '../models/Center';
 import { 
   authMiddleware, 
-  requireRole, 
   requirePermission, 
   // requireLevel
 } from '../middleware/auth';
@@ -334,6 +332,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.get('/', authMiddleware, requirePermission('userManagement'), async (req: AuthRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
+    void centerId;
     const skip = (Number(page) - 1) * Number(limit);
     
     const query: any = {};
@@ -919,6 +918,7 @@ async function checkCenterAdminAccess(adminId: string, user: any): Promise<boole
   // 학생인 경우: 등록된 강습 과정의 센터가 관리 센터와 일치하는지 확인
   if (user.userType === 'student') {
     const enrolledCourses = user.studentInfo?.enrolledCourses || [];
+    void enrolledCourses;
     // TODO: 실제로는 Course 모델을 통해 강습 과정의 센터 확인 필요
     // 현재는 임시로 true 반환 (향후 개선 필요)
     return true;
@@ -972,33 +972,6 @@ async function checkInstructorAccess(instructorId: string, user: any): Promise<b
  * 
  * TODO: Course 모델과 연동하여 실제 데이터 조회 구현 필요
  */
-async function getCenterCourses(centerId: string): Promise<string[]> {
-  // TODO: 실제로는 Course 모델에서 센터별 강습 과정을 조회
-  // const courses = await Course.find({ centerId }).select('_id');
-  // return courses.map(course => course._id.toString());
-  return [];
-}
-
-/**
- * 👨‍🏫 강사별 강습 과정 조회 함수
- * 
- * 📋 **기능**
- * - 특정 강사가 담당하는 모든 강습 과정 조회
- * - 강사의 권한 범위 확인을 위한 데이터 제공
- * - 강사별 담당 학생 및 강습 현황 지원
- * 
- * @param instructorId 강사 ID
- * @returns 강사의 담당 강습 과정 ID 배열
- * 
- * TODO: Course 모델과 연동하여 실제 데이터 조회 구현 필요
- */
-async function getInstructorCourses(instructorId: string): Promise<string[]> {
-  // TODO: 실제로는 Course 모델에서 강사별 강습 과정을 조회
-  // const courses = await Course.find({ instructorId }).select('_id');
-  // return courses.map(course => course._id.toString());
-  return [];
-}
-
 /**
  * PUT /api/users/:userId/swimming-profile/css
  * 회원의 CSS 업데이트 (강사 또는 본인)
@@ -1008,6 +981,7 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
     const { userId } = req.params;
     const currentUser = (req as any).user;
     const { css, updatedByRole, reason } = req.body; // css: { freestyle: 90, backstroke: 100, ... }
+    void reason;
     
     // 권한 확인: 본인 또는 강사만 가능
     console.log('🔍 CSS 수정 권한 체크:', {

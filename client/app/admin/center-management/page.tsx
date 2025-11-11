@@ -238,6 +238,30 @@ export default function CenterManagement() {
     loadStats();
   }, [currentPage, searchTerm, statusFilter, gradeFilter, selectedRegions, selectedDistricts]);
 
+  useEffect(() => {
+    if (!showAssignAdminModal) return;
+
+    const fetchCenterAdmins = async () => {
+      try {
+        const response = await apiClient.get<{
+          success: boolean;
+          data?: Array<{ _id: string; name: string; email: string; managedCentersCount: number }>;
+          message?: string;
+        }>('/api/center-management/admins');
+
+        if (response?.success && Array.isArray(response.data)) {
+          setCenterAdmins(response.data);
+        } else {
+          console.warn('센터 관리자 목록을 불러오지 못했습니다.', response?.message);
+        }
+      } catch (fetchError) {
+        console.error('센터 관리자 목록 조회 실패:', fetchError);
+      }
+    };
+
+    void fetchCenterAdmins();
+  }, [showAssignAdminModal]);
+
   const loadCenters = async () => {
     try {
       setLoading(true);
@@ -377,6 +401,38 @@ export default function CenterManagement() {
     e.preventDefault();
     setCurrentPage(1);
     loadCenters();
+  };
+
+  const handleAssignAdmin = async () => {
+    if (!selectedCenter) {
+      alert('센터가 선택되지 않았습니다.');
+      return;
+    }
+    if (!selectedAdminId) {
+      alert('할당할 관리자를 선택해주세요.');
+      return;
+    }
+
+    try {
+      const response = await apiClient.post<{
+        success: boolean;
+        message?: string;
+      }>(`/api/center-management/${selectedCenter._id}/assign-admin`, {
+        adminId: selectedAdminId
+      });
+
+      if (response?.success) {
+        alert('관리자가 성공적으로 할당되었습니다.');
+        setShowAssignAdminModal(false);
+        setSelectedAdminId('');
+        await loadCenters();
+      } else {
+        alert(response?.message || '관리자 할당에 실패했습니다.');
+      }
+    } catch (assignError) {
+      console.error('센터 관리자 할당 실패:', assignError);
+      alert('관리자 할당 중 오류가 발생했습니다.');
+    }
   };
 
   if (loading && centers.length === 0) {

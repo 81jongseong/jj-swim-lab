@@ -1,6 +1,6 @@
-import express, { Request, Response, Router } from 'express';
+import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
-import Order, { IOrder } from '../models/Order';
+import Order from '../models/Order';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();

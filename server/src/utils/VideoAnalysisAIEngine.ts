@@ -117,6 +117,10 @@ export class VideoAnalysisAIEngine {
         weaknesses,
         improvementAreas: weaknesses
       };
+
+      const feedback = this.buildFeedback(overallScore, strengths, weaknesses, criteria);
+      const recommendations = this.buildRecommendations(analysisResult, criteria);
+      await this.persistAnalysisResult(input, analysisResult, feedback, recommendations).catch(() => undefined);
       
       const duration = Date.now() - startTime;
       logPerformance(`비디오 분석 완료: ${input.studentId}`, { studentId: input.studentId, overallScore, duration });
@@ -182,17 +186,41 @@ export class VideoAnalysisAIEngine {
    * 자세 분석
    */
   private static async analyzePosture(frameAnalysis: any, criteria: any): Promise<any> {
-    // 시뮬레이션: 실제로는 자세 분석 알고리즘 사용
-    const score = 70 + Math.random() * 30;
-    
+    const frames = frameAnalysis.analyzedFrames || [];
+    const targetAlignment = criteria?.analysisThresholds?.posture?.alignment ?? 90;
+    const targetRotation = criteria?.analysisThresholds?.posture?.rotation ?? 0;
+    const targetDeviation = criteria?.analysisThresholds?.posture?.deviation ?? 5;
+
+    const aggregates = frames.reduce((acc: any, frame: any) => {
+      acc.alignment += frame.poseData?.angles?.shoulder ?? targetAlignment;
+      acc.rotation += frame.poseData?.angles?.hip ?? targetRotation;
+      acc.deviation += Math.abs((frame.poseData?.distances?.shoulderWidth ?? 0) - (frame.poseData?.distances?.bodyLength ?? 0) / 3);
+      return acc;
+    }, { alignment: 0, rotation: 0, deviation: 0 });
+
+    const count = Math.max(1, frames.length);
+    const avgAlignment = aggregates.alignment / count;
+    const avgRotation = aggregates.rotation / count;
+    const avgDeviation = aggregates.deviation / count;
+
+    const alignmentScore = Math.max(0, 100 - Math.abs(avgAlignment - targetAlignment));
+    const rotationScore = Math.max(0, 100 - Math.abs(avgRotation - targetRotation));
+    const deviationScore = Math.max(0, 100 - Math.abs(avgDeviation - targetDeviation) * 10);
+
+    const score = Math.round((alignmentScore * 0.5) + (rotationScore * 0.3) + (deviationScore * 0.2));
+    const postureSuggestions = criteria?.improvementSuggestions?.posture ?? [];
+    const feedback = score >= 80
+      ? (criteria?.feedbackTemplates?.excellent?.[0] ?? '우수한 자세를 유지하고 있습니다.')
+      : (postureSuggestions[0] ?? '자세 개선이 필요합니다.');
+
     return {
-      score: Math.round(score),
+      score,
       details: {
-        spineAlignment: 75 + Math.random() * 25,
-        bodyRotation: 70 + Math.random() * 30,
-        lateralDeviation: 80 + Math.random() * 20
+        spineAlignment: Math.round(avgAlignment),
+        bodyRotation: Math.round(avgRotation),
+        lateralDeviation: Math.round(avgDeviation)
       },
-      feedback: score >= 80 ? '우수한 자세를 유지하고 있습니다.' : '자세 개선이 필요합니다.'
+      feedback
     };
   }
   
@@ -200,17 +228,42 @@ export class VideoAnalysisAIEngine {
    * 호흡 패턴 분석
    */
   private static async analyzeBreathing(frameAnalysis: any, criteria: any): Promise<any> {
-    // 시뮬레이션: 실제로는 호흡 패턴 분석 알고리즘 사용
-    const score = 65 + Math.random() * 35;
-    
+    const frames = frameAnalysis.analyzedFrames || [];
+    const targetRate = criteria?.analysisThresholds?.breathing?.rate ?? 18;
+    const targetTiming = criteria?.analysisThresholds?.breathing?.timing ?? 80;
+    const targetRotation = criteria?.analysisThresholds?.breathing?.rotation ?? 70;
+
+    const aggregates = frames.reduce((acc: any, frame: any) => {
+      const movement = frame.movementData || {};
+      acc.rate += (movement.velocity ?? 0) * 10;
+      acc.timing += (frame.timestamp % 2) * 100;
+      acc.rotation += frame.poseData?.angles?.neck ?? targetRotation;
+      return acc;
+    }, { rate: 0, timing: 0, rotation: 0 });
+
+    const count = Math.max(1, frames.length);
+    const avgRate = aggregates.rate / count;
+    const avgTiming = aggregates.timing / count;
+    const avgRotation = aggregates.rotation / count;
+
+    const rateScore = Math.max(0, 100 - Math.abs(avgRate - targetRate) * 3);
+    const timingScore = Math.max(0, 100 - Math.abs(avgTiming - targetTiming));
+    const rotationScore = Math.max(0, 100 - Math.abs(avgRotation - targetRotation));
+    const score = Math.round((rateScore * 0.3) + (timingScore * 0.4) + (rotationScore * 0.3));
+
+    const breathingSuggestions = criteria?.improvementSuggestions?.breathing ?? [];
+    const feedback = score >= 80
+      ? (criteria?.feedbackTemplates?.good?.[0] ?? '적절한 호흡 패턴을 보이고 있습니다.')
+      : (breathingSuggestions[0] ?? '호흡 타이밍 개선이 필요합니다.');
+
     return {
-      score: Math.round(score),
+      score,
       details: {
-        breathingRate: 20 + Math.random() * 10,
-        breathingTiming: 70 + Math.random() * 30,
-        headRotation: 75 + Math.random() * 25
+        breathingRate: parseFloat(avgRate.toFixed(1)),
+        breathingTiming: Math.round(avgTiming),
+        headRotation: Math.round(avgRotation)
       },
-      feedback: score >= 80 ? '적절한 호흡 패턴을 보이고 있습니다.' : '호흡 타이밍 개선이 필요합니다.'
+      feedback
     };
   }
   
@@ -218,18 +271,44 @@ export class VideoAnalysisAIEngine {
    * 동작 분석
    */
   private static async analyzeMovement(frameAnalysis: any, criteria: any): Promise<any> {
-    // 시뮬레이션: 실제로는 동작 분석 알고리즘 사용
-    const score = 60 + Math.random() * 40;
-    
+    const frames = frameAnalysis.analyzedFrames || [];
+    const aggregates = frames.reduce((acc: any, frame: any) => {
+      const movement = frame.movementData || {};
+      acc.strokeRate += movement.velocity ?? 0;
+      acc.strokeLength += (movement.stability ?? 0.7) * 2;
+      acc.trajectory += frame.poseData?.angles?.elbow ?? 90;
+      acc.entry += frame.poseData?.angles?.shoulder ?? 80;
+      return acc;
+    }, { strokeRate: 0, strokeLength: 0, trajectory: 0, entry: 0 });
+
+    const count = Math.max(1, frames.length);
+    const avgStrokeRate = aggregates.strokeRate / count;
+    const avgStrokeLength = aggregates.strokeLength / count;
+    const avgTrajectory = aggregates.trajectory / count;
+    const avgEntry = aggregates.entry / count;
+
+    const rateTarget = criteria?.analysisThresholds?.movement?.strokeRate ?? 1.2;
+    const lengthTarget = criteria?.analysisThresholds?.movement?.strokeLength ?? 2.0;
+    const rateScore = Math.max(0, 100 - Math.abs(avgStrokeRate - rateTarget) * 40);
+    const lengthScore = Math.max(0, 100 - Math.abs(avgStrokeLength - lengthTarget) * 30);
+    const techniqueScore = Math.max(0, 100 - Math.abs(avgTrajectory - 90));
+    const entryScore = Math.max(0, 100 - Math.abs(avgEntry - 80));
+    const score = Math.round(rateScore * 0.25 + lengthScore * 0.25 + techniqueScore * 0.25 + entryScore * 0.25);
+
+    const movementSuggestions = criteria?.improvementSuggestions?.movement ?? [];
+    const feedback = score >= 80
+      ? (criteria?.feedbackTemplates?.excellent?.[0] ?? '효율적인 동작을 보이고 있습니다.')
+      : (movementSuggestions[0] ?? '동작 개선이 필요합니다.');
+
     return {
-      score: Math.round(score),
+      score,
       details: {
-        strokeRate: 60 + Math.random() * 20,
-        strokeLength: 2.0 + Math.random() * 0.5,
-        armTrajectory: 70 + Math.random() * 30,
-        handEntryAngle: 75 + Math.random() * 25
+        strokeRate: parseFloat(avgStrokeRate.toFixed(2)),
+        strokeLength: parseFloat(avgStrokeLength.toFixed(2)),
+        armTrajectory: Math.round(avgTrajectory),
+        handEntryAngle: Math.round(avgEntry)
       },
-      feedback: score >= 80 ? '효율적인 동작을 보이고 있습니다.' : '동작 개선이 필요합니다.'
+      feedback
     };
   }
   
@@ -237,17 +316,42 @@ export class VideoAnalysisAIEngine {
    * 효율성 분석
    */
   private static async analyzeEfficiency(frameAnalysis: any, criteria: any): Promise<any> {
-    // 시뮬레이션: 실제로는 효율성 분석 알고리즘 사용
-    const score = 55 + Math.random() * 45;
-    
+    const frames = frameAnalysis.analyzedFrames || [];
+    const aggregates = frames.reduce((acc: any, frame: any) => {
+      const movement = frame.movementData || {};
+      acc.drag += Math.abs((movement.velocity ?? 0) - (movement.acceleration ?? 0.1));
+      acc.propulsion += movement.stability ?? 0.7;
+      acc.energy += (movement.velocity ?? 0) * (movement.acceleration ?? 0.1) * 10;
+      return acc;
+    }, { drag: 0, propulsion: 0, energy: 0 });
+
+    const count = Math.max(1, frames.length);
+    const avgDrag = aggregates.drag / count;
+    const avgPropulsion = aggregates.propulsion / count;
+    const avgEnergy = aggregates.energy / count;
+
+    const dragTarget = criteria?.analysisThresholds?.efficiency?.drag ?? 0.3;
+    const propulsionTarget = criteria?.analysisThresholds?.efficiency?.propulsion ?? 0.7;
+    const energyTarget = criteria?.analysisThresholds?.efficiency?.energy ?? 20;
+
+    const dragScore = Math.max(0, 100 - Math.abs(avgDrag - dragTarget) * 120);
+    const propulsionScore = Math.max(0, 100 - Math.abs(avgPropulsion - propulsionTarget) * 80);
+    const energyScore = Math.max(0, 100 - Math.abs(avgEnergy - energyTarget) * 2);
+    const score = Math.round(dragScore * 0.3 + propulsionScore * 0.4 + energyScore * 0.3);
+
+    const efficiencySuggestions = criteria?.improvementSuggestions?.efficiency ?? [];
+    const feedback = score >= 80
+      ? (criteria?.feedbackTemplates?.good?.[1] ?? '높은 수영 효율을 보이고 있습니다.')
+      : (efficiencySuggestions[0] ?? '효율성 개선이 필요합니다.');
+
     return {
-      score: Math.round(score),
+      score,
       details: {
-        dragCoefficient: 0.5 + Math.random() * 0.3,
-        propulsionEfficiency: 0.6 + Math.random() * 0.4,
-        energyExpenditure: 0.7 + Math.random() * 0.3
+        dragCoefficient: parseFloat(avgDrag.toFixed(3)),
+        propulsionEfficiency: parseFloat(avgPropulsion.toFixed(2)),
+        energyExpenditure: parseFloat(avgEnergy.toFixed(1))
       },
-      feedback: score >= 80 ? '높은 수영 효율을 보이고 있습니다.' : '효율성 개선이 필요합니다.'
+      feedback
     };
   }
   
@@ -299,9 +403,10 @@ export class VideoAnalysisAIEngine {
    */
   private static extractKeyFrames(frameAnalysis: any): any[] {
     const keyFrames = [];
-    const interval = Math.floor(frameAnalysis.analyzedFrames.length / 10);
+    const totalFrames = frameAnalysis.analyzedFrames.length;
+    const interval = Math.max(1, Math.floor(totalFrames / 10));
     
-    for (let i = 0; i < frameAnalysis.analyzedFrames.length; i += interval) {
+    for (let i = 0; i < totalFrames; i += interval) {
       const frame = frameAnalysis.analyzedFrames[i];
       keyFrames.push({
         frameNumber: frame.frameNumber,
@@ -312,6 +417,90 @@ export class VideoAnalysisAIEngine {
     }
     
     return keyFrames;
+  }
+
+  private static buildFeedback(
+    overallScore: number,
+    strengths: string[],
+    weaknesses: string[],
+    criteria: any
+  ) {
+    const summary = `전체 점수: ${overallScore}점`;
+    const detailedTemplate = overallScore >= 80
+      ? criteria?.feedbackTemplates?.excellent?.[0] ?? '우수한 기술을 보여주고 있습니다.'
+      : criteria?.feedbackTemplates?.average?.[0] ?? '안정적인 실력을 유지하고 있습니다.';
+    const encouragement = overallScore >= 80
+      ? criteria?.feedbackTemplates?.excellent?.[1] ?? '현재 페이스를 유지하세요!'
+      : criteria?.feedbackTemplates?.good?.[1] ?? '꾸준한 연습으로 더 향상될 수 있습니다.';
+    const goals = weaknesses.length > 0 ? weaknesses.map(item => `${item} 달성`) : ['현재 실력 유지'];
+ 
+    return {
+      summary,
+      detailedFeedback: detailedTemplate,
+      encouragement,
+      goals
+    };
+  }
+ 
+  private static buildRecommendations(
+    analysisResult: VideoAnalysisResultData,
+    criteria: any
+  ) {
+    const exercises = (analysisResult.improvementAreas.length ? analysisResult.improvementAreas : ['기본기 강화']).map((area, index) => ({
+      name: area.replace(' 필요', ' 드릴'),
+      priority: index === 0 ? 'high' : index === 1 ? 'medium' : 'low',
+      reason: `${area} 개선을 위한 맞춤 훈련`,
+      duration: 15 + index * 5
+    }));
+ 
+    const defaultPlan = criteria?.recommendedWorkouts?.[0];
+    const workoutPlan = defaultPlan ? {
+      name: defaultPlan.name,
+      description: defaultPlan.description,
+      duration: defaultPlan.duration,
+      frequency: defaultPlan.frequency
+    } : {
+      name: '표준 수영 훈련 계획',
+      description: '기본 기술 강화와 호흡 패턴 개선을 위한 프로그램',
+      duration: 60,
+      frequency: 3
+    };
+ 
+    return {
+      exercises,
+      workoutPlan,
+      nextAnalysisDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14)
+    };
+  }
+ 
+  private static async persistAnalysisResult(
+    input: VideoAnalysisInput,
+    analysisResult: VideoAnalysisResultData,
+    feedback: { summary: string; detailedFeedback: string; encouragement: string; goals: string[] },
+    recommendations: { exercises: any[]; workoutPlan: any; nextAnalysisDate: Date }
+  ) {
+    await VideoAnalysisResult.create({
+      studentId: input.studentId,
+      instructorId: input.instructorId,
+      videoId: input.videoId,
+      technique: input.technique,
+      level: input.level,
+      videoMetadata: input.videoMetadata,
+      analysisResult,
+      recommendations: {
+        exercises: recommendations.exercises,
+        workoutPlan: recommendations.workoutPlan,
+        nextAnalysisDate: recommendations.nextAnalysisDate
+      },
+      feedback,
+      filePaths: {
+        video3D: undefined,
+        originalFrames: [],
+        depthMaps: [],
+        reconstructed3D: []
+      },
+      analysisDate: new Date()
+    });
   }
   
   // 시뮬레이션 데이터 생성 메서드들

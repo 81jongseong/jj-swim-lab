@@ -300,7 +300,7 @@ router.get('/stats/difficulties', async (req: Request, res: Response) => {
 router.put('/:id/level', authMiddleware, requireRole(['centerAdmin', 'instructor']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { level, instructorComment, updatedBy } = req.body;
+    const { level, instructorComment } = req.body;
 
     if (!level || !['beginner', 'intermediate', 'advanced'].includes(level)) {
       return res.status(400).json({

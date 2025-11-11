@@ -59,6 +59,7 @@ class QueryOptimizer {
       const startQuery = Date.now();
       const result = await model.find(query, null, options);
       const executionTime = Date.now() - startTime;
+      const queryDuration = Date.now() - startQuery;
       
       const analysis: QueryAnalysis = {
         query: JSON.stringify(query),
@@ -68,7 +69,7 @@ class QueryOptimizer {
         documentsReturned: Array.isArray(result) ? result.length : 1,
         indexUsed: false, // 기본값
         indexName: undefined,
-        executionStats: { queryTime: executionTime },
+        executionStats: { queryTime: queryDuration, totalTime: executionTime },
         recommendations: [],
         score: 0
       };
@@ -207,7 +208,7 @@ class QueryOptimizer {
           });
         }
       } catch (error) {
-        // JSON 파싱 실패 시 무시
+        console.debug('쿼리 패턴 파싱 실패', error);
       }
     });
 

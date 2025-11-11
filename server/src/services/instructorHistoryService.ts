@@ -15,7 +15,6 @@ import {
   IInstructorWorkHistory,
   IInstructorCertification 
 } from '../models/InstructorHistory';
-import { User } from '../models/User';
 import { logInfo, logError } from '../utils/logger';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -678,8 +677,8 @@ export class InstructorHistoryService {
 
   private async hasAllRequiredCertifications(instructorId: string): Promise<boolean> {
     const requiredTypes = Object.entries(CERTIFICATION_TYPES)
-      .filter(([_, config]) => config.required)
-      .map(([type, _]) => type);
+      .filter(([, config]) => config.required)
+      .map(([type]) => type);
 
     for (const certType of requiredTypes) {
       const validCert = await InstructorCertification.findOne({

@@ -7,8 +7,6 @@
 
 import { Notification } from '../models/Notification';
 import { User } from '../models/User';
-import { LearningProgress } from '../models/LearningProgress';
-import { Recommendation } from '../models/Recommendation';
 
 export class NotificationService {
   /**
@@ -45,6 +43,14 @@ export class NotificationService {
         return null; // 50% 미만은 알림 생성하지 않음
       }
 
+      if (title) {
+        notificationTitle = title;
+      }
+
+      if (title) {
+        notificationTitle = title;
+      }
+
       return await Notification.create({
         userId,
         type: 'learning_progress',
@@ -72,7 +78,7 @@ export class NotificationService {
     recommendationData: any
   ) {
     try {
-      const { type, title, description, methodName } = recommendationData;
+      const { type, description, methodName, title: customTitle } = recommendationData;
 
       let notificationTitle = '';
       let notificationMessage = '';
@@ -98,6 +104,10 @@ export class NotificationService {
           notificationTitle = '📚 학습 추천';
           notificationMessage = `"${methodName}" 강습법을 확인해보세요.`;
           priority = 'low';
+      }
+
+      if (customTitle) {
+        notificationTitle = customTitle;
       }
 
       return await Notification.create({

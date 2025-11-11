@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { auth as authenticateToken, requireRole } from '../middleware/auth';
 import { Notice } from '../models/Notice';
-import { User } from '../models/User';
 
 // Request 타입 확장
 interface AuthRequest extends Request {

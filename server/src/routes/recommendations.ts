@@ -5,12 +5,10 @@
  * @author JJ Swim Lab
  */
 
-import express, { Request, Response } from 'express';
-import mongoose from 'mongoose';
+import express, { Response } from 'express';
 import { Recommendation } from '../models/Recommendation';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
-import { User } from '../models/User';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
@@ -21,7 +19,7 @@ router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: 
     const studentId = req.user.id;
     const { type, priority, status } = req.query;
 
-    let query: any = { 
+    const query: any = { 
       studentId,
       status: 'active',
       expiresAt: { $gt: new Date() }
@@ -334,7 +332,8 @@ function getWeakAreas(progressData: any[]): string[] {
   return weakAreas;
 }
 
-function getPreferredLearningTime(progressData: any[]): string {
+function getPreferredLearningTime(_progressData: any[]): string {
+  void _progressData;
   // 시간대별 학습 패턴 분석 (임시 구현)
   return '오후 2-4시';
 }

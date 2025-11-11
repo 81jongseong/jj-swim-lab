@@ -91,7 +91,6 @@
 
 import mongoose from 'mongoose';
 import { logInfo, logError, logDatabase } from './utils/logger';
-import { optimizeConnectionPool } from './utils/performance';
 
 
 // MongoDB Atlas URI 강제 설정 (Atlas만 사용)
@@ -309,7 +308,7 @@ export const suggestIndexes = async () => {
             recommendation: '인덱스 추가 고려'
           });
         }
-      } catch (error) {
+      } catch {
         // 개별 컬렉션 통계 조회 실패 시 건너뛰기
         continue;
       }

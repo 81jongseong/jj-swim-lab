@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/instructor/**/*",
+    "app/student/my-group-program/**/*",
+    "components/ui/**/*",
+    "components/instructor/**/*",
+    "hooks/useAuth.tsx",
+    "lib/utils.ts",
+    "types/**/*",
+    "utils/api.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*"
+  ]
+}

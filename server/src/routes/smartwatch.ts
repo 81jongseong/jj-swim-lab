@@ -8,7 +8,7 @@
  * - 개인화된 운동 계획 수립을 위한 데이터 제공
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { SmartWatchData } from '../models/SmartWatchData';
 import { IntegratedAIEngine } from '../utils/IntegratedAIEngine';
 import { authMiddleware, requireRole } from '../middleware/auth';

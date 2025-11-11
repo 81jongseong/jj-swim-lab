@@ -88,14 +88,26 @@ export class IntegratedAIEngine {
     input: IntegratedAnalysisInput
   ): Promise<IntegratedAnalysisResult> {
     try {
+      const [storedSmartWatch, storedVideoResult, lastEvaluation, analysisCriteria] = await Promise.all([
+        SmartWatchData.findOne({ studentId: input.studentId }).sort({ recordedAt: -1 }).lean(),
+        VideoAnalysisResult.findOne({ studentId: input.studentId, technique: input.technique }).sort({ createdAt: -1 }).lean(),
+        AIEvaluationResult.findOne({ studentId: input.studentId, technique: input.technique }).sort({ evaluationDate: -1 }).lean(),
+        VideoAnalysisCriteria.findOne({ technique: input.technique }).lean()
+      ]);
+
+      const enrichedInput: IntegratedAnalysisInput = {
+        ...input,
+        smartWatchData: input.smartWatchData || storedSmartWatch || undefined,
+        videoAnalysisData: input.videoAnalysisData || storedVideoResult || undefined
+      };
       // 1. 스마트 워치 데이터 분석
-      const smartWatchAnalysis = await this.analyzeSmartWatchData(input);
+      const smartWatchAnalysis = await this.analyzeSmartWatchData(enrichedInput);
       
       // 2. 영상 분석 데이터 처리
-      const videoAnalysis = await this.analyzeVideoData(input);
+      const videoAnalysis = await this.analyzeVideoData(enrichedInput, analysisCriteria);
       
       // 3. 강사 관찰 데이터 처리
-      const instructorAnalysis = this.analyzeInstructorObservations(input.instructorObservations);
+      const instructorAnalysis = this.analyzeInstructorObservations(enrichedInput.instructorObservations);
       
       // 4. 데이터 소스별 가중치 계산
       const dataSourceWeights = this.calculateDataSourceWeights(
@@ -131,7 +143,8 @@ export class IntegratedAIEngine {
       const recommendations = this.generateRecommendations(
         overallScore,
         categoryScores,
-        detailedAnalysis
+        detailedAnalysis,
+        analysisCriteria
       );
       
       // 9. 운동 계획 수립
@@ -145,7 +158,8 @@ export class IntegratedAIEngine {
       const progressPrediction = this.predictProgress(
         overallScore,
         categoryScores,
-        input.studentId
+        input.studentId,
+        lastEvaluation
       );
       
       return {
@@ -225,7 +239,7 @@ export class IntegratedAIEngine {
   /**
    * 영상 분석 데이터 처리
    */
-  private static async analyzeVideoData(input: IntegratedAnalysisInput): Promise<any> {
+  private static async analyzeVideoData(input: IntegratedAnalysisInput, criteria?: any): Promise<any> {
     if (!input.videoAnalysisData) {
       return {
         available: false,
@@ -246,17 +260,23 @@ export class IntegratedAIEngine {
     // 타이밍 분석
     const timingAnalysis = this.analyzeTimingFromVideo(data.detailedAnalysis.timingAnalysis);
     
+    const calibration = criteria?.calibration || {};
+    const postureWeight = calibration.postureWeight ?? 0.35;
+    const movementWeight = calibration.movementWeight ?? 0.35;
+    const timingWeight = calibration.timingWeight ?? 0.3;
+    const confidenceBoost = calibration.confidenceBoost ?? 0;
+
     // 종합 점수 계산
     const overallScore = (
-      postureAnalysis.score * 0.35 +
-      movementAnalysis.score * 0.35 +
-      timingAnalysis.score * 0.3
+      postureAnalysis.score * postureWeight +
+      movementAnalysis.score * movementWeight +
+      timingAnalysis.score * timingWeight
     );
     
     return {
       available: true,
       overallScore: Math.round(overallScore),
-      confidence: 0.8, // 영상 분석은 중간 신뢰도
+      confidence: Math.min(1, 0.8 + confidenceBoost),
       insights: {
         posture: postureAnalysis,
         movement: movementAnalysis,
@@ -292,28 +312,20 @@ export class IntegratedAIEngine {
     video: any,
     instructor: any
   ): any {
-    const totalSources = [smartWatch.available, video.available, true].filter(Boolean).length;
-    
-    if (totalSources === 3) {
-      // 모든 데이터 소스가 있는 경우
-      return {
-        smartWatch: 0.4,
-        video: 0.4,
-        instructor: 0.2
-      };
-    } else if (totalSources === 2) {
-      // 두 개의 데이터 소스가 있는 경우
-      if (smartWatch.available && video.available) {
-        return { smartWatch: 0.5, video: 0.5, instructor: 0 };
-      } else if (smartWatch.available) {
-        return { smartWatch: 0.6, instructor: 0.4, video: 0 };
-      } else {
-        return { video: 0.6, instructor: 0.4, smartWatch: 0 };
-      }
-    } else {
-      // 하나의 데이터 소스만 있는 경우
-      return { instructor: 1, smartWatch: 0, video: 0 };
+    const smartWeight = smartWatch.available ? smartWatch.confidence ?? 0.8 : 0;
+    const videoWeight = video.available ? video.confidence ?? 0.7 : 0;
+    const instructorWeight = instructor?.confidence ?? 0.6;
+
+    const total = smartWeight + videoWeight + instructorWeight;
+    if (total === 0) {
+      return { smartWatch: 0, video: 0, instructor: 1 };
     }
+
+    return {
+      smartWatch: smartWeight / total,
+      video: videoWeight / total,
+      instructor: instructorWeight / total
+    };
   }
 
   /**
@@ -402,7 +414,8 @@ export class IntegratedAIEngine {
   private static generateRecommendations(
     overallScore: number,
     categoryScores: any,
-    detailedAnalysis: any
+    detailedAnalysis: any,
+    criteria?: any
   ): any {
     const recommendations = {
       immediate: [] as string[],
@@ -413,19 +426,31 @@ export class IntegratedAIEngine {
     // 즉시 개선사항
     if (categoryScores.posture < 60) {
       recommendations.immediate.push('자세 교정 운동을 시작하세요');
+      if (criteria?.posture?.recommendations) {
+        recommendations.immediate.push(...criteria.posture.recommendations);
+      }
     }
     if (categoryScores.breathing < 60) {
       recommendations.immediate.push('호흡 타이밍 연습을 강화하세요');
+      if (criteria?.breathing?.recommendations) {
+        recommendations.immediate.push(...criteria.breathing.recommendations);
+      }
     }
     
     // 단기 목표
     if (overallScore < 70) {
       recommendations.shortTerm.push('기본 동작 연습을 집중적으로 하세요');
+      if (criteria?.movement?.recommendations) {
+        recommendations.shortTerm.push(...criteria.movement.recommendations);
+      }
     }
     
     // 장기 목표
     if (overallScore > 80) {
       recommendations.longTerm.push('고급 기술 습득을 목표로 하세요');
+      if (criteria?.efficiency?.recommendations) {
+        recommendations.longTerm.push(...criteria.efficiency.recommendations);
+      }
     }
     
     return recommendations;
@@ -465,15 +490,25 @@ export class IntegratedAIEngine {
   private static predictProgress(
     overallScore: number,
     categoryScores: any,
-    studentId: string
+    studentId: string,
+    lastEvaluation: any
   ): any {
     // 기본 진도 예측 로직
-    const improvementRate = 0.5; // 기본 개선율
-    
+    const previousScore = lastEvaluation?.overallScore ?? 0;
+    const delta = overallScore - previousScore;
+    const improvementRate = delta !== 0 ? Math.max(0.2, Math.min(1, delta / 10 + 0.5)) : 0.5;
+    const categoryFocus = Object.entries(categoryScores)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 2)
+      .map(([category]) => category);
+
     return {
       expectedImprovement: Math.round(overallScore * improvementRate * 0.1),
-      timeToNextLevel: Math.round((100 - overallScore) / improvementRate),
-      confidence: 0.7
+      timeToNextLevel: Math.max(1, Math.round((100 - overallScore) / improvementRate)),
+      confidence: Math.min(0.95, 0.6 + (delta >= 0 ? 0.1 : -0.05)),
+      referenceEvaluationId: lastEvaluation?._id ?? null,
+      focusCategories: categoryFocus,
+      studentId
     };
   }
 

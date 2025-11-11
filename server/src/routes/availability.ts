@@ -29,13 +29,12 @@
  * - 상태: ✅ 완성
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { CenterSchedule } from '../models/CenterSchedule';
 import { PersonalLesson } from '../models/PersonalLesson';
 import { LaneRental } from '../models/LaneRental';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
-import { requireCenterAdmin } from '../middleware/role';
 
 const router = express.Router();
 

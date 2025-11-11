@@ -7,7 +7,7 @@ import multer from 'multer';
 import { authMiddleware } from '../middleware/auth';
 import { CommunityService } from '../services/communityService';
 import { ROOM_CONFIGS } from '../models/Community';
-import { logInfo, logError } from '../utils/logger';
+import { logError } from '../utils/logger';
 
 const router = Router();
 const communityService = CommunityService.getInstance();
@@ -39,6 +39,7 @@ router.get('/rooms', authMiddleware, async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
+    logError('커뮤니티 방 목록 조회 오류:', error);
     res.status(500).json({ success: false, error: '방 목록 조회 중 오류가 발생했습니다.' });
   }
 });

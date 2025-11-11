@@ -24,6 +24,9 @@ import BookingCard from '../../../components/instructor/BookingCard';
 import BookingMiniCard from '../../../components/instructor/BookingMiniCard';
 import { StatCard } from '../../../components/StatCard';
 
+type BookingStatus = 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
+type BookingType = 'personal-lesson' | 'lane-rental';
+
 interface BookingRow {
   _id: string;
   course?: { name: string; level: string } | null;
@@ -31,10 +34,11 @@ interface BookingRow {
   startTime: string;
   endTime: string;
   user?: { name: string; phone: string } | null;
-  status: string;
+  status: BookingStatus;
   laneNumber: number;
   purpose: string;
   notes?: string;
+  type: BookingType;
 }
 
 interface ScheduleStats {
@@ -81,17 +85,17 @@ function InstructorBookingsPage() {
         const isPersonalLesson = b.type === 'personal-lesson';
         const user = isPersonalLesson ? b.student : b.user;
         const course = isPersonalLesson ? { name: '개인레슨', level: b.skillLevel || '-' } : null;
-        const purpose = isPersonalLesson ? 'lesson' : (b.purpose || 'other');
+        const purpose = (isPersonalLesson ? 'lesson' : (b.purpose || 'other')) as string;
         
         return {
           _id: b._id,
-          type: b.type || (isPersonalLesson ? 'personal-lesson' : 'lane-rental'), // ⭐ 타입 추가
+          type: (b.type || (isPersonalLesson ? 'personal-lesson' : 'lane-rental')) as BookingType, // ⭐ 타입 추가
           course: course,
           date: b.date ? (typeof b.date === 'string' ? b.date.slice(0, 10) : new Date(b.date).toISOString().slice(0, 10)) : selectedDate,
           startTime: b.startTime || b.time || '',
           endTime: b.endTime || '',
           user: user ? { name: user.name || '-', phone: user.phone || '' } : null,
-          status: b.status || 'pending',
+          status: (b.status || 'pending') as BookingStatus,
           laneNumber: b.laneNumber || b.assignedLane || 1,
           purpose: purpose,
           notes: b.notes || '',
@@ -129,7 +133,7 @@ function InstructorBookingsPage() {
     return () => clearInterval(interval);
   }, [selectedDate]);
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: BookingStatus) => {
     switch (status) {
       case 'pending': return '대기';
       case 'approved': return '확정';
@@ -141,7 +145,7 @@ function InstructorBookingsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: BookingStatus) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'approved': return 'bg-blue-100 text-blue-800';
@@ -173,10 +177,21 @@ function InstructorBookingsPage() {
     }
   };
 
-  const handleStatusChange = async (bookingId: string, newStatus: string) => {
+  const handleStatusChange = async (bookingId: string, newStatus: BookingStatus) => {
     try {
-      // confirmed를 approved로 변환 (서버에서도 처리하지만 클라이언트에서도 변환)
-      const statusToSend = newStatus === 'confirmed' ? 'approved' : newStatus;
+      const statusToSend: 'pending' | 'confirmed' | 'cancelled' | 'completed' =
+        newStatus === 'approved'
+          ? 'confirmed'
+          : newStatus === 'rejected'
+            ? 'cancelled'
+            : newStatus === 'pending'
+              ? 'pending'
+              : newStatus === 'cancelled'
+                ? 'cancelled'
+                : newStatus === 'confirmed'
+                  ? 'confirmed'
+                  : 'completed';
+
       const res = await apiClient.updateBooking(bookingId, { status: statusToSend });
       if (!res.error) {
         await load(); // 목록 새로고침
@@ -195,7 +210,7 @@ function InstructorBookingsPage() {
   };
 
   const getWeekDates = () => {
-    const dates = [];
+    const dates: string[] = [];
     const currentDate = new Date(selectedDate);
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -209,7 +224,7 @@ function InstructorBookingsPage() {
   };
 
   const getMonthDates = () => {
-    const dates = [];
+    const dates: string[] = [];
     const currentDate = new Date(selectedDate);
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);

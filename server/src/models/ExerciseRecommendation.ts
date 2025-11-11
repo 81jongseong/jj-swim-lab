@@ -56,7 +56,7 @@ export interface IExerciseRecommendation {
 }
 
 // 운동 스키마
-const ExerciseSchema = new Schema<IExercise>({
+export const ExerciseSchema = new Schema<IExercise>({
   name: { type: String, required: true },
   description: { type: String, required: true },
   difficulty: { 
@@ -74,7 +74,7 @@ const ExerciseSchema = new Schema<IExercise>({
 }, { _id: false });
 
 // 훈련 계획 스키마
-const WorkoutPlanSchema = new Schema<IWorkoutPlan>({
+export const WorkoutPlanSchema = new Schema<IWorkoutPlan>({
   name: { type: String, required: true },
   description: { type: String, required: true },
   totalDuration: { type: Number, required: true, min: 1 },

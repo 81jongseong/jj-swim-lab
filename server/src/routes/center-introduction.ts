@@ -389,6 +389,7 @@ router.post('/:centerId/images', authMiddleware, requireRole(['centerAdmin', 'su
 
     const { centerId } = req.params;
     const { imageUrl, description } = req.body;
+    void description;
     const userId = (req as any).user._id;
     const userType = (req as any).user.userType;
     const userCenterId = (req as any).user.centerId;

@@ -7,7 +7,7 @@ import multer from 'multer';
 import { authMiddleware, requireAdmin, requireCenterAdmin } from '../middleware/auth';
 import { InstructorHistoryService } from '../services/instructorHistoryService';
 import { CERTIFICATION_TYPES, InstructorWorkHistory } from '../models/InstructorHistory';
-import { logInfo, logError } from '../utils/logger';
+import { logError } from '../utils/logger';
 
 const router = Router();
 const historyService = InstructorHistoryService.getInstance();
@@ -399,6 +399,8 @@ router.post('/work-history/:historyId/end', authMiddleware, requireAdmin, async 
   try {
     const { historyId } = req.params;
     const { endDate, achievements } = req.body;
+    void endDate;
+    void achievements;
 
     // 기존 이력 조회
     const currentHistory = await (InstructorWorkHistory as any).findById(historyId);

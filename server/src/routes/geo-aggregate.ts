@@ -85,13 +85,6 @@ function laplaceNoise(epsilon: number = 1.0): number {
 }
 
 /**
- * 5 단위 반올림
- */
-function round5(n: number): number {
-  return Math.round(n / 5) * 5;
-}
-
-/**
  * 노이즈 추가 및 반올림
  * 프라이버시를 위해 노이즈만 추가하고 정수로 반올림 (5단위 반올림 제거)
  */
@@ -441,7 +434,6 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
 
     // 센터 정보 조회 (이름 매핑 및 공개 여부 확인용)
     const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
-    const { SwimmingCenter } = await import('../models/SwimmingCenter');
     
     // 회원분포도 공개 여부를 포함하여 센터 정보 조회
     const centers = await Center.find({ _id: { $in: centerIds } })

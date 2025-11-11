@@ -75,7 +75,8 @@ const requireAdmin = (req: any, res: any, next: any) => {
 router.get('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     // 🔍 요청자 정보 및 쿼리 파라미터 추출
-    let { userType, centerId } = req.user;  // 요청자 계정 정보
+    let { userType } = req.user;  // 요청자 계정 정보
+    const { centerId } = req.user;
     const { status, type, page = 1, limit = 20 } = req.query;  // 필터링 옵션
 
     // center-admin을 centerAdmin으로 정규화

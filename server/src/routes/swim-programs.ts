@@ -227,7 +227,7 @@ router.get('/all', authMiddleware, async (req, res) => {
     const currentUser = (req as any).user;
     const { limit = 100, search } = req.query;
     
-    let query: any = {};
+    const query: any = {};
     
     // 센터 관리자는 해당 센터 프로그램만
     if (currentUser.userType === 'centerAdmin' && currentUser.centerId) {

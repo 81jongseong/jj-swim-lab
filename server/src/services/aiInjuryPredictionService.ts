@@ -575,6 +575,8 @@ export class AIInjuryPredictionService {
     environmentalFactors: any,
     userProfile: any
   ): IRiskFactor[] {
+    void environmentalFactors;
+    void userProfile;
     
     const riskFactors: IRiskFactor[] = [];
     

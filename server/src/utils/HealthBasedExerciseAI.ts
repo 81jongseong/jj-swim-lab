@@ -24,7 +24,7 @@
  */
 
 import { HealthData } from '../models/HealthData';
-import { HealthConfig } from '../models/HealthConfig';
+import { HealthConfig, IAIConfig } from '../models/HealthConfig';
 import { User } from '../models/User';
 import { 
   MedicalGuidelineWeights, 
@@ -92,8 +92,28 @@ export class HealthBasedExerciseAI {
     try {
       console.log(`🏥 건강정보 기반 운동량 조정 시작: 사용자 ${input.userId}`);
       
+      const [userProfile, latestHealthSnapshot, activeConfig] = await Promise.all([
+        User.findById(input.userId).select('name age gender').lean(),
+        HealthData.findOne({ studentId: input.userId }).sort({ createdAt: -1 }).lean(),
+        HealthConfig.findOne({ isActive: true }).lean()
+      ]);
+
+      const mergedHealthData = {
+        ...(latestHealthSnapshot || {}),
+        ...(input.healthData || {})
+      };
+
+      const healthData = Object.keys(mergedHealthData).length > 0 ? mergedHealthData : input.healthData;
+
+      if (!healthData) {
+        return {
+          success: false,
+          message: '건강 데이터가 없어 운동량을 계산할 수 없습니다.'
+        };
+      }
+
       // 1. 의학적 위험 요소 변환
-      const medicalFactors: MedicalRiskFactors = this.convertToMedicalFactors(input.healthData, input.medicalConditions);
+      const medicalFactors: MedicalRiskFactors = this.convertToMedicalFactors(healthData, input.medicalConditions);
       
       // 2. 의학적 가이드라인 기반 위험도 평가
       const medicalAssessment = MedicalGuidelineWeights.calculateMedicalWeights(medicalFactors);
@@ -102,28 +122,29 @@ export class HealthBasedExerciseAI {
       const swimmingGuidance = MedicalGuidelineWeights.assessSwimmingSpecificRisks(medicalFactors);
       
       // 4. 기존 건강정보 가중치 계산 (의학적 가중치와 결합)
-      const healthWeights = await this.calculateHealthWeights(input.healthData);
+      const healthWeights = await this.calculateHealthWeights(healthData);
       
       // 5. 기존 위험도 평가 (의학적 평가와 결합)
-      const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions);
+      const riskAssessment = this.assessHealthRisks(healthData, input.medicalConditions);
       
       // 6. 조정 팩터 계산 (의학적 가이드라인 반영)
       const adjustmentFactors = this.calculateAdjustmentFactors(
-        input.healthData,
+        healthData,
         riskAssessment,
-        input.currentFitnessLevel
+        input.currentFitnessLevel,
+        activeConfig?.aiConfig
       );
       
       // 7. 운동 추천 생성 (의학적 제약사항 반영)
       const exerciseRecommendation = this.generateExerciseRecommendation(
-        input,
+        { ...input, healthData },
         healthWeights,
         adjustmentFactors,
         riskAssessment
       );
       
       // 8. 다음 검토 날짜 계산
-      const nextReviewDate = this.calculateNextReviewDate(riskAssessment);
+      const nextReviewDate = this.calculateNextReviewDate(riskAssessment.overallRisk);
       
       const result: HealthBasedExerciseResult = {
         exerciseRecommendation,
@@ -141,6 +162,10 @@ export class HealthBasedExerciseAI {
         nextReviewDate
       };
       
+      if (userProfile?.name) {
+        result.medicalRecommendations = result.medicalRecommendations.map(rec => `${userProfile.name}님: ${rec}`);
+      }
+
       console.log(`✅ 의학적 가이드라인 기반 운동량 조정 완료:`);
       console.log(`   - 의학적 위험도: ${medicalAssessment.classification.riskLevel}`);
       console.log(`   - 권장 강도: ${medicalAssessment.classification.recommendedIntensity}`);
@@ -360,7 +385,8 @@ export class HealthBasedExerciseAI {
   private static calculateAdjustmentFactors(
     healthData: any,
     riskAssessment: HealthRiskAssessment,
-    fitnessLevel: string
+    fitnessLevel: string,
+    aiConfig?: IAIConfig
   ): { [key: string]: number } {
     const factors: { [key: string]: number } = {
       intensity: 1.0,
@@ -428,6 +454,14 @@ export class HealthBasedExerciseAI {
     } else if (healthData.bmi < 18.5) {
       factors.intensity *= 0.8;
       factors.duration *= 0.9;
+    }
+
+    if (aiConfig?.parameters) {
+      const { confidence = 1, accuracy = 1 } = aiConfig.parameters;
+      const confidenceWeight = Math.min(1.2, Math.max(0.8, confidence));
+      const accuracyWeight = Math.min(1.2, Math.max(0.8, accuracy));
+      factors.intensity *= confidenceWeight;
+      factors.frequency *= accuracyWeight;
     }
     
     return factors;
@@ -530,11 +564,11 @@ export class HealthBasedExerciseAI {
   /**
    * 다음 검토 날짜 계산
    */
-  private static calculateNextReviewDate(riskAssessment: HealthRiskAssessment): Date {
+  private static calculateNextReviewDate(riskLevel: 'low' | 'moderate' | 'high' | 'critical'): Date {
     const now = new Date();
     let daysToAdd: number;
     
-    switch (riskAssessment.overallRisk) {
+    switch (riskLevel) {
       case 'critical':
         daysToAdd = 7; // 1주일
         break;

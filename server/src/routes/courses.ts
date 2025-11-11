@@ -116,7 +116,6 @@ import { Center } from '../models/Center'; // ⭐ Center 모델 추가
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
-import { LaneAllocationService } from '../services/laneAllocationService'; // ⭐ 레인 자동 조정 서비스 추가
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -580,6 +579,7 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
 
     // 기본적인 데이터 검증
     const { name, description, level, duration, price, maxStudents, instructorId } = req.body;
+    void instructorId;
     if (name && typeof name !== 'string') {
       return res.status(400).json({ error: '강습 과정명은 문자열이어야 합니다.' });
     }
@@ -604,7 +604,6 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
     const updateData: any = { ...req.body };
     if (updateData.instructorId) {
       updateData.instructor = updateData.instructorId;
-      updateData.instructorId = updateData.instructorId; // instructorId 필드도 유지
       
       // 강사 이름 가져오기
       let instructorName = updateData.instructorName;
@@ -2470,6 +2469,7 @@ router.put('/:id/approval', authMiddleware, requireRole(['superAdmin']), async (
   try {
     const { id } = req.params;
     const { action, reason } = req.body;
+    void reason;
     
     if (!['approve', 'reject'].includes(action)) {
       return res.status(400).json({

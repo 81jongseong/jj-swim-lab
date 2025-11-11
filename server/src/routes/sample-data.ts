@@ -31,7 +31,7 @@ router.post('/generate-dashboard-data', authMiddleware, requireRole(['student', 
 
     console.log(`📊 ${req.user.name} (${userType}) 샘플 데이터 생성 시작...`);
 
-    let generatedData = {
+    const generatedData = {
       courses: 0,
       bookings: 0,
       payments: 0,

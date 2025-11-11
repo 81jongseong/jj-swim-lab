@@ -5,12 +5,11 @@
  * @author JJ Swim Lab
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import mongoose from 'mongoose';
 import { LessonPlan } from '../models/LessonPlan';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
-import { LearningProgress } from '../models/LearningProgress';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = express.Router();
@@ -21,7 +20,7 @@ router.get('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), asyn
     const instructorId = req.user.id;
     const { status, date, studentId } = req.query;
 
-    let query: any = { instructorId };
+    const query: any = { instructorId };
 
     if (status) query.status = status;
     if (date) {

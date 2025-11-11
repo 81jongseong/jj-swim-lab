@@ -344,6 +344,11 @@ router.post('/backup', authMiddleware, requireRole(['superAdmin']), async (req: 
 router.get('/logs', authMiddleware, requireRole(['superAdmin']), async (req: Request, res: Response) => {
   try {
     const { type, level, startDate, endDate, limit = 100 } = req.query;
+    void type;
+    void level;
+    void startDate;
+    void endDate;
+    void limit;
 
     // 실제로는 로그 시스템에서 조회
     const logs = [

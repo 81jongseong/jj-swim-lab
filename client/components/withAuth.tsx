@@ -83,8 +83,8 @@ import React, { ComponentType } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 type Options = {
-  requireTypes?: Array<'student'|'instructor'|'centerAdmin'|'superAdmin'>;
-  requirePermission?: keyof ReturnType<typeof useAuth>['user']['accessPermissions'] | null;
+  requireTypes?: Array<'student' | 'instructor' | 'centerAdmin' | 'superAdmin'>;
+  requirePermission?: string | null;
 };
 
 export default function withAuth<P>(Wrapped: ComponentType<P>, options: Options = {}) {
@@ -111,14 +111,16 @@ export default function withAuth<P>(Wrapped: ComponentType<P>, options: Options 
     
     // 권한 확인 (accessPermissions가 undefined일 수 있음)
     if (options.requirePermission) {
-      const hasPermission = user.accessPermissions && user.accessPermissions[options.requirePermission];
+      const hasPermission = Boolean(
+        user.accessPermissions?.[options.requirePermission]
+      );
       if (!hasPermission) {
         if (typeof window !== 'undefined') window.location.href = '/';
         return null;
       }
     }
     
-    return <Wrapped {...props} />;
+    return React.createElement(Wrapped as React.ComponentType<any>, props);
   };
 }
 

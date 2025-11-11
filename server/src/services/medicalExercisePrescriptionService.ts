@@ -10,10 +10,8 @@ import {
   IHealthAssessment, 
   HealthRiskLevel, 
   ChronicCondition,
-  ExerciseRestriction,
   ExerciseRecommendationType,
-  IExerciseRecommendation,
-  IVitalSigns
+  IExerciseRecommendation
 } from '../models/HealthAssessment';
 
 // 운동 처방 요청 인터페이스
@@ -162,7 +160,7 @@ export class MedicalExercisePrescriptionService {
     const riskFactors = [];
     let cardiovascularRisk = 0;
     let metabolicRisk = 0;
-    let overallRisk = healthAssessment.riskAssessment.overallRisk;
+    const overallRisk = healthAssessment.riskAssessment.overallRisk;
     
     // 혈압 위험도 분석
     if (latestVitals) {
@@ -536,10 +534,10 @@ export class MedicalExercisePrescriptionService {
   ) {
     let aerobicIntensity = 5; // 기본 중간 강도
     let aerobicDuration = 30;
-    let aerobicFrequency = 3;
+    const aerobicFrequency = 3;
     let resistanceIntensity = 4;
-    let resistanceDuration = 20;
-    let resistanceFrequency = 2;
+    const resistanceDuration = 20;
+    const resistanceFrequency = 2;
     
     // 위험도에 따른 조정
     if (riskAnalysis.overallRisk === HealthRiskLevel.HIGH || 
@@ -766,6 +764,7 @@ export class MedicalExercisePrescriptionService {
    * 유연성 운동 생성
    */
   private static generateFlexibilityExercises(healthAssessment: IHealthAssessment) {
+    void healthAssessment;
     return [
       {
         name: '목 스트레칭',
@@ -841,6 +840,7 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static generateAerobicProgression(baseParams: any) {
+    void baseParams;
     return [
       { week: 1, adjustments: '기본 강도로 적응' },
       { week: 4, adjustments: '운동 시간 5분 증가' },
@@ -850,6 +850,8 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static getResistancePrecautions(healthAssessment: IHealthAssessment, riskAnalysis: any): string[] {
+    void healthAssessment;
+    void riskAnalysis;
     return [
       '발살바 호흡법 피하기',
       '점진적 부하 증가',
@@ -858,6 +860,7 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static getResistanceContraindications(healthAssessment: IHealthAssessment): string[] {
+    void healthAssessment;
     return [
       '급성 관절염',
       '조절되지 않는 고혈압',
@@ -866,6 +869,7 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static generateResistanceProgression(baseParams: any) {
+    void baseParams;
     return [
       { week: 1, adjustments: '동작 익히기' },
       { week: 3, adjustments: '반복 횟수 2회 증가' },
@@ -875,6 +879,8 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static generateSafetyGuidelines(healthAssessment: IHealthAssessment, riskAnalysis: any) {
+    void healthAssessment;
+    void riskAnalysis;
     return {
       preExerciseChecklist: [
         '혈압 측정 (고혈압 환자)',
@@ -916,6 +922,8 @@ export class MedicalExercisePrescriptionService {
   }
   
   private static createProgressionPlan(healthAssessment: IHealthAssessment, recommendations: IExerciseRecommendation[]) {
+    void healthAssessment;
+    void recommendations;
     return [
       {
         phase: 1,

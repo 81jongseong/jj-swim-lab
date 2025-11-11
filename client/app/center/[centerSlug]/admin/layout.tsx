@@ -34,7 +34,9 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
     if (centerSlug) {
       try {
         localStorage.setItem('centerSlug', centerSlug);
-      } catch {}
+      } catch (storageError) {
+        console.warn('centerSlug 저장 실패:', storageError);
+      }
     }
     async function resolveSlug() {
       try {
@@ -72,7 +74,9 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
             try {
               localStorage.setItem('centerId', centerSlug || '');
               document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
-            } catch {}
+            } catch (persistError) {
+              console.warn('centerId 저장 실패:', persistError);
+            }
             setError('auth_required'); // 에러는 설정하되 계속 진행
           }
         } else {
@@ -83,7 +87,9 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
             try {
               localStorage.setItem('centerId', centerSlug || '');
               document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
-            } catch {}
+            } catch (fallbackError) {
+              console.warn('centerId 저장 실패 (fallback):', fallbackError);
+            }
             setError('failed_to_resolve_center_slug');
           }
         }

@@ -13,13 +13,6 @@ export enum CacheType {
   QUERY = 'query'
 }
 
-// 캐시 설정 인터페이스
-interface CacheConfig {
-  ttl: number; // Time To Live (초)
-  checkperiod?: number; // 캐시 체크 주기 (초)
-  useClones?: boolean; // 객체 복사 사용 여부
-}
-
 // 캐시 항목 인터페이스
 interface CacheItem<T = any> {
   key: string;
@@ -226,7 +219,7 @@ class CacheService {
     });
 
     // 쿼리 캐시에서도 삭제
-    for (const [key, item] of this.queryCache.entries()) {
+    for (const key of Array.from(this.queryCache.keys())) {
       if (key.includes(pattern)) {
         this.queryCache.delete(key);
         deletedCount++;
@@ -318,7 +311,6 @@ class CacheService {
    * 캐시 정리 (만료된 항목 제거)
    */
   public cleanup(): void {
-    const now = Date.now();
     let cleanedCount = 0;
 
     // 쿼리 캐시에서 만료된 항목 제거

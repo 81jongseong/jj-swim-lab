@@ -90,7 +90,6 @@
  */
 
 import express from 'express';
-import cors from 'cors';
 import compression from 'compression';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -100,18 +99,12 @@ import dotenv from 'dotenv';
 
 // 보안 미들웨어 import
 import { securityMiddleware } from './middleware/security';
-import { authMiddleware } from './middleware/auth';
-import { createValidationMiddleware } from './middleware/validation';
 import { errorHandler, notFoundHandler } from './utils/errorHandler';
 import { cache } from './middleware/cache';
 import { apiMonitoring, userActivityTracking, securityEventTracking, errorTracking } from './middleware/monitoring';
 import { trackUserActivity, trackSecurityEvents } from './middleware/userActivity';
 import { pageTrackingMiddleware, cleanupOldPageVisits } from './middleware/pageTracking';
-import { maintenanceModeMiddleware } from './middleware/maintenanceMode';
-import { dynamicRateLimitMiddleware } from './middleware/dynamicRateLimit';
-import { emailService } from './services/emailService';
 import { backupService } from './services/backupService';
-import { performanceService } from './services/performanceService';
 
 // Deprecation warning 무시 설정
 process.on('warning', (warning) => {
@@ -132,7 +125,6 @@ dotenv.config({ path: envPath });
 
 // 환경 변수 로드 후 connectDB import
 import { connectDB } from './db';
-import { runSeedData } from './utils/seedData';
 
 // 라우트 임포트
 import centerLevelsRoutes from './routes/center-levels';
@@ -167,7 +159,6 @@ import checklistTemplateRoutes from './routes/checklist-template';
 import classChecklistRoutes from './routes/class-checklist';
 import classesRoutes from './routes/classes';
 import studentProgressRoutes from './routes/student-progress';
-import centerLevelRoutes from './routes/center-level';
 import studentLevelRoutes from './routes/student-levels';
 import instructorRoutes from './routes/instructor';
 import instructorManagementRoutes from './routes/instructorManagement';

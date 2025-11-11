@@ -31,6 +31,7 @@ export interface ISettlement extends Document {
   // 정산 대상 정보
   recipientType: 'instructor' | 'center' | 'platform'; // 정산 수령자 타입
   recipientId: mongoose.Types.ObjectId; // 정산 수령자 ID (강사 또는 센터)
+  recipientTypeModel: 'User' | 'Center';
   
   // 정산 기간
   periodType: 'weekly' | 'monthly'; // 정산 주기

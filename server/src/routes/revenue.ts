@@ -14,10 +14,7 @@
 
 import express from 'express';
 import { auth as authMiddleware } from '../middleware/auth';
-import { User } from '../models/User';
 import { Payment } from '../models/Payment';
-import { Course } from '../models/Course';
-import { Booking } from '../models/Booking';
 import mongoose from 'mongoose';
 
 const router = express.Router();

@@ -22,7 +22,6 @@ import mongoose from 'mongoose';
 import SwimProgram from '../models/SwimProgram';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
-import { errorHandler, notFoundHandler } from '../utils/errorHandler';
 
 const router = express.Router();
 

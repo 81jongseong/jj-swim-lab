@@ -294,8 +294,6 @@ router.put('/applications/:id', authMiddleware, async (req: Request, res: Respon
         let centerId = post.roomSpecific?.jobBoard?.centerId;
         if (centerId && typeof centerId === 'object' && centerId._id) {
           centerId = centerId._id;
-        } else if (centerId && typeof centerId === 'object') {
-          centerId = centerId;
         }
         centerId = centerId?.toString ? centerId.toString() : centerId;
         
@@ -360,6 +358,7 @@ router.put('/applications/:id', authMiddleware, async (req: Request, res: Respon
     let notificationSent = false;
     if (status === 'interview_scheduled' && application.interviewDate && !application.notificationSent) {
       const applicant = application.applicantId as any;
+      void applicant;
       const centerName = post.roomSpecific?.jobBoard?.centerId?.name || '센터';
       
       const interviewDateStr = new Date(application.interviewDate).toLocaleDateString('ko-KR');
@@ -492,8 +491,6 @@ router.put('/applications/:id/respond', authMiddleware, async (req: Request, res
       let centerId = post.roomSpecific?.jobBoard?.centerId;
       if (centerId && typeof centerId === 'object' && centerId._id) {
         centerId = centerId._id;
-      } else if (centerId && typeof centerId === 'object') {
-        centerId = centerId;
       }
       centerId = centerId?.toString ? centerId.toString() : centerId;
       
@@ -545,8 +542,6 @@ router.put('/applications/:id/respond', authMiddleware, async (req: Request, res
       let centerId = post.roomSpecific?.jobBoard?.centerId;
       if (centerId && typeof centerId === 'object' && centerId._id) {
         centerId = centerId._id;
-      } else if (centerId && typeof centerId === 'object') {
-        centerId = centerId;
       }
       centerId = centerId?.toString ? centerId.toString() : centerId;
       
@@ -716,8 +711,6 @@ router.post('/applications/sync-instructors', authMiddleware, async (req: Reques
         let centerId = post?.roomSpecific?.jobBoard?.centerId || application.centerId;
         if (centerId && typeof centerId === 'object' && centerId._id) {
           centerId = centerId._id;
-        } else if (centerId && typeof centerId === 'object') {
-          centerId = centerId;
         }
         centerId = centerId?.toString ? centerId.toString() : centerId;
 

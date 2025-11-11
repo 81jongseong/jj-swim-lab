@@ -272,7 +272,7 @@ export class AIPerformancePredictionService {
     const cv = (stdDev / mean) * 100; // 변동계수
     
     // 변동계수가 낮을수록 일관성이 높음 (5% 이하면 매우 일관적)
-    let score = 100 - (cv * 10);
+    const score = 100 - (cv * 10);
     return Math.max(0, Math.min(100, score));
   }
   
@@ -1077,6 +1077,11 @@ export class AIPerformancePredictionService {
     physiologicalAnalysis: any,
     techniqueAnalysis: any
   ): IPerformanceFactor[] {
+    void event;
+    void performanceAnalysis;
+    void trainingAnalysis;
+    void physiologicalAnalysis;
+    void techniqueAnalysis;
     // 간단한 구현
     return [
       {
@@ -1095,6 +1100,8 @@ export class AIPerformancePredictionService {
     techniqueAnalysis: any,
     totalImprovement: number
   ) {
+    void event;
+    void techniqueAnalysis;
     // 간단한 구현
     return {
       startImprovement: totalImprovement * 0.15,
@@ -1111,6 +1118,9 @@ export class AIPerformancePredictionService {
     performanceFactors: IPerformanceFactor[],
     performanceAnalysis: IPerformanceAnalysis
   ) {
+    void event;
+    void performanceFactors;
+    void performanceAnalysis;
     // 간단한 구현
     return {
       training: ['훈련량 점진적 증가', '인터벌 훈련 강화'],
@@ -1125,6 +1135,7 @@ export class AIPerformancePredictionService {
     targetTime: number,
     userProfile: any
   ) {
+    void userProfile;
     // 간단한 구현
     const totalImprovement = currentTime - targetTime;
     const milestones = [];
@@ -1212,6 +1223,8 @@ export class AIPerformancePredictionService {
   }
   
   private static async generateValidationInfo(userProfile: any, predictions: IPredictionResult[]) {
+    void userProfile;
+    void predictions;
     return {
       historicalAccuracy: 80, // 기본값
       similarSwimmersComparison: {

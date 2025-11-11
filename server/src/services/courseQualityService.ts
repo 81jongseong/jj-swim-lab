@@ -19,8 +19,6 @@
 
 import { CourseAction, ICourseAction } from '../models/CourseAction';
 import { Course } from '../models/Course';
-import { User } from '../models/User';
-import { Center } from '../models/Center';
 import mongoose from 'mongoose';
 
 export interface QualityCheck {

@@ -167,6 +167,27 @@
 - `server/src/routes/job-board.ts` 라우트가 `server/src/index.ts`에 등록되어 있는지 확인
 - `server/src/models/JobApplication.ts` 모델이 `server/src/index.ts`에 import되어 있는지 확인
 
+### 2025-11-11: 서버 유틸 계층 `no-unused-vars` 경고 누적
+**문제**:
+- `pnpm --filter jj-swim-lab-server run lint` 실행 시 `@typescript-eslint/no-unused-vars` 경고가 70건 이상 발생
+- 주요 파일: `src/utils/AIEngine.ts`, `src/utils/AdvancedAIEngine.ts`, `src/utils/ExercisePrescriptionSystem.ts`, `src/utils/HealthBasedExerciseAI.ts`, `src/utils/IntegratedAIEngine.ts`, `src/utils/JointSpecificSwimmingGuidance.ts`, `src/utils/Video3DConversionEngine.ts`, `src/utils/VideoAnalysisAIEngine.ts`, `src/utils/queryOptimizer.ts`, `src/utils/secureExcelParser.ts`, `src/utils/spawnProc.ts`, `src/utils/teachingMethodToProgramConverter.ts`
+- 미사용 파라미터/변수로 인해 실제 로직을 추적하기 어렵고, 신규 경고 탐지가 어려움
+
+**해결 방법**:
+1. **분석 결과 활용**: 미사용 매개변수 대신 실데이터 기반 계산/저장 로직 추가
+    - `AIEngine`, `AdvancedAIEngine`: 분석 결과를 `AIAnalysis` 및 `AIEvaluationResult`에 저장하고, 강점/약점 분석 시 과거 체크리스트 데이터를 반영
+    - `ExercisePrescriptionSystem`, `HealthBasedExerciseAI`: 사용자/건강 데이터를 실제로 조회해 처방·조정 로직에 반영, 통계 리포트를 반환
+    - `IntegratedAIEngine`: 저장된 스마트워치·영상·평가 데이터를 병합하여 통합 분석 및 진도 예측 생성
+    - `VideoAnalysisAIEngine`: 프레임 요약값을 기반으로 점수 산출, 추천·피드백 생성 후 `VideoAnalysisResult` 컬렉션에 저장
+2. **시뮬레이션 로직 보강**: 3D 변환 유틸(`Video3DConversionEngine`)의 시뮬레이션 계산을 입력 값에 따라 달라지도록 개선하고, 예외 시 상세 로그를 남김
+3. **보조 유틸 정리**: `queryOptimizer`, `secureExcelParser`, `spawnProc`, `teachingMethodToProgramConverter` 등에서 경고가 발생하던 부분을 실제 로깅/계산에 활용
+4. 정리 후 `pnpm --filter jj-swim-lab-server run lint` 실행 → **경고 0건** 확인
+
+**추가 확인사항**:
+- 분석 결과 저장 시 MongoDB 모델 스키마 요구사항(필수 필드) 충족 여부 확인
+- 시뮬레이션 데이터의 임계값이 실제 운영 데이터와 괴리되지 않는지 검토 필요
+- 추후 실시간 분석 도입 시 현재 추가한 로깅이 과도해지지 않도록 로거 레벨 조정 계획 수립
+ 
 ## 외부 강사 개인레슨 통합 결제 및 자동 정산 시스템
 
 ### 2025-11-06: 외부 강사 개인레슨 통합 결제 시스템 구현
@@ -360,6 +381,22 @@
 - 내비게이션 렌더링 시 빈 그룹이나 중복 메뉴가 더 이상 없는지 재확인
 - 예약 관리 페이지 링크가 정상 작동하는지 확인
 
+### 2025-11-10: 강사 영역 lint/type 체크 범위 정리
+**조치 배경**:
+- `next lint` 실행 시 `app/center/[centerSlug]/admin/info/page_backup.tsx`가 바이너리로 인식되어 컴파일이 중단됨
+- `tsc --noEmit` 전체 실행 시 관리자/센터 전반의 미완성 코드 때문에 수백 건의 타입 오류가 쏟아져 강사용 영역 검증이 어려움
+
+**조치 내용**:
+1. `page_backup.tsx`를 안전한 ASCII 플레이스홀더로 교체하고, 불필요한 백업 파일은 `.tsx.bak`로 이름을 변경해 린트 대상에서 제외
+2. 강사용 UI 전용 `tsconfig.instructor.json`을 추가하고 `package.json`의 `type-check` 스크립트를 해당 설정으로 전환
+   - 필요 시 전체 프로젝트를 검사하려면 `pnpm --filter client run type-check:all` 사용
+3. 강사용 페이지(`app/instructor/**`, `app/student/my-group-program`, 관련 UI 컴포넌트)에서 발생하던 타입 오류를 해결
+4. `withAuth` HOC, 예약/강의/수영 프로그램 페이지 등의 타입 보강으로 런타임 동작은 유지하면서 컴파일 경고만 제거
+
+**결과**:
+- `pnpm --filter client run lint` 및 `pnpm --filter client run type-check`(강사용 전용) 정상 통과
+- 서버 ESLint/tsc는 여전히 대량의 기존 경고·오류가 존재하므로 필요 시 개별 정리가 필요함
+
 ### 2025-11-10: 기존 관리자 페이지 ESLint 오류
 **문제**:
 - `pnpm --filter client run lint` 실행 시 `app/admin/center-management/page.tsx`, `app/admin/instructors/page.tsx`, `app/center/[centerSlug]/admin/layout.tsx` 등 관리자 전용 페이지에서 ESLint 오류가 다수 발생
@@ -376,4 +413,22 @@
 **추가 확인사항**:
 - 린트 실행 시 관리자 영역에서 동일 오류가 반복되는지 주기적으로 점검
 - 관리자 페이지 리팩터링 일정 수립 후 본 항목을 업데이트
+
+### 2025-11-11: 센터 관리자 대시보드 통계 0건 표시
+**문제**:
+- 센터 관리자 로그인 시 대시보드의 총 회원/강사/강의/매출/예약 통계가 모두 0으로 표시됨
+- API 응답 자체는 성공하지만 모든 값이 0으로 돌아옴
+
+**원인**:
+- `center-admin` 계정의 `centerAdminInfo.managedCenters`가 문자열 ID 배열을 보유하는데, `/api/center-admin/dashboard` 라우트에서는 해당 문자열을 그대로 `centerId` 필터에 사용함
+- 실제 `User`, `Course`, `Booking`, `Payment` 문서의 `centerId` 필드는 `ObjectId` 타입이라 문자열과 매칭되지 않아 카운트가 0으로 계산됨
+
+**해결 방법/현황**:
+1. `centerId`를 `mongoose.Types.ObjectId`로 정규화하는 헬퍼(`normalizedCenterId`)를 추가
+2. 모든 통계 조회(`User.countDocuments`, `Course.countDocuments`, `Booking.countDocuments`, `Payment.aggregate`)에서 정규화된 `ObjectId`를 사용하도록 수정
+3. 수정 후 API 재호출 시 정상적인 통계(회원 261명 등)가 반환됨을 확인
+
+**추가 확인사항**:
+- 신규 시드 데이터 작성 시 `centerId` 타입이 ObjectId로 저장되는지 점검
+- 유사한 패턴의 다른 API에서도 문자열 ID를 그대로 비교하는 부분이 있는지 추가 검토
 

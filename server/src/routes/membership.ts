@@ -1,7 +1,6 @@
 import * as express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { cache } from '../middleware/cache';
-import { measurePerformance } from '../utils/performance';
 import { logInfo, logError } from '../utils/logger';
 import { MembershipPlan, UserMembership, MembershipPayment } from '../models/Membership';
 
@@ -63,6 +62,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { userId, centerId, type, startDate, endDate, price, status = 'active' } = req.body;
+    void type;
     
     const membership = new UserMembership({
       userId,
@@ -87,6 +87,8 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const { type, startDate, endDate, price, status } = req.body;
+    void type;
+    void price;
     
     const membership = await UserMembership.findByIdAndUpdate(
       req.params.id,

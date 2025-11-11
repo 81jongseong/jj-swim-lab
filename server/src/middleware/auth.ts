@@ -122,15 +122,15 @@ export const generateTokens = (user: any) => {
     permissions: user.permissions || [],
   };
   
-  const accessToken = jwt.sign(payload, JWT_SECRET, { 
-    expiresIn: '1h'
+  const accessToken = jwt.sign(payload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN
   });
   
   const refreshToken = jwt.sign(
     { id: user._id, type: 'refresh' }, 
     JWT_REFRESH_SECRET, 
     { 
-      expiresIn: '7d'
+      expiresIn: JWT_REFRESH_EXPIRES_IN
     }
   );
   
@@ -557,7 +557,7 @@ export const requireCenterOwnership = (req: Request, res: Response, next: NextFu
 };
 
 // 토큰 갱신 미들웨어
-export const refreshTokenMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const refreshTokenMiddleware = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     

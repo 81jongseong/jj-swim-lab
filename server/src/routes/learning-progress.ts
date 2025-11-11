@@ -5,7 +5,7 @@
  * @author JJ Swim Lab
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import mongoose from 'mongoose';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
@@ -22,7 +22,7 @@ router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: 
     const studentId = req.user.id;
     const { category, level, status } = req.query;
 
-    let query: any = { studentId };
+    const query: any = { studentId };
 
     // 카테고리 필터
     if (category && category !== 'all') {
@@ -392,7 +392,7 @@ router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'c
 
     // 모든 학생의 진도 조회
     const studentIds = studentDocs.map(s => s._id);
-    let query: any = { studentId: { $in: studentIds } };
+    const query: any = { studentId: { $in: studentIds } };
 
     // 필터 적용
     if (category && category !== 'all') {

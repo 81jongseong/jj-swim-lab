@@ -105,9 +105,9 @@
  * 7. 응답 데이터 반환 및 로깅
  */
 
-import express, { Request, Response, Router } from 'express';
+import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
-import Product, { IProduct } from '../models/Product';
+import Product from '../models/Product';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();

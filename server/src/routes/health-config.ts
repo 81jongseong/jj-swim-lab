@@ -345,6 +345,7 @@ router.put('/ai', authMiddleware, requireRole(['superAdmin']), async (req: AuthR
 
     // 가중치를 제외한 다른 설정만 업데이트
     const { weights, parameters, ...allowedConfig } = aiConfigData;
+    void weights;
     const safeParameters = parameters ? {
       ...parameters,
       weights: undefined // 가중치 제거

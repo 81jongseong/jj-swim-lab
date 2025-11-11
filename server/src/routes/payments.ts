@@ -115,7 +115,6 @@ import { Router, Request, Response } from 'express';
 import { Payment } from '../models/Payment';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
-import { Booking } from '../models/Booking';
 import { auth as authenticateToken, requireRole } from '../middleware/auth';
 import { calculatePricing, getCurrentPricingPolicy, updatePricingPolicy } from '../services/pricingService';
 import mongoose from 'mongoose';

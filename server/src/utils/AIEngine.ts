@@ -103,6 +103,7 @@ export interface PostureAnalysisResult {
   strengths: string[];
   improvements: string[];
   detailedFeedback: string;
+  completionRate: number;
 }
 
 export interface ProgressPredictionResult {
@@ -111,6 +112,8 @@ export interface ProgressPredictionResult {
   estimatedWeeks: number;
   confidence: number;
   factors: string[];
+  referenceEvaluationId?: string | null;
+  focusCategories?: string[];
 }
 
 export interface PersonalizedRecommendationResult {
@@ -193,7 +196,8 @@ export class AIEngine {
       score: Math.round(score),
       strengths,
       improvements,
-      detailedFeedback
+      detailedFeedback,
+      completionRate: Math.round(completionRate)
     };
   }
   
@@ -244,8 +248,11 @@ export class AIEngine {
    */
   static async generatePersonalizedRecommendation(
     studentId: string,
-    instructorId: string
+    instructorId: string,
+    options: { persist?: boolean } = {}
   ): Promise<PersonalizedRecommendationResult> {
+    
+    const studentProfile = await User.findById(studentId).select('name profileLevel');
     
     // 학생의 학습 데이터 분석
     const recentChecklists = await Checklist.find({
@@ -262,14 +269,29 @@ export class AIEngine {
     const recommendedExercises = this.generateExerciseRecommendations(weaknesses, strengths);
     const focusAreas = this.determineFocusAreas(weaknesses);
     const difficultyAdjustment = this.suggestDifficultyAdjustment(recentChecklists);
-    const estimatedImprovement = this.estimateImprovement(weaknesses, recommendedExercises);
+    const estimatedImprovement = this.estimateImprovement(
+      weaknesses,
+      recommendedExercises,
+      studentProfile?.name
+    );
     
-    return {
+    const recommendationPayload: PersonalizedRecommendationResult = {
       recommendedExercises,
       focusAreas,
       difficultyAdjustment,
       estimatedImprovement
     };
+    
+    if (options.persist !== false) {
+      await AIAnalysis.create({
+        studentId,
+        instructorId,
+        analysisType: 'recommendation',
+        personalizedRecommendation: recommendationPayload
+      }).catch(() => undefined);
+    }
+    
+    return recommendationPayload;
   }
   
   /**
@@ -277,7 +299,8 @@ export class AIEngine {
    */
   static async analyzePerformance(
     studentId: string,
-    instructorId: string
+    instructorId: string,
+    options: { persist?: boolean } = {}
   ): Promise<PerformanceAnalysisResult> {
     
     const checklists = await Checklist.find({
@@ -286,12 +309,21 @@ export class AIEngine {
     }).sort({ createdAt: -1 });
     
     if (checklists.length === 0) {
-      return {
+      const emptyReport: PerformanceAnalysisResult = {
         overallScore: 0,
         improvementRate: 0,
         consistencyScore: 0,
         recommendations: ['더 많은 데이터가 필요합니다']
       };
+      if (options.persist !== false) {
+        await AIAnalysis.create({
+          studentId,
+          instructorId,
+          analysisType: 'performance',
+          performanceAnalysis: emptyReport
+        }).catch(() => undefined);
+      }
+      return emptyReport;
     }
     
     // 전체 점수 계산
@@ -308,12 +340,23 @@ export class AIEngine {
       overallScore, improvementRate, consistencyScore
     );
     
-    return {
+    const report: PerformanceAnalysisResult = {
       overallScore,
       improvementRate,
       consistencyScore,
       recommendations
     };
+
+    if (options.persist !== false) {
+      await AIAnalysis.create({
+        studentId,
+        instructorId,
+        analysisType: 'performance',
+        performanceAnalysis: report
+      }).catch(() => undefined);
+    }
+    
+    return report;
   }
   
   // 헬퍼 메서드들
@@ -453,6 +496,12 @@ export class AIEngine {
         recommendations.push(...exerciseMap[weakness]);
       }
     });
+
+    strengths.forEach(strength => {
+      if (exerciseMap[strength]) {
+        recommendations.push(`${strength} 유지 훈련: ${exerciseMap[strength][0]}`);
+      }
+    });
     
     return [...new Set(recommendations)]; // 중복 제거
   }
@@ -472,9 +521,21 @@ export class AIEngine {
     return 'same';
   }
   
-  private static estimateImprovement(weaknesses: string[], exercises: string[]): string {
-    const weeks = Math.ceil(weaknesses.length * 2);
-    return `${weeks}주 후 ${weaknesses[0]} 영역에서 20-30% 개선 예상`;
+  private static estimateImprovement(
+    weaknesses: string[],
+    recommendedExercises: string[],
+    studentName?: string | null
+  ): string {
+    if (weaknesses.length === 0) {
+      return studentName
+        ? `${studentName}님의 현재 프로그램은 균형 잡혀 있습니다.`
+        : '현재 프로그램은 균형 잡혀 있습니다.';
+    }
+    
+    const keyWeakness = weaknesses[0];
+    const exercise = recommendedExercises[0] || '맞춤 운동';
+    const namePrefix = studentName ? `${studentName}님, ` : '';
+    return `${namePrefix}${keyWeakness} 개선을 위해 ${exercise}을(를) 집중적으로 수행해보세요.`;
   }
   
   private static calculateOverallScore(checklists: any[]): number {

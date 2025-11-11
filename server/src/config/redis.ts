@@ -88,8 +88,6 @@
  * 7. Redis 연결 종료 및 정리
  */
 
-import Redis from 'ioredis';
-
 // Redis 클라이언트 설정 (비활성화)
 // const redis = new Redis({
 //   host: process.env.REDIS_HOST || 'localhost',
@@ -105,11 +103,28 @@ import Redis from 'ioredis';
 // Redis 비활성화 - 더미 객체
 const redis = {
   ping: () => Promise.resolve('PONG'),
-  setex: (key: string, ttl: number, value: string) => Promise.resolve('OK'),
-  get: (key: string) => Promise.resolve(null),
-  del: (key: string) => Promise.resolve(1),
-  keys: (pattern: string) => Promise.resolve([]),
-  exists: (key: string) => Promise.resolve(0),
+  setex: (key: string, ttl: number, value: string) => {
+    void key;
+    void ttl;
+    void value;
+    return Promise.resolve('OK');
+  },
+  get: (key: string) => {
+    void key;
+    return Promise.resolve(null);
+  },
+  del: (key: string) => {
+    void key;
+    return Promise.resolve(1);
+  },
+  keys: (pattern: string) => {
+    void pattern;
+    return Promise.resolve([]);
+  },
+  exists: (key: string) => {
+    void key;
+    return Promise.resolve(0);
+  },
   on: () => {},
   off: () => {},
   disconnect: () => Promise.resolve(),

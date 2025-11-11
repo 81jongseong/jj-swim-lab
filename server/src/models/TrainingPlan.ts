@@ -386,6 +386,8 @@ trainingPlanSchema.statics.generateAIPlan = async function(
   userId: mongoose.Types.ObjectId, 
   userInput: any
 ) {
+  void userId;
+  void userInput;
   // AI 로직은 서비스에서 구현
   return null;
 };

@@ -185,6 +185,11 @@ export function convertTeachingStepToTrainingSet(
     reps = Math.min(reps, 10);
   }
 
+  if (!hasDistance) {
+    const perSetTarget = Math.max(poolLength, Math.round(distances.main / Math.max(reps, 1)));
+    distance = Math.min(distance, perSetTarget);
+  }
+
   return {
     type: 'drill',
     distance,

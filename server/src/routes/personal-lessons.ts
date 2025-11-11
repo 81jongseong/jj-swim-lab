@@ -6,7 +6,7 @@
 
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { authMiddleware, requireRole } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 import { PersonalLesson } from '../models/PersonalLesson';
 import { User } from '../models/User';
 import { LaneAllocationService } from '../services/laneAllocationService';

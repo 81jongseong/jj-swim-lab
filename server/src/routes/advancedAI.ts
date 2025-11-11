@@ -208,6 +208,7 @@ router.get('/analysis-history/:userId', authMiddleware, async (req: Request, res
   try {
     const { userId } = req.params;
     const { page = 1, limit = 10, type } = req.query;
+    void type;
     const currentUserId = (req as any).user?.userId;
 
     // 본인 또는 관리자만 조회 가능

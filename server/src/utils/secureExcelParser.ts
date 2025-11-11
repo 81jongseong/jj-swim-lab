@@ -187,10 +187,12 @@ export class SecureExcelParser {
     const columnCount = worksheet.columnCount;
     
     if (rowCount > this.options.maxRows) {
+      logWarn('엑셀 행 수 제한 초과', { sheetName: worksheet.name, rowCount, maxRows: this.options.maxRows });
       throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
     }
     
     if (columnCount > this.options.maxColumns) {
+      logWarn('엑셀 열 수 제한 초과', { sheetName: worksheet.name, columnCount, maxColumns: this.options.maxColumns });
       throw new Error(`열 수가 너무 많습니다. 최대 ${this.options.maxColumns}열까지 허용됩니다.`);
     }
     
@@ -296,6 +298,7 @@ export class SecureExcelParser {
       const lines = content.split('\n').filter(line => line.trim());
       
       if (lines.length > this.options.maxRows) {
+        logWarn('CSV 행 수 제한 초과', { filePath, lines: lines.length, maxRows: this.options.maxRows });
         throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
       }
       

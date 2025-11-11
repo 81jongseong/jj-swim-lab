@@ -193,6 +193,7 @@ const instructorImageUpload = multer({
     }
   }
 });
+void instructorImageUpload;
 
 // ===== 기본 센터 목록 조회 =====
 
@@ -780,10 +781,10 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     
     // centerId 우선순위: 1) JWT의 defaultCenterId, 2) JWT의 memberships[0].centerId, 3) DB의 centerId, 4) DB의 managedCenters[0]
     const jwtToken = req.user as any;
-    let centerId = jwtToken?.defaultCenterId || 
-                   jwtToken?.memberships?.[0]?.centerId ||
-                   centerAdmin?.centerId || 
-                   centerAdmin?.centerAdminInfo?.managedCenters?.[0];
+    const centerId = jwtToken?.defaultCenterId || 
+                     jwtToken?.memberships?.[0]?.centerId ||
+                     centerAdmin?.centerId || 
+                     centerAdmin?.centerAdminInfo?.managedCenters?.[0];
     
     if (!centerId) {
       console.error('❌ 관리하는 센터가 없음');
@@ -1422,6 +1423,7 @@ router.put('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       introduction,
       guide
     } = req.body;
+    void guide;
 
     const center = await Center.findById(centerId);
     if (!center) {
@@ -2187,7 +2189,7 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
     
     // centerId 우선순위: 1) x-center-id 헤더, 2) JWT의 centerId, 3) JWT의 defaultCenterId, 4) JWT의 memberships[0].centerId, 5) DB의 centerId, 6) DB의 managedCenters[0]
     const jwtUser = req.user as any;
-    let rawCenterId = (headerCenterId && typeof headerCenterId === 'string') 
+    const rawCenterId = (headerCenterId && typeof headerCenterId === 'string') 
       ? headerCenterId 
       : (jwtUser?.centerId || 
          jwtUser?.defaultCenterId || 

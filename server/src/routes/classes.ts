@@ -1,5 +1,4 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { logInfo, logError } from '../utils/logger';
 

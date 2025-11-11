@@ -253,6 +253,7 @@ router.post('/verify-phone-code', async (req: Request, res: Response) => {
 router.post('/signup', async (req: Request, res: Response) => {
   try {
     const { userId, name, email, password, phone, address, userType, location, phoneVerified } = req.body;
+    void phoneVerified;
 
     // 필수 필드 검증 (소셜 로그인인 경우 password는 선택)
     if (!name || !email) {

@@ -74,24 +74,88 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
       });
     }
 
+    const centerIdStrings = new Set<string>();
+    const objectIdStrings = new Set<string>();
+
+    const collectCenterId = (value: any) => {
+      if (!value) return;
+
+      if (Array.isArray(value)) {
+        value.forEach(collectCenterId);
+        return;
+      }
+
+      if (value instanceof mongoose.Types.ObjectId) {
+        const str = value.toString();
+        objectIdStrings.add(str);
+        return;
+      }
+
+      if (typeof value === 'object') {
+        if (value._id) {
+          collectCenterId(value._id);
+          return;
+        }
+
+        if (value.toString && value.toString() !== '[object Object]') {
+          collectCenterId(value.toString());
+          return;
+        }
+      }
+
+      const strValue = String(value);
+      centerIdStrings.add(strValue);
+
+      if (mongoose.Types.ObjectId.isValid(strValue)) {
+        objectIdStrings.add(strValue);
+      }
+    };
+
+    collectCenterId(centerId);
+    collectCenterId(queryCenterId);
+
+    const objectIdCandidates = Array.from(objectIdStrings).map((id) => new mongoose.Types.ObjectId(id));
+    const stringCandidates = Array.from(centerIdStrings).filter((id) => !objectIdStrings.has(id));
+    const centerIdFilterValues: Array<mongoose.Types.ObjectId | string> = [
+      ...objectIdCandidates,
+      ...stringCandidates
+    ];
+
+    if (centerIdFilterValues.length === 0) {
+      console.warn('⚠️ 센터 ID 후보가 없어 통계를 계산할 수 없습니다.', {
+        userId: req.user?._id,
+        centerId,
+        queryCenterId
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: '센터 정보를 확인할 수 없습니다.'
+      });
+    }
+
+    const centerIdFilter = { $in: centerIdFilterValues };
+    const centerOrConditions = [
+      { centerId: centerIdFilter },
+      { 'instructorInfo.assignedCenters': centerIdFilter },
+      { 'studentInfo.enrolledCenters': centerIdFilter }
+    ];
+
     // 센터 통계 조회
     const totalMembers = await User.countDocuments({
-      centerId: centerId,
-      $or: [
-        { userType: 'student' },
-        { userType: 'instructor' }
-      ],
-      isActive: true
+      isActive: true,
+      userType: { $in: ['student', 'instructor'] },
+      $or: centerOrConditions
     });
 
     const activeInstructors = await User.countDocuments({
       userType: 'instructor',
-      centerId: centerId,
-      isActive: true
+      isActive: true,
+      $or: centerOrConditions
     });
 
     const activeCourses = await Course.countDocuments({
-      centerId,
+      centerId: centerIdFilter,
       status: 'active'
     });
 
@@ -103,7 +167,7 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
     const monthlyRevenue = await Payment.aggregate([
       {
         $match: {
-          centerId,
+          centerId: centerIdFilter,
           status: 'completed',
           createdAt: { $gte: startOfMonth }
         }
@@ -123,7 +187,7 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const todayBookings = await Booking.countDocuments({
-      centerId,
+      centerId: centerIdFilter,
       date: {
         $gte: today,
         $lt: tomorrow
@@ -133,8 +197,21 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
 
     // 승인 대기 건수
     const pendingApprovals = await Booking.countDocuments({
-      centerId,
+      centerId: centerIdFilter,
       status: 'pending'
+    });
+
+    console.log('📊 센터 관리자 대시보드 통계', {
+      userId: req.user?._id,
+      centerIdCandidates: centerIdFilterValues.map((value) => value.toString()),
+      totals: {
+        totalMembers,
+        activeInstructors,
+        activeCourses,
+        monthlyRevenue: monthlyRevenue[0]?.total || 0,
+        todayBookings,
+        pendingApprovals
+      }
     });
 
     res.json({
@@ -927,6 +1004,9 @@ router.get('/bookings', authMiddleware, requireCenterAdmin, async (req: AuthRequ
     }
 
     const { page = 1, limit = 10, status = 'all', date, type } = req.query;
+    void status;
+    void date;
+    void type;
     const skip = (Number(page) - 1) * Number(limit);
 
     // 개인레슨과 레인대여를 모두 포함한 예약 목록
@@ -2858,13 +2938,6 @@ router.put('/members/:memberId', authMiddleware, requireCenterAdmin, async (req:
         message: '회원을 찾을 수 없습니다.'
       });
     }
-
-    // 회원 정보 업데이트
-    const allowedFields = [
-      'name', 'email', 'phone', 'status', 'currentLevel', 
-      'emergencyContact', 'medicalConditions', 'swimmingGoals', 
-      'centerMemo', 'membershipType', 'notes'
-    ];
 
     // 기본 정보 업데이트
     if (updateData.name) member.name = updateData.name;

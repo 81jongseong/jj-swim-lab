@@ -247,7 +247,7 @@ router.get('/:userId/next-recommendation', authMiddleware, async (req: Request, 
     );
 
     // 추천 우선순위
-    let recommendations = [];
+    const recommendations = [];
 
     // 1순위: 진행 중이고 선호 영법인 것
     const preferredInProgress = inProgressMethods.filter((p: any) =>

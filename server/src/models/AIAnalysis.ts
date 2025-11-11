@@ -13,6 +13,7 @@ export interface IAIAnalysis extends Document {
     strengths: string[];
     improvements: string[];
     detailedFeedback: string;
+    completionRate?: number;
   };
   
   // 진도 예측
@@ -22,6 +23,8 @@ export interface IAIAnalysis extends Document {
     estimatedWeeks: number;
     confidence: number; // 0-1
     factors: string[];
+    referenceEvaluationId?: mongoose.Types.ObjectId | null;
+    focusCategories?: string[];
   };
   
   // 개인화 추천
@@ -76,7 +79,12 @@ const AIAnalysisSchema = new Schema<IAIAnalysis>({
     },
     strengths: [String],
     improvements: [String],
-    detailedFeedback: String
+    detailedFeedback: String,
+    completionRate: {
+      type: Number,
+      min: 0,
+      max: 100
+    }
   },
   
   // 진도 예측
@@ -89,7 +97,12 @@ const AIAnalysisSchema = new Schema<IAIAnalysis>({
       min: 0,
       max: 1
     },
-    factors: [String]
+    factors: [String],
+    referenceEvaluationId: {
+      type: Schema.Types.ObjectId,
+      ref: 'AIEvaluationResult'
+    },
+    focusCategories: [String]
   },
   
   // 개인화 추천

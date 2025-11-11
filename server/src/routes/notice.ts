@@ -1,7 +1,6 @@
 import express, { Router } from 'express';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { Notice, NoticeView } from '../models/Notice';
-import { User } from '../models/User';
 
 interface AuthRequest extends express.Request {
   user?: any;

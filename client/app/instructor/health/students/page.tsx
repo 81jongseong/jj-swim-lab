@@ -85,33 +85,22 @@ interface StudentHealthDetail {
 
 export default function InstructorHealthStudents() {
   const { user, hasUserType } = useAuth();
+  const isInstructor = hasUserType('instructor');
   const [students, setStudents] = useState<StudentHealthDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<StudentHealthDetail | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 강사 권한 확인
-  if (!hasUserType('instructor')) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🚫</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한이 없습니다</h1>
-            <p className="text-gray-600">이 페이지는 강사만 접근할 수 있습니다.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // 데이터 로드
   useEffect(() => {
-    if (user?.userType === 'instructor') {
-      loadStudentHealthDetails();
+    if (!isInstructor) {
+      setLoading(false);
+      return;
     }
-  }, [user?.userType]);
+    loadStudentHealthDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInstructor, user?.userType]);
 
   const loadStudentHealthDetails = async () => {
     try {
@@ -121,11 +110,12 @@ export default function InstructorHealthStudents() {
       const token = localStorage.getItem('token');
       if (!token) {
         setError('인증 토큰이 없습니다.');
+        setLoading(false);
         return;
       }
 
-      // 담당 학생 목록 조회
-      const studentsResponse = await fetch('http://localhost:5000/api/instructor/students', {
+      // 담당 학생 목록 조회 (학습 진도 API 활용)
+      const studentsResponse = await fetch('http://localhost:5000/api/learning-progress/instructor/students', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -271,6 +261,21 @@ export default function InstructorHealthStudents() {
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // 강사 권한 확인
+  if (!isInstructor) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🚫</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한이 없습니다</h1>
+            <p className="text-gray-600">이 페이지는 강사만 접근할 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

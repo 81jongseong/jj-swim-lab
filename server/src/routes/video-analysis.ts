@@ -8,7 +8,7 @@
  * - AI 평가 시스템과의 연동
  */
 
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { VideoAnalysisCriteria, VideoAnalysisResult } from '../models/VideoAnalysisCriteria';
 import { authMiddleware, requireRole } from '../middleware/auth';
 

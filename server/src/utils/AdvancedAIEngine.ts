@@ -142,7 +142,7 @@ export interface IAIEvaluationResult {
       name: string;
       description: string;
       duration: number;
-      frequency: number;
+      frequency: number | string;
     };
     nextEvaluationDate: Date;
   };
@@ -151,6 +151,11 @@ export interface IAIEvaluationResult {
     detailedFeedback: string;
     encouragement: string;
     goals: string[];
+  };
+  historicalContext?: {
+    averageProgress: number;
+    sessionsAnalyzed: number;
+    latestChecklistDate: Date | null;
   };
 }
 
@@ -180,6 +185,12 @@ export class AdvancedAIEngine {
           message: `${input.technique} ${input.level} 레벨의 평가 기준을 찾을 수 없습니다.`
         };
       }
+
+      const recentChecklists = await Checklist.find({
+        studentId: input.studentId,
+        instructorId: input.instructorId
+      }).sort({ createdAt: -1 }).limit(5).lean();
+      const historicalTrend = this.calculateHistoricalTrend(recentChecklists);
       
       // 2. 성과 지표 분석
       const performanceAnalysis = this.analyzePerformanceMetrics(input.performanceMetrics, criteria.performanceMetrics, input.level);
@@ -204,6 +215,9 @@ export class AdvancedAIEngine {
       
       // 9. 피드백 생성
       const feedback = this.generateFeedback(overallScore, strengths, weaknesses);
+      if (historicalTrend.sessionsAnalyzed > 0) {
+        feedback.detailedFeedback += ` 최근 ${historicalTrend.sessionsAnalyzed}회 평균 완수율은 ${historicalTrend.averageProgress}%입니다.`;
+      }
       
       // 10. 결과 구성
       const result: IAIEvaluationResult = {
@@ -218,11 +232,24 @@ export class AdvancedAIEngine {
           workoutPlan: exerciseRecommendations.workoutPlan,
           nextEvaluationDate: this.calculateNextEvaluationDate(input.level, overallScore)
         },
-        feedback
+        feedback,
+        historicalContext: historicalTrend
       };
       
       // 11. 결과 저장
       await this.saveEvaluationResult(input, result);
+      await AIAnalysis.create({
+        studentId: input.studentId,
+        instructorId: input.instructorId,
+        analysisType: 'progress',
+        progressPrediction: {
+          currentLevel: input.level,
+          predictedNextLevel: levelAssessment,
+          estimatedWeeks: Math.max(1, historicalTrend.sessionsAnalyzed * 2),
+          confidence: Math.min(1, overallScore / 100),
+          factors: improvementAreas.length > 0 ? improvementAreas : ['steady_progress']
+        }
+      }).catch(() => undefined);
       
       console.log('✅ 고급 AI 엔진 - 종합 평가 완료:', overallScore);
       
@@ -279,11 +306,11 @@ export class AdvancedAIEngine {
   ): { [key: string]: number } {
     const analysis: { [key: string]: number } = {};
     
-    Object.keys(observations).forEach(category => {
-      if (observations[category] !== undefined) {
-        // 강사 관찰 점수를 그대로 사용 (이미 0-100 범위)
-        analysis[category] = observations[category];
-      }
+    Object.keys(categories).forEach(category => {
+      const observedScore = observations[category];
+      const weight = categories[category]?.weight ?? 1;
+      const normalizedScore = typeof observedScore === 'number' ? observedScore : 0;
+      analysis[category] = Math.min(100, Math.max(0, Math.round(normalizedScore * weight)));
     });
     
     return analysis;
@@ -327,11 +354,23 @@ export class AdvancedAIEngine {
     observationAnalysis: { [key: string]: number },
     categories: any
   ): { posture: number; breathing: number; movement: number; efficiency: number } {
+    const performanceAverage = Object.keys(performanceAnalysis).length > 0
+      ? Object.values(performanceAnalysis).reduce((sum, score) => sum + score, 0) / Object.values(performanceAnalysis).length
+      : 0;
+    
+    const blendedScores: { [key: string]: number } = {};
+    Object.keys(categories).forEach(category => {
+      const weight = categories[category]?.weight ?? 1;
+      const observationScore = observationAnalysis[category] ?? 0;
+      const blended = (observationScore * 0.7) + (performanceAverage * 0.3);
+      blendedScores[category] = Math.min(100, Math.max(0, Math.round(blended * weight)));
+    });
+    
     return {
-      posture: observationAnalysis.posture || 0,
-      breathing: observationAnalysis.breathing || 0,
-      movement: observationAnalysis.movement || 0,
-      efficiency: observationAnalysis.efficiency || 0
+      posture: blendedScores.posture ?? 0,
+      breathing: blendedScores.breathing ?? 0,
+      movement: blendedScores.movement ?? 0,
+      efficiency: blendedScores.efficiency ?? 0
     };
   }
   
@@ -339,9 +378,16 @@ export class AdvancedAIEngine {
    * 레벨 평가
    */
   private static assessLevel(overallScore: number, currentLevel: string): string {
-    if (overallScore >= 90) return 'expert';
-    if (overallScore >= 75) return 'advanced';
-    if (overallScore >= 60) return 'intermediate';
+    const baselineByLevel: { [key: string]: number } = {
+      beginner: 50,
+      intermediate: 65,
+      advanced: 75,
+      expert: 85
+    };
+    const baseline = baselineByLevel[currentLevel] ?? 65;
+    if (overallScore >= baseline + 15) return 'expert';
+    if (overallScore >= baseline + 5) return 'advanced';
+    if (overallScore >= baseline - 5) return 'intermediate';
     return 'beginner';
   }
   
@@ -365,10 +411,16 @@ export class AdvancedAIEngine {
       } else if (score < 60) {
         weaknesses.push(categoryName);
         improvementAreas.push(categoryName);
+        const subCategories = criteria?.categories?.[category]?.subCategories;
+        if (subCategories) {
+          Object.keys(subCategories).forEach(sub => {
+            improvementAreas.push(`${categoryName} - ${this.getSubCategoryKoreanName(sub)}`);
+          });
+        }
       }
     });
     
-    return { strengths, weaknesses, improvementAreas };
+    return { strengths, weaknesses, improvementAreas: [...new Set(improvementAreas)] };
   }
   
   /**
@@ -384,8 +436,8 @@ export class AdvancedAIEngine {
     
     // 개선 영역별 운동 추천
     for (const area of improvementAreas) {
-      const recommendations = await ExerciseRecommendation.find({
-        category: this.getCategoryEnglishName(area),
+      const recommendations: IExerciseRecommendation[] = await ExerciseRecommendation.find({
+        category: this.getCategoryEnglishName(area.replace(/\s*-.*$/, '')),
         difficulty: level === 'expert' ? 'advanced' : level
       });
       
@@ -409,7 +461,7 @@ export class AdvancedAIEngine {
           name: rec.name,
           description: rec.description,
           duration: rec.duration,
-          frequency: 'daily'
+          frequency: rec.frequency ?? 'daily'
         };
       }
     }
@@ -478,7 +530,8 @@ export class AdvancedAIEngine {
         levelAssessment: result.levelAssessment,
         strengths: result.strengths,
         weaknesses: result.weaknesses,
-        improvementAreas: result.improvementAreas
+        improvementAreas: result.improvementAreas,
+        historicalContext: result.historicalContext
       },
       recommendations: result.recommendations,
       feedback: result.feedback,
@@ -526,15 +579,22 @@ export class AdvancedAIEngine {
   }
   
   private static determinePriority(area: string, difficulty: string): 'high' | 'medium' | 'low' {
-    if (area === '자세' || area === '호흡') return 'high';
+    if (area.startsWith('자세') || area.startsWith('호흡')) return 'high';
     if (difficulty === 'hard') return 'low';
     return 'medium';
   }
   
   private static calculateNextEvaluationDate(level: string, score: number): Date {
-    const days = score >= 80 ? 14 : score >= 60 ? 7 : 3; // 점수에 따른 평가 주기
+    const baseDaysByLevel: { [key: string]: number } = {
+      beginner: 3,
+      intermediate: 7,
+      advanced: 10,
+      expert: 14
+    };
+    const baseDays = baseDaysByLevel[level] ?? 7;
+    const modifier = score >= 85 ? 1.5 : score >= 70 ? 1 : 0.5;
     const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + days);
+    nextDate.setDate(nextDate.getDate() + Math.round(baseDays * modifier));
     return nextDate;
   }
   
@@ -550,5 +610,45 @@ export class AdvancedAIEngine {
   
   private static generateGoals(weaknesses: string[]): string[] {
     return weaknesses.map(weakness => `${weakness} 개선하기`);
+  }
+
+  private static getSubCategoryKoreanName(subCategory: string): string {
+    const names: { [key: string]: string } = {
+      bodyAlignment: '몸의 정렬',
+      headPosition: '머리 위치',
+      coreStability: '코어 안정성',
+      timing: '호흡 타이밍',
+      technique: '호흡 기술',
+      consistency: '호흡 일관성',
+      strokeTechnique: '스트로크 기술',
+      rhythm: '리듬',
+      coordination: '협응력',
+      power: '파워',
+      endurance: '지구력',
+      speed: '속도'
+    };
+    return names[subCategory] || subCategory;
+  }
+
+  private static calculateHistoricalTrend(
+    checklists: any[]
+  ): { averageProgress: number; sessionsAnalyzed: number; latestChecklistDate: Date | null } {
+    if (!checklists || checklists.length === 0) {
+      return {
+        averageProgress: 0,
+        sessionsAnalyzed: 0,
+        latestChecklistDate: null
+      };
+    }
+
+    const progressValues = checklists.map(checklist => checklist.progress ?? 0);
+    const averageProgress = Math.round(progressValues.reduce((sum, value) => sum + value, 0) / checklists.length);
+    const latestChecklistDate = checklists[0]?.createdAt ? new Date(checklists[0].createdAt) : null;
+
+    return {
+      averageProgress,
+      sessionsAnalyzed: checklists.length,
+      latestChecklistDate
+    };
   }
 }

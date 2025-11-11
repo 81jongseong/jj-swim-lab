@@ -18,6 +18,9 @@
 import React from 'react';
 import { Card, CardContent } from '../ui';
 
+type BookingStatus = 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
+type BookingType = 'personal-lesson' | 'lane-rental';
+
 interface BookingRow {
   _id: string;
   course?: { name: string; level: string } | null;
@@ -25,18 +28,18 @@ interface BookingRow {
   startTime: string;
   endTime: string;
   user?: { name: string; phone: string } | null;
-  status: string;
+  status: BookingStatus;
   laneNumber: number;
   purpose: string;
   notes?: string;
-  type?: 'personal-lesson' | 'lane-rental'; // ⭐ 예약 타입 추가
+  type?: BookingType; // ⭐ 예약 타입 추가
 }
 
 interface BookingCardProps {
   booking: BookingRow;
-  onStatusChange: (bookingId: string, newStatus: string) => void;
-  getStatusText: (status: string) => string;
-  getStatusColor: (status: string) => string;
+  onStatusChange: (bookingId: string, newStatus: BookingStatus) => void;
+  getStatusText: (status: BookingStatus) => string;
+  getStatusColor: (status: BookingStatus) => string;
   getPurposeText: (purpose: string) => string;
   getPurposeColor: (purpose: string) => string;
   formatTime: (time: string | undefined | null) => string;
