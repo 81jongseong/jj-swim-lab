@@ -57,6 +57,19 @@ type StudentSummary = {
   centerId?: string;
   studentInfo?: any;
   instructorInfo?: any;
+  displayName?: string;
+  groupClassId?: string;
+  groupClassName?: string;
+  groupMemberCount?: number;
+  isGroupRepresentative?: boolean;
+};
+
+type GroupClassSummary = {
+  _id: string;
+  className: string;
+  level?: string;
+  students: StudentSummary[];
+  activeCount: number;
 };
 
 type PlanBlock = {
@@ -112,6 +125,9 @@ type WeeklyPlan = {
   planExplanation: string;
   sessions: PlanSession[];
   usedMethodIds: string[];
+  scope?: 'individual' | 'group';
+  groupClassId?: string;
+  representativeStudentId?: string;
 };
 
 type StatusMessage = {
@@ -354,7 +370,11 @@ const extractCss = (raw?: any) => {
 
 const buildPlanSummary = (student: StudentSummary, plan: WeeklyPlan) => {
   const perSession = Math.round(plan.sessionDurationMinutes);
-  return `${student.name} · ${plan.goal} · 주 ${plan.weeklyFrequency}회 · 회당 ${perSession}분 (총 ${plan.weeklyTargetMinutes}분 / 약 ${plan.totalMeters}m)`;
+  const nameLabel = student.displayName || student.name;
+  const title = student.groupClassName && student.groupMemberCount
+    ? `${nameLabel} (${student.groupMemberCount}명)`
+    : nameLabel;
+  return `${title} · ${plan.goal} · 주 ${plan.weeklyFrequency}회 · 회당 ${perSession}분 (총 ${plan.weeklyTargetMinutes}분 / 약 ${plan.totalMeters}m)`;
 };
 
 const buildDefaultPlanExplanation = (sessions: PlanSession[]) =>
@@ -649,6 +669,7 @@ const generatePlanForStudent = (
 function SwimTrainingPlanPage() {
   const { user, hasUserType } = useAuth();
   const [students, setStudents] = useState<StudentSummary[]>([]);
+  const [groupClasses, setGroupClasses] = useState<GroupClassSummary[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState<string | null>(null);
 
@@ -669,6 +690,8 @@ function SwimTrainingPlanPage() {
         const rawStudents = Array.isArray(response?.students) ? response.students : [];
         if (rawStudents.length === 0) {
           setStudents([]);
+          setGroupClasses([]);
+          setSelectedStudentId(null);
           return;
         }
         const formatted: StudentSummary[] = rawStudents.map((student: any) => ({
@@ -679,11 +702,89 @@ function SwimTrainingPlanPage() {
           studentInfo: student.studentInfo,
           instructorInfo: student.instructorInfo
         }));
-        setStudents(formatted);
+
+        const studentMap = new Map<string, StudentSummary>();
+        formatted.forEach((student) => {
+          if (student._id) {
+            studentMap.set(student._id.toString(), student);
+          }
+        });
+
+        const membersToHide = new Set<string>();
+        const groupSummaries: GroupClassSummary[] = [];
+
+        try {
+          const groupResponse = await apiClient.get<any>('/api/group-classes?status=active&limit=200');
+          const groupData = groupResponse?.data?.groupClasses || groupResponse?.groupClasses || [];
+
+          groupData.forEach((group: any) => {
+            if (!group || !group._id || !Array.isArray(group.students)) {
+              return;
+            }
+
+            const memberEntries = group.students
+              .map((entry: any) => {
+                if (!entry) return null;
+                const rawUserId = entry.userId;
+                let mappedId: string | null = null;
+                if (rawUserId && typeof rawUserId === 'object') {
+                  mappedId = rawUserId._id?.toString?.() || rawUserId.id?.toString?.() || rawUserId.toString?.() || null;
+                } else if (rawUserId) {
+                  mappedId = rawUserId.toString();
+                }
+                if (!mappedId) return null;
+                const student = studentMap.get(mappedId);
+                return student ? { student, status: entry.status } : null;
+              })
+              .filter((entry): entry is { student: StudentSummary; status?: string } => Boolean(entry));
+
+            if (memberEntries.length === 0) {
+              return;
+            }
+
+            const representativeEntry = memberEntries.find((entry) => (entry.status || 'active') === 'active') || memberEntries[0];
+            const representative = representativeEntry.student;
+
+            representative.displayName = group.className || representative.name;
+            representative.groupClassId = group._id.toString();
+            representative.groupClassName = group.className;
+            representative.groupMemberCount = memberEntries.length;
+            representative.isGroupRepresentative = true;
+
+            memberEntries.forEach((entry) => {
+              if (entry.student._id !== representative._id) {
+                membersToHide.add(entry.student._id);
+              }
+            });
+
+            groupSummaries.push({
+              _id: group._id.toString(),
+              className: group.className,
+              level: group.level,
+              students: memberEntries.map((entry) => entry.student),
+              activeCount: memberEntries.length
+            });
+          });
+        } catch (groupError) {
+          console.warn('단체반 정보 조회 실패:', groupError);
+        }
+
+        const filteredStudents = formatted.filter((student) => !membersToHide.has(student._id));
+
+        setGroupClasses(groupSummaries);
+        setStudents(filteredStudents);
+        setSelectedStudentId((prev) => {
+          if (prev && filteredStudents.some((student) => student._id === prev)) {
+            return prev;
+          }
+          return filteredStudents.length > 0 ? filteredStudents[0]._id : null;
+        });
       } catch (error) {
         console.error('학생 목록 조회 실패:', error);
         setStudentsError('담당 학생 목록을 불러오는 중 오류가 발생했습니다.');
         setStudents([]);
+        setGroupClasses([]);
+        setSelectedStudentId(null);
       } finally {
         setStudentsLoading(false);
       }
@@ -1111,7 +1212,7 @@ function SwimTrainingPlanPage() {
                 const levelLabel = student.studentInfo?.currentLevel || student.studentInfo?.swimmingLevel;
                 const goalLabel = student.studentInfo?.healthProfile?.fitnessGoals?.[0];
                 return (
-                        <button 
+                  <button 
                     key={student._id}
                     onClick={() => handleSelectStudent(student._id)}
                     className={`w-full text-left border rounded-lg px-4 py-3 transition-colors ${
@@ -1121,14 +1222,31 @@ function SwimTrainingPlanPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-gray-900">{student.name}</span>
-                      {isActive && (
-                        <span className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded-full">선택됨</span>
-                      )}
+                      <span className="font-semibold text-gray-900">{student.displayName || student.name}</span>
+                      <div className="flex items-center gap-2">
+                        {student.groupClassName && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                            단체반 {student.groupMemberCount ?? 0}명
+                          </span>
+                        )}
+                        {isActive && (
+                          <span className="text-xs px-2 py-0.5 bg-blue-600 text-white rounded-full">선택됨</span>
+                        )}
                       </div>
+                    </div>
                     <div className="text-xs text-gray-600 space-y-1">
-                      {levelLabel && <div>레벨: {levelLabel}</div>}
-                      {goalLabel && <div>목표: {goalLabel}</div>}
+                      {student.groupClassName ? (
+                        <>
+                          <div>대표 회원: {student.name}</div>
+                          {levelLabel && <div>레벨: {levelLabel}</div>}
+                          {goalLabel && <div>목표: {goalLabel}</div>}
+                        </>
+                      ) : (
+                        <>
+                          {levelLabel && <div>레벨: {levelLabel}</div>}
+                          {goalLabel && <div>목표: {goalLabel}</div>}
+                        </>
+                      )}
                     </div>
                   </button>
                 );
@@ -1159,7 +1277,7 @@ function SwimTrainingPlanPage() {
                   <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="space-y-2">
                       <CardTitle className="text-xl font-semibold text-gray-900">
-                        {selectedStudent.name} 주간 프로그램 요약
+                        {(selectedStudent.displayName || selectedStudent.name)} 주간 프로그램 요약
                       </CardTitle>
                       <div className="text-sm text-gray-600 space-y-1">
                         <div className="flex items-center gap-2">
