@@ -40,7 +40,7 @@ router.post('/student/:studentId', authMiddleware, requireRole(['instructor']), 
   try {
     const instructorId = req.user?.id;
     const { studentId } = req.params;
-    const { courseName, sessions = [], notes = [], homework = [] } = req.body || {};
+    const { courseName, sessions = [], notes = [], homework = [], levelChecklist = [] } = req.body || {};
 
     if (!Types.ObjectId.isValid(studentId)) {
       return res.status(400).json({ success: false, message: '유효하지 않은 학생 ID 입니다.' });
@@ -85,6 +85,22 @@ router.post('/student/:studentId', authMiddleware, requireRole(['instructor']), 
         }))
       : [];
 
+    const normalizedChecklist = Array.isArray(levelChecklist)
+      ? levelChecklist.map((item: any) => ({
+          itemId: item.itemId || item.id,
+          label: item.label,
+          description: item.description,
+          category: ['stroke', 'technique', 'endurance', 'safety'].includes(item.category)
+            ? item.category
+            : 'technique',
+          level: ['beginner', 'intermediate', 'advanced'].includes(item.level) ? item.level : 'beginner',
+          checked: Boolean(item.checked),
+          checkedAt: item.checkedAt ? new Date(item.checkedAt) : item.checked ? new Date() : null,
+          sourceMethodId: item.sourceMethodId || item.sourceId || null,
+          sourceMethodName: item.sourceMethodName || item.sourceName || item.source || null
+        }))
+      : [];
+
     const updated = await InstructorProgress.findOneAndUpdate(
       { instructorId: instructorObjectId, studentId: studentObjectId },
       {
@@ -93,7 +109,8 @@ router.post('/student/:studentId', authMiddleware, requireRole(['instructor']), 
         courseName,
         sessions: normalizedSessions,
         notes: normalizedNotes,
-        homework: normalizedHomework
+        homework: normalizedHomework,
+        levelChecklist: normalizedChecklist
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ).lean();

@@ -350,6 +350,22 @@
 - 커스텀 `next.config.js` 변경 없이도 빌드가 안정적으로 통과하는지 2회 이상 확인 완료 (2025-11-09)
 - 404/500 페이지는 기본 `app/not-found.tsx`, `app/error.tsx`로 정상 동작함
 
+### 2025-11-11: Next.js 빌드 실패 - vendor chunk 누락
+**현상**:
+- `client` 디렉터리에서 `npm run build` 실행 시 `/instructor/progress` 경로 프리렌더링 단계에서 `Cannot find module './chunks/vendor-chunks/next@14.1.4_@babel+core@7.2_8b2f4e7d400a2c2cfd6e4e7b82148591.js'` 오류가 발생하며 빌드가 중단됨.
+- 동일 세션에서 재빌드하면 파일이 존재하지만, 이전 빌드 산출물이 일부 남아 있을 경우 청크 로딩이 실패함.
+
+**원인**:
+- Windows 환경에서 `.next` 디렉터리 내부 일부 파일이 잠긴 상태로 남아 있어 새 빌드가 동일 경로의 새 청크를 생성하지 못하고, 기존 런타임이 누락된 파일을 참조.
+
+**해결 방법**:
+1. 빌드 전에 `.next` 폴더를 완전히 삭제: `cd client && if (Test-Path .next) { Remove-Item .next -Recurse -Force }`
+2. `npm run build`를 다시 실행하면 새 청크가 정상 생성되며 오류 없이 프리렌더링 완료.
+
+**추가 확인 사항**:
+- 동일 증상이 반복되면 `npm run clean` 또는 PowerShell에서 강제 삭제 후 빌드 재시도를 권장.
+- CI 환경에서도 캐시된 `.next` 산출물 사용 시 동일 문제가 발생할 수 있으므로, 배포 파이프라인에서 빌드 전 캐시 삭제를 명시적으로 수행한다.
+
 ## 🔍 자동 헬스 체크 (2025. 11. 9. 오전 11:43:52)
 
 - 총 검사: 435개
@@ -516,4 +532,64 @@
 **추가 확인 사항**:
 - 향후 실제 코스/예약 API에서 반환하는 세션 데이터가 주간 단위로 분리되어 들어오면 필터링 로직을 재검토.
 - `sessions` 배열에 과거/미래 주차 데이터를 함께 보관하는 경우에는 카드 집계 시 항상 날짜 범위를 적용해야 함.
+
+### 2025-11-12: 레벨 체크리스트 - 슈퍼관리자 강습법 연동 및 승급 API 연결
+**배경**:
+- 기존 "레벨 체크리스트"는 하드코딩된 기본 항목만 사용하여 실제 강습 템플릿과 동기화되지 않았음.
+- 승급 제안 버튼이 UI 알림에만 머물고, 학생 레벨 변경 API와 연계되지 않아 실데이터 반영이 되지 않았음.
+
+**조치 내용**:
+1. `client/app/instructor/progress/page.tsx`
+   - 슈퍼관리자 강습법(`GET /api/teaching-methods?difficulty=...`)을 호출해 현재 레벨/다음 레벨 체크 항목을 자동 구성하도록 개선.
+   - 네트워크 오류나 템플릿 부재 시 `@/data/swimming-checklist` 기본 항목으로 폴백.
+   - 체크리스트 상태를 학생별로 저장하고, 저장 API 호출 시 항목별 체크 여부·출처(강습법 ID/이름)를 함께 전송.
+   - 승급 버튼 클릭 시 `/api/student-levels/:studentId/level` 엔드포인트를 호출해 레벨을 실제로 갱신하고, 성공 시 템플릿을 새 레벨 기준으로 다시 로드.
+2. `server/src/models/InstructorProgress.ts`
+   - `levelChecklist` 필드를 추가해 체크리스트 항목/체크 상태/출처 메타데이터를 영구 저장.
+3. `server/src/routes/instructor-progress.ts`
+   - 저장 시 전달받은 체크리스트를 정규화하여 MongoDB에 보관하고, 조회 시 기존 기록을 그대로 반환하도록 확장.
+4. `server/src/routes/student-levels.ts`
+   - API 입력(영문/한글)을 모두 지원하며, 저장 시 `studentInfo.swimmingLevel`과 `currentLevel`을 한글(초급/중급/고급…)로 업데이트하도록 매핑을 추가.
+   - 레벨 변경 이력에 한글 레벨을 기록하고, 응답에는 영문/한글 레벨을 모두 포함해 프런트와 센터 관리 툴에서 동일한 데이터를 재사용할 수 있게 함.
+
+**추가 확인사항**:
+- 추후 체크리스트 항목 커스터마이징(센터 단위 템플릿)이 도입되면, 현재의 슈퍼관리자 템플릿과 병합 로직을 조정해야 함.
+- 승급 API는 권한 검증(강사/센터 관리자/슈퍼관리자) 결과에 따라 403을 반환하므로, 프런트에서 오류 메시지를 노출하도록 유지.
+
+### 2025-11-12: Next.js 빌드 일시 실패 (TypeError: Cannot read properties of undefined (reading 'call'))
+**현상**:
+- `npm run build` 첫 수행 시 `/instructor/progress`, `/instructor/courses` 등 다수 경로의 프리렌더링 단계에서 `TypeError: Cannot read properties of undefined (reading 'call')`가 발생하며 export 단계가 중단됨.
+
+**원인/조치**:
+- `.next` 캐시에 남아 있던 이전 청크와 신규 청크가 충돌한 것으로 추정.
+- 동일 세션에서 `NEXT_DEBUG_BUILD=1 npm run build` → 성공, 이후 환경 변수를 제거하고 재빌드 시 문제 재현되지 않음.
+- 작업 후 `.next` 폴더를 완전히 삭제(`Remove-Item .next -Recurse -Force`)하고 `npm run build`를 재실행하면 안정적으로 통과함을 확인.
+
+**추가 확인 사항**:
+- 일시 오류라도 `DEVELOPMENT.md`에 로그를 남기고, 재빌드 성공 여부를 기록.
+- Windows 환경에서는 빌드 전 `.next` 삭제를 습관화해 유사 증상이 반복되지 않도록 한다.
+
+### 2025-11-12: 진행상황 추적 페이지 제거 및 맞춤형 계획 이력 통합
+**조치 배경**:
+- `instructor/health/progress` 페이지가 실제 서비스 플로우에서 사용되지 않고, 진행·출석 관리는 `/instructor/progress`에서 집중적으로 다루고 있었음.
+- 프로그램 이력도 별도 페이지 대신 맞춤형 수영 계획 화면에서 바로 조회하고 싶다는 요청이 있었음.
+
+**조치 내용**:
+1. `client/app/instructor/health/progress/page.tsx` 파일을 제거하고, 네비게이션에서 해당 링크를 삭제.
+2. 맞춤형 수영 계획 페이지(`client/app/instructor/swim-training-plan/page.tsx`) 상단에 “저장된 프로그램 이력” 카드 추가.
+   - 개인/단체반별 최근 10개의 저장 이력을 조회하고, 클릭 시 즉시 불러오기 가능.
+   - 새로고침 버튼과 로딩/에러 처리 추가.
+   - 이력 카드에 `id="plan-history"` 앵커를 부여하여 네비게이션에서 바로 이동 가능.
+   - 2025-11-12 업데이트: 저장 이력을 월간 캘린더로 시각화하고, 날짜별로 색상으로 구분된 프로그램을 선택하여 당시의 계획 및 완료율을 확인할 수 있도록 개선.
+   - 2025-11-12 추가 조치: 그룹 프로그램 저장 시 실제 `GroupClass` ObjectId를 우선 사용하도록 식별자 정규화 로직을 보완해 `단체반을 찾을 수 없습니다.` 404 응답이 발생하던 문제를 예방.
+   - 2025-11-12 추가 조치 2: 기존 `Course` 기반 강습(신규 강습 엔진)만 존재하는 경우에도 저장·이력이 동작하도록 `/api/group-programs`에서 `courseId`를 허용하고, 프론트에서도 `GroupClass` 미연동 시 경고만 표시하게 변경.
+3. 불필요한 강사용 부가 페이지 정리
+   - 강사용 운동량 계산기(`client/app/instructor/exercise-calculator/page.tsx`)와 애니메이션 체험 메뉴를 제거하고 네비게이션에서도 숨김.
+   - 강사용 맞춤형 계획 이력 앵커 메뉴 삭제로 네비게이션 단순화.
+   - 센터 관리자 메뉴 그룹 구조를 참고해 강사용 메뉴도 `바로가기 · 강의/예약 · 수강생 케어 · 코칭 도구 · 지도 자료 · 리소스` 체계로 재구성.
+3. 네비게이션 `Health` 섹션에 `맞춤형 계획 이력` 링크(`'/instructor/swim-training-plan#plan-history'`)를 추가하고, 사용되지 않던 중복 메뉴를 정리.
+
+**추가 확인사항**:
+- 프로그램 저장 후에는 자동으로 이력이 갱신되도록 `historyRefreshKey` 기반 재조회 로직을 추가했으므로, 저장 API 응답 구조 변경 시에도 동일한 갱신이 이루어지는지 확인.
+- 단체반 프로그램도 동일한 카드에서 확인할 수 있으므로, 그룹별 데이터가 정상적으로 정렬되는지 QA 필요.
 

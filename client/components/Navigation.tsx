@@ -116,12 +116,10 @@ const userMenuStructure = {
       { href: '/health/program', label: '🏊‍♂️ 운동 프로그램' },
       { href: '/health/history', label: '📋 프로그램 이력' },
       { href: '/health/measurements', label: '📊 측정 데이터' },
-      { href: '/health/exercise-calculator', label: '⚡ 운동량 계산기' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/uploads', label: '📹 영상 업로드' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     info: [
@@ -134,41 +132,31 @@ const userMenuStructure = {
     ]
   },
   instructor: {
-    main: [
+    quickAccess: [
       { href: '/', label: '🏠 홈' },
       { href: '/instructor/dashboard', label: '📊 강사 대시보드' },
+    ],
+    classManagement: [
       { href: '/instructor/courses', label: '📚 내 강의 관리' },
       { href: '/instructor/bookings', label: '📅 예약 관리' },
     ],
-    students: [
+    studentCare: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
-      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
       { href: '/instructor/progress', label: '📈 진행 · 출석 관리' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
-    reports: [
-      { href: '/instructor/reports', label: '📊 강사 리포트' },
-      { href: '/instructor/progress', label: '📈 진행상황 관리' },
-    ],
-    health: [
+    coachingTools: [
+      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
       { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
-      { href: '/instructor/health/progress', label: '📈 진행상황 추적' },
-      { href: '/instructor/health/history', label: '📋 프로그램 이력 관리' },
-      { href: '/instructor/exercise-calculator', label: '⚡ 운동량 계산기' },
-    ],
-    center: [
-      { href: '/guide', label: '📖 이용안내' },
-      { href: '/news', label: '📢 공지사항' },
-    ],
-    teaching: [
       { href: '/instructor/teaching-methods', label: '🏊‍♂️ 강습법 관리' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/(labs)/animation', label: '🎬 애니메이션' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
-    info: [
+    resources: [
+      { href: '/guide', label: '📖 이용안내' },
+      { href: '/news', label: '📢 공지사항' },
       { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
@@ -308,12 +296,12 @@ const menuGrouping = {
     { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
   ],
   instructor: [
-    { groupName: '🏠 기본 메뉴', categories: ['main'] },
-    { groupName: '👥 수강생 관리', categories: ['students'] },
-    { groupName: '🏥 건강정보 관리', categories: ['health'] },
-    { groupName: '🏢 센터 정보', categories: ['center'] },
+    { groupName: '⚡ 바로가기', categories: ['quickAccess'] },
+    { groupName: '📚 강의 · 예약', categories: ['classManagement'] },
+    { groupName: '👥 수강생 케어', categories: ['studentCare'] },
+    { groupName: '🏊 코칭 도구', categories: ['coachingTools'] },
     { groupName: '🎯 체험 메뉴', categories: ['experience'] },
-    { groupName: '💬 커뮤니티', categories: ['info'] },
+    { groupName: '📘 안내 & 지원', categories: ['resources'] },
   ],
   centerAdmin: [
     { groupName: '📊 센터 관리', categories: ['dashboard'] },

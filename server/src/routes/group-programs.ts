@@ -18,6 +18,7 @@ import SwimProgram from '../models/SwimProgram';
 import PersonalProgramAdjustment from '../models/PersonalProgramAdjustment';
 import { User } from '../models/User';
 const GroupClass = require('../models/GroupClass').default;
+import { Course } from '../models/Course';
 
 const router = express.Router();
 
@@ -27,31 +28,72 @@ const router = express.Router();
  */
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { groupClassId, programData } = req.body;
+    const { groupClassId, courseId, programData } = req.body;
     
-    if (!groupClassId || !programData) {
+    if ((!groupClassId && !courseId) || !programData) {
       return res.status(400).json({
         success: false,
-        message: '단체반 ID와 프로그램 데이터가 필요합니다.'
+        message: '단체반 또는 강습 과정 ID와 프로그램 데이터가 필요합니다.'
       });
     }
     
     // 단체반 정보 조회
-    const groupClass = await GroupClass.findById(groupClassId);
+    let groupClass = groupClassId ? await GroupClass.findById(groupClassId) : null;
+    let fallbackCourse: any = null;
+    let resolvedGroupClassId = groupClassId;
+    let resolvedClassName = groupClass?.className;
+    let resolvedCenterId = groupClass?.centerId;
+    let resolvedInstructorId = groupClass?.instructorId;
+    let resolvedStudents: any[] = groupClass?.students || [];
+    let resolvedDuration = groupClass?.schedule?.duration;
+
     if (!groupClass) {
-      return res.status(404).json({
-        success: false,
-        message: '단체반을 찾을 수 없습니다.'
-      });
+      if (!courseId) {
+        return res.status(404).json({
+          success: false,
+          message: '단체반을 찾을 수 없습니다.'
+        });
+      }
+
+      fallbackCourse = await Course.findById(courseId);
+
+      if (!fallbackCourse) {
+        return res.status(404).json({
+          success: false,
+          message: '단체반을 찾을 수 없습니다.'
+        });
+      }
+
+      resolvedGroupClassId = courseId;
+      resolvedClassName = fallbackCourse.classInfo?.className || fallbackCourse.name || '단체반';
+      resolvedCenterId = fallbackCourse.centerId;
+      resolvedInstructorId =
+        fallbackCourse.instructorId ||
+        fallbackCourse.instructor ||
+        (fallbackCourse.teacherId || fallbackCourse.teacher);
+      resolvedDuration = fallbackCourse.duration || fallbackCourse.classInfo?.duration || 60;
+
+      resolvedStudents = (fallbackCourse.enrolledStudents || []).map((enrollment: any) => ({
+        userId: enrollment?.student || enrollment?.studentId,
+        status: (enrollment?.status || 'active') as 'active' | 'inactive' | 'completed' | 'dropped'
+      }));
+
+      groupClass = {
+        _id: courseId,
+        className: resolvedClassName,
+        centerId: resolvedCenterId,
+        instructorId: resolvedInstructorId,
+        students: resolvedStudents
+      } as any;
     }
     
-    console.log(`📚 단체반 프로그램 생성 시작: ${groupClass.className}`);
+    console.log(`📚 단체반 프로그램 생성 시작: ${resolvedClassName}`);
     
     // 공통 프로그램 생성
     const newProgram = new SwimProgram({
-      groupClassId: groupClass._id,
-      groupClassName: groupClass.className,
-      centerId: groupClass.centerId,
+      groupClassId: resolvedGroupClassId,
+      groupClassName: resolvedClassName,
+      centerId: resolvedCenterId,
       programType: programData.programType || 'weekly',
       programScope: 'group', // 단체반 프로그램
       params: programData.params,
@@ -63,7 +105,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     console.log(`✅ 단체반 공통 프로그램 생성 완료: ${newProgram._id}`);
     
     // 단체반 학생들 조회
-    const activeStudents = groupClass.students.filter((s: any) => s.status === 'active');
+    const activeStudents = resolvedStudents.filter((s: any) => (s?.status || 'active') === 'active');
     console.log(`👥 활성 학생 ${activeStudents.length}명에 대한 개인별 조정사항 생성 시작`);
     
     const adjustmentPromises = activeStudents.map(async (student: any) => {
@@ -79,7 +121,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         const adjustment = await generatePersonalAdjustment(
           newProgram._id,
           user._id,
-          groupClass._id,
+          resolvedGroupClassId,
           user,
           programData
         );
@@ -102,9 +144,10 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       message: `단체반 프로그램 생성 완료! (${successCount}/${activeStudents.length}명의 개인별 조정사항 생성됨)`,
       data: {
         programId: newProgram._id,
-        groupClassName: groupClass.className,
+        groupClassName: resolvedClassName,
         studentCount: activeStudents.length,
-        adjustmentCount: successCount
+        adjustmentCount: successCount,
+        usedFallbackCourse: Boolean(fallbackCourse)
       }
     });
     
