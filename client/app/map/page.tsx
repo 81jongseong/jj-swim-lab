@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import MapHeader from '@/components/map/MapHeader';
@@ -21,6 +21,31 @@ import FilterOptions from '@/components/map/FilterOptions';
 
 // 동적 import로 SSR 문제 방지
 let L: any;
+
+const DEFAULT_COORDINATES = { lat: 37.5665, lng: 126.9780 };
+
+const normalizeAddress = (value?: string) => {
+  if (!value) return '';
+  return value
+    .replace(/특별자치시|광역시|특별시/g, '시')
+    .replace(/특별자치도|자치도/g, '도')
+    .replace(/\s+/g, '')
+    .toLowerCase();
+};
+
+const normalizeName = (value?: string) => {
+  if (!value) return '';
+  return value.replace(/\s+/g, '').toLowerCase();
+};
+
+const ADDRESS_KEYWORD_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  '강남구': { lat: 37.4979, lng: 127.0276 },
+  '테헤란로': { lat: 37.4999, lng: 127.0373 },
+  '송파구': { lat: 37.5112, lng: 127.1038 },
+  '마포구': { lat: 37.5662, lng: 126.9018 },
+  '홍대': { lat: 37.5563, lng: 126.9237 },
+  '일산': { lat: 37.6763, lng: 126.775 },
+};
 
 interface SwimmingCenter {
   id: string;
@@ -569,6 +594,66 @@ export default function MapPage() {
     '20:00', '21:00', '22:00'
   ];
 
+  const sampleLookups = useMemo(() => {
+    const addressMap = new Map<string, { lat: number; lng: number }>();
+    const nameMap = new Map<string, { lat: number; lng: number }>();
+
+    swimmingCenters.forEach((center) => {
+      const normalizedAddress = normalizeAddress(center.address);
+      if (normalizedAddress) {
+        addressMap.set(normalizedAddress, center.position);
+      }
+
+      const normalizedName = normalizeName(center.name);
+      if (normalizedName) {
+        nameMap.set(normalizedName, center.position);
+      }
+    });
+
+    return { addressMap, nameMap };
+  }, []);
+
+  const getCenterPosition = (center: any, index: number) => {
+    const centerCoordinates = center?.location?.coordinates;
+
+    if (
+      Array.isArray(centerCoordinates) &&
+      centerCoordinates.length === 2 &&
+      centerCoordinates.every((value: any) => typeof value === 'number')
+    ) {
+      return { lat: centerCoordinates[1], lng: centerCoordinates[0] };
+    }
+
+    if (
+      typeof center.latitude === 'number' &&
+      typeof center.longitude === 'number'
+    ) {
+      return { lat: center.latitude, lng: center.longitude };
+    }
+
+    const normalizedAddress = normalizeAddress(center.address);
+    if (normalizedAddress && sampleLookups.addressMap.has(normalizedAddress)) {
+      return sampleLookups.addressMap.get(normalizedAddress)!;
+    }
+
+    const normalizedName = normalizeName(center.name);
+    if (normalizedName && sampleLookups.nameMap.has(normalizedName)) {
+      return sampleLookups.nameMap.get(normalizedName)!;
+    }
+
+    for (const [keyword, coords] of Object.entries(ADDRESS_KEYWORD_COORDINATES)) {
+      if (normalizedAddress.includes(normalizeAddress(keyword))) {
+        return coords;
+      }
+    }
+
+    const offset = (index % 5) * 0.0007;
+    return {
+      lat: DEFAULT_COORDINATES.lat + offset,
+      lng: DEFAULT_COORDINATES.lng + offset,
+    };
+  };
+
   // 🆕 샘플 + 실제 센터 병합 (개발 중에는 샘플 데이터도 유지)
   const allCenters = [...swimmingCenters, ...realCenters];
 
@@ -723,10 +808,8 @@ export default function MapPage() {
         
         // API 데이터를 SwimmingCenter 인터페이스로 변환
         const transformedCenters: SwimmingCenter[] = (data || []).map((center: any, index: number) => {
-          // location.coordinates는 [lng, lat] 형식 (GeoJSON 표준)
-          const lat = center.location?.coordinates?.[1] || 37.5665;
-          const lng = center.location?.coordinates?.[0] || 126.9780;
-          
+          const { lat, lng } = getCenterPosition(center, index);
+
           return {
             id: center._id || `center-${index}`,
             name: center.name || '이름 없음',
