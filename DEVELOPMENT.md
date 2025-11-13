@@ -872,3 +872,19 @@
 - 실패: 0개
 - 경고: 0개
 
+### ✅ 2025-11-13: 수강생 회원가입 수영 정보 확장
+
+- `client/app/auth/signup/page.tsx` 학생 단계에 수영 숙련도, 연속 완영 거리, 주·회피 영법, CSS 입력(측정 유무 포함)을 추가하고 `ConditionQuickPick`을 통합해 프로그램 엔진이 요구하는 컨디션 데이터와 연동.
+- CSS 측정 시 `CSSInputSection`을 그대로 활용해 영법별 CSS, 측정 풀 길이 등 엔진과 호환 가능한 형태로 `studentInfo.swimmingProfile`에 전송.
+- 숙련도 선택값을 레벨 체계(초급~전문가)로 매핑해 `swimmingLevel`/`currentLevel`에 기록하고, 선택한 영법을 `mainStrokes`·`preferredStrokes`로 동기화.
+- 질환·특수상황은 health 엔진과 동일한 ID 배열로 저장되며, 빠른 선택/전체 보기 UX가 가입 단계에서도 그대로 동작하도록 구성.
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 11:09:25)
+
+- 총 검사: 443개
+- 통과: 553개
+- 실패: 0개
+- 경고: 0개
+

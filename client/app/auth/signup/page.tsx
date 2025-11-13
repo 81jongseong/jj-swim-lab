@@ -29,6 +29,9 @@ import {
   EyeOff
 } from 'lucide-react';
 import RegionSelector, { CITIES_BY_PROVINCE } from '@/components/map/RegionSelector';
+import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSection';
+import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
+import ConditionQuickPick from '@/components/swimlab/ConditionQuickPick';
 
 
 interface Certificate {
@@ -45,8 +48,51 @@ interface TeachingExperience {
   workType: string;
 }
 
+type AccountType = 'student' | 'instructor';
+type StrokeId = 'freestyle' | 'backstroke' | 'breaststroke' | 'butterfly';
+type SwimProficiencyId = 'basic' | StrokeId;
+type HasCssOption = 'yes' | 'no';
+
+interface SignupFormState {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  birthDate: string;
+  gender: string;
+  address: string;
+  postalCode: string;
+  address1: string;
+  address2: string;
+  latitude: number | null;
+  longitude: number | null;
+  accountType: AccountType;
+  height: string;
+  weight: string;
+  bloodType: string;
+  medicalHistory: string;
+  allergies: string;
+  emergencyContact: string;
+  emergencyPhone: string;
+  swimProficiency: SwimProficiencyId | '';
+  maxContinuousDistance: string;
+  hasCssMeasurement: HasCssOption;
+  strokeCSS: Record<StrokeId, number>;
+  cssMeasurementPoolLength: number;
+  mainStrokes: StrokeId[];
+  excludedStrokes: StrokeId[];
+  preferredStrokes: StrokeId[];
+  conditionIds: string[];
+  fitnessGoals: string;
+  specialties: string;
+  introduction: string;
+  agreeTerms: boolean;
+  agreePrivacy: boolean;
+}
+
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignupFormState>({
     // 기본 정보
     name: '',
     email: '',
@@ -59,8 +105,8 @@ export default function SignupPage() {
     postalCode: '', // 🆕 우편번호
     address1: '', // 🆕 기본 주소
     address2: '', // 🆕 상세 주소
-    latitude: null as number | null, // 🆕 위도
-    longitude: null as number | null, // 🆕 경도
+    latitude: null, // 🆕 위도
+    longitude: null, // 🆕 경도
     
     // 계정 유형별 정보
     accountType: 'student',
@@ -70,16 +116,24 @@ export default function SignupPage() {
     weight: '',
     bloodType: '',
     medicalHistory: '',
-    currentMedications: '',
     allergies: '',
     emergencyContact: '',
     emergencyPhone: '',
-    
-    // 학생용 운동 정보
-    exerciseExperience: '',
-    preferredSwimmingStyle: '',
+    swimProficiency: '',
+    maxContinuousDistance: '',
+    hasCssMeasurement: 'no',
+    strokeCSS: {
+      freestyle: 0,
+      backstroke: 0,
+      breaststroke: 0,
+      butterfly: 0
+    },
+    cssMeasurementPoolLength: 25,
+    mainStrokes: ['freestyle'],
+    excludedStrokes: [],
+    preferredStrokes: ['freestyle'],
+    conditionIds: [],
     fitnessGoals: '',
-    availableTime: '',
     
     // 강사용 정보
     specialties: '',
@@ -123,6 +177,59 @@ export default function SignupPage() {
   const [codeError, setCodeError] = useState('');
 
   const totalSteps = 5;
+
+  const strokeOptions: Array<{ id: StrokeId; label: string; icon: string }> = [
+    { id: 'freestyle', label: '자유형', icon: '🏊' },
+    { id: 'backstroke', label: '배영', icon: '🏊‍♂️' },
+    { id: 'breaststroke', label: '평영', icon: '🤿' },
+    { id: 'butterfly', label: '접영', icon: '🦋' }
+  ];
+
+  const swimProficiencyOptions: Array<{ id: SwimProficiencyId; label: string; description: string }> = [
+    {
+      id: 'basic',
+      label: '기초 단계',
+      description: '킥보드, 호흡 연습 단계'
+    },
+    {
+      id: 'freestyle',
+      label: '자유형까지 가능',
+      description: '25m 이상 자유형 완영'
+    },
+    {
+      id: 'backstroke',
+      label: '배영까지 가능',
+      description: '자유형 + 배영 완영'
+    },
+    {
+      id: 'breaststroke',
+      label: '평영까지 가능',
+      description: '3영법 완영 가능'
+    },
+    {
+      id: 'butterfly',
+      label: '접영까지 가능',
+      description: '4영법 모두 완영 가능'
+    }
+  ];
+
+  const distanceOptions: Array<{ value: string; label: string }> = [
+    { value: '25', label: '25m (1바퀴)' },
+    { value: '50', label: '50m (2바퀴)' },
+    { value: '100', label: '100m (4바퀴)' },
+    { value: '200', label: '200m (8바퀴)' },
+    { value: '400', label: '400m (16바퀴)' },
+    { value: '800', label: '800m (32바퀴)' },
+    { value: '1500', label: '1500m 이상' }
+  ];
+
+  const proficiencyToLevel: Record<SwimProficiencyId, '초급' | '중급' | '고급' | '전문가' | '마스터'> = {
+    basic: '초급',
+    freestyle: '초급',
+    backstroke: '중급',
+    breaststroke: '고급',
+    butterfly: '전문가'
+  };
 
   // 🆕 Daum Postcode API 스크립트 로드
   useEffect(() => {
@@ -229,8 +336,17 @@ export default function SignupPage() {
       if (formData.accountType === 'student') {
         if (!formData.height) newErrors.height = '키를 입력해주세요';
         if (!formData.weight) newErrors.weight = '몸무게를 입력해주세요';
-        if (!formData.exerciseExperience) newErrors.exerciseExperience = '운동 경험을 선택해주세요';
-        if (!formData.preferredSwimmingStyle) newErrors.preferredSwimmingStyle = '선호하는 수영 스타일을 선택해주세요';
+        if (!formData.swimProficiency) newErrors.swimProficiency = '수영 숙련도를 선택해주세요';
+        if (!formData.maxContinuousDistance) newErrors.maxContinuousDistance = '연속으로 수영할 수 있는 거리를 선택해주세요';
+        if (!formData.mainStrokes || formData.mainStrokes.length === 0) {
+          newErrors.mainStrokes = '가능한 영법을 최소 1개 이상 선택해주세요';
+        }
+        if (formData.hasCssMeasurement === 'yes') {
+          const hasValidCss = Object.values(formData.strokeCSS || {}).some((value) => Number(value) > 0);
+          if (!hasValidCss) {
+            newErrors.strokeCSS = 'CSS 측정 값을 입력해주세요';
+          }
+        }
       } else if (formData.accountType === 'instructor') {
         const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.certificateNumber && cert.acquiredDate);
         if (validCertificates.length === 0) newErrors.certifications = '자격증 정보를 최소 1개 이상 입력해주세요';
@@ -301,12 +417,52 @@ export default function SignupPage() {
 
       // 계정 유형별 추가 정보
       if (formData.accountType === 'student') {
+        const cleanedCss = Object.entries(formData.strokeCSS || {}).reduce<Record<string, number>>((acc, [key, value]) => {
+          const numeric = Number(value);
+          if (Number.isFinite(numeric) && numeric > 0) {
+            acc[key] = numeric;
+          }
+          return acc;
+        }, {});
+
+        const swimmingProfile: Record<string, any> = {
+          mainStrokes: formData.mainStrokes,
+          preferredStrokes: formData.preferredStrokes,
+          excludedStrokes: formData.excludedStrokes,
+          conditionIds: formData.conditionIds,
+          currentGoal: formData.fitnessGoals || undefined,
+          hasCssMeasurement: formData.hasCssMeasurement === 'yes'
+        };
+
+        if (formData.maxContinuousDistance) {
+          swimmingProfile.maxContinuousDistance = Number(formData.maxContinuousDistance);
+        }
+
+        if (formData.swimProficiency) {
+          swimmingProfile.swimProficiency = formData.swimProficiency;
+        }
+
+        if (formData.hasCssMeasurement === 'yes' && Object.keys(cleanedCss).length > 0) {
+          swimmingProfile.css = {
+            ...cleanedCss,
+            lastUpdated: new Date().toISOString(),
+            updatedByRole: 'self'
+          };
+          swimmingProfile.cssMeasurementPoolLength = formData.cssMeasurementPoolLength;
+        }
+
         requestData.studentInfo = {
           height: formData.height ? Number(formData.height) : undefined,
           weight: formData.weight ? Number(formData.weight) : undefined,
           medicalConditions: formData.medicalHistory,
+          medicalHistory: formData.medicalHistory,
+          allergies: formData.allergies,
+          bloodType: formData.bloodType,
           emergencyContact: formData.emergencyContact,
-          emergencyPhone: formData.emergencyPhone
+          emergencyPhone: formData.emergencyPhone,
+          swimmingLevel: formData.swimProficiency ? proficiencyToLevel[formData.swimProficiency] : undefined,
+          currentLevel: formData.swimProficiency ? proficiencyToLevel[formData.swimProficiency] : undefined,
+          swimmingProfile
         };
       } else if (formData.accountType === 'instructor') {
         const validCertificates = certificates.filter(cert => cert.name && cert.issuer && cert.certificateNumber && cert.acquiredDate);
@@ -715,47 +871,138 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Activity className="w-4 h-4 inline mr-2" />
-                    운동 경험 *
-                  </label>
-                  <select
-                    value={formData.exerciseExperience}
-                    onChange={(e) => setFormData({ ...formData, exerciseExperience: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.exerciseExperience ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">운동 경험을 선택하세요</option>
-                    <option value="beginner">초보자</option>
-                    <option value="intermediate">중급자</option>
-                    <option value="advanced">고급자</option>
-                    <option value="expert">전문가</option>
-                  </select>
-                  {errors.exerciseExperience && <p className="text-red-500 text-sm mt-1">{errors.exerciseExperience}</p>}
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-800">수영 숙련도 *</h3>
+                      <p className="text-xs text-gray-500">완영 가능한 최고 영법을 선택해주세요.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {swimProficiencyOptions.map((option) => (
+                      <label
+                        key={option.id}
+                        className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${
+                          formData.swimProficiency === option.id
+                            ? 'border-blue-500 bg-white shadow-sm'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="swimProficiency"
+                          value={option.id}
+                          checked={formData.swimProficiency === option.id}
+                          onChange={() => setFormData({ ...formData, swimProficiency: option.id })}
+                          className="mt-1 h-4 w-4 text-blue-600"
+                        />
+                        <div>
+                          <p className="font-medium text-gray-900">{option.label}</p>
+                          <p className="text-sm text-gray-600">{option.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  {errors.swimProficiency && <p className="text-red-500 text-sm mt-1">{errors.swimProficiency}</p>}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Activity className="w-4 h-4 inline mr-2" />
-                    선호하는 수영 스타일 *
+                    <Target className="w-4 h-4 inline mr-2" />
+                    연속으로 수영 가능한 거리 *
                   </label>
                   <select
-                    value={formData.preferredSwimmingStyle}
-                    onChange={(e) => setFormData({ ...formData, preferredSwimmingStyle: e.target.value })}
+                    value={formData.maxContinuousDistance}
+                    onChange={(e) => setFormData({ ...formData, maxContinuousDistance: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.preferredSwimmingStyle ? 'border-red-500' : 'border-gray-300'
+                      errors.maxContinuousDistance ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">수영 스타일을 선택하세요</option>
-                    <option value="freestyle">자유형</option>
-                    <option value="backstroke">배영</option>
-                    <option value="breaststroke">평영</option>
-                    <option value="butterfly">접영</option>
-                    <option value="mixed">혼영</option>
+                    <option value="">거리를 선택하세요</option>
+                    {distanceOptions.map((distance) => (
+                      <option key={distance.value} value={distance.value}>
+                        {distance.label}
+                      </option>
+                    ))}
                   </select>
-                  {errors.preferredSwimmingStyle && <p className="text-red-500 text-sm mt-1">{errors.preferredSwimmingStyle}</p>}
+                  {errors.maxContinuousDistance && (
+                    <p className="text-red-500 text-sm mt-1">{errors.maxContinuousDistance}</p>
+                  )}
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-800">가능 영법 & 회피 영법 *</h3>
+                      <p className="text-xs text-gray-500">주로 사용하는 영법과 피하고 싶은 영법을 선택하세요.</p>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      선택된 영법: <strong className="text-blue-600">{formData.mainStrokes.length}</strong>개
+                    </span>
+                  </div>
+                  <StrokesSelectionSection
+                    mainStrokes={formData.mainStrokes}
+                    excludedStrokes={formData.excludedStrokes}
+                    strokes={strokeOptions}
+                    onUpdate={(updates) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        mainStrokes: updates.mainStrokes ?? prev.mainStrokes,
+                        preferredStrokes: updates.mainStrokes ?? prev.preferredStrokes,
+                        excludedStrokes: updates.excludedStrokes ?? prev.excludedStrokes,
+                      }))
+                    }
+                  />
+                  {errors.mainStrokes && <p className="text-red-500 text-sm">{errors.mainStrokes}</p>}
+                </div>
+
+                <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-blue-900">CSS 측정 여부</h3>
+                      <p className="text-xs text-blue-700">
+                        최근에 CSS(Critical Swim Speed)를 측정하셨다면 값을 입력해주세요.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {(['no', 'yes'] as HasCssOption[]).map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, hasCssMeasurement: value })}
+                          className={`px-3 py-2 text-sm rounded-md border transition ${
+                            formData.hasCssMeasurement === value
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-100'
+                          }`}
+                        >
+                          {value === 'yes' ? '측정 완료' : '아직 없음'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {formData.hasCssMeasurement === 'yes' && (
+                    <div className="space-y-3">
+                      <CSSInputSection
+                        css={formData.strokeCSS}
+                        strokes={strokeOptions}
+                        onUpdate={(css) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            strokeCSS: css as Record<StrokeId, number>,
+                          }))
+                        }
+                        cssMeasurementPoolLength={formData.cssMeasurementPoolLength}
+                        onCssMeasurementPoolLengthUpdate={(length) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            cssMeasurementPoolLength: length,
+                          }))
+                        }
+                      />
+                      {errors.strokeCSS && <p className="text-red-500 text-sm">{errors.strokeCSS}</p>}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -1009,6 +1256,27 @@ export default function SignupPage() {
             
             {formData.accountType === 'student' ? (
               <>
+                <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-800">질환·특수상황 선택</h3>
+                      <p className="text-xs text-gray-500">
+                        수영 엔진의 안전 조정을 위해 해당되는 질환이나 특수상황을 선택해주세요.
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      선택됨: <strong className="text-blue-600">{formData.conditionIds.length}</strong>개
+                    </span>
+                  </div>
+                  <ConditionQuickPick
+                    value={formData.conditionIds}
+                    onChange={(ids) => setFormData({ ...formData, conditionIds: ids })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    선택된 항목은 프로그램 생성 시 자동으로 반영됩니다.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Heart className="w-4 h-4 inline mr-2" />
