@@ -90,6 +90,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, lazy } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from '../../hooks/useAuth';
 import apiClient from '../../utils/api';
 
@@ -141,6 +142,7 @@ interface WeeklyProgram {
 
 export default function MemberDashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<MemberStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
@@ -187,19 +189,9 @@ export default function MemberDashboard() {
         
         if (!response.ok) {
           const message = res?.message || '대시보드 데이터를 불러오지 못했습니다.';
-          if (response.status === 404 && message.includes('소속 센터')) {
-            setStats({
-              totalBookings: 0,
-              activeCourses: 0,
-              totalPayments: 0,
-              nextLesson: null
-            });
-            setHealthData(null);
-            setExerciseRecords([]);
-            setHealthGoals([]);
-            setWeeklyProgram([]);
-            setRecentBookings([]);
-            setInfoMessage('아직 소속 센터가 배정되지 않았습니다. 센터 검색 후 수강 신청 및 승인/결제 완료 시 대시보드가 활성화됩니다.');
+          // 학생이고 센터 미배정인 경우 센터 검색 페이지로 리다이렉트
+          if (user?.userType === 'student' && (response.status === 404 && message.includes('소속 센터'))) {
+            router.push('/map');
             return;
           }
           
@@ -209,19 +201,9 @@ export default function MemberDashboard() {
         }
         
         if (res.success && res.data) {
-          if (res.data.needsCenterAssignment) {
-            setStats({
-              totalBookings: 0,
-              activeCourses: 0,
-              totalPayments: 0,
-              nextLesson: null
-            });
-            setHealthData(null);
-            setExerciseRecords([]);
-            setHealthGoals([]);
-            setWeeklyProgram([]);
-            setRecentBookings([]);
-            setInfoMessage('아직 소속 센터가 배정되지 않았습니다. 센터 검색 후 수강 신청 및 승인/결제 완료 시 대시보드가 활성화됩니다.');
+          // 학생이고 센터 미배정인 경우 센터 검색 페이지로 리다이렉트
+          if (user?.userType === 'student' && res.data.needsCenterAssignment) {
+            router.push('/map');
             return;
           }
           
