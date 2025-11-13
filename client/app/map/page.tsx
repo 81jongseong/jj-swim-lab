@@ -810,6 +810,19 @@ export default function MapPage() {
         const transformedCenters: SwimmingCenter[] = (data || []).map((center: any, index: number) => {
           const { lat, lng } = getCenterPosition(center, index);
 
+          if (process.env.NODE_ENV !== 'production') {
+            const normalizedAddress = normalizeAddress(center.address);
+            const matchedSample = sampleLookups.addressMap.has(normalizedAddress);
+            console.log('📍 센터 좌표 변환', {
+              name: center.name,
+              address: center.address,
+              lat,
+              lng,
+              matchedSample,
+              normalizedAddress,
+            });
+          }
+
           return {
             id: center._id || `center-${index}`,
             name: center.name || '이름 없음',
