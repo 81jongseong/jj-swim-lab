@@ -20,9 +20,7 @@ import {
   Phone, 
   Calendar,
   MapPin,
-  Heart,
   Activity,
-  AlertCircle,
   CheckCircle,
   Eye,
   Target,
@@ -70,9 +68,6 @@ interface SignupFormState {
   accountType: AccountType;
   height: string;
   weight: string;
-  bloodType: string;
-  medicalHistory: string;
-  allergies: string;
   emergencyContact: string;
   emergencyPhone: string;
   swimProficiency: SwimProficiencyId | '';
@@ -114,9 +109,6 @@ export default function SignupPage() {
     // 학생용 건강 정보
     height: '',
     weight: '',
-    bloodType: '',
-    medicalHistory: '',
-    allergies: '',
     emergencyContact: '',
     emergencyPhone: '',
     swimProficiency: '',
@@ -133,7 +125,7 @@ export default function SignupPage() {
     excludedStrokes: [],
     preferredStrokes: ['freestyle'],
     conditionIds: [],
-    fitnessGoals: '',
+    fitnessGoals: '체력 향상',
     
     // 강사용 정보
     specialties: '',
@@ -221,6 +213,19 @@ export default function SignupPage() {
     { value: '400', label: '400m (16바퀴)' },
     { value: '800', label: '800m (32바퀴)' },
     { value: '1500', label: '1500m 이상' }
+  ];
+
+  const goalOptions = [
+    '체력 향상',
+    '체중 감량',
+    '기술 연마',
+    '실력 향상',
+    '재활',
+    '스트레스 해소',
+    '장거리 수영',
+    '오픈워터',
+    '생존수영',
+    '인명구조원'
   ];
 
   const proficiencyToLevel: Record<SwimProficiencyId, '초급' | '중급' | '고급' | '전문가' | '마스터'> = {
@@ -454,10 +459,6 @@ export default function SignupPage() {
         requestData.studentInfo = {
           height: formData.height ? Number(formData.height) : undefined,
           weight: formData.weight ? Number(formData.weight) : undefined,
-          medicalConditions: formData.medicalHistory,
-          medicalHistory: formData.medicalHistory,
-          allergies: formData.allergies,
-          bloodType: formData.bloodType,
           emergencyContact: formData.emergencyContact,
           emergencyPhone: formData.emergencyPhone,
           swimmingLevel: formData.swimProficiency ? proficiencyToLevel[formData.swimProficiency] : undefined,
@@ -1277,65 +1278,42 @@ export default function SignupPage() {
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Heart className="w-4 h-4 inline mr-2" />
-                    혈액형
-                  </label>
-                  <select
-                    value={formData.bloodType}
-                    onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">혈액형을 선택하세요</option>
-                    <option value="A">A형</option>
-                    <option value="B">B형</option>
-                    <option value="AB">AB형</option>
-                    <option value="O">O형</option>
-                  </select>
+                <div className="border border-purple-200 rounded-lg p-4 space-y-4 bg-purple-50/40">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-purple-900">운동 목표 선택</h3>
+                      <p className="text-xs text-purple-700">
+                        수영 엔진에서 제공하는 10가지 목표 중 하나를 선택해주세요.
+                      </p>
+                    </div>
+                    <span className="text-xs text-purple-700">
+                      현재 선택: <strong className="text-purple-600">{formData.fitnessGoals}</strong>
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {goalOptions.map((goal) => {
+                      const isSelected = formData.fitnessGoals === goal;
+                      return (
+                        <button
+                          key={goal}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, fitnessGoals: goal })}
+                          className={`px-3 py-2 text-sm border-2 rounded-lg transition-all ${
+                            isSelected
+                              ? 'border-purple-500 bg-white text-purple-700 font-semibold shadow-sm'
+                              : 'border-purple-100 bg-white hover:border-purple-300 text-gray-700'
+                          }`}
+                        >
+                          {goal}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-purple-700">
+                    선택한 목표는 프로그램 생성 시 운동 강도와 구성에 직접 반영됩니다.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                    질병 이력
-                  </label>
-                  <textarea
-                    value={formData.medicalHistory}
-                    onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="질병 이력을 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                    알레르기
-                  </label>
-                  <textarea
-                    value={formData.allergies}
-                    onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="알레르기를 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Target className="w-4 h-4 inline mr-2" />
-                    운동 목표
-                  </label>
-                  <textarea
-                    value={formData.fitnessGoals}
-                    onChange={(e) => setFormData({ ...formData, fitnessGoals: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    placeholder="운동 목표를 입력하세요"
-                  />
-                </div>
               </>
             ) : (
               <>
