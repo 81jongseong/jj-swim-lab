@@ -70,15 +70,18 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User';
 
 // JWT 시크릿 키 (환경변수에서 가져오기)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+const normalizeEnvString = (value: string | undefined, fallback: string): string =>
+  value && value.trim().length > 0 ? value.trim() : fallback;
+
+const JWT_SECRET = normalizeEnvString(process.env.JWT_SECRET, 'your-secret-key');
+const JWT_REFRESH_SECRET = normalizeEnvString(process.env.JWT_REFRESH_SECRET, 'your-refresh-secret-key');
+const JWT_EXPIRES_IN = normalizeEnvString(process.env.JWT_EXPIRES_IN, '1h');
+const JWT_REFRESH_EXPIRES_IN = normalizeEnvString(process.env.JWT_REFRESH_EXPIRES_IN, '7d');
 
 // 사용자 타입 정의
 export interface AuthenticatedUser {
@@ -122,16 +125,16 @@ export const generateTokens = (user: any) => {
     permissions: user.permissions || [],
   };
   
-  const accessToken = jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN
-  });
+  const accessToken = jwt.sign(
+    payload,
+    JWT_SECRET as Secret,
+    { expiresIn: JWT_EXPIRES_IN } as SignOptions
+  );
   
   const refreshToken = jwt.sign(
     { id: user._id, type: 'refresh' }, 
-    JWT_REFRESH_SECRET, 
-    { 
-      expiresIn: JWT_REFRESH_EXPIRES_IN
-    }
+    JWT_REFRESH_SECRET as Secret, 
+    { expiresIn: JWT_REFRESH_EXPIRES_IN } as SignOptions
   );
   
   return { accessToken, refreshToken };

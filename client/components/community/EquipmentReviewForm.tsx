@@ -26,7 +26,32 @@ export const EquipmentReviewForm: React.FC<EquipmentReviewFormProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    productName: string;
+    brand: string;
+    model: string;
+    category: string;
+    rating: number;
+    usagePeriod: string;
+    purchasePrice: string;
+    purchaseDate: string;
+    purchaseLocation: string;
+    detailedRating: {
+      durability: number;
+      comfort: number;
+      performance: number;
+      valueForMoney: number;
+      design: number;
+    };
+    pros: string[];
+    cons: string[];
+    recommendedFor: string[];
+    wouldBuyAgain: boolean;
+    recommendToOthers: boolean;
+    comparedProducts: string[];
+  }>({
     title: '',
     content: '',
     productName: '',

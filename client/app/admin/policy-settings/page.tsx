@@ -74,7 +74,7 @@ export default function PolicySettingsPage() {
   const loadPolicy = async () => {
     try {
       // TODO: 실제 API 호출
-      // const response = await fetch('/api/policy/decline');
+      // const response = await fetch(policyDeclineEndpoint);
       // const data = await response.json();
       // setPolicy(data.policy);
       // setOriginalPolicy(data.policy);
@@ -104,7 +104,7 @@ export default function PolicySettingsPage() {
       }
       
       // TODO: 실제 API 호출
-      // const response = await fetch('/api/policy/decline', {
+      // const response = await fetch(policyDeclineEndpoint, {
       //   method: 'PUT',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ policy })

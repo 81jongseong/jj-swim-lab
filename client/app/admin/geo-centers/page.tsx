@@ -68,7 +68,7 @@ type RenderMode = 'dominant' | 'stack';
 export default function GeoCentersPage() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
   const layerRef = useRef<any>(null);
 
   const { user, loading } = useAuth();

@@ -1,37 +1,11 @@
 {
-  "timestamp": "2025-10-28T23:21:44.709Z",
+  "timestamp": "2025-11-13T13:27:53.585Z",
   "stats": {
-    "totalChecks": 418,
-    "passed": 527,
-    "failed": 2,
-    "warnings": 4
+    "totalChecks": 443,
+    "passed": 553,
+    "failed": 0,
+    "warnings": 0
   },
-  "errors": [
-    {
-      "message": "center-admin-instructor-stats 라우트가 등록되지 않음",
-      "solution": "server/src/index.ts에 \"app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);\" 추가"
-    },
-    {
-      "message": "클라이언트 tsconfig.json 파싱 오류",
-      "solution": "Unexpected token '/', \"/**\n * 🔧 \"... is not valid JSON"
-    }
-  ],
-  "warnings": [
-    {
-      "message": "JWT_SECRET이 너무 짧습니다 (32자 이상 권장)",
-      "solution": "더 긴 랜덤 문자열로 변경하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    },
-    {
-      "message": "클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음",
-      "solution": "서버에 해당 라우트가 등록되어 있는지 확인하세요"
-    }
-  ]
+  "errors": [],
+  "warnings": []
 }

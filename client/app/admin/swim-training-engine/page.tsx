@@ -302,11 +302,30 @@ export default function SwimTrainingEnginePage() {
     const adjustedSessionDuration = Math.round(sessionDuration * finalIntensity);
     
     // 세션별 프로그램 생성
-    const sessions = [];
+    interface SessionBlock {
+      type: string;
+      stroke: string;
+      strokeName: string;
+      duration: number;
+      distance: number;
+      pace: number;
+      description: string;
+    }
+    
+    interface Session {
+      day: string;
+      dayNumber: number;
+      blocks: SessionBlock[];
+      totalDuration: number;
+      totalDistance: number;
+      intensity: number;
+    }
+    
+    const sessions: Session[] = [];
     const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
     
     for (let i = 0; i < sessionsPerWeek; i++) {
-      const sessionBlocks = [];
+      const sessionBlocks: SessionBlock[] = [];
       
       // 워밍업 (10% of time)
       const warmupTime = Math.round(adjustedSessionDuration * 0.1);

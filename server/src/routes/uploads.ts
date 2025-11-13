@@ -677,9 +677,11 @@ router.post('/:id/feedback', authMiddleware, async (req: Request, res: Response)
     }
     
     // 피드백 추가
+    const reviewerType: 'instructor' | 'member' = isInstructor ? 'instructor' : 'member';
+
     const feedback = {
       reviewer: user._id,
-      reviewerType: isInstructor ? 'instructor' : 'member',
+      reviewerType,
       reviewerCenterId: userCenterId,
       content: content.trim(),
       rating: rating ? Math.min(5, Math.max(1, Number(rating))) : undefined,

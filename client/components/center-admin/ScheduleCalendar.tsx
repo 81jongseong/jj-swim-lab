@@ -60,8 +60,8 @@ export default function ScheduleCalendar({
   onEditSchedule,
   onDeleteSchedule
 }: ScheduleCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
 
 

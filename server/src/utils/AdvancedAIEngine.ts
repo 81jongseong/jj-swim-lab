@@ -457,11 +457,12 @@ export class AdvancedAIEngine {
       // 첫 번째 개선 영역의 운동 계획 사용
       if (!workoutPlan && recommendations.length > 0) {
         const rec = recommendations[0];
+        const frequency = rec.frequency ?? 3;
         workoutPlan = {
           name: rec.name,
           description: rec.description,
           duration: rec.duration,
-          frequency: rec.frequency ?? 'daily'
+          frequency
         };
       }
     }

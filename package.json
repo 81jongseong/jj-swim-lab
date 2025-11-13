@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "cd server && npm start",
-    "build": "tsc",
+    "build": "npm run check-health && npm run type-check",
     "dev": "node scripts/comprehensive-health-check.cjs && cd client && npm run dev",
     "dev:skip-check": "cd client && npm run dev",
     "demo": "ts-node --esm scripts/demo.ts",
@@ -19,7 +19,10 @@
     "check-health": "node scripts/comprehensive-health-check.cjs",
     "fix-issues": "node scripts/auto-fix-issues.cjs",
     "fix-issues:dry": "node scripts/auto-fix-issues.cjs --dry-run",
-    "setup-hooks": "node scripts/setup-git-hooks.js && git config commit.template .gitmessage.txt"
+    "setup-hooks": "node scripts/setup-git-hooks.js && git config commit.template .gitmessage.txt",
+    "type-check": "npm run type-check:server && npm run type-check:client",
+    "type-check:server": "npm --prefix server run type-check",
+    "type-check:client": "npm --prefix client run type-check"
   },
   "keywords": [
     "swimming",

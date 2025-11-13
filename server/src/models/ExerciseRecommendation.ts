@@ -53,6 +53,7 @@ export interface IExerciseRecommendation {
   equipment?: string[];
   instructions: string[];
   benefits: string[];
+  frequency?: number | string;
 }
 
 // 운동 스키마
@@ -99,6 +100,7 @@ const ExerciseRecommendationSchema = new Schema<IExerciseRecommendation>({
   },
   category: { type: String, required: true },
   duration: { type: Number, required: true },
+  frequency: { type: Schema.Types.Mixed },
   equipment: [{ type: String }],
   instructions: [{ type: String, required: true }],
   benefits: [{ type: String, required: true }]

@@ -115,7 +115,7 @@ function CenterInfoManagement() {
               try {
                 // 센터 정보 API 호출
                 const response = await apiClient.get(`/api/center-management/${centerId}`);
-                if (response.success && response.data?.center) {
+                if (response.success && response.data && 'center' in response.data && response.data.center) {
                   return {
                     _id: centerId,
                     name: response.data.center.name || `센터 ${centerId}`

@@ -43,14 +43,6 @@ export class NotificationService {
         return null; // 50% 미만은 알림 생성하지 않음
       }
 
-      if (title) {
-        notificationTitle = title;
-      }
-
-      if (title) {
-        notificationTitle = title;
-      }
-
       return await Notification.create({
         userId,
         type: 'learning_progress',

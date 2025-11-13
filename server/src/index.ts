@@ -128,6 +128,7 @@ import { connectDB } from './db';
 
 // 라우트 임포트
 import centerLevelsRoutes from './routes/center-levels';
+import centerLevelRoutes from './routes/center-level';
 import exampleRoutes from './routes/example';
 import runPipelineRoutes from './routes/runPipeline';
 import centerAdminInstructorStatsRoutes from './routes/center-admin-instructor-stats';
@@ -283,6 +284,7 @@ import './models/SwimTrainingMethod'; // ⭐ 추가
 import './models/GroupClass'; // ⭐ 추가
 import './models/PageVisit'; // ⭐ 추가
 import './models/CenterSchedule'; // ⭐ 추가
+import './models/InstructorProgress'; // ⭐ 추가
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
 
@@ -487,12 +489,14 @@ app.use('/api/shop', shopRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/center-info', centerInfoRoutes);
 app.use('/api/checklist', checklistRoutes);
+app.use('/api/checklists', checklistRoutes);
 app.use('/api/checklist-template', checklistTemplateRoutes);
 app.use('/api/class-checklist', classChecklistRoutes);
 app.use('/api/classes', classesRoutes);
 app.use('/api/student-progress', studentProgressRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/center-levels', centerLevelsRoutes);
+app.use('/api/center-level', centerLevelRoutes);
 app.use('/api/student-levels', studentLevelRoutes);
 app.use('/api/instructor', instructorRoutes);
 app.use('/api/instructor-management', instructorManagementRoutes);
@@ -503,6 +507,7 @@ app.use('/api/approvals', approvalRoutes);
 // 사용자 유형별 API 라우트
 app.use('/api/center-admin', centerAdminRoutes);
 app.use('/api/center-admin', centerAdminInstructorStatsRoutes);
+app.use('/api/center-admin-instructor-stats', centerAdminInstructorStatsRoutes);
 // 예약 관리 하위 라우트 (개인레슨/레인대여 상태 변경 등)
 app.use('/api/center-admin/bookings', bookingRoutes);
 app.use('/api/personal-lessons', personalLessonRoutes);
@@ -568,6 +573,7 @@ app.use('/api/notice', noticeRoutes); // ⭐ 추가
 app.use('/api/runPipeline', runPipelineRoutes); // ⭐ 추가
 app.use('/api/swim-program-completions', swimProgramCompletionsRoutes); // ⭐ 추가
 app.use('/api/swim-program-day-condition', swimProgramDayConditionRoutes); // ⭐ 추가
+app.use('/api/instructor-progress', instructorProgressRoutes);
 app.use('/api/instructor/progress', instructorProgressRoutes);
 
 // 404 에러 처리 (라우트 등록 후)

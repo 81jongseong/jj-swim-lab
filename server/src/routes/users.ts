@@ -103,6 +103,7 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import { User } from '../models/User';
+import { Course } from '../models/Course';
 import { 
   authMiddleware, 
   requirePermission, 
@@ -1331,5 +1332,32 @@ router.post('/:userId/swimming-profile/reject-changes', authMiddleware, async (r
     return res.status(500).json({ error: '변경사항 거부에 실패했습니다.' });
   }
 });
+
+
+async function getInstructorCourses(instructorId: mongoose.Types.ObjectId | string): Promise<mongoose.Types.ObjectId[]> {
+  try {
+    const normalizedInstructorId =
+      typeof instructorId === 'string'
+        ? new mongoose.Types.ObjectId(instructorId)
+        : instructorId;
+
+    const courses = await Course.find({
+      $or: [
+        { instructor: normalizedInstructorId },
+        { instructorId: normalizedInstructorId }
+      ]
+    })
+      .select('_id')
+      .lean();
+
+    return courses.map(course => course._id as mongoose.Types.ObjectId);
+  } catch (error) {
+    console.error('강사 코스 조회 실패:', {
+      instructorId,
+      error
+    });
+    return [];
+  }
+}
 
 export default router;

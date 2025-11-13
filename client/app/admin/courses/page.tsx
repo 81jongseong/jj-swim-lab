@@ -269,7 +269,7 @@ export default function AdminCoursesPage() {
   }, []);
 
   const handleAddCourse = () => {
-    if (!newCourse.name || !newCourse.instructor || !newCourse.time || newCourse.days.length === 0) {
+    if (!newCourse.name || !newCourse.instructor || !newCourse.time || !newCourse.days || newCourse.days.length === 0) {
       alert('필수 정보를 모두 입력해주세요.');
       return;
     }
@@ -284,7 +284,7 @@ export default function AdminCoursesPage() {
       status: newCourse.status || 'active',
       lanes: newCourse.lanes || [],
       time: newCourse.time,
-      days: newCourse.days
+      days: newCourse.days || []
     };
 
     setCourses([...courses, course]);

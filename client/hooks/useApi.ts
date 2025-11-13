@@ -156,7 +156,7 @@ export const useInstructorDashboard = () => {
 export const useAdminDashboard = () => {
   return useQuery({
     queryKey: ['admin-dashboard'],
-    queryFn: () => apiRequest('/api/admin/dashboard'),
+    queryFn: () => apiRequest('/api/dashboard/stats'),
     staleTime: 1 * 60 * 1000, // 1분
   });
 };

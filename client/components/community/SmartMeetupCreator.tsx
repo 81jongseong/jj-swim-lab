@@ -29,13 +29,57 @@ export const SmartMeetupCreator: React.FC<SmartMeetupCreatorProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    meetupType: string;
+    skillLevel: string;
+    location: {
+      type: 'preset' | 'custom';
+      preset: string;
+      custom: string;
+      address: string;
+      latitude: number;
+      longitude: number;
+    };
+    datetime: {
+      date: string;
+      time: string;
+      duration: number;
+      isFlexible: boolean;
+    };
+    participants: {
+      min: number;
+      max: number;
+      current: number;
+      autoConfirm: boolean;
+      requireApproval: boolean;
+    };
+    fee: {
+      hasFee: boolean;
+      amount: number;
+      description: string;
+      paymentMethod: string;
+    };
+    requirements: {
+      skillLevel: string;
+      equipment: string[];
+      ageRange: { min: number; max: number };
+      genderPreference: string;
+    };
+    contact: {
+      method: string;
+      phone: string;
+      kakao: string;
+      emergencyContact: string;
+    };
+  }>({
     title: '',
     description: '',
     meetupType: '',
     skillLevel: '',
     location: {
-      type: 'preset' as 'preset' | 'custom',
+      type: 'preset',
       preset: '',
       custom: '',
       address: '',

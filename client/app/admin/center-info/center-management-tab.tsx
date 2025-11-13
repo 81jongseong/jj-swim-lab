@@ -207,7 +207,7 @@ export default function CenterManagementTab() {
   const loadCenterAdmins = async () => {
     try {
       const response = await apiClient.get('/api/center-management/admins');
-      if (response.success && response.data?.admins) {
+      if (response.success && response.data && 'admins' in response.data && Array.isArray(response.data.admins)) {
         setCenterAdmins(response.data.admins);
       }
     } catch (error) {

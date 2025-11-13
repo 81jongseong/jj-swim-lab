@@ -489,7 +489,7 @@ export class IntegratedAIEngine {
    */
   private static predictProgress(
     overallScore: number,
-    categoryScores: any,
+    categoryScores: Record<string, number> | null | undefined,
     studentId: string,
     lastEvaluation: any
   ): any {
@@ -497,8 +497,9 @@ export class IntegratedAIEngine {
     const previousScore = lastEvaluation?.overallScore ?? 0;
     const delta = overallScore - previousScore;
     const improvementRate = delta !== 0 ? Math.max(0.2, Math.min(1, delta / 10 + 0.5)) : 0.5;
-    const categoryFocus = Object.entries(categoryScores)
-      .sort(([,a], [,b]) => b - a)
+    const scoreEntries = Object.entries(categoryScores ?? {}) as [string, number][];
+    const categoryFocus = scoreEntries
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 2)
       .map(([category]) => category);
 

@@ -33,6 +33,25 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Users, DollarSign, Plus, Trash2, Edit } from 'lucide-react';
 
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  maxStudents: number;
+  poolType: string;
+  isActive: boolean;
+  pricingType: string;
+  singleSessionPrice: number;
+  packageOptions: Array<{
+    sessions: number;
+    price: number;
+    expirationDays: number;
+    name: string;
+  }>;
+  notes: string;
+  lessonDuration: number;
+  bufferTime: number;
+}
+
 interface InstructorScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,7 +67,14 @@ export default function InstructorScheduleModal({
   instructors, 
   editingInstructor 
 }: InstructorScheduleModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    instructorId: string;
+    instructorName: string;
+    instructorType: string;
+    availableDays: string[];
+    timeSlots: TimeSlot[];
+    isActive: boolean;
+  }>({
     instructorId: '',
     instructorName: '',
     instructorType: 'instructor',

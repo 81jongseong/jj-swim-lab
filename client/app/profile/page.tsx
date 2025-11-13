@@ -1058,8 +1058,12 @@ export default function ProfilePage() {
                   id="profile-name"
                   value={profile.name ?? ''}
                   placeholder="이름 입력"
-                  onChange={(event) => handleBasicChange('name', event.target.value)}
+                  disabled
+                  readOnly
                 />
+                <p className="text-xs text-slate-500">
+                  이름 변경은 센터 관리자 또는 최고 관리자에게 요청해주세요.
+                </p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700" htmlFor="profile-email">

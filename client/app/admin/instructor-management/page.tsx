@@ -13,18 +13,56 @@ import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import InstructorScheduleCard from '@/components/InstructorScheduleCard';
 
+interface Instructor {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  center: string;
+  region: string;
+  district: string;
+  status: string;
+  experience: string;
+  rating: number;
+  students: number;
+  evaluationCount: number;
+  specialties: string[];
+  certifications: Array<{
+    name: string;
+    issuer: string;
+    issueDate?: string;
+    expiryDate?: string;
+    date?: string;
+    expiry?: string;
+    status?: string;
+  }>;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  salary: {
+    base: number;
+    bonus?: number;
+    incentive?: number;
+    total?: number;
+    currency?: string;
+  };
+}
+
 export default function InstructorManagementPage() {
   const { user, hasUserType } = useAuth();
   const [isLoading, setIsLoading] = useState(false); // 초기 로딩 비활성화
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedInstructor, setSelectedInstructor] = useState(null);
+  const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [showInstructorDetail, setShowInstructorDetail] = useState(false);
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [selectedDistricts, setSelectedDistricts] = useState([]);
-  const [selectedCenters, setSelectedCenters] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('month'); // 'month', 'week', 'day'
-  const [searchMode, setSearchMode] = useState('center'); // 'center', 'address'
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
+  const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [searchMode, setSearchMode] = useState<'center' | 'address'>('center');
   const [showDeactivationModal, setShowDeactivationModal] = useState(false);
   const [deactivationReason, setDeactivationReason] = useState('');
   const [deactivationDetails, setDeactivationDetails] = useState('');
@@ -76,7 +114,7 @@ export default function InstructorManagementPage() {
   };
 
   // 샘플 강사 데이터 (최적화됨 - 지연 로딩)
-  const [sampleInstructors, setSampleInstructors] = useState([]);
+  const [sampleInstructors, setSampleInstructors] = useState<Instructor[]>([]);
 
   // 강사 데이터 지연 로딩 (최적화됨)
   useEffect(() => {

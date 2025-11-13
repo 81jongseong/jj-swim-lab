@@ -173,8 +173,18 @@ export default function HealthProfileForm({
     setProfile(prev => ({
       ...prev,
       privacySettings: {
+        height: prev.privacySettings?.height ?? true,
+        weight: prev.privacySettings?.weight ?? false,
+        bmi: prev.privacySettings?.bmi ?? true,
+        bloodType: prev.privacySettings?.bloodType ?? false,
+        allergies: prev.privacySettings?.allergies ?? false,
+        chronicConditions: prev.privacySettings?.chronicConditions ?? false,
+        medications: prev.privacySettings?.medications ?? false,
+        emergencyContact: prev.privacySettings?.emergencyContact ?? false,
+        fitnessGoals: prev.privacySettings?.fitnessGoals ?? true,
+        activityLevel: prev.privacySettings?.activityLevel ?? true,
         ...prev.privacySettings,
-        [field]: !prev.privacySettings?.[field]
+        [field]: !(prev.privacySettings?.[field] ?? false)
       }
     }));
   };

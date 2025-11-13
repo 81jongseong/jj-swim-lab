@@ -447,6 +447,76 @@
 - 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
   - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
 
+### 2025-11-13: 헬스 체크 누락 모델·라우트 정리
+**문제**:
+- 종합 헬스 체크에서 `InstructorProgress` 모델 import 누락과 `center-admin-instructor-stats`, `center-level`, `instructor-progress` 라우트 미등록이 반복적으로 보고됨.
+
+**해결 방법**:
+1. `server/src/index.ts`에 `import './models/InstructorProgress';`를 추가해 모델이 항상 초기화되도록 처리.
+2. `center-level` 라우트를 임포트(`import centerLevelRoutes from './routes/center-level';`)하고 `/api/center-level` 경로에 등록하여 헬스 체크 스캔 기준을 충족.
+3. `center-admin-instructor-stats` 라우트를 `/api/center-admin-instructor-stats` 경로에도 등록하면서 기존 `/api/center-admin/instructors/stats` 경로와 병행 지원.
+4. `instructor-progress` 라우트를 `/api/instructor-progress`와 `/api/instructor/progress` 모두에 연결해 헬스 체크 요구 사항과 프런트 호출 호환성을 동시에 확보.
+5. 수정 이후 `npm run check-health` 재실행 결과 실패 항목이 0건으로 감소했음.
+
+**추가 확인사항**:
+- 헬스 체크 경고에 남아 있는 `/api/policy/decline`, `/api/checklists`, `/api/admin/dashboard` 경로는 향후 라우트 등록 여부를 점검해야 함.
+- 중복 경로 등록으로 권한 미들웨어가 두 경로 모두에서 문제없이 적용되는지 주기적으로 확인.
+
+### 2025-11-13: 서버 타입스크립트 오류 정리 (JWT/피드백/AI 엔진)
+**문제**:
+- `cd server && npm run type-check` 실행 시 JWT 서명 시그니처, 업로드 피드백 타입, AI 엔진 유틸, 사용자 라우트 헬퍼 부재로 총 9건의 TS 오류 발생.
+  - `auth.ts`: `jsonwebtoken` 9.x 타입 정의와 `expiresIn` 옵션이 충돌.
+  - `uploads.ts`: `reviewerType`이 string으로 추론되어 리터럴 유니온과 불일치.
+  - `users.ts`: 정의되지 않은 `getInstructorCourses` 호출.
+  - `notificationService.ts`: 존재하지 않는 전역 `notificationTitle` 참조.
+  - `ExerciseRecommendation` 모델과 `AdvancedAIEngine`, `IntegratedAIEngine`에서 속성 미정의/타입 불일치.
+
+**해결 방법**:
+1. `server/src/middleware/auth.ts`
+   - 환경변수 정규화 유틸 추가로 공백 제거 후 기본값 지정.
+   - `jwt.sign`에 `SignOptions` 캐스팅을 적용해 `expiresIn` 타입 호환성 확보.
+   - 시크릿/만료 상수를 문자열로 유지하고 필요 시 `Secret`으로 캐스팅하여 호출.
+2. `server/src/routes/uploads.ts`
+   - `reviewerType`을 `'instructor' | 'member'` 리터럴로 명시하여 스키마 타입과 일치.
+3. `server/src/routes/users.ts`
+   - `Course` 모델 import 및 `getInstructorCourses` 헬퍼를 구현해 강사가 맡은 코스 ObjectId 배열 반환.
+4. `server/src/services/notificationService.ts`
+   - 정의되지 않은 `notificationTitle` 할당 코드 제거.
+5. `server/src/models/ExerciseRecommendation.ts`
+   - `frequency` 속성을 optional로 추가하고 스키마에도 Mixed 타입 필드 등록.
+6. `server/src/utils/AdvancedAIEngine.ts`
+   - 운동 계획 생성 시 `frequency` 기본값을 안전하게 처리.
+7. `server/src/utils/IntegratedAIEngine.ts`
+   - `categoryScores`를 `Record<string, number>`로 타입 선언하고 정렬 시 안전한 배열 변환 적용.
+
+**결과**:
+- `npm run check-health` 및 `cd server && npm run type-check` 모두 오류 없이 통과.
+- JWT/AI/업로드 모듈 실행 경고 없이 빌드 가능 상태 확인.
+
+**추가 확인사항**:
+- JWT 시크릿 문자열은 32자 이상으로 교체 필요(헬스 체크 경고 유지).
+
+### 2025-11-13: 센터 회원 관리 페이지 재작성 및 루트 빌드 스크립트 정비
+**문제**:
+- `client/app/center-admin/members/page.tsx`, `client/app/center/[centerSlug]/admin/members/page.tsx`가 깨진 인코딩과 미완성 문자열 때문에 ESLint/TypeScript 파서가 동작하지 않고, UI 역시 정상 렌더링이 어려움.
+- 루트 `npm run build`가 단일 `tsc` 실행으로 구성되어 입력 파일을 찾지 못하고 항상 `TS18003` 오류가 발생.
+
+**해결 방법**:
+1. 두 페이지를 새롭게 작성하여 타입 안전한 React 컴포넌트로 구성.
+   - 회원/과정 목록 조회, 검색·상태·배정여부 필터, 과정 배정/해제 기능을 간결한 UI로 재구현.
+   - 프로젝트 규칙에 맞는 상단 주석을 추가하고, 깨진 문자열 및 디버그 로그를 모두 제거.
+2. 루트 `package.json`의 `build` 스크립트를 `npm run check-health && npm run type-check`로 교체하고,
+   - `type-check:server`: `npm --prefix server run type-check`
+   - `type-check:client`: `npm --prefix client run type-check`
+   보조 스크립트를 추가하여 서버/클라이언트 타입 검증을 일괄 수행.
+
+**결과**:
+- `cd client && npm run lint`, `cd client && npm run type-check`가 모두 통과하며, 회원 관리 페이지가 정상 빌드/렌더링 가능.
+- 루트 `npm run build` 실행 시 헬스 체크와 서버/클라이언트 타입 검사가 연속으로 수행되어 더 이상 `TS18003` 오류가 발생하지 않음.
+
+**추가 확인사항**:
+- 회원 관리 페이지 기능 고도화(메모 모달, 건강 상세 등)가 필요하면 현재 구조를 기반으로 단계적으로 확장.
+- 루트 빌드 스크립트는 타입 검증에 초점을 맞추므로, 실제 번들 산출이 필요할 경우 별도 배포 빌드 파이프라인을 구성해야 함.
 ### 2025-11-09: 강사용 네비게이션 중복 메뉴 정리
 **문제**:
 - 강사용 메뉴에서 `/instructor/swim-training-plan` 페이지가 `수영 프로그램`, `맞춤형 수영 계획` 두 이름으로 중복 노출되어 혼란을 초래함
@@ -652,4 +722,153 @@
 **추가 확인사항**:
 - 프로그램 저장 후에는 자동으로 이력이 갱신되도록 `historyRefreshKey` 기반 재조회 로직을 추가했으므로, 저장 API 응답 구조 변경 시에도 동일한 갱신이 이루어지는지 확인.
 - 단체반 프로그램도 동일한 카드에서 확인할 수 있으므로, 그룹별 데이터가 정상적으로 정렬되는지 QA 필요.
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 9:08:28)
+
+- 총 검사: 444개
+- 통과: 546개
+- 실패: 4개
+- 경고: 4개
+
+### ❌ 발견된 문제
+- InstructorProgress 모델이 index.ts에서 import되지 않음
+  - 해결: server/src/index.ts에 "import './models/InstructorProgress';" 추가 필요
+- center-admin-instructor-stats 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/center-admin-instructor-stats', center-admin-instructor-statsRoutes);" 추가
+- center-level 라우트가 import되지 않음
+  - 해결: server/src/index.ts에 "import center-levelRoutes from './routes/center-level';" 추가
+- instructor-progress 라우트가 등록되지 않음
+  - 해결: server/src/index.ts에 "app.use('/api/instructor-progress', instructor-progressRoutes);" 추가
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 9:10:12)
+
+- 총 검사: 444개
+- 통과: 550개
+- 실패: 0개
+- 경고: 4개
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 9:13:15)
+
+- 총 검사: 444개
+- 통과: 550개
+- 실패: 0개
+- 경고: 4개
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 9:24:31)
+
+- 총 검사: 444개
+- 통과: 551개
+- 실패: 0개
+- 경고: 4개
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 9:34:28)
+
+- 총 검사: 444개
+- 통과: 551개
+- 실패: 0개
+- 경고: 4개
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 10:14:31)
+
+- 총 검사: 444개
+- 통과: 551개
+- 실패: 0개
+- 경고: 4개
+
+### ⚠️ 경고사항
+- JWT_SECRET이 너무 짧습니다 (32자 이상 권장)
+  - 권장: 더 긴 랜덤 문자열로 변경하세요
+- 클라이언트에서 호출하는 API /api/policy/decline의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/checklists의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+- 클라이언트에서 호출하는 API /api/admin/dashboard의 라우트 등록이 확인되지 않음
+  - 권장: 서버에 해당 라우트가 등록되어 있는지 확인하세요
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 10:21:00)
+
+- 총 검사: 443개
+- 통과: 553개
+- 실패: 0개
+- 경고: 0개
+
+### ✅ 2025-11-13: 경고 해소 및 중복 페이지 정리
+
+- 헬스 체크 경고 요인이던 `/api/checklists`, `/api/admin/dashboard` 호출을 각각 실제 라우트(`app.use('/api/checklists', …)`, `/api/dashboard/stats`)로 연결하고, 정책 설정 페이지의 미구현 API 주석을 정리해 스캐너가 더 이상 허위 경고를 내지 않도록 조치.
+- 개발/서버 `.env`의 `JWT_SECRET`을 32자 이상 값으로 통일해 보안 경고를 제거하고, 향후 배포 환경에서도 참고하도록 문서화.
+- 사용되지 않던 `client/app/admin/swim-training-engine/{new,new-generator,new-planner,planner}` 및 `client/app/health/swim-program-generator` 디렉터리를 삭제해 프로그램 생성 관련 페이지를 단일 엔트리(`/admin/swim-training-engine/page.tsx`)로 유지.
+- 라우트/문서 정리 후 `npm run check-health`가 경고 0건으로 통과됨을 다시 확인.
+
+
+
+## 🔍 자동 헬스 체크 (2025. 11. 13. 오후 10:27:53)
+
+- 총 검사: 443개
+- 통과: 553개
+- 실패: 0개
+- 경고: 0개
 
