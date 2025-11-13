@@ -616,6 +616,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const { 
       userId,  // 사용자 로그인 ID
       name,    // 사용자 이름
+      email,   // 사용자 이메일
       phone,   // 전화번호
       address, // 주소
       userType, // 사용자 타입 (student/instructor/centerAdmin/superAdmin)
@@ -634,7 +635,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const targetUserId = req.params.id;     // 수정 대상 사용자 ID
     
     // 본인이 아닌 경우 계정별 권한 검증
-    if (currentUser._id !== targetUserId) {
+    if (currentUser._id?.toString() !== targetUserId) {
       if (currentUser.userType === 'centerAdmin') {
         // 센터관리자: 자신이 관리하는 센터의 사용자만 수정 가능
         const hasAccess = await checkCenterAdminAccess(currentUser._id, { _id: targetUserId });
@@ -661,9 +662,24 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const updateData: any = {};
     
     // 🔒 개인정보 수정 권한 체크 (본인만 가능)
-    if (currentUser._id === targetUserId) {
+    if (currentUser._id?.toString() === targetUserId) {
       // 본인인 경우에만 개인정보 수정 가능
       if (name) updateData.name = name;         // 사용자 이름
+      if (email) {
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(normalizedEmail)) {
+          return res.status(400).json({ error: '유효한 이메일 주소를 입력해주세요.' });
+        }
+
+        const existingEmailUser = await User.findOne({ email: normalizedEmail });
+
+        if (existingEmailUser && existingEmailUser._id.toString() !== targetUserId) {
+          return res.status(400).json({ error: '이미 사용 중인 이메일입니다.' });
+        }
+
+        updateData.email = normalizedEmail;
+      }
       if (phone) updateData.phone = phone;      // 전화번호  
       if (address) updateData.address = address; // 주소
     } else {

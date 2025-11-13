@@ -111,6 +111,7 @@ const router: Router = Router();
 
 // 인증 코드 저장 (메모리 저장소 - 프로덕션에서는 Redis 사용 권장)
 const phoneVerificationCodes = new Map<string, { code: string; expiresAt: number }>();
+const emailVerificationCodes = new Map<string, { code: string; expiresAt: number }>();
 
 // 전화번호 인증 코드 생성 (6자리)
 function generateVerificationCode(): string {
@@ -226,6 +227,100 @@ router.post('/verify-phone-code', async (req: Request, res: Response) => {
     return res.status(500).json({ 
       success: false,
       error: '인증 코드 검증에 실패했습니다.' 
+    });
+  }
+});
+
+// 이메일 인증 코드 발송 (개발 환경에서는 콘솔 출력)
+router.post('/send-email-code', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: '이메일을 입력해주세요.'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: '올바른 이메일 주소를 입력해주세요.'
+      });
+    }
+
+    const code = generateVerificationCode();
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    emailVerificationCodes.set(normalizedEmail, { code, expiresAt });
+
+    console.log(`📧 [개발용] ${normalizedEmail}로 이메일 인증 코드 발송: ${code}`);
+
+    return res.status(200).json({
+      success: true,
+      message: '이메일 인증 코드가 발송되었습니다.',
+      ...(process.env.NODE_ENV === 'development' && { code })
+    });
+  } catch (error) {
+    console.error('이메일 인증 코드 발송 오류:', error);
+    return res.status(500).json({
+      success: false,
+      error: '이메일 인증 코드 발송에 실패했습니다.'
+    });
+  }
+});
+
+// 이메일 인증 코드 검증
+router.post('/verify-email-code', async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({
+        success: false,
+        error: '이메일과 인증 코드를 입력해주세요.'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const stored = emailVerificationCodes.get(normalizedEmail);
+
+    if (!stored) {
+      return res.status(400).json({
+        success: false,
+        error: '인증 코드가 만료되었거나 발송되지 않았습니다.'
+      });
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      emailVerificationCodes.delete(normalizedEmail);
+      return res.status(400).json({
+        success: false,
+        error: '인증 코드가 만료되었습니다. 다시 발송해주세요.'
+      });
+    }
+
+    if (stored.code !== code) {
+      return res.status(400).json({
+        success: false,
+        error: '인증 코드가 일치하지 않습니다.'
+      });
+    }
+
+    emailVerificationCodes.delete(normalizedEmail);
+
+    return res.status(200).json({
+      success: true,
+      message: '이메일 인증이 완료되었습니다.',
+      verified: true
+    });
+  } catch (error) {
+    console.error('이메일 인증 코드 검증 오류:', error);
+    return res.status(500).json({
+      success: false,
+      error: '이메일 인증 코드 검증에 실패했습니다.'
     });
   }
 });

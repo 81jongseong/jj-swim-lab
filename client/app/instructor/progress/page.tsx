@@ -747,8 +747,8 @@ function InstructorProgress() {
         const nextLevelLabel = mapStudentLevelToTeachingMethodLevel(nextLevel);
 
         const [currentLevelRes, nextLevelRes] = await Promise.all([
-          apiClient.getTeachingMethods({ level: currentLevelLabel }),
-          apiClient.getTeachingMethods({ level: nextLevelLabel })
+          apiClient.getTeachingMethods({ difficulty: currentLevelLabel }),
+          apiClient.getTeachingMethods({ difficulty: nextLevelLabel })
         ]);
 
         let currentMethods = extractMethods(currentLevelRes);
