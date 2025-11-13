@@ -1925,14 +1925,21 @@ export default function MapPage() {
                   const distance = userLocation 
                     ? calculateDistance(userLocation.lat, userLocation.lng, center.position.lat, center.position.lng)
                     : null;
-                  
+
+                  const animationStyles = sortAnimation
+                    ? {
+                        animationName: 'slideIn',
+                        animationDuration: '0.3s',
+                        animationTimingFunction: 'ease-out',
+                        animationFillMode: 'both' as const,
+                        animationDelay: `${index * 30}ms`,
+                      }
+                    : {};
+
                   return (
                   <div 
                     key={center.id}
-                    style={{ 
-                      animationDelay: sortAnimation ? `${index * 30}ms` : '0ms',
-                      animation: sortAnimation ? 'slideIn 0.3s ease-out' : 'none'
-                    }}
+                    style={animationStyles}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedCenter?.id === center.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
