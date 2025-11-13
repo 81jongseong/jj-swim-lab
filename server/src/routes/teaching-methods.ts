@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { TeachingMethod } from '../models/TeachingMethod';
+import * as jwt from 'jsonwebtoken';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -8,7 +9,7 @@ interface AuthRequest extends Request {
 
 const router: Router = express.Router();
 
-// 모든 강습법 조회 (공개)
+// 모든 강습법 조회 (공개, 인증된 강사는 대체 강습법 우선 반환)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { category, level, difficulty, search } = req.query;
@@ -36,9 +37,65 @@ router.get('/', async (req: Request, res: Response) => {
     
     console.log('🔍 강습법 조회 쿼리:', JSON.stringify(query, null, 2));
     
-    const methods = await TeachingMethod.find(query)
+    // 인증 토큰 확인 (선택적)
+    let userId: string | null = null;
+    let userType: string | null = null;
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        userId = decoded.userId || decoded._id;
+        userType = decoded.userType;
+      }
+    } catch (err) {
+      // 인증 실패는 무시 (공개 조회)
+    }
+    
+    // 모든 강습법 조회
+    let methods = await TeachingMethod.find(query)
       .sort({ order: 1, createdAt: 1 })
-      .select('-__v');
+      .select('-__v')
+      .lean();
+    
+    // createdByRole이 없는 기존 강습법을 최고 관리자 강습법으로 인식
+    methods = methods.map((m: any) => {
+      if (!m.createdByRole) {
+        m.createdByRole = 'superAdmin'; // 기존 강습법은 최고 관리자 강습법으로 간주
+      }
+      return m;
+    });
+    
+    // 강사인 경우 대체 로직 적용 (선택적, 필요시 주석 해제)
+    // if (userType === 'instructor' && userId) {
+    //   // 대체 강습법 찾기 (해당 강사가 만든 대체 강습법)
+    //   const overrideMethods = methods.filter((m: any) => 
+    //     m.overridesSuperAdminMethod && 
+    //     m.createdBy && 
+    //     m.createdBy.toString() === userId
+    //   );
+    //   
+    //   // 대체 강습법이 있으면 원본 최고 관리자 강습법 제거
+    //   if (overrideMethods.length > 0) {
+    //     const originalIds = overrideMethods
+    //       .map((m: any) => m.originalSuperAdminMethodId?.toString())
+    //       .filter(Boolean);
+    //     
+    //     // 원본 최고 관리자 강습법 제거
+    //     methods = methods.filter((m: any) => {
+    //       // 대체 강습법은 유지
+    //       if (m.overridesSuperAdminMethod && m.createdBy?.toString() === userId) {
+    //         return true;
+    //       }
+    //       // 원본 최고 관리자 강습법 중 대체된 것은 제거
+    //       if (m.createdByRole === 'superAdmin' && originalIds.includes(m._id.toString())) {
+    //         return false;
+    //       }
+    //       // 그 외는 유지
+    //       return true;
+    //     });
+    //   }
+    // }
     
     console.log(`📊 쿼리 결과: ${methods.length}개의 강습법 발견`);
     
@@ -98,13 +155,31 @@ router.get('/:id', async (req: Request, res: Response) => {
 // 강습법 생성 (강사, 센터 관리자, 총관리자만)
 router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
+    const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist, overridesSuperAdminMethod, originalSuperAdminMethodId } = req.body;
     
     if (!name || !description || !category || !steps) {
       return res.status(400).json({
         success: false,
         message: '필수 필드가 누락되었습니다.'
       });
+    }
+    
+    // 대체 강습법인 경우 원본 강습법 확인
+    if (overridesSuperAdminMethod && originalSuperAdminMethodId) {
+      const originalMethod = await TeachingMethod.findById(originalSuperAdminMethodId);
+      if (!originalMethod) {
+        return res.status(404).json({
+          success: false,
+          message: '대체할 원본 강습법을 찾을 수 없습니다.'
+        });
+      }
+      // 원본이 최고 관리자 강습법인지 확인
+      if (originalMethod.createdByRole !== 'superAdmin') {
+        return res.status(400).json({
+          success: false,
+          message: '최고 관리자 강습법만 대체할 수 있습니다.'
+        });
+      }
     }
     
     const newMethod = new TeachingMethod({
@@ -114,11 +189,15 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
       level: level || 'beginner',
       steps: Array.isArray(steps) ? steps : [steps],
       tips: Array.isArray(tips) ? tips : [],
+      checklist: Array.isArray(checklist) ? checklist : [],
       videoUrl,
       imageUrl,
       order: req.body.order || 0, // 순서 정보 추가
       createdBy: req.user._id,
-      isActive: true
+      createdByRole: req.user.userType, // 생성자 역할 저장 (instructor, centerAdmin, superAdmin)
+      isActive: true,
+      overridesSuperAdminMethod: overridesSuperAdminMethod || false,
+      originalSuperAdminMethodId: originalSuperAdminMethodId || undefined
     });
     
     await newMethod.save();
@@ -141,7 +220,7 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
 router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist } = req.body;
+    const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist, overridesSuperAdminMethod, originalSuperAdminMethodId } = req.body;
     
     const method = await TeachingMethod.findById(id);
     
@@ -162,6 +241,24 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
       });
     }
     
+    // 대체 강습법인 경우 원본 강습법 확인
+    if (overridesSuperAdminMethod && originalSuperAdminMethodId) {
+      const originalMethod = await TeachingMethod.findById(originalSuperAdminMethodId);
+      if (!originalMethod) {
+        return res.status(404).json({
+          success: false,
+          message: '대체할 원본 강습법을 찾을 수 없습니다.'
+        });
+      }
+      // 원본이 최고 관리자 강습법인지 확인
+      if (originalMethod.createdByRole !== 'superAdmin') {
+        return res.status(400).json({
+          success: false,
+          message: '최고 관리자 강습법만 대체할 수 있습니다.'
+        });
+      }
+    }
+    
     // 데이터 업데이트
     if (name) method.name = name;
     if (description) method.description = description;
@@ -173,6 +270,8 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
     if (videoUrl !== undefined) method.videoUrl = videoUrl;
     if (imageUrl !== undefined) method.imageUrl = imageUrl;
     if (req.body.order !== undefined) method.order = req.body.order; // 순서 정보 업데이트
+    if (overridesSuperAdminMethod !== undefined) method.overridesSuperAdminMethod = overridesSuperAdminMethod;
+    if (originalSuperAdminMethodId !== undefined) method.originalSuperAdminMethodId = originalSuperAdminMethodId;
     
     method.updatedAt = new Date();
     

@@ -2508,4 +2508,165 @@ router.put('/:id/approval', authMiddleware, requireRole(['superAdmin']), async (
   }
 });
 
+/**
+ * 강좌별 강습법 지정 및 순서 관리 API
+ * PUT /api/courses/:id/teaching-methods
+ * - 강사나 센터 관리자가 초급/중급/상급 강좌의 강습법을 지정하고 순서를 설정
+ */
+router.put('/:id/teaching-methods', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { teachingMethods } = req.body;
+
+    if (!Array.isArray(teachingMethods)) {
+      return res.status(400).json({
+        success: false,
+        message: 'teachingMethods는 배열이어야 합니다.'
+      });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: '강좌를 찾을 수 없습니다.'
+      });
+    }
+
+    // 권한 확인: 강사는 자신의 강좌만, 센터 관리자는 자신의 센터 강좌만 수정 가능
+    if (req.user.userType === 'instructor') {
+      if (course.instructor.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: '자신의 강좌만 수정할 수 있습니다.'
+        });
+      }
+    } else if (req.user.userType === 'centerAdmin') {
+      const userCenterId = req.user.centerId || req.user.centerAdminInfo?.managedCenters?.[0];
+      if (!userCenterId || course.centerId.toString() !== userCenterId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: '자신의 센터 강좌만 수정할 수 있습니다.'
+        });
+      }
+    }
+
+    // 강습법 유효성 검증
+    const TeachingMethod = (await import('../models/TeachingMethod')).TeachingMethod;
+    for (const tm of teachingMethods) {
+      if (!tm.methodId || typeof tm.order !== 'number') {
+        return res.status(400).json({
+          success: false,
+          message: '각 강습법에는 methodId와 order가 필요합니다.'
+        });
+      }
+
+      // 강습법 존재 확인
+      const method = await TeachingMethod.findById(tm.methodId);
+      if (!method) {
+        return res.status(404).json({
+          success: false,
+          message: `강습법을 찾을 수 없습니다: ${tm.methodId}`
+        });
+      }
+
+      // 강사가 자신의 강습법 또는 최고 관리자 강습법만 사용할 수 있도록 검증
+      if (req.user.userType === 'instructor') {
+        const isMyMethod = method.createdBy && method.createdBy.toString() === req.user._id.toString();
+        const isSuperAdminMethod = method.createdByRole === 'superAdmin';
+        if (!isMyMethod && !isSuperAdminMethod) {
+          return res.status(403).json({
+            success: false,
+            message: `다른 강사의 강습법은 사용할 수 없습니다: ${method.name}`
+          });
+        }
+      }
+    }
+
+    // 강좌의 teachingMethods 업데이트
+    course.teachingMethods = teachingMethods.map((tm: any) => ({
+      methodId: new mongoose.Types.ObjectId(tm.methodId),
+      order: tm.order,
+      isRequired: tm.isRequired !== undefined ? tm.isRequired : true
+    }));
+
+    await course.save();
+
+    // 업데이트된 강좌 정보 반환 (강습법 정보 포함)
+    const updatedCourse = await Course.findById(id)
+      .populate('teachingMethods.methodId')
+      .populate('instructor', 'name userId')
+      .populate('centerId', 'name');
+
+    res.json({
+      success: true,
+      message: '강좌별 강습법이 성공적으로 지정되었습니다.',
+      data: updatedCourse
+    });
+  } catch (error) {
+    console.error('강좌별 강습법 지정 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강좌별 강습법 지정 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
+/**
+ * 강좌별 강습법 조회 API
+ * GET /api/courses/:id/teaching-methods
+ * - 특정 강좌에 지정된 강습법 목록 조회
+ */
+router.get('/:id/teaching-methods', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+      .populate('teachingMethods.methodId')
+      .select('teachingMethods level name');
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: '강좌를 찾을 수 없습니다.'
+      });
+    }
+
+    // 강습법을 order 순서대로 정렬
+    const sortedMethods = (course.teachingMethods || []).sort((a: any, b: any) => {
+      return (a.order || 0) - (b.order || 0);
+    });
+
+    res.json({
+      success: true,
+      message: '강좌별 강습법 조회 성공',
+      data: {
+        courseId: course._id,
+        courseName: course.name,
+        level: course.level,
+        teachingMethods: sortedMethods.map((tm: any) => ({
+          methodId: tm.methodId?._id || tm.methodId,
+          methodName: tm.methodId?.name,
+          methodDescription: tm.methodId?.description,
+          methodCategory: tm.methodId?.category,
+          methodLevel: tm.methodId?.level,
+          order: tm.order,
+          isRequired: tm.isRequired,
+          steps: tm.methodId?.steps || [],
+          tips: tm.methodId?.tips || [],
+          checklist: tm.methodId?.checklist || []
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('강좌별 강습법 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '강좌별 강습법 조회 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : '알 수 없는 오류'
+    });
+  }
+});
+
 export default router; 

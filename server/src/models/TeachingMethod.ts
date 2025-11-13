@@ -11,9 +11,12 @@ export interface ITeachingMethod extends Document {
   videoUrl?: string;
   imageUrl?: string;
   createdBy?: mongoose.Types.ObjectId;
+  createdByRole?: string; // 생성자 역할 (superAdmin, instructor, centerAdmin)
   isActive: boolean;
   order?: number; // 순서 정보 추가
   instructorComments?: string; // 강사 코멘트
+  overridesSuperAdminMethod?: boolean; // 최고 관리자 강습법을 대체하는지 여부
+  originalSuperAdminMethodId?: mongoose.Types.ObjectId; // 대체하는 원본 최고 관리자 강습법 ID
   levelChangeHistory?: Array<{ // 레벨 변경 이력
     fromLevel: string;
     toLevel: string;
@@ -72,9 +75,23 @@ const TeachingMethodSchema = new Schema<ITeachingMethod>({
     ref: 'User',
     required: false
   },
+  createdByRole: {
+    type: String,
+    enum: ['superAdmin', 'instructor', 'centerAdmin'],
+    required: false
+  },
   isActive: {
     type: Boolean,
     default: true
+  },
+  overridesSuperAdminMethod: {
+    type: Boolean,
+    default: false
+  },
+  originalSuperAdminMethodId: {
+    type: Schema.Types.ObjectId,
+    ref: 'TeachingMethod',
+    required: false
   },
   order: {
     type: Number,
