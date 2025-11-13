@@ -2023,7 +2023,7 @@ router.get('/my-center/courses', authMiddleware, requireRole(['centerAdmin']), a
 router.get('/guest', async (req, res) => {
   try {
     const centers = await Center.find(
-      { isActive: true }, 
+      { status: 'active' }, 
       'name region district address phone email website location description facilities province city gu dong'
     ).lean();
 
