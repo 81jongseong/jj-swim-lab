@@ -27,6 +27,14 @@ interface SwimmingCenter {
   name: string;
   position: { lat: number; lng: number };
   address: string;
+  province?: string;
+  city?: string;
+  region?: string;
+  district?: string;
+  gu?: string;
+  dong?: string;
+  email?: string;
+  website?: string;
   phone: string;
   rating: number;
   courses: string[];
@@ -561,17 +569,6 @@ export default function MapPage() {
     '20:00', '21:00', '22:00'
   ];
 
-  // 지역별 센터 매핑
-  const regionCenters: Record<string, string[]> = {
-    '전국': ['JJ Swim Lab 강남점', 'JJ Swim Lab 홍대점', 'JJ Swim Lab 송파점', 'JJ Swim Lab 마포점', 'JJ Swim Lab 일산점'],
-    '서울시': ['JJ Swim Lab 강남점', 'JJ Swim Lab 홍대점', 'JJ Swim Lab 송파점', 'JJ Swim Lab 마포점'],
-    '강남구': ['JJ Swim Lab 강남점'],
-    '마포구': ['JJ Swim Lab 홍대점', 'JJ Swim Lab 마포점'],
-    '송파구': ['JJ Swim Lab 송파점'],
-    '경기도': ['JJ Swim Lab 일산점'],
-    '고양시': ['JJ Swim Lab 일산점'],
-  };
-
   // 🆕 샘플 + 실제 센터 병합 (개발 중에는 샘플 데이터도 유지)
   const allCenters = [...swimmingCenters, ...realCenters];
 
@@ -580,9 +577,31 @@ export default function MapPage() {
     // 지역 필터
     if (selectedRegions.size > 0) {
       const selectedRegionList = Array.from(selectedRegions);
+      const normalizedAddress = (center.address || '').replace(/\s/g, '');
+      const normalizedName = (center.name || '').replace(/\s/g, '');
+      const centerRegions = [
+        center.province,
+        center.city,
+        center.region,
+        center.district,
+        center.gu,
+        center.dong
+      ]
+        .filter(Boolean)
+        .map(value => String(value).replace(/\s/g, ''));
+
       const centerInSelectedRegions = selectedRegionList.some(region => {
-        const centersInRegion = regionCenters[region] || [];
-        return centersInRegion.includes(center.name);
+        const normalizedRegion = region.replace(/\s/g, '');
+
+        if (normalizedRegion === '전국') {
+          return true;
+        }
+
+        return (
+          normalizedAddress.includes(region) ||
+          normalizedName.includes(region) ||
+          centerRegions.some(centerRegion => centerRegion.includes(normalizedRegion))
+        );
       });
       if (!centerInSelectedRegions) return false;
     }
@@ -713,6 +732,14 @@ export default function MapPage() {
             name: center.name || '이름 없음',
             position: { lat, lng },
             address: center.address || '',
+            province: center.province || center.region || '',
+            city: center.city || '',
+            region: center.region || '',
+            district: center.district || center.gu || '',
+            gu: center.gu || '',
+            dong: center.dong || '',
+            email: center.email || '',
+            website: center.website || '',
             phone: center.phone || '',
             rating: 4.5,
             courses: ['초급', '중급', '고급'],
