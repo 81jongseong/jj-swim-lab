@@ -144,6 +144,8 @@ export default function MemberDashboard() {
   const [stats, setStats] = useState<MemberStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // 건강 관련 상태
   const [healthData, setHealthData] = useState<HealthData | null>(null);
@@ -155,6 +157,8 @@ export default function MemberDashboard() {
     const load = async () => {
       try {
         const token = localStorage.getItem('token');
+        setInfoMessage(null);
+        setErrorMessage(null);
         
         // 사용자 타입에 따라 다른 API 엔드포인트 사용
         let apiEndpoint = 'http://localhost:5000/api/centers/student-dashboard-stats';
@@ -172,10 +176,55 @@ export default function MemberDashboard() {
           },
         });
         
-        const res = await response.json();
+        let parsed: any = null;
+        try {
+          parsed = await response.json();
+        } catch (jsonError) {
+          console.error('대시보드 응답 파싱 실패:', jsonError);
+        }
+        const res = parsed || {};
         console.log('🔍 대시보드 API 응답:', res);
         
+        if (!response.ok) {
+          const message = res?.message || '대시보드 데이터를 불러오지 못했습니다.';
+          if (response.status === 404 && message.includes('소속 센터')) {
+            setStats({
+              totalBookings: 0,
+              activeCourses: 0,
+              totalPayments: 0,
+              nextLesson: null
+            });
+            setHealthData(null);
+            setExerciseRecords([]);
+            setHealthGoals([]);
+            setWeeklyProgram([]);
+            setRecentBookings([]);
+            setInfoMessage('아직 소속 센터가 배정되지 않았습니다. 센터 검색 후 수강 신청 및 승인/결제 완료 시 대시보드가 활성화됩니다.');
+            return;
+          }
+          
+          console.error('대시보드 API 오류 상태:', response.status, message);
+          setErrorMessage(message);
+          return;
+        }
+        
         if (res.success && res.data) {
+          if (res.data.needsCenterAssignment) {
+            setStats({
+              totalBookings: 0,
+              activeCourses: 0,
+              totalPayments: 0,
+              nextLesson: null
+            });
+            setHealthData(null);
+            setExerciseRecords([]);
+            setHealthGoals([]);
+            setWeeklyProgram([]);
+            setRecentBookings([]);
+            setInfoMessage('아직 소속 센터가 배정되지 않았습니다. 센터 검색 후 수강 신청 및 승인/결제 완료 시 대시보드가 활성화됩니다.');
+            return;
+          }
+          
           const d = res.data;
           setStats({
             totalBookings: d.enrolledCourses || 0,
@@ -248,10 +297,12 @@ export default function MemberDashboard() {
             }
           ]);
         } else {
-          console.error('대시보드 API 오류:', res.message);
+          const message = res?.message || '대시보드 데이터를 불러오지 못했습니다.';
+          setErrorMessage(message);
         }
       } catch (error) {
         console.error('대시보드 데이터 로딩 실패:', error);
+        setErrorMessage('대시보드 데이터를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         setLoading(false);
       }
@@ -259,7 +310,7 @@ export default function MemberDashboard() {
     load();
   }, [user]);
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -279,24 +330,39 @@ export default function MemberDashboard() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-single-line">회원 대시보드</h1>
 
-        {/* 통계 카드 - 코드 스플리팅 적용 */}
-        <Suspense fallback={
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-                <div className="flex items-center">
-                  <div className="p-2 bg-gray-200 rounded-lg w-12 h-12"></div>
-                  <div className="ml-4 flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {infoMessage && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
+            {infoMessage}
           </div>
-        }>
-          <StatsCards stats={stats} />
-        </Suspense>
+        )}
+
+        {errorMessage && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+            {errorMessage}
+          </div>
+        )}
+
+        {stats && (
+          <Suspense
+            fallback={
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-gray-200 rounded-lg w-12 h-12"></div>
+                      <div className="ml-4 flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                        <div className="h-8 bg-gray-200 rounded w-16"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <StatsCards stats={stats} />
+          </Suspense>
+        )}
 
         {/* 건강 대시보드 - 코드 스플리팅 적용 */}
         {healthData && (

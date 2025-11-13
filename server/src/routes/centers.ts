@@ -661,9 +661,22 @@ router.get('/student-dashboard-stats', authMiddleware, requireRole(['student']),
     const centerId = req.user.centerId;
 
     if (!centerId) {
-      return res.status(404).json({
-        success: false,
-        message: '소속 센터가 없습니다.'
+      return res.status(200).json({
+        success: true,
+        message: '소속 센터가 아직 배정되지 않았습니다.',
+        data: {
+          needsCenterAssignment: true,
+          enrolledCourses: 0,
+          completedSessions: 0,
+          totalSessions: 0,
+          currentStreak: 0,
+          averageRating: 0,
+          nextClass: null,
+          achievements: 0,
+          weeklyGoal: 0,
+          activeCourses: 0,
+          totalPayments: 0
+        }
       });
     }
 
