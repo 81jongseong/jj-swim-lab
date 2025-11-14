@@ -47,6 +47,16 @@ const ADDRESS_KEYWORD_COORDINATES: Record<string, { lat: number; lng: number }> 
   '일산': { lat: 37.6763, lng: 126.775 },
 };
 
+const isHttpUrl = (value?: string) => {
+  if (!value) return false;
+  return /^https?:\/\//i.test(value.trim());
+};
+
+const ensureHttpUrl = (value: string) => {
+  if (!value) return '';
+  return isHttpUrl(value) ? value.trim() : `https://${value.trim()}`;
+};
+
 interface SwimmingCenter {
   id: string;
   name: string;
@@ -204,32 +214,39 @@ export default function MapPage() {
     return digits ? `0${digits}` : '';
   };
 
+  const showContactFallbackAlert = (center: SwimmingCenter, extraMessage?: string) => {
+    const lines = [
+      extraMessage ?? '온라인 신청 링크가 아직 준비되지 않았습니다.',
+      center.website ? `홈페이지: ${center.website}` : '',
+      center.registrationUrl && !isHttpUrl(center.registrationUrl) ? `신청 방법: ${center.registrationUrl}` : '',
+      center.email ? `이메일: ${center.email}` : '',
+      center.phone ? `전화: ${center.phone}` : ''
+    ].filter(Boolean);
+
+    alert(lines.join('\n'));
+  };
+
   const openCenterWebsite = (center: SwimmingCenter) => {
-    if (center.website) {
-      window.open(center.website, '_blank', 'noopener,noreferrer');
-    } else if (center.email) {
-      window.location.href = `mailto:${center.email}?subject=${encodeURIComponent(`${center.name} 문의`)}`;
-    } else if (center.phone) {
-      const tel = sanitizePhoneNumber(center.phone);
-      if (tel) window.location.href = `tel:${tel}`;
-    } else {
-      alert('센터 홈페이지 정보가 아직 준비되지 않았습니다.');
+    if (center.website && isHttpUrl(center.website)) {
+      window.open(ensureHttpUrl(center.website), '_blank', 'noopener,noreferrer');
+      return;
     }
+
+    showContactFallbackAlert(center, '센터 홈페이지 링크가 아직 등록되지 않았습니다.');
   };
 
   const openEnrollmentPage = (center: SwimmingCenter) => {
-    if (center.registrationUrl) {
-      window.open(center.registrationUrl, '_blank', 'noopener,noreferrer');
-    } else if (center.website) {
-      window.open(center.website, '_blank', 'noopener,noreferrer');
-    } else if (center.email) {
-      window.location.href = `mailto:${center.email}?subject=${encodeURIComponent(`${center.name} 수강 신청 문의`)}&body=${encodeURIComponent('안녕하세요. 수강 신청을 문의드립니다.')}`;
-    } else if (center.phone) {
-      const tel = sanitizePhoneNumber(center.phone);
-      if (tel) window.location.href = `tel:${tel}`;
-    } else {
-      alert('수강 신청 경로가 아직 준비되지 않았습니다. 센터에 직접 문의해주세요.');
+    if (center.registrationUrl && isHttpUrl(center.registrationUrl)) {
+      window.open(ensureHttpUrl(center.registrationUrl), '_blank', 'noopener,noreferrer');
+      return;
     }
+
+    if (center.website && isHttpUrl(center.website)) {
+      window.open(ensureHttpUrl(center.website), '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    showContactFallbackAlert(center, '온라인 수강 신청 링크가 아직 등록되지 않았습니다. 아래 연락처로 문의해주세요.');
   };
 
   // 거리 표시 함수 (단위 변환 포함)
