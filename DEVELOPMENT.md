@@ -934,6 +934,14 @@
 - 페이지 전체를 `dynamic(..., { ssr: false })`로 감싸 서버 사이드 렌더링을 비활성화해 viewOnly 전용 구조와 클라이언트 전용 상태가 일치하도록 함.
 - `client/app/center/[centerSlug]/admin/layout.tsx` 역시 `dynamic(..., { ssr: false })`로 감싸 테넌트 컨텍스트 레이아웃도 클라이언트 전용으로 전환해 Hydration 불일치 가능성을 차단.
 
+### ✅ 2025-11-14: 학생 공개 강습 결제/신청 플로우 구현
+
+- `client/app/center/[centerSlug]/admin/courses/page.tsx`의 viewOnly 강습 카드에서 `/student/courses/apply`로 이동해 결제 프로세스로 자연스럽게 연결.
+- `client/app/student/courses/apply/page.tsx`를 추가해 강습 상세 요약, 결제 수단 선택, 메모 입력, 결제 내역 이동 버튼을 갖춘 단계별 UI 제공.
+- `client/utils/api.ts`에 `getPublicCourse`/`applyForPublicCourse` 메서드를 추가해 공개 강습 조회 및 결제 요청을 APIClient로 통합.
+- `server/src/routes/courses.ts`에 공개 강습 단건 조회(`/public/:courseId`)와 결제 생성 기반의 수강 신청(`/public/:courseId/apply`) 엔드포인트를 추가하고, 정원/중복/결제 중복 검증을 수행.
+- 결제 생성 시 `Payment` 모델을 활용해 강습 가격을 기준으로 `pending` 결제를 만들고, 결제 완료 시 기존 로직을 통해 강습에 자동 편성되도록 흐름을 연결.
+
 
 
 ## 🔍 자동 헬스 체크 (2025. 11. 14. 오전 7:03:42)

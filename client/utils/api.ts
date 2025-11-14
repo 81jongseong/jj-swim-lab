@@ -642,6 +642,18 @@ class ApiClient {
     });
   }
 
+  // ===== 공개 강습 API =====
+  async getPublicCourse(courseId: string): Promise<ApiResponse<any>> {
+    return this.request(`/api/courses/public/${courseId}`);
+  }
+
+  async applyForPublicCourse(courseId: string, payload: { paymentMethod?: string; notes?: string }): Promise<ApiResponse<any>> {
+    return this.request(`/api/courses/public/${courseId}/apply`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async updatePayment(id: string, paymentData: Partial<PaymentData>): Promise<ApiResponse<PaymentData>> {
     return this.request(`/api/payments/${id}`, {
       method: 'PUT',

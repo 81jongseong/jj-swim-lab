@@ -113,6 +113,7 @@ import { Router, Request, Response } from 'express';
 import { Course } from '../models/Course';
 import { User } from '../models/User';
 import { Center } from '../models/Center'; // ⭐ Center 모델 추가
+import { Payment } from '../models/Payment';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
@@ -173,6 +174,203 @@ router.get('/public/center/:centerId', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: '강습 정보를 조회할 수 없습니다.'
+    });
+  }
+});
+
+// 공개용 단일 강습 과정 조회
+router.get('/public/:courseId', async (req: Request, res: Response) => {
+  try {
+    const { courseId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 강습 ID입니다.'
+      });
+    }
+
+    const course = await Course.findById(courseId)
+      .populate('instructor', 'name email phone')
+      .lean<any>();
+
+    if (!course || course.status === 'inactive' || course.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message: '강습 정보를 찾을 수 없습니다.'
+      });
+    }
+
+    const center = await Center.findById(course.centerId).lean<any>();
+
+    const activeEnrollment = (course.enrolledStudents || []).filter((enrollment: any) => enrollment.status !== 'dropped').length;
+    const currentEnrollment = course.classInfo?.currentEnrollment ?? activeEnrollment;
+
+    const normalized = {
+      _id: course._id,
+      name: course.name,
+      description: course.description,
+      level: course.level,
+      duration: course.duration,
+      price: course.price,
+      maxStudents: course.maxStudents,
+      currentStudents: currentEnrollment,
+      status: course.status,
+      schedule: (course.schedule || []).map((item: any) => ({
+        day: item.day || item.dayOfWeek || '',
+        startTime: item.startTime,
+        endTime: item.endTime
+      })),
+      instructor: {
+        name: (course.instructor as any)?.name || course.instructorName || '',
+        email: (course.instructor as any)?.email || '',
+        phone: (course.instructor as any)?.phone || ''
+      },
+      center: center ? {
+        _id: center._id,
+        name: center.name,
+        address: center.address,
+        phone: center.phone,
+        email: center.email,
+        region: center.region,
+        district: center.district,
+        city: center.city,
+        province: center.province
+      } : null,
+      tags: course.tags || [],
+      classInfo: course.classInfo ? {
+        className: course.classInfo.className,
+        classType: course.classInfo.classType,
+        startDate: course.classInfo.startDate,
+        endDate: course.classInfo.endDate
+      } : null,
+      isPersonalLesson: course.isPersonalLesson,
+      courseType: course.courseType
+    };
+
+    return res.json({
+      success: true,
+      message: '강습 과정 조회 성공!',
+      data: normalized
+    });
+  } catch (error) {
+    console.error('공개 강습 상세 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '강습 정보를 조회할 수 없습니다.'
+    });
+  }
+});
+
+// 공개 강습 수강 신청 및 결제 생성
+router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const { paymentMethod = 'card', notes = '' } = req.body || {};
+    const allowedMethods = new Set(['card', 'cash', 'transfer', 'online']);
+    const normalizedMethod = allowedMethods.has(paymentMethod) ? paymentMethod : 'card';
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 강습 ID입니다.'
+      });
+    }
+
+    const course = await Course.findById(courseId);
+
+    if (!course || course.status === 'inactive' || course.isActive === false) {
+      return res.status(404).json({
+        success: false,
+        message: '강습 정보를 찾을 수 없습니다.'
+      });
+    }
+
+    // 이미 등록된 경우 방지
+    const isAlreadyEnrolled = (course.enrolledStudents || []).some((enrollment: any) =>
+      enrollment.student && enrollment.student.toString() === req.user.userId.toString()
+    );
+
+    if (isAlreadyEnrolled) {
+      return res.status(400).json({
+        success: false,
+        message: '이미 해당 강습에 등록되어 있습니다.'
+      });
+    }
+
+    // 기존 결제 요청 확인 (대기/완료 상태)
+    const existingPayment = await Payment.findOne({
+      user: req.user.userId,
+      relatedCourse: course._id,
+      status: { $in: ['pending', 'completed'] }
+    });
+
+    if (existingPayment) {
+      return res.status(400).json({
+        success: false,
+        message: existingPayment.status === 'completed'
+          ? '이미 결제가 완료된 강습입니다.'
+          : '이미 결제가 진행 중입니다. 결제 내역을 확인해주세요.'
+      });
+    }
+
+    const activeEnrollment = (course.enrolledStudents || []).filter((enrollment: any) => enrollment.status !== 'dropped').length;
+    const currentEnrollment = course.classInfo?.currentEnrollment ?? activeEnrollment;
+
+    if (currentEnrollment >= course.maxStudents || course.status === 'full') {
+      return res.status(400).json({
+        success: false,
+        message: '이미 정원이 가득 찬 강습입니다.'
+      });
+    }
+
+    const transactionId = `COURSE-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+    const payment = new Payment({
+      user: req.user.userId,
+      amount: course.price,
+      currency: 'KRW',
+      pricingInfo: {
+        userType: req.user.userType || 'student',
+        pricingTier: 'standard',
+        baseAmount: course.price,
+        discountAmount: 0,
+        discountReason: '',
+        centerId: course.centerId,
+        isCenterSponsored: false
+      },
+      paymentMethod: normalizedMethod,
+      status: 'pending',
+      purpose: 'course',
+      relatedCourse: course._id,
+      transactionId,
+      notes: notes || '',
+      centerId: course.centerId
+    });
+
+    await payment.save();
+
+    return res.status(201).json({
+      success: true,
+      message: '수강 신청이 접수되었습니다. 결제 승인을 기다려주세요.',
+      data: {
+        paymentId: payment._id,
+        status: payment.status,
+        amount: payment.amount,
+        paymentMethod: payment.paymentMethod,
+        transactionId: payment.transactionId,
+        course: {
+          _id: course._id,
+          name: course.name,
+          price: course.price
+        }
+      }
+    });
+  } catch (error) {
+    console.error('공개 강습 신청 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '수강 신청 처리 중 오류가 발생했습니다.'
     });
   }
 });

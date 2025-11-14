@@ -156,7 +156,7 @@ function ViewOnlyCourses({ centerSlug }: { centerSlug: string }) {
   }, [centerSlug]);
 
   const handleApply = (course: PublicCourse) => {
-    window.location.href = `/student/courses?courseId=${course._id}`;
+    window.location.href = `/student/courses/apply?courseId=${course._id}&center=${centerSlug}`;
   };
 
   if (loading) {
