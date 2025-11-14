@@ -941,6 +941,8 @@
 - `client/utils/api.ts`에 `getPublicCourse`/`applyForPublicCourse` 메서드를 추가해 공개 강습 조회 및 결제 요청을 APIClient로 통합.
 - `server/src/routes/courses.ts`에 공개 강습 단건 조회(`/public/:courseId`)와 결제 생성 기반의 수강 신청(`/public/:courseId/apply`) 엔드포인트를 추가하고, 정원/중복/결제 중복 검증을 수행.
 - 결제 생성 시 `Payment` 모델을 활용해 강습 가격을 기준으로 `pending` 결제를 만들고, 결제 완료 시 기존 로직을 통해 강습에 자동 편성되도록 흐름을 연결.
+- 학생 전용 내비게이션에서 `🏠 홈`을 제거하고, 메인 메뉴에 `🗺️ 수영센터 찾기`를 배치해 가입 직후에도 바로 센터 검색으로 이동 가능하도록 UX 정비.
+- `server/src/routes/courses.ts`에 `/student/enrolled` 엔드포인트를 추가하고 `client/utils/api.ts` · `client/app/courses/page.tsx`를 갱신해 학생이 결제 완료된 강습만 `내 강의` 화면에서 확인하도록 수정.
 
 
 

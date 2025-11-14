@@ -375,6 +375,91 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
   }
 });
 
+// 학생 본인 강습 목록 조회
+router.get('/student/enrolled', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+  try {
+    const studentId = req.user.userId;
+
+    const courses = await Course.find({
+      'enrolledStudents.student': studentId
+    })
+      .populate('instructor', 'name userId email phone')
+      .populate('centerId', 'name address phone email region district city province')
+      .sort({ 'classInfo.startDate': 1, createdAt: -1 })
+      .lean<any>();
+
+    const normalized = courses.map((course: any) => {
+      const enrollment = (course.enrolledStudents || []).find((enrollmentItem: any) => {
+        if (!enrollmentItem) return false;
+        if (typeof enrollmentItem.student === 'string') {
+          return enrollmentItem.student === String(studentId);
+        }
+        if (typeof enrollmentItem.student === 'object') {
+          return (enrollmentItem.student?._id || enrollmentItem.student)?.toString() === String(studentId);
+        }
+        return false;
+      });
+
+      const instructor = course.instructor || {};
+      const center = course.centerId || {};
+
+      return {
+        _id: course._id,
+        name: course.name,
+        description: course.description,
+        level: course.level,
+        duration: course.duration,
+        price: course.price,
+        maxStudents: course.maxStudents,
+        currentStudents: course.classInfo?.currentEnrollment ?? 0,
+        status: course.status,
+        schedule: (course.schedule || []).map((item: any) => ({
+          day: item.day || item.dayOfWeek || '',
+          startTime: item.startTime,
+          endTime: item.endTime
+        })),
+        instructor: instructor
+          ? {
+              _id: instructor._id,
+              name: instructor.name,
+              email: instructor.email,
+              phone: instructor.phone
+            }
+          : null,
+        center: center
+          ? {
+              _id: center._id,
+              name: center.name,
+              address: center.address,
+              phone: center.phone,
+              email: center.email,
+              region: center.region,
+              district: center.district,
+              city: center.city,
+              province: center.province
+            }
+          : null,
+        enrollmentStatus: enrollment?.status ?? 'pending',
+        enrolledAt: enrollment?.enrolledAt ?? null,
+        nextClassStart: course.classInfo?.startDate ?? null,
+        nextClassEnd: course.classInfo?.endDate ?? null
+      };
+    });
+
+    return res.json({
+      success: true,
+      message: '내 강습 목록을 불러왔습니다.',
+      data: normalized
+    });
+  } catch (error) {
+    console.error('학생 강습 목록 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '내 강습 정보를 가져오는 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 // 모든 강습 과정 조회
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

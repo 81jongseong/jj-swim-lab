@@ -548,6 +548,10 @@ class ApiClient {
     return this.request(`/api/courses${queryString}`);
   }
 
+  async getMyCourses(): Promise<ApiResponse<any>> {
+    return this.request('/api/courses/student/enrolled');
+  }
+
   async getCourse(id: string): Promise<any> {
     return this.request(`/api/courses/${id}`);
   }

@@ -1,247 +1,207 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import apiClient from '../../utils/api';
+import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import apiClient from "@/utils/api";
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Loader2,
+  MapPin,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/Button";
 
-interface ApiCourse {
+interface EnrolledCourse {
   _id: string;
   name: string;
-  instructor?: { _id: string; name: string; userId?: string } | string;
-  level: "beginner" | "intermediate" | "advanced";
   description: string;
-  price: number;
+  level: string;
   duration: number;
+  price: number;
   maxStudents: number;
-  enrolledStudents?: Array<{ student: string; status: string } | any>;
-  isActive?: boolean;
-  schedule?: string[];
+  currentStudents: number;
+  status: string;
+  schedule: Array<{ day: string; startTime: string; endTime?: string }>;
+  instructor?: {
+    _id?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  } | null;
+  center?: {
+    _id?: string;
+    name?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+  } | null;
+  enrollmentStatus?: string;
+  enrolledAt?: string | null;
+  nextClassStart?: string | null;
+  nextClassEnd?: string | null;
 }
 
-interface Instructor {
-  _id: string;
-  name: string;
-  email: string;
-  instructorInfo?: {
-    instructorLevel?: string;
-    experience?: string;
-    specialties?: string[];
-  };
-}
+const levelLabels: Record<string, string> = {
+  beginner: "초급",
+  intermediate: "중급",
+  advanced: "고급",
+  expert: "전문",
+  master: "마스터",
+};
 
-export default function CoursesPage() {
-  const [courses, setCourses] = useState<ApiCourse[]>([]);
-  const [instructors, setInstructors] = useState<Instructor[]>([]);
+const enrollmentLabels: Record<string, string> = {
+  active: "수강 중",
+  completed: "수료 완료",
+  dropped: "중도 취소",
+  pending: "승인 대기",
+};
+
+const dayLabels: Record<string, string> = {
+  monday: "월요일",
+  tuesday: "화요일",
+  wednesday: "수요일",
+  thursday: "목요일",
+  friday: "금요일",
+  saturday: "토요일",
+  sunday: "일요일",
+};
+
+const formatSchedule = (items: Array<{ day: string; startTime: string; endTime?: string }>) => {
+  if (!items || items.length === 0) return "시간표 정보 없음";
+  return items
+    .map((item) => {
+      const label = dayLabels[item.day?.toLowerCase?.() || item.day] || item.day;
+      return `${label ?? item.day} ${item.startTime}${item.endTime ? ` - ${item.endTime}` : ""}`.trim();
+    })
+    .join(", ");
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return null;
+  try {
+    return new Date(value).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+  } catch {
+    return null;
+  }
+};
+
+export default function StudentCoursesPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [courses, setCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
-  const [selectedInstructor, setSelectedInstructor] = useState<string>("all");
 
-  const loadCourses = async () => {
-    setLoading(true);
-    const res = await apiClient.getCourses();
-    console.log('🔍 강습과정 API 응답:', res);
-    if (res.data) {
-      setCourses(res.data);
-    } else if (res.courses) {
-      setCourses(res.courses);
-    } else {
-      // 샘플 데이터로 대체
-      setCourses([
-        {
-          _id: '1',
-          name: '자유형 기초반',
-          level: 'beginner',
-          instructor: { _id: '1', name: '김강사' },
-          description: '자유형의 기본 자세와 호흡법을 배우는 초급 과정입니다.',
-          duration: 60,
-          price: 50000,
-          maxStudents: 10,
-          enrolledStudents: [
-            { student: { _id: 's1', name: '학생1' }, status: 'active' },
-            { student: { _id: 's2', name: '학생2' }, status: 'active' }
-          ],
-          isActive: true
-        },
-        {
-          _id: '2',
-          name: '배영 중급반',
-          level: 'intermediate',
-          instructor: { _id: '2', name: '이강사' },
-          description: '배영의 롤링과 스트로크 기술을 향상시키는 중급 과정입니다.',
-          duration: 60,
-          price: 70000,
-          maxStudents: 8,
-          enrolledStudents: [
-            { student: { _id: 's3', name: '학생3' }, status: 'active' },
-            { student: { _id: 's4', name: '학생4' }, status: 'active' },
-            { student: { _id: 's5', name: '학생5' }, status: 'active' }
-          ],
-          isActive: true
-        },
-        {
-          _id: '3',
-          name: '평영 고급반',
-          level: 'advanced',
-          instructor: { _id: '3', name: '박강사' },
-          description: '평영의 고급 기술과 경기력 향상을 위한 고급 과정입니다.',
-          duration: 90,
-          price: 90000,
-          maxStudents: 6,
-          enrolledStudents: [
-            { student: { _id: 's6', name: '학생6' }, status: 'active' }
-          ],
-          isActive: true
-        },
-        {
-          _id: '4',
-          name: '접영 마스터반',
-          level: 'advanced',
-          instructor: { _id: '1', name: '김강사' },
-          description: '접영의 완벽한 마스터를 위한 최고급 과정입니다.',
-          duration: 90,
-          price: 120000,
-          maxStudents: 4,
-          enrolledStudents: [],
-          isActive: true
-        },
-        {
-          _id: '5',
-          name: '성인 수영교실',
-          level: 'beginner',
-          instructor: { _id: '2', name: '이강사' },
-          description: '성인을 위한 기초 수영 교실입니다.',
-          duration: 60,
-          price: 45000,
-          maxStudents: 12,
-          enrolledStudents: [
-            { student: { _id: 's7', name: '학생7' }, status: 'active' },
-            { student: { _id: 's8', name: '학생8' }, status: 'active' },
-            { student: { _id: 's9', name: '학생9' }, status: 'active' },
-            { student: { _id: 's10', name: '학생10' }, status: 'active' }
-          ],
-          isActive: true
-        }
-      ]);
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setError("로그인이 필요합니다. 다시 로그인해 주세요.");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  };
 
-  const loadInstructors = async () => {
-    try {
-      // 강습과정에서 강사 정보 추출 (API 호출 대신)
-      const uniqueInstructors = courses.reduce((acc: any[], course) => {
-        const instructor = typeof course.instructor === 'string' ? 
-          { _id: course.instructor, name: course.instructor } : 
-          course.instructor;
-        
-        if (instructor && !acc.find(i => i._id === instructor._id)) {
-          acc.push(instructor);
-        }
-        return acc;
-      }, []);
+    if (user.userType !== "student") {
+      setError("학생 전용 페이지입니다. 다른 역할 계정에서는 접근할 수 없습니다.");
+      setLoading(false);
+      return;
+    }
 
-      if (uniqueInstructors.length > 0) {
-        setInstructors(uniqueInstructors);
+    const loadCourses = async () => {
+      setLoading(true);
+      setError("");
+
+      const response = await apiClient.getMyCourses();
+      if (response.success && Array.isArray(response.data)) {
+        setCourses(response.data as EnrolledCourse[]);
       } else {
-        // 강사 데이터가 없으면 샘플 데이터 사용
-        setInstructors([
-          { _id: '1', name: '김강사', email: 'instructor1@jjswim.com' },
-          { _id: '2', name: '이강사', email: 'instructor2@jjswim.com' },
-          { _id: '3', name: '박강사', email: 'instructor3@jjswim.com' }
-        ]);
+        setCourses([]);
+        setError(response.message || response.error || "내 강습 정보를 불러오지 못했습니다.");
       }
-    } catch (error) {
-      console.error('강사 목록 로드 실패:', error);
-      // 에러 시 샘플 데이터 사용
-      setInstructors([
-        { _id: '1', name: '김강사', email: 'instructor1@jjswim.com' },
-        { _id: '2', name: '이강사', email: 'instructor2@jjswim.com' },
-        { _id: '3', name: '박강사', email: 'instructor3@jjswim.com' }
-      ]);
-    }
-  };
+      setLoading(false);
+    };
 
-  useEffect(() => {
     loadCourses();
-  }, []);
+  }, [authLoading, user]);
 
-  useEffect(() => {
-    if (courses.length > 0) {
-      loadInstructors();
-    }
+  const levelOptions = useMemo(() => {
+    const unique = new Set<string>();
+    courses.forEach((course) => {
+      if (course.level) {
+        unique.add(course.level);
+      }
+    });
+    return Array.from(unique);
   }, [courses]);
 
   const filteredCourses = useMemo(() => {
-    let filtered = courses;
-    
-    // 레벨별 필터링
-    if (selectedLevel !== "all") {
-      filtered = filtered.filter((c) => c.level === (selectedLevel as any));
+    if (selectedLevel === "all") {
+      return courses;
     }
-    
-    // 강사별 필터링
-    if (selectedInstructor !== "all") {
-      filtered = filtered.filter((c) => {
-        if (typeof c.instructor === 'object') {
-          return c.instructor.userId === selectedInstructor;
-        }
-        return c.instructor === selectedInstructor;
-      });
-    }
-    
-    return filtered;
-  }, [courses, selectedLevel, selectedInstructor]);
+    return courses.filter((course) => course.level === selectedLevel);
+  }, [courses, selectedLevel]);
 
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "초급";
-      case "intermediate":
-        return "중급";
-      case "advanced":
-        return "고급";
-      default:
-        return level;
-    }
-  };
-
-  const getStatusText = (course: ApiCourse) => {
-    const activeCount = course.enrolledStudents?.filter((e: any) => e.status === "active").length || 0;
-    if (course.isActive === false) return "마감";
-    if (activeCount >= (course.maxStudents || 0)) return "마감";
-    return "신청 가능";
-  };
-
-  const getStatusColor = (course: ApiCourse) => {
-    const activeCount = course.enrolledStudents?.filter((e: any) => e.status === "active").length || 0;
-    const status = course.isActive === false || activeCount >= (course.maxStudents || 0) ? "closed" : "available";
-    switch (status) {
-      case "available":
-        return "bg-green-100 text-green-800";
-      case "closed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const handleEnroll = async (courseId: string) => {
-    const res = await apiClient.post(`/courses/${courseId}/enroll`);
-    if (!res.error) {
-      alert("강습에 신청되었습니다.");
-      await loadCourses();
-    } else {
-      alert(res.error);
-    }
-  };
-
-  if (loading) {
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
+      <div className="min-h-screen bg-slate-50 pt-20 pb-16">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex flex-col items-center justify-center py-24 text-slate-600">
+            <Loader2 className="h-10 w-10 animate-spin mb-4" />
+            <p className="text-lg font-medium">내 강습 정보를 불러오는 중입니다...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-20 pb-16">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-white border border-red-100 rounded-3xl shadow-sm p-8 text-center space-y-6">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-slate-900">내 강의를 불러올 수 없습니다</h1>
+              <p className="text-slate-600">{error}</p>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700 text-white">
+                다시 시도하기
+              </Button>
+              <Link href="/map" className="text-sm text-blue-600 hover:text-blue-700">
+                수영센터 찾기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!filteredCourses.length) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-20 pb-16">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-8 text-center space-y-6">
+            <CreditCard className="h-12 w-12 text-blue-500 mx-auto" />
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-slate-900">아직 신청한 강습이 없습니다</h1>
+              <p className="text-slate-600">
+                관심 있는 센터와 강습을 찾아 신청해 보세요. 결제 완료 후 이곳에서 수강 중인 강습을 확인할 수 있습니다.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Link href="/map">수영센터 찾기</Link>
+              </Button>
+              <Link href="/payments" className="text-sm text-blue-600 hover:text-blue-700">
+                결제 내역 확인하기
+              </Link>
             </div>
           </div>
         </div>
@@ -250,121 +210,141 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-single-line">강습 과정</h1>
-
-        <div className="mb-6 space-y-4">
-          {/* 레벨별 필터 */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">레벨별 필터</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedLevel("all")}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  selectedLevel === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                전체
-              </button>
-              {["beginner", "intermediate", "advanced"].map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setSelectedLevel(level)}
-                  className={`px-4 py-2 rounded-md transition-colors ${
-                    selectedLevel === level
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  {getLevelText(level)}
-                </button>
-              ))}
-            </div>
+    <div className="min-h-screen bg-slate-50 pt-20 pb-16">
+      <div className="max-w-5xl mx-auto px-4 space-y-8">
+        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-extrabold text-slate-900">내 강의</h1>
+            <p className="text-slate-600 text-sm">
+              결제가 완료된 강습만 표시됩니다. 강습 일정과 상태를 확인하고, 필요시 센터에 문의하세요.
+            </p>
           </div>
-
-          {/* 강사별 필터 */}
-          {instructors.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">강사별 필터</h3>
+          {levelOptions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-600">레벨 필터</span>
               <select
-                value={selectedInstructor}
-                onChange={(e) => setSelectedInstructor(e.target.value)}
-                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                value={selectedLevel}
+                onChange={(event) => setSelectedLevel(event.target.value)}
+                className="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
               >
-                <option value="all">전체 강사</option>
-                {instructors.map((instructor) => (
-                  <option key={instructor._id} value={instructor._id}>
-                    {instructor.name} 강사
+                <option value="all">전체 레벨</option>
+                {levelOptions.map((level) => (
+                  <option key={level} value={level}>
+                    {levelLabels[level] || level}
                   </option>
                 ))}
               </select>
             </div>
           )}
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 gap-6">
           {filteredCourses.map((course) => {
-            const activeCount = course.enrolledStudents?.filter((e: any) => e.status === "active").length || 0;
-            const isAvailable = (course.isActive !== false) && activeCount < (course.maxStudents || 0);
+            const enrollmentStatus = enrollmentLabels[course.enrollmentStatus ?? "active"] || course.enrollmentStatus;
+            const enrolledAtText = formatDate(course.enrolledAt);
+            const nextClassStart = formatDate(course.nextClassStart);
+
             return (
-              <div key={course._id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 card-title-text">{course.name}</h3>
-                    <p className="text-sm text-gray-600 text-single-line">
-                      {typeof course.instructor === "string" ? course.instructor : course.instructor?.name} 강사
-                    </p>
+              <article
+                key={course._id}
+                className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 space-y-5"
+              >
+                <header className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900">{course.name}</h2>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {levelLabels[course.level] || course.level} · {course.duration}분 · {course.price.toLocaleString()}원
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                        enrollmentStatus === "수강 중"
+                          ? "bg-blue-50 text-blue-600"
+                          : enrollmentStatus === "수료 완료"
+                          ? "bg-green-50 text-green-600"
+                          : enrollmentStatus === "중도 취소"
+                          ? "bg-red-50 text-red-600"
+                          : "bg-yellow-50 text-yellow-600"
+                      }`}
+                    >
+                      {enrollmentStatus}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(course)}`}>
-                    {getStatusText(course)}
-                  </span>
+                  <p className="text-slate-600 leading-relaxed text-sm">{course.description}</p>
+                </header>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-5 w-5 text-blue-500 mt-1" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-slate-500 uppercase">강습 일정</p>
+                      <p className="text-sm text-slate-700 leading-relaxed break-words">
+                        {formatSchedule(course.schedule)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-blue-500 mt-1" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-slate-500 uppercase">정원 현황</p>
+                      <p className="text-sm text-slate-700">
+                        {course.currentStudents} / {course.maxStudents}명
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-blue-500 mt-1" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-slate-500 uppercase">수업 시간</p>
+                      <p className="text-sm text-slate-700">총 {course.duration}분</p>
+                      {nextClassStart && (
+                        <p className="text-xs text-blue-600">다음 수업 예정일: {nextClassStart}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {course.center && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-blue-500 mt-1" />
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-500 uppercase">센터 정보</p>
+                        <p className="text-sm text-slate-700">{course.center.name}</p>
+                        {course.center.address && (
+                          <p className="text-xs text-slate-500">{course.center.address}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <p className="text-gray-700 mb-4 description-text">{course.description}</p>
+                <footer className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                    <CreditCard className="h-4 w-4 text-blue-500" />
+                    <span>결제 금액 {course.price.toLocaleString()}원</span>
+                    {enrolledAtText && (
+                      <span className="text-xs text-slate-500">신청일 {enrolledAtText}</span>
+                    )}
+                  </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">레벨:</span>
-                    <span className="font-medium">{getLevelText(course.level)}</span>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" className="text-sm">
+                      <Link href="/payments">결제 내역 확인</Link>
+                    </Button>
+                    <Button asChild className="bg-slate-900 hover:bg-black text-white text-sm flex items-center gap-1">
+                      <Link href="/map">
+                        더 많은 강습 찾기
+                        <CheckCircle className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">기간:</span>
-                    <span className="font-medium">{course.duration}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">수강생:</span>
-                    <span className="font-medium">{activeCount}/{course.maxStudents}명</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">수강료:</span>
-                    <span className="font-medium text-blue-600">{course.price.toLocaleString()}원</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleEnroll(course._id)}
-                  disabled={!isAvailable}
-                  className={`w-full py-2 px-4 rounded-md transition-colors ${
-                    isAvailable
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  {isAvailable ? "신청하기" : "마감"}
-                </button>
-              </div>
+                </footer>
+              </article>
             );
           })}
-        </div>
-
-        {filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">해당 레벨의 강습이 없습니다.</p>
-          </div>
-        )}
+        </section>
       </div>
     </div>
   );

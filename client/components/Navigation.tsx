@@ -104,8 +104,8 @@ import { useTenantSettings } from '@/contexts/TenantSettingsContext';
 const userMenuStructure = {
   student: {
     main: [
-      { href: '/', label: '🏠 홈' },
       { href: '/dashboard', label: '📊 대시보드' },
+      { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/courses', label: '📚 내 강의' },
       { href: '/bookings', label: '📅 예약 관리' },
       { href: '/payments', label: '💰 결제 내역' },
@@ -127,7 +127,6 @@ const userMenuStructure = {
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
-      { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/profile', label: '👤 프로필' },
     ]
   },
