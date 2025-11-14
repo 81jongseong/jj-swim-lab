@@ -18,6 +18,7 @@
 /* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenantSettings } from '@/contexts/TenantSettingsContext';
@@ -1098,7 +1099,13 @@ const CenterHomePage: React.FC = () => {
 
           <div className="text-center mt-16">
             <Button
-              onClick={() => window.location.href = '/center-admin/courses'}
+              onClick={() => {
+                if (viewOnly) {
+                  window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
+                } else {
+                  window.location.href = '/center-admin/courses';
+                }
+              }}
               className="bg-white text-blue-700 hover:bg-gray-50 px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-3 mx-auto"
             >
               <Calendar className="h-6 w-6" />
@@ -1112,5 +1119,5 @@ const CenterHomePage: React.FC = () => {
   );
 };
 
-export default CenterHomePage;
+export default dynamic(() => Promise.resolve(CenterHomePage), { ssr: false });
 

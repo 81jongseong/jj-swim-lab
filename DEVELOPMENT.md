@@ -931,6 +931,7 @@
 - 강습과정 카드 클릭 시 viewOnly 모드에서는 `/student/courses` 대신 `/center/${centerSlug}/admin/courses?viewOnly=true`로 이동하도록 변경하여 인증 없이 접근 가능한 공개 강습 목록 페이지로 연결.
 - 편집 버튼(히어로 섹션, 시설 소개) 조건부 렌더링에 `hasMounted` 체크를 추가하여 서버 렌더링 시 편집 버튼이 표시되지 않도록 수정.
 - "전체 강습 과정 보기" 버튼도 viewOnly 모드에 따라 올바른 경로로 이동하도록 수정.
+- 페이지 전체를 `dynamic(..., { ssr: false })`로 감싸 서버 사이드 렌더링을 비활성화해 viewOnly 전용 구조와 클라이언트 전용 상태가 일치하도록 함.
 
 
 
