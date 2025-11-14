@@ -85,11 +85,21 @@ import { useAuth } from '@/hooks/useAuth';
 type Options = {
   requireTypes?: Array<'student' | 'instructor' | 'centerAdmin' | 'superAdmin'>;
   requirePermission?: string | null;
+  allowViewOnly?: boolean;
 };
 
 export default function withAuth<P>(Wrapped: ComponentType<P>, options: Options = {}) {
   return function Guarded(props: P) {
     const { user, loading } = useAuth();
+    
+    const viewOnly =
+      options.allowViewOnly &&
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('viewOnly') === 'true';
+
+    if (viewOnly) {
+      return React.createElement(Wrapped as React.ComponentType<any>, props);
+    }
     
     if (loading) return <div className="min-h-screen pt-16 p-6">로딩중...</div>;
     

@@ -18,7 +18,7 @@
 /* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenantSettings } from '@/contexts/TenantSettingsContext';
 import { 
@@ -82,6 +82,9 @@ interface Instructor {
 
 const CenterHomePage: React.FC = () => {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const { centerSlug } = useParams<{ centerSlug: string }>();
+  const viewOnly = searchParams?.get('viewOnly') === 'true';
   const { branding } = useTenantSettings();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -106,6 +109,64 @@ const CenterHomePage: React.FC = () => {
   const loadCenterInfo = async () => {
     try {
       setIsLoading(true);
+
+      if (viewOnly) {
+        if (!centerSlug) {
+          console.error('센터 slug가 없습니다.');
+          return;
+        }
+
+        const resolveRes = await fetch(`http://localhost:5000/api/centers/resolve-slug/${centerSlug}`);
+        if (!resolveRes.ok) {
+          console.error('센터 정보를 불러올 수 없습니다.');
+          return;
+        }
+
+        const resolveJson = await resolveRes.json();
+        if (!resolveJson.success) {
+          console.error(resolveJson.message || '센터 정보를 불러올 수 없습니다.');
+          return;
+        }
+
+        const centerId = resolveJson.data?.centerId;
+        const centerName = resolveJson.data?.name || centerSlug;
+
+        let publicInfo: any = null;
+        if (centerId) {
+          const introRes = await fetch(`http://localhost:5000/api/center-introduction/public/${centerId}`);
+          if (introRes.ok) {
+            const introJson = await introRes.json();
+            if (introJson.success) {
+              publicInfo = introJson.data;
+            }
+          }
+
+          const coursesRes = await fetch(`http://localhost:5000/api/courses/public/center/${centerId}`);
+          if (coursesRes.ok) {
+            const coursesJson = await coursesRes.json();
+            if (coursesJson.success) {
+              setCourses(coursesJson.data?.slice(0, 6) || []);
+            }
+          }
+        }
+
+        setCenterInfo({
+          _id: centerId,
+          name: centerName,
+          address: publicInfo?.address,
+          phone: publicInfo?.phone,
+          email: publicInfo?.email,
+          description: publicInfo?.introduction?.fullDescription || publicInfo?.introduction?.shortDescription,
+          introduction: publicInfo?.introduction,
+          facilities: publicInfo?.facilities || [],
+          operatingHours: publicInfo?.operatingHours || {},
+          images: publicInfo?.introduction?.images?.length
+            ? { mainImage: publicInfo.introduction.images[0] }
+            : undefined,
+        } as CenterInfo);
+        return;
+      }
+
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -164,6 +225,7 @@ const CenterHomePage: React.FC = () => {
 
   // 섹션 편집 시작
   const startEdit = (section: string) => {
+    if (viewOnly) return;
     setEditingSection(section);
     if (section === 'facilities') {
       setEditData({
@@ -184,6 +246,7 @@ const CenterHomePage: React.FC = () => {
 
   // 편집 저장
   const saveEdit = async () => {
+    if (viewOnly) return;
     try {
       const token = localStorage.getItem('token');
       if (!token || !centerInfo?._id) return;
@@ -306,16 +369,18 @@ const CenterHomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 via-blue-800/30 to-transparent"></div>
         
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
-          <div className="absolute top-6 right-6">
-            <Button
-              onClick={() => startEdit('hero')}
-              variant="outline"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/30 shadow-lg hover:shadow-xl transition-all"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              편집
-            </Button>
-          </div>
+          {!viewOnly && (
+            <div className="absolute top-6 right-6">
+              <Button
+                onClick={() => startEdit('hero')}
+                variant="outline"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/30 shadow-lg hover:shadow-xl transition-all"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                편집
+              </Button>
+            </div>
+          )}
           
           {/* 로고 이미지 표시 */}
           {centerInfo?.images?.logo && (
@@ -346,11 +411,18 @@ const CenterHomePage: React.FC = () => {
           
           <div className="flex flex-wrap justify-center gap-4 mt-4">
             <Button
-              onClick={() => window.location.href = '/center-admin/courses'}
+              onClick={() => {
+                if (viewOnly) {
+                  const targetSlug = centerSlug || 'default';
+                  window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
+                } else {
+                  window.location.href = '/center-admin/courses';
+                }
+              }}
               className="bg-white text-blue-700 hover:bg-gray-50 px-10 py-4 text-lg font-bold shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105 rounded-full flex items-center justify-center gap-2"
             >
               <Calendar className="h-5 w-5" />
-              강습 등록하기
+              {viewOnly ? '강습 과정 보기' : '강습 등록하기'}
               <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
@@ -364,7 +436,7 @@ const CenterHomePage: React.FC = () => {
       </section>
 
       {/* 편집 모달 */}
-      {editingSection === 'hero' && (
+      {!viewOnly && editingSection === 'hero' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg p-6 max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="text-2xl font-bold mb-6">히어로 섹션 편집</h3>
@@ -581,7 +653,7 @@ const CenterHomePage: React.FC = () => {
             <div className="w-20 h-1 bg-blue-600 mx-auto rounded-full"></div>
           </div>
           
-          {editingSection === 'facilities' && (
+      {!viewOnly && editingSection === 'facilities' && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <h3 className="text-2xl font-bold mb-4">시설 소개 편집</h3>

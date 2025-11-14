@@ -2024,7 +2024,7 @@ router.get('/guest', async (req, res) => {
   try {
     const centers = await Center.find(
       { status: 'active' }, 
-      'name region district address phone email website location description facilities province city gu dong'
+      'name slug region district address phone email website location description facilities province city gu dong'
     ).lean();
 
     res.json(centers);

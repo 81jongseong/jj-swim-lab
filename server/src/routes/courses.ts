@@ -126,6 +126,57 @@ const router: Router = Router();
 
 import { auth as authenticateToken } from '../middleware/auth';
 
+// 공개용 센터 강습 과정 조회
+router.get('/public/center/:centerId', async (req: Request, res: Response) => {
+  try {
+    const { centerId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(centerId)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효하지 않은 센터 ID입니다.'
+      });
+    }
+
+    const courses = await Course.find({
+      centerId,
+      status: { $ne: 'inactive' }
+    })
+      .select('name description level duration price maxStudents classInfo currentStudents instructorName schedule status')
+      .sort({ 'classInfo.startDate': 1 });
+
+    const normalized = courses.map(course => ({
+      _id: course._id,
+      name: course.name,
+      description: course.description,
+      level: course.level,
+      duration: course.duration,
+      price: course.price,
+      maxStudents: course.maxStudents,
+      currentStudents: course.classInfo?.currentEnrollment ?? course.currentStudents ?? 0,
+      instructorName: course.instructorName || undefined,
+      schedule: (course.schedule || []).map((item: any) => ({
+        day: item.day || item.dayOfWeek || '',
+        startTime: item.startTime,
+        endTime: item.endTime
+      })),
+      status: course.status
+    }));
+
+    return res.json({
+      success: true,
+      message: '강습 과정 조회 성공!',
+      data: normalized
+    });
+  } catch (error) {
+    console.error('공개 강습 과정 조회 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '강습 정보를 조회할 수 없습니다.'
+    });
+  }
+});
+
 // 모든 강습 과정 조회
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

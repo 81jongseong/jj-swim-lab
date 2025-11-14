@@ -71,6 +71,9 @@ interface SwimmingCenter {
   email?: string;
   website?: string;
   registrationUrl?: string;
+  slug?: string;
+  adminHomeUrl?: string;
+  adminCoursesUrl?: string;
   phone: string;
   rating: number;
   courses: string[];
@@ -227,6 +230,11 @@ export default function MapPage() {
   };
 
   const openCenterWebsite = (center: SwimmingCenter) => {
+    if (center.adminHomeUrl) {
+      window.open(center.adminHomeUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (center.website && isHttpUrl(center.website)) {
       window.open(ensureHttpUrl(center.website), '_blank', 'noopener,noreferrer');
       return;
@@ -236,6 +244,11 @@ export default function MapPage() {
   };
 
   const openEnrollmentPage = (center: SwimmingCenter) => {
+    if (center.adminCoursesUrl) {
+      window.open(center.adminCoursesUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (center.registrationUrl && isHttpUrl(center.registrationUrl)) {
       window.open(ensureHttpUrl(center.registrationUrl), '_blank', 'noopener,noreferrer');
       return;
@@ -352,6 +365,9 @@ export default function MapPage() {
       address: '서울특별시 강남구 테헤란로 123',
       website: 'https://jj-swim-lab.com/centers/gangnam',
       registrationUrl: 'https://jj-swim-lab.com/centers/gangnam/register',
+      slug: 'jj-swim-lab-gangnam',
+      adminHomeUrl: '/center/jj-swim-lab-gangnam/admin/home?viewOnly=true',
+      adminCoursesUrl: '/center/jj-swim-lab-gangnam/admin/courses?viewOnly=true',
       phone: '02-1234-5678',
       rating: 4.8,
       courses: ['초급 자유형', '중급 접영', '고급 평영'],
@@ -394,6 +410,9 @@ export default function MapPage() {
       address: '서울특별시 마포구 와우산로 123',
       website: 'https://jj-swim-lab.com/centers/hongdae',
       registrationUrl: 'https://jj-swim-lab.com/centers/hongdae/register',
+      slug: 'jj-swim-lab-hongdae',
+      adminHomeUrl: '/center/jj-swim-lab-hongdae/admin/home?viewOnly=true',
+      adminCoursesUrl: '/center/jj-swim-lab-hongdae/admin/courses?viewOnly=true',
       phone: '02-2345-6789',
       rating: 4.6,
       courses: ['초급 자유형', '중급 접영', '고급 평영', '혼영'],
@@ -435,6 +454,9 @@ export default function MapPage() {
       address: '서울특별시 송파구 올림픽로 123',
       website: 'https://jj-swim-lab.com/centers/jamsil',
       registrationUrl: 'https://jj-swim-lab.com/centers/jamsil/register',
+      slug: 'jj-swim-lab-jamsil',
+      adminHomeUrl: '/center/jj-swim-lab-jamsil/admin/home?viewOnly=true',
+      adminCoursesUrl: '/center/jj-swim-lab-jamsil/admin/courses?viewOnly=true',
       phone: '02-3456-7890',
       rating: 4.9,
       courses: ['초급 자유형', '중급 접영', '고급 평영', '혼영', '수구'],
@@ -883,6 +905,9 @@ export default function MapPage() {
             });
           }
 
+          const rawSlug = center.slug || center._id || center.name || `center-${index}`;
+          const normalizedSlug = String(rawSlug).trim().replace(/\s+/g, '-');
+
           return {
             id: center._id || `center-${index}`,
             name: center.name || '이름 없음',
@@ -897,6 +922,9 @@ export default function MapPage() {
             email: center.email || '',
             website: center.website || center?.contactInfo?.website || '',
             registrationUrl: center.registrationUrl || center?.contactInfo?.registrationUrl || center.website || '',
+            slug: normalizedSlug,
+            adminHomeUrl: `/center/${normalizedSlug}/admin/home?viewOnly=true`,
+            adminCoursesUrl: `/center/${normalizedSlug}/admin/courses?viewOnly=true`,
             phone: center.phone || '',
             rating: 4.5,
             courses: ['초급', '중급', '고급'],

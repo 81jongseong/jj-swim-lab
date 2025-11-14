@@ -30,7 +30,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Plus, Calendar, List, BookOpen, CreditCard } from 'lucide-react';
 import withAuth from '@/components/withAuth';
@@ -91,8 +91,163 @@ type Course = {
   endDate?: Date | string;
 }
 
+type PublicCourse = {
+  _id: string;
+  name: string;
+  description: string;
+  level: string;
+  duration: number;
+  maxStudents: number;
+  currentStudents: number;
+  price: number;
+  instructorName?: string;
+  schedule: Array<{
+    day: string;
+    startTime: string;
+    endTime: string;
+  }>;
+  status: string;
+};
+
+function ViewOnlyCourses({ centerSlug }: { centerSlug: string }) {
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<PublicCourse[]>([]);
+  const [centerName, setCenterName] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (!centerSlug) {
+          setError('센터 정보를 확인할 수 없습니다.');
+          return;
+        }
+
+        const resolveRes = await fetch(`http://localhost:5000/api/centers/resolve-slug/${centerSlug}`);
+        if (!resolveRes.ok) throw new Error('센터 정보를 불러오지 못했습니다.');
+        const resolveJson = await resolveRes.json();
+        if (!resolveJson.success) throw new Error(resolveJson.message || '센터 정보를 찾을 수 없습니다.');
+
+        const centerId = resolveJson.data?.centerId;
+        setCenterName(resolveJson.data?.name || centerSlug);
+
+        if (!centerId) {
+          throw new Error('센터 정보를 찾을 수 없습니다.');
+        }
+
+        const coursesRes = await fetch(`http://localhost:5000/api/courses/public/center/${centerId}`);
+        if (!coursesRes.ok) throw new Error('강습 정보를 불러오지 못했습니다.');
+        const coursesJson = await coursesRes.json();
+        if (!coursesJson.success) throw new Error(coursesJson.message || '강습 정보를 불러오지 못했습니다.');
+
+        setCourses(coursesJson.data || []);
+      } catch (err) {
+        console.error(err);
+        setError(err instanceof Error ? err.message : '강습 정보를 가져오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [centerSlug]);
+
+  const handleApply = (course: PublicCourse) => {
+    window.location.href = `/student/courses?courseId=${course._id}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">강습 정보를 불러오는 중...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{centerName}</h1>
+        <p className="text-gray-600">
+          센터에서 운영하는 강습 과정 목록입니다. 수강 신청 버튼을 눌러 예약 페이지로 이동할 수 있습니다.
+        </p>
+      </div>
+
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          {error}
+        </div>
+      )}
+
+      {courses.length === 0 && !error && (
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
+          준비된 강습 과정이 없습니다. 센터에 직접 문의해주세요.
+        </div>
+      )}
+
+      {courses.length > 0 && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {courses.map((course) => (
+            <div key={course._id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  {course.level}
+                </span>
+                <span className="text-sm font-medium text-gray-500">
+                  {course.status === 'full' ? '마감' : '모집중'}
+                </span>
+              </div>
+              <h2 className="mb-2 text-lg font-bold text-gray-900">{course.name}</h2>
+              <p className="mb-4 flex-1 text-sm text-gray-600">{course.description}</p>
+
+              <div className="mb-4 space-y-2 text-sm text-gray-700">
+                <div>⏱️ 수업 시간: {course.duration}분</div>
+                <div>👥 정원: {course.currentStudents} / {course.maxStudents}명</div>
+                {course.instructorName && <div>👨‍🏫 강사: {course.instructorName}</div>}
+                {course.schedule?.length > 0 && (
+                  <div>
+                    📅 일정:
+                    <ul className="mt-1 list-disc pl-4 text-xs text-gray-500">
+                      {course.schedule.map((s, index) => (
+                        <li key={index}>{s.day} {s.startTime}~{s.endTime}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-auto flex items-center justify-between">
+                <span className="text-base font-semibold text-blue-600">
+                  {course.price?.toLocaleString()}원
+                </span>
+                <button
+                  onClick={() => handleApply(course)}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  수강 신청
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CoursesManagement() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const params = useParams<{ centerSlug?: string }>();
+  const centerSlug = params?.centerSlug || '';
+  const viewOnly = searchParams?.get('viewOnly') === 'true';
+  
+  if (viewOnly) {
+    return <ViewOnlyCourses centerSlug={centerSlug} />;
+  }
   
   // 권한 확인 - 페이지 렌더링 전에 체크
   // center@swim.com 계정도 센터 관리자로 인식
@@ -1063,5 +1218,6 @@ function CoursesManagement() {
 }
 
 export default withAuth(CoursesManagement, { 
-  requireTypes: ['centerAdmin', 'superAdmin'] 
+  requireTypes: ['centerAdmin', 'superAdmin'],
+  allowViewOnly: true
 });
