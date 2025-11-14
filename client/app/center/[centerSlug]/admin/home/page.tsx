@@ -85,7 +85,7 @@ const CenterHomePage: React.FC = () => {
   const searchParams = useSearchParams();
   const { centerSlug } = useParams<{ centerSlug: string }>();
   const [hasMounted, setHasMounted] = useState(false);
-  const viewOnly = useMemo(() => searchParams?.get('viewOnly') === 'true', [searchParams]);
+  const viewOnly = useMemo(() => hasMounted && searchParams?.get('viewOnly') === 'true', [hasMounted, searchParams]);
   const { branding } = useTenantSettings();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -377,7 +377,7 @@ const CenterHomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 via-blue-800/30 to-transparent"></div>
         
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
-          {!viewOnly && (
+          {hasMounted && !viewOnly && (
             <div className="absolute top-6 right-6">
               <Button
                 onClick={() => startEdit('hero')}
@@ -643,7 +643,7 @@ const CenterHomePage: React.FC = () => {
 
       {/* 시설 소개 섹션 */}
       <section id="facilities" className="py-20 bg-gradient-to-b from-white to-gray-50 relative">
-        {!viewOnly && (
+        {hasMounted && !viewOnly && (
           <div className="absolute top-6 right-6 z-10">
             <Button
               onClick={() => startEdit('facilities')}
@@ -823,13 +823,13 @@ const CenterHomePage: React.FC = () => {
                   tabIndex={viewOnly ? 0 : undefined}
                   onClick={() => {
                     if (viewOnly) {
-                      window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                      window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
                     }
                   }}
                   onKeyDown={(event) => {
                     if (viewOnly && (event.key === 'Enter' || event.key === ' ')) {
                       event.preventDefault();
-                      window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                      window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
                     }
                   }}
                   className={`group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform border border-gray-100 relative overflow-hidden ${
@@ -891,7 +891,7 @@ const CenterHomePage: React.FC = () => {
                       onClick={(event) => {
                         event.stopPropagation();
                         if (viewOnly) {
-                          window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                          window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
                         } else {
                           window.location.href = '/center-admin/courses';
                         }
@@ -905,17 +905,22 @@ const CenterHomePage: React.FC = () => {
               ))}
             </div>
             <div className="text-center mt-16">
-              <a href="/center-admin/courses">
-                <Button 
-                  className="text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full"
-                  style={{ 
-                    background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
-                  }}
-                >
-                  전체 강습 과정 보기
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </a>
+              <Button 
+                onClick={() => {
+                  if (viewOnly) {
+                    window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
+                  } else {
+                    window.location.href = '/center-admin/courses';
+                  }
+                }}
+                className="text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full"
+                style={{ 
+                  background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
+                }}
+              >
+                전체 강습 과정 보기
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
           </div>
         </section>

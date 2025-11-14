@@ -925,6 +925,13 @@
 - 홈페이지/수강 신청 링크가 없는 경우 바로 메일/전화 앱이 열리던 현상을 안내 창으로 바꿔, 사용자가 연락처를 확인한 뒤 원하는 방식으로 문의할 수 있게 UX 수정.
 - `/center/[centerSlug]/admin/home|courses`에 `viewOnly=true` 모드를 추가해 편집 기능을 숨기고 공개 API로 센터·강습 정보를 불러오며, 강습 카드/버튼을 수강 신청 페이지(`student/courses`)로 연결.
 
+### ✅ 2025-11-14: 센터 공개 페이지 viewOnly 모드 개선 및 Hydration 오류 수정
+
+- `client/app/center/[centerSlug]/admin/home/page.tsx`에서 `viewOnly` 상태를 `hasMounted`와 함께 계산하도록 수정하여 서버/클라이언트 렌더링 불일치로 인한 Hydration 오류를 해결.
+- 강습과정 카드 클릭 시 viewOnly 모드에서는 `/student/courses` 대신 `/center/${centerSlug}/admin/courses?viewOnly=true`로 이동하도록 변경하여 인증 없이 접근 가능한 공개 강습 목록 페이지로 연결.
+- 편집 버튼(히어로 섹션, 시설 소개) 조건부 렌더링에 `hasMounted` 체크를 추가하여 서버 렌더링 시 편집 버튼이 표시되지 않도록 수정.
+- "전체 강습 과정 보기" 버튼도 viewOnly 모드에 따라 올바른 경로로 이동하도록 수정.
+
 
 
 ## 🔍 자동 헬스 체크 (2025. 11. 14. 오전 7:03:42)
