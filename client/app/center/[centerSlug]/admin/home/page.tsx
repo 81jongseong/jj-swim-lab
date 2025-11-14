@@ -17,7 +17,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenantSettings } from '@/contexts/TenantSettingsContext';
@@ -84,7 +84,8 @@ const CenterHomePage: React.FC = () => {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const { centerSlug } = useParams<{ centerSlug: string }>();
-  const viewOnly = searchParams?.get('viewOnly') === 'true';
+  const [hasMounted, setHasMounted] = useState(false);
+  const viewOnly = useMemo(() => searchParams?.get('viewOnly') === 'true', [searchParams]);
   const { branding } = useTenantSettings();
   const [centerInfo, setCenterInfo] = useState<CenterInfo | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -101,10 +102,17 @@ const CenterHomePage: React.FC = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
 
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const targetSlug = centerSlug || 'default';
+
   // 센터 정보 로드
   useEffect(() => {
+    if (!hasMounted) return;
     loadCenterInfo();
-  }, []);
+  }, [hasMounted]);
 
   const loadCenterInfo = async () => {
     try {
@@ -342,7 +350,7 @@ const CenterHomePage: React.FC = () => {
     return timeSlots.length > 0 ? timeSlots.join(', ') : '문의하세요';
   };
 
-  if (isLoading) {
+  if (!hasMounted || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -413,7 +421,6 @@ const CenterHomePage: React.FC = () => {
             <Button
               onClick={() => {
                 if (viewOnly) {
-                  const targetSlug = centerSlug || 'default';
                   window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
                 } else {
                   window.location.href = '/center-admin/courses';
@@ -636,16 +643,18 @@ const CenterHomePage: React.FC = () => {
 
       {/* 시설 소개 섹션 */}
       <section id="facilities" className="py-20 bg-gradient-to-b from-white to-gray-50 relative">
-        <div className="absolute top-6 right-6 z-10">
-          <Button
-            onClick={() => startEdit('facilities')}
-            variant="outline"
-            className="bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm text-gray-700 border-gray-200"
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            편집
-          </Button>
-        </div>
+        {!viewOnly && (
+          <div className="absolute top-6 right-6 z-10">
+            <Button
+              onClick={() => startEdit('facilities')}
+              variant="outline"
+              className="bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm text-gray-700 border-gray-200"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              편집
+            </Button>
+          </div>
+        )}
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <span className="inline-block text-blue-600 font-semibold mb-3">ABOUT</span>
@@ -808,7 +817,25 @@ const CenterHomePage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {courses.map((course) => (
-                <div key={course._id} className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2 border border-gray-100 relative overflow-hidden">
+                <div
+                  key={course._id}
+                  role={viewOnly ? 'button' : undefined}
+                  tabIndex={viewOnly ? 0 : undefined}
+                  onClick={() => {
+                    if (viewOnly) {
+                      window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (viewOnly && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault();
+                      window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
+                  className={`group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform border border-gray-100 relative overflow-hidden ${
+                    viewOnly ? 'cursor-pointer hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500' : 'hover:-translate-y-2'
+                  }`}
+                >
                   <div 
                     className="absolute top-0 left-0 w-full h-2"
                     style={{ 
@@ -861,8 +888,16 @@ const CenterHomePage: React.FC = () => {
                     <Button 
                       className="bg-white font-bold"
                       style={{ color: primaryColor }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (viewOnly) {
+                          window.open(`/student/courses?courseId=${course._id}&center=${targetSlug}`, '_blank', 'noopener,noreferrer');
+                        } else {
+                          window.location.href = '/center-admin/courses';
+                        }
+                      }}
                     >
-                      상세보기
+                      {viewOnly ? '수강 신청' : '상세보기'}
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </div>
