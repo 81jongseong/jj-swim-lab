@@ -60,6 +60,7 @@ interface SwimmingCenter {
   dong?: string;
   email?: string;
   website?: string;
+  registrationUrl?: string;
   phone: string;
   rating: number;
   courses: string[];
@@ -195,6 +196,42 @@ export default function MapPage() {
     return R * c; // 거리 (km)
   };
 
+  const sanitizePhoneNumber = (phone?: string) => {
+    if (!phone) return '';
+    const digits = phone.replace(/[^0-9+]/g, '');
+    if (digits.startsWith('+')) return digits;
+    if (digits.startsWith('0')) return digits;
+    return digits ? `0${digits}` : '';
+  };
+
+  const openCenterWebsite = (center: SwimmingCenter) => {
+    if (center.website) {
+      window.open(center.website, '_blank', 'noopener,noreferrer');
+    } else if (center.email) {
+      window.location.href = `mailto:${center.email}?subject=${encodeURIComponent(`${center.name} 문의`)}`;
+    } else if (center.phone) {
+      const tel = sanitizePhoneNumber(center.phone);
+      if (tel) window.location.href = `tel:${tel}`;
+    } else {
+      alert('센터 홈페이지 정보가 아직 준비되지 않았습니다.');
+    }
+  };
+
+  const openEnrollmentPage = (center: SwimmingCenter) => {
+    if (center.registrationUrl) {
+      window.open(center.registrationUrl, '_blank', 'noopener,noreferrer');
+    } else if (center.website) {
+      window.open(center.website, '_blank', 'noopener,noreferrer');
+    } else if (center.email) {
+      window.location.href = `mailto:${center.email}?subject=${encodeURIComponent(`${center.name} 수강 신청 문의`)}&body=${encodeURIComponent('안녕하세요. 수강 신청을 문의드립니다.')}`;
+    } else if (center.phone) {
+      const tel = sanitizePhoneNumber(center.phone);
+      if (tel) window.location.href = `tel:${tel}`;
+    } else {
+      alert('수강 신청 경로가 아직 준비되지 않았습니다. 센터에 직접 문의해주세요.');
+    }
+  };
+
   // 거리 표시 함수 (단위 변환 포함)
   const formatDistance = (distanceKm: number): string => {
     if (distanceUnit === 'm') {
@@ -296,6 +333,8 @@ export default function MapPage() {
       name: 'JJ Swim Lab 강남점',
       position: { lat: 37.4979, lng: 127.0276 },
       address: '서울특별시 강남구 테헤란로 123',
+      website: 'https://jj-swim-lab.com/centers/gangnam',
+      registrationUrl: 'https://jj-swim-lab.com/centers/gangnam/register',
       phone: '02-1234-5678',
       rating: 4.8,
       courses: ['초급 자유형', '중급 접영', '고급 평영'],
@@ -336,6 +375,8 @@ export default function MapPage() {
       name: 'JJ Swim Lab 홍대점',
       position: { lat: 37.5563, lng: 126.9237 },
       address: '서울특별시 마포구 와우산로 123',
+      website: 'https://jj-swim-lab.com/centers/hongdae',
+      registrationUrl: 'https://jj-swim-lab.com/centers/hongdae/register',
       phone: '02-2345-6789',
       rating: 4.6,
       courses: ['초급 자유형', '중급 접영', '고급 평영', '혼영'],
@@ -375,6 +416,8 @@ export default function MapPage() {
       name: 'JJ Swim Lab 잠실점',
       position: { lat: 37.5139, lng: 127.1006 },
       address: '서울특별시 송파구 올림픽로 123',
+      website: 'https://jj-swim-lab.com/centers/jamsil',
+      registrationUrl: 'https://jj-swim-lab.com/centers/jamsil/register',
       phone: '02-3456-7890',
       rating: 4.9,
       courses: ['초급 자유형', '중급 접영', '고급 평영', '혼영', '수구'],
@@ -835,7 +878,8 @@ export default function MapPage() {
             gu: center.gu || '',
             dong: center.dong || '',
             email: center.email || '',
-            website: center.website || '',
+            website: center.website || center?.contactInfo?.website || '',
+            registrationUrl: center.registrationUrl || center?.contactInfo?.registrationUrl || center.website || '',
             phone: center.phone || '',
             rating: 4.5,
             courses: ['초급', '중급', '고급'],
@@ -1059,6 +1103,16 @@ export default function MapPage() {
         icon: customIcon
       }).addTo(mapInstanceRef.current);
 
+      const popupWebsiteLink = center.website
+        ? `<a href="${center.website}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:8px 12px;background:#2563eb;color:#fff;border-radius:8px;font-size:12px;text-decoration:none;box-shadow:0 2px 6px rgba(37,99,235,0.25);">센터 홈페이지</a>`
+        : '';
+      const popupRegisterLink = center.registrationUrl
+        ? `<a href="${center.registrationUrl}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:8px 12px;background:#0f766e;color:#fff;border-radius:8px;font-size:12px;text-decoration:none;box-shadow:0 2px 6px rgba(15,118,110,0.25);">수강 신청</a>`
+        : '';
+      const fallbackContact = !popupRegisterLink && !popupWebsiteLink && center.phone
+        ? `<div style="margin-top:10px;font-size:12px;color:#6b7280;">문의: ${center.phone}</div>`
+        : '';
+
       // 팝업 추가
       marker.bindPopup(`
         <div style="padding: 12px; min-width: 250px;">
@@ -1077,6 +1131,13 @@ export default function MapPage() {
           <p style="margin: 0; font-size: 12px; color: #374151;">
             ${center.description}
           </p>
+          ${(popupWebsiteLink || popupRegisterLink) ? `
+            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+              ${popupRegisterLink}
+              ${popupWebsiteLink}
+            </div>
+          ` : ''}
+          ${fallbackContact}
         </div>
       `);
 
@@ -1806,6 +1867,31 @@ export default function MapPage() {
                     <p className="text-gray-600 text-sm mb-2">📞 {selectedCenter.phone}</p>
                     <p className="text-gray-700 text-sm">{selectedCenter.description}</p>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      fullWidth
+                      onClick={() => openCenterWebsite(selectedCenter)}
+                      disabled={!selectedCenter.website && !selectedCenter.email && !selectedCenter.phone}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <span>🏠 센터 홈페이지</span>
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => openEnrollmentPage(selectedCenter)}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <span>📝 수강 신청하기</span>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    홈페이지 또는 신청 페이지가 없는 경우, 연락처로 바로 문의해주세요.
+                  </p>
                   
                   <div>
                     <h5 className="font-semibold text-gray-900 mb-2">개설 과정</h5>
@@ -2079,6 +2165,30 @@ export default function MapPage() {
                           {center.courses[0]}
                         </div>
                       </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openCenterWebsite(center);
+                        }}
+                      >
+                        홈페이지
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEnrollmentPage(center);
+                        }}
+                      >
+                        수강 신청
+                      </Button>
                     </div>
                   </div>
                   );
