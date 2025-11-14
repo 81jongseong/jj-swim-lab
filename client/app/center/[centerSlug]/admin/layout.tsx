@@ -8,6 +8,7 @@
 
 'use client';
 
+import dynamic from 'next/dynamic';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { TenantSettingsProvider } from '@/contexts/TenantSettingsContext';
@@ -21,7 +22,7 @@ interface TenantContextValue {
 
 const TenantContext = createContext<TenantContextValue | undefined>(undefined);
 
-export default function TenantAdminLayout({ children }: { children: React.ReactNode }) {
+function TenantAdminLayoutComponent({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const centerSlug = String((params as any)?.centerSlug || '');
   const [centerId, setCenterId] = useState<string | undefined>(undefined);
@@ -117,3 +118,5 @@ export default function TenantAdminLayout({ children }: { children: React.ReactN
     </TenantContext.Provider>
   );
 }
+
+export default dynamic(() => Promise.resolve(TenantAdminLayoutComponent), { ssr: false });
