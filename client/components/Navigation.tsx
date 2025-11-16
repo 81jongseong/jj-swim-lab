@@ -166,6 +166,7 @@ const userMenuStructure = {
   centerAdmin: {
     dashboard: [
       { href: '/', label: '🏠 홈' },
+      { href: '/center/default/admin/manage', label: '🧾 예약·결제 관리' },
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
@@ -194,6 +195,7 @@ const userMenuStructure = {
   'center-admin': {
     dashboard: [
       { href: '/center/default/admin/home', label: '🏠 홈' },
+      { href: '/center/default/admin/manage', label: '🧾 예약·결제 관리' },
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
@@ -334,12 +336,26 @@ export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const [centerName, setCenterName] = useState('JJ Swim Lab');
+  const [centerSlug, setCenterSlug] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
   const [secondaryColor, setSecondaryColor] = useState<string | undefined>(undefined);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // 테넌트 브랜딩 정보 가져오기 (TenantSettingsProvider 밖에서도 작동하도록)
   useEffect(() => {
+    // centerSlug 추출: 1) pathname에서 추출 2) localStorage fallback
+    try {
+      const m = pathname?.match(/\/center\/([^/]+)\/admin\//);
+      if (m && m[1]) {
+        setCenterSlug(m[1]);
+      } else {
+        const storedSlug = localStorage.getItem('center-slug');
+        if (storedSlug) setCenterSlug(storedSlug);
+      }
+    } catch {
+      // ignore
+    }
+
     // localStorage에서 센터명 가져오기
     const storedCenterName = localStorage.getItem('center-name');
     if (storedCenterName) {
@@ -614,6 +630,13 @@ export default function Navigation() {
   // 메뉴 렌더링 함수 (데스크탑과 모바일 모두에서 사용)
   const renderMenuGroups = (isMobile: boolean = false) => {
     const grouping = getCurrentMenuGrouping();
+    const resolveHref = (href: string) => {
+      if (href.startsWith('/center/default/')) {
+        const slug = centerSlug || 'default';
+        return href.replace('/center/default/', `/center/${slug}/`);
+      }
+      return href;
+    };
     
     return grouping.map((group, groupIndex) => {
       if (isMobile) {
@@ -626,14 +649,16 @@ export default function Navigation() {
             {group.categories && group.categories.map && group.categories.map(category => {
               const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
               const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
-              return menuItems.map((item, itemIndex) => (
+              return menuItems.map((item, itemIndex) => {
+                const href = resolveHref(item.href);
+                return (
                 <Link
                   key={`${category}-${itemIndex}`}
-                  href={item.href}
-                  data-active={isMenuActive(item.href, pathname).toString()}
-                  data-href={item.href}
+                  href={href}
+                  data-active={isMenuActive(href, pathname).toString()}
+                  data-href={href}
                   className={`block w-full text-left px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isMenuActive(item.href, pathname)
+                    isMenuActive(href, pathname)
                       ? 'bg-blue-500 text-white font-bold border-l-3 border-blue-700 shadow-sm' 
                       : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                   }`}
@@ -656,7 +681,7 @@ export default function Navigation() {
                 >
                   {item.label}
                 </Link>
-              ));
+              );});
             })}
           </div>
         );
@@ -668,7 +693,7 @@ export default function Navigation() {
               className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 ${
                 group.categories.some(cat => 
                   userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
-                    isMenuActive(item.href, pathname)
+                    isMenuActive(resolveHref(item.href), pathname)
                   )
                 ) ? 'text-white font-semibold bg-white/30' : ''
               }`}
@@ -690,29 +715,27 @@ export default function Navigation() {
                   {group.categories && group.categories.map && group.categories.map(category => {
                     const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
               const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
-                    return menuItems.map((item, itemIndex) => (
+                    return menuItems.map((item, itemIndex) => {
+                      const href = resolveHref(item.href);
+                      const isActive =
+                        pathname === href ||
+                        (href === resolveHref('/center/default/admin/manage') && pathname.startsWith(href)) ||
+                        (href === '/health' && pathname.startsWith('/health')) ||
+                        (href === '/swimlab/trial' && pathname === '/swimlab/trial')) ||
+                        (href === '/health/program' && pathname === '/health/program') ||
+                        (href === '/health/history' && pathname === '/health/history') ||
+                        (href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine');
+                      return (
                       <Link
                         key={`${category}-${itemIndex}`}
-                        href={item.href}
+                        href={href}
                         className={`block w-full text-left px-4 py-2 text-sm transition-colors text-white ${
-                          pathname === item.href || 
-                          (item.href === '/center/default/admin/manage' && pathname.startsWith('/center/default/admin/manage')) ||
-                          (item.href === '/health' && pathname.startsWith('/health')) ||
-                          (item.href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
-                          (item.href === '/health/program' && pathname === '/health/program') ||
-                          (item.href === '/health/history' && pathname === '/health/history') ||
-                          (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')
+                          isActive
                             ? 'font-semibold border-r-2' 
                             : 'hover:opacity-80'
                         }`}
                         style={{
-                          ...(pathname === item.href || 
-                            (item.href === '/center/default/admin/manage' && pathname.startsWith('/center/default/admin/manage')) ||
-                            (item.href === '/health' && pathname.startsWith('/health')) ||
-                            (item.href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
-                            (item.href === '/health/program' && pathname === '/health/program') ||
-                            (item.href === '/health/history' && pathname === '/health/history') ||
-                            (item.href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine')
+                          ...(isActive
                             ? {
                                 backgroundColor: 'rgba(255, 255, 255, 0.3)',
                                 color: '#ffffff',
@@ -729,7 +752,7 @@ export default function Navigation() {
                       >
                         {item.label}
                       </Link>
-                    ));
+                    );});
                   })}
               </div>
             )}
