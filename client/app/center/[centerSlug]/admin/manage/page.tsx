@@ -98,6 +98,7 @@ interface ApprovalItem {
   type: 'course_enrollment' | 'payment_approval' | 'schedule_change' | 'refund_request';
   title: string;
   description: string;
+  paymentId?: string;
   requesterName: string;
   requesterEmail: string;
   requestDate: string;
@@ -271,7 +272,7 @@ function IntegratedManagement() {
           currency: payment.currency || 'KRW',
           paymentMethod: payment.paymentMethod,
           status: payment.status,
-          description: payment.description || payment.purpose || '',
+          description: payment.relatedCourse?.name || payment.description || (payment.purpose === 'course' ? '강습 결제' : payment.purpose || ''),
           createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
           completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
           transactionId: payment.transactionId,
@@ -307,6 +308,7 @@ function IntegratedManagement() {
             type: approval.type,
             title: approval.title,
             description: approval.description,
+            paymentId: approval.paymentId,
             requesterName: user?.name || approval.requesterName || '알 수 없음',
             requesterEmail: user?.email || approval.requesterEmail || '',
             requestDate: approval.requestDate 
@@ -502,6 +504,27 @@ ${list}`);
       alert(action === 'refund' ? '결제가 환불되었습니다.' : '결제가 취소되었습니다.');
     } catch (error) {
       if (DEBUG) console.error('결제 처리 실패:', error);
+    }
+  };
+
+  const handleApprovePayment = async (paymentId: string) => {
+    try {
+      // 결제와 매칭되는 승인 요청 찾기
+      const target = approvals.find(a => a.paymentId && a.paymentId.toString() === paymentId.toString() && a.status === 'pending');
+      if (!target) {
+        alert('해당 결제에 대한 승인 요청을 찾을 수 없습니다. 이미 처리되었거나 생성되지 않았을 수 있습니다.');
+        return;
+      }
+      const res = await apiClient.put(`/api/approvals/${target.id}/process`, { action: 'approve' });
+      if (res.success) {
+        await loadAllData();
+        alert('결제가 승인되었습니다.');
+      } else {
+        alert(res.message || '승인 처리 중 오류가 발생했습니다.');
+      }
+    } catch (e) {
+      if (DEBUG) console.error('결제 승인 실패:', e);
+      alert('결제 승인에 실패했습니다.');
     }
   };
 
@@ -1004,6 +1027,7 @@ ${list}`);
           {/* 결제 내역 목록 */}
           <PaymentTable
             payments={payments}
+            onApprove={handleApprovePayment}
             onCancel={(id) => handlePaymentAction(id, 'cancel')}
             onRefund={(id) => handlePaymentAction(id, 'refund')}
           />
