@@ -36,6 +36,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import Modal from '@/components/ui/modal';
 import ThemedStatCard from '@/components/ThemedStatCard';
 import { Button } from '@/components/Button';
 import { 
@@ -162,6 +163,8 @@ function IntegratedManagement() {
   const [loading, setLoading] = useState(true);
   const [showPersonalLessonModal, setShowPersonalLessonModal] = useState(false);
   const [showLaneRentalModal, setShowLaneRentalModal] = useState(false);
+  const [changeCourseForBookingId, setChangeCourseForBookingId] = useState<string | null>(null);
+  const [changeCourseOptions, setChangeCourseOptions] = useState<any[]>([]);
 
   // (debug) 개발 중 디버그가 필요할 경우 true로 변경
   const DEBUG = false;
@@ -1152,6 +1155,49 @@ ${list}`);
         onClose={() => setShowLaneRentalModal(false)}
         onSubmit={handleLaneRentalSubmit}
       />
+
+      {/* 반변경 모달 */}
+      <Modal isOpen={!!changeCourseForBookingId} onClose={() => { setChangeCourseForBookingId(null); setChangeCourseOptions([]); }} title="반 변경" size="lg">
+        <div className="max-h-[60vh] overflow-auto divide-y">
+          {changeCourseOptions.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => {
+                // confirmChangeCourse inline to avoid adding another function
+                (async () => {
+                  const bookingForMember = bookings.find(b => b._id === changeCourseForBookingId) as any;
+                  const memberId = bookingForMember?.memberId || bookingForMember?.studentId;
+                  if (!memberId) { alert('회원 정보를 찾을 수 없습니다.'); return; }
+                  const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId: opt.id });
+                  if (putRes.success) {
+                    setChangeCourseForBookingId(null);
+                    setChangeCourseOptions([]);
+                    await loadAllData();
+                  } else {
+                    alert(putRes.message || '반 변경 중 오류가 발생했습니다.');
+                  }
+                })();
+              }}
+              className="w-full text-left px-5 py-3 hover:bg-gray-50 focus:outline-none"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-gray-900">{opt.name}</div>
+                  <div className="text-sm text-gray-600 mt-0.5">{opt.day} {opt.time} · {opt.instructor || '강사 미지정'}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">정원/등록: {opt.capacity}</div>
+                </div>
+                <div className="text-sm font-semibold text-gray-800 whitespace-nowrap">{(Number(opt.price)||0).toLocaleString()} 원</div>
+              </div>
+            </button>
+          ))}
+          {changeCourseOptions.length === 0 && (
+            <div className="px-5 py-6 text-center text-gray-500">표시할 반이 없습니다.</div>
+          )}
+        </div>
+        <div className="px-5 py-3 flex justify-end gap-2 border-t">
+          <button onClick={() => { setChangeCourseForBookingId(null); setChangeCourseOptions([]); }} className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">닫기</button>
+        </div>
+      </Modal>
     </div>
   );
 }
