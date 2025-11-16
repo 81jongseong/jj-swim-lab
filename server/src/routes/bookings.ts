@@ -496,6 +496,41 @@ router.patch('/lane-rentals/:id/status', async (req: any, res: Response) => {
   }
 });
 
+// 레인대여 레인 번호 변경
+router.patch('/lane-rentals/:id/lane', async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { laneNumber } = req.body;
+    const laneRental = await LaneRental.findById(id);
+    if (!laneRental) {
+      return res.status(404).json({ success: false, message: '레인대여를 찾을 수 없습니다.' });
+    }
+    const newLane = Number(laneNumber);
+    if (!newLane || isNaN(newLane) || newLane <= 0) {
+      return res.status(400).json({ success: false, message: '올바르지 않은 레인 번호입니다.' });
+    }
+    // 충돌 검사
+    const conflict = await LaneRental.findOne({
+      centerId: laneRental.centerId,
+      date: laneRental.date,
+      startTime: laneRental.startTime,
+      endTime: laneRental.endTime,
+      laneNumber: newLane,
+      _id: { $ne: laneRental._id },
+      status: { $in: ['pending', 'approved', 'completed'] }
+    });
+    if (conflict) {
+      return res.status(400).json({ success: false, message: '해당 시간대에 선택한 레인이 이미 사용 중입니다.' });
+    }
+    laneRental.laneNumber = newLane;
+    await laneRental.save();
+    return res.json({ success: true, message: '레인 번호가 변경되었습니다.', data: laneRental });
+  } catch (error) {
+    console.error('레인 번호 변경 오류:', error);
+    return res.status(500).json({ success: false, message: '레인 번호 변경 중 오류가 발생했습니다.' });
+  }
+});
+
 // 강사 목록 조회 (배정용)
 router.get('/instructors', async (req: any, res: Response) => {
   try {

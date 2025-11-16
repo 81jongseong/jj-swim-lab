@@ -494,6 +494,64 @@ ${list}`);
     }
   };
 
+  const handleChangeCourse = async (bookingId: string) => {
+    try {
+      // 과정 목록 로드
+      const res = await apiClient.get('/api/center-admin/courses');
+      const courses: any[] = res.data || res.data?.courses || [];
+      if (!Array.isArray(courses) || courses.length === 0) {
+        alert('변경할 수 있는 과정이 없습니다.');
+        return;
+      }
+      const list = courses.map((c: any, idx: number) => `${idx + 1}. ${c.name} (${c._id})`).join('\\n');
+      const picked = prompt(`변경할 반을 선택하세요. 숫자를 입력:\\n${list}`);
+      const idx = picked ? parseInt(picked, 10) - 1 : -1;
+      if (isNaN(idx) || idx < 0 || idx >= courses.length) {
+        alert('올바른 번호를 입력해주세요.');
+        return;
+      }
+      const courseId = courses[idx]._id;
+      // bookingId로 회원 찾기
+      const booking = bookings.find(b => b._id === bookingId) as any;
+      const memberId = booking?.memberId || booking?.studentId;
+      if (!memberId) {
+        alert('회원 정보를 찾을 수 없습니다.');
+        return;
+      }
+      const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId });
+      if (putRes.success) {
+        await loadAllData();
+        alert('반이 변경되었습니다.');
+      } else {
+        alert(putRes.message || '반 변경 중 오류가 발생했습니다.');
+      }
+    } catch (e) {
+      if (DEBUG) console.error('반 변경 실패:', e);
+      alert('반 변경에 실패했습니다.');
+    }
+  };
+
+  const handleChangeLane = async (bookingId: string) => {
+    try {
+      const value = prompt('변경할 레인 번호를 입력하세요 (숫자)');
+      const laneNumber = value ? parseInt(value, 10) : NaN;
+      if (!laneNumber || isNaN(laneNumber) || laneNumber <= 0) {
+        alert('올바른 레인 번호를 입력해주세요.');
+        return;
+      }
+      const res = await apiClient.patch(`/api/bookings/lane-rentals/${bookingId}/lane`, { laneNumber });
+      if (res.success) {
+        await loadAllData();
+        alert('레인 번호가 변경되었습니다.');
+      } else {
+        alert(res.message || '레인 변경 중 오류가 발생했습니다.');
+      }
+    } catch (e) {
+      if (DEBUG) console.error('레인 변경 실패:', e);
+      alert('레인 변경에 실패했습니다.');
+    }
+  };
+
   const handlePaymentAction = async (paymentId: string, action: 'refund' | 'cancel') => {
     try {
       // 1) 낙관적 업데이트: UI를 즉시 변경
@@ -984,16 +1042,14 @@ ${list}`);
           <BookingTable
             bookings={bookings}
             type="personal-lesson"
-            onApprove={(id) => handleBookingAction(id, 'approve', undefined, 'personal-lesson')}
-            onReject={(id) => handleBookingAction(id, 'reject', undefined, 'personal-lesson')}
+            onChangeCourse={handleChangeCourse}
           />
 
           {/* 레인대여 섹션 */}
           <BookingTable
             bookings={bookings}
             type="lane-rental"
-            onApprove={(id) => handleBookingAction(id, 'approve', undefined, 'lane-rental')}
-            onReject={(id) => handleBookingAction(id, 'reject', undefined, 'lane-rental')}
+            onChangeLane={handleChangeLane}
           />
         </div>
       )}

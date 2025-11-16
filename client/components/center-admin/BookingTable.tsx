@@ -28,6 +28,8 @@ interface BookingTableProps {
   type?: 'personal-lesson' | 'lane-rental' | 'all';
   onApprove?: (bookingId: string) => void;
   onReject?: (bookingId: string) => void;
+  onChangeCourse?: (bookingId: string) => void;
+  onChangeLane?: (bookingId: string) => void;
 }
 
 const getStatusIcon = (status: string) => {
@@ -71,7 +73,9 @@ export default function BookingTable({
   bookings, 
   type = 'all',
   onApprove,
-  onReject 
+  onReject,
+  onChangeCourse,
+  onChangeLane
 }: BookingTableProps) {
   const formatDate = (value?: string) => {
     if (!value) return '';
@@ -107,10 +111,10 @@ export default function BookingTable({
     : '예약 목록';
 
   const description = type === 'personal-lesson'
-    ? '개인레슨 신청을 승인/거절하고 강사를 배정하세요'
+    ? '개인레슨/단체강습 반변경을 수행하세요'
     : type === 'lane-rental'
-    ? '레인대여 신청을 승인/거절하세요'
-    : '모든 예약을 확인하고 관리하세요';
+    ? '레인대여의 레인 번호를 변경하세요'
+    : '예약의 반배정/레인 변경을 관리하세요';
 
   if (filteredBookings.length === 0) {
     return (
@@ -179,29 +183,24 @@ export default function BookingTable({
                 </div>
               </div>
               
-              {booking.status === 'pending' && (onApprove || onReject) && (
-                <div className="flex items-center space-x-2 mt-3 pt-3 border-t">
-                  {onApprove && (
-                    <Button
-                      onClick={() => onApprove(booking._id)}
-                      className="bg-green-600 hover:bg-green-700"
-                      size="sm"
-                    >
-                      승인
-                    </Button>
-                  )}
-                  {onReject && (
-                    <Button
-                      onClick={() => onReject(booking._id)}
-                      variant="outline"
-                      className="border-red-300 text-red-600 hover:bg-red-50"
-                      size="sm"
-                    >
-                      거절
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center space-x-2 mt-3 pt-3 border-t">
+                {booking.type !== 'lane-rental' && onChangeCourse && (
+                  <Button
+                    onClick={() => onChangeCourse(booking._id)}
+                    size="sm"
+                  >
+                    반변경
+                  </Button>
+                )}
+                {booking.type === 'lane-rental' && onChangeLane && (
+                  <Button
+                    onClick={() => onChangeLane(booking._id)}
+                    size="sm"
+                  >
+                    레인변경
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
