@@ -507,7 +507,7 @@ ${list}`);
 
   const handleApproval = async (id: string, action: 'approve' | 'reject') => {
     try {
-      const response = await apiClient.put(`/api/center-admin/approvals/${id}/process`, {
+      const response = await apiClient.put(`/api/approvals/${id}/process`, {
         action: action,
         comments: action === 'approve' ? '센터에서 승인되었습니다.' : '센터에서 거부되었습니다.',
         rejectionReason: action === 'reject' ? '센터 정책에 따른 거부' : undefined
@@ -848,7 +848,46 @@ ${list}`);
               </CardContent>
             </Card>
 
-          {/* 승인 관리 제거에 따른 우측 카드 영역은 비워둠 또는 다른 요약 위젯 배치 가능 */}
+            {/* 최근 승인 요청 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>최근 승인 요청</CardTitle>
+                <CardDescription>결제 승인/강습 신청 등 대기중 항목</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {approvals
+                    .filter(a => a.status === 'pending')
+                    .slice(0, 5)
+                    .map((item) => (
+                      <div key={item.id} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(item.status)}
+                            <div>
+                              <p className="font-medium text-sm">{item.title}</p>
+                              <p className="text-xs text-gray-600">
+                                {getTypeLabel(item.type)} · {item.requesterName} · {item.requestDate}
+                                {typeof item.estimatedAmount === 'number' ? ` · ${formatCurrency(item.estimatedAmount)}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                            {getStatusText(item.status)}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <Button size="sm" onClick={() => handleApproval(item.id, 'approve')}>승인</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleApproval(item.id, 'reject')}>거부</Button>
+                        </div>
+                      </div>
+                    ))}
+                  {approvals.filter(a => a.status === 'pending').length === 0 && (
+                    <p className="text-center text-gray-500 py-4">승인 대기 요청이 없습니다.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* 빠른 액션 */}
