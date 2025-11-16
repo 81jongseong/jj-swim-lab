@@ -165,9 +165,9 @@ const userMenuStructure = {
   },
   centerAdmin: {
     dashboard: [
+      { href: '/', label: '🏠 홈' },
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/manage', label: '🧾 예약·결제 관리' },
-      { href: '/', label: '🏠 홈' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
       { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
@@ -194,9 +194,9 @@ const userMenuStructure = {
   },
   'center-admin': {
     dashboard: [
+      { href: '/center/default/admin/home', label: '🏠 홈' },
       { href: '/center/default/admin/dashboard', label: '📊 센터 대시보드' },
       { href: '/center/default/admin/manage', label: '🧾 예약·결제 관리' },
-      { href: '/center/default/admin/home', label: '🏠 홈' },
       { href: '/center/default/admin/members', label: '👥 센터 회원 관리' },
       { href: '/center/default/admin/instructors', label: '👨‍🏫 센터 강사 관리' },
       { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
