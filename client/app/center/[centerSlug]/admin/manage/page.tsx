@@ -1184,9 +1184,19 @@ ${list}`);
                     || bookingForMember?.userId
                     || bookingForMember?.student?._id
                     || '';
-                  const memberId = typeof candidate === 'string' ? candidate : String(candidate || '');
+                  let memberId = typeof candidate === 'string' ? candidate : String(candidate || '');
                   const isValidObjectId = /^[a-f\d]{24}$/i.test(memberId);
-                  if (!isValidObjectId) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
+                  if (!isValidObjectId) {
+                    // 서버에서 예약의 학생 ID 조회 (fallback)
+                    try {
+                      const resp = await apiClient.get(`/api/bookings/${changeCourseForBookingId}/student`);
+                      const sid = resp?.data?.studentId || resp?.data?.id || '';
+                      if (sid && /^[a-f\d]{24}$/i.test(String(sid))) {
+                        memberId = String(sid);
+                      }
+                    } catch {}
+                  }
+                  if (!/^[a-f\d]{24}$/i.test(memberId)) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
                   const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId: opt.id });
                   if (putRes.success) {
                     setChangeCourseForBookingId(null);

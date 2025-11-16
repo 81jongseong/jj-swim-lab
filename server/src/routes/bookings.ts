@@ -531,6 +531,30 @@ router.patch('/lane-rentals/:id/lane', async (req: any, res: Response) => {
   }
 });
 
+// 예약의 학생 ID 조회 (개인레슨/레인대여 공통)
+router.get('/:id/student', async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    // 개인레슨 먼저 조회
+    const pl = await PersonalLesson.findById(id).select('studentId');
+    if (pl && pl.studentId) {
+      return res.json({ success: true, data: { studentId: pl.studentId } });
+    }
+    // 레인대여에서 사용자 ID 사용
+    const lr = await LaneRental.findById(id).select('userId renter');
+    if (lr && (lr as any).userId) {
+      return res.json({ success: true, data: { studentId: (lr as any).userId } });
+    }
+    if (lr && (lr as any).renter) {
+      return res.json({ success: true, data: { studentId: (lr as any).renter } });
+    }
+    return res.status(404).json({ success: false, message: '예약을 찾을 수 없습니다.' });
+  } catch (error) {
+    console.error('예약 학생 ID 조회 오류:', error);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
 // 강사 목록 조회 (배정용)
 router.get('/instructors', async (req: any, res: Response) => {
   try {
