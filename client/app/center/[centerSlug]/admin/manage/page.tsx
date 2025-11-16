@@ -123,17 +123,12 @@ interface ApprovalItem {
 interface DashboardStats {
   todayBookings: number;
   weekBookings: number;
-  pendingApprovals: number;
   totalRevenue: number;
   personalLessons: number;
   laneRentals: number;
-  pendingPayments: number;
-  completedPayments: number;
-  pendingApprovalCount: number;
   refundCount: number; // 환불 건수
   refundRate: number; // 환불률 = 환불건/총결제건
   averageTicketSize: number; // 평균 결제 금액(완료 건 기준)
-  paymentCompletionRate: number; // 결제 완료율 = 완료건/총결제건
 }
 
 type TabType = 'dashboard' | 'bookings' | 'payments';
@@ -148,17 +143,13 @@ function IntegratedManagement() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     todayBookings: 0,
     weekBookings: 0,
-    pendingApprovals: 0,
     totalRevenue: 0,
     personalLessons: 0,
     laneRentals: 0,
-    pendingPayments: 0,
-    completedPayments: 0,
-    pendingApprovalCount: 0,
     refundCount: 0,
     refundRate: 0,
     averageTicketSize: 0,
-    paymentCompletionRate: 0
+    // 결제 완료율/대기 항목 제거
   });
   const [loading, setLoading] = useState(true);
   const [showPersonalLessonModal, setShowPersonalLessonModal] = useState(false);
@@ -194,15 +185,13 @@ function IntegratedManagement() {
   const updateDashboardStats = useCallback(() => {
     // payments와 approvals 배열에서 직접 계산
     const totalPayments = payments.length;
-    const pendingPayments = payments.filter(p => p.status === 'pending').length;
     const completedPayments = payments.filter(p => p.status === 'completed').length;
     const refundedPayments = payments.filter(p => p.status === 'refunded' || (p as any).refundAmount > 0).length;
-    const pendingApprovalCount = approvals.filter(a => a.status === 'pending').length;
     const completedAmounts = payments.filter(p => p.status === 'completed').map(p => p.amount);
     const totalRevenue = completedAmounts.reduce((sum, amount) => sum + amount, 0);
     const averageTicketSize = completedAmounts.length > 0 ? Math.round(totalRevenue / completedAmounts.length) : 0;
     const refundRate = totalPayments > 0 ? Math.round((refundedPayments / totalPayments) * 100) : 0;
-    const paymentCompletionRate = totalPayments > 0 ? Math.round((completedPayments / totalPayments) * 100) : 0;
+    // 결제 완료율/대기, 승인대기 제외
     
     // 날짜 기준 계산
     const today = new Date();
@@ -242,14 +231,10 @@ function IntegratedManagement() {
       weekBookings: weekBookings,
       personalLessons: personalLessons,
       laneRentals: laneRentals,
-      pendingPayments,
-      completedPayments,
-      pendingApprovalCount,
       totalRevenue: totalRevenue || prev.totalRevenue || 0,
       refundCount: refundedPayments,
       refundRate,
-      averageTicketSize,
-      paymentCompletionRate
+      averageTicketSize
     }));
   }, [payments, approvals, bookings]);
 
@@ -921,18 +906,18 @@ ${list}`);
           {/* 통합 통계 카드 (1행 핵심 KPI) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             <ThemedStatCard
-              title="승인대기"
-              value={`${dashboardStats.pendingApprovalCount}건`}
-              icon={<AlertCircle className="h-4 w-4" />}
-              color="yellow"
-              description="승인 대기 중인 요청"
-            />
-            <ThemedStatCard
               title="오늘 예약"
               value={dashboardStats.todayBookings}
               icon={<Calendar className="h-4 w-4" />}
               color="blue"
               description="오늘 처리된 예약 수"
+            />
+            <ThemedStatCard
+              title="금주 예약"
+              value={dashboardStats.weekBookings}
+              icon={<Calendar className="h-4 w-4" />}
+              color="indigo"
+              description="이번 주 예약 수"
             />
             <ThemedStatCard
               title="개인레슨 예약"
@@ -956,30 +941,16 @@ ${list}`);
               description="이번달 총 수익"
             />
             <ThemedStatCard
-              title="결제 대기"
-              value={`${dashboardStats.pendingPayments}건`}
-              icon={<Clock className="h-4 w-4" />}
-              color="orange"
-              description="결제 대기 중"
-            />
-          </div>
-          
-          {/* 통합 통계 카드 (2행 결제 KPI) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <ThemedStatCard
               title="평균 결제액"
               value={formatCurrency(dashboardStats.averageTicketSize)}
               icon={<CreditCard className="h-4 w-4" />}
               color="purple"
               description="완료 건 평균 티켓"
             />
-            <ThemedStatCard
-              title="결제 완료율"
-              value={`${dashboardStats.paymentCompletionRate}%`}
-              icon={<CheckCircle className="h-4 w-4" />}
-              color="teal"
-              description="완료/전체 결제 비율"
-            />
+          </div>
+          
+          {/* 통합 통계 카드 (2행 결제/환불 KPI) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             <ThemedStatCard
               title="환불 건수"
               value={`${dashboardStats.refundCount}건`}
