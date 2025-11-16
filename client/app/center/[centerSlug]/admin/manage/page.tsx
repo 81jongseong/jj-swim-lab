@@ -1212,7 +1212,10 @@ ${list}`);
                       if (sid && /^[a-f\d]{24}$/i.test(String(sid))) {
                         memberId = String(sid);
                       }
-                    } catch {}
+                    } catch (e) {
+                      // Fallback failed, will use original memberId
+                      if (DEBUG) console.error('학생 ID 조회 실패:', e);
+                    }
                   }
                   if (!/^[a-f\d]{24}$/i.test(memberId)) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
                   const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId: opt.id });
