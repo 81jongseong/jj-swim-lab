@@ -506,11 +506,11 @@ ${list}`);
         return;
       }
       // 기준 예약(가격/요일/시간) 추출
-      const booking = bookings.find(b => b._id === bookingId) as any;
-      const basePrice = Number(booking?.price || 0);
-      const baseDate = booking?.date ? new Date(booking.date) : null;
+      const baseBooking = bookings.find(b => b._id === bookingId) as any;
+      const basePrice = Number(baseBooking?.price || 0);
+      const baseDate = baseBooking?.date ? new Date(baseBooking.date) : null;
       const baseDay = baseDate ? ['일','월','화','수','목','금','토'][baseDate.getDay()] : null;
-      const baseTime = (booking?.time || '').slice(0,5); // HH:mm
+      const baseTime = (baseBooking?.time || '').slice(0,5); // HH:mm
 
       // 같은 가격 필터 + 동일 요일/시간대 우선 필터
       const dayName = (v: any) => {
@@ -543,8 +543,8 @@ ${list}`);
         // 사용자에게 코드/ID 미노출
         return `${c.name}${instructorText ? ' · ' + instructorText : ''}`;
       };
-      const list = filtered.map((c: any, idx: number) => `${idx + 1}. ${courseLabel(c)}`).join('\\n');
-      const pickedCourseIdx = prompt(`변경할 반을 선택하세요. 숫자를 입력:\\n${list}`);
+      const list = filtered.map((c: any, idx: number) => `${idx + 1}. ${courseLabel(c)}`).join('\n');
+      const pickedCourseIdx = prompt(`변경할 반을 선택하세요. 숫자를 입력:\n${list}`);
       const idx = pickedCourseIdx ? parseInt(pickedCourseIdx, 10) - 1 : -1;
       if (isNaN(idx) || idx < 0 || idx >= filtered.length) {
         alert('올바른 번호를 입력해주세요.');
@@ -552,8 +552,8 @@ ${list}`);
       }
       const courseId = filtered[idx]._id;
       // bookingId로 회원 찾기
-      const booking = bookings.find(b => b._id === bookingId) as any;
-      const memberId = booking?.memberId || booking?.studentId;
+      const bookingForMember = bookings.find(b => b._id === bookingId) as any;
+      const memberId = bookingForMember?.memberId || bookingForMember?.studentId;
       if (!memberId) {
         alert('회원 정보를 찾을 수 없습니다.');
         return;
