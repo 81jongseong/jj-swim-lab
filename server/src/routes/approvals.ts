@@ -17,6 +17,7 @@ import { auth as authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
+import { Course } from '../models/Course';
 import { Approval } from '../models/Approval';
 import mongoose from 'mongoose';
 // 사용되지 않는 import 제거됨:
@@ -301,13 +302,45 @@ async function processApprovedRequest(approval: any) {
         break;
 
       case 'payment_approval':
-        // 결제 승인 시 결제 상태 변경
+        // 결제 승인 시 결제 상태 변경 + 코스 배정(enrolledStudents) + 학생 centerId 지정
         if (approval.paymentId) {
-          await Payment.findByIdAndUpdate(approval.paymentId, {
-            status: 'completed',
-            approvedAt: new Date(),
-            approvedBy: approval.processedBy
-          });
+          const updatedPayment = await Payment.findByIdAndUpdate(
+            approval.paymentId,
+            {
+              status: 'completed',
+              approvedAt: new Date(),
+              approvedBy: approval.processedBy
+            },
+            { new: true }
+          ).populate('relatedCourse');
+
+          // 결제에 연결된 코스/유저로 배정 처리
+          const courseId = approval.courseId || updatedPayment?.relatedCourse;
+          const userId = approval.userId || updatedPayment?.user;
+
+          if (courseId && userId) {
+            // 코스에 수강생 배정(enrolledStudents)
+            const course = await Course.findById(courseId);
+            if (course) {
+              const already =
+                (course.enrolledStudents || []).some((e: any) => e?.student?.toString?.() === userId.toString());
+              if (!already) {
+                course.enrolledStudents = [
+                  ...(course.enrolledStudents || []),
+                  { student: userId, enrollmentDate: new Date(), status: 'active' }
+                ];
+                await course.save();
+              }
+              // 학생 centerId 지정(없을 경우)
+              if (course.centerId) {
+                const student = await User.findById(userId);
+                if (student && !student.centerId) {
+                  student.centerId = course.centerId;
+                  await student.save();
+                }
+              }
+            }
+          }
         }
         break;
 
