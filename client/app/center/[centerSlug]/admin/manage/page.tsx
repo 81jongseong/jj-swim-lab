@@ -532,10 +532,45 @@ ${list}`);
       };
       const bySamePrice = (c: any) => Number(c.price || 0) === basePrice;
 
+      // 현재 회원 ID 추출 (후속 필터에서 사용)
+      const curBooking = bookings.find(b => b._id === bookingId) as any;
+      const rawStudentId = curBooking?.memberId
+        || curBooking?.studentId
+        || curBooking?.userId
+        || curBooking?.student?._id
+        || '';
+      const studentIdForFilter = typeof rawStudentId === 'string' ? rawStudentId : String(rawStudentId || '');
+
       let filtered = courses.filter((c: any) => bySamePrice(c) && withinSameSlot(c));
+      // 가득 찬 반 제외, 비활성/풀 상태 제외, 이미 해당 학생이 등록된 반 제외
+      filtered = filtered.filter((c: any) => {
+        const statusNotFull = (c.status !== 'full') && (c.isActive !== false);
+        const currentEnroll = Number(c.classInfo?.currentEnrollment ?? (Array.isArray(c.enrolledStudents) ? c.enrolledStudents.length : 0));
+        const max = Number(c.maxStudents ?? 0);
+        const hasCapacity = max ? currentEnroll < max : true;
+        const alreadyEnrolled = Array.isArray(c.enrolledStudents)
+          ? c.enrolledStudents.some((e: any) => {
+              const sid = typeof e?.student === 'string' ? e.student : (e?.student?._id || e?.student);
+              return String(sid || '') === String(studentIdForFilter || '');
+            })
+          : false;
+        return statusNotFull && hasCapacity && !alreadyEnrolled;
+      });
       // 시간/요일 정확히 일치하는 반이 없으면, 같은 가격만 기준으로 전체 제시
       if (filtered.length === 0) {
-        filtered = courses.filter(bySamePrice);
+        filtered = courses.filter(bySamePrice).filter((c: any) => {
+          const statusNotFull = (c.status !== 'full') && (c.isActive !== false);
+          const currentEnroll = Number(c.classInfo?.currentEnrollment ?? (Array.isArray(c.enrolledStudents) ? c.enrolledStudents.length : 0));
+          const max = Number(c.maxStudents ?? 0);
+          const hasCapacity = max ? currentEnroll < max : true;
+          const alreadyEnrolled = Array.isArray(c.enrolledStudents)
+            ? c.enrolledStudents.some((e: any) => {
+                const sid = typeof e?.student === 'string' ? e.student : (e?.student?._id || e?.student);
+                return String(sid || '') === String(studentIdForFilter || '');
+              })
+            : false;
+          return statusNotFull && hasCapacity && !alreadyEnrolled;
+        });
       }
       // 현재 예약의 반은 후보에서 제외
       const currentCourseId = (() => {
