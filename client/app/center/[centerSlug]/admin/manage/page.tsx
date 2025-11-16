@@ -1228,6 +1228,8 @@ ${list}`);
                     await loadAllData();
                   } else {
                     alert(putRes.message || '반 변경 중 오류가 발생했습니다.');
+                    // 실패 시에도 최신 서버 상태로 강사/반 정보를 강제 동기화
+                    await loadAllData();
                   }
                 })();
               }}
