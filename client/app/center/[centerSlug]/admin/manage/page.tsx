@@ -1178,8 +1178,15 @@ ${list}`);
                 // confirmChangeCourse inline to avoid adding another function
                 (async () => {
                   const bookingForMember = bookings.find(b => b._id === changeCourseForBookingId) as any;
-                  const memberId = bookingForMember?.memberId || bookingForMember?.studentId;
-                  if (!memberId) { alert('회원 정보를 찾을 수 없습니다.'); return; }
+                  // 다양한 필드에서 학생 ID 추출
+                  const candidate = bookingForMember?.memberId
+                    || bookingForMember?.studentId
+                    || bookingForMember?.userId
+                    || bookingForMember?.student?._id
+                    || '';
+                  const memberId = typeof candidate === 'string' ? candidate : String(candidate || '');
+                  const isValidObjectId = /^[a-f\d]{24}$/i.test(memberId);
+                  if (!isValidObjectId) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
                   const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId: opt.id });
                   if (putRes.success) {
                     setChangeCourseForBookingId(null);
