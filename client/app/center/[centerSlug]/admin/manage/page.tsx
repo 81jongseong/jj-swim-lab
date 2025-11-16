@@ -541,33 +541,20 @@ ${list}`);
         alert('해당 요일/시간대의 반이 없습니다.');
         return;
       }
-      const courseLabel = (c: any) => {
-        const instructorText = c.instructorName || c.instructor?.name || '';
-        // 사용자에게 코드/ID 미노출
-        return `${c.name}${instructorText ? ' · ' + instructorText : ''}`;
+      // 준비된 옵션을 모달로 표시
+      const toLabel = (c: any) => {
+        const s = Array.isArray(c.schedule) && c.schedule.length > 0 ? c.schedule[0] : {};
+        const d = s?.day || s?.dayOfWeek || '';
+        const t = s?.startTime && s?.endTime ? `${s.startTime}-${s.endTime}` : '';
+        const instructor = c.instructorName || c.instructor?.name || '';
+        const current = Number(c.classInfo?.currentEnrollment ?? (c.enrolledStudents?.length || 0));
+        const max = Number(c.maxStudents ?? 0);
+        const cap = max ? `${current}/${max}` : `${current}`;
+        return { id: c._id, name: c.name, day: d, time: t, instructor, capacity: cap, price: c.price };
       };
-      const list = filtered.map((c: any, idx: number) => `${idx + 1}. ${courseLabel(c)}`).join('\n');
-      const pickedCourseIdx = prompt(`변경할 반을 선택하세요. 숫자를 입력:\n${list}`);
-      const idx = pickedCourseIdx ? parseInt(pickedCourseIdx, 10) - 1 : -1;
-      if (isNaN(idx) || idx < 0 || idx >= filtered.length) {
-        alert('올바른 번호를 입력해주세요.');
-        return;
-      }
-      const courseId = filtered[idx]._id;
-      // bookingId로 회원 찾기
-      const bookingForMember = bookings.find(b => b._id === bookingId) as any;
-      const memberId = bookingForMember?.memberId || bookingForMember?.studentId;
-      if (!memberId) {
-        alert('회원 정보를 찾을 수 없습니다.');
-        return;
-      }
-      const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId });
-      if (putRes.success) {
-        await loadAllData();
-        alert('반이 변경되었습니다.');
-      } else {
-        alert(putRes.message || '반 변경 중 오류가 발생했습니다.');
-      }
+      setChangeCourseOptions(filtered.map(toLabel));
+      setChangeCourseForBookingId(bookingId);
+      return;
     } catch (e) {
       if (DEBUG) console.error('반 변경 실패:', e);
       alert('반 변경에 실패했습니다.');
