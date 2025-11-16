@@ -45,7 +45,6 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     let resolvedCenterId = groupClass?.centerId;
     let resolvedInstructorId = groupClass?.instructorId;
     let resolvedStudents: any[] = groupClass?.students || [];
-    let resolvedDuration = groupClass?.schedule?.duration;
 
     if (!groupClass) {
       if (!courseId) {
@@ -71,7 +70,6 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         fallbackCourse.instructorId ||
         fallbackCourse.instructor ||
         (fallbackCourse.teacherId || fallbackCourse.teacher);
-      resolvedDuration = fallbackCourse.duration || fallbackCourse.classInfo?.duration || 60;
 
       resolvedStudents = (fallbackCourse.enrolledStudents || []).map((enrollment: any) => ({
         userId: enrollment?.student || enrollment?.studentId,

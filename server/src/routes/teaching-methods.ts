@@ -1,7 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { TeachingMethod } from '../models/TeachingMethod';
-import * as jwt from 'jsonwebtoken';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -36,21 +35,6 @@ router.get('/', async (req: Request, res: Response) => {
     }
     
     console.log('🔍 강습법 조회 쿼리:', JSON.stringify(query, null, 2));
-    
-    // 인증 토큰 확인 (선택적)
-    let userId: string | null = null;
-    let userType: string | null = null;
-    try {
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        userId = decoded.userId || decoded._id;
-        userType = decoded.userType;
-      }
-    } catch (err) {
-      // 인증 실패는 무시 (공개 조회)
-    }
     
     // 모든 강습법 조회
     let methods = await TeachingMethod.find(query)

@@ -552,7 +552,7 @@ router.get('/lane-rentals/:id/availability', async (req: any, res: Response) => 
       const center = await Center.findById(centerId).select('poolInfo');
       const lanes = Number(center?.poolInfo?.lanes || 0);
       if (lanes && !Number.isNaN(lanes)) totalLanes = lanes;
-    } catch (_) {
+    } catch {
       // 모델이 없거나 필드가 없으면 기본값 유지
     }
 

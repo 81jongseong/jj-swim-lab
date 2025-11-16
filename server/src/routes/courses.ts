@@ -115,7 +115,6 @@ import { User } from '../models/User';
 import { Center } from '../models/Center'; // ⭐ Center 모델 추가
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
-import { Approval } from '../models/Approval';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
