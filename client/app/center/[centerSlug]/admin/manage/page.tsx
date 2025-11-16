@@ -1199,6 +1199,18 @@ ${list}`);
                   if (!/^[a-f\d]{24}$/i.test(memberId)) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
                   const putRes = await apiClient.put(`/api/center-admin/members/${memberId}/course`, { courseId: opt.id });
                   if (putRes.success) {
+                    // Optimistic update: 카드에 즉시 새 반/강사 표시
+                    setBookings(prev => prev.map((b: any) => {
+                      if (b._id !== changeCourseForBookingId) return b;
+                      const updated = { ...b };
+                      updated.courseId = opt.id;
+                      updated.courseName = opt.name || updated.courseName;
+                      updated.instructorName = opt.instructor || updated.instructorName;
+                      if (opt.time) updated.time = opt.time;
+                      if (opt.day) updated.day = opt.day;
+                      if (typeof opt.price !== 'undefined') updated.price = opt.price;
+                      return updated;
+                    }));
                     setChangeCourseForBookingId(null);
                     setChangeCourseOptions([]);
                     await loadAllData();
