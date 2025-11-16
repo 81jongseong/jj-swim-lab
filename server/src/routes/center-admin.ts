@@ -1207,10 +1207,16 @@ router.patch('/payments/:id/cancel', authMiddleware, requireCenterAdmin, async (
     payment.status = 'cancelled';
     await payment.save();
 
-    if (payment.relatedCourse && payment.purpose === 'course') {
-      const course = await Course.findById(payment.relatedCourse);
-      if (course && Array.isArray(course.enrolledStudents)) {
-        course.enrolledStudents = course.enrolledStudents.filter((e: any) => e?.student?.toString?.() !== payment.user.toString());
+    // 안전한 반배정 해제
+    if ((payment as any).relatedCourse && (payment as any).purpose === 'course') {
+      const course = await Course.findById((payment as any).relatedCourse);
+      const userIdStr = (payment as any).user?.toString?.() || String((payment as any).user || '');
+      if (course) {
+        const current = Array.isArray((course as any).enrolledStudents) ? (course as any).enrolledStudents : [];
+        (course as any).enrolledStudents = current.filter((e: any) => {
+          const sid = e?.student?.toString?.() || String(e?.student || '');
+          return sid !== userIdStr;
+        });
         await course.save();
       }
     }
@@ -1237,10 +1243,15 @@ router.patch('/payments/:id/refund', authMiddleware, requireCenterAdmin, async (
     payment.status = 'refunded';
     await payment.save();
 
-    if (payment.relatedCourse && payment.purpose === 'course') {
-      const course = await Course.findById(payment.relatedCourse);
-      if (course && Array.isArray(course.enrolledStudents)) {
-        course.enrolledStudents = course.enrolledStudents.filter((e: any) => e?.student?.toString?.() !== payment.user.toString());
+    if ((payment as any).relatedCourse && (payment as any).purpose === 'course') {
+      const course = await Course.findById((payment as any).relatedCourse);
+      const userIdStr = (payment as any).user?.toString?.() || String((payment as any).user || '');
+      if (course) {
+        const current = Array.isArray((course as any).enrolledStudents) ? (course as any).enrolledStudents : [];
+        (course as any).enrolledStudents = current.filter((e: any) => {
+          const sid = e?.student?.toString?.() || String(e?.student || '');
+          return sid !== userIdStr;
+        });
         await course.save();
       }
     }
