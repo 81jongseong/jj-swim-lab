@@ -140,22 +140,9 @@ export default function PaymentTable({
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0 break-words">
                   <div className={`text-sm font-semibold ${theme.title}`}>
-                    {payment.description /* 코스명 또는 '개인레슨' / '레인대여' */}
+                    {payment.description}
                   </div>
-                  {/* 거래 ID는 숨김 처리 */}
-                  {/* <div className="text-xs text-gray-500">{payment.transactionId}</div> */}
                 </div>
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payment.status)} ${payment.status === 'completed' && payment.paymentMethod === 'cash' && onRefund ? 'cursor-pointer hover:opacity-80' : ''}`}
-                  title={payment.status === 'completed' && payment.paymentMethod === 'cash' ? '클릭하여 환불' : undefined}
-                  onClick={() => {
-                    if (payment.status === 'completed' && payment.paymentMethod === 'cash' && onRefund) {
-                      if (confirm('이 결제를 환불하시겠습니까?')) onRefund(payment._id);
-                    }
-                  }}
-                >
-                  {getStatusText(payment.status)}
-                </span>
               </div>
               <div className="mt-3 space-y-1 text-sm">
                 <div className="text-gray-700 whitespace-nowrap">

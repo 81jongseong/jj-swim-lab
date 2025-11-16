@@ -149,7 +149,6 @@ export default function BookingTable({
             <div key={booking._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow h-full overflow-visible">
               <div className="flex items-start justify-between mb-3 flex-wrap gap-3">
                 <div className="flex items-start space-x-3 min-w-0">
-                  {getStatusIcon(booking.status)}
                   <div className="min-w-0 break-words">
                     <h4 className="font-semibold">{booking.memberName}</h4>
                     <div className="flex items-center flex-wrap gap-2 text-sm text-gray-600 mt-1">
@@ -175,11 +174,6 @@ export default function BookingTable({
                   <span className="text-lg font-bold align-middle">
                     {(booking.price || 0).toLocaleString()} 원
                   </span>
-                  <div className="mt-1">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                      {getStatusText(booking.status)}
-                    </span>
-                  </div>
                 </div>
               </div>
               

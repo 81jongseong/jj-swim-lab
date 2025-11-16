@@ -285,7 +285,9 @@ function IntegratedManagement() {
           completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
           transactionId: payment.transactionId,
           refundAmount: payment.refundAmount
-        }});
+        }})
+        // 취소/환불된 카드는 결제 관리에서 노출하지 않음
+        .filter((p: any) => !['cancelled', 'refunded'].includes(p.status));
         // (debug) 결제 데이터 로드 로그
         if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);
@@ -503,7 +505,14 @@ ${list}`);
         alert('변경할 수 있는 과정이 없습니다.');
         return;
       }
-      const list = courses.map((c: any, idx: number) => `${idx + 1}. ${c.name} (${c._id})`).join('\\n');
+      // 코스 정보 라벨: 이름 · (요일/시간) · 강사
+      const courseLabel = (c: any) => {
+        const s = Array.isArray(c.schedule) && c.schedule.length > 0 ? c.schedule[0] : null;
+        const timeText = s ? `${s.day || s.dayOfWeek || ''} ${s.startTime || ''}-${s.endTime || ''}` : '';
+        const instructorText = c.instructorName || c.instructor?.name || '';
+        return `${c.name}${timeText ? ' · ' + timeText : ''}${instructorText ? ' · ' + instructorText : ''}`;
+      };
+      const list = courses.map((c: any, idx: number) => `${idx + 1}. ${courseLabel(c)} (${c._id})`).join('\\n');
       const picked = prompt(`변경할 반을 선택하세요. 숫자를 입력:\\n${list}`);
       const idx = picked ? parseInt(picked, 10) - 1 : -1;
       if (isNaN(idx) || idx < 0 || idx >= courses.length) {
