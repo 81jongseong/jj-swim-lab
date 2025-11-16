@@ -159,6 +159,9 @@ function IntegratedManagement() {
   // 레인 변경 모달 상태 (항상 최상단에서 선언: 훅 순서 고정)
   const [changeLaneForBookingId, setChangeLaneForBookingId] = useState<string | null>(null);
   const [laneAvailability, setLaneAvailability] = useState<{ currentLane: number | null; totalLanes: number; occupied: number[]; available: number[] } | null>(null);
+  // 강사 배정 모달 상태 (훅 순서 고정)
+  const [assignInstructorForBookingId, setAssignInstructorForBookingId] = useState<string | null>(null);
+  const [instructorList, setInstructorList] = useState<Array<{ _id: string; name: string; email?: string }>>([]);
 
   // (debug) 개발 중 디버그가 필요할 경우 true로 변경
   const DEBUG = false;
@@ -674,8 +677,6 @@ ${list}`);
   };
 
   // 강사 배정: 강사 목록 조회 + 배정
-  const [assignInstructorForBookingId, setAssignInstructorForBookingId] = useState<string | null>(null);
-  const [instructorList, setInstructorList] = useState<Array<{ _id: string; name: string; email?: string }>>([]);
   const openAssignInstructor = async (bookingId: string) => {
     try {
       const res = await apiClient.get('/api/center-admin/instructors');
