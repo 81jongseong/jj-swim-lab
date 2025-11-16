@@ -721,7 +721,7 @@ export default function Navigation() {
                         pathname === href ||
                         (href === resolveHref('/center/default/admin/manage') && pathname.startsWith(href)) ||
                         (href === '/health' && pathname.startsWith('/health')) ||
-                        (href === '/swimlab/trial' && pathname === '/swimlab/trial')) ||
+                        (href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
                         (href === '/health/program' && pathname === '/health/program') ||
                         (href === '/health/history' && pathname === '/health/history') ||
                         (href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine');
