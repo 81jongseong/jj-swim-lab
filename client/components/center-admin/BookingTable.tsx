@@ -21,6 +21,7 @@ interface Booking {
   status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
   instructorName?: string;
   createdAt?: Date | string;
+  laneNumber?: number; // 레인대여 현재 레인 표시용
 }
 
 interface BookingTableProps {
@@ -163,6 +164,11 @@ export default function BookingTable({
                     <div className="text-xs text-gray-600 mt-1">
                       반: {((booking as any).courseName) || ((booking as any).className) || (booking.type === 'personal-lesson' ? '개인레슨' : '레인대여')}
                     </div>
+                    {booking.type === 'lane-rental' && (
+                      <div className="text-xs text-purple-700 mt-1">
+                        레인: {(booking as any).laneNumber ? `${(booking as any).laneNumber}번` : '-'}
+                      </div>
+                    )}
                     {booking.instructorName && (
                       <div className="text-xs text-blue-600 mt-1">
                         강사: {booking.instructorName}
