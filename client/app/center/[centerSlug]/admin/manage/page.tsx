@@ -541,16 +541,28 @@ ${list}`);
         alert('해당 요일/시간대의 반이 없습니다.');
         return;
       }
-      // 준비된 옵션을 모달로 표시
+      // 준비된 옵션을 모달로 표시 (모든 요일 표시)
       const toLabel = (c: any) => {
-        const s = Array.isArray(c.schedule) && c.schedule.length > 0 ? c.schedule[0] : {};
-        const d = s?.day || s?.dayOfWeek || '';
-        const t = s?.startTime && s?.endTime ? `${s.startTime}-${s.endTime}` : '';
+        const slots: any[] = Array.isArray(c.schedule) ? c.schedule : [];
+        const dn = (v: any) => {
+          const map: any = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
+          if (['월','화','수','목','금','토','일'].includes(v)) return v;
+          const d = String(v || '').toLowerCase();
+          return map[d] || v || '';
+        };
+        const dayList = Array.from(new Set(slots.map(s => dn(s?.day ?? s?.dayOfWeek)).filter(Boolean)));
+        const timeList = Array.from(new Set(slots.map(s => {
+          const st = s?.startTime || '';
+          const et = s?.endTime || '';
+          return st && et ? `${st}-${et}` : '';
+        }).filter(Boolean)));
+        const dayText = dayList.join(', ');
+        const timeText = timeList.length === 1 ? timeList[0] : (timeList.length > 1 ? '다양' : '');
         const instructor = c.instructorName || c.instructor?.name || '';
         const current = Number(c.classInfo?.currentEnrollment ?? (c.enrolledStudents?.length || 0));
         const max = Number(c.maxStudents ?? 0);
         const cap = max ? `${current}/${max}` : `${current}`;
-        return { id: c._id, name: c.name, day: d, time: t, instructor, capacity: cap, price: c.price };
+        return { id: c._id, name: c.name, day: dayText, time: timeText, instructor, capacity: cap, price: c.price };
       };
       setChangeCourseOptions(filtered.map(toLabel));
       setChangeCourseForBookingId(bookingId);
