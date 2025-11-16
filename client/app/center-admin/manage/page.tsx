@@ -294,21 +294,28 @@ function IntegratedManagement() {
       if (response.ok) {
         const data = await response.json();
         // Payment 모델은 user 필드 사용 (populate로 name, email 포함)
-        const formattedPayments = (data.data?.payments || []).map((payment: any) => ({
-          _id: payment._id,
-          userId: payment.user?._id || payment.user || payment.userId,
-          userName: payment.user?.name || payment.userName || '알 수 없음',
-          userEmail: payment.user?.email || payment.userEmail || '',
-          amount: payment.amount,
-          currency: payment.currency || 'KRW',
-          paymentMethod: payment.paymentMethod,
-          status: payment.status,
-          description: payment.relatedCourse?.name || payment.description || (payment.purpose === 'course' ? '강습 결제' : payment.purpose || ''),
-          createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
-          completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
-          transactionId: payment.transactionId,
-          refundAmount: payment.refundAmount
-        }));
+        const formattedPayments = (data.data?.payments || []).map((payment: any) => {
+          const purposeLabel = payment.purpose === 'personal-lesson'
+            ? '개인레슨'
+            : payment.purpose === 'lane-rental'
+            ? '레인대여'
+            : payment.purpose;
+          return {
+            _id: payment._id,
+            userId: payment.user?._id || payment.user || payment.userId,
+            userName: payment.user?.name || payment.userName || '알 수 없음',
+            userEmail: payment.user?.email || payment.userEmail || '',
+            amount: payment.amount,
+            currency: payment.currency || 'KRW',
+            paymentMethod: payment.paymentMethod,
+            status: payment.status,
+            description: payment.relatedCourse?.name || (payment.purpose === 'course' ? '강습 결제' : purposeLabel || ''),
+            createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
+            completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
+            transactionId: payment.transactionId,
+            refundAmount: payment.refundAmount
+          };
+        });
         // (debug) 결제 데이터 로드 로그
         if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);

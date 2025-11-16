@@ -263,7 +263,13 @@ function IntegratedManagement() {
       const response = await apiClient.get('/api/center-admin/payments');
       if (response.success) {
         // Payment 모델은 user 필드 사용 (populate로 name, email 포함)
-        const formattedPayments = (response.data?.payments || []).map((payment: any) => ({
+        const formattedPayments = (response.data?.payments || []).map((payment: any) => {
+          const purposeLabel = payment.purpose === 'personal-lesson'
+            ? '개인레슨'
+            : payment.purpose === 'lane-rental'
+            ? '레인대여'
+            : payment.purpose;
+          return {
           _id: payment._id,
           userId: payment.user?._id || payment.user || payment.userId,
           userName: payment.user?.name || payment.userName || '알 수 없음',
@@ -272,12 +278,12 @@ function IntegratedManagement() {
           currency: payment.currency || 'KRW',
           paymentMethod: payment.paymentMethod,
           status: payment.status,
-          description: payment.relatedCourse?.name || payment.description || (payment.purpose === 'course' ? '강습 결제' : payment.purpose || ''),
+          description: payment.relatedCourse?.name || (payment.purpose === 'course' ? '강습 결제' : purposeLabel || ''),
           createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
           completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
           transactionId: payment.transactionId,
           refundAmount: payment.refundAmount
-        }));
+        }});
         // (debug) 결제 데이터 로드 로그
         if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);
@@ -497,11 +503,17 @@ ${list}`);
       // 대시보드 통계 즉시 반영
       updateDashboardStats();
 
-      // 2) 실제 API 호출 (TODO: 엔드포인트 연결)
-      // 성공 응답에서만 재로드하여 낙관적 상태가 즉시 사라지지 않도록 함
-      // const res = await apiClient.post(`/api/center-admin/payments/${paymentId}/${action}`);
-      // if (res.success) await loadAllData();
-      alert(action === 'refund' ? '결제가 환불되었습니다.' : '결제가 취소되었습니다.');
+      // 2) 실제 API 호출
+      const url = action === 'refund'
+        ? `/api/center-admin/payments/${paymentId}/refund`
+        : `/api/center-admin/payments/${paymentId}/cancel`;
+      const res = await apiClient.patch(url, action === 'refund' ? {} : {});
+      if (res.success) {
+        await loadAllData();
+        alert(action === 'refund' ? '결제가 환불되었습니다.' : '결제가 취소되었습니다.');
+      } else {
+        alert(res.message || '처리 중 오류가 발생했습니다.');
+      }
     } catch (error) {
       if (DEBUG) console.error('결제 처리 실패:', error);
     }

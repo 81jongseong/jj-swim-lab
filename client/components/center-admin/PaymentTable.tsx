@@ -28,7 +28,6 @@ interface PaymentTableProps {
   payments: Payment[];
   onRefund?: (paymentId: string) => void;
   onCancel?: (paymentId: string) => void;
-  onApprove?: (paymentId: string) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -104,8 +103,7 @@ const formatCurrency = (amount: number, currency: string = 'KRW') => {
 export default function PaymentTable({ 
   payments, 
   onRefund,
-  onCancel,
-  onApprove
+  onCancel
 }: PaymentTableProps) {
   if (payments.length === 0) {
     return (
@@ -174,11 +172,6 @@ export default function PaymentTable({
                 <div className="text-gray-600 break-words">{payment.userName} • {payment.userEmail}</div>
               </div>
               <div className="mt-3 flex gap-2">
-                {payment.status === 'pending' && onApprove && (
-                  <Button onClick={() => onApprove(payment._id)} size="sm" className="gap-1">
-                    <CheckCircle className="w-4 h-4" /> 결제 승인
-                  </Button>
-                )}
                 {payment.status === 'completed' && (
                   <>
                     {onCancel && payment.paymentMethod === 'card' && (

@@ -1194,6 +1194,65 @@ router.patch('/payments/:id/complete', authMiddleware, requireCenterAdmin, async
 });
 
 /**
+ * 💳 카드 결제 취소 처리
+ * PATCH /api/center-admin/payments/:id/cancel
+ * - Payment.status: cancelled
+ * - Course.enrolledStudents에서 해당 학생 제거
+ */
+router.patch('/payments/:id/cancel', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const payment = await Payment.findById(id);
+    if (!payment) return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+    payment.status = 'cancelled';
+    await payment.save();
+
+    if (payment.relatedCourse && payment.purpose === 'course') {
+      const course = await Course.findById(payment.relatedCourse);
+      if (course && Array.isArray(course.enrolledStudents)) {
+        course.enrolledStudents = course.enrolledStudents.filter((e: any) => e?.student?.toString?.() !== payment.user.toString());
+        await course.save();
+      }
+    }
+    return res.json({ success: true, message: '결제가 취소되었습니다.', data: payment });
+  } catch (error) {
+    console.error('결제 취소 처리 오류:', error);
+    return res.status(500).json({ success: false, message: '결제 취소 처리 중 오류가 발생했습니다.' });
+  }
+});
+
+/**
+ * 💵 현금 결제 환불 처리
+ * PATCH /api/center-admin/payments/:id/refund
+ * - Payment.status: refunded, refundAmount 설정(요청 값 없으면 전액)
+ * - Course.enrolledStudents에서 해당 학생 제거
+ */
+router.patch('/payments/:id/refund', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { refundAmount } = req.body as any;
+    const payment = await Payment.findById(id);
+    if (!payment) return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+    (payment as any).refundAmount = typeof refundAmount === 'number' ? refundAmount : payment.amount;
+    payment.status = 'refunded';
+    await payment.save();
+
+    if (payment.relatedCourse && payment.purpose === 'course') {
+      const course = await Course.findById(payment.relatedCourse);
+      if (course && Array.isArray(course.enrolledStudents)) {
+        course.enrolledStudents = course.enrolledStudents.filter((e: any) => e?.student?.toString?.() !== payment.user.toString());
+        await course.save();
+      }
+    }
+
+    return res.json({ success: true, message: '결제가 환불 처리되었습니다.', data: payment });
+  } catch (error) {
+    console.error('결제 환불 처리 오류:', error);
+    return res.status(500).json({ success: false, message: '결제 환불 처리 중 오류가 발생했습니다.' });
+  }
+});
+
+/**
  * 📚 센터 강습 과정 목록 조회
  * GET /api/center-admin/courses
  */
