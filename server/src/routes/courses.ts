@@ -114,6 +114,7 @@ import { Course } from '../models/Course';
 import { User } from '../models/User';
 import { Center } from '../models/Center'; // ⭐ Center 모델 추가
 import { Payment } from '../models/Payment';
+import { Booking } from '../models/Booking';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
@@ -378,10 +379,50 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
 // 학생 본인 강습 목록 조회
 router.get('/student/enrolled', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
+    // 파일 연동 주석: 이 엔드포인트는 학생의 “내 강의” 리스트를 반환합니다.
+    // 연동 모델: Course, Booking, Payment
+    // 연동 규칙:
+    //  - Course.enrolledStudents.student 에 포함된 코스
+    //  - Booking(confirmed|pending|completed) 으로 학생이 예약한 코스
+    //  - Payment(pending|completed) 의 relatedCourse 로 결제를 진행/완료한 코스
+    // 주의: 결제만 있고 관리자가 최종 배정(enrolledStudents 반영)을 안 한 상태도 표시되도록 합니다.
     const studentId = req.user.userId;
 
+    // 1) explicit enrollment (기존 방식)
+    const explicitlyEnrolledCourseIds = await Course.find(
+      { 'enrolledStudents.student': studentId },
+      { _id: 1 }
+    ).lean();
+
+    // 2) bookings 기반 포함
+    const bookingCourseIds = await Booking.distinct('courseId', {
+      studentId,
+      status: { $in: ['confirmed', 'pending', 'completed'] }
+    });
+
+    // 3) payments 기반 포함
+    const paymentCourseIds = await Payment.distinct('relatedCourse', {
+      user: studentId,
+      status: { $in: ['pending', 'completed'] },
+      purpose: 'course'
+    });
+
+    // 코스 ID 집합 구성
+    const enrolledIdsSet = new Set<string>([
+      ...explicitlyEnrolledCourseIds.map((c: any) => String(c._id)),
+      ...bookingCourseIds.map((id: any) => String(id)),
+      ...paymentCourseIds.map((id: any) => String(id))
+    ].filter(Boolean));
+
+    // 집합이 비어 있으면 바로 빈 배열 반환
+    if (enrolledIdsSet.size === 0) {
+      return res.json({ success: true, message: '등록/예약/결제된 강습이 없습니다.', data: [] });
+    }
+
+    const enrolledIds = Array.from(enrolledIdsSet);
+
     const courses = await Course.find({
-      'enrolledStudents.student': studentId
+      _id: { $in: enrolledIds }
     })
       .populate('instructor', 'name userId email phone')
       .populate('centerId', 'name address phone email region district city province')
