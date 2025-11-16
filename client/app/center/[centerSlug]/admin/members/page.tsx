@@ -90,6 +90,10 @@ const CenterAdminMembersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | MemberStatus>('all');
   const [courseFilter, setCourseFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
   const [assignmentDraft, setAssignmentDraft] = useState<Record<string, string>>({});
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [sortKey, setSortKey] = useState<'name' | 'createdAt' | 'status' | 'courses'>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const loadMembers = useCallback(async () => {
     setIsLoading(true);
@@ -177,7 +181,7 @@ const CenterAdminMembersPage: React.FC = () => {
   };
 
   const filteredMembers = useMemo(() => {
-    return members.filter((member) => {
+    const result = members.filter((member) => {
       const matchesSearch = [member.name, member.email, member.phone]
         .filter(Boolean)
         .some((value) =>
@@ -195,7 +199,42 @@ const CenterAdminMembersPage: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesCourse;
     });
-  }, [courseFilter, members, searchTerm, statusFilter]);
+    // 정렬
+    const sorted = [...result].sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      if (sortKey === 'name') {
+        return (a.name || '').localeCompare(b.name || '') * dir;
+      }
+      if (sortKey === 'status') {
+        return (a.status || '').localeCompare(b.status || '') * dir;
+      }
+      if (sortKey === 'courses') {
+        const ac = a.assignedCourses?.length ?? 0;
+        const bc = b.assignedCourses?.length ?? 0;
+        return (ac - bc) * dir;
+      }
+      // createdAt: 최신순 기본
+      const aCreated = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0;
+      const bCreated = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0;
+      return (aCreated - bCreated) * dir;
+    });
+    return sorted;
+  }, [courseFilter, members, searchTerm, sortDir, sortKey, statusFilter]);
+
+  const pagedMembers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredMembers.slice(start, start + pageSize);
+  }, [filteredMembers, page, pageSize]);
+
+  const stats = useMemo(() => {
+    const total = members.length;
+    const active = members.filter(m => m.status === 'active').length;
+    const inactive = members.filter(m => m.status === 'inactive').length;
+    const suspended = members.filter(m => m.status === 'suspended').length;
+    const assigned = members.filter(m => (m.assignedCourses?.length ?? 0) > 0).length;
+    const unassigned = total - assigned;
+    return { total, active, inactive, suspended, assigned, unassigned };
+  }, [members]);
 
   if (isLoading) {
     return (
@@ -220,13 +259,41 @@ const CenterAdminMembersPage: React.FC = () => {
           </p>
         </header>
 
+        {/* 요약 카드 */}
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">전체 회원</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-900">{stats.total}</div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">활성</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-700">{stats.active}</div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">비활성</div>
+            <div className="mt-1 text-2xl font-semibold text-gray-700">{stats.inactive}</div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">정지</div>
+            <div className="mt-1 text-2xl font-semibold text-red-700">{stats.suspended}</div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">배정됨</div>
+            <div className="mt-1 text-2xl font-semibold text-blue-700">{stats.assigned}</div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="text-xs text-gray-500">미배정</div>
+            <div className="mt-1 text-2xl font-semibold text-amber-700">{stats.unassigned}</div>
+          </div>
+        </section>
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between">
+        <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between sticky top-0 z-10">
           <div className="flex flex-1 flex-col gap-3 md:flex-row">
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="member-search">
@@ -272,6 +339,32 @@ const CenterAdminMembersPage: React.FC = () => {
                 <option value="unassigned">미배정</option>
               </select>
             </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700" htmlFor="sort-key">
+                정렬
+              </label>
+              <div className="flex items-center gap-2">
+                <select
+                  id="sort-key"
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="createdAt">최근 가입</option>
+                  <option value="name">이름</option>
+                  <option value="status">상태</option>
+                  <option value="courses">배정 코스 수</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+                  aria-label="정렬 방향 전환"
+                >
+                  {sortDir === 'asc' ? '오름차순' : '내림차순'}
+                </button>
+              </div>
+            </div>
           </div>
           <button
             type="button"
@@ -303,7 +396,7 @@ const CenterAdminMembersPage: React.FC = () => {
                   </tr>
                 )}
 
-                {filteredMembers.map((member) => {
+                {pagedMembers.map((member) => {
                   const assigned = member.assignedCourses ?? [];
                   const selectedCourseId = assignmentDraft[member._id] ?? '';
 
@@ -387,6 +480,50 @@ const CenterAdminMembersPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+          {/* 페이지네이션 */}
+          <div className="flex items-center justify-between border-t border-gray-200 p-3 text-sm">
+            <div className="text-gray-600">
+              총 {filteredMembers.length}명 · {page} / {Math.max(1, Math.ceil(filteredMembers.length / pageSize))} 페이지
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-gray-600" htmlFor="page-size">페이지당</label>
+              <select
+                id="page-size"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rounded-md border border-gray-300 px-2 py-1"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <div className="ml-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="rounded-md border border-gray-300 px-3 py-1 text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  이전
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const max = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
+                    setPage((p) => Math.min(max, p + 1));
+                  }}
+                  disabled={page >= Math.ceil(filteredMembers.length / pageSize)}
+                  className="rounded-md border border-gray-300 px-3 py-1 text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  다음
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </div>
