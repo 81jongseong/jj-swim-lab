@@ -165,6 +165,9 @@ function IntegratedManagement() {
   const [showLaneRentalModal, setShowLaneRentalModal] = useState(false);
   const [changeCourseForBookingId, setChangeCourseForBookingId] = useState<string | null>(null);
   const [changeCourseOptions, setChangeCourseOptions] = useState<any[]>([]);
+  // 레인 변경 모달 상태 (항상 최상단에서 선언: 훅 순서 고정)
+  const [changeLaneForBookingId, setChangeLaneForBookingId] = useState<string | null>(null);
+  const [laneAvailability, setLaneAvailability] = useState<{ currentLane: number | null; totalLanes: number; occupied: number[]; available: number[] } | null>(null);
 
   // (debug) 개발 중 디버그가 필요할 경우 true로 변경
   const DEBUG = false;
@@ -626,10 +629,6 @@ ${list}`);
       alert('반 변경에 실패했습니다.');
     }
   };
-
-  // 레인 변경 모달 상태
-  const [changeLaneForBookingId, setChangeLaneForBookingId] = useState<string | null>(null);
-  const [laneAvailability, setLaneAvailability] = useState<{ currentLane: number | null; totalLanes: number; occupied: number[]; available: number[] } | null>(null);
 
   const handleChangeLane = async (bookingId: string) => {
     try {
