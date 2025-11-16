@@ -541,14 +541,27 @@ ${list}`);
         alert('해당 요일/시간대의 반이 없습니다.');
         return;
       }
-      // 준비된 옵션을 모달로 표시 (모든 요일 표시)
+      // 준비된 옵션을 모달로 표시 (모든 요일 표시, 한글 변환)
       const toLabel = (c: any) => {
         const slots: any[] = Array.isArray(c.schedule) ? c.schedule : [];
         const dn = (v: any) => {
-          const map: any = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
-          if (['월','화','수','목','금','토','일'].includes(v)) return v;
-          const d = String(v || '').toLowerCase();
-          return map[d] || v || '';
+          const raw = String(v || '').trim();
+          if (['월','화','수','목','금','토','일'].includes(raw)) return raw;
+          const lower = raw.toLowerCase();
+          const mapShort: any = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
+          const mapFull: any = { monday: '월', tuesday: '화', wednesday: '수', thursday: '목', friday: '금', saturday: '토', sunday: '일' };
+          if (mapFull[lower]) return mapFull[lower];
+          if (mapShort[lower]) return mapShort[lower];
+          // 숫자/요일번호 매핑 (0/7=일, 1=월 ... 6=토)
+          const n = Number(lower);
+          if (!Number.isNaN(n)) {
+            const arr = ['일','월','화','수','목','금','토','일'];
+            if (n >= 0 && n <= 7) return arr[n];
+          }
+          // 앞 3글자 줄임이 들어온 경우
+          const first3 = lower.slice(0,3);
+          if (mapShort[first3]) return mapShort[first3];
+          return raw;
         };
         const dayList = Array.from(new Set(slots.map(s => dn(s?.day ?? s?.dayOfWeek)).filter(Boolean)));
         const timeList = Array.from(new Set(slots.map(s => {
