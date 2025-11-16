@@ -557,120 +557,16 @@ router.get('/instructors/stats', authMiddleware, requireCenterAdmin, async (req:
  */
 router.get('/instructors', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
   try {
-    console.log('📋 센터 강사 목록 조회 요청');
-    console.log('🔍 req.user 정보:', req.user);
-    
-    const centerAdmin = await User.findById(req.user._id);
-    console.log('🔍 데이터베이스에서 조회한 사용자:', centerAdmin);
-    
-    // centerId 필드 또는 centerAdminInfo.managedCenters에서 센터 ID 가져오기
-    const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
-
-    console.log('👤 센터 관리자:', {
-      name: centerAdmin?.name,
-      email: centerAdmin?.email,
-      centerId: centerId?.toString()
-    });
-
+    const admin = await User.findById(req.user._id);
+    const centerId = admin?.centerId || admin?.centerAdminInfo?.managedCenters?.[0];
     if (!centerId) {
-      console.error('❌ 센터 ID 없음');
-      return res.status(400).json({
-        success: false,
-        message: '관리하는 센터가 없습니다.'
-      });
+      return res.status(400).json({ success: false, message: '관리하는 센터가 없습니다.' });
     }
-
-    const { page = 1, limit = 1000, search = '' } = req.query; // ⭐ limit을 크게 설정하여 모든 강사 조회
-    const skip = (Number(page) - 1) * Number(limit);
-
-    // ⭐ 강사 조회: centerId 또는 instructorInfo.assignedCenters에 포함된 강사
-    const centerIdObj = new mongoose.Types.ObjectId(centerId);
-    const query: any = {
-      userType: 'instructor',
-      $or: [
-        { centerId: centerIdObj },
-        { 'instructorInfo.assignedCenters': centerIdObj }
-      ]
-    };
-
-    // ⭐ 검색 조건이 있으면 $and로 추가 (기존 $or 조건과 함께 사용)
-    if (search) {
-      query.$and = [
-        {
-          $or: [
-            { centerId: centerIdObj },
-            { 'instructorInfo.assignedCenters': centerIdObj }
-          ]
-        },
-        {
-          $or: [
-            { name: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } }
-          ]
-        }
-      ];
-      // $or는 $and가 있으면 무시되므로 제거
-      delete query.$or;
-    }
-
-    console.log('🔍 검색 조건:', query);
-
-    // ⭐ isActive 필터 제거 - 모든 강사 조회 (비활성 포함)
-    const instructors = await User.find(query)
-      .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
-      .lean()
-      .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 });
-    
-    // instructorInfo에 photo와 bio/introduction 필드 포함
-    const instructorsWithPhoto = instructors.map(instructor => {
-      const instructorInfo = (instructor.instructorInfo as any) || {};
-      return {
-        ...instructor,
-        instructorInfo: {
-          ...instructorInfo,
-          photo: instructorInfo.photo,
-          bio: instructorInfo.bio || instructorInfo.introduction
-        }
-      };
-    });
-
-    const total = await User.countDocuments(query);
-
-    console.log('📊 조회 결과:', {
-      강사수: instructors.length,
-      총계: total,
-      강사목록: instructors.map(i => ({ name: i.name, id: i._id.toString() }))
-    });
-
-    const responseData = {
-      success: true,
-      message: '센터 강사 목록 조회 성공!',
-      data: {
-        instructors: instructorsWithPhoto,
-        pagination: {
-          current: Number(page),
-          total: Math.ceil(total / Number(limit)),
-          count: instructorsWithPhoto.length,
-          totalCount: total
-        }
-      }
-    };
-
-    console.log('📤 응답 데이터:', {
-      success: responseData.success,
-      instructorsCount: responseData.data.instructors.length,
-      instructorNames: responseData.data.instructors.map(i => i.name)
-    });
-
-    res.json(responseData);
+    const instructors = await User.find({ userType: 'instructor', centerId: centerId }, 'name email phone userType').lean();
+    return res.json({ success: true, data: instructors });
   } catch (error) {
-    console.error('센터 강사 목록 조회 오류:', error);
-    res.status(500).json({
-      success: false,
-      message: '서버 오류가 발생했습니다.'
-    });
+    console.error('강사 목록 조회 오류:', error);
+    return res.status(500).json({ success: false, message: '강사 목록 조회 중 오류가 발생했습니다.' });
   }
 });
 

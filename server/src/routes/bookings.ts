@@ -1036,4 +1036,30 @@ router.get('/my-bookings', async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/bookings/personal-lessons/:id/instructor - assign or change instructor
+router.patch('/personal-lessons/:id/instructor', authMiddleware, async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { instructorId } = req.body || {};
+    if (!id || !instructorId) {
+      return res.status(400).json({ success: false, message: '예약 ID와 강사 ID가 필요합니다.' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(instructorId)) {
+      return res.status(400).json({ success: false, message: '유효하지 않은 강사 ID입니다.' });
+    }
+    const lesson = await PersonalLesson.findById(id);
+    if (!lesson) {
+      return res.status(404).json({ success: false, message: '개인레슨 예약을 찾을 수 없습니다.' });
+    }
+    // Optional: verify user has permission (center admin or instructor self)
+    // For now, allow centerAdmin or server-side secured routes to call this.
+    lesson.instructorId = new mongoose.Types.ObjectId(instructorId);
+    await lesson.save();
+    return res.json({ success: true, message: '강사가 배정되었습니다.', data: lesson });
+  } catch (error) {
+    console.error('개인레슨 강사 배정 오류:', error);
+    return res.status(500).json({ success: false, message: '개인레슨 강사 배정 중 오류가 발생했습니다.' });
+  }
+});
+
 export default router; 

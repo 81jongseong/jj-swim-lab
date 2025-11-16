@@ -673,6 +673,45 @@ ${list}`);
     }
   };
 
+  // 강사 배정: 강사 목록 조회 + 배정
+  const [assignInstructorForBookingId, setAssignInstructorForBookingId] = useState<string | null>(null);
+  const [instructorList, setInstructorList] = useState<Array<{ _id: string; name: string; email?: string }>>([]);
+  const openAssignInstructor = async (bookingId: string) => {
+    try {
+      const res = await apiClient.get('/api/center-admin/instructors');
+      if (res?.success) {
+        setInstructorList(res.data || []);
+        setAssignInstructorForBookingId(bookingId);
+      } else {
+        alert(res?.message || '강사 목록을 불러오지 못했습니다.');
+      }
+    } catch (e) {
+      if (DEBUG) console.error('강사 목록 조회 실패:', e);
+      alert('강사 목록 조회에 실패했습니다.');
+    }
+  };
+  const assignInstructor = async (instructorId: string) => {
+    if (!assignInstructorForBookingId) return;
+    try {
+      // 낙관적 업데이트
+      const picked = instructorList.find(i => i._id === instructorId);
+      setBookings(prev => prev.map(b => b._id === assignInstructorForBookingId ? { ...b, instructorName: picked?.name || b.instructorName } : b));
+      const res = await apiClient.patch(`/api/bookings/personal-lessons/${assignInstructorForBookingId}/instructor`, { instructorId });
+      if (!res?.success) {
+        await loadAllData();
+        alert(res?.message || '강사 배정 중 오류가 발생했습니다.');
+      } else {
+        await loadAllData();
+      }
+    } catch (e) {
+      if (DEBUG) console.error('강사 배정 실패:', e);
+      await loadAllData();
+      alert('강사 배정에 실패했습니다.');
+    } finally {
+      setAssignInstructorForBookingId(null);
+      setInstructorList([]);
+    }
+  };
   const handleApproval = async (id: string, action: 'approve' | 'reject') => {
     try {
       const response = await apiClient.put(`/api/approvals/${id}/process`, {
@@ -988,11 +1027,12 @@ ${list}`);
                         <div>
                           <p className="font-medium text-sm">{booking.memberName}</p>
                           <p className="text-xs text-gray-600">{booking.date} {booking.time}</p>
+                        {booking.type === 'personal-lesson' && !booking.instructorName && (
+                          <button className="text-xs text-emerald-700 underline" onClick={() => openAssignInstructor(booking._id)}>강사 배정</button>
+                        )}
                         </div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                        {getStatusText(booking.status)}
-                      </span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusText(booking.status)}</span>
                     </div>
                   ))}
                   {bookings.length === 0 && (
@@ -1068,6 +1108,7 @@ ${list}`);
             bookings={bookings}
             type="personal-lesson"
             onChangeCourse={handleChangeCourse}
+            onAssignInstructor={openAssignInstructor}
           />
 
           {/* 레인대여 섹션 */}
@@ -1218,6 +1259,30 @@ ${list}`);
         </div>
       </Modal>
 
+      {/* 강사 배정 모달 */}
+      <Modal isOpen={!!assignInstructorForBookingId} onClose={() => { setAssignInstructorForBookingId(null); setInstructorList([]); }} title="강사 배정" size="md">
+        <div className="px-5 py-4">
+          {instructorList.length > 0 ? (
+            <div className="space-y-2">
+              {instructorList.map((ins) => (
+                <button
+                  key={ins._id}
+                  onClick={() => assignInstructor(ins._id)}
+                  className="w-full text-left px-4 py-2 border rounded hover:bg-gray-50"
+                >
+                  <div className="font-medium text-gray-900">{ins.name}</div>
+                  {ins.email && <div className="text-xs text-gray-500">{ins.email}</div>}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">강사 목록이 없습니다.</div>
+          )}
+        </div>
+        <div className="px-5 py-3 flex justify-end gap-2 border-t">
+          <button onClick={() => { setAssignInstructorForBookingId(null); setInstructorList([]); }} className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">닫기</button>
+        </div>
+      </Modal>
       {/* 레인변경 모달 */}
       <Modal isOpen={!!changeLaneForBookingId} onClose={() => { setChangeLaneForBookingId(null); setLaneAvailability(null); }} title="레인 변경" size="md">
         <div className="px-5 py-4">

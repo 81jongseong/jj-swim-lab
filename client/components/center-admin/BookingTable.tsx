@@ -20,6 +20,7 @@ interface Booking {
   price?: number;
   status: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
   instructorName?: string;
+  instructorId?: string;
   createdAt?: Date | string;
   laneNumber?: number; // 레인대여 현재 레인 표시용
 }
@@ -31,6 +32,7 @@ interface BookingTableProps {
   onReject?: (bookingId: string) => void;
   onChangeCourse?: (bookingId: string) => void;
   onChangeLane?: (bookingId: string) => void;
+  onAssignInstructor?: (bookingId: string) => void;
 }
 
 const getStatusIcon = (status: string) => {
@@ -76,7 +78,8 @@ export default function BookingTable({
   onApprove,
   onReject,
   onChangeCourse,
-  onChangeLane
+  onChangeLane,
+  onAssignInstructor
 }: BookingTableProps) {
   const formatDate = (value?: string) => {
     if (!value) return '';
@@ -190,6 +193,15 @@ export default function BookingTable({
                     size="sm"
                   >
                     반변경
+                  </Button>
+                )}
+                {booking.type === 'personal-lesson' && !booking.instructorName && onAssignInstructor && (
+                  <Button
+                    onClick={() => onAssignInstructor(booking._id)}
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    강사 배정
                   </Button>
                 )}
                 {booking.type === 'lane-rental' && onChangeLane && (
