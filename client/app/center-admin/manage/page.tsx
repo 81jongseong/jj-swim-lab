@@ -303,7 +303,7 @@ function IntegratedManagement() {
           currency: payment.currency || 'KRW',
           paymentMethod: payment.paymentMethod,
           status: payment.status,
-          description: payment.description || payment.purpose || '',
+          description: payment.relatedCourse?.name || payment.description || (payment.purpose === 'course' ? '강습 결제' : payment.purpose || ''),
           createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
           completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
           transactionId: payment.transactionId,
@@ -474,7 +474,7 @@ function IntegratedManagement() {
 
   const handleBookingAction = async (bookingId: string, action: 'approve' | 'reject', instructorId?: string, bookingType?: 'personal-lesson' | 'lane-rental') => {
     try {
-      const base = 'http://localhost:5000/api/center-admin/bookings';
+      const base = 'http://localhost:5000/api/bookings';
       const endpoint = bookingType === 'lane-rental'
         ? `${base}/lane-rentals/${bookingId}/status`
         : `${base}/personal-lessons/${bookingId}/status`;

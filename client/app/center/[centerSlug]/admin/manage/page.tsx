@@ -437,8 +437,8 @@ function IntegratedManagement() {
   const handleBookingAction = async (bookingId: string, action: 'approve' | 'reject', instructorId?: string, bookingType?: 'personal-lesson' | 'lane-rental') => {
     try {
       const endpoint = bookingType === 'lane-rental'
-        ? `/api/center-admin/bookings/lane-rentals/${bookingId}/status`
-        : `/api/center-admin/bookings/personal-lessons/${bookingId}/status`;
+        ? `/api/bookings/lane-rentals/${bookingId}/status`
+        : `/api/bookings/personal-lessons/${bookingId}/status`;
       const status = action === 'approve' ? (bookingType === 'lane-rental' ? 'approved' : 'accepted') : 'rejected';
 
       // 개인레슨 승인 시 강사 ID가 필수 → 간단 선택 프롬프트 제공
@@ -1022,7 +1022,6 @@ ${list}`);
           {/* 결제 내역 목록 */}
           <PaymentTable
             payments={payments}
-            onApprove={handleApprovePayment}
             onCancel={(id) => handlePaymentAction(id, 'cancel')}
             onRefund={(id) => handlePaymentAction(id, 'refund')}
           />
