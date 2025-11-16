@@ -627,24 +627,22 @@ ${list}`);
     }
   };
 
+  // 레인 변경 모달 상태
+  const [changeLaneForBookingId, setChangeLaneForBookingId] = useState<string | null>(null);
+  const [laneAvailability, setLaneAvailability] = useState<{ currentLane: number | null; totalLanes: number; occupied: number[]; available: number[] } | null>(null);
+
   const handleChangeLane = async (bookingId: string) => {
     try {
-      const value = prompt('변경할 레인 번호를 입력하세요 (숫자)');
-      const laneNumber = value ? parseInt(value, 10) : NaN;
-      if (!laneNumber || isNaN(laneNumber) || laneNumber <= 0) {
-        alert('올바른 레인 번호를 입력해주세요.');
-        return;
-      }
-      const res = await apiClient.patch(`/api/bookings/lane-rentals/${bookingId}/lane`, { laneNumber });
-      if (res.success) {
-        await loadAllData();
-        alert('레인 번호가 변경되었습니다.');
+      const avail = await apiClient.get(`/api/bookings/lane-rentals/${bookingId}/availability`);
+      if (avail?.success && avail?.data) {
+        setLaneAvailability(avail.data);
+        setChangeLaneForBookingId(bookingId);
       } else {
-        alert(res.message || '레인 변경 중 오류가 발생했습니다.');
+        alert(avail?.message || '가용 레인을 불러오지 못했습니다.');
       }
     } catch (e) {
-      if (DEBUG) console.error('레인 변경 실패:', e);
-      alert('레인 변경에 실패했습니다.');
+      if (DEBUG) console.error('레인 가용 조회 실패:', e);
+      alert('가용 레인 조회에 실패했습니다.');
     }
   };
 
@@ -1286,6 +1284,74 @@ ${list}`);
         </div>
         <div className="px-5 py-3 flex justify-end gap-2 border-t">
           <button onClick={() => { setChangeCourseForBookingId(null); setChangeCourseOptions([]); }} className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">닫기</button>
+        </div>
+      </Modal>
+
+      {/* 레인변경 모달 */}
+      <Modal isOpen={!!changeLaneForBookingId} onClose={() => { setChangeLaneForBookingId(null); setLaneAvailability(null); }} title="레인 변경" size="md">
+        <div className="px-5 py-4">
+          {laneAvailability ? (
+            <>
+              <div className="mb-3 text-sm text-gray-700">
+                현재 레인: <span className="font-semibold">{laneAvailability.currentLane ?? '-'}</span> / 총 {laneAvailability.totalLanes} 레인
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: laneAvailability.totalLanes }, (_, i) => i + 1).map((n) => {
+                  const isCurrent = n === laneAvailability.currentLane;
+                  const isOccupied = laneAvailability.occupied.includes(n);
+                  const isAvailable = laneAvailability.available.includes(n);
+                  return (
+                    <button
+                      key={n}
+                      disabled={!isAvailable}
+                      onClick={async () => {
+                        if (!changeLaneForBookingId) return;
+                        if (isCurrent) { alert('이미 현재 레인입니다.'); return; }
+                        try {
+                          // 낙관적 업데이트
+                          setBookings(prev => prev.map(b => b._id === changeLaneForBookingId ? { ...b, laneNumber: n } : b));
+                          const res = await apiClient.patch(`/api/bookings/lane-rentals/${changeLaneForBookingId}/lane`, { laneNumber: n });
+                          if (res.success) {
+                            setChangeLaneForBookingId(null);
+                            setLaneAvailability(null);
+                            await loadAllData();
+                            alert(`레인 ${n}번으로 변경되었습니다.`);
+                          } else {
+                            await loadAllData();
+                            alert(res.message || '레인 변경 중 오류가 발생했습니다.');
+                          }
+                        } catch (err) {
+                          if (DEBUG) console.error('레인 변경 실패:', err);
+                          await loadAllData();
+                          alert('레인 변경에 실패했습니다.');
+                        }
+                      }}
+                      className={`px-3 py-2 rounded border text-sm ${
+                        isCurrent ? 'bg-blue-600 text-white border-blue-600' :
+                        isAvailable ? 'bg-white hover:bg-gray-50 border-gray-300' :
+                        'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      }`}
+                      title={
+                        isCurrent ? '현재 레인' : (isAvailable ? '선택 가능' : '다른 예약으로 사용 중')
+                      }
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
+              </div>
+              {laneAvailability.occupied.length > 0 && (
+                <div className="mt-3 text-xs text-gray-500">
+                  사용 중: {laneAvailability.occupied.join(', ')}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-sm text-gray-500">가용 레인 정보를 불러오는 중...</div>
+          )}
+        </div>
+        <div className="px-5 py-3 flex justify-end gap-2 border-t">
+          <button onClick={() => { setChangeLaneForBookingId(null); setLaneAvailability(null); }} className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">닫기</button>
         </div>
       </Modal>
     </div>

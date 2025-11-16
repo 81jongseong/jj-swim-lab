@@ -531,6 +531,65 @@ router.patch('/lane-rentals/:id/lane', async (req: any, res: Response) => {
   }
 });
 
+// 레인대여 예약의 가용 레인 조회
+router.get('/lane-rentals/:id/availability', async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const laneRental = await LaneRental.findById(id);
+    if (!laneRental) {
+      return res.status(404).json({ success: false, message: '레인대여를 찾을 수 없습니다.' });
+    }
+    const centerId = laneRental.centerId;
+    const date = laneRental.date;
+    const startTime = laneRental.startTime;
+    const endTime = laneRental.endTime;
+    const currentLane = laneRental.laneNumber || null;
+
+    // 센터 총 레인 수 조회 (없으면 6레인 가정)
+    let totalLanes = 6;
+    try {
+      const Center = require('../models/Center').default || require('../models/Center');
+      const center = await Center.findById(centerId).select('poolInfo');
+      const lanes = Number(center?.poolInfo?.lanes || 0);
+      if (lanes && !Number.isNaN(lanes)) totalLanes = lanes;
+    } catch (_) {
+      // 모델이 없거나 필드가 없으면 기본값 유지
+    }
+
+    // 동일 시간대 점유 레인 조회 (현재 예약 제외)
+    const conflicts = await LaneRental.find({
+      centerId,
+      date,
+      startTime,
+      endTime,
+      status: { $in: ['pending', 'approved', 'completed'] },
+      _id: { $ne: id }
+    }).select('laneNumber');
+
+    const occupied = Array.from(
+      new Set(
+        conflicts
+          .map((c: any) => Number(c.laneNumber))
+          .filter((n: any) => !!n && !Number.isNaN(n))
+      )
+    ).sort((a, b) => a - b);
+
+    const available: number[] = [];
+    for (let i = 1; i <= totalLanes; i++) {
+      if (!occupied.includes(i)) available.push(i);
+    }
+
+    return res.json({
+      success: true,
+      message: '가용 레인 조회 성공',
+      data: { currentLane, totalLanes, occupied, available }
+    });
+  } catch (error) {
+    console.error('레인 가용 조회 오류:', error);
+    return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
 // 예약의 학생 ID 조회 (개인레슨/레인대여 공통)
 router.get('/:id/student', async (req: any, res: Response) => {
   try {
