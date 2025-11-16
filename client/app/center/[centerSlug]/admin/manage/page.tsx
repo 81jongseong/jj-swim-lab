@@ -537,6 +537,12 @@ ${list}`);
       if (filtered.length === 0) {
         filtered = courses.filter(bySamePrice);
       }
+      // 현재 예약의 반은 후보에서 제외
+      const currentCourseId = (() => {
+        const cur = bookings.find(b => b._id === bookingId) as any;
+        return (cur?.courseId) || (cur?.course?._id) || '';
+      })();
+      filtered = filtered.filter((c: any) => String(c?._id || '') !== String(currentCourseId || ''));
       if (filtered.length === 0) {
         alert('해당 요일/시간대의 반이 없습니다.');
         return;
@@ -1178,6 +1184,12 @@ ${list}`);
                 // confirmChangeCourse inline to avoid adding another function
                 (async () => {
                   const bookingForMember = bookings.find(b => b._id === changeCourseForBookingId) as any;
+                  // 동일 반 선택 방지
+                  const currentCourseId = (bookingForMember?.courseId) || (bookingForMember?.course?._id) || '';
+                  if (String(opt.id) === String(currentCourseId)) {
+                    alert('이미 현재 반입니다.');
+                    return;
+                  }
                   // 다양한 필드에서 학생 ID 추출
                   const candidate = bookingForMember?.memberId
                     || bookingForMember?.studentId
