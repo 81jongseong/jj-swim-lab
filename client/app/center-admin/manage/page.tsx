@@ -300,6 +300,7 @@ function IntegratedManagement() {
             : payment.purpose === 'lane-rental'
             ? '레인대여'
             : payment.purpose;
+          const displayStatus = payment.purpose === 'course' && payment.status === 'pending' ? 'completed' : payment.status;
           return {
             _id: payment._id,
             userId: payment.user?._id || payment.user || payment.userId,
@@ -308,7 +309,7 @@ function IntegratedManagement() {
             amount: payment.amount,
             currency: payment.currency || 'KRW',
             paymentMethod: payment.paymentMethod,
-            status: payment.status,
+            status: displayStatus,
             description: payment.relatedCourse?.name || (payment.purpose === 'course' ? '강습 결제' : purposeLabel || ''),
             createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
             completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,

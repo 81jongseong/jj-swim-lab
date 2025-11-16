@@ -269,6 +269,8 @@ function IntegratedManagement() {
             : payment.purpose === 'lane-rental'
             ? '레인대여'
             : payment.purpose;
+          // 코스 결제는 항상 승인됨으로 표시(과거 pending 데이터도 표시상 completed로)
+          const displayStatus = payment.purpose === 'course' && payment.status === 'pending' ? 'completed' : payment.status;
           return {
           _id: payment._id,
           userId: payment.user?._id || payment.user || payment.userId,
@@ -277,7 +279,7 @@ function IntegratedManagement() {
           amount: payment.amount,
           currency: payment.currency || 'KRW',
           paymentMethod: payment.paymentMethod,
-          status: payment.status,
+            status: displayStatus,
           description: payment.relatedCourse?.name || (payment.purpose === 'course' ? '강습 결제' : purposeLabel || ''),
           createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
           completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,

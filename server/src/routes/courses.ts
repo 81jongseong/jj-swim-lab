@@ -342,7 +342,7 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
         isCenterSponsored: false
       },
       paymentMethod: normalizedMethod,
-      status: 'pending',
+      status: 'completed',
       purpose: 'course',
       relatedCourse: course._id,
       transactionId,
@@ -352,29 +352,30 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
 
     await payment.save();
 
-    // 승인 요청 생성: 결제 승인(센터 관리자 큐에 노출)
+    // 결제 즉시 수강 배정 및 학생 centerId 지정
     try {
-      await Approval.create({
-        type: 'payment_approval',
-        userId: req.user.userId,
-        courseId: course._id,
-        paymentId: payment._id,
-        centerId: course.centerId,
-        title: `결제 승인 요청 - ${course.name}`,
-        description: `학생이 강습(${course.name})에 대한 결제를 신청했습니다. 결제 승인 후 수강 등록을 진행하세요.`,
-        status: 'pending',
-        priority: 'medium',
-        estimatedAmount: course.price,
-        requestDate: new Date()
-      });
-    } catch (approvalErr) {
-      console.error('승인 요청 생성 실패:', approvalErr);
-      // 승인 생성 실패는 신청 자체를 막지 않음
+      const existingEnrollment = (course.enrolledStudents || []).some((e: any) => e?.student?.toString?.() === req.user.userId.toString());
+      if (!existingEnrollment) {
+        course.enrolledStudents = [
+          ...(course.enrolledStudents || []),
+          { student: req.user.userId, enrollmentDate: new Date(), status: 'active' }
+        ];
+        await course.save();
+      }
+      if (course.centerId) {
+        const student = await User.findById(req.user.userId);
+        if (student && !student.centerId) {
+          student.centerId = course.centerId as any;
+          await student.save();
+        }
+      }
+    } catch (e) {
+      console.error('결제 후 배정 처리 실패(무시):', e);
     }
 
     return res.status(201).json({
       success: true,
-      message: '수강 신청이 접수되었습니다. 결제 승인을 기다려주세요.',
+      message: '결제가 완료되었고 수강이 배정되었습니다.',
       data: {
         paymentId: payment._id,
         status: payment.status,
