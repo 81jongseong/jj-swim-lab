@@ -115,6 +115,7 @@ import { User } from '../models/User';
 import { Center } from '../models/Center'; // ⭐ Center 모델 추가
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
+import { Approval } from '../models/Approval';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
@@ -350,6 +351,26 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
     });
 
     await payment.save();
+
+    // 승인 요청 생성: 결제 승인(센터 관리자 큐에 노출)
+    try {
+      await Approval.create({
+        type: 'payment_approval',
+        userId: req.user.userId,
+        courseId: course._id,
+        paymentId: payment._id,
+        centerId: course.centerId,
+        title: `결제 승인 요청 - ${course.name}`,
+        description: `학생이 강습(${course.name})에 대한 결제를 신청했습니다. 결제 승인 후 수강 등록을 진행하세요.`,
+        status: 'pending',
+        priority: 'medium',
+        estimatedAmount: course.price,
+        requestDate: new Date()
+      });
+    } catch (approvalErr) {
+      console.error('승인 요청 생성 실패:', approvalErr);
+      // 승인 생성 실패는 신청 자체를 막지 않음
+    }
 
     return res.status(201).json({
       success: true,
