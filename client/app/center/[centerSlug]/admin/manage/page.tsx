@@ -505,68 +505,42 @@ ${list}`);
         alert('변경할 수 있는 과정이 없습니다.');
         return;
       }
-      // 1) 요일 선택
+      // 기준 예약(가격/요일/시간) 추출
+      const booking = bookings.find(b => b._id === bookingId) as any;
+      const basePrice = Number(booking?.price || 0);
+      const baseDate = booking?.date ? new Date(booking.date) : null;
+      const baseDay = baseDate ? ['일','월','화','수','목','금','토'][baseDate.getDay()] : null;
+      const baseTime = (booking?.time || '').slice(0,5); // HH:mm
+
+      // 같은 가격 필터 + 동일 요일/시간대 우선 필터
       const dayName = (v: any) => {
         const d = String(v || '').toLowerCase();
         const map: any = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
         if (['월','화','수','목','금','토','일'].includes(v)) return v;
         return map[d] || v || '';
       };
-      const allSlots = courses.flatMap((c: any) => (Array.isArray(c.schedule) ? c.schedule : []));
-      const daySet = new Set<string>();
-      allSlots.forEach((s: any) => daySet.add(dayName(s?.day ?? s?.dayOfWeek)));
-      const dayOptions = Array.from(daySet).filter(Boolean);
-      if (dayOptions.length === 0) {
-        alert('코스에 등록된 일정 정보가 없습니다.');
-        return;
-      }
-      const dayPrompt = dayOptions.map((d, i) => `${i + 1}. ${d}`).join('\\n');
-      const pickedDayIdx = prompt(`요일을 선택하세요. 숫자를 입력:\\n${dayPrompt}`);
-      const dayIdx = pickedDayIdx ? parseInt(pickedDayIdx, 10) - 1 : -1;
-      if (isNaN(dayIdx) || dayIdx < 0 || dayIdx >= dayOptions.length) {
-        alert('올바른 번호를 입력해주세요.');
-        return;
-      }
-      const selectedDay = dayOptions[dayIdx];
-
-      // 2) 시간 선택
-      const timeSet = new Set<string>();
-      allSlots
-        .filter((s: any) => dayName(s?.day ?? s?.dayOfWeek) === selectedDay)
-        .forEach((s: any) => {
-          const st = s?.startTime || '';
-          const et = s?.endTime || '';
-          if (st && et) timeSet.add(`${st}-${et}`);
+      const withinSameSlot = (c: any) => {
+        const slots = Array.isArray(c.schedule) ? c.schedule : [];
+        return slots.some((s: any) => {
+          const d = dayName(s?.day ?? s?.dayOfWeek);
+          const st = (s?.startTime || '').slice(0,5);
+          return (!baseDay || d === baseDay) && (!baseTime || st === baseTime);
         });
-      const timeOptions = Array.from(timeSet);
-      if (timeOptions.length === 0) {
-        alert('선택한 요일의 시간 정보가 없습니다.');
-        return;
-      }
-      const timePrompt = timeOptions.map((t, i) => `${i + 1}. ${t}`).join('\\n');
-      const pickedTimeIdx = prompt(`시간대를 선택하세요. 숫자를 입력:\\n${timePrompt}`);
-      const timeIdx = pickedTimeIdx ? parseInt(pickedTimeIdx, 10) - 1 : -1;
-      if (isNaN(timeIdx) || timeIdx < 0 || timeIdx >= timeOptions.length) {
-        alert('올바른 번호를 입력해주세요.');
-        return;
-      }
-      const selectedTime = timeOptions[timeIdx];
-      const [selStart, selEnd] = selectedTime.split('-');
+      };
+      const bySamePrice = (c: any) => Number(c.price || 0) === basePrice;
 
-      // 3) 필터링된 반 목록
-      const filtered = courses.filter((c: any) =>
-        (Array.isArray(c.schedule) ? c.schedule : []).some((s: any) =>
-          dayName(s?.day ?? s?.dayOfWeek) === selectedDay &&
-          (s?.startTime || '') === selStart &&
-          (s?.endTime || '') === selEnd
-        )
-      );
+      let filtered = courses.filter((c: any) => bySamePrice(c) && withinSameSlot(c));
+      // 시간/요일 정확히 일치하는 반이 없으면, 같은 가격만 기준으로 전체 제시
+      if (filtered.length === 0) {
+        filtered = courses.filter(bySamePrice);
+      }
       if (filtered.length === 0) {
         alert('해당 요일/시간대의 반이 없습니다.');
         return;
       }
       const courseLabel = (c: any) => {
         const instructorText = c.instructorName || c.instructor?.name || '';
+        // 사용자에게 코드/ID 미노출
         return `${c.name}${instructorText ? ' · ' + instructorText : ''}`;
       };
       const list = filtered.map((c: any, idx: number) => `${idx + 1}. ${courseLabel(c)}`).join('\\n');
