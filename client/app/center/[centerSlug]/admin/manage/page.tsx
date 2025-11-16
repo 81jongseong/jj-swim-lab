@@ -509,22 +509,17 @@ ${list}`);
 
   const handleApprovePayment = async (paymentId: string) => {
     try {
-      // 결제와 매칭되는 승인 요청 찾기
-      const target = approvals.find(a => a.paymentId && a.paymentId.toString() === paymentId.toString() && a.status === 'pending');
-      if (!target) {
-        alert('해당 결제에 대한 승인 요청을 찾을 수 없습니다. 이미 처리되었거나 생성되지 않았을 수 있습니다.');
-        return;
-      }
-      const res = await apiClient.put(`/api/approvals/${target.id}/process`, { action: 'approve' });
+      // 승인 화면 없이 결제 직접 완료 처리
+      const res = await apiClient.patch(`/api/center-admin/payments/${paymentId}/complete`, {});
       if (res.success) {
         await loadAllData();
-        alert('결제가 승인되었습니다.');
+        alert('결제가 완료되었습니다.');
       } else {
-        alert(res.message || '승인 처리 중 오류가 발생했습니다.');
+        alert(res.message || '결제 완료 처리 중 오류가 발생했습니다.');
       }
     } catch (e) {
-      if (DEBUG) console.error('결제 승인 실패:', e);
-      alert('결제 승인에 실패했습니다.');
+      if (DEBUG) console.error('결제 완료 실패:', e);
+      alert('결제 완료 처리에 실패했습니다.');
     }
   };
 

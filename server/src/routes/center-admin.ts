@@ -1109,6 +1109,7 @@ router.get('/payments', authMiddleware, requireCenterAdmin, async (req: AuthRequ
 
     const payments = await Payment.find(query)
       .populate('user', 'name email')
+      .populate('relatedCourse', 'name')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
@@ -1134,6 +1135,61 @@ router.get('/payments', authMiddleware, requireCenterAdmin, async (req: AuthRequ
       success: false,
       message: '서버 오류가 발생했습니다.'
     });
+  }
+});
+
+/**
+ * ✅ 결제 완료 처리(승인 화면 없이 센터관리자 직접 완료)
+ * PATCH /api/center-admin/payments/:id/complete
+ * - Payment.status: completed
+ * - Course.enrolledStudents에 학생 배정
+ * - 학생 centerId가 없으면 course.centerId로 지정
+ */
+router.patch('/payments/:id/complete', authMiddleware, requireCenterAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const payment = await Payment.findById(id);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+    }
+
+    // 이미 완료된 결제
+    if (payment.status === 'completed') {
+      return res.json({ success: true, message: '이미 완료된 결제입니다.', data: payment });
+    }
+
+    // 결제 완료로 상태 변경
+    payment.status = 'completed';
+    (payment as any).approvedAt = new Date();
+    await payment.save();
+
+    // 관련 코스 및 학생 배정 처리
+    if (payment.relatedCourse && payment.purpose === 'course') {
+      const course = await Course.findById(payment.relatedCourse);
+      if (course) {
+        const already = (course.enrolledStudents || []).some((e: any) => e?.student?.toString?.() === payment.user.toString());
+        if (!already) {
+          course.enrolledStudents = [
+            ...(course.enrolledStudents || []),
+            { student: payment.user, enrollmentDate: new Date(), status: 'active' }
+          ];
+          await course.save();
+        }
+        // 학생 centerId 자동 지정
+        if (course.centerId) {
+          const student = await User.findById(payment.user);
+          if (student && !student.centerId) {
+            student.centerId = course.centerId as any;
+            await student.save();
+          }
+        }
+      }
+    }
+
+    return res.json({ success: true, message: '결제가 완료 처리되었습니다.', data: payment });
+  } catch (error) {
+    console.error('결제 완료 처리 오류:', error);
+    return res.status(500).json({ success: false, message: '결제 완료 처리 중 오류가 발생했습니다.' });
   }
 });
 
