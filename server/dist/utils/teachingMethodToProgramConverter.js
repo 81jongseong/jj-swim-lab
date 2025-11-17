@@ -107,6 +107,10 @@ function convertTeachingStepToTrainingSet(step, stroke, level, poolLength = 25) 
         distance = Math.min(distance, poolLength * 20);
         reps = Math.min(reps, 10);
     }
+    if (!hasDistance) {
+        const perSetTarget = Math.max(poolLength, Math.round(distances.main / Math.max(reps, 1)));
+        distance = Math.min(distance, perSetTarget);
+    }
     return {
         type: 'drill',
         distance,

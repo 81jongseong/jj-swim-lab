@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -7,11 +30,621 @@ const express_1 = require("express");
 const Course_1 = require("../models/Course");
 const User_1 = require("../models/User");
 const Center_1 = require("../models/Center");
+const Payment_1 = require("../models/Payment");
+const Booking_1 = require("../models/Booking");
 const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
 const role_1 = require("../middleware/role");
 const router = (0, express_1.Router)();
 const auth_2 = require("../middleware/auth");
+router.get('/public/center/:centerId', async (req, res) => {
+    try {
+        const { centerId } = req.params;
+        if (!mongoose_1.default.Types.ObjectId.isValid(centerId)) {
+            return res.status(400).json({
+                success: false,
+                message: '유효하지 않은 센터 ID입니다.'
+            });
+        }
+        const courses = await Course_1.Course.find({
+            centerId,
+            status: { $ne: 'inactive' }
+        })
+            .select('name description level duration price maxStudents classInfo currentStudents instructorName schedule status')
+            .sort({ 'classInfo.startDate': 1 });
+        const normalized = courses.map(course => ({
+            _id: course._id,
+            name: course.name,
+            description: course.description,
+            level: course.level,
+            duration: course.duration,
+            price: course.price,
+            maxStudents: course.maxStudents,
+            currentStudents: course.classInfo?.currentEnrollment ?? course.currentStudents ?? 0,
+            instructorName: course.instructorName || undefined,
+            schedule: (course.schedule || []).map((item) => ({
+                day: item.day || item.dayOfWeek || '',
+                startTime: item.startTime,
+                endTime: item.endTime
+            })),
+            status: course.status
+        }));
+        return res.json({
+            success: true,
+            message: '강습 과정 조회 성공!',
+            data: normalized
+        });
+    }
+    catch (error) {
+        console.error('공개 강습 과정 조회 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '강습 정보를 조회할 수 없습니다.'
+        });
+    }
+});
+router.get('/public/:courseId', async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        if (!mongoose_1.default.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({
+                success: false,
+                message: '유효하지 않은 강습 ID입니다.'
+            });
+        }
+        const course = await Course_1.Course.findById(courseId)
+            .populate('instructor', 'name email phone')
+            .lean();
+        if (!course || course.status === 'inactive' || course.isActive === false) {
+            return res.status(404).json({
+                success: false,
+                message: '강습 정보를 찾을 수 없습니다.'
+            });
+        }
+        const center = await Center_1.Center.findById(course.centerId).lean();
+        const activeEnrollment = (course.enrolledStudents || []).filter((enrollment) => enrollment.status !== 'dropped').length;
+        const currentEnrollment = course.classInfo?.currentEnrollment ?? activeEnrollment;
+        const normalized = {
+            _id: course._id,
+            name: course.name,
+            description: course.description,
+            level: course.level,
+            duration: course.duration,
+            price: course.price,
+            maxStudents: course.maxStudents,
+            currentStudents: currentEnrollment,
+            status: course.status,
+            schedule: (course.schedule || []).map((item) => ({
+                day: item.day || item.dayOfWeek || '',
+                startTime: item.startTime,
+                endTime: item.endTime
+            })),
+            instructor: {
+                name: course.instructor?.name || course.instructorName || '',
+                email: course.instructor?.email || '',
+                phone: course.instructor?.phone || ''
+            },
+            center: center ? {
+                _id: center._id,
+                name: center.name,
+                address: center.address,
+                phone: center.phone,
+                email: center.email,
+                region: center.region,
+                district: center.district,
+                city: center.city,
+                province: center.province
+            } : null,
+            tags: course.tags || [],
+            classInfo: course.classInfo ? {
+                className: course.classInfo.className,
+                classType: course.classInfo.classType,
+                startDate: course.classInfo.startDate,
+                endDate: course.classInfo.endDate
+            } : null,
+            isPersonalLesson: course.isPersonalLesson,
+            courseType: course.courseType
+        };
+        return res.json({
+            success: true,
+            message: '강습 과정 조회 성공!',
+            data: normalized
+        });
+    }
+    catch (error) {
+        console.error('공개 강습 상세 조회 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '강습 정보를 조회할 수 없습니다.'
+        });
+    }
+});
+router.post('/public/:courseId/apply', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { paymentMethod = 'card', notes = '' } = req.body || {};
+        const allowedMethods = new Set(['card', 'cash', 'transfer', 'online']);
+        const normalizedMethod = allowedMethods.has(paymentMethod) ? paymentMethod : 'card';
+        if (!mongoose_1.default.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({
+                success: false,
+                message: '유효하지 않은 강습 ID입니다.'
+            });
+        }
+        const course = await Course_1.Course.findById(courseId);
+        if (!course || course.status === 'inactive' || course.isActive === false) {
+            return res.status(404).json({
+                success: false,
+                message: '강습 정보를 찾을 수 없습니다.'
+            });
+        }
+        const isAlreadyEnrolled = (course.enrolledStudents || []).some((enrollment) => enrollment.student && enrollment.student.toString() === req.user.userId.toString());
+        if (isAlreadyEnrolled) {
+            return res.status(400).json({
+                success: false,
+                message: '이미 해당 강습에 등록되어 있습니다.'
+            });
+        }
+        const existingPayment = await Payment_1.Payment.findOne({
+            user: req.user.userId,
+            relatedCourse: course._id,
+            status: { $in: ['pending', 'completed'] }
+        });
+        if (existingPayment) {
+            return res.status(400).json({
+                success: false,
+                message: existingPayment.status === 'completed'
+                    ? '이미 결제가 완료된 강습입니다.'
+                    : '이미 결제가 진행 중입니다. 결제 내역을 확인해주세요.'
+            });
+        }
+        const activeEnrollment = (course.enrolledStudents || []).filter((enrollment) => enrollment.status !== 'dropped').length;
+        const currentEnrollment = course.classInfo?.currentEnrollment ?? activeEnrollment;
+        if (currentEnrollment >= course.maxStudents || course.status === 'full') {
+            return res.status(400).json({
+                success: false,
+                message: '이미 정원이 가득 찬 강습입니다.'
+            });
+        }
+        const transactionId = `COURSE-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        const payment = new Payment_1.Payment({
+            user: req.user.userId,
+            amount: course.price,
+            currency: 'KRW',
+            pricingInfo: {
+                userType: req.user.userType || 'student',
+                pricingTier: 'standard',
+                baseAmount: course.price,
+                discountAmount: 0,
+                discountReason: '',
+                centerId: course.centerId,
+                isCenterSponsored: false
+            },
+            paymentMethod: normalizedMethod,
+            status: 'completed',
+            purpose: 'course',
+            relatedCourse: course._id,
+            transactionId,
+            notes: notes || '',
+            centerId: course.centerId
+        });
+        await payment.save();
+        try {
+            const existingEnrollment = (course.enrolledStudents || []).some((e) => e?.student?.toString?.() === req.user.userId.toString());
+            if (!existingEnrollment) {
+                course.enrolledStudents = [
+                    ...(course.enrolledStudents || []),
+                    { student: req.user.userId, enrollmentDate: new Date(), status: 'active' }
+                ];
+                await course.save();
+            }
+            if (course.centerId) {
+                const student = await User_1.User.findById(req.user.userId);
+                if (student && !student.centerId) {
+                    student.centerId = course.centerId;
+                    await student.save();
+                }
+            }
+        }
+        catch (e) {
+            console.error('결제 후 배정 처리 실패(무시):', e);
+        }
+        return res.status(201).json({
+            success: true,
+            message: '결제가 완료되었고 수강이 배정되었습니다.',
+            data: {
+                paymentId: payment._id,
+                status: payment.status,
+                amount: payment.amount,
+                paymentMethod: payment.paymentMethod,
+                transactionId: payment.transactionId,
+                course: {
+                    _id: course._id,
+                    name: course.name,
+                    price: course.price
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('공개 강습 신청 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '수강 신청 처리 중 오류가 발생했습니다.'
+        });
+    }
+});
+router.get('/student/enrolled', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
+    try {
+        const studentId = req.user.userId;
+        const { PersonalLesson } = require('../models/PersonalLesson');
+        const explicitlyEnrolledCourseIds = await Course_1.Course.find({ 'enrolledStudents.student': studentId }, { _id: 1 }).lean();
+        const bookingCourseIds = await Booking_1.Booking.distinct('courseId', {
+            studentId,
+            status: { $in: ['confirmed', 'pending', 'completed'] }
+        });
+        const paymentCourseIds = await Payment_1.Payment.distinct('relatedCourse', {
+            user: studentId,
+            status: { $in: ['pending', 'completed'] },
+            purpose: 'course'
+        });
+        const enrolledIdsSet = new Set([
+            ...explicitlyEnrolledCourseIds.map((c) => String(c._id)),
+            ...bookingCourseIds.map((id) => String(id)),
+            ...paymentCourseIds.map((id) => String(id))
+        ].filter(Boolean));
+        if (enrolledIdsSet.size === 0) {
+            return res.json({ success: true, message: '등록/예약/결제된 강습이 없습니다.', data: [] });
+        }
+        const enrolledIds = Array.from(enrolledIdsSet);
+        const courses = await Course_1.Course.find({
+            _id: { $in: enrolledIds }
+        })
+            .populate('instructor', 'name userId email phone')
+            .populate('centerId', 'name address phone email region district city province')
+            .sort({ 'classInfo.startDate': 1, createdAt: -1 })
+            .lean();
+        const personalLessonsRaw = await PersonalLesson.find({
+            studentId: studentId,
+            status: { $in: ['pending', 'approved', 'completed'] }
+        })
+            .populate('instructorId', 'name email phone')
+            .populate('centerId', 'name address phone email region district city province')
+            .sort({ date: -1, startTime: -1 });
+        const personalLessonsToUpdate = [];
+        for (const lesson of personalLessonsRaw) {
+            if (lesson.status === 'pending' && lesson.instructorId) {
+                lesson.status = 'approved';
+                personalLessonsToUpdate.push(lesson);
+            }
+        }
+        if (personalLessonsToUpdate.length > 0) {
+            await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+            console.log(`✅ 학생 ${studentId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+        }
+        const defaultRefundPolicy = {
+            beforeUse: {
+                enabled: true,
+                timeBefore: 24,
+                refundRate: 100,
+                description: '이용 전 환불'
+            },
+            afterUse: {
+                enabled: true,
+                calculationMethod: 'sessions',
+                sessionBased: {
+                    enabled: true,
+                    refundByRemainingSessions: true,
+                    description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+                }
+            },
+            processingDays: 7,
+            refundMethod: '원래 결제 수단으로 환불'
+        };
+        const formatRefundPolicy = (policy) => {
+            const effectivePolicy = policy || defaultRefundPolicy;
+            if (typeof effectivePolicy === 'string')
+                return effectivePolicy;
+            const parts = [];
+            if (effectivePolicy.beforeUse?.enabled) {
+                parts.push(`이용 ${effectivePolicy.beforeUse.timeBefore || 24}시간 전까지 ${effectivePolicy.beforeUse.refundRate || 100}% 환불`);
+            }
+            if (effectivePolicy.afterUse?.enabled) {
+                const calculationMethod = effectivePolicy.afterUse.calculationMethod || 'sessions';
+                if (calculationMethod === 'sessions' && effectivePolicy.afterUse.sessionBased?.enabled) {
+                    parts.push('이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불');
+                }
+                else if (calculationMethod === 'days' && effectivePolicy.afterUse.dayBased?.enabled && effectivePolicy.afterUse.dayBased.refundRates) {
+                    effectivePolicy.afterUse.dayBased.refundRates.forEach((rate) => {
+                        if (rate.daysTo) {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+                        }
+                        else {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+                        }
+                    });
+                }
+                else if (effectivePolicy.afterUse.refundRates) {
+                    effectivePolicy.afterUse.refundRates.forEach((rate) => {
+                        if (rate.daysTo) {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+                        }
+                        else {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+                        }
+                    });
+                }
+            }
+            if (effectivePolicy.refundFee?.enabled && effectivePolicy.refundFee.amount > 0) {
+                parts.push(`환불 수수료: ${effectivePolicy.refundFee.amount.toLocaleString()}원`);
+            }
+            if (effectivePolicy.processingDays) {
+                parts.push(`환불 처리 기간: ${effectivePolicy.processingDays}일`);
+            }
+            if (effectivePolicy.refundMethod) {
+                parts.push(`환불 방법: ${effectivePolicy.refundMethod}`);
+            }
+            if (effectivePolicy.customDescription) {
+                parts.push(`※ ${effectivePolicy.customDescription}`);
+            }
+            return parts.length > 0 ? parts.join(', ') : '이용 24시간 전까지 100% 환불, 이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불';
+        };
+        const refundPolicyMap = new Map();
+        try {
+            const centerIds = [...new Set(courses.map((c) => c.centerId?.toString()).filter(Boolean))];
+            if (centerIds.length > 0) {
+                const centers = await Center_1.Center.find({ _id: { $in: centerIds } }).select('_id settings').lean();
+                centers.forEach((center) => {
+                    try {
+                        const refundPolicy = center?.settings?.paymentSettings?.refundPolicy;
+                        console.log(`🔍 센터 ${center._id} 환불 정책 조회:`, refundPolicy ? '설정됨' : '없음 (기본값 사용)');
+                        const formattedPolicy = formatRefundPolicy(refundPolicy);
+                        refundPolicyMap.set(center._id.toString(), formattedPolicy);
+                        console.log(`✅ 센터 ${center._id} 환불 정책 포맷팅 결과:`, formattedPolicy);
+                    }
+                    catch (err) {
+                        console.error('환불 정책 매핑 오류:', err);
+                    }
+                });
+            }
+        }
+        catch (err) {
+            console.error('센터 환불 정책 조회 오류:', err);
+        }
+        const { Approval } = require('../models/Approval');
+        const refundRequests = await Approval.find({
+            type: 'refund_request',
+            userId: studentId,
+            status: 'pending'
+        }).select('courseId status').lean();
+        const refundRequestMap = new Map();
+        refundRequests.forEach((req) => {
+            if (req.courseId) {
+                refundRequestMap.set(req.courseId.toString(), req.status);
+            }
+        });
+        const normalized = courses.map((course) => {
+            const enrollment = (course.enrolledStudents || []).find((enrollmentItem) => {
+                if (!enrollmentItem)
+                    return false;
+                if (typeof enrollmentItem.student === 'string') {
+                    return enrollmentItem.student === String(studentId);
+                }
+                if (typeof enrollmentItem.student === 'object') {
+                    return (enrollmentItem.student?._id || enrollmentItem.student)?.toString() === String(studentId);
+                }
+                return false;
+            });
+            const instructor = course.instructor || {};
+            const center = course.centerId || {};
+            const centerIdStr = course.centerId?.toString();
+            const refundPolicy = centerIdStr
+                ? (refundPolicyMap.get(centerIdStr) || formatRefundPolicy(null))
+                : formatRefundPolicy(null);
+            const hasRefundRequest = refundRequestMap.has(course._id.toString());
+            const activeEnrollments = (course.enrolledStudents || []).filter((e) => e.status === 'active' || !e.status || e.status !== 'dropped' && e.status !== 'cancelled');
+            const currentStudentsCount = activeEnrollments.length;
+            return {
+                _id: course._id,
+                name: course.name,
+                description: course.description,
+                level: course.level,
+                duration: course.duration,
+                price: course.price,
+                maxStudents: course.maxStudents,
+                currentStudents: currentStudentsCount || course.classInfo?.currentEnrollment || 0,
+                status: course.status,
+                schedule: (course.schedule || []).map((item) => ({
+                    day: item.day || item.dayOfWeek || '',
+                    startTime: item.startTime,
+                    endTime: item.endTime
+                })),
+                instructor: instructor
+                    ? {
+                        _id: instructor._id,
+                        name: instructor.name,
+                        email: instructor.email,
+                        phone: instructor.phone
+                    }
+                    : null,
+                center: center
+                    ? {
+                        _id: center._id,
+                        name: center.name,
+                        address: center.address,
+                        phone: center.phone,
+                        email: center.email,
+                        region: center.region,
+                        district: center.district,
+                        city: center.city,
+                        province: center.province
+                    }
+                    : null,
+                enrollmentStatus: enrollment?.status ?? 'active',
+                enrolledAt: enrollment?.enrolledAt ?? null,
+                nextClassStart: (() => {
+                    try {
+                        const schedule = Array.isArray(course.schedule) ? course.schedule : [];
+                        if (schedule.length === 0)
+                            return null;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        let startDate = today;
+                        if (course.classInfo?.startDate) {
+                            const sd = new Date(course.classInfo.startDate);
+                            if (!isNaN(sd.getTime()))
+                                startDate = sd;
+                        }
+                        else if (course.startDate) {
+                            const sd = new Date(course.startDate);
+                            if (!isNaN(sd.getTime()))
+                                startDate = sd;
+                        }
+                        let endDate = null;
+                        if (course.classInfo?.endDate) {
+                            const ed = new Date(course.classInfo.endDate);
+                            if (!isNaN(ed.getTime()))
+                                endDate = ed;
+                        }
+                        else if (course.endDate) {
+                            const ed = new Date(course.endDate);
+                            if (!isNaN(ed.getTime()))
+                                endDate = ed;
+                        }
+                        const dayMap = {
+                            'sunday': 0, '일': 0, '0': 0,
+                            'monday': 1, '월': 1, '1': 1,
+                            'tuesday': 2, '화': 2, '2': 2,
+                            'wednesday': 3, '수': 3, '3': 3,
+                            'thursday': 4, '목': 4, '4': 4,
+                            'friday': 5, '금': 5, '5': 5,
+                            'saturday': 6, '토': 6, '6': 6
+                        };
+                        for (let i = 0; i < 30; i++) {
+                            const checkDate = new Date(today);
+                            checkDate.setDate(today.getDate() + i);
+                            const dayOfWeek = checkDate.getDay();
+                            if (checkDate < startDate)
+                                continue;
+                            if (endDate && checkDate > endDate)
+                                break;
+                            const daySchedule = schedule.find((s) => {
+                                if (!s)
+                                    return false;
+                                const sDay = String(s.day || s.dayOfWeek || '').toLowerCase();
+                                const sDayNumber = dayMap[sDay];
+                                return sDayNumber !== undefined && sDayNumber === dayOfWeek;
+                            });
+                            if (daySchedule && daySchedule.startTime) {
+                                try {
+                                    const classDateTime = new Date(checkDate);
+                                    const timeParts = String(daySchedule.startTime).split(':');
+                                    if (timeParts.length >= 2) {
+                                        const hours = parseInt(timeParts[0], 10);
+                                        const minutes = parseInt(timeParts[1], 10);
+                                        if (!isNaN(hours) && !isNaN(minutes)) {
+                                            classDateTime.setHours(hours, minutes, 0, 0);
+                                            const now = new Date();
+                                            if (classDateTime >= now) {
+                                                return classDateTime.toISOString();
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (timeError) {
+                                    console.error('시간 파싱 오류:', timeError);
+                                    continue;
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                    catch (err) {
+                        console.error('다음 수업 날짜 계산 오류:', err);
+                        return null;
+                    }
+                })(),
+                nextClassEnd: course.classInfo?.endDate ?? null,
+                startDate: course.classInfo?.startDate || course.startDate || null,
+                classInfo: course.classInfo || null,
+                refundPolicy: refundPolicy || formatRefundPolicy(null),
+                hasRefundRequest: hasRefundRequest
+            };
+        });
+        const personalLessonsNormalized = personalLessonsRaw.map((pl) => {
+            const plObj = pl.toObject ? pl.toObject() : pl;
+            const instructor = plObj.instructorId || {};
+            const center = plObj.centerId || {};
+            const centerIdStr = plObj.centerId?.toString();
+            const refundPolicy = centerIdStr
+                ? (refundPolicyMap.get(centerIdStr) || formatRefundPolicy(null))
+                : formatRefundPolicy(null);
+            const hasRefundRequest = false;
+            const enrollmentStatus = plObj.instructorId ? 'active' : 'pending';
+            const lessonDate = new Date(plObj.date);
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayName = dayNames[lessonDate.getDay()];
+            return {
+                _id: plObj._id?.toString(),
+                name: '개인 레슨',
+                description: plObj.goals || '',
+                level: plObj.skillLevel || 'beginner',
+                duration: plObj.duration || 60,
+                price: plObj.price || 0,
+                maxStudents: 1,
+                currentStudents: 1,
+                status: plObj.status === 'completed' ? 'inactive' : 'active',
+                schedule: [{
+                        day: dayName,
+                        startTime: plObj.startTime || plObj.time || '09:00',
+                        endTime: plObj.endTime || ''
+                    }],
+                instructor: instructor && instructor._id
+                    ? {
+                        _id: instructor._id,
+                        name: instructor.name || '강사 미배정',
+                        email: instructor.email || '',
+                        phone: instructor.phone || ''
+                    }
+                    : null,
+                center: center && center._id
+                    ? {
+                        _id: center._id,
+                        name: center.name || '',
+                        address: center.address || '',
+                        phone: center.phone || '',
+                        email: center.email || '',
+                        region: center.region || '',
+                        district: center.district || '',
+                        city: center.city || '',
+                        province: center.province || ''
+                    }
+                    : null,
+                enrollmentStatus: enrollmentStatus,
+                enrolledAt: plObj.createdAt || null,
+                nextClassStart: plObj.date ? new Date(plObj.date).toISOString() : null,
+                nextClassEnd: plObj.endTime ? `${new Date(plObj.date).toISOString().split('T')[0]}T${plObj.endTime}:00` : null,
+                startDate: plObj.date ? new Date(plObj.date).toISOString().split('T')[0] : null,
+                classInfo: null,
+                refundPolicy: refundPolicy || formatRefundPolicy(null),
+                hasRefundRequest: hasRefundRequest
+            };
+        });
+        const allCourses = [...normalized, ...personalLessonsNormalized];
+        return res.json({
+            success: true,
+            message: '내 강습 목록을 불러왔습니다.',
+            data: allCourses
+        });
+    }
+    catch (error) {
+        console.error('학생 강습 목록 조회 오류:', error);
+        return res.status(500).json({
+            success: false,
+            message: '내 강습 정보를 가져오는 중 오류가 발생했습니다.'
+        });
+    }
+});
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { level, instructor, isActive, centerId: centerIdQuery } = req.query;
@@ -358,6 +991,7 @@ router.put('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res
         }
         console.log('✅ 권한 확인 통과');
         const { name, description, level, duration, price, maxStudents, instructorId } = req.body;
+        void instructorId;
         if (name && typeof name !== 'string') {
             return res.status(400).json({ error: '강습 과정명은 문자열이어야 합니다.' });
         }
@@ -379,7 +1013,6 @@ router.put('/:id', auth_2.auth, role_1.requireInstructorOrAdmin, async (req, res
         const updateData = { ...req.body };
         if (updateData.instructorId) {
             updateData.instructor = updateData.instructorId;
-            updateData.instructorId = updateData.instructorId;
             let instructorName = updateData.instructorName;
             if (!instructorName) {
                 try {
@@ -1872,6 +2505,7 @@ router.put('/:id/approval', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
     try {
         const { id } = req.params;
         const { action, reason } = req.body;
+        void reason;
         if (!['approve', 'reject'].includes(action)) {
             return res.status(400).json({
                 success: false,
@@ -1900,6 +2534,314 @@ router.put('/:id/approval', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
             message: '강습 과정 승인 처리 중 오류가 발생했습니다.',
             error: error instanceof Error ? error.message : '알 수 없는 오류'
         });
+    }
+});
+router.put('/:id/teaching-methods', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { teachingMethods } = req.body;
+        if (!Array.isArray(teachingMethods)) {
+            return res.status(400).json({
+                success: false,
+                message: 'teachingMethods는 배열이어야 합니다.'
+            });
+        }
+        const course = await Course_1.Course.findById(id);
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: '강좌를 찾을 수 없습니다.'
+            });
+        }
+        if (req.user.userType === 'instructor') {
+            if (course.instructor.toString() !== req.user._id.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: '자신의 강좌만 수정할 수 있습니다.'
+                });
+            }
+        }
+        else if (req.user.userType === 'centerAdmin') {
+            const userCenterId = req.user.centerId || req.user.centerAdminInfo?.managedCenters?.[0];
+            if (!userCenterId || course.centerId.toString() !== userCenterId.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: '자신의 센터 강좌만 수정할 수 있습니다.'
+                });
+            }
+        }
+        const TeachingMethod = (await Promise.resolve().then(() => __importStar(require('../models/TeachingMethod')))).TeachingMethod;
+        for (const tm of teachingMethods) {
+            if (!tm.methodId || typeof tm.order !== 'number') {
+                return res.status(400).json({
+                    success: false,
+                    message: '각 강습법에는 methodId와 order가 필요합니다.'
+                });
+            }
+            const method = await TeachingMethod.findById(tm.methodId);
+            if (!method) {
+                return res.status(404).json({
+                    success: false,
+                    message: `강습법을 찾을 수 없습니다: ${tm.methodId}`
+                });
+            }
+            if (req.user.userType === 'instructor') {
+                const isMyMethod = method.createdBy && method.createdBy.toString() === req.user._id.toString();
+                const isSuperAdminMethod = method.createdByRole === 'superAdmin';
+                if (!isMyMethod && !isSuperAdminMethod) {
+                    return res.status(403).json({
+                        success: false,
+                        message: `다른 강사의 강습법은 사용할 수 없습니다: ${method.name}`
+                    });
+                }
+            }
+        }
+        course.teachingMethods = teachingMethods.map((tm) => ({
+            methodId: new mongoose_1.default.Types.ObjectId(tm.methodId),
+            order: tm.order,
+            isRequired: tm.isRequired !== undefined ? tm.isRequired : true
+        }));
+        await course.save();
+        const updatedCourse = await Course_1.Course.findById(id)
+            .populate('teachingMethods.methodId')
+            .populate('instructor', 'name userId')
+            .populate('centerId', 'name');
+        res.json({
+            success: true,
+            message: '강좌별 강습법이 성공적으로 지정되었습니다.',
+            data: updatedCourse
+        });
+    }
+    catch (error) {
+        console.error('강좌별 강습법 지정 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '강좌별 강습법 지정 중 오류가 발생했습니다.',
+            error: error instanceof Error ? error.message : '알 수 없는 오류'
+        });
+    }
+});
+router.get('/:id/teaching-methods', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const course = await Course_1.Course.findById(id)
+            .populate('teachingMethods.methodId')
+            .select('teachingMethods level name');
+        if (!course) {
+            return res.status(404).json({
+                success: false,
+                message: '강좌를 찾을 수 없습니다.'
+            });
+        }
+        const sortedMethods = (course.teachingMethods || []).sort((a, b) => {
+            return (a.order || 0) - (b.order || 0);
+        });
+        res.json({
+            success: true,
+            message: '강좌별 강습법 조회 성공',
+            data: {
+                courseId: course._id,
+                courseName: course.name,
+                level: course.level,
+                teachingMethods: sortedMethods.map((tm) => ({
+                    methodId: tm.methodId?._id || tm.methodId,
+                    methodName: tm.methodId?.name,
+                    methodDescription: tm.methodId?.description,
+                    methodCategory: tm.methodId?.category,
+                    methodLevel: tm.methodId?.level,
+                    order: tm.order,
+                    isRequired: tm.isRequired,
+                    steps: tm.methodId?.steps || [],
+                    tips: tm.methodId?.tips || [],
+                    checklist: tm.methodId?.checklist || []
+                }))
+            }
+        });
+    }
+    catch (error) {
+        console.error('강좌별 강습법 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '강좌별 강습법 조회 중 오류가 발생했습니다.',
+            error: error instanceof Error ? error.message : '알 수 없는 오류'
+        });
+    }
+});
+router.post('/:courseId/refund-request', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.userId;
+        const course = await Course_1.Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ success: false, message: '강습 과정을 찾을 수 없습니다.' });
+        }
+        const enrollment = (course.enrolledStudents || []).find((e) => {
+            const eStudentId = e.student?.toString() || e.student;
+            return eStudentId === String(studentId);
+        });
+        let isEnrolled = !!enrollment;
+        if (!isEnrolled) {
+            const { Booking } = require('../models/Booking');
+            const { Payment } = require('../models/Payment');
+            const booking = await Booking.findOne({
+                studentId: studentId,
+                courseId: courseId,
+                status: { $in: ['confirmed', 'pending', 'completed'] }
+            });
+            const payment = await Payment.findOne({
+                user: studentId,
+                relatedCourse: courseId,
+                status: { $in: ['pending', 'completed'] },
+                purpose: 'course'
+            });
+            isEnrolled = !!(booking || payment);
+        }
+        if (!isEnrolled) {
+            return res.status(400).json({ success: false, message: '등록된 강습 과정이 아닙니다.' });
+        }
+        const startDate = course.classInfo?.startDate || course.startDate;
+        const isCourseStarted = startDate ? new Date(startDate) <= new Date() : false;
+        const { Center } = require('../models/Center');
+        const center = await Center.findById(course.centerId).select('settings').lean();
+        const refundPolicyRaw = center?.settings?.paymentSettings?.refundPolicy;
+        const defaultRefundPolicy = {
+            beforeUse: {
+                enabled: true,
+                timeBefore: 24,
+                refundRate: 100,
+                description: '이용 전 환불'
+            },
+            afterUse: {
+                enabled: true,
+                calculationMethod: 'sessions',
+                sessionBased: {
+                    enabled: true,
+                    refundByRemainingSessions: true,
+                    description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+                }
+            },
+            processingDays: 7,
+            refundMethod: '원래 결제 수단으로 환불'
+        };
+        const formatRefundPolicy = (policy) => {
+            const effectivePolicy = policy || defaultRefundPolicy;
+            if (typeof effectivePolicy === 'string')
+                return effectivePolicy;
+            const parts = [];
+            if (effectivePolicy.beforeUse?.enabled) {
+                parts.push(`이용 ${effectivePolicy.beforeUse.timeBefore || 24}시간 전까지 ${effectivePolicy.beforeUse.refundRate || 100}% 환불`);
+            }
+            if (effectivePolicy.afterUse?.enabled) {
+                const calculationMethod = effectivePolicy.afterUse.calculationMethod || 'sessions';
+                if (calculationMethod === 'sessions' && effectivePolicy.afterUse.sessionBased?.enabled) {
+                    parts.push('이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불');
+                }
+                else if (calculationMethod === 'days' && effectivePolicy.afterUse.dayBased?.enabled && effectivePolicy.afterUse.dayBased.refundRates) {
+                    effectivePolicy.afterUse.dayBased.refundRates.forEach((rate) => {
+                        if (rate.daysTo) {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+                        }
+                        else {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+                        }
+                    });
+                }
+                else if (effectivePolicy.afterUse.refundRates) {
+                    effectivePolicy.afterUse.refundRates.forEach((rate) => {
+                        if (rate.daysTo) {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+                        }
+                        else {
+                            parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+                        }
+                    });
+                }
+            }
+            if (effectivePolicy.refundFee?.enabled && effectivePolicy.refundFee.amount > 0) {
+                parts.push(`환불 수수료: ${effectivePolicy.refundFee.amount.toLocaleString()}원`);
+            }
+            if (effectivePolicy.processingDays) {
+                parts.push(`환불 처리 기간: ${effectivePolicy.processingDays}일`);
+            }
+            if (effectivePolicy.refundMethod) {
+                parts.push(`환불 방법: ${effectivePolicy.refundMethod}`);
+            }
+            if (effectivePolicy.customDescription) {
+                parts.push(`※ ${effectivePolicy.customDescription}`);
+            }
+            return parts.length > 0 ? parts.join(', ') : '이용 24시간 전까지 100% 환불, 이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불';
+        };
+        const refundPolicy = formatRefundPolicy(refundPolicyRaw);
+        const { Approval } = require('../models/Approval');
+        const existingRefund = await Approval.findOne({
+            type: 'refund_request',
+            userId: studentId,
+            courseId: courseId,
+            status: 'pending'
+        });
+        if (existingRefund) {
+            return res.status(400).json({
+                success: false,
+                message: '이미 환불 신청이 접수되어 있습니다.'
+            });
+        }
+        const refundRequest = new Approval({
+            type: 'refund_request',
+            userId: studentId,
+            courseId: courseId,
+            centerId: course.centerId,
+            title: `${course.name} 환불 신청`,
+            description: isCourseStarted
+                ? '강의가 이미 시작되어 센터의 환불 정책에 따라 환불 금액이 결정됩니다.'
+                : '환불 신청이 접수되었습니다.',
+            status: 'pending',
+            priority: 'medium',
+            estimatedAmount: course.price,
+            requestDate: new Date()
+        });
+        await refundRequest.save();
+        const message = isCourseStarted
+            ? '환불 신청이 접수되었습니다. 강의가 이미 시작되어 센터의 환불 정책에 따라 환불 금액이 결정됩니다. 관리자 검토 후 환불이 진행됩니다.'
+            : '환불 신청이 접수되었습니다. 관리자 검토 후 환불이 진행됩니다.';
+        res.json({
+            success: true,
+            message: message,
+            refundPolicy: refundPolicy,
+            isCourseStarted: isCourseStarted,
+            refundRequestId: refundRequest._id
+        });
+    }
+    catch (error) {
+        console.error('환불 신청 오류:', error);
+        res.status(500).json({ success: false, message: '환불 신청 중 오류가 발생했습니다.' });
+    }
+});
+router.delete('/:courseId/refund-request', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.userId;
+        const { Approval } = require('../models/Approval');
+        const refundRequest = await Approval.findOne({
+            type: 'refund_request',
+            userId: studentId,
+            courseId: courseId,
+            status: 'pending'
+        });
+        if (!refundRequest) {
+            return res.status(404).json({
+                success: false,
+                message: '환불 신청을 찾을 수 없습니다.'
+            });
+        }
+        await Approval.findByIdAndDelete(refundRequest._id);
+        res.json({
+            success: true,
+            message: '환불 신청이 취소되었습니다.'
+        });
+    }
+    catch (error) {
+        console.error('환불 신청 취소 오류:', error);
+        res.status(500).json({ success: false, message: '환불 신청 취소 중 오류가 발생했습니다.' });
     }
 });
 exports.default = router;

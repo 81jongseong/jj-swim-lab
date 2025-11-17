@@ -219,9 +219,6 @@ router.put('/applications/:id', auth_1.authMiddleware, async (req, res) => {
                 if (centerId && typeof centerId === 'object' && centerId._id) {
                     centerId = centerId._id;
                 }
-                else if (centerId && typeof centerId === 'object') {
-                    centerId = centerId;
-                }
                 centerId = centerId?.toString ? centerId.toString() : centerId;
                 if (centerId) {
                     const instructor = await User_1.User.findById(applicantId);
@@ -272,6 +269,7 @@ router.put('/applications/:id', auth_1.authMiddleware, async (req, res) => {
         let notificationSent = false;
         if (status === 'interview_scheduled' && application.interviewDate && !application.notificationSent) {
             const applicant = application.applicantId;
+            void applicant;
             const centerName = post.roomSpecific?.jobBoard?.centerId?.name || '센터';
             const interviewDateStr = new Date(application.interviewDate).toLocaleDateString('ko-KR');
             const interviewTimeStr = application.interviewTime || '시간 미정';
@@ -376,9 +374,6 @@ router.put('/applications/:id/respond', auth_1.authMiddleware, async (req, res) 
             if (centerId && typeof centerId === 'object' && centerId._id) {
                 centerId = centerId._id;
             }
-            else if (centerId && typeof centerId === 'object') {
-                centerId = centerId;
-            }
             centerId = centerId?.toString ? centerId.toString() : centerId;
             console.log('🔍 면접 수락 알림 - 센터 ID:', centerId);
             const centerAdmins = await User_1.User.find({
@@ -419,9 +414,6 @@ router.put('/applications/:id/respond', auth_1.authMiddleware, async (req, res) 
             let centerId = post.roomSpecific?.jobBoard?.centerId;
             if (centerId && typeof centerId === 'object' && centerId._id) {
                 centerId = centerId._id;
-            }
-            else if (centerId && typeof centerId === 'object') {
-                centerId = centerId;
             }
             centerId = centerId?.toString ? centerId.toString() : centerId;
             console.log('🔍 면접 거부 알림 - 센터 ID:', centerId);
@@ -556,9 +548,6 @@ router.post('/applications/sync-instructors', auth_1.authMiddleware, async (req,
                 let centerId = post?.roomSpecific?.jobBoard?.centerId || application.centerId;
                 if (centerId && typeof centerId === 'object' && centerId._id) {
                     centerId = centerId._id;
-                }
-                else if (centerId && typeof centerId === 'object') {
-                    centerId = centerId;
                 }
                 centerId = centerId?.toString ? centerId.toString() : centerId;
                 if (!centerId) {

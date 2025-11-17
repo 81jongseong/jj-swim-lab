@@ -165,11 +165,33 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
     // 테넌트 가드: centerId 우선 적용, 없으면 본인 결제로 제한
     const currentUser = req.user;
     const resolvedCenterId = centerIdQuery || currentUser?.centerId || currentUser?.centerAdminInfo?.managedCenters?.[0];
-    if (resolvedCenterId) {
+    
+    // ⭐ 학생인 경우 항상 본인 결제만 조회
+    if (currentUser?.userType === 'student') {
+      filter.user = currentUser.userId || currentUser._id;
+      // centerId가 있으면 추가 필터링
+      if (resolvedCenterId) {
+        filter.centerId = resolvedCenterId;
+      }
+    } else if (resolvedCenterId) {
+      // 센터 관리자나 다른 역할인 경우
       filter.centerId = resolvedCenterId;
     } else if (currentUser?.userType !== 'superAdmin') {
-      filter.user = currentUser.userId;
+      // 일반 사용자는 본인 결제만
+      filter.user = currentUser.userId || currentUser._id;
     }
+
+    // ⭐ status 필터가 없으면 completed, refunded, pending 모두 포함 (pending은 completed로 표시)
+    if (!status) {
+      filter.status = { $in: ['completed', 'refunded', 'pending'] };
+    }
+
+    console.log('📊 결제 내역 조회 필터:', JSON.stringify(filter, null, 2));
+    console.log('📊 현재 사용자:', {
+      userId: currentUser?.userId || currentUser?._id,
+      userType: currentUser?.userType,
+      centerId: resolvedCenterId
+    });
 
     const payments = await Payment.find(filter)
       .populate('user', 'name userId')
@@ -177,7 +199,146 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       .populate('relatedBooking', 'date startTime endTime')
       .sort({ createdAt: -1 });
 
-    return res.json({ success: true, message: '결제 내역 조회 성공!', data: payments });
+    console.log('📊 조회된 결제 수:', payments.length);
+
+    // ⭐ 학생인 경우: 등록된 강의 중 Payment가 없는 경우 가상의 Payment 생성
+    if (currentUser?.userType === 'student' && !centerIdQuery) {
+      const userId = currentUser.userId || currentUser._id;
+      const userIdObj = new mongoose.Types.ObjectId(userId);
+      
+      // ⭐ 학생의 centerId 확인 (필터링용)
+      const studentCenterId = currentUser.centerId || resolvedCenterId;
+      
+      // 등록된 강의 조회 (해당 센터의 강의만)
+      const courseFilter: any = {
+        'enrolledStudents.student': userIdObj,
+        'enrolledStudents.status': { $ne: 'dropped' }
+      };
+      
+      // centerId가 있으면 해당 센터의 강의만 조회
+      if (studentCenterId) {
+        courseFilter.centerId = studentCenterId;
+      }
+      
+      const enrolledCourses = await Course.find(courseFilter)
+      .populate('instructor', 'name')
+      .lean();
+
+      // 각 등록된 강의에 대해 Payment가 있는지 확인
+      for (const course of enrolledCourses) {
+        const enrollment = (course.enrolledStudents || []).find((e: any) => {
+          const eStudentId = e.student?.toString() || e.student;
+          return eStudentId === userId.toString();
+        });
+
+        if (enrollment) {
+          // 해당 강의에 대한 Payment가 있는지 확인
+          const existingPayment = payments.find((p: any) => {
+            const pCourseId = p.relatedCourse?._id?.toString() || p.relatedCourse?.toString();
+            return pCourseId === course._id.toString();
+          });
+
+          // Payment가 없으면 가상의 Payment 생성
+          if (!existingPayment) {
+            const virtualPayment = {
+              _id: `virtual-${course._id}`,
+              user: { name: currentUser.name || '사용자', userId: userId },
+              amount: course.price || 0,
+              currency: 'KRW',
+              paymentMethod: 'card', // 기본값
+              status: 'completed' as const,
+              purpose: 'course' as const,
+              relatedCourse: { _id: course._id, name: course.name },
+              relatedBooking: null,
+              transactionId: `VIRTUAL-${course._id}`,
+              notes: '기존 등록 강의 (결제 기록 없음)',
+              centerId: course.centerId,
+              createdAt: enrollment.enrolledAt || enrollment.enrollmentDate || course.createdAt || new Date(),
+              updatedAt: enrollment.enrolledAt || enrollment.enrollmentDate || course.createdAt || new Date(),
+              isVirtual: true // 가상 Payment 표시
+            };
+            payments.push(virtualPayment as any);
+          }
+        }
+      }
+
+      // ⭐ PersonalLesson도 결제 내역에 포함 (Payment가 없는 경우, 해당 센터만)
+      const { PersonalLesson } = require('../models/PersonalLesson');
+      const personalLessonFilter: any = {
+        studentId: userIdObj,
+        status: { $in: ['pending', 'approved', 'completed'] }
+      };
+      
+      // centerId가 있으면 해당 센터의 PersonalLesson만 조회
+      if (studentCenterId) {
+        personalLessonFilter.centerId = studentCenterId;
+      }
+      
+      const personalLessons = await PersonalLesson.find(personalLessonFilter)
+      .populate('instructorId', 'name')
+      .lean();
+
+      for (const lesson of personalLessons) {
+        // PersonalLesson에 대한 Payment가 있는지 확인 (paymentId로)
+        const existingPayment = payments.find((p: any) => {
+          return p._id?.toString() === lesson.paymentId?.toString();
+        });
+
+        // Payment가 없으면 가상의 Payment 생성
+        if (!existingPayment && !lesson.paymentId) {
+          const virtualPayment = {
+            _id: `virtual-pl-${lesson._id}`,
+            user: { name: currentUser.name || '사용자', userId: userId },
+            amount: lesson.price || lesson.totalAmount || 0,
+            currency: 'KRW',
+            paymentMethod: 'card', // 기본값
+            status: 'completed' as const,
+            purpose: 'booking' as const,
+            relatedCourse: null,
+            relatedBooking: { _id: lesson._id, date: lesson.date, startTime: lesson.startTime || lesson.time, endTime: lesson.endTime },
+            transactionId: `VIRTUAL-PL-${lesson._id}`,
+            notes: '개인 레슨 (결제 기록 없음)',
+            centerId: lesson.centerId,
+            createdAt: lesson.createdAt || new Date(),
+            updatedAt: lesson.updatedAt || lesson.createdAt || new Date(),
+            isVirtual: true // 가상 Payment 표시
+          };
+          payments.push(virtualPayment as any);
+        }
+      }
+
+      // 날짜순 정렬
+      payments.sort((a: any, b: any) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+    }
+
+    // ⭐ 모든 결제 객체를 일반 객체로 변환하고 amount 보장, pending은 completed로 변환
+    const processedPayments = payments.map((payment: any) => {
+      // Mongoose 문서를 일반 객체로 변환
+      const paymentObj = payment.toObject ? payment.toObject() : payment;
+      
+      // pending 상태를 completed로 변환 (결제 대기 없음)
+      const finalStatus = paymentObj.status === 'pending' ? 'completed' : paymentObj.status;
+      
+      return {
+        ...paymentObj,
+        status: finalStatus,
+        amount: paymentObj.amount || 0 // amount가 없으면 0으로 설정
+      };
+    });
+
+    console.log('📊 결제 내역 조회 결과:', {
+      filter,
+      totalCount: payments.length,
+      completedCount: processedPayments.filter((p: any) => p.status === 'completed').length,
+      refundedCount: processedPayments.filter((p: any) => p.status === 'refunded').length,
+      payments: processedPayments.map((p: any) => ({ _id: p._id, status: p.status, amount: p.amount }))
+    });
+
+    return res.json({ success: true, message: '결제 내역 조회 성공!', data: { payments: processedPayments } });
   } catch (error) {
     console.error('결제 내역 조회 오류:', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
@@ -259,7 +420,8 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       relatedBooking,
       notes: notes || '',
       transactionId,
-      status: 'pending',
+      status: 'completed', // ⭐ 결제 대기 없이 바로 완료 상태로 설정
+      processedAt: new Date(), // ⭐ 처리 시간 설정
     };
 
     const payment = new Payment(paymentData);
@@ -275,7 +437,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
       const io = (req as any).app.get('io');
       if (io) io.to(`user:${String(req.user.userId)}`).emit('notification', {
         type: 'payment:created',
-        message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
+        message: '결제가 완료되었습니다.',
       });
     } catch (error) {
       console.error('결제 처리 중 오류:', error);
@@ -283,7 +445,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 
     return res.status(201).json({
       success: true,
-      message: '결제가 생성되었습니다.',
+      message: '결제가 완료되었습니다.',
       data: populatedPayment
     });
   } catch (error) {

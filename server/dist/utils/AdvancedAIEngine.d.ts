@@ -40,7 +40,7 @@ export interface IAIEvaluationResult {
             name: string;
             description: string;
             duration: number;
-            frequency: number;
+            frequency: number | string;
         };
         nextEvaluationDate: Date;
     };
@@ -49,6 +49,11 @@ export interface IAIEvaluationResult {
         detailedFeedback: string;
         encouragement: string;
         goals: string[];
+    };
+    historicalContext?: {
+        averageProgress: number;
+        sessionsAnalyzed: number;
+        latestChecklistDate: Date | null;
     };
 }
 export declare class AdvancedAIEngine {
@@ -74,5 +79,7 @@ export declare class AdvancedAIEngine {
     private static calculateNextEvaluationDate;
     private static generateEncouragement;
     private static generateGoals;
+    private static getSubCategoryKoreanName;
+    private static calculateHistoricalTrend;
 }
 //# sourceMappingURL=AdvancedAIEngine.d.ts.map

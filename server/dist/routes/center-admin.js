@@ -76,21 +76,73 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
                 message: '관리하는 센터가 없습니다.'
             });
         }
+        const centerIdStrings = new Set();
+        const objectIdStrings = new Set();
+        const collectCenterId = (value) => {
+            if (!value)
+                return;
+            if (Array.isArray(value)) {
+                value.forEach(collectCenterId);
+                return;
+            }
+            if (value instanceof mongoose_1.default.Types.ObjectId) {
+                const str = value.toString();
+                objectIdStrings.add(str);
+                return;
+            }
+            if (typeof value === 'object') {
+                if (value._id) {
+                    collectCenterId(value._id);
+                    return;
+                }
+                if (value.toString && value.toString() !== '[object Object]') {
+                    collectCenterId(value.toString());
+                    return;
+                }
+            }
+            const strValue = String(value);
+            centerIdStrings.add(strValue);
+            if (mongoose_1.default.Types.ObjectId.isValid(strValue)) {
+                objectIdStrings.add(strValue);
+            }
+        };
+        collectCenterId(centerId);
+        collectCenterId(queryCenterId);
+        const objectIdCandidates = Array.from(objectIdStrings).map((id) => new mongoose_1.default.Types.ObjectId(id));
+        const stringCandidates = Array.from(centerIdStrings).filter((id) => !objectIdStrings.has(id));
+        const centerIdFilterValues = [
+            ...objectIdCandidates,
+            ...stringCandidates
+        ];
+        if (centerIdFilterValues.length === 0) {
+            console.warn('⚠️ 센터 ID 후보가 없어 통계를 계산할 수 없습니다.', {
+                userId: req.user?._id,
+                centerId,
+                queryCenterId
+            });
+            return res.status(400).json({
+                success: false,
+                message: '센터 정보를 확인할 수 없습니다.'
+            });
+        }
+        const centerIdFilter = { $in: centerIdFilterValues };
+        const centerOrConditions = [
+            { centerId: centerIdFilter },
+            { 'instructorInfo.assignedCenters': centerIdFilter },
+            { 'studentInfo.enrolledCenters': centerIdFilter }
+        ];
         const totalMembers = await User_1.User.countDocuments({
-            centerId: centerId,
-            $or: [
-                { userType: 'student' },
-                { userType: 'instructor' }
-            ],
-            isActive: true
+            isActive: true,
+            userType: { $in: ['student', 'instructor'] },
+            $or: centerOrConditions
         });
         const activeInstructors = await User_1.User.countDocuments({
             userType: 'instructor',
-            centerId: centerId,
-            isActive: true
+            isActive: true,
+            $or: centerOrConditions
         });
         const activeCourses = await Course_1.Course.countDocuments({
-            centerId,
+            centerId: centerIdFilter,
             status: 'active'
         });
         const startOfMonth = new Date();
@@ -99,7 +151,7 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
         const monthlyRevenue = await Payment_1.Payment.aggregate([
             {
                 $match: {
-                    centerId,
+                    centerId: centerIdFilter,
                     status: 'completed',
                     createdAt: { $gte: startOfMonth }
                 }
@@ -116,16 +168,30 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const todayBookings = await Booking_1.Booking.countDocuments({
-            centerId,
+            centerId: centerIdFilter,
             date: {
                 $gte: today,
                 $lt: tomorrow
             },
             status: 'confirmed'
         });
-        const pendingApprovals = await Booking_1.Booking.countDocuments({
-            centerId,
-            status: 'pending'
+        const { Approval } = require('../models/Approval');
+        const pendingRefundRequests = await Approval.countDocuments({
+            type: 'refund_request',
+            status: 'pending',
+            centerId: centerIdFilter
+        });
+        console.log('📊 센터 관리자 대시보드 통계', {
+            userId: req.user?._id,
+            centerIdCandidates: centerIdFilterValues.map((value) => value.toString()),
+            totals: {
+                totalMembers,
+                activeInstructors,
+                activeCourses,
+                monthlyRevenue: monthlyRevenue[0]?.total || 0,
+                todayBookings,
+                pendingApprovals: pendingRefundRequests
+            }
         });
         res.json({
             success: true,
@@ -136,7 +202,7 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
                 activeCourses,
                 monthlyRevenue: monthlyRevenue[0]?.total || 0,
                 todayBookings,
-                pendingApprovals,
+                pendingApprovals: pendingRefundRequests,
                 monthlyGrowth: 12.5,
                 averageRating: 4.7
             }
@@ -399,100 +465,17 @@ router.get('/instructors/stats', auth_1.authMiddleware, requireCenterAdmin, asyn
 });
 router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
     try {
-        console.log('📋 센터 강사 목록 조회 요청');
-        console.log('🔍 req.user 정보:', req.user);
-        const centerAdmin = await User_1.User.findById(req.user._id);
-        console.log('🔍 데이터베이스에서 조회한 사용자:', centerAdmin);
-        const centerId = centerAdmin?.centerId || centerAdmin?.centerAdminInfo?.managedCenters?.[0];
-        console.log('👤 센터 관리자:', {
-            name: centerAdmin?.name,
-            email: centerAdmin?.email,
-            centerId: centerId?.toString()
-        });
+        const admin = await User_1.User.findById(req.user._id);
+        const centerId = admin?.centerId || admin?.centerAdminInfo?.managedCenters?.[0];
         if (!centerId) {
-            console.error('❌ 센터 ID 없음');
-            return res.status(400).json({
-                success: false,
-                message: '관리하는 센터가 없습니다.'
-            });
+            return res.status(400).json({ success: false, message: '관리하는 센터가 없습니다.' });
         }
-        const { page = 1, limit = 1000, search = '' } = req.query;
-        const skip = (Number(page) - 1) * Number(limit);
-        const centerIdObj = new mongoose_1.default.Types.ObjectId(centerId);
-        const query = {
-            userType: 'instructor',
-            $or: [
-                { centerId: centerIdObj },
-                { 'instructorInfo.assignedCenters': centerIdObj }
-            ]
-        };
-        if (search) {
-            query.$and = [
-                {
-                    $or: [
-                        { centerId: centerIdObj },
-                        { 'instructorInfo.assignedCenters': centerIdObj }
-                    ]
-                },
-                {
-                    $or: [
-                        { name: { $regex: search, $options: 'i' } },
-                        { email: { $regex: search, $options: 'i' } }
-                    ]
-                }
-            ];
-            delete query.$or;
-        }
-        console.log('🔍 검색 조건:', query);
-        const instructors = await User_1.User.find(query)
-            .select('name email phone userType centerId instructorInfo isActive createdAt updatedAt')
-            .lean()
-            .skip(skip)
-            .limit(Number(limit))
-            .sort({ createdAt: -1 });
-        const instructorsWithPhoto = instructors.map(instructor => {
-            const instructorInfo = instructor.instructorInfo || {};
-            return {
-                ...instructor,
-                instructorInfo: {
-                    ...instructorInfo,
-                    photo: instructorInfo.photo,
-                    bio: instructorInfo.bio || instructorInfo.introduction
-                }
-            };
-        });
-        const total = await User_1.User.countDocuments(query);
-        console.log('📊 조회 결과:', {
-            강사수: instructors.length,
-            총계: total,
-            강사목록: instructors.map(i => ({ name: i.name, id: i._id.toString() }))
-        });
-        const responseData = {
-            success: true,
-            message: '센터 강사 목록 조회 성공!',
-            data: {
-                instructors: instructorsWithPhoto,
-                pagination: {
-                    current: Number(page),
-                    total: Math.ceil(total / Number(limit)),
-                    count: instructorsWithPhoto.length,
-                    totalCount: total
-                }
-            }
-        };
-        console.log('📤 응답 데이터:', {
-            success: responseData.success,
-            instructorsCount: responseData.data.instructors.length,
-            instructorNames: responseData.data.instructors.map(i => i.name)
-        });
-        res.json(responseData);
+        const instructors = await User_1.User.find({ userType: 'instructor', centerId: centerId }, 'name email phone userType').lean();
+        return res.json({ success: true, data: instructors });
     }
     catch (error) {
-        console.error('센터 강사 목록 조회 오류:', error);
-        res.status(500).json({
-            success: false,
-            message: '서버 오류가 발생했습니다.'
-        });
+        console.error('강사 목록 조회 오류:', error);
+        return res.status(500).json({ success: false, message: '강사 목록 조회 중 오류가 발생했습니다.' });
     }
 });
 router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
@@ -751,6 +734,9 @@ router.get('/bookings', auth_1.authMiddleware, requireCenterAdmin, async (req, r
             });
         }
         const { page = 1, limit = 10, status = 'all', date, type } = req.query;
+        void status;
+        void date;
+        void type;
         const skip = (Number(page) - 1) * Number(limit);
         const personalLessons = await PersonalLesson_1.PersonalLesson.find({ centerId })
             .populate('studentId', 'name email phone')
@@ -837,6 +823,7 @@ router.get('/payments', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         }
         const payments = await Payment_1.Payment.find(query)
             .populate('user', 'name email')
+            .populate('relatedCourse', 'name')
             .skip(skip)
             .limit(Number(limit))
             .sort({ createdAt: -1 });
@@ -861,6 +848,102 @@ router.get('/payments', auth_1.authMiddleware, requireCenterAdmin, async (req, r
             success: false,
             message: '서버 오류가 발생했습니다.'
         });
+    }
+});
+router.patch('/payments/:id/complete', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const payment = await Payment_1.Payment.findById(id);
+        if (!payment) {
+            return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+        }
+        if (payment.status === 'completed') {
+            return res.json({ success: true, message: '이미 완료된 결제입니다.', data: payment });
+        }
+        payment.status = 'completed';
+        payment.approvedAt = new Date();
+        await payment.save();
+        if (payment.relatedCourse && payment.purpose === 'course') {
+            const course = await Course_1.Course.findById(payment.relatedCourse);
+            if (course) {
+                const already = (course.enrolledStudents || []).some((e) => e?.student?.toString?.() === payment.user.toString());
+                if (!already) {
+                    course.enrolledStudents = [
+                        ...(course.enrolledStudents || []),
+                        { student: payment.user, enrollmentDate: new Date(), status: 'active' }
+                    ];
+                    await course.save();
+                }
+                if (course.centerId) {
+                    const student = await User_1.User.findById(payment.user);
+                    if (student && !student.centerId) {
+                        student.centerId = course.centerId;
+                        await student.save();
+                    }
+                }
+            }
+        }
+        return res.json({ success: true, message: '결제가 완료 처리되었습니다.', data: payment });
+    }
+    catch (error) {
+        console.error('결제 완료 처리 오류:', error);
+        return res.status(500).json({ success: false, message: '결제 완료 처리 중 오류가 발생했습니다.' });
+    }
+});
+router.patch('/payments/:id/cancel', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const payment = await Payment_1.Payment.findById(id);
+        if (!payment)
+            return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+        payment.status = 'cancelled';
+        await payment.save();
+        if (payment.relatedCourse && payment.purpose === 'course') {
+            const course = await Course_1.Course.findById(payment.relatedCourse);
+            const userIdStr = payment.user?.toString?.() || String(payment.user || '');
+            if (course) {
+                const current = Array.isArray(course.enrolledStudents) ? course.enrolledStudents : [];
+                course.enrolledStudents = current.filter((e) => {
+                    const sid = e?.student?.toString?.() || String(e?.student || '');
+                    return sid !== userIdStr;
+                });
+                await course.save();
+            }
+        }
+        return res.json({ success: true, message: '결제가 취소되었습니다.', data: payment });
+    }
+    catch (error) {
+        console.error('결제 취소 처리 오류:', error);
+        return res.status(500).json({ success: false, message: '결제 취소 처리 중 오류가 발생했습니다.' });
+    }
+});
+router.patch('/payments/:id/refund', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { refundAmount } = req.body;
+        const payment = await Payment_1.Payment.findById(id);
+        if (!payment)
+            return res.status(404).json({ success: false, message: '결제를 찾을 수 없습니다.' });
+        payment.refundAmount = typeof refundAmount === 'number' ? refundAmount : payment.amount;
+        payment.status = 'refunded';
+        await payment.save();
+        if (payment.relatedCourse && payment.purpose === 'course') {
+            const course = await Course_1.Course.findById(payment.relatedCourse);
+            const userIdStr = payment.user?.toString?.() || String(payment.user || '');
+            if (course) {
+                const current = Array.isArray(course.enrolledStudents) ? course.enrolledStudents : [];
+                course.enrolledStudents = current.filter((e) => {
+                    const sid = e?.student?.toString?.() || String(e?.student || '');
+                    return sid !== userIdStr;
+                });
+                await course.save();
+            }
+        }
+        return res.json({ success: true, message: '결제가 환불 처리되었습니다.', data: payment });
+    }
+    catch (error) {
+        console.error('결제 환불 처리 오류:', error);
+        return res.status(500).json({ success: false, message: '결제 환불 처리 중 오류가 발생했습니다.' });
     }
 });
 router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, res) => {
@@ -2299,11 +2382,6 @@ router.put('/members/:memberId', auth_1.authMiddleware, requireCenterAdmin, asyn
                 message: '회원을 찾을 수 없습니다.'
             });
         }
-        const allowedFields = [
-            'name', 'email', 'phone', 'status', 'currentLevel',
-            'emergencyContact', 'medicalConditions', 'swimmingGoals',
-            'centerMemo', 'membershipType', 'notes'
-        ];
         if (updateData.name)
             member.name = updateData.name;
         if (updateData.email)

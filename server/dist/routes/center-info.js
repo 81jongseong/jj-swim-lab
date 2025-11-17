@@ -187,7 +187,7 @@ router.post('/images', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAd
         }
         const imageUrls = files.map(file => `/uploads/center-images/${file.filename}`);
         const updatedImages = [...(center.images || []), ...imageUrls];
-        const updatedCenter = await Center_1.Center.findByIdAndUpdate(center._id, {
+        await Center_1.Center.findByIdAndUpdate(center._id, {
             images: updatedImages,
             updatedAt: new Date(),
             updatedBy: userId
@@ -243,7 +243,7 @@ router.delete('/images/:imageUrl', auth_1.authMiddleware, (0, auth_2.requireRole
             });
         }
         const updatedImages = (center.images || []).filter(img => !img.includes(filename));
-        const updatedCenter = await Center_1.Center.findByIdAndUpdate(center._id, {
+        await Center_1.Center.findByIdAndUpdate(center._id, {
             images: updatedImages,
             updatedAt: new Date(),
             updatedBy: userId
@@ -318,10 +318,10 @@ router.get('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
                 ]
             },
             paymentSettings: {
-                acceptedMethods: ['카드', '계좌이체', '현금'],
-                refundPolicy: '이용 24시간 전까지 100% 환불, 이후 50% 환불',
-                latePaymentFee: 10000,
-                autoPayment: false
+                acceptedMethods: center?.settings?.paymentSettings?.acceptedMethods || ['카드', '계좌이체', '현금'],
+                refundPolicy: center?.settings?.paymentSettings?.refundPolicy || null,
+                latePaymentFee: center?.settings?.paymentSettings?.latePaymentFee || 10000,
+                autoPayment: center?.settings?.paymentSettings?.autoPayment || false
             },
             notificationSettings: {
                 emailNotifications: true,
@@ -402,6 +402,20 @@ router.put('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
         }
         if (settingsData.settings) {
             updateData.settings = { ...center.settings, ...settingsData.settings };
+        }
+        if (settingsData.paymentSettings) {
+            const currentSettings = center.settings || {};
+            updateData.settings = {
+                ...currentSettings,
+                paymentSettings: {
+                    ...(currentSettings.paymentSettings || {}),
+                    ...settingsData.paymentSettings,
+                    ...(settingsData.paymentSettings.refundPolicy !== undefined
+                        ? { refundPolicy: settingsData.paymentSettings.refundPolicy }
+                        : {})
+                }
+            };
+            console.log('💾 환불 정책 저장:', JSON.stringify(updateData.settings.paymentSettings.refundPolicy, null, 2));
         }
         const updatedCenter = await Center_1.Center.findByIdAndUpdate(center._id, updateData, { new: true });
         res.json({

@@ -7,10 +7,11 @@ exports.securityLogger = exports.sessionManager = exports.validatePasswordStreng
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const User_1 = require("../models/User");
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+const normalizeEnvString = (value, fallback) => value && value.trim().length > 0 ? value.trim() : fallback;
+const JWT_SECRET = normalizeEnvString(process.env.JWT_SECRET, 'your-secret-key');
+const JWT_REFRESH_SECRET = normalizeEnvString(process.env.JWT_REFRESH_SECRET, 'your-refresh-secret-key');
+const JWT_EXPIRES_IN = normalizeEnvString(process.env.JWT_EXPIRES_IN, '1h');
+const JWT_REFRESH_EXPIRES_IN = normalizeEnvString(process.env.JWT_REFRESH_EXPIRES_IN, '7d');
 const generateTokens = (user) => {
     const payload = {
         id: user._id,
@@ -20,12 +21,8 @@ const generateTokens = (user) => {
         centerId: user.centerId,
         permissions: user.permissions || [],
     };
-    const accessToken = jsonwebtoken_1.default.sign(payload, JWT_SECRET, {
-        expiresIn: '1h'
-    });
-    const refreshToken = jsonwebtoken_1.default.sign({ id: user._id, type: 'refresh' }, JWT_REFRESH_SECRET, {
-        expiresIn: '7d'
-    });
+    const accessToken = jsonwebtoken_1.default.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const refreshToken = jsonwebtoken_1.default.sign({ id: user._id, type: 'refresh' }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
     return { accessToken, refreshToken };
 };
 exports.generateTokens = generateTokens;
@@ -326,7 +323,7 @@ const requireCenterOwnership = (req, res, next) => {
     });
 };
 exports.requireCenterOwnership = requireCenterOwnership;
-const refreshTokenMiddleware = async (req, res, next) => {
+const refreshTokenMiddleware = async (req, res) => {
     try {
         const { refreshToken } = req.body;
         if (!refreshToken) {

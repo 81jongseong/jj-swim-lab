@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = require("../models/User");
+const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 router.get('/center-users', auth_1.authMiddleware, async (req, res) => {
@@ -164,6 +165,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
 router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManagement'), async (req, res) => {
     try {
         const { page = 1, limit = 10, userType, level, search, centerId } = req.query;
+        void centerId;
         const skip = (Number(page) - 1) * Number(limit);
         const query = {};
         if (req.user.userType === 'centerAdmin') {
@@ -368,10 +370,10 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManag
 });
 router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { userId, name, phone, address, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
+        const { userId, name, email, phone, address, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
         const currentUser = req.user;
         const targetUserId = req.params.id;
-        if (currentUser._id !== targetUserId) {
+        if (currentUser._id?.toString() !== targetUserId) {
             if (currentUser.userType === 'centerAdmin') {
                 const hasAccess = await checkCenterAdminAccess(currentUser._id, { _id: targetUserId });
                 if (!hasAccess) {
@@ -392,9 +394,21 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
             }
         }
         const updateData = {};
-        if (currentUser._id === targetUserId) {
+        if (currentUser._id?.toString() === targetUserId) {
             if (name)
                 updateData.name = name;
+            if (email) {
+                const normalizedEmail = String(email).trim().toLowerCase();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(normalizedEmail)) {
+                    return res.status(400).json({ error: '유효한 이메일 주소를 입력해주세요.' });
+                }
+                const existingEmailUser = await User_1.User.findOne({ email: normalizedEmail });
+                if (existingEmailUser && existingEmailUser._id.toString() !== targetUserId) {
+                    return res.status(400).json({ error: '이미 사용 중인 이메일입니다.' });
+                }
+                updateData.email = normalizedEmail;
+            }
             if (phone)
                 updateData.phone = phone;
             if (address)
@@ -566,6 +580,7 @@ async function checkCenterAdminAccess(adminId, user) {
     }
     if (user.userType === 'student') {
         const enrolledCourses = user.studentInfo?.enrolledCourses || [];
+        void enrolledCourses;
         return true;
     }
     return false;
@@ -578,17 +593,12 @@ async function checkInstructorAccess(instructorId, user) {
         return false;
     return true;
 }
-async function getCenterCourses(centerId) {
-    return [];
-}
-async function getInstructorCourses(instructorId) {
-    return [];
-}
 router.put('/:userId/swimming-profile/css', auth_1.authMiddleware, async (req, res) => {
     try {
         const { userId } = req.params;
         const currentUser = req.user;
         const { css, updatedByRole, reason } = req.body;
+        void reason;
         console.log('🔍 CSS 수정 권한 체크:', {
             currentUserId: currentUser._id.toString(),
             targetUserId: userId.toString(),
@@ -866,5 +876,28 @@ router.post('/:userId/swimming-profile/reject-changes', auth_1.authMiddleware, a
         return res.status(500).json({ error: '변경사항 거부에 실패했습니다.' });
     }
 });
+async function getInstructorCourses(instructorId) {
+    try {
+        const normalizedInstructorId = typeof instructorId === 'string'
+            ? new mongoose_1.default.Types.ObjectId(instructorId)
+            : instructorId;
+        const courses = await Course_1.Course.find({
+            $or: [
+                { instructor: normalizedInstructorId },
+                { instructorId: normalizedInstructorId }
+            ]
+        })
+            .select('_id')
+            .lean();
+        return courses.map(course => course._id);
+    }
+    catch (error) {
+        console.error('강사 코스 조회 실패:', {
+            instructorId,
+            error
+        });
+        return [];
+    }
+}
 exports.default = router;
 //# sourceMappingURL=users.js.map

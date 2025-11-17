@@ -16,7 +16,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
     try {
         const studentId = req.user.id;
         const { category, level, status } = req.query;
-        let query = { studentId };
+        const query = { studentId };
         if (category && category !== 'all') {
             const teachingMethods = await TeachingMethod_1.TeachingMethod.find({ category });
             const methodIds = teachingMethods.map(m => m._id);
@@ -333,7 +333,7 @@ router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole
             });
         }
         const studentIds = studentDocs.map(s => s._id);
-        let query = { studentId: { $in: studentIds } };
+        const query = { studentId: { $in: studentIds } };
         if (category && category !== 'all') {
             const teachingMethods = await TeachingMethod_1.TeachingMethod.find({ category });
             const methodIds = teachingMethods.map(m => m._id);

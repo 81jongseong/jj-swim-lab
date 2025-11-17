@@ -206,7 +206,7 @@ class Video3DConversionEngine {
             return framesDir;
         }
         catch (error) {
-            console.log('⚠️ FFmpeg를 찾을 수 없습니다. 시뮬레이션 모드로 전환합니다.');
+            console.warn('⚠️ FFmpeg 실행 실패, 시뮬레이션 모드로 전환합니다.', error);
             return this.simulateFrameExtraction(videoPath, outputDir);
         }
     }
@@ -283,7 +283,7 @@ class Video3DConversionEngine {
             }).png().toFile(outputPath);
         }
         catch (error) {
-            console.log(`⚠️ Depth Map 생성 실패, 시뮬레이션 모드로 전환: ${inputPath}`);
+            console.warn(`⚠️ Depth Map 생성 실패, 시뮬레이션 모드로 전환: ${inputPath}`, error);
             await this.generateSimulationDepthMap(outputPath);
         }
     }
@@ -333,7 +333,7 @@ class Video3DConversionEngine {
             return videoPath;
         }
         catch (error) {
-            console.log('⚠️ FFmpeg로 3D 영상 생성 실패, 시뮬레이션 모드로 전환');
+            console.warn('⚠️ FFmpeg로 3D 영상 생성 실패, 시뮬레이션 모드로 전환', error);
             return this.simulate3DVideo(reconstructedDir, outputDir);
         }
     }
@@ -434,7 +434,7 @@ print("3D reconstruction completed!")
             };
         }
         catch (error) {
-            console.log('⚠️ 3D 데이터 분석 실패, 시뮬레이션 모드로 전환');
+            console.warn('⚠️ 3D 데이터 분석 실패, 시뮬레이션 모드로 전환', error);
             return await this.generateSimulationAnalysisData(technique, level);
         }
     }
@@ -469,6 +469,10 @@ print("3D reconstruction completed!")
                 power: 120 + Math.random() * 30
             },
             swimming3DAnalysis: {
+                meta: {
+                    technique,
+                    level
+                },
                 bodyAlignment3D: {
                     spineCurvature: 0.15 + Math.random() * 0.1,
                     shoulderHipAlignment: 0.85 + Math.random() * 0.1,
@@ -496,27 +500,19 @@ print("3D reconstruction completed!")
                 jointAngles3D: {
                     shoulderFlexibility: 0.7 + Math.random() * 0.2,
                     elbowEfficiency: 0.8 + Math.random() * 0.15,
-                    hipRotation: 0.75 + Math.random() * 0.2,
-                    kneeFlexibility: 0.85 + Math.random() * 0.1,
-                    score: 78 + Math.random() * 17
-                },
-                movementTrajectories3D: {
-                    strokePattern: 0.8 + Math.random() * 0.15,
-                    rhythm: 0.75 + Math.random() * 0.2,
-                    coordination: 0.7 + Math.random() * 0.25,
-                    score: 76 + Math.random() * 19
-                },
-                swimmingMetrics3D: {
-                    strokeRate: 0.8 + Math.random() * 0.15,
-                    strokeLength: 0.75 + Math.random() * 0.2,
-                    efficiency: 0.7 + Math.random() * 0.25,
-                    power: 0.8 + Math.random() * 0.15,
-                    score: 77 + Math.random() * 18
-                },
-                overallScore: 76 + Math.random() * 19
+                    hipMobility: 0.75 + Math.random() * 0.2,
+                    kneeFlexion: 0.8 + Math.random() * 0.15,
+                    score: 76 + Math.random() * 18
+                }
             }
         };
-        console.log('✅ 시뮬레이션 3D 분석 데이터 생성 완료');
+        if (level === 'advanced' || level === 'expert') {
+            simulationData.swimmingMetrics3D.efficiency += 0.05;
+            simulationData.swimming3DAnalysis.strokeTechnique3D.score += 5;
+        }
+        if (technique === 'butterfly') {
+            simulationData.swimmingMetrics3D.strokeRate += 5;
+        }
         return simulationData;
     }
     static async performSwimming3DAnalysis(analysisData, technique, level) {
@@ -524,11 +520,25 @@ print("3D reconstruction completed!")
         const strokeTechnique3D = this.analyze3DStrokeTechnique(analysisData.jointAngles3D);
         const breathingPattern3D = this.analyze3DBreathingPattern(analysisData.movementTrajectories3D);
         const efficiency3D = this.analyze3DEfficiency(analysisData.swimmingMetrics3D);
+        if (level === 'advanced' || level === 'master') {
+            efficiency3D.score = Math.min(100, efficiency3D.score + 5);
+            strokeTechnique3D.score = Math.min(100, strokeTechnique3D.score + 3);
+        }
+        if (technique === 'breaststroke') {
+            bodyAlignment3D.score = Math.min(100, bodyAlignment3D.score + 2);
+        }
+        else if (technique === 'butterfly') {
+            breathingPattern3D.score = Math.min(100, breathingPattern3D.score + 3);
+        }
         return {
             bodyAlignment3D,
             strokeTechnique3D,
             breathingPattern3D,
-            efficiency3D
+            efficiency3D,
+            meta: {
+                technique,
+                level
+            }
         };
     }
     static analyze3DBodyAlignment(bodyPositions3D) {
@@ -629,40 +639,88 @@ print("3D reconstruction completed!")
         };
     }
     static calculateSpineCurvature3D(positions) {
-        return 75 + Math.random() * 25;
+        if (!positions.length)
+            return 75;
+        const curvature = positions.reduce((sum, pos) => {
+            const headZ = pos.head?.z ?? 0;
+            const hipsZ = pos.hips?.z ?? pos.body?.z ?? 0;
+            return sum + Math.abs(headZ - hipsZ);
+        }, 0) / positions.length;
+        return Math.round(70 + Math.min(30, curvature));
     }
     static calculateBodyRotation3D(positions) {
-        return 70 + Math.random() * 30;
+        if (!positions.length)
+            return 70;
+        const rotation = positions.reduce((sum, pos) => {
+            const left = pos.shoulders?.left?.z ?? pos.shoulders?.z ?? 0;
+            const right = pos.shoulders?.right?.z ?? pos.shoulders?.z ?? 0;
+            return sum + Math.abs(left - right);
+        }, 0) / positions.length;
+        return Math.round(80 - Math.min(40, rotation));
     }
     static calculateLateralDeviation3D(positions) {
-        return 80 + Math.random() * 20;
+        if (!positions.length)
+            return 80;
+        const averageX = positions.reduce((sum, pos) => sum + (pos.head?.x ?? 0), 0) / positions.length;
+        const variance = positions.reduce((sum, pos) => {
+            const delta = (pos.head?.x ?? 0) - averageX;
+            return sum + Math.abs(delta);
+        }, 0) / positions.length;
+        return Math.round(90 - Math.min(40, variance));
     }
     static calculateArmTrajectory3D(angles) {
-        return 65 + Math.random() * 35;
+        if (!angles.length)
+            return 65;
+        const average = angles.reduce((sum, angle) => sum + (angle.shoulderAngle ?? 0), 0) / angles.length;
+        return Math.round(60 + Math.min(40, average / 2));
     }
     static calculateHandEntryAngle3D(angles) {
-        return 70 + Math.random() * 30;
+        if (!angles.length)
+            return 70;
+        const variance = angles.reduce((sum, angle) => sum + Math.abs((angle.elbowAngle ?? 0) - 90), 0) / angles.length;
+        return Math.round(85 - Math.min(30, variance));
     }
     static calculatePullPattern3D(angles) {
-        return 75 + Math.random() * 25;
+        if (!angles.length)
+            return 75;
+        const hipFlex = angles.reduce((sum, angle) => sum + (angle.hipAngle ?? 0), 0) / angles.length;
+        return Math.round(70 + Math.min(25, hipFlex / 10));
     }
     static calculateHeadRotation3D(trajectories) {
-        return 80 + Math.random() * 20;
+        if (!trajectories.length)
+            return 80;
+        const rotationScore = trajectories.reduce((sum, item) => sum + Math.abs(item.velocity ?? 0), 0) / trajectories.length;
+        return Math.round(75 + Math.min(20, rotationScore * 10));
     }
     static calculateBreathingTiming3D(trajectories) {
-        return 70 + Math.random() * 30;
+        if (!trajectories.length)
+            return 70;
+        const timingConsistency = trajectories.filter(item => item.strokePhase === 'breath').length / trajectories.length;
+        return Math.round(60 + Math.min(30, timingConsistency * 100));
     }
     static calculateBodyPosition3D(trajectories) {
-        return 75 + Math.random() * 25;
+        if (!trajectories.length)
+            return 75;
+        const accelerationVariance = trajectories.reduce((sum, item) => sum + Math.abs(item.acceleration ?? 0), 0) / trajectories.length;
+        return Math.round(85 - Math.min(30, accelerationVariance * 100));
     }
     static calculateDragCoefficient3D(metrics) {
-        return 85 + Math.random() * 15;
+        if (!metrics)
+            return 85;
+        const dragBase = (metrics.strokeLength ?? 0) * (metrics.speed ?? 0);
+        return Math.round(70 + Math.min(30, dragBase * 10));
     }
     static calculatePropulsionEfficiency3D(metrics) {
-        return 70 + Math.random() * 30;
+        if (!metrics)
+            return 70;
+        const efficiency = metrics.efficiency ?? 0.7;
+        return Math.round(60 + Math.min(35, efficiency * 100));
     }
     static calculateEnergyExpenditure3D(metrics) {
-        return 75 + Math.random() * 25;
+        if (!metrics)
+            return 75;
+        const energy = metrics.power ?? 100;
+        return Math.round(65 + Math.min(30, energy / 5));
     }
     static async getFileList(directory) {
         try {
@@ -671,6 +729,7 @@ print("3D reconstruction completed!")
                 .sort();
         }
         catch (error) {
+            console.warn(`📁 디렉토리 읽기 실패: ${directory}`, error);
             return [];
         }
     }

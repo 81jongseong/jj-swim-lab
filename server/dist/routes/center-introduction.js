@@ -274,6 +274,7 @@ router.post('/:centerId/images', auth_1.authMiddleware, (0, auth_1.requireRole)(
         console.log('📸 센터 이미지 업로드 요청');
         const { centerId } = req.params;
         const { imageUrl, description } = req.body;
+        void description;
         const userId = req.user._id;
         const userType = req.user.userType;
         const userCenterId = req.user.centerId;

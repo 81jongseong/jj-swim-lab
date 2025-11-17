@@ -4,6 +4,7 @@ export interface PostureAnalysisResult {
     strengths: string[];
     improvements: string[];
     detailedFeedback: string;
+    completionRate: number;
 }
 export interface ProgressPredictionResult {
     currentLevel: string;
@@ -11,6 +12,8 @@ export interface ProgressPredictionResult {
     estimatedWeeks: number;
     confidence: number;
     factors: string[];
+    referenceEvaluationId?: string | null;
+    focusCategories?: string[];
 }
 export interface PersonalizedRecommendationResult {
     recommendedExercises: string[];
@@ -27,8 +30,12 @@ export interface PerformanceAnalysisResult {
 export declare class AIEngine {
     static analyzePosture(studentId: string, technique: string, checklistData: any[]): Promise<PostureAnalysisResult>;
     static predictProgress(studentId: string, instructorId: string): Promise<ProgressPredictionResult>;
-    static generatePersonalizedRecommendation(studentId: string, instructorId: string): Promise<PersonalizedRecommendationResult>;
-    static analyzePerformance(studentId: string, instructorId: string): Promise<PerformanceAnalysisResult>;
+    static generatePersonalizedRecommendation(studentId: string, instructorId: string, options?: {
+        persist?: boolean;
+    }): Promise<PersonalizedRecommendationResult>;
+    static analyzePerformance(studentId: string, instructorId: string, options?: {
+        persist?: boolean;
+    }): Promise<PerformanceAnalysisResult>;
     private static generateDetailedFeedback;
     private static analyzeProgressPattern;
     private static determineCurrentLevel;

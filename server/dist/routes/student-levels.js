@@ -7,6 +7,35 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const router = express_1.default.Router();
+const englishToKoreanLevelMap = {
+    beginner: '초급',
+    intermediate: '중급',
+    advanced: '고급',
+    expert: '전문가',
+    master: '마스터'
+};
+const koreanToEnglishLevelMap = {
+    초급: 'beginner',
+    중급: 'intermediate',
+    고급: 'advanced',
+    전문가: 'expert',
+    마스터: 'master'
+};
+const resolveLevelPair = (rawLevel) => {
+    if (!rawLevel) {
+        return { english: 'beginner', korean: englishToKoreanLevelMap.beginner };
+    }
+    const normalized = rawLevel.toString().trim().toLowerCase();
+    if (englishToKoreanLevelMap[normalized]) {
+        return { english: normalized, korean: englishToKoreanLevelMap[normalized] };
+    }
+    const koreanCandidate = rawLevel.toString().trim();
+    if (koreanToEnglishLevelMap[koreanCandidate]) {
+        const english = koreanToEnglishLevelMap[koreanCandidate];
+        return { english, korean: englishToKoreanLevelMap[english] };
+    }
+    return { english: normalized || 'beginner', korean: englishToKoreanLevelMap[normalized] || koreanCandidate };
+};
 router.put('/:studentId/level', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { studentId } = req.params;
@@ -51,19 +80,25 @@ router.put('/:studentId/level', auth_1.authMiddleware, (0, auth_1.requireRole)([
                 message: '이 학생의 레벨을 변경할 권한이 없습니다.'
             });
         }
-        const oldLevel = student.studentInfo?.currentLevel || student.studentInfo?.swimmingLevel || 'beginner';
+        const oldLevelRaw = student.studentInfo?.currentLevel ||
+            student.studentInfo?.swimmingLevel ||
+            student.level ||
+            'beginner';
+        const { english: oldLevelEnglish, korean: oldLevelKorean } = resolveLevelPair(oldLevelRaw);
+        const { english: englishLevel, korean: koreanLevel } = resolveLevelPair(newLevel);
         const levelChangeRecord = {
-            fromLevel: oldLevel,
-            toLevel: newLevel,
+            fromLevel: oldLevelKorean,
+            toLevel: koreanLevel,
             changedBy: user._id,
             changedByType: user.userType,
             reason: reason || '',
             changedAt: new Date()
         };
         const updateData = {
-            'studentInfo.currentLevel': newLevel,
-            'studentInfo.swimmingLevel': newLevel,
-            'level': newLevel
+            'studentInfo.currentLevel': koreanLevel,
+            'studentInfo.swimmingLevel': koreanLevel,
+            'studentInfo.levelChangeHistory': student.studentInfo.levelChangeHistory,
+            level: englishLevel
         };
         if (!student.studentInfo.levelChangeHistory) {
             student.studentInfo.levelChangeHistory = [];
@@ -72,14 +107,19 @@ router.put('/:studentId/level', auth_1.authMiddleware, (0, auth_1.requireRole)([
         if (student.studentInfo.levelChangeHistory.length > 10) {
             student.studentInfo.levelChangeHistory = student.studentInfo.levelChangeHistory.slice(-10);
         }
-        const updatedStudent = await User_1.User.findByIdAndUpdate(studentId, updateData, { new: true, runValidators: true }).populate('studentInfo.levelChangeHistory.changedBy', 'name userId userType');
+        const updatedStudent = await User_1.User.findByIdAndUpdate(studentId, updateData, {
+            new: true,
+            runValidators: true
+        }).populate('studentInfo.levelChangeHistory.changedBy', 'name userId userType');
         res.json({
             success: true,
             message: '학생 레벨이 성공적으로 변경되었습니다.',
             data: {
                 studentId: updatedStudent._id,
-                oldLevel,
-                newLevel,
+                oldLevel: oldLevelKorean,
+                oldLevelEnglish,
+                newLevel: koreanLevel,
+                newLevelEnglish: englishLevel,
                 changedBy: {
                     userId: user.userId,
                     name: user.name,

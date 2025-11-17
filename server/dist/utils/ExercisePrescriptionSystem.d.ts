@@ -103,6 +103,11 @@ export interface DynamicAdjustment {
     newPrescription: ExercisePrescription;
     reasoning: string[];
     confidence: number;
+    insights: {
+        completionRate: number;
+        perceivedExertion: number;
+        difficultyTrend: number;
+    };
 }
 export declare class ExercisePrescriptionSystem {
     static classifyHealthGrade(healthData: any, user: any): HealthGrade;
@@ -116,6 +121,13 @@ export declare class ExercisePrescriptionSystem {
         exerciseHistory?: string;
     }): ExerciseIntensity;
     static generateExercisePrescription(healthGrade: HealthGrade, healthData: any, user: any, exerciseHistory?: ExerciseHistory[]): ExercisePrescription;
+    static buildPrescriptionForUser(userId: string, options?: {
+        exerciseHistory?: ExerciseHistory[];
+        overrideHealthData?: Record<string, any>;
+    }): Promise<{
+        healthGrade: HealthGrade;
+        prescription: ExercisePrescription;
+    }>;
     static calculateHistoryBasedAdjustment(history: ExerciseHistory[]): DynamicAdjustment;
     private static calculateBMI;
     private static estimateVO2Max;

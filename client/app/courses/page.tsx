@@ -13,6 +13,8 @@ import {
   Loader2,
   MapPin,
   Users,
+  RefreshCw,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/Button";
 
@@ -44,6 +46,14 @@ interface EnrolledCourse {
   enrolledAt?: string | null;
   nextClassStart?: string | null;
   nextClassEnd?: string | null;
+  startDate?: string | null;
+  classInfo?: {
+    startDate?: string | null;
+    endDate?: string | null;
+    className?: string;
+  } | null;
+  refundPolicy?: string | null;
+  hasRefundRequest?: boolean; // 환불 신청 상태
 }
 
 const levelLabels: Record<string, string> = {
@@ -243,6 +253,24 @@ export default function StudentCoursesPage() {
             const enrollmentStatus = enrollmentLabels[course.enrollmentStatus ?? "active"] || course.enrollmentStatus;
             const enrolledAtText = formatDate(course.enrolledAt);
             const nextClassStart = formatDate(course.nextClassStart);
+            
+            // ⭐ 강의 시작 여부 확인
+            const startDate = course.classInfo?.startDate || course.startDate;
+            let isCourseStarted = false;
+            if (startDate) {
+              try {
+                const start = new Date(startDate);
+                if (!isNaN(start.getTime())) {
+                  const now = new Date();
+                  now.setHours(0, 0, 0, 0);
+                  start.setHours(0, 0, 0, 0);
+                  isCourseStarted = start <= now;
+                }
+              } catch (err) {
+                console.error('강의 시작일 파싱 오류:', err);
+                isCourseStarted = false; // 파싱 실패 시 시작 전으로 간주
+              }
+            }
 
             return (
               <article
@@ -320,6 +348,18 @@ export default function StudentCoursesPage() {
                   )}
                 </div>
 
+                {/* ⭐ 환불 정책 안내 (강의 시작 후에도 표시) */}
+                {isCourseStarted && course.refundPolicy && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                    <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900 mb-1">환불 정책 안내</p>
+                      <p className="text-xs text-blue-700">{course.refundPolicy}</p>
+                      <p className="text-xs text-blue-600 mt-1">※ 수업 중간에도 환불 신청이 가능하며, 센터의 환불 정책에 따라 환불 금액이 결정됩니다.</p>
+                    </div>
+                  </div>
+                )}
+
                 <footer className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-3 text-sm text-slate-600">
                     <CreditCard className="h-4 w-4 text-blue-500" />
@@ -330,6 +370,61 @@ export default function StudentCoursesPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* ⭐ 환불신청/신청취소 버튼: 항상 표시 (강의 시작 전/후 모두 가능) */}
+                    {course.hasRefundRequest ? (
+                      <Button 
+                        variant="outline" 
+                        className="text-sm border-gray-300 text-gray-600 hover:bg-gray-50"
+                        onClick={async () => {
+                          if (confirm('환불 신청을 취소하시겠습니까?')) {
+                            try {
+                              const response = await apiClient.delete(`/api/courses/${course._id}/refund-request`);
+                              if (response.success) {
+                                alert('환불 신청이 취소되었습니다.');
+                                window.location.reload();
+                              } else {
+                                alert(response.message || '환불 신청 취소에 실패했습니다.');
+                              }
+                            } catch (error: any) {
+                              console.error('환불 신청 취소 오류:', error);
+                              const errorMessage = error.response?.data?.message || '환불 신청 취소 중 오류가 발생했습니다.';
+                              alert(errorMessage);
+                            }
+                          }
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        신청 취소
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        className="text-sm border-orange-300 text-orange-600 hover:bg-orange-50"
+                        onClick={async () => {
+                          // ⭐ 환불 정책 안내 제거 (카드에만 표시)
+                          if (confirm('환불 신청을 하시겠습니까?')) {
+                            try {
+                              const response = await apiClient.post(`/api/courses/${course._id}/refund-request`, {
+                                courseId: course._id
+                              });
+                              if (response.success) {
+                                alert(response.message || '환불 신청이 접수되었습니다.');
+                                window.location.reload();
+                              } else {
+                                alert(response.message || '환불 신청에 실패했습니다.');
+                              }
+                            } catch (error: any) {
+                              console.error('환불 신청 오류:', error);
+                              const errorMessage = error.response?.data?.message || '환불 신청 중 오류가 발생했습니다.';
+                              alert(errorMessage);
+                            }
+                          }
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        환불 신청
+                      </Button>
+                    )}
                     <Button asChild variant="outline" className="text-sm">
                       <Link href="/payments">결제 내역 확인</Link>
                     </Button>

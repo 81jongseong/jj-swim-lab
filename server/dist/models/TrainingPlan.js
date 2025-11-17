@@ -200,6 +200,8 @@ trainingPlanSchema.pre('save', function (next) {
     next();
 });
 trainingPlanSchema.statics.generateAIPlan = async function (userId, userInput) {
+    void userId;
+    void userInput;
     return null;
 };
 trainingPlanSchema.methods.calculateProgress = function () {

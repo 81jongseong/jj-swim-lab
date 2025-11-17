@@ -7,7 +7,7 @@ const LaneRental_1 = require("../models/LaneRental");
 class LaneAllocationService {
     static async adjustLanesForPersonalLesson(personalLessonData) {
         try {
-            const { date, time, centerId, rentalCount = 1, dayName } = personalLessonData;
+            const { date, time, centerId, dayName } = personalLessonData;
             const normalizeDayName = (day) => {
                 const dayMap = {
                     'monday': 'monday',
@@ -77,14 +77,13 @@ class LaneAllocationService {
             });
             console.log(`🔍 개인레슨 시간 충돌 강습과정 발견: ${conflictingCourses.length}개`);
             const personalLessonLane = 1;
-            const usedLanes = new Set([personalLessonLane]);
             console.log(`🔍 개인레슨 레인: ${personalLessonLane}`);
             const coursesWithLane1 = conflictingCourses.filter((course) => {
                 const currentLanes = course.laneInfo?.assignedLanes || [];
                 return currentLanes.includes(1);
             });
             console.log(`🔍 1레인과 충돌하는 강습과정: ${coursesWithLane1.length}개`);
-            let currentAvailableLanes = [2, 3, 4, 5, 6];
+            const currentAvailableLanes = [2, 3, 4, 5, 6];
             let nextLaneIndex = 0;
             for (const course of conflictingCourses) {
                 const maxLanes = course.laneInfo?.maxLanes || course.laneInfo?.assignedLanes?.length || 1;
@@ -167,7 +166,6 @@ class LaneAllocationService {
                     });
                     if (isConflicting) {
                         const scheduleCurrentLanes = scheduleItem.lanes?.assignedLanes || currentLanes;
-                        const scheduleOriginalLanes = scheduleItem.lanes?.originalAssignedLanes || scheduleCurrentLanes;
                         console.log(`🔧 레인 조정 적용:`, {
                             courseName: course.name,
                             day: scheduleItem.day,

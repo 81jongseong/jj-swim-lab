@@ -350,8 +350,65 @@ async function processApprovedRequest(approval: any) {
         break;
 
       case 'refund_request':
-        // 환불 요청 승인 시 환불 처리
-        // (구체적인 구현은 결제 시스템에 따라 달라짐)
+        // ⭐ 환불 요청 승인 시 실제 환불 처리
+        if (approval.courseId && approval.userId) {
+          const { Payment } = require('../models/Payment');
+          const { Course } = require('../models/Course');
+          const { Booking } = require('../models/Booking');
+          const { PersonalLesson } = require('../models/PersonalLesson');
+          
+          // 1. 관련 Payment 찾기 및 환불 처리
+          const payment = await Payment.findOne({
+            user: approval.userId,
+            relatedCourse: approval.courseId,
+            status: { $in: ['completed', 'pending'] }
+          });
+          
+          if (payment) {
+            // ⭐ 환불 금액 계산 (환불 정책에 따라 계산, 일단 estimatedAmount 또는 payment.amount 사용)
+            // TODO: 환불 정책에 따른 정확한 환불 금액 계산 로직 추가 필요
+            const refundAmount = approval.estimatedAmount || payment.amount;
+            
+            payment.status = 'refunded';
+            payment.refundAmount = refundAmount;
+            payment.refundedAt = new Date();
+            payment.refundedBy = approval.processedBy;
+            payment.notes = (payment.notes || '') + `\n환불 승인: ${approval.reason || '센터 관리자 승인'}\n환불 금액: ${refundAmount.toLocaleString()}원`;
+            await payment.save();
+            console.log(`✅ Payment ${payment._id} 환불 처리 완료: ${refundAmount.toLocaleString()}원`);
+          }
+          
+          // 2. Course의 enrolledStudents에서 학생 제거
+          const course = await Course.findById(approval.courseId);
+          if (course && course.enrolledStudents) {
+            const studentIdStr = approval.userId.toString();
+            course.enrolledStudents = (course.enrolledStudents || []).filter((e: any) => {
+              const eStudentId = e.student?.toString() || e.student?.toString() || e.student;
+              return eStudentId !== studentIdStr;
+            });
+            await course.save();
+            console.log(`✅ Course ${course._id}에서 학생 ${approval.userId} 제거 완료`);
+          }
+          
+          // 3. Booking 상태 변경 (있다면)
+          const booking = await Booking.findOne({
+            studentId: approval.userId,
+            courseId: approval.courseId,
+            status: { $in: ['confirmed', 'pending', 'completed'] }
+          });
+          
+          if (booking) {
+            booking.status = 'cancelled';
+            booking.cancelledAt = new Date();
+            booking.cancellationReason = '환불 승인';
+            await booking.save();
+            console.log(`✅ Booking ${booking._id} 취소 처리 완료`);
+          }
+          
+          // 4. PersonalLesson 상태 변경 (있다면) - PersonalLesson은 courseId가 없을 수 있으므로 studentId로만 찾기
+          // 환불 신청은 Course에 대한 것이므로 PersonalLesson은 별도로 처리하지 않음
+          // (PersonalLesson 환불은 별도 Approval로 처리되어야 함)
+        }
         break;
     }
   } catch (error) {

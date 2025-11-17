@@ -44,7 +44,7 @@ class MedicalExercisePrescriptionService {
         const riskFactors = [];
         let cardiovascularRisk = 0;
         let metabolicRisk = 0;
-        let overallRisk = healthAssessment.riskAssessment.overallRisk;
+        const overallRisk = healthAssessment.riskAssessment.overallRisk;
         if (latestVitals) {
             if (latestVitals.systolicBP >= 180 || latestVitals.diastolicBP >= 110) {
                 cardiovascularRisk += 30;
@@ -355,10 +355,10 @@ class MedicalExercisePrescriptionService {
     static calculateBaseParameters(healthAssessment, riskAnalysis, conditionGuidelines) {
         let aerobicIntensity = 5;
         let aerobicDuration = 30;
-        let aerobicFrequency = 3;
+        const aerobicFrequency = 3;
         let resistanceIntensity = 4;
-        let resistanceDuration = 20;
-        let resistanceFrequency = 2;
+        const resistanceDuration = 20;
+        const resistanceFrequency = 2;
         if (riskAnalysis.overallRisk === HealthAssessment_1.HealthRiskLevel.HIGH ||
             riskAnalysis.overallRisk === HealthAssessment_1.HealthRiskLevel.VERY_HIGH) {
             aerobicIntensity = Math.max(3, aerobicIntensity - 2);
@@ -530,6 +530,7 @@ class MedicalExercisePrescriptionService {
         return exercises;
     }
     static generateFlexibilityExercises(healthAssessment) {
+        void healthAssessment;
         return [
             {
                 name: '목 스트레칭',
@@ -592,6 +593,7 @@ class MedicalExercisePrescriptionService {
         return contraindications;
     }
     static generateAerobicProgression(baseParams) {
+        void baseParams;
         return [
             { week: 1, adjustments: '기본 강도로 적응' },
             { week: 4, adjustments: '운동 시간 5분 증가' },
@@ -600,6 +602,8 @@ class MedicalExercisePrescriptionService {
         ];
     }
     static getResistancePrecautions(healthAssessment, riskAnalysis) {
+        void healthAssessment;
+        void riskAnalysis;
         return [
             '발살바 호흡법 피하기',
             '점진적 부하 증가',
@@ -607,6 +611,7 @@ class MedicalExercisePrescriptionService {
         ];
     }
     static getResistanceContraindications(healthAssessment) {
+        void healthAssessment;
         return [
             '급성 관절염',
             '조절되지 않는 고혈압',
@@ -614,6 +619,7 @@ class MedicalExercisePrescriptionService {
         ];
     }
     static generateResistanceProgression(baseParams) {
+        void baseParams;
         return [
             { week: 1, adjustments: '동작 익히기' },
             { week: 3, adjustments: '반복 횟수 2회 증가' },
@@ -622,6 +628,8 @@ class MedicalExercisePrescriptionService {
         ];
     }
     static generateSafetyGuidelines(healthAssessment, riskAnalysis) {
+        void healthAssessment;
+        void riskAnalysis;
         return {
             preExerciseChecklist: [
                 '혈압 측정 (고혈압 환자)',
@@ -662,6 +670,8 @@ class MedicalExercisePrescriptionService {
         };
     }
     static createProgressionPlan(healthAssessment, recommendations) {
+        void healthAssessment;
+        void recommendations;
         return [
             {
                 phase: 1,

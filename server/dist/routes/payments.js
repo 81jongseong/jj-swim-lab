@@ -42,18 +42,138 @@ router.get('/', auth_1.auth, async (req, res) => {
         }
         const currentUser = req.user;
         const resolvedCenterId = centerIdQuery || currentUser?.centerId || currentUser?.centerAdminInfo?.managedCenters?.[0];
-        if (resolvedCenterId) {
+        if (currentUser?.userType === 'student') {
+            filter.user = currentUser.userId || currentUser._id;
+            if (resolvedCenterId) {
+                filter.centerId = resolvedCenterId;
+            }
+        }
+        else if (resolvedCenterId) {
             filter.centerId = resolvedCenterId;
         }
         else if (currentUser?.userType !== 'superAdmin') {
-            filter.user = currentUser.userId;
+            filter.user = currentUser.userId || currentUser._id;
         }
+        if (!status) {
+            filter.status = { $in: ['completed', 'refunded', 'pending'] };
+        }
+        console.log('📊 결제 내역 조회 필터:', JSON.stringify(filter, null, 2));
+        console.log('📊 현재 사용자:', {
+            userId: currentUser?.userId || currentUser?._id,
+            userType: currentUser?.userType,
+            centerId: resolvedCenterId
+        });
         const payments = await Payment_1.Payment.find(filter)
             .populate('user', 'name userId')
             .populate('relatedCourse', 'name')
             .populate('relatedBooking', 'date startTime endTime')
             .sort({ createdAt: -1 });
-        return res.json({ success: true, message: '결제 내역 조회 성공!', data: payments });
+        console.log('📊 조회된 결제 수:', payments.length);
+        if (currentUser?.userType === 'student' && !centerIdQuery) {
+            const userId = currentUser.userId || currentUser._id;
+            const userIdObj = new mongoose_1.default.Types.ObjectId(userId);
+            const studentCenterId = currentUser.centerId || resolvedCenterId;
+            const courseFilter = {
+                'enrolledStudents.student': userIdObj,
+                'enrolledStudents.status': { $ne: 'dropped' }
+            };
+            if (studentCenterId) {
+                courseFilter.centerId = studentCenterId;
+            }
+            const enrolledCourses = await Course_1.Course.find(courseFilter)
+                .populate('instructor', 'name')
+                .lean();
+            for (const course of enrolledCourses) {
+                const enrollment = (course.enrolledStudents || []).find((e) => {
+                    const eStudentId = e.student?.toString() || e.student;
+                    return eStudentId === userId.toString();
+                });
+                if (enrollment) {
+                    const existingPayment = payments.find((p) => {
+                        const pCourseId = p.relatedCourse?._id?.toString() || p.relatedCourse?.toString();
+                        return pCourseId === course._id.toString();
+                    });
+                    if (!existingPayment) {
+                        const virtualPayment = {
+                            _id: `virtual-${course._id}`,
+                            user: { name: currentUser.name || '사용자', userId: userId },
+                            amount: course.price || 0,
+                            currency: 'KRW',
+                            paymentMethod: 'card',
+                            status: 'completed',
+                            purpose: 'course',
+                            relatedCourse: { _id: course._id, name: course.name },
+                            relatedBooking: null,
+                            transactionId: `VIRTUAL-${course._id}`,
+                            notes: '기존 등록 강의 (결제 기록 없음)',
+                            centerId: course.centerId,
+                            createdAt: enrollment.enrolledAt || enrollment.enrollmentDate || course.createdAt || new Date(),
+                            updatedAt: enrollment.enrolledAt || enrollment.enrollmentDate || course.createdAt || new Date(),
+                            isVirtual: true
+                        };
+                        payments.push(virtualPayment);
+                    }
+                }
+            }
+            const { PersonalLesson } = require('../models/PersonalLesson');
+            const personalLessonFilter = {
+                studentId: userIdObj,
+                status: { $in: ['pending', 'approved', 'completed'] }
+            };
+            if (studentCenterId) {
+                personalLessonFilter.centerId = studentCenterId;
+            }
+            const personalLessons = await PersonalLesson.find(personalLessonFilter)
+                .populate('instructorId', 'name')
+                .lean();
+            for (const lesson of personalLessons) {
+                const existingPayment = payments.find((p) => {
+                    return p._id?.toString() === lesson.paymentId?.toString();
+                });
+                if (!existingPayment && !lesson.paymentId) {
+                    const virtualPayment = {
+                        _id: `virtual-pl-${lesson._id}`,
+                        user: { name: currentUser.name || '사용자', userId: userId },
+                        amount: lesson.price || lesson.totalAmount || 0,
+                        currency: 'KRW',
+                        paymentMethod: 'card',
+                        status: 'completed',
+                        purpose: 'booking',
+                        relatedCourse: null,
+                        relatedBooking: { _id: lesson._id, date: lesson.date, startTime: lesson.startTime || lesson.time, endTime: lesson.endTime },
+                        transactionId: `VIRTUAL-PL-${lesson._id}`,
+                        notes: '개인 레슨 (결제 기록 없음)',
+                        centerId: lesson.centerId,
+                        createdAt: lesson.createdAt || new Date(),
+                        updatedAt: lesson.updatedAt || lesson.createdAt || new Date(),
+                        isVirtual: true
+                    };
+                    payments.push(virtualPayment);
+                }
+            }
+            payments.sort((a, b) => {
+                const dateA = new Date(a.createdAt).getTime();
+                const dateB = new Date(b.createdAt).getTime();
+                return dateB - dateA;
+            });
+        }
+        const processedPayments = payments.map((payment) => {
+            const paymentObj = payment.toObject ? payment.toObject() : payment;
+            const finalStatus = paymentObj.status === 'pending' ? 'completed' : paymentObj.status;
+            return {
+                ...paymentObj,
+                status: finalStatus,
+                amount: paymentObj.amount || 0
+            };
+        });
+        console.log('📊 결제 내역 조회 결과:', {
+            filter,
+            totalCount: payments.length,
+            completedCount: processedPayments.filter((p) => p.status === 'completed').length,
+            refundedCount: processedPayments.filter((p) => p.status === 'refunded').length,
+            payments: processedPayments.map((p) => ({ _id: p._id, status: p.status, amount: p.amount }))
+        });
+        return res.json({ success: true, message: '결제 내역 조회 성공!', data: { payments: processedPayments } });
     }
     catch (error) {
         console.error('결제 내역 조회 오류:', error);
@@ -112,7 +232,8 @@ router.post('/', auth_1.auth, async (req, res) => {
             relatedBooking,
             notes: notes || '',
             transactionId,
-            status: 'pending',
+            status: 'completed',
+            processedAt: new Date(),
         };
         const payment = new Payment_1.Payment(paymentData);
         await payment.save();
@@ -125,7 +246,7 @@ router.post('/', auth_1.auth, async (req, res) => {
             if (io)
                 io.to(`user:${String(req.user.userId)}`).emit('notification', {
                     type: 'payment:created',
-                    message: '결제가 생성되었습니다. 결제 완료 대기 중입니다.',
+                    message: '결제가 완료되었습니다.',
                 });
         }
         catch (error) {
@@ -133,7 +254,7 @@ router.post('/', auth_1.auth, async (req, res) => {
         }
         return res.status(201).json({
             success: true,
-            message: '결제가 생성되었습니다.',
+            message: '결제가 완료되었습니다.',
             data: populatedPayment
         });
     }

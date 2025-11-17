@@ -53,7 +53,12 @@ const AIAnalysisSchema = new mongoose_1.Schema({
         },
         strengths: [String],
         improvements: [String],
-        detailedFeedback: String
+        detailedFeedback: String,
+        completionRate: {
+            type: Number,
+            min: 0,
+            max: 100
+        }
     },
     progressPrediction: {
         currentLevel: String,
@@ -64,7 +69,12 @@ const AIAnalysisSchema = new mongoose_1.Schema({
             min: 0,
             max: 1
         },
-        factors: [String]
+        factors: [String],
+        referenceEvaluationId: {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'AIEvaluationResult'
+        },
+        focusCategories: [String]
     },
     personalizedRecommendation: {
         recommendedExercises: [String],

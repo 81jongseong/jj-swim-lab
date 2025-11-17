@@ -96,7 +96,6 @@ import apiClient from '../../utils/api';
 
 // 동적 임포트로 코드 스플리팅 적용
 const StatsCards = lazy(() => import('../../components/dashboard/StatsCards'));
-const RecentBookings = lazy(() => import('../../components/dashboard/RecentBookings'));
 const HealthDashboard = lazy(() => import('../../components/HealthDashboard'));
 
 interface MemberStats {
@@ -145,7 +144,6 @@ export default function MemberDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<MemberStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -209,9 +207,11 @@ export default function MemberDashboard() {
           }
           
           const d = res.data;
+          // ⭐ 총예약과 활성강습은 같은 값 (등록된 강습 수)
+          const enrolledCount = d.enrolledCourses || d.activeCourses || 0;
           setStats({
-            totalBookings: d.enrolledCourses || 0,
-            activeCourses: d.activeCourses || d.enrolledCourses || 0,
+            totalBookings: enrolledCount,
+            activeCourses: enrolledCount,
             totalPayments: d.totalPayments || 0,
             nextLesson: d.nextClass || null,
           });
@@ -238,47 +238,53 @@ export default function MemberDashboard() {
             { name: '심박수 개선', current: 75, target: 70, progress: 100, unit: 'bpm' }
           ]);
           
-          setWeeklyProgram([
-            { day: 'Mon', duration: 30, strokes: '배영 + 자유형' },
-            { day: 'Tue', duration: 30, strokes: '배영 + 자유형' },
-            { day: 'Wed', duration: 30, strokes: '배영 + 자유형' },
-            { day: 'Thu', duration: 30, strokes: '배영 + 자유형' },
-            { day: 'Fri', duration: 30, strokes: '배영 + 자유형' }
-          ]);
-          
-          // 샘플 데이터로 최근 예약 설정
-          setRecentBookings([
-            {
-              id: '1',
-              courseName: '자유형 기초반',
-              date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-              startTime: '14:00',
-              endTime: '15:00',
-              instructorName: '김강사',
-              status: 'confirmed',
-              location: '1층 메인풀'
-            },
-            {
-              id: '2',
-              courseName: '배영 중급반',
-              date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-              startTime: '15:00',
-              endTime: '16:00',
-              instructorName: '이강사',
-              status: 'confirmed',
-              location: '2층 보조풀'
-            },
-            {
-              id: '3',
-              courseName: '평영 고급반',
-              date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-              startTime: '16:00',
-              endTime: '17:00',
-              instructorName: '박강사',
-              status: 'pending',
-              location: '1층 메인풀'
+          // ⭐ 등록된 코스의 프로그램 가져오기
+          try {
+            const coursesRes = await apiClient.get('/api/courses/student/enrolled');
+            const enrolledCourses = coursesRes?.data || [];
+            
+            // 첫 번째 등록된 코스의 프로그램 찾기
+            let programData: any = null;
+            for (const course of enrolledCourses) {
+              if (course._id) {
+                try {
+                  // 단체반 프로그램 조회
+                  const programRes = await apiClient.get(`/api/group-programs/${course._id}`);
+                  if (programRes?.data?.programs && programRes.data.programs.length > 0) {
+                    programData = programRes.data.programs[0]; // 가장 최근 프로그램
+                    break;
+                  }
+                } catch (err) {
+                  // 프로그램이 없으면 다음 코스 확인
+                  continue;
+                }
+              }
             }
-          ]);
+            
+            // 프로그램 데이터가 있으면 주간 프로그램 생성
+            if (programData && programData.content?.sessions) {
+              const sessions = programData.content.sessions || [];
+              const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+              const weeklyProgramData = sessions.slice(0, 5).map((session: any, idx: number) => ({
+                _id: programData._id,
+                programId: programData._id,
+                courseId: programData.groupClassId,
+                courseName: programData.groupClassName || enrolledCourses[0]?.name,
+                instructorName: enrolledCourses[0]?.instructor?.name || enrolledCourses[0]?.instructorName,
+                day: dayNames[idx] || `Day ${idx + 1}`,
+                duration: session.duration || programData.params?.sessionDuration || 30,
+                strokes: session.strokes?.join(' + ') || session.summary || '운동',
+                summary: programData.content?.summary
+              }));
+              setWeeklyProgram(weeklyProgramData);
+            } else {
+              // 프로그램이 없으면 빈 배열
+              setWeeklyProgram([]);
+            }
+          } catch (err) {
+            console.error('프로그램 데이터 로딩 실패:', err);
+            setWeeklyProgram([]);
+          }
         } else {
           const message = res?.message || '대시보드 데이터를 불러오지 못했습니다.';
           setErrorMessage(message);
@@ -368,19 +374,6 @@ export default function MemberDashboard() {
           </Suspense>
         )}
 
-        {/* 최근 예약 - 코드 스플리팅 적용 */}
-        <Suspense fallback={
-          <div className="bg-white rounded-lg shadow p-6 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-          </div>
-        }>
-          <RecentBookings bookings={recentBookings} />
-        </Suspense>
       </div>
     </div>
   );

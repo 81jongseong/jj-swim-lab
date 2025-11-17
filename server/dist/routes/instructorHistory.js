@@ -294,6 +294,8 @@ router.post('/work-history/:historyId/end', auth_1.authMiddleware, auth_1.requir
     try {
         const { historyId } = req.params;
         const { endDate, achievements } = req.body;
+        void endDate;
+        void achievements;
         const currentHistory = await InstructorHistory_1.InstructorWorkHistory.findById(historyId);
         if (!currentHistory) {
             return res.status(404).json({

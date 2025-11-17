@@ -162,7 +162,7 @@ class CommunityService {
         try {
             const { page = 1, limit = 20, sortBy = 'latest', filters = {} } = options;
             const skip = (page - 1) * limit;
-            let query = { roomType, isHidden: false };
+            const query = { roomType, isHidden: false };
             if (roomType === 'equipment_reviews' && filters.category) {
                 query['roomSpecific.equipmentReview.category'] = filters.category;
             }
@@ -428,7 +428,6 @@ class CommunityService {
         }
     }
     validateRoomSpecificData(roomType, roomSpecific) {
-        const roomConfig = Community_1.ROOM_CONFIGS[roomType];
         if (roomType === 'equipment_reviews') {
             if (!roomSpecific?.equipmentReview) {
                 throw new Error('용품 후기 정보가 필요합니다.');
@@ -469,7 +468,7 @@ class CommunityService {
         if (reviews.length === 0)
             return stats;
         let totalRating = 0;
-        let totalDetailedRating = { durability: 0, comfort: 0, performance: 0, valueForMoney: 0, design: 0 };
+        const totalDetailedRating = { durability: 0, comfort: 0, performance: 0, valueForMoney: 0, design: 0 };
         let wouldBuyAgainCount = 0;
         let recommendCount = 0;
         let totalUsageMonths = 0;

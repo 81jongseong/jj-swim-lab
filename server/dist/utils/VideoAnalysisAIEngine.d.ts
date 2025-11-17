@@ -45,6 +45,9 @@ export declare class VideoAnalysisAIEngine {
     private static identifyStrengths;
     private static identifyWeaknesses;
     private static extractKeyFrames;
+    private static buildFeedback;
+    private static buildRecommendations;
+    private static persistAnalysisResult;
     private static generateSimulatedBodyLandmarks;
     private static generateSimulatedPoseData;
     private static generateSimulatedMovementData;

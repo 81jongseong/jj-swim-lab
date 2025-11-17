@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const Payment_1 = require("../models/Payment");
 const Booking_1 = require("../models/Booking");
+const Course_1 = require("../models/Course");
 const Approval_1 = require("../models/Approval");
 const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
@@ -23,7 +24,8 @@ const requireAdmin = (req, res, next) => {
 };
 router.get('/', auth_1.auth, requireAdmin, async (req, res) => {
     try {
-        let { userType, centerId } = req.user;
+        let { userType } = req.user;
+        const { centerId } = req.user;
         const { status, type, page = 1, limit = 20 } = req.query;
         if (userType === 'center-admin') {
             userType = 'centerAdmin';
@@ -203,16 +205,81 @@ async function processApprovedRequest(approval) {
                 break;
             case 'payment_approval':
                 if (approval.paymentId) {
-                    await Payment_1.Payment.findByIdAndUpdate(approval.paymentId, {
+                    const updatedPayment = await Payment_1.Payment.findByIdAndUpdate(approval.paymentId, {
                         status: 'completed',
                         approvedAt: new Date(),
                         approvedBy: approval.processedBy
-                    });
+                    }, { new: true }).populate('relatedCourse');
+                    const courseId = approval.courseId || updatedPayment?.relatedCourse;
+                    const userId = approval.userId || updatedPayment?.user;
+                    if (courseId && userId) {
+                        const course = await Course_1.Course.findById(courseId);
+                        if (course) {
+                            const already = (course.enrolledStudents || []).some((e) => e?.student?.toString?.() === userId.toString());
+                            if (!already) {
+                                course.enrolledStudents = [
+                                    ...(course.enrolledStudents || []),
+                                    { student: userId, enrollmentDate: new Date(), status: 'active' }
+                                ];
+                                await course.save();
+                            }
+                            if (course.centerId) {
+                                const student = await User_1.User.findById(userId);
+                                if (student && !student.centerId) {
+                                    student.centerId = course.centerId;
+                                    await student.save();
+                                }
+                            }
+                        }
+                    }
                 }
                 break;
             case 'schedule_change':
                 break;
             case 'refund_request':
+                if (approval.courseId && approval.userId) {
+                    const { Payment } = require('../models/Payment');
+                    const { Course } = require('../models/Course');
+                    const { Booking } = require('../models/Booking');
+                    const { PersonalLesson } = require('../models/PersonalLesson');
+                    const payment = await Payment.findOne({
+                        user: approval.userId,
+                        relatedCourse: approval.courseId,
+                        status: { $in: ['completed', 'pending'] }
+                    });
+                    if (payment) {
+                        const refundAmount = approval.estimatedAmount || payment.amount;
+                        payment.status = 'refunded';
+                        payment.refundAmount = refundAmount;
+                        payment.refundedAt = new Date();
+                        payment.refundedBy = approval.processedBy;
+                        payment.notes = (payment.notes || '') + `\n환불 승인: ${approval.reason || '센터 관리자 승인'}\n환불 금액: ${refundAmount.toLocaleString()}원`;
+                        await payment.save();
+                        console.log(`✅ Payment ${payment._id} 환불 처리 완료: ${refundAmount.toLocaleString()}원`);
+                    }
+                    const course = await Course.findById(approval.courseId);
+                    if (course && course.enrolledStudents) {
+                        const studentIdStr = approval.userId.toString();
+                        course.enrolledStudents = (course.enrolledStudents || []).filter((e) => {
+                            const eStudentId = e.student?.toString() || e.student?.toString() || e.student;
+                            return eStudentId !== studentIdStr;
+                        });
+                        await course.save();
+                        console.log(`✅ Course ${course._id}에서 학생 ${approval.userId} 제거 완료`);
+                    }
+                    const booking = await Booking.findOne({
+                        studentId: approval.userId,
+                        courseId: approval.courseId,
+                        status: { $in: ['confirmed', 'pending', 'completed'] }
+                    });
+                    if (booking) {
+                        booking.status = 'cancelled';
+                        booking.cancelledAt = new Date();
+                        booking.cancellationReason = '환불 승인';
+                        await booking.save();
+                        console.log(`✅ Booking ${booking._id} 취소 처리 완료`);
+                    }
+                }
                 break;
         }
     }

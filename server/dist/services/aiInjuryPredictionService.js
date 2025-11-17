@@ -326,6 +326,8 @@ class AIInjuryPredictionService {
         return Math.min(risk, 100);
     }
     static identifyRiskFactors(trainingAnalysis, biomechanicalAnalysis, recoveryAnalysis, environmentalFactors, userProfile) {
+        void environmentalFactors;
+        void userProfile;
         const riskFactors = [];
         if (trainingAnalysis.acuteChronicRatio > 1.5) {
             riskFactors.push({

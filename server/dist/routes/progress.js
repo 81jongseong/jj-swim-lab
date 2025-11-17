@@ -281,7 +281,6 @@ router.get('/instructor/:instructorId/stats', auth_1.authMiddleware, (0, auth_1.
 });
 router.get('/schedule-optimization', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
     try {
-        const instructor = await User_1.User.findById(req.user._id);
         const scheduleAnalysis = {
             currentSchedule: {
                 totalHours: 40,

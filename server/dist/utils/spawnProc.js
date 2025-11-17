@@ -116,6 +116,7 @@ class SpawnProc {
                     }
                 }
                 catch (error) {
+                    console.debug('Blender 경로 확인 실패', { blenderPath, error });
                     continue;
                 }
             }
@@ -132,6 +133,7 @@ class SpawnProc {
             return true;
         }
         catch (error) {
+            console.debug('파일 접근 실패', { filePath, error });
             return false;
         }
     }
@@ -141,6 +143,7 @@ class SpawnProc {
             await fs.mkdir(dirPath, { recursive: true });
         }
         catch (error) {
+            console.debug('디렉토리 생성 실패 또는 이미 존재', { dirPath, error });
         }
     }
     static resolvePath(inputPath) {

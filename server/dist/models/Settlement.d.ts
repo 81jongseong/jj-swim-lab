@@ -26,6 +26,7 @@ import mongoose, { Document } from 'mongoose';
 export interface ISettlement extends Document {
     recipientType: 'instructor' | 'center' | 'platform';
     recipientId: mongoose.Types.ObjectId;
+    recipientTypeModel: 'User' | 'Center';
     periodType: 'weekly' | 'monthly';
     periodStart: Date;
     periodEnd: Date;

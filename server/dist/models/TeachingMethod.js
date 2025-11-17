@@ -72,9 +72,23 @@ const TeachingMethodSchema = new mongoose_1.Schema({
         ref: 'User',
         required: false
     },
+    createdByRole: {
+        type: String,
+        enum: ['superAdmin', 'instructor', 'centerAdmin'],
+        required: false
+    },
     isActive: {
         type: Boolean,
         default: true
+    },
+    overridesSuperAdminMethod: {
+        type: Boolean,
+        default: false
+    },
+    originalSuperAdminMethodId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'TeachingMethod',
+        required: false
     },
     order: {
         type: Number,

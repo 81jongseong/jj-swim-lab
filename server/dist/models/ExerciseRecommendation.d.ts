@@ -69,7 +69,18 @@ export interface IExerciseRecommendation {
     equipment?: string[];
     instructions: string[];
     benefits: string[];
+    frequency?: number | string;
 }
+export declare const ExerciseSchema: mongoose.Schema<IExercise, mongoose.Model<IExercise, any, any, any, mongoose.Document<unknown, any, IExercise> & IExercise & {
+    _id: mongoose.Types.ObjectId;
+}, any>, {}, {}, {}, {}, mongoose.DefaultSchemaOptions, IExercise, mongoose.Document<unknown, {}, mongoose.FlatRecord<IExercise>> & mongoose.FlatRecord<IExercise> & {
+    _id: mongoose.Types.ObjectId;
+}>;
+export declare const WorkoutPlanSchema: mongoose.Schema<IWorkoutPlan, mongoose.Model<IWorkoutPlan, any, any, any, mongoose.Document<unknown, any, IWorkoutPlan> & IWorkoutPlan & {
+    _id: mongoose.Types.ObjectId;
+}, any>, {}, {}, {}, {}, mongoose.DefaultSchemaOptions, IWorkoutPlan, mongoose.Document<unknown, {}, mongoose.FlatRecord<IWorkoutPlan>> & mongoose.FlatRecord<IWorkoutPlan> & {
+    _id: mongoose.Types.ObjectId;
+}>;
 declare const _default: mongoose.Model<IExerciseRecommendation, {}, {}, {}, mongoose.Document<unknown, {}, IExerciseRecommendation> & IExerciseRecommendation & {
     _id: mongoose.Types.ObjectId;
 }, any>;

@@ -186,7 +186,7 @@ router.post('/submit', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
         const { instructorId, evaluationResultId, scores, overallComment, recommendations, strengths, improvements, isAnonymous = false } = req.body;
-        let evaluationResult = await InstructorEvaluationResult_1.default.findById(evaluationResultId);
+        const evaluationResult = await InstructorEvaluationResult_1.default.findById(evaluationResultId);
         if (!evaluationResult) {
             return res.status(404).json({
                 success: false,

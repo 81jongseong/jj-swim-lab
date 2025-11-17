@@ -59,9 +59,6 @@ function laplaceNoise(epsilon = 1.0) {
     const scale = 1 / epsilon;
     return -scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
 }
-function round5(n) {
-    return Math.round(n / 5) * 5;
-}
 function addNoiseAndRound(count, epsilon = 1.0) {
     const noisy = count + laplaceNoise(epsilon);
     const rounded = Math.max(1, Math.round(Math.max(0, noisy)));
@@ -326,7 +323,6 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         console.log(`  - 좌표 보유: ${usersWithCoords.length}명`);
         console.log(`  - 위치 정보 없음: ${usersWithoutLocation.length}명`);
         const centerIds = [...new Set(users.map(u => u.centerId).filter(Boolean))];
-        const { SwimmingCenter } = await Promise.resolve().then(() => __importStar(require('../models/SwimmingCenter')));
         const centers = await Center_1.default.find({ _id: { $in: centerIds } })
             .select('_id name geoDistributionVisibility')
             .lean();

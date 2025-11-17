@@ -24,6 +24,7 @@ const videoStorage = multer_1.default.diskStorage({
         cb(null, `video-${timestamp}-${Math.floor(Math.random() * 1000000000)}${ext}`);
     }
 });
+void videoStorage;
 const modelStorage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = path_1.default.join(__dirname, '../../uploads/models');
@@ -38,6 +39,7 @@ const modelStorage = multer_1.default.diskStorage({
         cb(null, `model-${timestamp}-${Math.floor(Math.random() * 1000000000)}${ext}`);
     }
 });
+void modelStorage;
 const upload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
     fileFilter: (req, file, cb) => {

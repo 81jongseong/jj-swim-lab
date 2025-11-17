@@ -14,7 +14,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
     try {
         const studentId = req.user.id;
         const { status, priority } = req.query;
-        let query = { studentId };
+        const query = { studentId };
         if (status)
             query.status = status;
         if (priority)

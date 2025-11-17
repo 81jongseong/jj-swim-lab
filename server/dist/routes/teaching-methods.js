@@ -28,9 +28,16 @@ router.get('/', async (req, res) => {
             ];
         }
         console.log('🔍 강습법 조회 쿼리:', JSON.stringify(query, null, 2));
-        const methods = await TeachingMethod_1.TeachingMethod.find(query)
+        let methods = await TeachingMethod_1.TeachingMethod.find(query)
             .sort({ order: 1, createdAt: 1 })
-            .select('-__v');
+            .select('-__v')
+            .lean();
+        methods = methods.map((m) => {
+            if (!m.createdByRole) {
+                m.createdByRole = 'superAdmin';
+            }
+            return m;
+        });
         console.log(`📊 쿼리 결과: ${methods.length}개의 강습법 발견`);
         if (methods.length > 0) {
             console.log('📋 첫 번째 강습법 샘플:', {
@@ -82,12 +89,27 @@ router.get('/:id', async (req, res) => {
 });
 router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
-        const { name, description, category, level, steps, tips, videoUrl, imageUrl } = req.body;
+        const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist, overridesSuperAdminMethod, originalSuperAdminMethodId } = req.body;
         if (!name || !description || !category || !steps) {
             return res.status(400).json({
                 success: false,
                 message: '필수 필드가 누락되었습니다.'
             });
+        }
+        if (overridesSuperAdminMethod && originalSuperAdminMethodId) {
+            const originalMethod = await TeachingMethod_1.TeachingMethod.findById(originalSuperAdminMethodId);
+            if (!originalMethod) {
+                return res.status(404).json({
+                    success: false,
+                    message: '대체할 원본 강습법을 찾을 수 없습니다.'
+                });
+            }
+            if (originalMethod.createdByRole !== 'superAdmin') {
+                return res.status(400).json({
+                    success: false,
+                    message: '최고 관리자 강습법만 대체할 수 있습니다.'
+                });
+            }
         }
         const newMethod = new TeachingMethod_1.TeachingMethod({
             name,
@@ -96,11 +118,15 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
             level: level || 'beginner',
             steps: Array.isArray(steps) ? steps : [steps],
             tips: Array.isArray(tips) ? tips : [],
+            checklist: Array.isArray(checklist) ? checklist : [],
             videoUrl,
             imageUrl,
             order: req.body.order || 0,
             createdBy: req.user._id,
-            isActive: true
+            createdByRole: req.user.userType,
+            isActive: true,
+            overridesSuperAdminMethod: overridesSuperAdminMethod || false,
+            originalSuperAdminMethodId: originalSuperAdminMethodId || undefined
         });
         await newMethod.save();
         res.status(201).json({
@@ -120,7 +146,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
 router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist } = req.body;
+        const { name, description, category, level, steps, tips, videoUrl, imageUrl, checklist, overridesSuperAdminMethod, originalSuperAdminMethodId } = req.body;
         const method = await TeachingMethod_1.TeachingMethod.findById(id);
         if (!method) {
             return res.status(404).json({
@@ -135,6 +161,21 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
                 success: false,
                 message: '수정 권한이 없습니다.'
             });
+        }
+        if (overridesSuperAdminMethod && originalSuperAdminMethodId) {
+            const originalMethod = await TeachingMethod_1.TeachingMethod.findById(originalSuperAdminMethodId);
+            if (!originalMethod) {
+                return res.status(404).json({
+                    success: false,
+                    message: '대체할 원본 강습법을 찾을 수 없습니다.'
+                });
+            }
+            if (originalMethod.createdByRole !== 'superAdmin') {
+                return res.status(400).json({
+                    success: false,
+                    message: '최고 관리자 강습법만 대체할 수 있습니다.'
+                });
+            }
         }
         if (name)
             method.name = name;
@@ -156,6 +197,10 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
             method.imageUrl = imageUrl;
         if (req.body.order !== undefined)
             method.order = req.body.order;
+        if (overridesSuperAdminMethod !== undefined)
+            method.overridesSuperAdminMethod = overridesSuperAdminMethod;
+        if (originalSuperAdminMethodId !== undefined)
+            method.originalSuperAdminMethodId = originalSuperAdminMethodId;
         method.updatedAt = new Date();
         await method.save();
         res.json({
@@ -266,7 +311,7 @@ router.get('/stats/difficulties', async (req, res) => {
 router.put('/:id/level', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'instructor']), async (req, res) => {
     try {
         const { id } = req.params;
-        const { level, instructorComment, updatedBy } = req.body;
+        const { level, instructorComment } = req.body;
         if (!level || !['beginner', 'intermediate', 'advanced'].includes(level)) {
             return res.status(400).json({
                 success: false,

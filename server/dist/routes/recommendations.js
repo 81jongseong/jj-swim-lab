@@ -13,7 +13,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
     try {
         const studentId = req.user.id;
         const { type, priority, status } = req.query;
-        let query = {
+        const query = {
             studentId,
             status: 'active',
             expiresAt: { $gt: new Date() }
@@ -280,7 +280,8 @@ function getWeakAreas(progressData) {
     });
     return weakAreas;
 }
-function getPreferredLearningTime(progressData) {
+function getPreferredLearningTime(_progressData) {
+    void _progressData;
     return '오후 2-4시';
 }
 function getAverageSessionLength(progressData) {

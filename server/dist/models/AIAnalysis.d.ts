@@ -33,6 +33,7 @@ export interface IAIAnalysis extends Document {
         strengths: string[];
         improvements: string[];
         detailedFeedback: string;
+        completionRate?: number;
     };
     progressPrediction?: {
         currentLevel: string;
@@ -40,6 +41,8 @@ export interface IAIAnalysis extends Document {
         estimatedWeeks: number;
         confidence: number;
         factors: string[];
+        referenceEvaluationId?: mongoose.Types.ObjectId | null;
+        focusCategories?: string[];
     };
     personalizedRecommendation?: {
         recommendedExercises: string[];

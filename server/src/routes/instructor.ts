@@ -27,6 +27,7 @@ import logger from '../utils/logger';
 import { User } from '../models/User';
 import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
+import { PersonalLesson } from '../models/PersonalLesson';
 import mongoose from 'mongoose';
 
 const router = express.Router();
@@ -174,6 +175,79 @@ router.get('/courses', authMiddleware, requirePermission('canManageCourses'), as
     .lean()
     .sort({ createdAt: -1 });
 
+    // ⭐ 강사가 배정된 PersonalLesson 조회 (pending 상태도 포함하여 자동 승인 처리)
+    const personalLessonsRaw = await PersonalLesson.find({
+      instructorId: new mongoose.Types.ObjectId(instructorId),
+      status: { $in: ['pending', 'approved', 'completed'] } // pending도 포함
+    })
+    .populate('studentId', 'name email')
+    .sort({ date: -1, startTime: -1 });
+
+    // ⭐ 강사가 자신에게 배정된 pending 상태 레슨을 자동으로 approved로 변경
+    const personalLessonsToUpdate: any[] = [];
+    for (const lesson of personalLessonsRaw) {
+      if (lesson.status === 'pending' && lesson.instructorId?.toString() === instructorId.toString()) {
+        // 강사가 자신에게 배정된 pending 레슨은 자동 승인
+        lesson.status = 'approved';
+        personalLessonsToUpdate.push(lesson);
+      }
+    }
+
+    // ⭐ 자동 승인된 레슨들을 일괄 저장
+    if (personalLessonsToUpdate.length > 0) {
+      await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+      logger.info(`✅ 강사 ${instructorId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+    }
+
+    // lean()으로 변환
+    const personalLessonsLean = personalLessonsRaw.map((lesson: any) => lesson.toObject());
+
+    // ⭐ PersonalLesson을 Course 형식으로 변환
+    const personalLessonCourses = personalLessonsLean.map((lesson: any) => {
+      const studentName = lesson.studentId?.name || '학생 이름 없음';
+      
+      return {
+        id: lesson._id?.toString() || '',
+        name: `개인 레슨 - ${studentName}`,
+        description: lesson.goals || '',
+        level: lesson.skillLevel || 'beginner',
+        category: lesson.lessonType || '개인레슨',
+        duration: lesson.duration || 60,
+        price: lesson.price || 0,
+        currentStudents: 1,
+        maxStudents: 1,
+        startDate: lesson.date ? new Date(lesson.date).toISOString().split('T')[0] : '',
+        endDate: lesson.date ? new Date(lesson.date).toISOString().split('T')[0] : '',
+        status: lesson.status === 'completed' ? 'inactive' : 'active',
+        totalSessions: 1,
+        completedSessions: lesson.status === 'completed' ? 1 : 0,
+        progress: lesson.status === 'completed' ? 100 : 0,
+        location: lesson.poolType || '위치 미지정',
+        schedule: [{
+          dayOfWeek: lesson.date ? new Date(lesson.date).getDay() + 1 : 1,
+          startTime: lesson.startTime || lesson.time || '09:00',
+          endTime: lesson.endTime || (() => {
+            const [h, m] = (lesson.startTime || lesson.time || '09:00').split(':').map(Number);
+            const end = new Date(2000, 0, 1, h, m + (lesson.duration || 60), 0);
+            return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+          })()
+        }],
+        tags: [lesson.lessonType || '개인레슨'],
+        rating: 0,
+        enrolledStudents: [{
+          studentId: lesson.studentId?._id?.toString() || lesson.studentId?.toString() || '',
+          studentName,
+          status: 'active',
+          enrolledAt: lesson.createdAt || null,
+          completedAt: lesson.status === 'completed' ? lesson.updatedAt : null
+        }],
+        isPersonalLesson: true,
+        courseType: 'personal',
+        createdAt: lesson.createdAt,
+        updatedAt: lesson.updatedAt,
+      };
+    });
+
     // 데이터 변환
     const courses = dbCourses.map((course: any) => {
       const enrolledStudents = course.enrolledStudents || [];
@@ -227,10 +301,13 @@ router.get('/courses', authMiddleware, requirePermission('canManageCourses'), as
       };
     });
 
+    // ⭐ Course와 PersonalLesson 합치기
+    const allCourses = [...courses, ...personalLessonCourses];
+
     res.status(200).json({
       success: true,
       message: '강사 강의 목록 조회 성공',
-      data: courses,
+      data: allCourses,
     });
   } catch (error: any) {
     logger.error(`❌ 강사 강의 목록 조회 중 오류 발생: ${error.message}`);

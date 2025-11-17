@@ -135,7 +135,7 @@ class CacheService {
                 deletedCount++;
             }
         });
-        for (const [key, item] of this.queryCache.entries()) {
+        for (const key of Array.from(this.queryCache.keys())) {
             if (key.includes(pattern)) {
                 this.queryCache.delete(key);
                 deletedCount++;
@@ -204,7 +204,6 @@ class CacheService {
         };
     }
     cleanup() {
-        const now = Date.now();
         let cleanedCount = 0;
         for (const [key, item] of this.queryCache.entries()) {
             if (!this.isCacheValid(item)) {

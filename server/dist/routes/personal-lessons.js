@@ -100,6 +100,7 @@ router.post('/external-request', auth_1.authMiddleware, async (req, res) => {
             await laneRental.save();
             laneRentalId = laneRental._id;
         }
+        const initialStatus = instructorId ? 'approved' : 'pending';
         const personalLesson = new PersonalLesson_1.PersonalLesson({
             studentId: userId,
             instructorId: instructorId || undefined,
@@ -125,7 +126,7 @@ router.post('/external-request', auth_1.authMiddleware, async (req, res) => {
             platformFee: calculatedPlatformFee,
             totalAmount: totalAmount,
             price: totalAmount,
-            status: 'pending',
+            status: initialStatus,
             paymentStatus: 'pending'
         });
         await personalLesson.save();
@@ -185,8 +186,11 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 conflicts
             });
         }
+        const { instructorId } = req.body;
+        const initialStatus = instructorId ? 'approved' : 'pending';
         const personalLesson = new PersonalLesson_1.PersonalLesson({
             studentId: userId,
+            instructorId: instructorId || undefined,
             centerId,
             isExternalMember: false,
             date: new Date(date),
@@ -198,7 +202,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
             skillLevel,
             goals,
             notes,
-            status: 'pending'
+            status: initialStatus
         });
         const adjustmentResult = await laneAllocationService_1.LaneAllocationService.adjustLanesForPersonalLesson({
             date,
@@ -365,11 +369,12 @@ router.post('/:id/payment', auth_1.authMiddleware, async (req, res) => {
             amount: totalAmount,
             currency: 'KRW',
             paymentMethod,
-            status: 'pending',
+            status: 'completed',
             purpose: 'booking',
             relatedBooking: id,
             centerId: personalLesson.centerId,
             transactionId,
+            processedAt: new Date(),
             pricingInfo: {
                 userType: 'student',
                 pricingTier: 'standard',

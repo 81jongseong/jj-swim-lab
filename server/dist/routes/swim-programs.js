@@ -137,7 +137,7 @@ router.get('/all', auth_1.authMiddleware, async (req, res) => {
     try {
         const currentUser = req.user;
         const { limit = 100, search } = req.query;
-        let query = {};
+        const query = {};
         if (currentUser.userType === 'centerAdmin' && currentUser.centerId) {
             query.centerId = currentUser.centerId;
         }

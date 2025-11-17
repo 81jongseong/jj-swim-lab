@@ -78,6 +78,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const { userId, centerId, type, startDate, endDate, price, status = 'active' } = req.body;
+        void type;
         const membership = new Membership_1.UserMembership({
             userId,
             planId: req.body.planId,
@@ -98,6 +99,8 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
 router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
         const { type, startDate, endDate, price, status } = req.body;
+        void type;
+        void price;
         const membership = await Membership_1.UserMembership.findByIdAndUpdate(req.params.id, { startDate, endDate, status }, { new: true });
         if (!membership) {
             return res.status(404).json({ error: '멤버십을 찾을 수 없습니다.' });

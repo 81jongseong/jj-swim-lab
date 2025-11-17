@@ -122,8 +122,9 @@ class AdvancedAIService {
         }
     }
     async extractBasicPose(videoData) {
+        void videoData;
         return {
-            landmarks: Array.from({ length: 33 }, (_, i) => ({
+            landmarks: Array.from({ length: 33 }, () => ({
                 x: Math.random(),
                 y: Math.random(),
                 z: Math.random(),
@@ -132,6 +133,7 @@ class AdvancedAIService {
         };
     }
     async calculate3DPose(basicPose) {
+        void basicPose;
         return {
             head: { x: 0.5, y: 0.8, z: 0.5, confidence: 0.9 },
             shoulders: {
@@ -181,9 +183,12 @@ class AdvancedAIService {
         };
     }
     async analyzeStrokeSpecific(pose3D, strokeType) {
+        void strokeType;
         return pose3D;
     }
     async analyzeTechnique(strokeAnalysis, strokeType) {
+        void strokeAnalysis;
+        void strokeType;
         return {
             overall: 82,
             armTechnique: 85,
@@ -198,6 +203,7 @@ class AdvancedAIService {
         };
     }
     async analyzeEfficiency(strokeAnalysis) {
+        void strokeAnalysis;
         return {
             overall: 78,
             energyWaste: 0.22,
@@ -208,6 +214,7 @@ class AdvancedAIService {
         };
     }
     async analyzeRhythm(strokeAnalysis) {
+        void strokeAnalysis;
         return {
             consistency: 0.85,
             strokeTiming: 0.8,
@@ -217,6 +224,7 @@ class AdvancedAIService {
         };
     }
     async analyzeBreathing(strokeAnalysis) {
+        void strokeAnalysis;
         return {
             frequency: 3,
             timing: 0.8,
@@ -226,6 +234,8 @@ class AdvancedAIService {
         };
     }
     async generateRecommendations(userId, technique, efficiency) {
+        void userId;
+        void efficiency;
         const recommendations = [];
         if (technique.legTechnique < 80) {
             recommendations.push({
@@ -262,33 +272,42 @@ class AdvancedAIService {
             breathing.efficiency * 100 * weights.breathing);
     }
     async getLearningHistory(userId) {
+        void userId;
         return [];
     }
     determineLearningStyle(history) {
+        void history;
         return 'visual';
     }
     calculateProgressRate(history) {
+        void history;
         return 0.75;
     }
     analyzeSkillAreas(history) {
+        void history;
         return {
             strongAreas: ['자유형 팔 동작', '호흡 리듬'],
             challengingAreas: ['킥 동작', '턴 기술']
         };
     }
     analyzeMotivationFactors(history) {
+        void history;
         return ['성과 시각화', '목표 달성', '동료와의 경쟁'];
     }
     findOptimalTrainingTime(history) {
+        void history;
         return '오후 6-8시';
     }
     calculateAttentionSpan(history) {
+        void history;
         return 25;
     }
     calculateRetentionRate(history) {
+        void history;
         return 0.85;
     }
     determinePreferredFeedbackType(history) {
+        void history;
         return 'immediate';
     }
     analyzePostureRisks(analysis) {
@@ -304,12 +323,17 @@ class AdvancedAIService {
         return risks;
     }
     async analyzeRepetitiveMotionRisks(userId) {
+        void userId;
         return [];
     }
     async analyzeFatigueRisks(userId) {
+        void userId;
         return [];
     }
     calculateOverallRiskLevel(risks) {
+        if (risks.length === 0) {
+            return 'low';
+        }
         const avgSeverity = risks.reduce((sum, risk) => sum + risk.severity, 0) / risks.length;
         if (avgSeverity >= 8)
             return 'critical';
@@ -327,9 +351,12 @@ class AdvancedAIService {
         return Array.from(recommendations);
     }
     setMonitoringPoints(risks) {
+        void risks;
         return ['어깨 가동범위', '허리 유연성', '무릎 안정성'];
     }
     async setPersonalizedGoals(userId, currentLevel) {
+        void userId;
+        void currentLevel;
         return {
             shortTerm: ['자유형 25m 연속 완주', '호흡 리듬 개선'],
             longTerm: ['자유형 100m 완주', '다양한 영법 습득'],
@@ -340,15 +367,22 @@ class AdvancedAIService {
         return pattern.learningStyle === 'visual' ? '시각적 피드백 중심' : '체감형 연습 중심';
     }
     generateWeeklyPlans(goals, approach, pattern) {
-        return Array.from({ length: 12 }, (_, week) => ({
-            week: week + 1,
-            focus: week < 4 ? '기초 기술' : week < 8 ? '기술 향상' : '실전 적용',
-            sessions: 3,
-            duration: '60분',
-            exercises: [`주차 ${week + 1} 맞춤 운동`]
-        }));
+        void goals;
+        void approach;
+        void pattern;
+        return Array.from({ length: 12 }, (_unused, week) => {
+            void _unused;
+            return {
+                week: week + 1,
+                focus: week < 4 ? '기초 기술' : week < 8 ? '기술 향상' : '실전 적용',
+                sessions: 3,
+                duration: '60분',
+                exercises: [`주차 ${week + 1} 맞춤 운동`]
+            };
+        });
     }
     setAssessmentCriteria(goals) {
+        void goals;
         return {
             frequency: '매주',
             metrics: ['기술 점수', '지구력', '효율성'],

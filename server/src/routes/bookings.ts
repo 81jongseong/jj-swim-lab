@@ -371,10 +371,11 @@ router.put('/:id', async (req: any, res: Response) => {
 });
 
 // 개인레슨 수락/거절
-router.patch('/personal-lessons/:id/status', async (req: any, res: Response) => {
+router.patch('/personal-lessons/:id/status', authMiddleware, async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const { status, instructorId, notes } = req.body;
+    const currentUser = req.user;
     
     const personalLesson = await PersonalLesson.findById(id);
     if (!personalLesson) {
@@ -400,9 +401,20 @@ router.patch('/personal-lessons/:id/status', async (req: any, res: Response) => 
       }
       
       personalLesson.instructorId = instructorId;
+      
+      // ⭐ 강사가 자신에게 배정될 때 자동으로 approved 상태로 변경
+      const assignedInstructorId = instructorId.toString();
+      const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString() || '';
+      if (assignedInstructorId === currentUserId && currentUser?.userType === 'instructor') {
+        // 강사가 자신에게 배정하는 경우 자동 승인
+        personalLesson.status = 'approved';
+      } else {
+        personalLesson.status = status;
+      }
+    } else {
+      personalLesson.status = status;
     }
     
-    personalLesson.status = status;
     if (notes) {
       personalLesson.specialRequests = notes;
     }
@@ -1041,6 +1053,7 @@ router.patch('/personal-lessons/:id/instructor', authMiddleware, async (req: any
   try {
     const { id } = req.params;
     const { instructorId } = req.body || {};
+    const currentUser = req.user;
     if (!id || !instructorId) {
       return res.status(400).json({ success: false, message: '예약 ID와 강사 ID가 필요합니다.' });
     }
@@ -1054,6 +1067,17 @@ router.patch('/personal-lessons/:id/instructor', authMiddleware, async (req: any
     // Optional: verify user has permission (center admin or instructor self)
     // For now, allow centerAdmin or server-side secured routes to call this.
     lesson.instructorId = new mongoose.Types.ObjectId(instructorId);
+    
+    // ⭐ 강사가 자신에게 배정될 때 자동으로 approved 상태로 변경
+    const assignedInstructorId = instructorId.toString();
+    const currentUserId = currentUser?._id?.toString() || currentUser?.id?.toString() || '';
+    if (assignedInstructorId === currentUserId && currentUser?.userType === 'instructor') {
+      // 강사가 자신에게 배정하는 경우 자동 승인
+      if (lesson.status === 'pending') {
+        lesson.status = 'approved';
+      }
+    }
+    
     await lesson.save();
     return res.json({ success: true, message: '강사가 배정되었습니다.', data: lesson });
   } catch (error) {

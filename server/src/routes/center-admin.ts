@@ -195,10 +195,12 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
       status: 'confirmed'
     });
 
-    // 승인 대기 건수
-    const pendingApprovals = await Booking.countDocuments({
-      centerId: centerIdFilter,
-      status: 'pending'
+    // ⭐ 환불 신청 건수 (Approval 모델에서 refund_request 타입 조회)
+    const { Approval } = require('../models/Approval');
+    const pendingRefundRequests = await Approval.countDocuments({
+      type: 'refund_request',
+      status: 'pending',
+      centerId: centerIdFilter
     });
 
     console.log('📊 센터 관리자 대시보드 통계', {
@@ -210,7 +212,7 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
         activeCourses,
         monthlyRevenue: monthlyRevenue[0]?.total || 0,
         todayBookings,
-        pendingApprovals
+        pendingApprovals: pendingRefundRequests
       }
     });
 
@@ -223,7 +225,7 @@ router.get('/dashboard', authMiddleware, requireCenterAdmin, async (req: AuthReq
         activeCourses,
         monthlyRevenue: monthlyRevenue[0]?.total || 0,
         todayBookings,
-        pendingApprovals,
+        pendingApprovals: pendingRefundRequests, // ⭐ 환불 신청 건수로 변경
         monthlyGrowth: 12.5, // 실제 계산 로직 필요
         averageRating: 4.7 // 실제 계산 로직 필요
       }

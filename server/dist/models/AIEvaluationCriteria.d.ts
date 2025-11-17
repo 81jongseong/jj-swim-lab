@@ -251,6 +251,24 @@ export interface IAIEvaluationResult extends Document {
             };
         };
     };
+    analysisResult?: {
+        overallScore: number;
+        categoryScores: {
+            posture: number;
+            breathing: number;
+            movement: number;
+            efficiency: number;
+        };
+        levelAssessment: string;
+        strengths: string[];
+        weaknesses: string[];
+        improvementAreas: string[];
+        historicalContext?: {
+            averageProgress: number;
+            sessionsAnalyzed: number;
+            latestChecklistDate: Date | null;
+        };
+    };
     performance: {
         speed: {
             value: number;

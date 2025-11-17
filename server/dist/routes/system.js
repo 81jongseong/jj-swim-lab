@@ -315,6 +315,11 @@ router.post('/backup', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdm
 router.get('/logs', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), async (req, res) => {
     try {
         const { type, level, startDate, endDate, limit = 100 } = req.query;
+        void type;
+        void level;
+        void startDate;
+        void endDate;
+        void limit;
         const logs = [
             {
                 timestamp: new Date().toISOString(),

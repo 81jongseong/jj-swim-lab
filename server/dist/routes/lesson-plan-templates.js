@@ -200,6 +200,7 @@ router.post('/:templateId/rate', auth_1.authMiddleware, (0, auth_1.requireRole)(
     try {
         const { templateId } = req.params;
         const { rating, feedback } = req.body;
+        void feedback;
         if (rating < 1 || rating > 5) {
             return res.status(400).json({
                 success: false,

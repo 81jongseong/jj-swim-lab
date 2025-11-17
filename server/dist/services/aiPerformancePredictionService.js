@@ -118,7 +118,7 @@ class AIPerformancePredictionService {
         const variance = times.reduce((sum, time) => sum + Math.pow(time - mean, 2), 0) / times.length;
         const stdDev = Math.sqrt(variance);
         const cv = (stdDev / mean) * 100;
-        let score = 100 - (cv * 10);
+        const score = 100 - (cv * 10);
         return Math.max(0, Math.min(100, score));
     }
     static calculateTimeVariability(trainingData) {
@@ -667,6 +667,11 @@ class AIPerformancePredictionService {
         return PerformancePrediction_1.ConfidenceLevel.VERY_LOW;
     }
     static analyzePerformanceFactors(event, performanceAnalysis, trainingAnalysis, physiologicalAnalysis, techniqueAnalysis) {
+        void event;
+        void performanceAnalysis;
+        void trainingAnalysis;
+        void physiologicalAnalysis;
+        void techniqueAnalysis;
         return [
             {
                 category: PerformancePrediction_1.PerformanceFactorCategory.TECHNIQUE,
@@ -679,6 +684,8 @@ class AIPerformancePredictionService {
         ];
     }
     static analyzePerformanceBreakdown(event, techniqueAnalysis, totalImprovement) {
+        void event;
+        void techniqueAnalysis;
         return {
             startImprovement: totalImprovement * 0.15,
             strokeImprovement: totalImprovement * 0.4,
@@ -689,6 +696,9 @@ class AIPerformancePredictionService {
         };
     }
     static generateEventRecommendations(event, performanceFactors, performanceAnalysis) {
+        void event;
+        void performanceFactors;
+        void performanceAnalysis;
         return {
             training: ['훈련량 점진적 증가', '인터벌 훈련 강화'],
             technique: ['기술 교정', '효율성 개선'],
@@ -697,6 +707,7 @@ class AIPerformancePredictionService {
         };
     }
     static generateMilestones(currentTime, targetTime, userProfile) {
+        void userProfile;
         const totalImprovement = currentTime - targetTime;
         const milestones = [];
         for (let i = 1; i <= 4; i++) {
@@ -755,6 +766,8 @@ class AIPerformancePredictionService {
         };
     }
     static async generateValidationInfo(userProfile, predictions) {
+        void userProfile;
+        void predictions;
         return {
             historicalAccuracy: 80,
             similarSwimmersComparison: {

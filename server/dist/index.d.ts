@@ -41,6 +41,7 @@ import './models/SwimTrainingMethod';
 import './models/GroupClass';
 import './models/PageVisit';
 import './models/CenterSchedule';
+import './models/InstructorProgress';
 declare const app: import("express-serve-static-core").Express;
 import './models/AIConfig';
 import './models/Approval';

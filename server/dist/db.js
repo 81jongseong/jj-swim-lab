@@ -189,7 +189,7 @@ const suggestIndexes = async () => {
                     });
                 }
             }
-            catch (error) {
+            catch {
                 continue;
             }
         }

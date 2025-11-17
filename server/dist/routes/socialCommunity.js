@@ -34,6 +34,7 @@ router.get('/rooms', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
+        (0, logger_1.logError)('커뮤니티 방 목록 조회 오류:', error);
         res.status(500).json({ success: false, error: '방 목록 조회 중 오류가 발생했습니다.' });
     }
 });

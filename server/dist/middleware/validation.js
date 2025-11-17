@@ -1,35 +1,64 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.businessValidations = exports.createValidationMiddleware = exports.handleValidationErrors = exports.fileValidations = exports.bookingValidations = exports.courseValidations = exports.userValidations = exports.commonValidations = exports.query = exports.param = exports.body = exports.validationResult = void 0;
-const validationResult = (req) => {
+const validationResult = (_req) => {
+    void _req;
     return {
         isEmpty: () => true,
         array: () => []
     };
 };
 exports.validationResult = validationResult;
-const body = (field) => {
+const body = (_field) => {
+    void _field;
     const chain = {
         isEmail: () => chain,
-        isLength: (options) => chain,
-        matches: (pattern) => chain,
-        custom: (fn) => chain,
+        isLength: (_options) => {
+            void _options;
+            return chain;
+        },
+        matches: (_pattern) => {
+            void _pattern;
+            return chain;
+        },
+        custom: (_fn) => {
+            void _fn;
+            return chain;
+        },
         trim: () => chain,
         escape: () => chain,
         optional: () => chain,
         isNumeric: () => chain,
         isURL: () => chain,
         normalizeEmail: () => chain,
-        withMessage: (msg) => chain,
-        isInt: (options) => chain,
-        isFloat: (options) => chain,
+        withMessage: (_msg) => {
+            void _msg;
+            return chain;
+        },
+        isInt: (_options) => {
+            void _options;
+            return chain;
+        },
+        isFloat: (_options) => {
+            void _options;
+            return chain;
+        },
         isString: () => chain,
-        isIn: (values) => chain,
-        isArray: (options) => chain,
+        isIn: (_values) => {
+            void _values;
+            return chain;
+        },
+        isArray: (_options) => {
+            void _options;
+            return chain;
+        },
         isObject: () => chain,
         isBoolean: () => chain,
         isMongoId: () => chain,
-        isMobilePhone: (locale) => chain,
+        isMobilePhone: (_locale) => {
+            void _locale;
+            return chain;
+        },
         notEmpty: () => chain,
         isISO8601: () => chain,
         toInt: () => chain,
@@ -39,20 +68,34 @@ const body = (field) => {
     return chain;
 };
 exports.body = body;
-const param = (field) => {
+const param = (_field) => {
+    void _field;
     const chain = {
         isMongoId: () => chain,
-        isLength: (options) => chain,
-        withMessage: (msg) => chain
+        isLength: (_options) => {
+            void _options;
+            return chain;
+        },
+        withMessage: (_msg) => {
+            void _msg;
+            return chain;
+        }
     };
     return chain;
 };
 exports.param = param;
-const query = (field) => {
+const query = (_field) => {
+    void _field;
     const chain = {
         optional: () => chain,
-        isInt: (options) => chain,
-        withMessage: (msg) => chain,
+        isInt: (_options) => {
+            void _options;
+            return chain;
+        },
+        withMessage: (_msg) => {
+            void _msg;
+            return chain;
+        },
         toInt: () => chain
     };
     return chain;
@@ -200,7 +243,7 @@ exports.commonValidations = {
                 throw new Error('허용되지 않은 도메인입니다.');
             }
         }
-        catch (error) {
+        catch {
             throw new Error('유효하지 않은 URL입니다.');
         }
         return true;
@@ -481,7 +524,7 @@ exports.createValidationMiddleware = createValidationMiddleware;
 exports.businessValidations = {
     checkCourseScheduleConflict: async (req, res, next) => {
         try {
-            const { instructorId, startDate, startTime, endTime, courseId } = req.body;
+            const { instructorId, startDate, startTime, endTime } = req.body;
             if (!instructorId || !startDate || !startTime || !endTime) {
                 return next();
             }

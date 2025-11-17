@@ -112,6 +112,10 @@ function LandingPage() {
     ctaSecondary: {
       text: "강사 등록하기",
       href: "/auth/signup-instructor"
+    },
+    ctaLogin: {
+      text: "로그인",
+      href: "/auth/login"
     }
   };
 
@@ -124,6 +128,7 @@ function LandingPage() {
         description={landingContent.description}
         ctaPrimary={landingContent.ctaPrimary}
         ctaSecondary={landingContent.ctaSecondary}
+        ctaLogin={landingContent.ctaLogin}
       />
 
       {/* 기능 소개 섹션 */}

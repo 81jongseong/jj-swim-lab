@@ -18,7 +18,7 @@ router.post('/generate-dashboard-data', auth_1.authMiddleware, (0, auth_1.requir
         const centerId = req.user.centerId;
         const userType = req.user.userType;
         console.log(`📊 ${req.user.name} (${userType}) 샘플 데이터 생성 시작...`);
-        let generatedData = {
+        const generatedData = {
             courses: 0,
             bookings: 0,
             payments: 0,

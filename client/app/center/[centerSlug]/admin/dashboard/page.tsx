@@ -240,7 +240,7 @@ const CenterAdminDashboard: React.FC = () => {
       {/* 주요 통계 */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-6 mb-8">
         <StatCard
-          title="승인 대기"
+          title="환불 신청"
           value={`${stats.pendingApprovals}건`}
           icon={<AlertCircle className="h-5 w-5" />}
           color="red"

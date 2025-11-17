@@ -233,6 +233,7 @@ router.put('/ai', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin'])
             healthConfig = await createDefaultHealthConfig(userId);
         }
         const { weights, parameters, ...allowedConfig } = aiConfigData;
+        void weights;
         const safeParameters = parameters ? {
             ...parameters,
             weights: undefined

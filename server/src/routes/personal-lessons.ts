@@ -169,6 +169,9 @@ router.post('/external-request', authMiddleware, async (req: AuthRequest, res: R
       laneRentalId = laneRental._id;
     }
 
+    // ⭐ 강사가 배정되어 있으면 바로 'approved'로 설정 (접수하면서 확정)
+    const initialStatus = instructorId ? 'approved' : 'pending';
+
     // 개인레슨 생성
     const personalLesson = new PersonalLesson({
       studentId: userId,
@@ -196,7 +199,7 @@ router.post('/external-request', authMiddleware, async (req: AuthRequest, res: R
       platformFee: calculatedPlatformFee,
       totalAmount: totalAmount,
       price: totalAmount, // 하위 호환성
-      status: 'pending',
+      status: initialStatus, // ⭐ 강사가 배정되어 있으면 바로 approved
       paymentStatus: 'pending'
     });
 
@@ -288,9 +291,14 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // ⭐ instructorId가 요청에 포함되어 있으면 바로 'approved'로 설정
+    const { instructorId } = req.body;
+    const initialStatus = instructorId ? 'approved' : 'pending';
+
     // 개인레슨 생성
     const personalLesson = new PersonalLesson({
       studentId: userId,
+      instructorId: instructorId || undefined,
       centerId,
       isExternalMember: false,
       date: new Date(date),
@@ -302,7 +310,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       skillLevel,
       goals,
       notes,
-      status: 'pending'
+      status: initialStatus // ⭐ 강사가 배정되어 있으면 바로 approved
     });
 
     // 레인 자동 조정 및 레인 배정
@@ -513,18 +521,19 @@ router.post('/:id/payment', authMiddleware, async (req: AuthRequest, res: Respon
       });
     }
 
-    // 결제 생성
+    // 결제 생성 (바로 completed 상태로 설정)
     const transactionId = `PL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const payment = new Payment({
       user: userId,
       amount: totalAmount,
       currency: 'KRW',
       paymentMethod,
-      status: 'pending',
+      status: 'completed', // ⭐ 결제 대기 없이 바로 완료 상태로 설정
       purpose: 'booking',
       relatedBooking: id,
       centerId: personalLesson.centerId,
       transactionId,
+      processedAt: new Date(), // ⭐ 처리 시간 설정
       pricingInfo: {
         userType: 'student',
         pricingTier: 'standard',

@@ -17,14 +17,14 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
             count: reports.length
         });
     }
-    catch (error) {
+    catch {
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
 router.get('/admin', auth_1.authMiddleware, async (req, res) => {
     try {
         const { limit = 50, status, type } = req.query;
-        let filter = {};
+        const filter = {};
         if (status && status !== 'all')
             filter.status = status;
         if (type && type !== 'all')

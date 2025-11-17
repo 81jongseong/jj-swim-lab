@@ -50,7 +50,8 @@ import {
   Clock,
   Settings,
   Users,
-  MapPin
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 
 // 수영장 정보 인터페이스
@@ -298,6 +299,46 @@ function CenterInfoManagementPage() {
     showToOtherMembers: false
   });
   
+  // ⭐ 환불 정책 설정 (소비자 보호법 근거)
+  const [refundPolicy, setRefundPolicy] = useState({
+    beforeUse: {
+      enabled: true,
+      timeBefore: 24, // 시간
+      refundRate: 100, // 환불률 (%)
+      description: '이용 전 환불'
+    },
+    afterUse: {
+      enabled: true,
+      calculationMethod: 'sessions', // 'sessions' (이용 회수 기반) 또는 'days' (기간 기반)
+      // 이용 회수 기반 환불
+      sessionBased: {
+        enabled: true,
+        refundByRemainingSessions: true, // 남은 회수 비율로 환불
+        // 개인레슨: 예약된 시간대는 노쇼여도 이용한 것으로 간주 (강사 시간 독점)
+        // 단체반: 경과된 수업은 실제 참석 여부와 관계없이 이용한 것으로 간주
+        description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+      },
+      // 기간 기반 환불 (기존 방식)
+      dayBased: {
+        enabled: false,
+        refundRates: [
+          { daysFromStart: 0, daysTo: 7, refundRate: 90, description: '1주일 이내' },
+          { daysFromStart: 8, daysTo: 14, refundRate: 70, description: '2주일 이내' },
+          { daysFromStart: 15, daysTo: 30, refundRate: 50, description: '1개월 이내' },
+          { daysFromStart: 31, daysTo: null, refundRate: 0, description: '1개월 이후' }
+        ]
+      }
+    },
+    refundFee: {
+      enabled: false,
+      amount: 0, // 환불 수수료 (원)
+      description: '환불 수수료'
+    },
+    processingDays: 7, // 환불 처리 기간 (일)
+    refundMethod: '원래 결제 수단으로 환불', // 환불 방법
+    customDescription: '' // 추가 설명
+  });
+  
   // 새 시간대 입력 상태 (개인레슨용)
   const [newTimeSlot, setNewTimeSlot] = useState({
     startTime: '09:00',
@@ -464,6 +505,81 @@ function CenterInfoManagementPage() {
               showToOwnMembers: centerData.geoDistributionVisibility.showToOwnMembers || false,
               showToOtherMembers: centerData.geoDistributionVisibility.showToOtherMembers || false
             });
+          }
+          
+          // ⭐ 환불 정책 로드 (센터 설정 API에서 가져오기)
+          try {
+            const settingsResponse = await fetch('http://localhost:5000/api/center-info/settings', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            if (settingsResponse.ok) {
+              const settingsData = await settingsResponse.json();
+              if (settingsData.success && settingsData.data?.paymentSettings?.refundPolicy) {
+                const policy = settingsData.data.paymentSettings.refundPolicy;
+                // 문자열이면 파싱, 객체면 그대로 사용
+                if (typeof policy === 'string') {
+                  // 기존 문자열 형식은 기본값 유지
+                  setRefundPolicy({
+                    beforeUse: {
+                      enabled: true,
+                      timeBefore: 24,
+                      refundRate: 100,
+                      description: '이용 전 환불'
+                    },
+                    afterUse: {
+                      enabled: true,
+                      calculationMethod: 'sessions',
+                      sessionBased: {
+                        enabled: true,
+                        refundByRemainingSessions: true,
+                        description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+                      },
+                      dayBased: {
+                        enabled: false,
+                        refundRates: [
+                          { daysFromStart: 0, daysTo: 7, refundRate: 90, description: '1주일 이내' },
+                          { daysFromStart: 8, daysTo: 14, refundRate: 70, description: '2주일 이내' },
+                          { daysFromStart: 15, daysTo: 30, refundRate: 50, description: '1개월 이내' },
+                          { daysFromStart: 31, daysTo: null, refundRate: 0, description: '1개월 이후' }
+                        ]
+                      }
+                    },
+                    refundFee: {
+                      enabled: false,
+                      amount: 0,
+                      description: '환불 수수료'
+                    },
+                    processingDays: 7,
+                    refundMethod: '원래 결제 수단으로 환불',
+                    customDescription: policy
+                  });
+                } else {
+                  // 객체 형식이면 그대로 사용 (하위 호환성 유지)
+                  if (policy.afterUse && !policy.afterUse.calculationMethod) {
+                    // 기존 형식 (refundRates만 있는 경우)
+                    policy.afterUse = {
+                      enabled: policy.afterUse.enabled !== false,
+                      calculationMethod: 'days',
+                      sessionBased: {
+                        enabled: false,
+                        refundByRemainingSessions: true,
+                        description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+                      },
+                      dayBased: {
+                        enabled: true,
+                        refundRates: policy.afterUse.refundRates || []
+                      }
+                    };
+                  }
+                  setRefundPolicy(policy);
+                }
+              }
+            }
+          } catch (err) {
+            console.error('환불 정책 로드 오류:', err);
           }
           
           // 시설 정보 로드
@@ -754,6 +870,27 @@ function CenterInfoManagementPage() {
           showToOtherMembers: geoDistributionVisibility.showToOtherMembers
         }
       };
+      
+      // ⭐ 환불 정책 저장 (센터 설정 API 사용)
+      try {
+        const settingsResponse = await fetch('http://localhost:5000/api/center-info/settings', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            paymentSettings: {
+              refundPolicy: refundPolicy // 구조화된 객체로 저장
+            }
+          })
+        });
+        if (!settingsResponse.ok) {
+          console.error('환불 정책 저장 실패');
+        }
+      } catch (err) {
+        console.error('환불 정책 저장 오류:', err);
+      }
 
       console.log('📤 저장할 데이터:', JSON.stringify(dataToSave.availabilitySettings, null, 2));
       const response = await fetch('http://localhost:5000/api/centers/my-center', {
@@ -2134,6 +2271,575 @@ function CenterInfoManagementPage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ⭐ 환불 정책 설정 (소비자 보호법 근거) */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CreditCard className="h-5 w-5 mr-2" />
+            환불 정책 설정
+          </CardTitle>
+          <CardDescription>
+            소비자 보호법에 근거한 환불 정책을 설정합니다. 이 정책은 강의 시작 전/후 환불 신청 시 안내됩니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* 이용 전 환불 */}
+            <div className="border rounded-lg p-4 bg-blue-50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">1. 이용 전 환불</h3>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={refundPolicy.beforeUse.enabled}
+                    onChange={(e) => {
+                      if (!isEditing) return;
+                      setRefundPolicy({
+                        ...refundPolicy,
+                        beforeUse: { ...refundPolicy.beforeUse, enabled: e.target.checked }
+                      });
+                    }}
+                    disabled={!isEditing}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                    !isEditing 
+                      ? 'bg-gray-100 cursor-not-allowed' 
+                      : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                  }`}></div>
+                </label>
+              </div>
+              {refundPolicy.beforeUse.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      이용 전 시간 (시간)
+                    </label>
+                    <input
+                      type="number"
+                      value={refundPolicy.beforeUse.timeBefore}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setRefundPolicy({
+                          ...refundPolicy,
+                          beforeUse: { ...refundPolicy.beforeUse, timeBefore: parseInt(e.target.value) || 0 }
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm ${
+                        !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                      }`}
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      환불률 (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={refundPolicy.beforeUse.refundRate}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        setRefundPolicy({
+                          ...refundPolicy,
+                          beforeUse: { ...refundPolicy.beforeUse, refundRate: parseInt(e.target.value) || 0 }
+                        });
+                      }}
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm ${
+                        !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                      }`}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 이용 시작 후 환불 */}
+            <div className="border rounded-lg p-4 bg-green-50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">2. 이용 시작 후 환불</h3>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={refundPolicy.afterUse.enabled}
+                    onChange={(e) => {
+                      if (!isEditing) return;
+                      setRefundPolicy({
+                        ...refundPolicy,
+                        afterUse: { ...refundPolicy.afterUse, enabled: e.target.checked }
+                      });
+                    }}
+                    disabled={!isEditing}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                    !isEditing 
+                      ? 'bg-gray-100 cursor-not-allowed' 
+                      : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                  }`}></div>
+                </label>
+              </div>
+              {refundPolicy.afterUse.enabled && (
+                <div className="space-y-4 mt-3">
+                  {/* 계산 방법 선택 */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      환불 계산 방법
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="calculationMethod"
+                          value="sessions"
+                          checked={refundPolicy.afterUse.calculationMethod === 'sessions'}
+                          onChange={(e) => {
+                            if (!isEditing) return;
+                            setRefundPolicy({
+                              ...refundPolicy,
+                              afterUse: { ...refundPolicy.afterUse, calculationMethod: 'sessions' }
+                            });
+                          }}
+                          disabled={!isEditing}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">이용 회수 기반 (권장)</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="calculationMethod"
+                          value="days"
+                          checked={refundPolicy.afterUse.calculationMethod === 'days'}
+                          onChange={(e) => {
+                            if (!isEditing) return;
+                            setRefundPolicy({
+                              ...refundPolicy,
+                              afterUse: { ...refundPolicy.afterUse, calculationMethod: 'days' }
+                            });
+                          }}
+                          disabled={!isEditing}
+                          className="mr-2"
+                        />
+                        <span className="text-sm">기간 기반</span>
+                      </label>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 space-y-1">
+                      <p>• 이용 회수 기반: 실제 수업을 받은 회수를 제외한 남은 회수 비율로 환불</p>
+                      <p>• 단체반: 경과된 수업은 실제 참석 여부와 관계없이 이용한 것으로 간주</p>
+                      <p>• 개인레슨: 예약된 시간대는 노쇼여도 이용한 것으로 간주 (강사 시간 독점)</p>
+                    </div>
+                  </div>
+
+                  {/* 이용 회수 기반 환불 */}
+                  {refundPolicy.afterUse.calculationMethod === 'sessions' && (
+                    <div className="bg-white p-4 rounded border">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-semibold text-gray-900">이용 회수 기반 환불</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={refundPolicy.afterUse.sessionBased.enabled}
+                            onChange={(e) => {
+                              if (!isEditing) return;
+                              setRefundPolicy({
+                                ...refundPolicy,
+                                afterUse: {
+                                  ...refundPolicy.afterUse,
+                                  sessionBased: { ...refundPolicy.afterUse.sessionBased, enabled: e.target.checked }
+                                }
+                              });
+                            }}
+                            disabled={!isEditing}
+                            className="sr-only peer"
+                          />
+                          <div className={`w-9 h-5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${
+                            !isEditing 
+                              ? 'bg-gray-100 cursor-not-allowed' 
+                              : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                          }`}></div>
+                        </label>
+                      </div>
+                      {refundPolicy.afterUse.sessionBased.enabled && (
+                        <div className="space-y-3">
+                          <div className="bg-blue-50 border border-blue-200 rounded p-3 space-y-2">
+                            <p className="text-xs text-gray-700">
+                              <strong>소비자 보호법 준수:</strong> 실제 수업을 받은 회수를 제외한 남은 회수 비율로 환불합니다.
+                            </p>
+                            <div className="text-xs text-gray-600 space-y-1">
+                              <p><strong>단체반 예시:</strong></p>
+                              <p>• 주 3회 × 4주 = 총 12회 수업</p>
+                              <p>• 10월 15일에 1회 참석, 2주 경과 (6회 수업 진행됨)</p>
+                              <p>• 환불 신청 시점: 경과된 6회는 이용한 것으로 간주</p>
+                              <p>• 환불률: (12 - 6) / 12 = 50% 환불</p>
+                              <p className="text-blue-700 font-semibold">→ 경과된 수업은 실제 참석 여부와 관계없이 이용한 것으로 간주</p>
+                              <p className="mt-2"><strong>개인레슨 예시:</strong></p>
+                              <p>• 총 10회 개인레슨 패키지</p>
+                              <p>• 3회 예약 (1회 참석, 2회 노쇼)</p>
+                              <p>• 환불 신청 시: 예약된 3회 모두 이용한 것으로 간주</p>
+                              <p>• 환불률: (10 - 3) / 10 = 70% 환불</p>
+                              <p className="text-blue-700 font-semibold">→ 예약된 시간대는 노쇼여도 이용한 것으로 간주 (강사 시간 독점)</p>
+                              <p className="mt-2 text-orange-700 font-semibold">
+                                ※ 단체반: 경과된 수업은 이용한 것으로 간주<br/>
+                                ※ 개인레슨: 예약된 시간대는 노쇼여도 이용한 것으로 간주
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="flex items-center mb-2">
+                              <input
+                                type="checkbox"
+                                checked={refundPolicy.afterUse.sessionBased.refundByRemainingSessions}
+                                onChange={(e) => {
+                                  if (!isEditing) return;
+                                  setRefundPolicy({
+                                    ...refundPolicy,
+                                    afterUse: {
+                                      ...refundPolicy.afterUse,
+                                      sessionBased: {
+                                        ...refundPolicy.afterUse.sessionBased,
+                                        refundByRemainingSessions: e.target.checked
+                                      }
+                                    }
+                                  });
+                                }}
+                                disabled={!isEditing}
+                                className="mr-2"
+                              />
+                              <span className="text-xs text-gray-700">
+                                남은 회수 비율로 환불 (단체반: 경과된 수업 간주, 개인레슨: 예약된 시간 간주)
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 기간 기반 환불 */}
+                  {refundPolicy.afterUse.calculationMethod === 'days' && (
+                    <div className="bg-white p-4 rounded border">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-semibold text-gray-900">기간 기반 환불</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={refundPolicy.afterUse.dayBased.enabled}
+                            onChange={(e) => {
+                              if (!isEditing) return;
+                              setRefundPolicy({
+                                ...refundPolicy,
+                                afterUse: {
+                                  ...refundPolicy.afterUse,
+                                  dayBased: { ...refundPolicy.afterUse.dayBased, enabled: e.target.checked }
+                                }
+                              });
+                            }}
+                            disabled={!isEditing}
+                            className="sr-only peer"
+                          />
+                          <div className={`w-9 h-5 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${
+                            !isEditing 
+                              ? 'bg-gray-100 cursor-not-allowed' 
+                              : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                          }`}></div>
+                        </label>
+                      </div>
+                      {refundPolicy.afterUse.dayBased.enabled && (
+                        <div className="space-y-3 mt-3">
+                          {refundPolicy.afterUse.dayBased.refundRates.map((rate, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded border">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">시작일</label>
+                                <input
+                                  type="number"
+                                  value={rate.daysFromStart}
+                                  onChange={(e) => {
+                                    if (!isEditing) return;
+                                    const newRates = [...refundPolicy.afterUse.dayBased.refundRates];
+                                    newRates[index].daysFromStart = parseInt(e.target.value) || 0;
+                                    setRefundPolicy({
+                                      ...refundPolicy,
+                                      afterUse: {
+                                        ...refundPolicy.afterUse,
+                                        dayBased: { ...refundPolicy.afterUse.dayBased, refundRates: newRates }
+                                      }
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  className={`w-full px-2 py-1 border rounded text-sm ${
+                                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                                  }`}
+                                  min="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">종료일</label>
+                                <input
+                                  type="number"
+                                  value={rate.daysTo ?? ''}
+                                  onChange={(e) => {
+                                    if (!isEditing) return;
+                                    const newRates = [...refundPolicy.afterUse.dayBased.refundRates];
+                                    newRates[index].daysTo = e.target.value ? parseInt(e.target.value) : null;
+                                    setRefundPolicy({
+                                      ...refundPolicy,
+                                      afterUse: {
+                                        ...refundPolicy.afterUse,
+                                        dayBased: { ...refundPolicy.afterUse.dayBased, refundRates: newRates }
+                                      }
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  placeholder="없음"
+                                  className={`w-full px-2 py-1 border rounded text-sm ${
+                                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                                  }`}
+                                  min="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">환불률 (%)</label>
+                                <input
+                                  type="number"
+                                  value={rate.refundRate}
+                                  onChange={(e) => {
+                                    if (!isEditing) return;
+                                    const newRates = [...refundPolicy.afterUse.dayBased.refundRates];
+                                    newRates[index].refundRate = parseInt(e.target.value) || 0;
+                                    setRefundPolicy({
+                                      ...refundPolicy,
+                                      afterUse: {
+                                        ...refundPolicy.afterUse,
+                                        dayBased: { ...refundPolicy.afterUse.dayBased, refundRates: newRates }
+                                      }
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  className={`w-full px-2 py-1 border rounded text-sm ${
+                                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                                  }`}
+                                  min="0"
+                                  max="100"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">설명</label>
+                                <input
+                                  type="text"
+                                  value={rate.description}
+                                  onChange={(e) => {
+                                    if (!isEditing) return;
+                                    const newRates = [...refundPolicy.afterUse.dayBased.refundRates];
+                                    newRates[index].description = e.target.value;
+                                    setRefundPolicy({
+                                      ...refundPolicy,
+                                      afterUse: {
+                                        ...refundPolicy.afterUse,
+                                        dayBased: { ...refundPolicy.afterUse.dayBased, refundRates: newRates }
+                                      }
+                                    });
+                                  }}
+                                  disabled={!isEditing}
+                                  className={`w-full px-2 py-1 border rounded text-sm ${
+                                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                                  }`}
+                                  placeholder="예: 1주일 이내"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newRates = [...refundPolicy.afterUse.dayBased.refundRates];
+                                newRates.push({ daysFromStart: 0, daysTo: null, refundRate: 0, description: '' });
+                                setRefundPolicy({
+                                  ...refundPolicy,
+                                  afterUse: {
+                                    ...refundPolicy.afterUse,
+                                    dayBased: { ...refundPolicy.afterUse.dayBased, refundRates: newRates }
+                                  }
+                                });
+                              }}
+                              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              + 기간 추가
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 환불 수수료 */}
+            <div className="border rounded-lg p-4 bg-yellow-50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">3. 환불 수수료</h3>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={refundPolicy.refundFee.enabled}
+                    onChange={(e) => {
+                      if (!isEditing) return;
+                      setRefundPolicy({
+                        ...refundPolicy,
+                        refundFee: { ...refundPolicy.refundFee, enabled: e.target.checked }
+                      });
+                    }}
+                    disabled={!isEditing}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                    !isEditing 
+                      ? 'bg-gray-100 cursor-not-allowed' 
+                      : 'bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600'
+                  }`}></div>
+                </label>
+              </div>
+              {refundPolicy.refundFee.enabled && (
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    환불 수수료 (원)
+                  </label>
+                  <input
+                    type="number"
+                    value={refundPolicy.refundFee.amount}
+                    onChange={(e) => {
+                      if (!isEditing) return;
+                      setRefundPolicy({
+                        ...refundPolicy,
+                        refundFee: { ...refundPolicy.refundFee, amount: parseInt(e.target.value) || 0 }
+                      });
+                    }}
+                    disabled={!isEditing}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm ${
+                      !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                    }`}
+                    min="0"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 환불 처리 기간 및 방법 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  환불 처리 기간 (일)
+                </label>
+                <input
+                  type="number"
+                  value={refundPolicy.processingDays}
+                  onChange={(e) => {
+                    if (!isEditing) return;
+                    setRefundPolicy({
+                      ...refundPolicy,
+                      processingDays: parseInt(e.target.value) || 0
+                    });
+                  }}
+                  disabled={!isEditing}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  환불 방법
+                </label>
+                <select
+                  value={refundPolicy.refundMethod}
+                  onChange={(e) => {
+                    if (!isEditing) return;
+                    setRefundPolicy({
+                      ...refundPolicy,
+                      refundMethod: e.target.value
+                    });
+                  }}
+                  disabled={!isEditing}
+                  className={`w-full px-3 py-2 border rounded-lg ${
+                    !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
+                >
+                  <option value="원래 결제 수단으로 환불">원래 결제 수단으로 환불</option>
+                  <option value="계좌이체로 환불">계좌이체로 환불</option>
+                  <option value="현금 환불">현금 환불</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 추가 설명 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                추가 설명 (선택사항)
+              </label>
+              <textarea
+                value={refundPolicy.customDescription}
+                onChange={(e) => {
+                  if (!isEditing) return;
+                  setRefundPolicy({
+                    ...refundPolicy,
+                    customDescription: e.target.value
+                  });
+                }}
+                disabled={!isEditing}
+                placeholder="예: 특별한 환불 조건이나 안내사항을 입력하세요"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  !isEditing ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                }`}
+                rows={3}
+              />
+            </div>
+
+            {/* 환불 정책 미리보기 */}
+            <div className="bg-gray-50 border rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-2">환불 정책 미리보기</h4>
+              <div className="text-xs text-gray-700 space-y-1">
+                {refundPolicy.beforeUse.enabled && (
+                  <p>• 이용 {refundPolicy.beforeUse.timeBefore}시간 전까지 {refundPolicy.beforeUse.refundRate}% 환불</p>
+                )}
+                {refundPolicy.afterUse.enabled && (
+                  <div>
+                    {refundPolicy.afterUse.calculationMethod === 'sessions' && refundPolicy.afterUse.sessionBased.enabled && (
+                      <p>
+                        • 이용 회수 기반: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불
+                      </p>
+                    )}
+                    {refundPolicy.afterUse.calculationMethod === 'days' && refundPolicy.afterUse.dayBased.enabled && (
+                      <div>
+                        {refundPolicy.afterUse.dayBased.refundRates.map((rate, idx) => (
+                          <p key={idx}>
+                            • 이용 시작 후 {rate.daysFromStart}일{rate.daysTo ? `~${rate.daysTo}일` : ' 이후'}: {rate.refundRate}% 환불 ({rate.description})
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {refundPolicy.refundFee.enabled && refundPolicy.refundFee.amount > 0 && (
+                  <p>• 환불 수수료: {refundPolicy.refundFee.amount.toLocaleString()}원</p>
+                )}
+                <p>• 환불 처리 기간: {refundPolicy.processingDays}일</p>
+                <p>• 환불 방법: {refundPolicy.refundMethod}</p>
+                {refundPolicy.customDescription && (
+                  <p className="mt-2 text-gray-600">※ {refundPolicy.customDescription}</p>
+                )}
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

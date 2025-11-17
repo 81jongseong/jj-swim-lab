@@ -149,6 +149,7 @@ router.get('/analysis-history/:userId', auth_1.authMiddleware, async (req, res) 
     try {
         const { userId } = req.params;
         const { page = 1, limit = 10, type } = req.query;
+        void type;
         const currentUserId = req.user?.userId;
         if (userId !== currentUserId && req.user?.role !== 'superAdmin') {
             return res.status(403).json({

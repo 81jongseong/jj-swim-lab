@@ -34,9 +34,12 @@ export interface ITeachingMethod extends Document {
     videoUrl?: string;
     imageUrl?: string;
     createdBy?: mongoose.Types.ObjectId;
+    createdByRole?: string;
     isActive: boolean;
     order?: number;
     instructorComments?: string;
+    overridesSuperAdminMethod?: boolean;
+    originalSuperAdminMethodId?: mongoose.Types.ObjectId;
     levelChangeHistory?: Array<{
         fromLevel: string;
         toLevel: string;

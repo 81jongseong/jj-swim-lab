@@ -116,7 +116,13 @@ const errorHandler = (error, req, res, next) => {
         appError = error;
     }
     else {
-        appError = new AppError(error.message || '예상치 못한 오류가 발생했습니다.', 500, ErrorCode.INTERNAL_SERVER_ERROR, ErrorSeverity.HIGH, { originalError: error.name });
+        appError = new AppError(error.message || '예상치 못한 오류가 발생했습니다.', 500, ErrorCode.INTERNAL_SERVER_ERROR, ErrorSeverity.HIGH, {
+            originalError: error,
+            stack: error.stack
+        });
+    }
+    if (res.headersSent) {
+        return next(appError);
     }
     logErrorDetails(appError, req);
     const errorResponse = createErrorResponse(appError, req);

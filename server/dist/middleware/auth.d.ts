@@ -25,7 +25,7 @@ export declare const requireCenterAdmin: (req: Request, res: Response, next: Nex
 export declare const requirePermission: (permission: string) => (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
 export declare const requireRole: (roles: string[]) => (req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
 export declare const requireCenterOwnership: (req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-export declare const refreshTokenMiddleware: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
+export declare const refreshTokenMiddleware: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
 export declare const hashPassword: (password: string) => Promise<string>;
 export declare const verifyPassword: (password: string, hashedPassword: string) => Promise<boolean>;
 export declare const validatePasswordStrength: (password: string) => {
@@ -59,7 +59,7 @@ declare const _default: {
     requireCenterAdmin: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
     requirePermission: (permission: string) => (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
     requireCenterOwnership: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
-    refreshTokenMiddleware: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
+    refreshTokenMiddleware: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>) => Promise<Response<any, Record<string, any>>>;
     generateTokens: (user: any) => {
         accessToken: string;
         refreshToken: string;

@@ -23,8 +23,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.WorkoutPlanSchema = exports.ExerciseSchema = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const ExerciseSchema = new mongoose_1.Schema({
+exports.ExerciseSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
     difficulty: {
@@ -40,7 +41,7 @@ const ExerciseSchema = new mongoose_1.Schema({
     benefits: [{ type: String }],
     precautions: [{ type: String }]
 }, { _id: false });
-const WorkoutPlanSchema = new mongoose_1.Schema({
+exports.WorkoutPlanSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
     totalDuration: { type: Number, required: true, min: 1 },
@@ -63,6 +64,7 @@ const ExerciseRecommendationSchema = new mongoose_1.Schema({
     },
     category: { type: String, required: true },
     duration: { type: Number, required: true },
+    frequency: { type: mongoose_1.Schema.Types.Mixed },
     equipment: [{ type: String }],
     instructions: [{ type: String, required: true }],
     benefits: [{ type: String, required: true }]

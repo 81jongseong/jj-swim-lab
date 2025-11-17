@@ -40,6 +40,10 @@ export interface Swimming3DAnalysis {
         energyExpenditure: number;
         score: number;
     };
+    meta?: {
+        technique: string;
+        level: string;
+    };
 }
 export declare class Video3DConversionEngine {
     static convertAndAnalyzeVideo(videoPath: string, outputDir: string, technique: string, level: string): Promise<Video3DConversionResult>;

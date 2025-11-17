@@ -85,9 +85,11 @@ class SecureExcelParser {
         const rowCount = worksheet.rowCount;
         const columnCount = worksheet.columnCount;
         if (rowCount > this.options.maxRows) {
+            (0, logger_1.logWarn)('엑셀 행 수 제한 초과', { sheetName: worksheet.name, rowCount, maxRows: this.options.maxRows });
             throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
         }
         if (columnCount > this.options.maxColumns) {
+            (0, logger_1.logWarn)('엑셀 열 수 제한 초과', { sheetName: worksheet.name, columnCount, maxColumns: this.options.maxColumns });
             throw new Error(`열 수가 너무 많습니다. 최대 ${this.options.maxColumns}열까지 허용됩니다.`);
         }
         if (this.options.allowedSheetNames && !this.options.allowedSheetNames.includes(sheetName)) {
@@ -162,6 +164,7 @@ class SecureExcelParser {
             const content = fs_1.default.readFileSync(filePath, 'utf-8');
             const lines = content.split('\n').filter(line => line.trim());
             if (lines.length > this.options.maxRows) {
+                (0, logger_1.logWarn)('CSV 행 수 제한 초과', { filePath, lines: lines.length, maxRows: this.options.maxRows });
                 throw new Error(`행 수가 너무 많습니다. 최대 ${this.options.maxRows}행까지 허용됩니다.`);
             }
             const data = lines.map(line => {

@@ -160,6 +160,7 @@ router.get('/stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 
     try {
         const userId = req.user._id;
         const { days = 30 } = req.query;
+        void days;
         const stats = {
             totalSessions: 0,
             averageDuration: 0,

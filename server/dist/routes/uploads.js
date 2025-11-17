@@ -463,12 +463,19 @@ router.get('/:id/download', auth_1.authMiddleware, async (req, res) => {
         const user = req.user;
         const isOwner = video.owner?.toString() === user._id.toString();
         const isPrivileged = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
-        if (!isOwner && !isPrivileged && video.visibility !== 'public') {
+        const hasPublicVisibility = Boolean(video.visibility?.allMembers || video.visibility?.allInstructors);
+        if (!isOwner && !isPrivileged && !hasPublicVisibility) {
             return res.status(403).json({ error: '다운로드 권한이 없습니다.' });
         }
-        res.download(video.path, video.originalName);
+        const filePath = video.path;
+        const originalName = video.originalName || 'video.mp4';
+        if (!filePath) {
+            return res.status(400).json({ error: '파일 경로가 설정되지 않았습니다.' });
+        }
+        res.download(filePath, originalName);
     }
     catch (error) {
+        console.error('다운로드 오류:', error);
         res.status(500).json({ error: '다운로드에 실패했습니다.' });
     }
 });
@@ -511,9 +518,10 @@ router.post('/:id/feedback', auth_1.authMiddleware, async (req, res) => {
         if (!canAccess) {
             return res.status(403).json({ error: '이 동영상에 피드백을 남길 권한이 없습니다.' });
         }
+        const reviewerType = isInstructor ? 'instructor' : 'member';
         const feedback = {
             reviewer: user._id,
-            reviewerType: isInstructor ? 'instructor' : 'member',
+            reviewerType,
             reviewerCenterId: userCenterId,
             content: content.trim(),
             rating: rating ? Math.min(5, Math.max(1, Number(rating))) : undefined,
@@ -550,6 +558,7 @@ router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['ins
         res.json(video);
     }
     catch (error) {
+        console.error('리뷰 업데이트 오류:', error);
         res.status(500).json({ error: '리뷰 업데이트에 실패했습니다.' });
     }
 });
@@ -561,7 +570,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         const userDoc = await require('mongoose').model('User').findById(user._id);
         const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
         const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
-        let filter = {};
+        const filter = {};
         if (myVideos === 'true') {
             filter.owner = user._id;
         }
@@ -630,6 +639,7 @@ router.get('/admin/review-queue/list', auth_1.authMiddleware, (0, auth_1.require
         res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
     }
     catch (error) {
+        console.error('리뷰 큐 조회 오류:', error);
         res.status(500).json({ error: '리뷰 큐 조회에 실패했습니다.' });
     }
 });

@@ -42,12 +42,12 @@ router.post('/generate', auth_1.authMiddleware, async (req, res) => {
                     const user = await User_1.User.findById(student.userId);
                     if (!user)
                         continue;
-                    const adjustment = await generatePersonalAdjustment(newProgram._id, user._id, groupClass._id, user, programData);
+                    await generatePersonalAdjustment(newProgram._id, user._id, groupClass._id, user, programData);
                     adjustmentCount++;
                     console.log(`  ✓ ${user.name}: 조정사항 생성`);
                 }
                 catch (error) {
-                    console.error(`  ✗ ${student.userId}: 실패`);
+                    console.error(`  ✗ ${student.userId}: 실패`, error);
                 }
             }
             return res.json({

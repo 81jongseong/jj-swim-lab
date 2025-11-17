@@ -130,7 +130,7 @@ router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instru
         }
         const allItems = [];
         let stepOrder = 1;
-        teachingMethods.forEach((method, methodIndex) => {
+        teachingMethods.forEach((method) => {
             method.steps.forEach((step, stepIndex) => {
                 allItems.push({
                     stepName: step,

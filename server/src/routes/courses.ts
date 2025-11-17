@@ -401,13 +401,17 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
 router.get('/student/enrolled', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
   try {
     // 파일 연동 주석: 이 엔드포인트는 학생의 “내 강의” 리스트를 반환합니다.
-    // 연동 모델: Course, Booking, Payment
+    // 연동 모델: Course, Booking, Payment, PersonalLesson
     // 연동 규칙:
     //  - Course.enrolledStudents.student 에 포함된 코스
     //  - Booking(confirmed|pending|completed) 으로 학생이 예약한 코스
     //  - Payment(pending|completed) 의 relatedCourse 로 결제를 진행/완료한 코스
+    //  - PersonalLesson (approved, completed, 또는 instructorId가 있는 pending)
     // 주의: 결제만 있고 관리자가 최종 배정(enrolledStudents 반영)을 안 한 상태도 표시되도록 합니다.
     const studentId = req.user.userId;
+    
+    // ⭐ PersonalLesson 모델 import
+    const { PersonalLesson } = require('../models/PersonalLesson');
 
     // 1) explicit enrollment (기존 방식)
     const explicitlyEnrolledCourseIds = await Course.find(
@@ -450,6 +454,154 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
       .sort({ 'classInfo.startDate': 1, createdAt: -1 })
       .lean<any>();
 
+    // ⭐ PersonalLesson 조회 (pending도 포함 - instructorId가 있으면 자동 승인 처리)
+    const personalLessonsRaw = await PersonalLesson.find({
+      studentId: studentId,
+      status: { $in: ['pending', 'approved', 'completed'] }
+    })
+    .populate('instructorId', 'name email phone')
+    .populate('centerId', 'name address phone email region district city province')
+    .sort({ date: -1, startTime: -1 });
+
+    // ⭐ instructorId가 있는 pending 상태 레슨을 자동으로 approved로 변경
+    const personalLessonsToUpdate: any[] = [];
+    for (const lesson of personalLessonsRaw) {
+      if (lesson.status === 'pending' && lesson.instructorId) {
+        lesson.status = 'approved';
+        personalLessonsToUpdate.push(lesson);
+      }
+    }
+
+    // 자동 승인된 레슨들을 일괄 저장
+    if (personalLessonsToUpdate.length > 0) {
+      await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+      console.log(`✅ 학생 ${studentId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+    }
+
+    // ⭐ 기본 환불 정책 (설정되지 않은 경우)
+    const defaultRefundPolicy = {
+      beforeUse: {
+        enabled: true,
+        timeBefore: 24,
+        refundRate: 100,
+        description: '이용 전 환불'
+      },
+      afterUse: {
+        enabled: true,
+        calculationMethod: 'sessions',
+        sessionBased: {
+          enabled: true,
+          refundByRemainingSessions: true,
+          description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+        }
+      },
+      processingDays: 7,
+      refundMethod: '원래 결제 수단으로 환불'
+    };
+
+    // ⭐ 환불 정책을 읽기 쉬운 문자열로 변환하는 함수
+    const formatRefundPolicy = (policy: any): string => {
+      // 정책이 없으면 기본값 사용
+      const effectivePolicy = policy || defaultRefundPolicy;
+      if (typeof effectivePolicy === 'string') return effectivePolicy;
+      
+      const parts: string[] = [];
+      
+      // 이용 전 환불
+      if (effectivePolicy.beforeUse?.enabled) {
+        parts.push(`이용 ${effectivePolicy.beforeUse.timeBefore || 24}시간 전까지 ${effectivePolicy.beforeUse.refundRate || 100}% 환불`);
+      }
+      
+      // 이용 시작 후 환불
+      if (effectivePolicy.afterUse?.enabled) {
+        const calculationMethod = effectivePolicy.afterUse.calculationMethod || 'sessions';
+        
+        if (calculationMethod === 'sessions' && effectivePolicy.afterUse.sessionBased?.enabled) {
+          // 이용 회수 기반 환불
+          // 단체반: 경과된 수업은 실제 참석 여부와 관계없이 이용한 것으로 간주
+          // 개인레슨: 예약된 시간대는 노쇼여도 이용한 것으로 간주 (강사 시간 독점)
+          parts.push('이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불');
+        } else if (calculationMethod === 'days' && effectivePolicy.afterUse.dayBased?.enabled && effectivePolicy.afterUse.dayBased.refundRates) {
+          // 기간 기반 환불
+          effectivePolicy.afterUse.dayBased.refundRates.forEach((rate: any) => {
+            if (rate.daysTo) {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+            } else {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+            }
+          });
+        } else if (effectivePolicy.afterUse.refundRates) {
+          // 하위 호환성: 기존 형식
+          effectivePolicy.afterUse.refundRates.forEach((rate: any) => {
+            if (rate.daysTo) {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+            } else {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+            }
+          });
+        }
+      }
+      
+      // 환불 수수료
+      if (effectivePolicy.refundFee?.enabled && effectivePolicy.refundFee.amount > 0) {
+        parts.push(`환불 수수료: ${effectivePolicy.refundFee.amount.toLocaleString()}원`);
+      }
+      
+      // 환불 처리 기간
+      if (effectivePolicy.processingDays) {
+        parts.push(`환불 처리 기간: ${effectivePolicy.processingDays}일`);
+      }
+      
+      // 환불 방법
+      if (effectivePolicy.refundMethod) {
+        parts.push(`환불 방법: ${effectivePolicy.refundMethod}`);
+      }
+      
+      // 추가 설명
+      if (effectivePolicy.customDescription) {
+        parts.push(`※ ${effectivePolicy.customDescription}`);
+      }
+      
+      return parts.length > 0 ? parts.join(', ') : '이용 24시간 전까지 100% 환불, 이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불';
+    };
+
+    const refundPolicyMap = new Map();
+    try {
+      const centerIds = [...new Set(courses.map((c: any) => c.centerId?.toString()).filter(Boolean))];
+      if (centerIds.length > 0) {
+        const centers = await Center.find({ _id: { $in: centerIds } }).select('_id settings').lean();
+        centers.forEach((center: any) => {
+          try {
+            const refundPolicy = center?.settings?.paymentSettings?.refundPolicy;
+            console.log(`🔍 센터 ${center._id} 환불 정책 조회:`, refundPolicy ? '설정됨' : '없음 (기본값 사용)');
+            // 정책이 없어도 기본값 사용 (formatRefundPolicy 내부에서 처리)
+            const formattedPolicy = formatRefundPolicy(refundPolicy);
+            refundPolicyMap.set(center._id.toString(), formattedPolicy);
+            console.log(`✅ 센터 ${center._id} 환불 정책 포맷팅 결과:`, formattedPolicy);
+          } catch (err) {
+            console.error('환불 정책 매핑 오류:', err);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('센터 환불 정책 조회 오류:', err);
+    }
+
+    // ⭐ 환불 신청 상태 조회
+    const { Approval } = require('../models/Approval');
+    const refundRequests = await Approval.find({
+      type: 'refund_request',
+      userId: studentId,
+      status: 'pending'
+    }).select('courseId status').lean();
+    
+    const refundRequestMap = new Map();
+    refundRequests.forEach((req: any) => {
+      if (req.courseId) {
+        refundRequestMap.set(req.courseId.toString(), req.status);
+      }
+    });
+
     const normalized = courses.map((course: any) => {
       const enrollment = (course.enrolledStudents || []).find((enrollmentItem: any) => {
         if (!enrollmentItem) return false;
@@ -464,6 +616,21 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
 
       const instructor = course.instructor || {};
       const center = course.centerId || {};
+      
+      // ⭐ 환불 정책 가져오기 (항상 문자열 반환, 없으면 기본값)
+      const centerIdStr = course.centerId?.toString();
+      const refundPolicy = centerIdStr 
+        ? (refundPolicyMap.get(centerIdStr) || formatRefundPolicy(null)) 
+        : formatRefundPolicy(null);
+      
+      // ⭐ 환불 신청 상태 확인
+      const hasRefundRequest = refundRequestMap.has(course._id.toString());
+
+      // ⭐ 실제 등록된 학생 수 계산 (active 상태만)
+      const activeEnrollments = (course.enrolledStudents || []).filter((e: any) => 
+        e.status === 'active' || !e.status || e.status !== 'dropped' && e.status !== 'cancelled'
+      );
+      const currentStudentsCount = activeEnrollments.length;
 
       return {
         _id: course._id,
@@ -473,7 +640,7 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
         duration: course.duration,
         price: course.price,
         maxStudents: course.maxStudents,
-        currentStudents: course.classInfo?.currentEnrollment ?? 0,
+        currentStudents: currentStudentsCount || course.classInfo?.currentEnrollment || 0, // ⭐ 실제 등록된 학생 수 사용
         status: course.status,
         schedule: (course.schedule || []).map((item: any) => ({
           day: item.day || item.dayOfWeek || '',
@@ -501,17 +668,177 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
               province: center.province
             }
           : null,
-        enrollmentStatus: enrollment?.status ?? 'pending',
+        enrollmentStatus: enrollment?.status ?? 'active', // ⭐ 기본값을 'active'로 변경 (pending이 아닌)
         enrolledAt: enrollment?.enrolledAt ?? null,
-        nextClassStart: course.classInfo?.startDate ?? null,
-        nextClassEnd: course.classInfo?.endDate ?? null
+        // ⭐ 다음 수업 날짜 계산 (스케줄 기반)
+        nextClassStart: (() => {
+          try {
+            const schedule = Array.isArray(course.schedule) ? course.schedule : [];
+            if (schedule.length === 0) return null;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let startDate = today;
+            if (course.classInfo?.startDate) {
+              const sd = new Date(course.classInfo.startDate);
+              if (!isNaN(sd.getTime())) startDate = sd;
+            } else if (course.startDate) {
+              const sd = new Date(course.startDate);
+              if (!isNaN(sd.getTime())) startDate = sd;
+            }
+            
+            let endDate: Date | null = null;
+            if (course.classInfo?.endDate) {
+              const ed = new Date(course.classInfo.endDate);
+              if (!isNaN(ed.getTime())) endDate = ed;
+            } else if (course.endDate) {
+              const ed = new Date(course.endDate);
+              if (!isNaN(ed.getTime())) endDate = ed;
+            }
+            
+            const dayMap: { [key: string]: number } = {
+              'sunday': 0, '일': 0, '0': 0,
+              'monday': 1, '월': 1, '1': 1,
+              'tuesday': 2, '화': 2, '2': 2,
+              'wednesday': 3, '수': 3, '3': 3,
+              'thursday': 4, '목': 4, '4': 4,
+              'friday': 5, '금': 5, '5': 5,
+              'saturday': 6, '토': 6, '6': 6
+            };
+            
+            // 최대 30일 후까지 확인
+            for (let i = 0; i < 30; i++) {
+              const checkDate = new Date(today);
+              checkDate.setDate(today.getDate() + i);
+              const dayOfWeek = checkDate.getDay();
+              
+              // 시작일 이후이고 종료일 이전인지 확인
+              if (checkDate < startDate) continue;
+              if (endDate && checkDate > endDate) break;
+              
+              // 스케줄에서 해당 요일 찾기
+              const daySchedule = schedule.find((s: any) => {
+                if (!s) return false;
+                const sDay = String(s.day || s.dayOfWeek || '').toLowerCase();
+                const sDayNumber = dayMap[sDay];
+                return sDayNumber !== undefined && sDayNumber === dayOfWeek;
+              });
+              
+              if (daySchedule && daySchedule.startTime) {
+                try {
+                  const classDateTime = new Date(checkDate);
+                  const timeParts = String(daySchedule.startTime).split(':');
+                  if (timeParts.length >= 2) {
+                    const hours = parseInt(timeParts[0], 10);
+                    const minutes = parseInt(timeParts[1], 10);
+                    if (!isNaN(hours) && !isNaN(minutes)) {
+                      classDateTime.setHours(hours, minutes, 0, 0);
+                      
+                      const now = new Date();
+                      if (classDateTime >= now) {
+                        return classDateTime.toISOString();
+                      }
+                    }
+                  }
+                } catch (timeError) {
+                  console.error('시간 파싱 오류:', timeError);
+                  continue;
+                }
+              }
+            }
+            return null;
+          } catch (err) {
+            console.error('다음 수업 날짜 계산 오류:', err);
+            return null;
+          }
+        })(),
+        nextClassEnd: course.classInfo?.endDate ?? null,
+        startDate: course.classInfo?.startDate || course.startDate || null,
+        classInfo: course.classInfo || null,
+        refundPolicy: refundPolicy || formatRefundPolicy(null), // 항상 문자열 반환
+        hasRefundRequest: hasRefundRequest // 환불 신청 상태
       };
     });
+
+    // ⭐ PersonalLesson을 Course 형식으로 변환하여 추가
+    const personalLessonsNormalized = personalLessonsRaw.map((pl: any) => {
+      const plObj = pl.toObject ? pl.toObject() : pl;
+      const instructor = plObj.instructorId || {};
+      const center = plObj.centerId || {};
+      
+      // ⭐ 환불 정책 가져오기 (PersonalLesson도 센터에 속하므로)
+      const centerIdStr = plObj.centerId?.toString();
+      const refundPolicy = centerIdStr 
+        ? (refundPolicyMap.get(centerIdStr) || formatRefundPolicy(null)) 
+        : formatRefundPolicy(null);
+      
+      // ⭐ 환불 신청 상태 확인 (PersonalLesson은 courseId가 없으므로 환불 신청 없음으로 처리)
+      // TODO: PersonalLesson 환불 신청 기능이 필요하면 별도 처리 필요
+      const hasRefundRequest = false;
+      
+      // ⭐ enrollmentStatus: instructorId가 있으면 'active', 없으면 'pending'
+      const enrollmentStatus = plObj.instructorId ? 'active' : 'pending';
+      
+      // 날짜를 스케줄 형식으로 변환
+      const lessonDate = new Date(plObj.date);
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const dayName = dayNames[lessonDate.getDay()];
+      
+      return {
+        _id: plObj._id?.toString(),
+        name: '개인 레슨',
+        description: plObj.goals || '',
+        level: plObj.skillLevel || 'beginner',
+        duration: plObj.duration || 60,
+        price: plObj.price || 0,
+        maxStudents: 1,
+        currentStudents: 1,
+        status: plObj.status === 'completed' ? 'inactive' : 'active',
+        schedule: [{
+          day: dayName,
+          startTime: plObj.startTime || plObj.time || '09:00',
+          endTime: plObj.endTime || ''
+        }],
+        instructor: instructor && instructor._id
+          ? {
+              _id: instructor._id,
+              name: instructor.name || '강사 미배정',
+              email: instructor.email || '',
+              phone: instructor.phone || ''
+            }
+          : null,
+        center: center && center._id
+          ? {
+              _id: center._id,
+              name: center.name || '',
+              address: center.address || '',
+              phone: center.phone || '',
+              email: center.email || '',
+              region: center.region || '',
+              district: center.district || '',
+              city: center.city || '',
+              province: center.province || ''
+            }
+          : null,
+        enrollmentStatus: enrollmentStatus, // ⭐ instructorId가 있으면 'active'
+        enrolledAt: plObj.createdAt || null,
+        nextClassStart: plObj.date ? new Date(plObj.date).toISOString() : null,
+        nextClassEnd: plObj.endTime ? `${new Date(plObj.date).toISOString().split('T')[0]}T${plObj.endTime}:00` : null,
+        startDate: plObj.date ? new Date(plObj.date).toISOString().split('T')[0] : null,
+        classInfo: null,
+        refundPolicy: refundPolicy || formatRefundPolicy(null), // 항상 문자열 반환
+        hasRefundRequest: hasRefundRequest // 환불 신청 상태
+      };
+    });
+
+    // Course와 PersonalLesson 합치기
+    const allCourses = [...normalized, ...personalLessonsNormalized];
 
     return res.json({
       success: true,
       message: '내 강습 목록을 불러왔습니다.',
-      data: normalized
+      data: allCourses
     });
   } catch (error) {
     console.error('학생 강습 목록 조회 오류:', error);
@@ -3062,6 +3389,235 @@ router.get('/:id/teaching-methods', authMiddleware, async (req: AuthRequest, res
       message: '강좌별 강습법 조회 중 오류가 발생했습니다.',
       error: error instanceof Error ? error.message : '알 수 없는 오류'
     });
+  }
+});
+
+// ⭐ 환불 신청 API
+router.post('/:courseId/refund-request', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const studentId = req.user.userId;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ success: false, message: '강습 과정을 찾을 수 없습니다.' });
+    }
+
+    // ⭐ 학생이 등록되어 있는지 확인 (enrolledStudents, Booking, Payment 모두 확인)
+    const enrollment = (course.enrolledStudents || []).find((e: any) => {
+      const eStudentId = e.student?.toString() || e.student;
+      return eStudentId === String(studentId);
+    });
+
+    // enrolledStudents에 없으면 Booking이나 Payment로 확인
+    let isEnrolled = !!enrollment;
+    if (!isEnrolled) {
+      const { Booking } = require('../models/Booking');
+      const { Payment } = require('../models/Payment');
+      
+      const booking = await Booking.findOne({
+        studentId: studentId,
+        courseId: courseId,
+        status: { $in: ['confirmed', 'pending', 'completed'] }
+      });
+      
+      const payment = await Payment.findOne({
+        user: studentId,
+        relatedCourse: courseId,
+        status: { $in: ['pending', 'completed'] },
+        purpose: 'course'
+      });
+      
+      isEnrolled = !!(booking || payment);
+    }
+
+    if (!isEnrolled) {
+      return res.status(400).json({ success: false, message: '등록된 강습 과정이 아닙니다.' });
+    }
+
+    // 강의 시작 여부 확인
+    const startDate = course.classInfo?.startDate || course.startDate;
+    const isCourseStarted = startDate ? new Date(startDate) <= new Date() : false;
+
+    // ⭐ 센터 환불 정책 가져오기
+    const { Center } = require('../models/Center');
+    const center = await Center.findById(course.centerId).select('settings').lean();
+    const refundPolicyRaw = center?.settings?.paymentSettings?.refundPolicy;
+    
+    // ⭐ 기본 환불 정책 (설정되지 않은 경우)
+    const defaultRefundPolicy = {
+      beforeUse: {
+        enabled: true,
+        timeBefore: 24,
+        refundRate: 100,
+        description: '이용 전 환불'
+      },
+      afterUse: {
+        enabled: true,
+        calculationMethod: 'sessions',
+        sessionBased: {
+          enabled: true,
+          refundByRemainingSessions: true,
+          description: '이용한 회수를 제외한 남은 회수 비율로 환불 (소비자 보호법 준수)'
+        }
+      },
+      processingDays: 7,
+      refundMethod: '원래 결제 수단으로 환불'
+    };
+    
+    // ⭐ 환불 정책을 읽기 쉬운 문자열로 변환하는 함수
+    const formatRefundPolicy = (policy: any): string => {
+      // 정책이 없으면 기본값 사용
+      const effectivePolicy = policy || defaultRefundPolicy;
+      if (typeof effectivePolicy === 'string') return effectivePolicy;
+      
+      const parts: string[] = [];
+      
+      // 이용 전 환불
+      if (effectivePolicy.beforeUse?.enabled) {
+        parts.push(`이용 ${effectivePolicy.beforeUse.timeBefore || 24}시간 전까지 ${effectivePolicy.beforeUse.refundRate || 100}% 환불`);
+      }
+      
+      // 이용 시작 후 환불
+      if (effectivePolicy.afterUse?.enabled) {
+        const calculationMethod = effectivePolicy.afterUse.calculationMethod || 'sessions';
+        
+        if (calculationMethod === 'sessions' && effectivePolicy.afterUse.sessionBased?.enabled) {
+          // 이용 회수 기반 환불
+          // 단체반: 경과된 수업은 실제 참석 여부와 관계없이 이용한 것으로 간주
+          // 개인레슨: 예약된 시간대는 노쇼여도 이용한 것으로 간주 (강사 시간 독점)
+          parts.push('이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불');
+        } else if (calculationMethod === 'days' && effectivePolicy.afterUse.dayBased?.enabled && effectivePolicy.afterUse.dayBased.refundRates) {
+          // 기간 기반 환불
+          effectivePolicy.afterUse.dayBased.refundRates.forEach((rate: any) => {
+            if (rate.daysTo) {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+            } else {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+            }
+          });
+        } else if (effectivePolicy.afterUse.refundRates) {
+          // 하위 호환성: 기존 형식
+          effectivePolicy.afterUse.refundRates.forEach((rate: any) => {
+            if (rate.daysTo) {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일~${rate.daysTo}일: ${rate.refundRate}% 환불`);
+            } else {
+              parts.push(`이용 시작 후 ${rate.daysFromStart}일 이후: ${rate.refundRate}% 환불`);
+            }
+          });
+        }
+      }
+      
+      // 환불 수수료
+      if (effectivePolicy.refundFee?.enabled && effectivePolicy.refundFee.amount > 0) {
+        parts.push(`환불 수수료: ${effectivePolicy.refundFee.amount.toLocaleString()}원`);
+      }
+      
+      // 환불 처리 기간
+      if (effectivePolicy.processingDays) {
+        parts.push(`환불 처리 기간: ${effectivePolicy.processingDays}일`);
+      }
+      
+      // 환불 방법
+      if (effectivePolicy.refundMethod) {
+        parts.push(`환불 방법: ${effectivePolicy.refundMethod}`);
+      }
+      
+      // 추가 설명
+      if (effectivePolicy.customDescription) {
+        parts.push(`※ ${effectivePolicy.customDescription}`);
+      }
+      
+      return parts.length > 0 ? parts.join(', ') : '이용 24시간 전까지 100% 환불, 이용 시작 후: 단체반은 경과된 수업을, 개인레슨은 예약된 시간을 이용한 것으로 간주하여 환불';
+    };
+    
+    const refundPolicy = formatRefundPolicy(refundPolicyRaw);
+
+    // ⭐ 환불 신청을 Approval 모델에 저장
+    const { Approval } = require('../models/Approval');
+    
+    // 기존 환불 신청이 있는지 확인
+    const existingRefund = await Approval.findOne({
+      type: 'refund_request',
+      userId: studentId,
+      courseId: courseId,
+      status: 'pending'
+    });
+
+    if (existingRefund) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 환불 신청이 접수되어 있습니다.' 
+      });
+    }
+
+    // 환불 신청 생성
+    const refundRequest = new Approval({
+      type: 'refund_request',
+      userId: studentId,
+      courseId: courseId,
+      centerId: course.centerId,
+      title: `${course.name} 환불 신청`,
+      description: isCourseStarted 
+        ? '강의가 이미 시작되어 센터의 환불 정책에 따라 환불 금액이 결정됩니다.'
+        : '환불 신청이 접수되었습니다.',
+      status: 'pending',
+      priority: 'medium',
+      estimatedAmount: course.price,
+      requestDate: new Date()
+    });
+    await refundRequest.save();
+
+    const message = isCourseStarted 
+      ? '환불 신청이 접수되었습니다. 강의가 이미 시작되어 센터의 환불 정책에 따라 환불 금액이 결정됩니다. 관리자 검토 후 환불이 진행됩니다.'
+      : '환불 신청이 접수되었습니다. 관리자 검토 후 환불이 진행됩니다.';
+    
+    res.json({
+      success: true,
+      message: message,
+      refundPolicy: refundPolicy,
+      isCourseStarted: isCourseStarted,
+      refundRequestId: refundRequest._id
+    });
+  } catch (error) {
+    console.error('환불 신청 오류:', error);
+    res.status(500).json({ success: false, message: '환불 신청 중 오류가 발생했습니다.' });
+  }
+});
+
+// ⭐ 환불 신청 취소 API
+router.delete('/:courseId/refund-request', authMiddleware, requireRole(['student']), async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    const studentId = req.user.userId;
+
+    const { Approval } = require('../models/Approval');
+    
+    // 환불 신청 찾기
+    const refundRequest = await Approval.findOne({
+      type: 'refund_request',
+      userId: studentId,
+      courseId: courseId,
+      status: 'pending'
+    });
+
+    if (!refundRequest) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '환불 신청을 찾을 수 없습니다.' 
+      });
+    }
+
+    // 환불 신청 삭제 (또는 상태를 cancelled로 변경)
+    await Approval.findByIdAndDelete(refundRequest._id);
+
+    res.json({
+      success: true,
+      message: '환불 신청이 취소되었습니다.'
+    });
+  } catch (error) {
+    console.error('환불 신청 취소 오류:', error);
+    res.status(500).json({ success: false, message: '환불 신청 취소 중 오류가 발생했습니다.' });
   }
 });
 

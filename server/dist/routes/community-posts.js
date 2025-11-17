@@ -259,6 +259,7 @@ router.post('/posts/:id/warn', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
         const { authorId, reason } = req.body;
+        void authorId;
         if (user.userType !== 'superAdmin') {
             return res.status(403).json({
                 success: false,
@@ -296,34 +297,36 @@ router.post('/posts/:id/join', auth_1.authMiddleware, async (req, res) => {
                 message: '게시글을 찾을 수 없습니다.'
             });
         }
-        if (!post.meetupDetails) {
+        const meetupDetails = post.meetupDetails;
+        if (!meetupDetails) {
             return res.status(400).json({
                 success: false,
                 message: '번개모임 게시글이 아닙니다.'
             });
         }
-        const alreadyJoined = post.meetupDetails.participants?.some(p => p.userId === userId);
+        const alreadyJoined = meetupDetails.participants?.some((participant) => participant.userId === userId);
         if (alreadyJoined) {
             return res.status(400).json({
                 success: false,
                 message: '이미 참가 신청한 모임입니다.'
             });
         }
-        if (post.meetupDetails.currentParticipants >= post.meetupDetails.maxParticipants) {
+        if (meetupDetails.currentParticipants >= meetupDetails.maxParticipants) {
             return res.status(400).json({
                 success: false,
                 message: '모집 인원이 마감되었습니다.'
             });
         }
-        if (!post.meetupDetails.participants) {
-            post.meetupDetails.participants = [];
+        if (!meetupDetails.participants) {
+            meetupDetails.participants = [];
         }
-        post.meetupDetails.participants.push({
+        meetupDetails.participants.push({
             userId,
             userName,
             joinedAt: new Date()
         });
-        post.meetupDetails.currentParticipants = (post.meetupDetails.currentParticipants || 0) + 1;
+        meetupDetails.currentParticipants = (meetupDetails.currentParticipants || 0) + 1;
+        post.meetupDetails = meetupDetails;
         await post.save();
         res.json({
             success: true,

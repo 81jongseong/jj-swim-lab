@@ -1,19 +1,34 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IntegratedAIEngine = void 0;
+const SmartWatchData_1 = require("../models/SmartWatchData");
+const VideoAnalysisCriteria_1 = require("../models/VideoAnalysisCriteria");
+const VideoAnalysisCriteria_2 = require("../models/VideoAnalysisCriteria");
+const AIEvaluationCriteria_1 = require("../models/AIEvaluationCriteria");
 class IntegratedAIEngine {
     static async performIntegratedAnalysis(input) {
         try {
-            const smartWatchAnalysis = await this.analyzeSmartWatchData(input);
-            const videoAnalysis = await this.analyzeVideoData(input);
-            const instructorAnalysis = this.analyzeInstructorObservations(input.instructorObservations);
+            const [storedSmartWatch, storedVideoResult, lastEvaluation, analysisCriteria] = await Promise.all([
+                SmartWatchData_1.SmartWatchData.findOne({ studentId: input.studentId }).sort({ recordedAt: -1 }).lean(),
+                VideoAnalysisCriteria_1.VideoAnalysisResult.findOne({ studentId: input.studentId, technique: input.technique }).sort({ createdAt: -1 }).lean(),
+                AIEvaluationCriteria_1.AIEvaluationResult.findOne({ studentId: input.studentId, technique: input.technique }).sort({ evaluationDate: -1 }).lean(),
+                VideoAnalysisCriteria_2.VideoAnalysisCriteria.findOne({ technique: input.technique }).lean()
+            ]);
+            const enrichedInput = {
+                ...input,
+                smartWatchData: input.smartWatchData || storedSmartWatch || undefined,
+                videoAnalysisData: input.videoAnalysisData || storedVideoResult || undefined
+            };
+            const smartWatchAnalysis = await this.analyzeSmartWatchData(enrichedInput);
+            const videoAnalysis = await this.analyzeVideoData(enrichedInput, analysisCriteria);
+            const instructorAnalysis = this.analyzeInstructorObservations(enrichedInput.instructorObservations);
             const dataSourceWeights = this.calculateDataSourceWeights(smartWatchAnalysis, videoAnalysis, instructorAnalysis);
             const overallScore = this.calculateOverallScore(smartWatchAnalysis, videoAnalysis, instructorAnalysis, dataSourceWeights);
             const categoryScores = this.calculateCategoryScores(smartWatchAnalysis, videoAnalysis, instructorAnalysis, dataSourceWeights);
             const detailedAnalysis = this.generateDetailedAnalysis(smartWatchAnalysis, videoAnalysis, instructorAnalysis);
-            const recommendations = this.generateRecommendations(overallScore, categoryScores, detailedAnalysis);
+            const recommendations = this.generateRecommendations(overallScore, categoryScores, detailedAnalysis, analysisCriteria);
             const exercisePlan = this.generateExercisePlan(overallScore, categoryScores, input.technique);
-            const progressPrediction = this.predictProgress(overallScore, categoryScores, input.studentId);
+            const progressPrediction = this.predictProgress(overallScore, categoryScores, input.studentId, lastEvaluation);
             return {
                 overallScore,
                 dataSources: {
@@ -71,7 +86,7 @@ class IntegratedAIEngine {
             }
         };
     }
-    static async analyzeVideoData(input) {
+    static async analyzeVideoData(input, criteria) {
         if (!input.videoAnalysisData) {
             return {
                 available: false,
@@ -84,13 +99,18 @@ class IntegratedAIEngine {
         const postureAnalysis = this.analyzePostureFromVideo(data.detailedAnalysis.postureAnalysis);
         const movementAnalysis = this.analyzeMovementFromVideo(data.detailedAnalysis.movementAnalysis);
         const timingAnalysis = this.analyzeTimingFromVideo(data.detailedAnalysis.timingAnalysis);
-        const overallScore = (postureAnalysis.score * 0.35 +
-            movementAnalysis.score * 0.35 +
-            timingAnalysis.score * 0.3);
+        const calibration = criteria?.calibration || {};
+        const postureWeight = calibration.postureWeight ?? 0.35;
+        const movementWeight = calibration.movementWeight ?? 0.35;
+        const timingWeight = calibration.timingWeight ?? 0.3;
+        const confidenceBoost = calibration.confidenceBoost ?? 0;
+        const overallScore = (postureAnalysis.score * postureWeight +
+            movementAnalysis.score * movementWeight +
+            timingAnalysis.score * timingWeight);
         return {
             available: true,
             overallScore: Math.round(overallScore),
-            confidence: 0.8,
+            confidence: Math.min(1, 0.8 + confidenceBoost),
             insights: {
                 posture: postureAnalysis,
                 movement: movementAnalysis,
@@ -113,28 +133,18 @@ class IntegratedAIEngine {
         };
     }
     static calculateDataSourceWeights(smartWatch, video, instructor) {
-        const totalSources = [smartWatch.available, video.available, true].filter(Boolean).length;
-        if (totalSources === 3) {
-            return {
-                smartWatch: 0.4,
-                video: 0.4,
-                instructor: 0.2
-            };
+        const smartWeight = smartWatch.available ? smartWatch.confidence ?? 0.8 : 0;
+        const videoWeight = video.available ? video.confidence ?? 0.7 : 0;
+        const instructorWeight = instructor?.confidence ?? 0.6;
+        const total = smartWeight + videoWeight + instructorWeight;
+        if (total === 0) {
+            return { smartWatch: 0, video: 0, instructor: 1 };
         }
-        else if (totalSources === 2) {
-            if (smartWatch.available && video.available) {
-                return { smartWatch: 0.5, video: 0.5, instructor: 0 };
-            }
-            else if (smartWatch.available) {
-                return { smartWatch: 0.6, instructor: 0.4, video: 0 };
-            }
-            else {
-                return { video: 0.6, instructor: 0.4, smartWatch: 0 };
-            }
-        }
-        else {
-            return { instructor: 1, smartWatch: 0, video: 0 };
-        }
+        return {
+            smartWatch: smartWeight / total,
+            video: videoWeight / total,
+            instructor: instructorWeight / total
+        };
     }
     static calculateOverallScore(smartWatch, video, instructor, weights) {
         let totalScore = 0;
@@ -180,7 +190,7 @@ class IntegratedAIEngine {
             instructorInsights: instructor.insights
         };
     }
-    static generateRecommendations(overallScore, categoryScores, detailedAnalysis) {
+    static generateRecommendations(overallScore, categoryScores, detailedAnalysis, criteria) {
         const recommendations = {
             immediate: [],
             shortTerm: [],
@@ -188,15 +198,27 @@ class IntegratedAIEngine {
         };
         if (categoryScores.posture < 60) {
             recommendations.immediate.push('자세 교정 운동을 시작하세요');
+            if (criteria?.posture?.recommendations) {
+                recommendations.immediate.push(...criteria.posture.recommendations);
+            }
         }
         if (categoryScores.breathing < 60) {
             recommendations.immediate.push('호흡 타이밍 연습을 강화하세요');
+            if (criteria?.breathing?.recommendations) {
+                recommendations.immediate.push(...criteria.breathing.recommendations);
+            }
         }
         if (overallScore < 70) {
             recommendations.shortTerm.push('기본 동작 연습을 집중적으로 하세요');
+            if (criteria?.movement?.recommendations) {
+                recommendations.shortTerm.push(...criteria.movement.recommendations);
+            }
         }
         if (overallScore > 80) {
             recommendations.longTerm.push('고급 기술 습득을 목표로 하세요');
+            if (criteria?.efficiency?.recommendations) {
+                recommendations.longTerm.push(...criteria.efficiency.recommendations);
+            }
         }
         return recommendations;
     }
@@ -218,12 +240,22 @@ class IntegratedAIEngine {
             }
         };
     }
-    static predictProgress(overallScore, categoryScores, studentId) {
-        const improvementRate = 0.5;
+    static predictProgress(overallScore, categoryScores, studentId, lastEvaluation) {
+        const previousScore = lastEvaluation?.overallScore ?? 0;
+        const delta = overallScore - previousScore;
+        const improvementRate = delta !== 0 ? Math.max(0.2, Math.min(1, delta / 10 + 0.5)) : 0.5;
+        const scoreEntries = Object.entries(categoryScores ?? {});
+        const categoryFocus = scoreEntries
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 2)
+            .map(([category]) => category);
         return {
             expectedImprovement: Math.round(overallScore * improvementRate * 0.1),
-            timeToNextLevel: Math.round((100 - overallScore) / improvementRate),
-            confidence: 0.7
+            timeToNextLevel: Math.max(1, Math.round((100 - overallScore) / improvementRate)),
+            confidence: Math.min(0.95, 0.6 + (delta >= 0 ? 0.1 : -0.05)),
+            referenceEvaluationId: lastEvaluation?._id ?? null,
+            focusCategories: categoryFocus,
+            studentId
         };
     }
     static analyzeHeartRateData(metrics) {

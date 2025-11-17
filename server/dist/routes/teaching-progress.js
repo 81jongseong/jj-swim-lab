@@ -141,7 +141,7 @@ router.get('/:userId/next-recommendation', auth_1.authMiddleware, async (req, re
         const inProgressMethods = teachingProgress.filter((p) => p.completionRate < 100);
         const completedMethodIds = teachingProgress.map((p) => p.methodId.toString());
         const notStartedMethods = allMethods.filter((m) => !completedMethodIds.includes(m._id.toString()));
-        let recommendations = [];
+        const recommendations = [];
         const preferredInProgress = inProgressMethods.filter((p) => preferredStrokes.includes(p.stroke));
         if (preferredInProgress.length > 0) {
             recommendations.push({

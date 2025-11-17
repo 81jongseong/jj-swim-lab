@@ -234,7 +234,7 @@ router.put('/:prescriptionId/adjust', auth_1.authMiddleware, async (req, res) =>
             });
         }
         const previousPrescription = { ...prescription.currentPrescription };
-        let newPrescription = { ...prescription.currentPrescription };
+        const newPrescription = { ...prescription.currentPrescription };
         if (manualAdjustment) {
             if (manualAdjustment.sessionDuration) {
                 newPrescription.sessionDuration = manualAdjustment.sessionDuration;

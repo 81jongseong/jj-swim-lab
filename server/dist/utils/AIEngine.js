@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIEngine = void 0;
+const AIAnalysis_1 = require("../models/AIAnalysis");
 const Checklist_1 = require("../models/Checklist");
+const User_1 = require("../models/User");
 class AIEngine {
     static async analyzePosture(studentId, technique, checklistData) {
         const completedItems = checklistData.filter(item => item.isCompleted);
@@ -47,7 +49,8 @@ class AIEngine {
             score: Math.round(score),
             strengths,
             improvements,
-            detailedFeedback
+            detailedFeedback,
+            completionRate: Math.round(completionRate)
         };
     }
     static async predictProgress(studentId, instructorId) {
@@ -79,7 +82,8 @@ class AIEngine {
             factors
         };
     }
-    static async generatePersonalizedRecommendation(studentId, instructorId) {
+    static async generatePersonalizedRecommendation(studentId, instructorId, options = {}) {
+        const studentProfile = await User_1.User.findById(studentId).select('name profileLevel');
         const recentChecklists = await Checklist_1.Checklist.find({
             studentId,
             instructorId,
@@ -90,37 +94,64 @@ class AIEngine {
         const recommendedExercises = this.generateExerciseRecommendations(weaknesses, strengths);
         const focusAreas = this.determineFocusAreas(weaknesses);
         const difficultyAdjustment = this.suggestDifficultyAdjustment(recentChecklists);
-        const estimatedImprovement = this.estimateImprovement(weaknesses, recommendedExercises);
-        return {
+        const estimatedImprovement = this.estimateImprovement(weaknesses, recommendedExercises, studentProfile?.name);
+        const recommendationPayload = {
             recommendedExercises,
             focusAreas,
             difficultyAdjustment,
             estimatedImprovement
         };
+        if (options.persist !== false) {
+            await AIAnalysis_1.AIAnalysis.create({
+                studentId,
+                instructorId,
+                analysisType: 'recommendation',
+                personalizedRecommendation: recommendationPayload
+            }).catch(() => undefined);
+        }
+        return recommendationPayload;
     }
-    static async analyzePerformance(studentId, instructorId) {
+    static async analyzePerformance(studentId, instructorId, options = {}) {
         const checklists = await Checklist_1.Checklist.find({
             studentId,
             instructorId
         }).sort({ createdAt: -1 });
         if (checklists.length === 0) {
-            return {
+            const emptyReport = {
                 overallScore: 0,
                 improvementRate: 0,
                 consistencyScore: 0,
                 recommendations: ['더 많은 데이터가 필요합니다']
             };
+            if (options.persist !== false) {
+                await AIAnalysis_1.AIAnalysis.create({
+                    studentId,
+                    instructorId,
+                    analysisType: 'performance',
+                    performanceAnalysis: emptyReport
+                }).catch(() => undefined);
+            }
+            return emptyReport;
         }
         const overallScore = this.calculateOverallScore(checklists);
         const improvementRate = this.calculateImprovementRate(checklists);
         const consistencyScore = this.calculateConsistencyScore(checklists);
         const recommendations = this.generatePerformanceRecommendations(overallScore, improvementRate, consistencyScore);
-        return {
+        const report = {
             overallScore,
             improvementRate,
             consistencyScore,
             recommendations
         };
+        if (options.persist !== false) {
+            await AIAnalysis_1.AIAnalysis.create({
+                studentId,
+                instructorId,
+                analysisType: 'performance',
+                performanceAnalysis: report
+            }).catch(() => undefined);
+        }
+        return report;
     }
     static generateDetailedFeedback(technique, score, strengths, improvements) {
         let feedback = `${technique} 수영 분석 결과입니다.\n\n`;
@@ -237,6 +268,11 @@ class AIEngine {
                 recommendations.push(...exerciseMap[weakness]);
             }
         });
+        strengths.forEach(strength => {
+            if (exerciseMap[strength]) {
+                recommendations.push(`${strength} 유지 훈련: ${exerciseMap[strength][0]}`);
+            }
+        });
         return [...new Set(recommendations)];
     }
     static determineFocusAreas(weaknesses) {
@@ -253,9 +289,16 @@ class AIEngine {
             return 'easier';
         return 'same';
     }
-    static estimateImprovement(weaknesses, exercises) {
-        const weeks = Math.ceil(weaknesses.length * 2);
-        return `${weeks}주 후 ${weaknesses[0]} 영역에서 20-30% 개선 예상`;
+    static estimateImprovement(weaknesses, recommendedExercises, studentName) {
+        if (weaknesses.length === 0) {
+            return studentName
+                ? `${studentName}님의 현재 프로그램은 균형 잡혀 있습니다.`
+                : '현재 프로그램은 균형 잡혀 있습니다.';
+        }
+        const keyWeakness = weaknesses[0];
+        const exercise = recommendedExercises[0] || '맞춤 운동';
+        const namePrefix = studentName ? `${studentName}님, ` : '';
+        return `${namePrefix}${keyWeakness} 개선을 위해 ${exercise}을(를) 집중적으로 수행해보세요.`;
     }
     static calculateOverallScore(checklists) {
         if (checklists.length === 0)

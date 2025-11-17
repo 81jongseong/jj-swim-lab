@@ -3,11 +3,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.redisUtils = exports.testRedisConnection = void 0;
 const redis = {
     ping: () => Promise.resolve('PONG'),
-    setex: (key, ttl, value) => Promise.resolve('OK'),
-    get: (key) => Promise.resolve(null),
-    del: (key) => Promise.resolve(1),
-    keys: (pattern) => Promise.resolve([]),
-    exists: (key) => Promise.resolve(0),
+    setex: (key, ttl, value) => {
+        void key;
+        void ttl;
+        void value;
+        return Promise.resolve('OK');
+    },
+    get: (key) => {
+        void key;
+        return Promise.resolve(null);
+    },
+    del: (key) => {
+        void key;
+        return Promise.resolve(1);
+    },
+    keys: (pattern) => {
+        void pattern;
+        return Promise.resolve([]);
+    },
+    exists: (key) => {
+        void key;
+        return Promise.resolve(0);
+    },
     on: () => { },
     off: () => { },
     disconnect: () => Promise.resolve(),

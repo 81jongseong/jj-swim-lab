@@ -35,10 +35,10 @@ router.post('/analyze', auth_1.authMiddleware, (0, auth_1.requireRole)(['instruc
                 analysisResult = await AIEngine_1.AIEngine.predictProgress(studentId, req.user._id);
                 break;
             case 'recommendation':
-                analysisResult = await AIEngine_1.AIEngine.generatePersonalizedRecommendation(studentId, req.user._id);
+                analysisResult = await AIEngine_1.AIEngine.generatePersonalizedRecommendation(studentId, req.user._id, { persist: false });
                 break;
             case 'performance':
-                analysisResult = await AIEngine_1.AIEngine.analyzePerformance(studentId, req.user._id);
+                analysisResult = await AIEngine_1.AIEngine.analyzePerformance(studentId, req.user._id, { persist: false });
                 break;
             default:
                 return res.status(400).json({
@@ -194,14 +194,51 @@ router.delete('/analysis/:analysisId', auth_1.authMiddleware, (0, auth_1.require
 });
 function getAnalysisSummary(analysis) {
     switch (analysis.analysisType) {
-        case 'posture':
-            return `자세 분석: ${analysis.postureAnalysis?.score}점 (${analysis.postureAnalysis?.technique})`;
-        case 'progress':
-            return `진도 예측: ${analysis.progressPrediction?.currentLevel} → ${analysis.progressPrediction?.predictedNextLevel}`;
-        case 'recommendation':
-            return `추천 운동: ${analysis.personalizedRecommendation?.recommendedExercises?.length}개`;
-        case 'performance':
-            return `성과 분석: ${analysis.performanceAnalysis?.overallScore}점`;
+        case 'posture': {
+            const score = analysis.postureAnalysis?.score;
+            const technique = analysis.postureAnalysis?.technique;
+            const completionRate = analysis.postureAnalysis?.completionRate;
+            return [
+                score !== undefined ? `자세 ${score}점` : null,
+                technique ? `${technique}` : null,
+                completionRate !== undefined ? `완료율 ${completionRate}%` : null
+            ].filter(Boolean).join(' · ') || '자세 분석 완료';
+        }
+        case 'progress': {
+            const prediction = analysis.progressPrediction;
+            if (!prediction)
+                return '진도 예측 완료';
+            const base = `${prediction.currentLevel} → ${prediction.predictedNextLevel}`;
+            const weeks = prediction.estimatedWeeks ? `${prediction.estimatedWeeks}주 예상` : null;
+            const confidence = prediction.confidence ? `신뢰도 ${(prediction.confidence * 100).toFixed(0)}%` : null;
+            return [base, weeks, confidence].filter(Boolean).join(' · ');
+        }
+        case 'recommendation': {
+            const recommendation = analysis.personalizedRecommendation;
+            if (!recommendation)
+                return '추천 분석 완료';
+            const focus = recommendation.focusAreas?.length
+                ? `중점 영역: ${recommendation.focusAreas.join(', ')}`
+                : null;
+            const difficulty = recommendation.difficultyAdjustment
+                ? `강도: ${translateDifficulty(recommendation.difficultyAdjustment)}`
+                : null;
+            const improvement = recommendation.estimatedImprovement;
+            return [focus, difficulty, improvement].filter(Boolean).join(' · ') || '추천 운동 생성';
+        }
+        case 'performance': {
+            const performance = analysis.performanceAnalysis;
+            if (!performance)
+                return '성과 분석 완료';
+            const base = `총점 ${performance.overallScore}점`;
+            const improvement = performance.improvementRate !== undefined
+                ? `개선율 ${performance.improvementRate}%`
+                : null;
+            const consistency = performance.consistencyScore !== undefined
+                ? `일관성 ${performance.consistencyScore}`
+                : null;
+            return [base, improvement, consistency].filter(Boolean).join(' · ');
+        }
         default:
             return '분석 완료';
     }
@@ -218,7 +255,23 @@ function calculateProgressTrend(checklists) {
 }
 function getLatestRecommendations(analyses) {
     const recommendationAnalysis = analyses.find(a => a.analysisType === 'recommendation');
-    return recommendationAnalysis?.personalizedRecommendation?.recommendedExercises || [];
+    if (!recommendationAnalysis?.personalizedRecommendation)
+        return [];
+    const { personalizedRecommendation: recommendation } = recommendationAnalysis;
+    const messages = [];
+    if (recommendation.focusAreas?.length) {
+        messages.push(`중점 훈련 영역: ${recommendation.focusAreas.join(', ')}`);
+    }
+    if (recommendation.recommendedExercises?.length) {
+        messages.push(`추천 운동: ${recommendation.recommendedExercises.slice(0, 3).join(', ')}${recommendation.recommendedExercises.length > 3 ? ' 외' : ''}`);
+    }
+    if (recommendation.difficultyAdjustment) {
+        messages.push(`강도 조정: ${translateDifficulty(recommendation.difficultyAdjustment)}`);
+    }
+    if (recommendation.estimatedImprovement) {
+        messages.push(`예상 효과: ${recommendation.estimatedImprovement}`);
+    }
+    return messages;
 }
 function calculatePerformanceMetrics(checklists) {
     if (checklists.length === 0) {
@@ -235,6 +288,16 @@ function calculatePerformanceMetrics(checklists) {
         completionRate: Math.round(completionRate),
         consistency: Math.round(consistency * 100)
     };
+}
+function translateDifficulty(difficulty) {
+    switch (difficulty) {
+        case 'easier':
+            return '완화';
+        case 'harder':
+            return '강화';
+        default:
+            return '유지';
+    }
 }
 router.get('/config', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {

@@ -131,7 +131,7 @@ interface DashboardStats {
   averageTicketSize: number; // 평균 결제 금액(완료 건 기준)
 }
 
-type TabType = 'dashboard' | 'bookings' | 'payments';
+type TabType = 'dashboard' | 'bookings' | 'payments' | 'approvals';
 
 function IntegratedManagement() {
   const { user, loading: authLoading } = useAuth();
@@ -917,7 +917,8 @@ ${list}`);
             {[
               { id: 'dashboard', name: '대시보드', icon: LayoutDashboard },
               { id: 'bookings', name: '예약 관리', icon: Calendar },
-              { id: 'payments', name: '결제 관리', icon: DollarSign }
+              { id: 'payments', name: '결제 관리', icon: DollarSign },
+              { id: 'approvals', name: '환불 신청', icon: AlertCircle }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -1165,7 +1166,98 @@ ${list}`);
         </div>
       )}
 
-      {/* 승인 관리 탭 제거 */}
+      {/* 환불 신청 탭 */}
+      {activeTab === 'approvals' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>환불 신청 관리</CardTitle>
+              <CardDescription>회원의 환불 신청을 확인하고 처리하세요.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {approvals.filter(a => a.type === 'refund_request').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    환불 신청이 없습니다.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {approvals
+                      .filter(a => a.type === 'refund_request')
+                      .map((approval) => (
+                        <div
+                          key={approval.id}
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-gray-900">{approval.title}</h3>
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    approval.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : approval.status === 'approved'
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}
+                                >
+                                  {approval.status === 'pending'
+                                    ? '대기중'
+                                    : approval.status === 'approved'
+                                    ? '승인됨'
+                                    : '거부됨'}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <p>
+                                  <span className="font-medium">신청자:</span> {approval.requesterName} ({approval.requesterEmail})
+                                </p>
+                                {approval.courseName && (
+                                  <p>
+                                    <span className="font-medium">강의:</span> {approval.courseName}
+                                  </p>
+                                )}
+                                {approval.estimatedAmount && (
+                                  <p>
+                                    <span className="font-medium">환불 금액:</span> {approval.estimatedAmount.toLocaleString()}원
+                                  </p>
+                                )}
+                                <p>
+                                  <span className="font-medium">신청일:</span> {approval.requestDate}
+                                </p>
+                                <p className="text-gray-700 mt-2">{approval.description}</p>
+                              </div>
+                            </div>
+                            {approval.status === 'pending' && (
+                              <div className="flex gap-2 ml-4">
+                                <Button
+                                  onClick={() => handleApproval(approval.id, 'approve')}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  size="sm"
+                                >
+                                  승인
+                                </Button>
+                                <Button
+                                  onClick={() => handleApproval(approval.id, 'reject')}
+                                  variant="outline"
+                                  className="border-red-300 text-red-600 hover:bg-red-50"
+                                  size="sm"
+                                >
+                                  거부
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* 모달들 */}
       <SimplePersonalLessonModal

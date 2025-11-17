@@ -8,67 +8,175 @@ const auth_1 = require("../middleware/auth");
 const errorHandler_1 = require("../utils/errorHandler");
 const logger_1 = __importDefault(require("../utils/logger"));
 const Booking_1 = require("../models/Booking");
+const Course_1 = require("../models/Course");
+const PersonalLesson_1 = require("../models/PersonalLesson");
+const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
 router.get('/dashboard', auth_1.authMiddleware, async (req, res) => {
     try {
         const studentId = req.user?._id;
         logger_1.default.info(`👨‍🎓 학생 대시보드 조회 요청: ${studentId}`);
+        if (!studentId) {
+            return res.status(400).json({
+                success: false,
+                message: '학생 ID가 없습니다.'
+            });
+        }
+        const { User } = require('../models/User');
+        const student = await User.findById(studentId);
+        if (student && !student.centerId) {
+            const enrolledCourse = await Course_1.Course.findOne({
+                'enrolledStudents.student': studentId
+            }).select('centerId').lean();
+            if (enrolledCourse?.centerId) {
+                student.centerId = enrolledCourse.centerId;
+                await student.save();
+                logger_1.default.info(`✅ 학생 ${studentId}의 centerId 자동 배정 (Course): ${enrolledCourse.centerId}`);
+            }
+            else {
+                const { Payment } = require('../models/Payment');
+                const payment = await Payment.findOne({
+                    user: studentId,
+                    status: { $in: ['pending', 'completed'] },
+                    purpose: 'course'
+                }).select('centerId').lean();
+                if (payment?.centerId) {
+                    student.centerId = payment.centerId;
+                    await student.save();
+                    logger_1.default.info(`✅ 학생 ${studentId}의 centerId 자동 배정 (Payment): ${payment.centerId}`);
+                }
+                else {
+                    const booking = await Booking_1.Booking.findOne({
+                        studentId: new mongoose_1.default.Types.ObjectId(studentId),
+                        status: { $in: ['confirmed', 'pending', 'completed'] }
+                    }).select('centerId').lean();
+                    if (booking?.centerId) {
+                        student.centerId = booking.centerId;
+                        await student.save();
+                        logger_1.default.info(`✅ 학생 ${studentId}의 centerId 자동 배정 (Booking): ${booking.centerId}`);
+                    }
+                }
+            }
+        }
+        const explicitlyEnrolledCourseIds = await Course_1.Course.find({ 'enrolledStudents.student': studentId }, { _id: 1 }).lean();
+        const bookingCourseIds = await Booking_1.Booking.distinct('courseId', {
+            studentId: new mongoose_1.default.Types.ObjectId(studentId),
+            status: { $in: ['confirmed', 'pending', 'completed'] }
+        });
+        const { Payment } = require('../models/Payment');
+        const paymentCourseIds = await Payment.distinct('relatedCourse', {
+            user: studentId,
+            status: { $in: ['pending', 'completed'] },
+            purpose: 'course'
+        });
+        const enrolledIdsSet = new Set([
+            ...explicitlyEnrolledCourseIds.map((c) => String(c._id)),
+            ...bookingCourseIds.map((id) => String(id)),
+            ...paymentCourseIds.map((id) => String(id))
+        ].filter(Boolean));
+        const enrolledCourses = enrolledIdsSet.size > 0 ? await Course_1.Course.find({
+            _id: { $in: Array.from(enrolledIdsSet).map(id => new mongoose_1.default.Types.ObjectId(id)) }
+        })
+            .populate('instructor', 'name')
+            .lean() : [];
+        const personalLessonsRaw = await PersonalLesson_1.PersonalLesson.find({
+            studentId: new mongoose_1.default.Types.ObjectId(studentId),
+            status: { $in: ['pending', 'approved', 'completed'] }
+        })
+            .populate('instructorId', 'name')
+            .sort({ date: 1, startTime: 1 });
+        const personalLessonsToUpdate = [];
+        for (const lesson of personalLessonsRaw) {
+            if (lesson.status === 'pending' && lesson.instructorId) {
+                lesson.status = 'approved';
+                personalLessonsToUpdate.push(lesson);
+            }
+        }
+        if (personalLessonsToUpdate.length > 0) {
+            await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+            logger_1.default.info(`✅ 학생 ${studentId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+        }
+        const personalLessons = personalLessonsRaw.map((lesson) => lesson.toObject());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcomingBookings = await Booking_1.Booking.find({
+            studentId: new mongoose_1.default.Types.ObjectId(studentId),
+            date: { $gte: today },
+            status: { $in: ['confirmed', 'approved', 'pending'] }
+        })
+            .populate('courseId', 'name')
+            .populate('instructorId', 'name')
+            .sort({ date: 1, startTime: 1 })
+            .limit(5)
+            .lean();
+        const enrolledCoursesCount = enrolledCourses.length;
+        const activePersonalLessons = personalLessons.filter((pl) => pl.status === 'approved' || pl.status === 'completed' || (pl.status === 'pending' && pl.instructorId));
+        const personalLessonsCount = activePersonalLessons.length;
+        const totalEnrolled = enrolledCoursesCount + personalLessonsCount;
+        const completedSessions = personalLessons.filter((pl) => pl.status === 'completed').length;
+        const totalSessions = personalLessons.length;
+        let nextClass = null;
+        const allUpcoming = [
+            ...upcomingBookings.map((b) => ({
+                id: b._id?.toString(),
+                courseName: b.courseId?.name || '개인 레슨',
+                instructorName: b.instructorId?.name || '강사 미배정',
+                date: b.date ? new Date(b.date).toISOString().split('T')[0] : null,
+                time: b.startTime ? `${b.startTime} - ${b.endTime || ''}` : '',
+                location: b.location || '위치 미지정',
+                status: b.status || 'confirmed'
+            })),
+            ...personalLessons
+                .filter((pl) => {
+                const lessonDate = new Date(pl.date);
+                const isActive = pl.status === 'approved' || (pl.status === 'pending' && pl.instructorId);
+                return lessonDate >= today && isActive;
+            })
+                .slice(0, 5)
+                .map((pl) => ({
+                id: pl._id?.toString(),
+                courseName: '개인 레슨',
+                instructorName: pl.instructorId?.name || '강사 미배정',
+                date: pl.date ? new Date(pl.date).toISOString().split('T')[0] : null,
+                time: pl.startTime ? `${pl.startTime} - ${pl.endTime || ''}` : '',
+                location: pl.poolType || '위치 미지정',
+                status: pl.status === 'pending' && pl.instructorId ? 'approved' : (pl.status || 'approved')
+            }))
+        ].sort((a, b) => {
+            if (!a.date || !b.date)
+                return 0;
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+        });
+        if (allUpcoming.length > 0) {
+            nextClass = allUpcoming[0];
+        }
+        const progressData = enrolledCourses.map((course) => {
+            const enrollment = (course.enrolledStudents || []).find((e) => e.student?.toString() === studentId.toString());
+            const progress = enrollment?.progress?.percentage || 0;
+            return {
+                skill: course.name || '강의',
+                currentLevel: Math.floor(progress / 20),
+                maxLevel: 5,
+                progress: progress
+            };
+        });
         const dashboardData = {
             stats: {
-                enrolledCourses: 2,
-                completedSessions: 15,
-                totalSessions: 24,
-                currentStreak: 7,
-                averageRating: 4.5,
-                nextClass: '2025-01-15 14:00',
-                achievements: 3,
+                enrolledCourses: totalEnrolled,
+                completedSessions,
+                totalSessions,
+                currentStreak: 0,
+                averageRating: 0,
+                nextClass: nextClass ? `${nextClass.date} ${nextClass.time}` : null,
+                achievements: 0,
                 weeklyGoal: 3,
             },
-            upcomingClasses: [
-                {
-                    id: 'booking1',
-                    courseName: '자유형 기초반',
-                    instructorName: '김강사',
-                    date: '2025-01-15',
-                    time: '14:00 - 15:00',
-                    location: '1층 메인풀',
-                    status: 'confirmed',
-                },
-                {
-                    id: 'booking2',
-                    courseName: '배영 중급반',
-                    instructorName: '이강사',
-                    date: '2025-01-17',
-                    time: '15:00 - 16:00',
-                    location: '2층 보조풀',
-                    status: 'confirmed',
-                },
-            ],
-            progressData: [
-                {
-                    skill: '자유형',
-                    currentLevel: 3,
-                    maxLevel: 5,
-                    progress: 60,
-                },
-                {
-                    skill: '배영',
-                    currentLevel: 2,
-                    maxLevel: 5,
-                    progress: 40,
-                },
-                {
-                    skill: '접영',
-                    currentLevel: 1,
-                    maxLevel: 5,
-                    progress: 20,
-                },
-                {
-                    skill: '평영',
-                    currentLevel: 1,
-                    maxLevel: 5,
-                    progress: 20,
-                },
+            upcomingClasses: allUpcoming.slice(0, 5),
+            progressData: progressData.length > 0 ? progressData : [
+                { skill: '자유형', currentLevel: 0, maxLevel: 5, progress: 0 },
+                { skill: '배영', currentLevel: 0, maxLevel: 5, progress: 0 },
+                { skill: '접영', currentLevel: 0, maxLevel: 5, progress: 0 },
+                { skill: '평영', currentLevel: 0, maxLevel: 5, progress: 0 },
             ],
         };
         res.status(200).json({
@@ -86,40 +194,75 @@ router.get('/courses', auth_1.authMiddleware, async (req, res) => {
     try {
         const studentId = req.user?._id;
         logger_1.default.info(`📚 학생 강의 목록 조회 요청: ${studentId}`);
-        const courses = [
-            {
-                id: 'course1',
-                name: '자유형 기초반',
-                instructorName: '김강사',
-                level: 'beginner',
-                startDate: '2025-01-01',
-                endDate: '2025-03-31',
-                status: 'active',
-                progress: 60,
-                completedSessions: 8,
-                totalSessions: 24,
-                nextClass: '2025-01-15 14:00',
-                schedule: '월,수,금 14:00-15:00',
-            },
-            {
-                id: 'course2',
-                name: '배영 중급반',
-                instructorName: '이강사',
-                level: 'intermediate',
-                startDate: '2025-01-15',
-                endDate: '2025-04-15',
-                status: 'active',
-                progress: 25,
-                completedSessions: 5,
-                totalSessions: 20,
-                nextClass: '2025-01-17 15:00',
-                schedule: '화,목 15:00-16:00',
-            },
-        ];
+        if (!studentId) {
+            return res.status(400).json({
+                success: false,
+                message: '학생 ID가 없습니다.'
+            });
+        }
+        const enrolledCourses = await Course_1.Course.find({
+            'enrolledStudents.student': new mongoose_1.default.Types.ObjectId(studentId),
+            'enrolledStudents.status': 'active'
+        })
+            .populate('instructor', 'name')
+            .populate('centerId', 'name address')
+            .lean();
+        const personalLessonsRaw = await PersonalLesson_1.PersonalLesson.find({
+            studentId: new mongoose_1.default.Types.ObjectId(studentId),
+            status: { $in: ['pending', 'approved', 'completed'] }
+        })
+            .populate('instructorId', 'name')
+            .sort({ date: -1 });
+        const personalLessonsToUpdate = [];
+        for (const lesson of personalLessonsRaw) {
+            if (lesson.status === 'pending' && lesson.instructorId) {
+                lesson.status = 'approved';
+                personalLessonsToUpdate.push(lesson);
+            }
+        }
+        if (personalLessonsToUpdate.length > 0) {
+            await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+            logger_1.default.info(`✅ 학생 ${studentId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+        }
+        const personalLessons = personalLessonsRaw.map((lesson) => lesson.toObject());
+        const coursesData = enrolledCourses.map((course) => {
+            const enrollment = (course.enrolledStudents || []).find((e) => e.student?.toString() === studentId.toString());
+            const progress = enrollment?.progress?.percentage || 0;
+            const schedule = (course.schedule || []).map((s) => `${s.day || s.dayOfWeek || ''} ${s.startTime || ''}-${s.endTime || ''}`).join(', ');
+            return {
+                id: course._id?.toString(),
+                name: course.name || '제목 없음',
+                instructorName: course.instructor?.name || '강사 미배정',
+                level: course.level || 'beginner',
+                startDate: course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : '',
+                endDate: course.endDate ? new Date(course.endDate).toISOString().split('T')[0] : '',
+                status: course.status || 'active',
+                progress,
+                completedSessions: Math.floor((progress / 100) * (course.totalSessions || 0)),
+                totalSessions: course.totalSessions || 0,
+                nextClass: course.classInfo?.startDate ? new Date(course.classInfo.startDate).toISOString().replace('T', ' ').slice(0, 16) : null,
+                schedule: schedule || '일정 없음',
+            };
+        });
+        const personalLessonsData = personalLessons.map((pl) => ({
+            id: pl._id?.toString(),
+            name: '개인 레슨',
+            instructorName: pl.instructorId?.name || '강사 미배정',
+            level: pl.skillLevel || 'beginner',
+            startDate: pl.date ? new Date(pl.date).toISOString().split('T')[0] : '',
+            endDate: pl.date ? new Date(pl.date).toISOString().split('T')[0] : '',
+            status: pl.status === 'completed' ? 'completed' : 'active',
+            progress: pl.status === 'completed' ? 100 : 0,
+            completedSessions: pl.status === 'completed' ? 1 : 0,
+            totalSessions: 1,
+            nextClass: pl.date ? new Date(pl.date).toISOString().replace('T', ' ').slice(0, 16) : null,
+            schedule: `${pl.startTime || pl.time || ''} - ${pl.endTime || ''}`,
+        }));
+        const allCourses = [...coursesData, ...personalLessonsData];
         res.status(200).json({
             success: true,
             message: '학생 강의 목록 조회 성공',
-            data: courses,
+            data: allCourses,
         });
     }
     catch (error) {

@@ -10,6 +10,7 @@ const logger_1 = __importDefault(require("../utils/logger"));
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
+const PersonalLesson_1 = require("../models/PersonalLesson");
 const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
 router.get('/dashboard', auth_1.authMiddleware, (0, auth_1.requirePermission)('canManageCourses'), async (req, res) => {
@@ -125,6 +126,67 @@ router.get('/courses', auth_1.authMiddleware, (0, auth_1.requirePermission)('can
             .populate('enrolledStudents.student', 'name email')
             .lean()
             .sort({ createdAt: -1 });
+        const personalLessonsRaw = await PersonalLesson_1.PersonalLesson.find({
+            instructorId: new mongoose_1.default.Types.ObjectId(instructorId),
+            status: { $in: ['pending', 'approved', 'completed'] }
+        })
+            .populate('studentId', 'name email')
+            .sort({ date: -1, startTime: -1 });
+        const personalLessonsToUpdate = [];
+        for (const lesson of personalLessonsRaw) {
+            if (lesson.status === 'pending' && lesson.instructorId?.toString() === instructorId.toString()) {
+                lesson.status = 'approved';
+                personalLessonsToUpdate.push(lesson);
+            }
+        }
+        if (personalLessonsToUpdate.length > 0) {
+            await Promise.all(personalLessonsToUpdate.map(lesson => lesson.save()));
+            logger_1.default.info(`✅ 강사 ${instructorId}의 ${personalLessonsToUpdate.length}개 개인레슨 자동 승인 완료`);
+        }
+        const personalLessonsLean = personalLessonsRaw.map((lesson) => lesson.toObject());
+        const personalLessonCourses = personalLessonsLean.map((lesson) => {
+            const studentName = lesson.studentId?.name || '학생 이름 없음';
+            return {
+                id: lesson._id?.toString() || '',
+                name: `개인 레슨 - ${studentName}`,
+                description: lesson.goals || '',
+                level: lesson.skillLevel || 'beginner',
+                category: lesson.lessonType || '개인레슨',
+                duration: lesson.duration || 60,
+                price: lesson.price || 0,
+                currentStudents: 1,
+                maxStudents: 1,
+                startDate: lesson.date ? new Date(lesson.date).toISOString().split('T')[0] : '',
+                endDate: lesson.date ? new Date(lesson.date).toISOString().split('T')[0] : '',
+                status: lesson.status === 'completed' ? 'inactive' : 'active',
+                totalSessions: 1,
+                completedSessions: lesson.status === 'completed' ? 1 : 0,
+                progress: lesson.status === 'completed' ? 100 : 0,
+                location: lesson.poolType || '위치 미지정',
+                schedule: [{
+                        dayOfWeek: lesson.date ? new Date(lesson.date).getDay() + 1 : 1,
+                        startTime: lesson.startTime || lesson.time || '09:00',
+                        endTime: lesson.endTime || (() => {
+                            const [h, m] = (lesson.startTime || lesson.time || '09:00').split(':').map(Number);
+                            const end = new Date(2000, 0, 1, h, m + (lesson.duration || 60), 0);
+                            return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                        })()
+                    }],
+                tags: [lesson.lessonType || '개인레슨'],
+                rating: 0,
+                enrolledStudents: [{
+                        studentId: lesson.studentId?._id?.toString() || lesson.studentId?.toString() || '',
+                        studentName,
+                        status: 'active',
+                        enrolledAt: lesson.createdAt || null,
+                        completedAt: lesson.status === 'completed' ? lesson.updatedAt : null
+                    }],
+                isPersonalLesson: true,
+                courseType: 'personal',
+                createdAt: lesson.createdAt,
+                updatedAt: lesson.updatedAt,
+            };
+        });
         const courses = dbCourses.map((course) => {
             const enrolledStudents = course.enrolledStudents || [];
             const students = course.students || [];
@@ -173,10 +235,11 @@ router.get('/courses', auth_1.authMiddleware, (0, auth_1.requirePermission)('can
                 updatedAt: course.updatedAt,
             };
         });
+        const allCourses = [...courses, ...personalLessonCourses];
         res.status(200).json({
             success: true,
             message: '강사 강의 목록 조회 성공',
-            data: courses,
+            data: allCourses,
         });
     }
     catch (error) {

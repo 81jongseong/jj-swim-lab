@@ -1,19 +1,38 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthBasedExerciseAI = void 0;
+const HealthData_1 = require("../models/HealthData");
+const HealthConfig_1 = require("../models/HealthConfig");
+const User_1 = require("../models/User");
 const MedicalGuidelineWeights_1 = require("./MedicalGuidelineWeights");
 class HealthBasedExerciseAI {
     static async calculateHealthBasedExercise(input) {
         try {
             console.log(`🏥 건강정보 기반 운동량 조정 시작: 사용자 ${input.userId}`);
-            const medicalFactors = this.convertToMedicalFactors(input.healthData, input.medicalConditions);
+            const [userProfile, latestHealthSnapshot, activeConfig] = await Promise.all([
+                User_1.User.findById(input.userId).select('name age gender').lean(),
+                HealthData_1.HealthData.findOne({ studentId: input.userId }).sort({ createdAt: -1 }).lean(),
+                HealthConfig_1.HealthConfig.findOne({ isActive: true }).lean()
+            ]);
+            const mergedHealthData = {
+                ...(latestHealthSnapshot || {}),
+                ...(input.healthData || {})
+            };
+            const healthData = Object.keys(mergedHealthData).length > 0 ? mergedHealthData : input.healthData;
+            if (!healthData) {
+                return {
+                    success: false,
+                    message: '건강 데이터가 없어 운동량을 계산할 수 없습니다.'
+                };
+            }
+            const medicalFactors = this.convertToMedicalFactors(healthData, input.medicalConditions);
             const medicalAssessment = MedicalGuidelineWeights_1.MedicalGuidelineWeights.calculateMedicalWeights(medicalFactors);
             const swimmingGuidance = MedicalGuidelineWeights_1.MedicalGuidelineWeights.assessSwimmingSpecificRisks(medicalFactors);
-            const healthWeights = await this.calculateHealthWeights(input.healthData);
-            const riskAssessment = this.assessHealthRisks(input.healthData, input.medicalConditions);
-            const adjustmentFactors = this.calculateAdjustmentFactors(input.healthData, riskAssessment, input.currentFitnessLevel);
-            const exerciseRecommendation = this.generateExerciseRecommendation(input, healthWeights, adjustmentFactors, riskAssessment);
-            const nextReviewDate = this.calculateNextReviewDate(riskAssessment);
+            const healthWeights = await this.calculateHealthWeights(healthData);
+            const riskAssessment = this.assessHealthRisks(healthData, input.medicalConditions);
+            const adjustmentFactors = this.calculateAdjustmentFactors(healthData, riskAssessment, input.currentFitnessLevel, activeConfig?.aiConfig);
+            const exerciseRecommendation = this.generateExerciseRecommendation({ ...input, healthData }, healthWeights, adjustmentFactors, riskAssessment);
+            const nextReviewDate = this.calculateNextReviewDate(riskAssessment.overallRisk);
             const result = {
                 exerciseRecommendation,
                 riskAssessment,
@@ -29,6 +48,9 @@ class HealthBasedExerciseAI {
                 },
                 nextReviewDate
             };
+            if (userProfile?.name) {
+                result.medicalRecommendations = result.medicalRecommendations.map(rec => `${userProfile.name}님: ${rec}`);
+            }
             console.log(`✅ 의학적 가이드라인 기반 운동량 조정 완료:`);
             console.log(`   - 의학적 위험도: ${medicalAssessment.classification.riskLevel}`);
             console.log(`   - 권장 강도: ${medicalAssessment.classification.recommendedIntensity}`);
@@ -213,7 +235,7 @@ class HealthBasedExerciseAI {
             monitoringRequired: riskScore >= 2
         };
     }
-    static calculateAdjustmentFactors(healthData, riskAssessment, fitnessLevel) {
+    static calculateAdjustmentFactors(healthData, riskAssessment, fitnessLevel, aiConfig) {
         const factors = {
             intensity: 1.0,
             duration: 1.0,
@@ -272,6 +294,13 @@ class HealthBasedExerciseAI {
         else if (healthData.bmi < 18.5) {
             factors.intensity *= 0.8;
             factors.duration *= 0.9;
+        }
+        if (aiConfig?.parameters) {
+            const { confidence = 1, accuracy = 1 } = aiConfig.parameters;
+            const confidenceWeight = Math.min(1.2, Math.max(0.8, confidence));
+            const accuracyWeight = Math.min(1.2, Math.max(0.8, accuracy));
+            factors.intensity *= confidenceWeight;
+            factors.frequency *= accuracyWeight;
         }
         return factors;
     }
@@ -345,10 +374,10 @@ class HealthBasedExerciseAI {
             modifications
         };
     }
-    static calculateNextReviewDate(riskAssessment) {
+    static calculateNextReviewDate(riskLevel) {
         const now = new Date();
         let daysToAdd;
-        switch (riskAssessment.overallRisk) {
+        switch (riskLevel) {
             case 'critical':
                 daysToAdd = 7;
                 break;

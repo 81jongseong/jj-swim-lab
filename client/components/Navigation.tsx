@@ -107,7 +107,6 @@ const userMenuStructure = {
       { href: '/dashboard', label: '📊 대시보드' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/courses', label: '📚 내 강의' },
-      { href: '/bookings', label: '📅 예약 관리' },
       { href: '/payments', label: '💰 결제 내역' },
     ],
     health: [

@@ -297,7 +297,7 @@ exerciseDataSchema.statics.getUserStats = async function (userId, days = 30) {
 };
 exerciseDataSchema.statics.generateAIRecommendations = async function (userId) {
     const userStats = await this.constructor.getUserStats(userId, 7);
-    const recentSessions = await this.find({ userId })
+    await this.find({ userId })
         .sort({ startTime: -1 })
         .limit(5);
     const recommendations = {

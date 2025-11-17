@@ -12,76 +12,71 @@ const Video3DConversionEngine_1 = require("../utils/Video3DConversionEngine");
 const VideoAnalysisCriteria_1 = require("../models/VideoAnalysisCriteria");
 const execAsync_1 = require("../utils/execAsync");
 const router = express_1.default.Router();
+const ensureDirectory = (dirPath) => {
+    if (!fs_1.default.existsSync(dirPath)) {
+        fs_1.default.mkdirSync(dirPath, { recursive: true });
+    }
+};
+const VIDEO_MIME_TYPES = [
+    'video/mp4',
+    'video/avi',
+    'video/mov',
+    'video/wmv',
+    'video/mkv',
+    'video/quicktime',
+    'video/x-msvideo',
+    'video/x-ms-wmv',
+    'application/octet-stream',
+    'video/webm',
+    'video/3gpp',
+    'video/x-flv'
+];
+const VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mov', '.wmv', '.mkv', '.webm', '.3gp', '.flv'];
+const MODEL_MIME_TYPES = [
+    'application/octet-stream',
+    'model/obj',
+    'application/x-tgif',
+    'model/gltf-binary',
+    'model/gltf+json',
+    'application/x-blender'
+];
+const MODEL_EXTENSIONS = ['.obj', '.fbx', '.glb', '.gltf', '.blend'];
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = path_1.default.join(__dirname, '../../uploads/videos');
-        if (!fs_1.default.existsSync(uploadDir)) {
-            fs_1.default.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
+        const baseDir = file.fieldname === 'customModel'
+            ? path_1.default.join(__dirname, '../../uploads/models')
+            : path_1.default.join(__dirname, '../../uploads/videos');
+        ensureDirectory(baseDir);
+        cb(null, baseDir);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, `video-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const prefix = file.fieldname === 'customModel' ? 'model' : 'video';
+        cb(null, `${prefix}-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
     }
 });
 const upload = (0, multer_1.default)({
-    storage: storage,
+    storage,
     limits: {
-        fileSize: 100 * 1024 * 1024,
+        fileSize: 100 * 1024 * 1024
     },
     fileFilter: (req, file, cb) => {
-        const allowedTypes = [
-            'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/mkv',
-            'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv',
-            'application/octet-stream',
-            'video/webm', 'video/3gpp', 'video/x-flv'
-        ];
-        const allowedExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.mkv', '.webm', '.3gp', '.flv'];
         const fileExt = path_1.default.extname(file.originalname).toLowerCase();
-        if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExt)) {
+        if (file.fieldname === 'customModel') {
+            if (MODEL_MIME_TYPES.includes(file.mimetype) || MODEL_EXTENSIONS.includes(fileExt)) {
+                cb(null, true);
+            }
+            else {
+                cb(new Error('지원되지 않는 3D 모델 형식입니다. OBJ, FBX, GLB, GLTF, BLEND 파일을 업로드해주세요.'));
+            }
+            return;
+        }
+        if (VIDEO_MIME_TYPES.includes(file.mimetype) || VIDEO_EXTENSIONS.includes(fileExt)) {
             cb(null, true);
         }
         else {
             console.log(`파일 업로드 거부 - MIME: ${file.mimetype}, 확장자: ${fileExt}, 파일명: ${file.originalname}`);
             cb(new Error('지원되지 않는 파일 형식입니다. 동영상 파일만 업로드 가능합니다.'));
-        }
-    }
-});
-const modelStorage = multer_1.default.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path_1.default.join(__dirname, '../../uploads/models');
-        if (!fs_1.default.existsSync(uploadDir)) {
-            fs_1.default.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, `model-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
-    }
-});
-const modelUpload = (0, multer_1.default)({
-    storage: modelStorage,
-    limits: {
-        fileSize: 50 * 1024 * 1024
-    },
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = [
-            'application/octet-stream',
-            'model/obj',
-            'application/x-tgif',
-            'model/gltf-binary',
-            'model/gltf+json',
-            'application/x-blender'
-        ];
-        const allowedExtensions = ['.obj', '.fbx', '.glb', '.gltf', '.blend'];
-        const fileExt = path_1.default.extname(file.originalname).toLowerCase();
-        if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExt)) {
-            cb(null, true);
-        }
-        else {
-            cb(new Error('지원되지 않는 3D 모델 형식입니다. OBJ, FBX, GLB, GLTF, BLEND 파일을 업로드해주세요.'));
         }
     }
 });

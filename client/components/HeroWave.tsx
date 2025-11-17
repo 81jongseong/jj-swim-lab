@@ -89,6 +89,10 @@ interface HeroWaveProps {
     text: string;
     href: string;
   };
+  ctaLogin?: {
+    text: string;
+    href: string;
+  };
   backgroundImage?: string;
 }
 
@@ -98,6 +102,7 @@ const HeroWave: React.FC<HeroWaveProps> = ({
   description,
   ctaPrimary,
   ctaSecondary,
+  ctaLogin,
   backgroundImage,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -291,6 +296,21 @@ const HeroWave: React.FC<HeroWaveProps> = ({
                 whileTap={{ scale: 0.95 }}
               >
                 {ctaSecondary.text}
+              </motion.a>
+            )}
+            {ctaLogin && (
+              <motion.a
+                href={ctaLogin.href}
+                className="px-10 py-4 bg-transparent border-2 border-white text-white rounded-lg font-bold text-lg hover:bg-white/10 transition-all shadow-lg"
+                style={{ 
+                  minWidth: '180px',
+                  textAlign: 'center',
+                  display: 'inline-block'
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {ctaLogin.text}
               </motion.a>
             )}
           </motion.div>

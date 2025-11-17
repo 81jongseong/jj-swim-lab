@@ -262,6 +262,7 @@ class AITrainingPlanService {
         };
     }
     static calculateRecommendedDuration(goalAnalysis, profileAnalysis) {
+        void profileAnalysis;
         let duration = goalAnalysis.timeframe;
         duration = Math.max(4, Math.min(duration, 52));
         if (goalAnalysis.difficulty === 'very_high' && duration < 12)
@@ -282,6 +283,7 @@ class AITrainingPlanService {
     static generateIntensityProgression(duration, profileAnalysis, goalAnalysis) {
         const progression = [];
         const baseIntensity = profileAnalysis.fitnessLevel / 100 * 10;
+        void goalAnalysis;
         for (let week = 1; week <= duration; week++) {
             let intensity = baseIntensity;
             if (week <= duration * 0.7) {
@@ -576,6 +578,7 @@ class AITrainingPlanService {
         return allDays.filter(day => !trainingDays.includes(day));
     }
     static generateExpectedImprovement(week, goal) {
+        void goal;
         if (week <= 2)
             return '기초 적응 및 동작 익히기';
         if (week <= 4)

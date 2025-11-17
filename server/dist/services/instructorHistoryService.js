@@ -460,8 +460,8 @@ class InstructorHistoryService {
     }
     async hasAllRequiredCertifications(instructorId) {
         const requiredTypes = Object.entries(InstructorHistory_1.CERTIFICATION_TYPES)
-            .filter(([_, config]) => config.required)
-            .map(([type, _]) => type);
+            .filter(([, config]) => config.required)
+            .map(([type]) => type);
         for (const certType of requiredTypes) {
             const validCert = await InstructorHistory_1.InstructorCertification.findOne({
                 instructorId,

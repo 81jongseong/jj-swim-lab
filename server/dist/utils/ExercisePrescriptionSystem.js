@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExercisePrescriptionSystem = void 0;
+const HealthData_1 = require("../models/HealthData");
+const User_1 = require("../models/User");
 class ExercisePrescriptionSystem {
     static classifyHealthGrade(healthData, user) {
         const age = healthData.age || user.age || 30;
@@ -140,41 +142,47 @@ class ExercisePrescriptionSystem {
         let targetHR;
         let calculationMethod;
         switch (method) {
-            case 'karvonen':
+            case 'karvonen': {
                 const hrReserve = actualMaxHR - restingHR;
                 targetHR = restingHR + (hrReserve * adjustedIntensity);
                 calculationMethod = 'karvonen';
                 break;
-            case 'max_hr_percentage':
+            }
+            case 'max_hr_percentage': {
                 targetHR = actualMaxHR * adjustedIntensity;
                 calculationMethod = 'max_hr_percentage';
                 break;
-            case 'vo2_max_percentage':
+            }
+            case 'vo2_max_percentage': {
                 const estimatedVO2Max = this.estimateVO2Max(additionalData);
                 const targetVO2 = estimatedVO2Max * adjustedIntensity;
                 targetHR = this.convertVO2ToHeartRate(targetVO2, actualMaxHR, restingHR);
                 calculationMethod = 'vo2_max_percentage';
                 break;
-            case 'rpe_based':
+            }
+            case 'rpe_based': {
                 const rpeScale = Math.round(adjustedIntensity * 10);
                 targetHR = this.convertRPEToHeartRate(rpeScale, actualMaxHR, restingHR);
                 calculationMethod = 'rpe_based';
                 break;
-            case 'hybrid':
+            }
+            case 'hybrid': {
                 const karvonenHR = restingHR + ((actualMaxHR - restingHR) * adjustedIntensity);
                 const maxHRPercentage = actualMaxHR * adjustedIntensity;
                 const rpeHR = this.convertRPEToHeartRate(Math.round(adjustedIntensity * 10), actualMaxHR, restingHR);
                 targetHR = (karvonenHR + maxHRPercentage + rpeHR) / 3;
                 calculationMethod = 'hybrid';
                 break;
+            }
             case 'ai_adaptive':
                 targetHR = this.calculateAIAdaptiveIntensity(restingHR, actualMaxHR, adjustedIntensity, healthGrade, additionalData);
                 calculationMethod = 'ai_adaptive';
                 break;
-            default:
+            default: {
                 const defaultHRReserve = actualMaxHR - restingHR;
                 targetHR = restingHR + (defaultHRReserve * adjustedIntensity);
                 calculationMethod = 'karvonen';
+            }
         }
         const estimatedVO2Max = this.estimateVO2Max(additionalData);
         const targetVO2 = estimatedVO2Max * adjustedIntensity;
@@ -287,24 +295,52 @@ class ExercisePrescriptionSystem {
             contraindications: this.generateContraindications(healthGrade)
         };
     }
+    static async buildPrescriptionForUser(userId, options = {}) {
+        const [user, healthData] = await Promise.all([
+            User_1.User.findById(userId).lean(),
+            HealthData_1.HealthData.findOne({ studentId: userId }).lean()
+        ]);
+        if (!user || (!healthData && !options.overrideHealthData)) {
+            throw new Error('처방을 생성할 사용자 또는 건강 데이터를 찾을 수 없습니다.');
+        }
+        const mergedHealthData = {
+            ...(healthData || {}),
+            ...(options.overrideHealthData || {})
+        };
+        const healthGrade = this.classifyHealthGrade(mergedHealthData, user);
+        const prescription = this.generateExercisePrescription(healthGrade, mergedHealthData, user, options.exerciseHistory);
+        return {
+            healthGrade,
+            prescription
+        };
+    }
     static calculateHistoryBasedAdjustment(history) {
+        const recentSessions = history.slice(-3);
+        const completionRateSum = recentSessions.reduce((sum, session) => sum + (session.actualPerformance.completionRate || 0), 0);
+        const exertionSum = recentSessions.reduce((sum, session) => sum + (session.actualPerformance.perceivedExertion || 0), 0);
+        const diffSum = recentSessions.reduce((sum, session) => {
+            const difficultyScore = session.feedback.difficulty === 'too_easy' ? 1 :
+                session.feedback.difficulty === 'appropriate' ? 0 : -1;
+            return sum + difficultyScore;
+        }, 0);
+        const completionDenominator = recentSessions.length || 1;
+        const avgCompletionRate = completionRateSum / completionDenominator;
+        const avgPerceivedExertion = exertionSum / completionDenominator;
+        const avgDifficulty = diffSum / completionDenominator;
         if (history.length < 3) {
             return {
                 adjustmentType: 'maintain',
                 adjustmentAmount: 0,
                 newPrescription: {},
                 reasoning: ['충분한 운동 이력이 없어 현재 강도 유지'],
-                confidence: 0.3
+                confidence: 0.3,
+                insights: {
+                    completionRate: Math.round(avgCompletionRate),
+                    perceivedExertion: parseFloat(avgPerceivedExertion.toFixed(1)),
+                    difficultyTrend: parseFloat(avgDifficulty.toFixed(2))
+                }
             };
         }
-        const recentSessions = history.slice(-3);
-        const avgCompletionRate = recentSessions.reduce((sum, session) => sum + session.actualPerformance.completionRate, 0) / 3;
-        const avgPerceivedExertion = recentSessions.reduce((sum, session) => sum + session.actualPerformance.perceivedExertion, 0) / 3;
-        const avgDifficulty = recentSessions.reduce((sum, session) => {
-            const difficultyScore = session.feedback.difficulty === 'too_easy' ? 1 :
-                session.feedback.difficulty === 'appropriate' ? 0 : -1;
-            return sum + difficultyScore;
-        }, 0) / 3;
         let adjustmentType = 'maintain';
         let adjustmentAmount = 0;
         const reasoning = [];
@@ -342,12 +378,18 @@ class ExercisePrescriptionSystem {
             adjustmentAmount = Math.max(adjustmentAmount, 8);
             reasoning.push('높은 피로도로 인한 강도 감소');
         }
+        reasoning.push(`평균 RPE ${avgPerceivedExertion.toFixed(1)} 수준을 기록했습니다.`);
         return {
             adjustmentType,
             adjustmentAmount: Math.min(adjustmentAmount, 20),
             newPrescription: {},
             reasoning,
-            confidence: Math.min(0.9, 0.5 + (history.length * 0.1))
+            confidence: Math.min(0.9, 0.5 + (history.length * 0.1)),
+            insights: {
+                completionRate: Math.round(avgCompletionRate),
+                perceivedExertion: parseFloat(avgPerceivedExertion.toFixed(1)),
+                difficultyTrend: parseFloat(avgDifficulty.toFixed(2))
+            }
         };
     }
     static calculateBMI(weight, height) {
@@ -404,6 +446,15 @@ class ExercisePrescriptionSystem {
         }
         else if (healthGrade.exerciseHistory === 'none') {
             adaptiveIntensity *= 0.7;
+        }
+        if (data?.recentFatigueScore !== undefined) {
+            adaptiveIntensity *= 1 - Math.min(0.3, data.recentFatigueScore * 0.05);
+        }
+        if (data?.performanceTrend === 'up') {
+            adaptiveIntensity *= 1.05;
+        }
+        else if (data?.performanceTrend === 'down') {
+            adaptiveIntensity *= 0.9;
         }
         const hrReserve = maxHR - restingHR;
         return restingHR + (hrReserve * Math.min(adaptiveIntensity, 0.95));

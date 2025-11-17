@@ -59,7 +59,7 @@ const paymentSchema = new mongoose_1.default.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed', 'refunded'],
+        enum: ['pending', 'completed', 'failed', 'refunded', 'cancelled'],
         default: 'pending',
     },
     purpose: {
@@ -93,6 +93,17 @@ const paymentSchema = new mongoose_1.default.Schema({
     },
     processedAt: {
         type: Date,
+    },
+    refundAmount: {
+        type: Number,
+        default: 0,
+    },
+    refundedAt: {
+        type: Date,
+    },
+    refundedBy: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'User',
     },
 }, {
     timestamps: true

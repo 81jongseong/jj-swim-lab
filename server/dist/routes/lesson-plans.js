@@ -14,7 +14,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'c
     try {
         const instructorId = req.user.id;
         const { status, date, studentId } = req.query;
-        let query = { instructorId };
+        const query = { instructorId };
         if (status)
             query.status = status;
         if (date) {

@@ -9,6 +9,7 @@ const Center_1 = require("../models/Center");
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
+const mongoose_1 = __importDefault(require("mongoose"));
 const Payment_1 = require("../models/Payment");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
@@ -111,6 +112,7 @@ const instructorImageUpload = (0, multer_1.default)({
         }
     }
 });
+void instructorImageUpload;
 router.get('/public', async (req, res) => {
     try {
         const centers = await Center_1.Center.find({ isActive: true })
@@ -474,64 +476,290 @@ router.get('/instructor-dashboard-stats', auth_1.authMiddleware, (0, auth_1.requ
 router.get('/student-dashboard-stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
         const studentId = req.user._id;
-        const centerId = req.user.centerId;
+        let centerId = req.user.centerId;
         if (!centerId) {
-            return res.status(404).json({
-                success: false,
-                message: '소속 센터가 없습니다.'
+            const enrolledCourse = await Course_1.Course.findOne({
+                'enrolledStudents.student': studentId
+            }).select('centerId').lean();
+            if (enrolledCourse?.centerId) {
+                centerId = enrolledCourse.centerId;
+            }
+            else {
+                const payment = await Payment_1.Payment.findOne({
+                    user: studentId,
+                    status: { $in: ['pending', 'completed'] },
+                    purpose: 'course'
+                }).select('centerId').lean();
+                if (payment?.centerId) {
+                    centerId = payment.centerId;
+                }
+                else {
+                    const booking = await Booking_1.Booking.findOne({
+                        studentId: studentId,
+                        status: { $in: ['confirmed', 'pending', 'completed'] }
+                    }).select('centerId').lean();
+                    if (booking?.centerId) {
+                        centerId = booking.centerId;
+                    }
+                }
+            }
+            if (centerId) {
+                const student = await User_1.User.findById(studentId);
+                if (student && !student.centerId) {
+                    student.centerId = centerId;
+                    await student.save();
+                    console.log(`✅ 학생 ${studentId}의 centerId 자동 배정: ${centerId}`);
+                }
+            }
+        }
+        if (!centerId) {
+            return res.status(200).json({
+                success: true,
+                message: '소속 센터가 아직 배정되지 않았습니다.',
+                data: {
+                    needsCenterAssignment: true,
+                    enrolledCourses: 0,
+                    completedSessions: 0,
+                    totalSessions: 0,
+                    currentStreak: 0,
+                    averageRating: 0,
+                    nextClass: null,
+                    achievements: 0,
+                    weeklyGoal: 0,
+                    activeCourses: 0,
+                    totalPayments: 0
+                }
             });
+        }
+        const studentIdObj = new mongoose_1.default.Types.ObjectId(studentId);
+        const centerIdObj = centerId ? new mongoose_1.default.Types.ObjectId(centerId) : null;
+        const bookingQuery = {
+            studentId: studentIdObj
+        };
+        if (centerIdObj) {
+            bookingQuery.centerId = centerIdObj;
         }
         const [enrolledCourses, completedSessions, totalSessions, nextClass] = await Promise.all([
             Booking_1.Booking.countDocuments({
-                centerId: centerId,
-                studentId: studentId,
+                ...bookingQuery,
                 status: { $in: ['confirmed', 'pending'] }
             }),
             Booking_1.Booking.countDocuments({
-                centerId: centerId,
-                studentId: studentId,
+                ...bookingQuery,
                 status: 'completed'
             }),
-            Booking_1.Booking.countDocuments({
-                centerId: centerId,
-                studentId: studentId
-            }),
+            Booking_1.Booking.countDocuments(bookingQuery),
             Booking_1.Booking.findOne({
-                centerId: centerId,
-                studentId: studentId,
+                ...bookingQuery,
                 status: { $in: ['confirmed', 'pending'] },
                 date: { $gte: new Date() }
-            }).sort({ date: 1 }).populate('courseId', 'name').populate('instructorId', 'name')
+            }).sort({ date: 1, startTime: 1 }).populate('courseId', 'name').populate('instructorId', 'name')
         ]);
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const recentBookings = await Booking_1.Booking.countDocuments({
-            centerId: centerId,
-            studentId: studentId,
+            ...bookingQuery,
             status: 'completed',
             date: { $gte: sevenDaysAgo }
         });
-        const hasData = enrolledCourses > 0 || completedSessions > 0 || totalSessions > 0;
-        const actualBookingsCount = await Booking_1.Booking.countDocuments({ user: req.user._id });
-        const actualCoursesCount = await Course_1.Course.countDocuments({ isActive: true });
-        const actualPaymentsCount = await Payment_1.Payment.countDocuments({ userId: req.user._id });
-        console.log('🔍 실제 데이터 개수 조회 결과:', {
-            userId: req.user._id,
-            actualBookingsCount,
-            actualCoursesCount,
-            actualPaymentsCount
+        const explicitlyEnrolledCourseIds = await Course_1.Course.find({ 'enrolledStudents.student': studentIdObj }, { _id: 1 }).lean();
+        const bookingCourseIds = await Booking_1.Booking.distinct('courseId', {
+            studentId: studentIdObj,
+            status: { $in: ['confirmed', 'pending', 'completed'] }
         });
+        const paymentCourseIds = await Payment_1.Payment.distinct('relatedCourse', {
+            user: studentIdObj,
+            status: { $in: ['pending', 'completed'] },
+            purpose: 'course'
+        });
+        const enrolledIdsSet = new Set([
+            ...explicitlyEnrolledCourseIds.map((c) => String(c._id)),
+            ...bookingCourseIds.map((id) => String(id)),
+            ...paymentCourseIds.map((id) => String(id))
+        ].filter(Boolean));
+        const enrolledCoursesCount = enrolledIdsSet.size;
+        const { PersonalLesson } = require('../models/PersonalLesson');
+        const personalLessons = await PersonalLesson.find({
+            studentId: studentIdObj,
+            status: { $in: ['pending', 'approved', 'completed'] }
+        }).lean();
+        const activePersonalLessons = personalLessons.filter((pl) => pl.status === 'approved' || pl.status === 'completed' || (pl.status === 'pending' && pl.instructorId));
+        const activePersonalLessonsCount = activePersonalLessons.length;
+        const totalActiveCourses = enrolledCoursesCount + activePersonalLessonsCount;
+        const paymentAggregate = await Payment_1.Payment.aggregate([
+            {
+                $match: {
+                    user: studentIdObj,
+                    status: { $in: ['completed', 'pending', 'refunded'] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ['$status', 'refunded'] },
+                                { $subtract: ['$amount', { $ifNull: ['$refundAmount', 0] }] },
+                                '$amount'
+                            ]
+                        }
+                    }
+                }
+            }
+        ]);
+        const totalPaymentAmount = paymentAggregate.length > 0 ? paymentAggregate[0].totalAmount : 0;
+        const allPayments = await Payment_1.Payment.find({ user: studentIdObj }).lean();
+        console.log(`🔍 학생 ${studentId}의 결제 데이터:`, {
+            totalPayments: allPayments.length,
+            completedPayments: allPayments.filter((p) => p.status === 'completed').length,
+            totalAmount: totalPaymentAmount,
+            payments: allPayments.map((p) => ({
+                id: p._id,
+                amount: p.amount,
+                status: p.status,
+                purpose: p.purpose
+            }))
+        });
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const nextPersonalLesson = personalLessons
+            .filter((pl) => {
+            const lessonDate = new Date(pl.date);
+            const isActive = pl.status === 'approved' || pl.status === 'completed' || (pl.status === 'pending' && pl.instructorId);
+            return lessonDate >= today && isActive;
+        })
+            .sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateA !== dateB)
+                return dateA - dateB;
+            const timeA = (a.startTime || a.time || '00:00').split(':').map(Number);
+            const timeB = (b.startTime || b.time || '00:00').split(':').map(Number);
+            return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+        })[0];
+        const enrolledCoursesList = await Course_1.Course.find({
+            _id: { $in: Array.from(enrolledIdsSet).map(id => new mongoose_1.default.Types.ObjectId(id)) }
+        })
+            .populate('instructor', 'name')
+            .lean();
+        const nextCourseClasses = [];
+        const dayMap = {
+            'sunday': 0, '일': 0, '0': 0,
+            'monday': 1, '월': 1, '1': 1,
+            'tuesday': 2, '화': 2, '2': 2,
+            'wednesday': 3, '수': 3, '3': 3,
+            'thursday': 4, '목': 4, '4': 4,
+            'friday': 5, '금': 5, '5': 5,
+            'saturday': 6, '토': 6, '6': 6
+        };
+        for (const course of enrolledCoursesList) {
+            const schedule = course.schedule || [];
+            const startDate = course.classInfo?.startDate || course.startDate;
+            const endDate = course.classInfo?.endDate || course.endDate;
+            if (!schedule.length) {
+                console.log(`⚠️ Course ${course.name}에 schedule이 없습니다.`);
+                continue;
+            }
+            console.log(`🔍 Course ${course.name}의 schedule:`, schedule);
+            for (let i = 0; i < 30; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() + i);
+                const dayOfWeek = checkDate.getDay();
+                const daySchedule = schedule.find((s) => {
+                    const sDay = String(s.day || s.dayOfWeek || '').toLowerCase();
+                    const sDayNumber = dayMap[sDay];
+                    return sDayNumber !== undefined && sDayNumber === dayOfWeek;
+                });
+                if (daySchedule && daySchedule.startTime) {
+                    const classDateTime = new Date(checkDate);
+                    const [hours, minutes] = daySchedule.startTime.split(':').map(Number);
+                    classDateTime.setHours(hours, minutes, 0, 0);
+                    const now = new Date();
+                    const isInDateRange = (!startDate || new Date(startDate) <= checkDate) && (!endDate || new Date(endDate) >= checkDate);
+                    if (classDateTime >= now && isInDateRange) {
+                        nextCourseClasses.push({
+                            date: checkDate,
+                            startTime: daySchedule.startTime,
+                            courseId: { name: course.name || '강습' }
+                        });
+                        console.log(`✅ 다음 수업 찾음: ${course.name} - ${checkDate.toISOString().split('T')[0]} ${daySchedule.startTime}`);
+                        break;
+                    }
+                }
+            }
+        }
+        const nextCourseClass = nextCourseClasses
+            .sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateA !== dateB)
+                return dateA - dateB;
+            const timeA = (a.startTime || '00:00').split(':').map(Number);
+            const timeB = (b.startTime || '00:00').split(':').map(Number);
+            return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+        })[0];
+        console.log(`🔍 학생 ${studentId}의 다음 수업 찾기:`, {
+            nextClass: nextClass ? {
+                date: nextClass.date,
+                startTime: nextClass.startTime,
+                courseName: nextClass.courseId?.name
+            } : null,
+            nextPersonalLesson: nextPersonalLesson ? {
+                date: nextPersonalLesson.date,
+                startTime: nextPersonalLesson.startTime || nextPersonalLesson.time,
+                status: nextPersonalLesson.status
+            } : null,
+            nextCourseClass: nextCourseClass ? {
+                date: nextCourseClass.date,
+                startTime: nextCourseClass.startTime,
+                courseName: nextCourseClass.courseId?.name
+            } : null,
+            enrolledCoursesCount: enrolledCoursesList.length,
+            personalLessonsCount: personalLessons.length,
+            activePersonalLessonsCount: activePersonalLessons.length
+        });
+        const allNextClasses = [
+            nextClass ? { ...nextClass, source: 'booking' } : null,
+            nextPersonalLesson ? {
+                date: nextPersonalLesson.date,
+                startTime: nextPersonalLesson.startTime || nextPersonalLesson.time || '00:00',
+                courseId: { name: '개인 레슨' },
+                source: 'personalLesson'
+            } : null,
+            nextCourseClass ? { ...nextCourseClass, source: 'course' } : null
+        ].filter(Boolean);
+        let finalNextClass = null;
+        if (allNextClasses.length > 0) {
+            finalNextClass = allNextClasses.sort((a, b) => {
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                if (dateA !== dateB)
+                    return dateA - dateB;
+                const timeA = (a.startTime || '00:00').split(':').map(Number);
+                const timeB = (b.startTime || '00:00').split(':').map(Number);
+                return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+            })[0];
+        }
+        let nextClassString = null;
+        if (finalNextClass) {
+            const date = new Date(finalNextClass.date);
+            const dateStr = date.toISOString().split('T')[0];
+            const timeStr = finalNextClass.startTime || '';
+            nextClassString = `${dateStr} ${timeStr}`;
+        }
+        const hasData = enrolledCourses > 0 || completedSessions > 0 || totalSessions > 0;
         const stats = {
-            enrolledCourses: actualBookingsCount > 0 ? actualBookingsCount : 5,
-            completedSessions: hasData ? completedSessions : 15,
-            totalSessions: hasData ? totalSessions : 18,
-            currentStreak: hasData ? Math.min(recentBookings, 7) : 5,
+            enrolledCourses: totalActiveCourses,
+            completedSessions: hasData ? completedSessions : 0,
+            totalSessions: hasData ? totalSessions : 0,
+            currentStreak: hasData ? Math.min(recentBookings, 7) : 0,
             averageRating: 4.5,
-            nextClass: hasData ? (nextClass ? `${nextClass.date} ${nextClass.startTime}` : '예정된 수업 없음') : '2025-09-20 14:00',
-            achievements: hasData ? Math.floor(completedSessions / 5) : 3,
+            nextClass: nextClassString,
+            achievements: hasData ? Math.floor(completedSessions / 5) : 0,
             weeklyGoal: 3,
-            activeCourses: actualCoursesCount > 0 ? actualCoursesCount : 5,
-            totalPayments: actualPaymentsCount || 0
+            activeCourses: totalActiveCourses,
+            totalPayments: totalPaymentAmount
         };
         res.json({
             success: true,
@@ -565,7 +793,7 @@ router.get('/my-center', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         const centerAdmin = await User_1.User.findById(req.user._id);
         console.log('👤 센터 관리자 조회:', centerAdmin?.email, 'centerId:', centerAdmin?.centerId, '관리 센터:', centerAdmin?.centerAdminInfo?.managedCenters);
         const jwtToken = req.user;
-        let centerId = jwtToken?.defaultCenterId ||
+        const centerId = jwtToken?.defaultCenterId ||
             jwtToken?.memberships?.[0]?.centerId ||
             centerAdmin?.centerId ||
             centerAdmin?.centerAdminInfo?.managedCenters?.[0];
@@ -1105,6 +1333,7 @@ router.put('/info', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin
             });
         }
         const { name, description, address, phone, email, operatingHours, facilities, introduction, guide } = req.body;
+        void guide;
         const center = await Center_1.Center.findById(centerId);
         if (!center) {
             return res.status(404).json({
@@ -1608,7 +1837,7 @@ router.get('/my-center/courses', auth_1.authMiddleware, (0, auth_1.requireRole)(
 });
 router.get('/guest', async (req, res) => {
     try {
-        const centers = await Center_1.Center.find({ isActive: true }, 'name region district address phone email website location description facilities province city gu dong').lean();
+        const centers = await Center_1.Center.find({ status: 'active' }, 'name slug region district address phone email website location description facilities province city gu dong').lean();
         res.json(centers);
     }
     catch (error) {
@@ -1750,7 +1979,7 @@ router.get('/settings', auth_1.authMiddleware, async (req, res) => {
         const headerCenterId = req.headers['x-center-id'];
         const user = await User_1.User.findById(req.user._id).select('userType centerId centerAdminInfo instructorInfo settings');
         const jwtUser = req.user;
-        let rawCenterId = (headerCenterId && typeof headerCenterId === 'string')
+        const rawCenterId = (headerCenterId && typeof headerCenterId === 'string')
             ? headerCenterId
             : (jwtUser?.centerId ||
                 jwtUser?.defaultCenterId ||

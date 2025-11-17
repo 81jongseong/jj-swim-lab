@@ -53,7 +53,7 @@ class NotificationService {
     }
     static async createRecommendationNotification(userId, recommendationData) {
         try {
-            const { type, title, description, methodName } = recommendationData;
+            const { type, description, methodName, title: customTitle } = recommendationData;
             let notificationTitle = '';
             let notificationMessage = '';
             let priority = 'medium';
@@ -77,6 +77,9 @@ class NotificationService {
                     notificationTitle = '📚 학습 추천';
                     notificationMessage = `"${methodName}" 강습법을 확인해보세요.`;
                     priority = 'low';
+            }
+            if (customTitle) {
+                notificationTitle = customTitle;
             }
             return await Notification_1.Notification.create({
                 userId,

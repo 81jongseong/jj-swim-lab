@@ -18,6 +18,7 @@ class QueryOptimizer {
             const startQuery = Date.now();
             const result = await model.find(query, null, options);
             const executionTime = Date.now() - startTime;
+            const queryDuration = Date.now() - startQuery;
             const analysis = {
                 query: JSON.stringify(query),
                 collection,
@@ -26,7 +27,7 @@ class QueryOptimizer {
                 documentsReturned: Array.isArray(result) ? result.length : 1,
                 indexUsed: false,
                 indexName: undefined,
-                executionStats: { queryTime: executionTime },
+                executionStats: { queryTime: queryDuration, totalTime: executionTime },
                 recommendations: [],
                 score: 0
             };
@@ -124,6 +125,7 @@ class QueryOptimizer {
                 }
             }
             catch (error) {
+                console.debug('쿼리 패턴 파싱 실패', error);
             }
         });
         return Array.from(patterns.values());
