@@ -552,6 +552,27 @@ class ApiClient {
     return this.request('/api/courses/student/enrolled');
   }
 
+  // ===== 학생 대시보드 및 학습 관리 API =====
+  async getStudentDashboard(): Promise<ApiResponse<any>> {
+    return this.request('/api/student/dashboard');
+  }
+
+  async getStudentCourses(): Promise<ApiResponse<any>> {
+    return this.request('/api/student/courses');
+  }
+
+  async getStudentProgress(): Promise<ApiResponse<any>> {
+    return this.request('/api/student/progress');
+  }
+
+  async getStudentLearningProgress(): Promise<ApiResponse<any>> {
+    return this.request('/api/student/learning-progress');
+  }
+
+  async getStudentRecommendations(): Promise<ApiResponse<any>> {
+    return this.request('/api/student/recommendations');
+  }
+
   async getCourse(id: string): Promise<any> {
     return this.request(`/api/courses/${id}`);
   }
@@ -923,8 +944,9 @@ class ApiClient {
 
   // ===== 업로드 관리 API =====
   async getMyUploads(params?: { page?: number; limit?: number; status?: string }): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-    return this.request(`/api/uploads/my${queryString}`);
+    const queryParams = { ...params, myVideos: 'true' };
+    const queryString = `?${new URLSearchParams(queryParams as any).toString()}`;
+    return this.request(`/api/uploads${queryString}`);
   }
 
   async uploadFile(fileData: FormData): Promise<any> {

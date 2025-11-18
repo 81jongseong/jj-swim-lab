@@ -29,7 +29,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Calendar, CheckCircle2, Info, MapPin, Shield, UserCheck, Users, Award, Activity, Phone, Mail } from 'lucide-react';
+import { Calendar, CheckCircle2, Info, MapPin, Shield, UserCheck, Users, Award, Activity, Phone, Mail, Target } from 'lucide-react';
+import ConditionQuickPick from '@/components/swimlab/ConditionQuickPick';
 
 import { useAuth, type User as AuthUser } from 'hooks/useAuth';
 import apiClient from '@/utils/api';
@@ -54,6 +55,8 @@ type ProfileUser = Omit<AuthUser, 'lastLoginAt'> & {
   userId?: string;
   phone?: string;
   address?: string;
+  birthDate?: string;
+  gender?: string;
   lastLoginAt?: string | Date | null;
   createdAt?: string;
   updatedAt?: string;
@@ -61,6 +64,7 @@ type ProfileUser = Omit<AuthUser, 'lastLoginAt'> & {
     status?: string;
     centerMemo?: string;
     healthProfile?: Record<string, unknown>;
+    age?: number;
   }) | null;
   instructorInfo?: (AuthUser['instructorInfo'] & {
     bio?: string;
@@ -224,6 +228,14 @@ export default function ProfilePage() {
     authUserRef.current = authUser ?? null;
     if (authUser && !seededRef.current) {
       const cloned = deepClone(authUser) as ProfileUser;
+      // authUser에 phone/address가 없을 수 있으므로 임시로만 설정
+      // API에서 받은 데이터로 덮어쓰기 위해 seededRef는 API 로드 후에 설정
+      console.log('🔍 authUser에서 초기 프로필 설정:', {
+        phone: cloned.phone,
+        address: cloned.address,
+        hasPhone: !!cloned.phone,
+        hasAddress: !!cloned.address
+      });
       setProfile(cloned);
       setInitialProfile(cloned);
       const initialCertificates = ensureCertificateList(
@@ -234,23 +246,54 @@ export default function ProfilePage() {
       );
       setCertificateList(initialCertificates);
       setLoading(false);
-      seededRef.current = true;
+      // seededRef는 API 데이터가 로드된 후에 설정하도록 변경
+      // seededRef.current = true;
     }
   }, [authUser]);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
+    if (fetchedRef.current) {
+      console.log('⚠️ [프로필 페이지] 이미 로드됨, 스킵');
+      return;
+    }
     fetchedRef.current = true;
+    console.log('🚀 [프로필 페이지] 프로필 로드 시작');
 
     let isMounted = true;
+    let hasLoaded = false; // 중복 로드 방지
 
     const loadProfile = async () => {
+      if (hasLoaded) {
+        console.log('⚠️ [프로필 페이지] 이미 로드 중, 스킵');
+        return;
+      }
+      hasLoaded = true;
+      
       if (!profile) {
         setLoading(true);
       }
       try {
+        console.log('📡 [프로필 페이지] API 요청 시작');
         const response = await apiClient.get<any>('/api/auth/profile');
-        if (!isMounted) return;
+        console.log('📥 [프로필 페이지] API 응답 받음, isMounted:', isMounted);
+        
+        // isMounted 체크를 제거하고 항상 처리 (React Strict Mode 대응)
+        // if (!isMounted) {
+        //   console.log('⚠️ [프로필 페이지] 컴포넌트 언마운트됨, 스킵');
+        //   return;
+        // }
+
+        // API 응답 구조 확인 (즉시 로그)
+        console.log('🔍 [프로필 페이지] API 응답 받음:', {
+          response,
+          responseType: typeof response,
+          responseKeys: response ? Object.keys(response) : [],
+          hasUser: !!(response as any)?.user,
+          hasData: !!(response as any)?.data,
+          userPhone: (response as any)?.user?.phone,
+          userAddress: (response as any)?.user?.address,
+          fullResponse: response
+        });
 
         if ((response as any)?.error) {
           setStatus({
@@ -264,16 +307,58 @@ export default function ProfilePage() {
             setInitialProfile(clonedFallback);
           }
         } else {
+          // API 응답에서 user 객체 추출
           const apiUser: ProfileUser | null =
             (response as any)?.user ??
             (response as any)?.data?.user ??
             (response as any)?.data ??
             null;
+          
+          console.log('🔍 [프로필 페이지] apiUser 추출:', {
+            apiUser,
+            hasApiUser: !!apiUser,
+            apiUserType: typeof apiUser,
+            apiUserKeys: apiUser ? Object.keys(apiUser) : [],
+            phone: apiUser?.phone,
+            address: apiUser?.address,
+            birthDate: apiUser?.birthDate,
+            gender: apiUser?.gender,
+            hasStudentInfo: !!apiUser?.studentInfo,
+            studentInfoHeight: (apiUser?.studentInfo as any)?.height,
+            studentInfoWeight: (apiUser?.studentInfo as any)?.weight,
+            studentInfo: apiUser?.studentInfo,
+            fullApiUser: apiUser
+          });
 
           if (apiUser) {
             const cloned = deepClone(apiUser);
+            // phone, address, healthProfile 데이터 확인
+            console.log('📋 프로필 데이터 로드 (API):', {
+              userId: cloned.userId || cloned._id,
+              hasPhone: !!cloned.phone,
+              hasAddress: !!cloned.address,
+              phone: cloned.phone,
+              address: cloned.address,
+              birthDate: cloned.birthDate,
+              gender: cloned.gender,
+              hasStudentInfo: !!cloned.studentInfo,
+              studentInfoHeight: cloned.studentInfo?.height,
+              studentInfoWeight: cloned.studentInfo?.weight,
+              hasHealthProfile: !!cloned.studentInfo?.healthProfile,
+              healthProfileHeight: (cloned.studentInfo?.healthProfile as any)?.height,
+              healthProfileWeight: (cloned.studentInfo?.healthProfile as any)?.weight,
+              healthProfile: cloned.studentInfo?.healthProfile,
+              studentInfo: cloned.studentInfo
+            });
+            
+            // API에서 받은 데이터로 profile 업데이트 (phone, address 포함)
+            // 이 데이터가 최신이므로 항상 덮어쓰기
             setProfile(cloned);
             setInitialProfile(deepClone(apiUser));
+            
+            // seededRef 설정 (API 데이터 로드 완료)
+            seededRef.current = true;
+            
             const initialCertificates = ensureCertificateList(
               normalizeCertificates(
                 cloned.instructorInfo?.certificates,
@@ -284,8 +369,17 @@ export default function ProfilePage() {
             if (!areUsersEqual(cloned, authUserRef.current ?? undefined)) {
               updateUser(cloned as Partial<AuthUser>);
             }
+            
+            // 업데이트 후 확인
+            setTimeout(() => {
+              console.log('✅ 프로필 상태 업데이트 완료 - API 데이터 반영됨');
+            }, 100);
           } else if (!profile && authUserRef.current) {
             const clonedFallback = deepClone(authUserRef.current) as ProfileUser;
+            console.log('⚠️ API 데이터 없음, authUser 사용:', {
+              phone: clonedFallback.phone,
+              address: clonedFallback.address
+            });
             setProfile(clonedFallback);
             setInitialProfile(clonedFallback);
             const initialCertificates = ensureCertificateList(
@@ -295,6 +389,7 @@ export default function ProfilePage() {
               ),
             );
             setCertificateList(initialCertificates);
+            seededRef.current = true;
           }
         }
       } catch (error) {
@@ -317,17 +412,17 @@ export default function ProfilePage() {
           message: '프로필 정보를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
         });
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        // isMounted 체크 제거 (React Strict Mode 대응)
+        setLoading(false);
       }
     };
 
     loadProfile();
 
-    return () => {
-      isMounted = false;
-    };
+    // cleanup 함수 제거 (React Strict Mode에서 isMounted가 false가 되는 문제 방지)
+    // return () => {
+    //   isMounted = false;
+    // };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -420,6 +515,40 @@ export default function ProfilePage() {
     });
   }, [profile?.phone, initialProfile?.phone]);
 
+  // 디버깅: profile 상태 확인 (모든 hooks는 early return 전에 위치해야 함)
+  useEffect(() => {
+    if (profile) {
+      console.log('🔍 프로필 상태 확인 (렌더링 시점):', {
+        phone: profile.phone,
+        address: profile.address,
+        hasPhone: !!profile.phone,
+        hasAddress: !!profile.address,
+        studentInfo: profile.studentInfo,
+        healthProfile: profile.studentInfo?.healthProfile,
+        profileKeys: Object.keys(profile),
+        fullProfile: profile
+      });
+    }
+  }, [profile]);
+
+  // 건강 프로필 수정 핸들러
+  const handleHealthProfileChange = (field: string, value: any) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const nextStudentInfo = {
+        ...(prev.studentInfo ?? {}),
+        healthProfile: {
+          ...(prev.studentInfo?.healthProfile ?? {}),
+          [field]: value,
+        },
+      };
+      return {
+        ...prev,
+        studentInfo: nextStudentInfo,
+      };
+    });
+  };
+
   const isDirty = useMemo(() => {
     if (!profile || !initialProfile) return false;
     return JSON.stringify(profile) !== JSON.stringify(initialProfile);
@@ -496,6 +625,52 @@ export default function ProfilePage() {
       return {
         ...prev,
         studentInfo: nextStudentInfo,
+      };
+    });
+  };
+
+  // swimmingProfile 수정 핸들러
+  const handleSwimmingProfileChange = (field: string, value: any) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const currentSwimmingProfile = prev.studentInfo?.swimmingProfile ?? {};
+      const nextSwimmingProfile = {
+        ...currentSwimmingProfile,
+        [field]: value,
+      };
+      return {
+        ...prev,
+        studentInfo: {
+          ...(prev.studentInfo ?? {}),
+          swimmingProfile: nextSwimmingProfile,
+        },
+      };
+    });
+  };
+
+  // CSS 값 수정 핸들러
+  const handleCssChange = (stroke: string, value: string) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const currentSwimmingProfile = prev.studentInfo?.swimmingProfile ?? {};
+      const currentCss = currentSwimmingProfile.css ?? {};
+      const numericValue = value === '' ? undefined : Number(value);
+      const nextCss = numericValue !== undefined && !isNaN(numericValue) && numericValue > 0
+        ? { ...currentCss, [stroke]: numericValue }
+        : { ...currentCss };
+      // stroke가 제거된 경우 해당 키 삭제
+      if (numericValue === undefined || isNaN(numericValue) || numericValue <= 0) {
+        delete nextCss[stroke as keyof typeof nextCss];
+      }
+      return {
+        ...prev,
+        studentInfo: {
+          ...(prev.studentInfo ?? {}),
+          swimmingProfile: {
+            ...currentSwimmingProfile,
+            css: Object.keys(nextCss).length > 0 ? nextCss : undefined,
+          },
+        },
       };
     });
   };
@@ -814,6 +989,8 @@ export default function ProfilePage() {
       payload.email = normalizedEmail;
       if (profile.phone !== undefined) payload.phone = profile.phone?.trim() ?? '';
       if (profile.address !== undefined) payload.address = profile.address?.trim() ?? '';
+      if ((profile as any).birthDate) payload.birthDate = (profile as any).birthDate;
+      if ((profile as any).gender) payload.gender = (profile as any).gender;
       if (profile.userId) payload.userId = profile.userId.trim();
 
       if (profile.studentInfo || initialProfile?.studentInfo) {
@@ -958,21 +1135,63 @@ export default function ProfilePage() {
 
   const accessList = Object.entries(profile.accessPermissions || {}).filter(([, allowed]) => allowed);
 
+  if (!profile) {
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="h-40 animate-pulse rounded-3xl bg-slate-100" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(0,1fr)]">
+            <div className="h-96 animate-pulse rounded-2xl bg-slate-100" />
+            <div className="space-y-6">
+              <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
+              <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8 text-sm text-slate-500">
+        프로필 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+      </div>
+    );
+  }
+
   const healthProfile = profile.studentInfo?.healthProfile ?? {};
+  // studentInfo에서도 키와 체중 가져오기 (healthProfile이 없을 경우)
+  const height = (healthProfile as any)?.height ?? profile.studentInfo?.height;
+  const weight = (healthProfile as any)?.weight ?? profile.studentInfo?.weight;
+  const bmi = (healthProfile as any)?.bmi ?? (height && weight ? (weight / ((height / 100) ** 2)).toFixed(1) : undefined);
+  
+  // 데이터 표시 확인 로그
+  console.log('🔍 [프로필 페이지] 렌더링 시점 데이터 확인:', {
+    birthDate: profile.birthDate,
+    gender: profile.gender,
+    studentInfoHeight: profile.studentInfo?.height,
+    studentInfoWeight: profile.studentInfo?.weight,
+    healthProfileHeight: (healthProfile as any)?.height,
+    healthProfileWeight: (healthProfile as any)?.weight,
+    finalHeight: height,
+    finalWeight: weight,
+    hasStudentInfo: !!profile.studentInfo,
+    studentInfo: profile.studentInfo
+  });
+  
+  // 건강 정보 배지 생성 (더 많은 필드 포함)
   const healthBadges: Array<{ label: string; value?: string | number; icon?: ReactNode }> = [
     {
       label: '키',
-      value: (healthProfile as any)?.height ? `${(healthProfile as any).height} cm` : undefined,
+      value: height ? `${height} cm` : undefined,
       icon: <Activity className="h-4 w-4" />,
     },
     {
       label: '체중',
-      value: (healthProfile as any)?.weight ? `${(healthProfile as any).weight} kg` : undefined,
+      value: weight ? `${weight} kg` : undefined,
       icon: <Activity className="h-4 w-4" />,
     },
     {
       label: 'BMI',
-      value: (healthProfile as any)?.bmi ? String((healthProfile as any).bmi) : undefined,
+      value: bmi ? String(bmi) : undefined,
       icon: <Activity className="h-4 w-4" />,
     },
     {
@@ -980,6 +1199,28 @@ export default function ProfilePage() {
       value: (healthProfile as any)?.bloodType,
       icon: <Shield className="h-4 w-4" />,
     },
+    // 수영 관련 건강 상태
+    ...(Object.values((healthProfile as any)?.swimmingRelatedConditions || {}).some((v: any) => v === true) 
+      ? [{
+          label: '건강 상태',
+          value: Object.entries((healthProfile as any)?.swimmingRelatedConditions || {})
+            .filter(([_, v]: [string, any]) => v === true)
+            .map(([k]: [string, any]) => {
+              const labels: Record<string, string> = {
+                cardiovascular: '심장 질환',
+                respiratory: '호흡기 질환',
+                musculoskeletal: '근골격계 질환',
+                diabetes: '당뇨',
+                hypertension: '고혈압',
+                asthma: '천식'
+              };
+              return labels[k] || k;
+            })
+            .join(', ') || '없음',
+          icon: <Shield className="h-4 w-4" />,
+        }]
+      : []
+    ),
   ].filter((item) => Boolean(item.value));
 
   return (
@@ -1101,6 +1342,51 @@ export default function ProfilePage() {
                   placeholder="서울특별시 ..."
                   onChange={(event) => handleBasicChange('address', event.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700" htmlFor="profile-birthDate">
+                  생년월일
+                </label>
+                <Input
+                  id="profile-birthDate"
+                  type="date"
+                  value={profile.birthDate ? (() => {
+                    // birthDate가 문자열이면 그대로 사용, Date 객체면 변환
+                    if (typeof profile.birthDate === 'string') {
+                      // YYYY-MM-DD 형식인지 확인
+                      if (profile.birthDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        return profile.birthDate;
+                      }
+                      // ISO 형식이면 날짜 부분만 추출
+                      return profile.birthDate.split('T')[0];
+                    }
+                    // Date 객체면 ISO 형식으로 변환
+                    return new Date(profile.birthDate).toISOString().split('T')[0];
+                  })() : ''}
+                  onChange={(event) => handleBasicChange('birthDate', event.target.value)}
+                />
+                <p className="text-xs text-slate-500">
+                  회원가입 시 입력한 생년월일입니다.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700" htmlFor="profile-gender">
+                  성별
+                </label>
+                <select
+                  id="profile-gender"
+                  value={profile.gender || ''}
+                  onChange={(event) => handleBasicChange('gender', event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">선택하세요</option>
+                  <option value="male">남성</option>
+                  <option value="female">여성</option>
+                  <option value="other">기타</option>
+                </select>
+                <p className="text-xs text-slate-500">
+                  회원가입 시 입력한 성별입니다.
+                </p>
               </div>
             </div>
 
@@ -1237,48 +1523,409 @@ export default function ProfilePage() {
             {profile.userType === 'student' && (
               <>
                 <Separator />
-                <section className="space-y-4">
+                <section className="space-y-6">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">회원 추가 정보</h3>
                     <p className="text-sm text-slate-500">
-                      응급 연락처와 건강 관련 메모는 담당 강사와 관리자에게 공유됩니다.
+                      회원가입 시 입력한 정보를 확인하고 수정할 수 있습니다.
                     </p>
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700" htmlFor="student-emergency">
-                        응급 연락처
+
+                  {/* 키, 몸무게 (회원가입과 동일한 위치) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <Activity className="w-4 h-4 inline mr-2" />
+                        키 (cm)
                       </label>
-                      <Input
-                        id="student-emergency"
-                        value={profile.studentInfo?.emergencyContact ?? ''}
-                        placeholder="홍길동 / 010-1234-5678"
-                      onChange={(event) => handleStudentInfoChange('emergencyContact', event.target.value)}
+                      <input
+                        type="number"
+                        value={profile.studentInfo?.height ?? ''}
+                        onChange={(e) => handleStudentInfoChange('height', e.target.value ? Number(e.target.value) : undefined)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        placeholder="키를 입력하세요"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700" htmlFor="student-status">
-                        회원 상태
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <Activity className="w-4 h-4 inline mr-2" />
+                        몸무게 (kg)
                       </label>
-                      <Input
-                        id="student-status"
-                        value={profile.studentInfo?.status ?? ''}
-                        placeholder="active / inactive"
-                      onChange={(event) => handleStudentInfoChange('status', event.target.value)}
+                      <input
+                        type="number"
+                        value={profile.studentInfo?.weight ?? ''}
+                        onChange={(e) => handleStudentInfoChange('weight', e.target.value ? Number(e.target.value) : undefined)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        placeholder="몸무게를 입력하세요"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700" htmlFor="student-medical">
-                      건강 메모
+
+                  {/* 응급 연락처 */}
+                  <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="text-sm font-semibold text-slate-800">응급 연락처</h4>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="student-emergency">
+                          응급 연락처 이름
+                        </label>
+                        <Input
+                          id="student-emergency"
+                          value={profile.studentInfo?.emergencyContact ?? ''}
+                          placeholder="홍길동"
+                          onChange={(event) => handleStudentInfoChange('emergencyContact', event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="student-emergency-phone">
+                          응급 연락처 전화번호
+                        </label>
+                        <Input
+                          id="student-emergency-phone"
+                          value={(profile.studentInfo as any)?.emergencyPhone ?? ''}
+                          placeholder="010-1234-5678"
+                          onChange={(event) => handleStudentInfoChange('emergencyPhone' as any, event.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 수영 숙련도 (회원가입과 동일한 라디오 버튼) */}
+                  <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-semibold text-slate-800">수영 숙련도</h3>
+                        <p className="text-xs text-slate-500">완영 가능한 최고 영법을 선택해주세요.</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        { id: 'basic', label: '기초 단계', description: '킥보드, 호흡 연습 단계' },
+                        { id: 'freestyle', label: '자유형까지 가능', description: '25m 이상 자유형 완영' },
+                        { id: 'backstroke', label: '배영까지 가능', description: '자유형 + 배영 완영' },
+                        { id: 'breaststroke', label: '평영까지 가능', description: '3영법 완영 가능' },
+                        { id: 'butterfly', label: '접영까지 가능', description: '4영법 모두 완영 가능' }
+                      ].map((option) => {
+                        const currentProficiency = (profile.studentInfo?.swimmingProfile as any)?.swimProficiency ?? '';
+                        const isSelected = currentProficiency === option.id;
+                        return (
+                          <label
+                            key={option.id}
+                            className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${
+                              isSelected
+                                ? 'border-blue-500 bg-white shadow-sm'
+                                : 'border-slate-200 hover:border-blue-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="swimProficiency"
+                              value={option.id}
+                              checked={isSelected}
+                              onChange={() => handleSwimmingProfileChange('swimProficiency', option.id)}
+                              className="mt-1 h-4 w-4 text-blue-600"
+                            />
+                            <div>
+                              <p className="font-medium text-slate-900">{option.label}</p>
+                              <p className="text-sm text-slate-600">{option.description}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 최대 연속 거리 (회원가입과 동일한 select) */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <Target className="w-4 h-4 inline mr-2" />
+                      연속으로 수영 가능한 거리
                     </label>
-                    <Textarea
-                      id="student-medical"
-                      value={profile.studentInfo?.medicalConditions ?? ''}
-                      placeholder="알레르기, 주의해야 할 사항 등을 입력하세요."
-                      className="min-h-[96px]"
-                      onChange={(event) => handleStudentInfoChange('medicalConditions', event.target.value)}
+                    <select
+                      value={(profile.studentInfo?.swimmingProfile as any)?.maxContinuousDistance?.toString() ?? ''}
+                      onChange={(e) => handleSwimmingProfileChange('maxContinuousDistance', e.target.value ? Number(e.target.value) : undefined)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">거리를 선택하세요</option>
+                      {[
+                        { value: '25', label: '25m (1바퀴)' },
+                        { value: '50', label: '50m (2바퀴)' },
+                        { value: '100', label: '100m (4바퀴)' },
+                        { value: '200', label: '200m (8바퀴)' },
+                        { value: '400', label: '400m (16바퀴)' },
+                        { value: '800', label: '800m (32바퀴)' },
+                        { value: '1500', label: '1500m 이상' }
+                      ].map((distance) => (
+                        <option key={distance.value} value={distance.value}>
+                          {distance.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 운동 목표 (회원가입과 동일한 UI) */}
+                  <div className="border border-purple-200 rounded-lg p-4 space-y-4 bg-purple-50/40">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-semibold text-purple-900">운동 목표 선택</h3>
+                        <p className="text-xs text-purple-700">
+                          수영 엔진에서 제공하는 10가지 목표 중 하나를 선택해주세요.
+                        </p>
+                      </div>
+                      <span className="text-xs text-purple-700">
+                        현재 선택: <strong className="text-purple-600">{(profile.studentInfo?.swimmingProfile as any)?.currentGoal || '선택 안됨'}</strong>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {[
+                        '체력 향상',
+                        '체중 감량',
+                        '기술 연마',
+                        '실력 향상',
+                        '재활',
+                        '스트레스 해소',
+                        '장거리 수영',
+                        '오픈워터',
+                        '생존수영',
+                        '인명구조원'
+                      ].map((goal) => {
+                        const currentGoal = (profile.studentInfo?.swimmingProfile as any)?.currentGoal || '';
+                        const isSelected = currentGoal === goal;
+                        return (
+                          <button
+                            key={goal}
+                            type="button"
+                            onClick={() => handleSwimmingProfileChange('currentGoal', goal)}
+                            className={`px-3 py-2 text-sm border-2 rounded-lg transition-all ${
+                              isSelected
+                                ? 'border-purple-500 bg-white text-purple-700 font-semibold shadow-sm'
+                                : 'border-purple-100 bg-white hover:border-purple-300 text-gray-700'
+                            }`}
+                          >
+                            {goal}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-purple-700">
+                      선택한 목표는 프로그램 생성 시 운동 강도와 구성에 직접 반영됩니다.
+                    </p>
+                  </div>
+
+                  {/* CSS 측정값 */}
+                  <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="text-sm font-semibold text-slate-800">CSS 측정값 (초/100m)</h4>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="css-freestyle">
+                          자유형
+                        </label>
+                        <Input
+                          id="css-freestyle"
+                          type="number"
+                          step="0.1"
+                          value={(profile.studentInfo?.swimmingProfile?.css as any)?.freestyle ?? ''}
+                          placeholder="예: 90.5"
+                          onChange={(event) => handleCssChange('freestyle', event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="css-backstroke">
+                          배영
+                        </label>
+                        <Input
+                          id="css-backstroke"
+                          type="number"
+                          step="0.1"
+                          value={(profile.studentInfo?.swimmingProfile?.css as any)?.backstroke ?? ''}
+                          placeholder="예: 95.0"
+                          onChange={(event) => handleCssChange('backstroke', event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="css-breaststroke">
+                          평영
+                        </label>
+                        <Input
+                          id="css-breaststroke"
+                          type="number"
+                          step="0.1"
+                          value={(profile.studentInfo?.swimmingProfile?.css as any)?.breaststroke ?? ''}
+                          placeholder="예: 110.0"
+                          onChange={(event) => handleCssChange('breaststroke', event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700" htmlFor="css-butterfly">
+                          접영
+                        </label>
+                        <Input
+                          id="css-butterfly"
+                          type="number"
+                          step="0.1"
+                          value={(profile.studentInfo?.swimmingProfile?.css as any)?.butterfly ?? ''}
+                          placeholder="예: 100.0"
+                          onChange={(event) => handleCssChange('butterfly', event.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 영법 선택 */}
+                  <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="text-sm font-semibold text-slate-800">영법 선택</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">주 영법 (주로 사용하는 영법)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
+                            const labels: Record<string, string> = {
+                              freestyle: '🏊 자유형',
+                              backstroke: '🏊‍♂️ 배영',
+                              breaststroke: '🤿 평영',
+                              butterfly: '🦋 접영'
+                            };
+                            const isSelected = (profile.studentInfo?.swimmingProfile as any)?.mainStrokes?.includes(stroke) ?? false;
+                            return (
+                              <button
+                                key={stroke}
+                                type="button"
+                                onClick={() => {
+                                  const current = (profile.studentInfo?.swimmingProfile as any)?.mainStrokes ?? [];
+                                  const next = isSelected
+                                    ? current.filter((s: string) => s !== stroke)
+                                    : [...current, stroke];
+                                  handleSwimmingProfileChange('mainStrokes', next.length > 0 ? next : undefined);
+                                }}
+                                className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all ${
+                                  isSelected
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                                }`}
+                              >
+                                {labels[stroke]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-slate-500">주로 사용하는 영법을 선택하세요 (복수 선택 가능)</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">선호 영법 (좋아하는 영법)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
+                            const labels: Record<string, string> = {
+                              freestyle: '🏊 자유형',
+                              backstroke: '🏊‍♂️ 배영',
+                              breaststroke: '🤿 평영',
+                              butterfly: '🦋 접영'
+                            };
+                            const isSelected = (profile.studentInfo?.swimmingProfile as any)?.preferredStrokes?.includes(stroke) ?? false;
+                            return (
+                              <button
+                                key={stroke}
+                                type="button"
+                                onClick={() => {
+                                  const current = (profile.studentInfo?.swimmingProfile as any)?.preferredStrokes ?? [];
+                                  const next = isSelected
+                                    ? current.filter((s: string) => s !== stroke)
+                                    : [...current, stroke];
+                                  handleSwimmingProfileChange('preferredStrokes', next.length > 0 ? next : undefined);
+                                }}
+                                className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all ${
+                                  isSelected
+                                    ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
+                                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                                }`}
+                              >
+                                {labels[stroke]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-slate-500">좋아하거나 선호하는 영법을 선택하세요 (복수 선택 가능)</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">회피 영법 (피하고 싶은 영법)</label>
+                        <div className="flex flex-wrap gap-2">
+                          {['freestyle', 'backstroke', 'breaststroke', 'butterfly'].map((stroke) => {
+                            const labels: Record<string, string> = {
+                              freestyle: '🏊 자유형',
+                              backstroke: '🏊‍♂️ 배영',
+                              breaststroke: '🤿 평영',
+                              butterfly: '🦋 접영'
+                            };
+                            const isSelected = (profile.studentInfo?.swimmingProfile as any)?.excludedStrokes?.includes(stroke) ?? false;
+                            return (
+                              <button
+                                key={stroke}
+                                type="button"
+                                onClick={() => {
+                                  const current = (profile.studentInfo?.swimmingProfile as any)?.excludedStrokes ?? [];
+                                  const next = isSelected
+                                    ? current.filter((s: string) => s !== stroke)
+                                    : [...current, stroke];
+                                  handleSwimmingProfileChange('excludedStrokes', next.length > 0 ? next : undefined);
+                                }}
+                                className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all ${
+                                  isSelected
+                                    ? 'border-red-500 bg-red-50 text-red-700 shadow-sm'
+                                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                                }`}
+                              >
+                                {labels[stroke]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs text-slate-500">부상이나 건강상의 이유로 피하고 싶은 영법을 선택하세요 (복수 선택 가능)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 질환·특수상황 선택 (회원가입과 동일한 UI) */}
+                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-800">질환·특수상황 선택</h3>
+                        <p className="text-xs text-gray-500">
+                          수영 엔진의 안전 조정을 위해 해당되는 질환이나 특수상황을 선택해주세요.
+                        </p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        선택됨: <strong className="text-blue-600">{(profile.studentInfo?.swimmingProfile as any)?.conditionIds?.length || 0}</strong>개
+                      </span>
+                    </div>
+                    <ConditionQuickPick
+                      value={(profile.studentInfo?.swimmingProfile as any)?.conditionIds || []}
+                      onChange={(ids) => handleSwimmingProfileChange('conditionIds', ids.length > 0 ? ids : undefined)}
                     />
+                    <p className="text-xs text-gray-500">
+                      선택된 항목은 프로그램 생성 시 자동으로 반영됩니다.
+                    </p>
+                  </div>
+
+                  {/* 건강 메모 */}
+                  <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                    <h4 className="text-sm font-semibold text-slate-800">건강 메모</h4>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700" htmlFor="student-medical">
+                        건강 관련 메모
+                      </label>
+                      <Textarea
+                        id="student-medical"
+                        value={profile.studentInfo?.medicalConditions ?? ''}
+                        placeholder="알레르기, 주의해야 할 사항 등을 입력하세요."
+                        className="min-h-[96px]"
+                        onChange={(event) => handleStudentInfoChange('medicalConditions', event.target.value)}
+                      />
+                      <p className="text-xs text-slate-500">
+                        응급 연락처와 건강 관련 메모는 담당 강사와 관리자에게 공유됩니다.
+                      </p>
+                    </div>
                   </div>
                 </section>
               </>
@@ -1609,7 +2256,7 @@ export default function ProfilePage() {
           <Card className="border-slate-200 shadow-lg">
             <CardHeader>
               <CardTitle>건강 프로필</CardTitle>
-              <CardDescription>프로그램 추천에 활용되는 건강 데이터를 한눈에 확인하세요.</CardDescription>
+              <CardDescription>회원가입 시 입력한 건강 정보를 확인하고 수정할 수 있습니다.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-600">
               {healthBadges.length > 0 ? (
@@ -1622,11 +2269,101 @@ export default function ProfilePage() {
                     </Badge>
                   ))}
                 </div>
+              ) : Object.keys(healthProfile).length > 0 ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-6">
+                  <p className="text-sm font-semibold text-slate-700 mb-2">등록된 건강 정보</p>
+                  <p className="text-xs text-slate-600">
+                    건강 프로필이 등록되어 있지만 표시할 수 있는 기본 지표(키, 체중, BMI 등)가 없습니다.
+                    <br />
+                    아래에서 건강 정보를 수정하거나 건강 입력 페이지에서 기본 정보를 추가해주세요.
+                  </p>
+                </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-4 py-6 text-center text-sm text-slate-500">
-                  등록된 건강 지표가 없습니다. 건강 입력 페이지에서 정보를 추가해주세요.
+                  등록된 건강 지표가 없습니다. 아래에서 건강 정보를 입력하거나 건강 입력 페이지에서 정보를 추가해주세요.
                 </div>
               )}
+              {/* 만성 질환 정보 */}
+              {Array.isArray((healthProfile as any)?.chronicConditions) &&
+                (healthProfile as any).chronicConditions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-500">만성 질환</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(healthProfile as any).chronicConditions.map((item: string) => (
+                        <Badge key={item} variant="outline" size="sm" className="text-red-600 border-red-300">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              
+              {/* 수영 관련 건강 상태 상세 표시 */}
+              {(healthProfile as any)?.swimmingRelatedConditions && (
+                (() => {
+                  const conditions = (healthProfile as any).swimmingRelatedConditions;
+                  const activeConditions = Object.entries(conditions)
+                    .filter(([_, v]: [string, any]) => v === true)
+                    .map(([k]: [string, any]) => {
+                      const labels: Record<string, string> = {
+                        cardiovascular: '심장 질환',
+                        respiratory: '호흡기 질환',
+                        musculoskeletal: '근골격계 질환',
+                        diabetes: '당뇨',
+                        hypertension: '고혈압',
+                        asthma: '천식'
+                      };
+                      return labels[k] || k;
+                    });
+                  
+                  if (activeConditions.length > 0) {
+                    return (
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-slate-500">수영 관련 건강 상태</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {activeConditions.map((item: string) => (
+                            <Badge key={item} variant="outline" size="sm" className="text-orange-600 border-orange-300">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
+              )}
+              
+              {/* 기타 건강질환 (other 필드) */}
+              {Array.isArray((healthProfile as any)?.swimmingRelatedConditions?.other) &&
+                (healthProfile as any).swimmingRelatedConditions.other.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-500">기타 건강 상태</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(healthProfile as any).swimmingRelatedConditions.other.map((item: string) => (
+                        <Badge key={item} variant="outline" size="sm" className="text-orange-600 border-orange-300">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              
+              {/* 복용 중인 약물 */}
+              {Array.isArray((healthProfile as any)?.medications) &&
+                (healthProfile as any).medications.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-slate-500">복용 중인 약물</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {(healthProfile as any).medications.map((item: string) => (
+                        <Badge key={item} variant="outline" size="sm" className="text-purple-600 border-purple-300">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              
               {Array.isArray((healthProfile as any)?.allergies) &&
                 (healthProfile as any).allergies.length > 0 && (
                   <div>
@@ -1653,6 +2390,19 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
+              
+              {/* 건강 정보 수정 링크 */}
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <Link
+                  href="/health/input"
+                  className="inline-flex w-full items-center justify-center rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                >
+                  건강 정보 수정하기
+                </Link>
+                <p className="text-xs text-slate-500 mt-2 text-center">
+                  건강 입력 페이지에서 모든 건강 정보를 확인하고 수정할 수 있습니다.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -1972,27 +1982,97 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
                     goals: [],
                     centerMemo: member.studentInfo?.centerMemo || '',
                     centerMemos: member.studentInfo?.centerMemos || [],
-                    healthProfile: member.studentInfo?.healthProfile ? {
-                        height: member.studentInfo.healthProfile.height,
-                        weight: member.studentInfo.healthProfile.weight,
-                        bmi: member.studentInfo.healthProfile.bmi,
-                        bloodType: member.studentInfo.healthProfile.bloodType,
-                        allergies: member.studentInfo.healthProfile.allergies || [],
-                        chronicConditions: member.studentInfo.healthProfile.chronicConditions || [],
-                        medications: member.studentInfo.healthProfile.medications || [],
-                        emergencyContact: member.studentInfo.healthProfile.emergencyContact,
-                        fitnessGoals: member.studentInfo.healthProfile.fitnessGoals || [],
-                        activityLevel: member.studentInfo.healthProfile.activityLevel,
-                        targetWeight: member.studentInfo.healthProfile.targetWeight,
-                        targetBMI: member.studentInfo.healthProfile.targetBMI,
-                        lastHealthCheck: member.studentInfo.healthProfile.lastHealthCheck,
-                        bloodPressure: member.studentInfo.healthProfile.bloodPressure,
-                        cholesterol: member.studentInfo.healthProfile.cholesterol,
-                        bloodSugar: member.studentInfo.healthProfile.bloodSugar,
-                        swimmingRelatedConditions: member.studentInfo.healthProfile.swimmingRelatedConditions,
-                        fitnessMetrics: member.studentInfo.healthProfile.fitnessMetrics,
-                        healthHistory: member.studentInfo.healthProfile.healthHistory || []
-                    } : null
+                    healthProfile: member.studentInfo?.healthProfile ? (() => {
+                        const healthProfile = member.studentInfo.healthProfile;
+                        const privacySettings = healthProfile.privacySettings || {};
+                        const filteredProfile = {};
+                        if (healthProfile.height !== undefined && privacySettings.height !== false) {
+                            filteredProfile.height = healthProfile.height;
+                        }
+                        if (healthProfile.weight !== undefined && privacySettings.weight !== false) {
+                            filteredProfile.weight = healthProfile.weight;
+                        }
+                        if (healthProfile.bmi !== undefined && privacySettings.bmi !== false) {
+                            filteredProfile.bmi = healthProfile.bmi;
+                        }
+                        if (healthProfile.bloodPressure &&
+                            privacySettings.blood_pressure_systolic !== false &&
+                            privacySettings.blood_pressure_diastolic !== false) {
+                            filteredProfile.bloodPressure = healthProfile.bloodPressure;
+                        }
+                        if (healthProfile.cholesterol) {
+                            const filteredChol = {};
+                            if (privacySettings.cholesterol_total !== false && healthProfile.cholesterol.total !== undefined) {
+                                filteredChol.total = healthProfile.cholesterol.total;
+                            }
+                            if (privacySettings.cholesterol_ldl !== false && healthProfile.cholesterol.ldl !== undefined) {
+                                filteredChol.ldl = healthProfile.cholesterol.ldl;
+                            }
+                            if (privacySettings.cholesterol_hdl !== false && healthProfile.cholesterol.hdl !== undefined) {
+                                filteredChol.hdl = healthProfile.cholesterol.hdl;
+                            }
+                            if (privacySettings.cholesterol_triglycerides !== false && healthProfile.cholesterol.triglycerides !== undefined) {
+                                filteredChol.triglycerides = healthProfile.cholesterol.triglycerides;
+                            }
+                            if (Object.keys(filteredChol).length > 0) {
+                                filteredProfile.cholesterol = filteredChol;
+                            }
+                        }
+                        if (healthProfile.bloodSugar) {
+                            const filteredSugar = {};
+                            if (privacySettings.blood_sugar_fasting !== false && healthProfile.bloodSugar.fasting !== undefined) {
+                                filteredSugar.fasting = healthProfile.bloodSugar.fasting;
+                            }
+                            if (privacySettings.blood_sugar_postprandial !== false && healthProfile.bloodSugar.postprandial !== undefined) {
+                                filteredSugar.postprandial = healthProfile.bloodSugar.postprandial;
+                            }
+                            if (privacySettings.blood_sugar_hba1c !== false && healthProfile.bloodSugar.hba1c !== undefined) {
+                                filteredSugar.hba1c = healthProfile.bloodSugar.hba1c;
+                            }
+                            if (Object.keys(filteredSugar).length > 0) {
+                                filteredProfile.bloodSugar = filteredSugar;
+                            }
+                        }
+                        if (healthProfile.fitnessMetrics) {
+                            const filteredFitness = {};
+                            if (privacySettings.muscle_mass !== false && healthProfile.fitnessMetrics.muscleMass !== undefined) {
+                                filteredFitness.muscleMass = healthProfile.fitnessMetrics.muscleMass;
+                            }
+                            if (privacySettings.body_fat !== false && healthProfile.fitnessMetrics.bodyFatPercentage !== undefined) {
+                                filteredFitness.bodyFatPercentage = healthProfile.fitnessMetrics.bodyFatPercentage;
+                            }
+                            if (privacySettings.heart_rate !== false && healthProfile.fitnessMetrics.restingHeartRate !== undefined) {
+                                filteredFitness.restingHeartRate = healthProfile.fitnessMetrics.restingHeartRate;
+                            }
+                            if (privacySettings.max_heart_rate !== false && healthProfile.fitnessMetrics.maxHeartRate !== undefined) {
+                                filteredFitness.maxHeartRate = healthProfile.fitnessMetrics.maxHeartRate;
+                            }
+                            if (Object.keys(filteredFitness).length > 0) {
+                                filteredProfile.fitnessMetrics = filteredFitness;
+                            }
+                        }
+                        if (member.studentInfo?.swimmingProfile) {
+                            filteredProfile.swimmingProfile = member.studentInfo.swimmingProfile;
+                        }
+                        if (privacySettings.chronic_conditions !== false) {
+                            filteredProfile.chronicConditions = healthProfile.chronicConditions || [];
+                        }
+                        if (privacySettings.medications !== false) {
+                            filteredProfile.medications = healthProfile.medications || [];
+                        }
+                        if (privacySettings.allergies !== false) {
+                            filteredProfile.allergies = healthProfile.allergies || [];
+                        }
+                        filteredProfile.bloodType = healthProfile.bloodType;
+                        filteredProfile.emergencyContact = healthProfile.emergencyContact;
+                        filteredProfile.fitnessGoals = healthProfile.fitnessGoals || [];
+                        filteredProfile.activityLevel = healthProfile.activityLevel;
+                        filteredProfile.targetWeight = healthProfile.targetWeight;
+                        filteredProfile.targetBMI = healthProfile.targetBMI;
+                        filteredProfile.lastHealthCheck = healthProfile.lastHealthCheck;
+                        filteredProfile.swimmingRelatedConditions = healthProfile.swimmingRelatedConditions;
+                        return Object.keys(filteredProfile).length > 0 ? filteredProfile : null;
+                    })() : null
                 },
                 isEnrolledInSpecificCourse: isEnrolledInSpecificCourse,
                 currentCourses: courseDetails.map(course => ({

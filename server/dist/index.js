@@ -114,6 +114,7 @@ const medicalExercisePrescription_1 = __importDefault(require("./routes/medicalE
 const health_exercise_ai_1 = __importDefault(require("./routes/health-exercise-ai"));
 const exercise_prescription_1 = __importDefault(require("./routes/exercise-prescription"));
 const health_input_1 = __importDefault(require("./routes/health-input"));
+const health_measurements_1 = __importDefault(require("./routes/health-measurements"));
 const swim_engine_1 = __importDefault(require("./routes/swim-engine"));
 const geo_aggregate_1 = __importDefault(require("./routes/geo-aggregate"));
 const geo_distribution_visibility_1 = __importDefault(require("./routes/geo-distribution-visibility"));
@@ -395,6 +396,7 @@ app.use('/api/medical-exercise-prescription', medicalExercisePrescription_1.defa
 app.use('/api/health-exercise-ai', health_exercise_ai_1.default);
 app.use('/api/exercise-prescription', exercise_prescription_1.default);
 app.use('/api/health', health_input_1.default);
+app.use('/api/health', health_measurements_1.default);
 app.use('/api/swim-engine', swim_engine_1.default);
 app.use('/api/geo', geo_aggregate_1.default);
 app.use('/api/geo-distribution-visibility', geo_distribution_visibility_1.default);

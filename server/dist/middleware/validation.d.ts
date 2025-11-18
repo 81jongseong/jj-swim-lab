@@ -1552,10 +1552,10 @@ declare const _default: {
         }[];
     };
     businessValidations: {
-        checkCourseScheduleConflict: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<void>;
-        checkBookingAvailability: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<void>;
+        checkCourseScheduleConflict: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+        checkBookingAvailability: (req: Request, res: Response, next: NextFunction) => Promise<void>;
     };
-    handleValidationErrors: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    handleValidationErrors: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
     createValidationMiddleware: (validations: ValidationChain[]) => ValidationChain[];
 };
 export default _default;

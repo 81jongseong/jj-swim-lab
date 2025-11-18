@@ -33,70 +33,24 @@ function StudentRecommendations() {
   const loadRecommendations = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempRecommendations: Recommendation[] = [
-        {
-          _id: '1',
-          type: 'course',
-          title: '중급 배영 클래스 추천',
-          description: '현재 자유형 기초를 잘 마스터하고 계시니, 배영으로 확장해보시는 것을 추천합니다.',
-          reason: '자유형 팔 동작이 3단계에 도달하여 배영 학습에 적합한 시점입니다.',
-          priority: 'high',
-          estimatedTime: '4-6주',
-          difficulty: 'medium',
-          category: '배영',
-          createdAt: new Date('2024-01-20')
-        },
-        {
-          _id: '2',
-          type: 'exercise',
-          title: '호흡법 개선 운동',
-          description: '자유형 호흡법을 더욱 자연스럽게 만들기 위한 특별 운동입니다.',
-          reason: '현재 호흡법이 2단계로 개선이 필요한 상태입니다.',
-          priority: 'medium',
-          estimatedTime: '2-3주',
-          difficulty: 'easy',
-          category: '자유형',
-          createdAt: new Date('2024-01-19')
-        },
-        {
-          _id: '3',
-          type: 'technique',
-          title: '발차기 기술 향상',
-          description: '자유형 발차기의 효율성을 높이는 기술 연습을 추천합니다.',
-          reason: '발차기 기술이 2단계로 기본 동작을 더욱 정교하게 만들어야 합니다.',
-          priority: 'medium',
-          estimatedTime: '3-4주',
-          difficulty: 'medium',
-          category: '자유형',
-          createdAt: new Date('2024-01-18')
-        },
-        {
-          _id: '4',
-          type: 'goal',
-          title: '50m 자유형 완주 목표',
-          description: '현재 25m를 완주하고 계시니, 다음 목표로 50m 완주를 설정해보세요.',
-          reason: '25m 완주 성취를 바탕으로 더 긴 거리에 도전할 준비가 되었습니다.',
-          priority: 'high',
-          estimatedTime: '6-8주',
-          difficulty: 'medium',
-          category: '자유형',
-          createdAt: new Date('2024-01-17')
-        },
-        {
-          _id: '5',
-          type: 'exercise',
-          title: '코어 강화 운동',
-          description: '수영에 필요한 핵심 근육을 강화하는 운동 프로그램입니다.',
-          reason: '코어 근육 강화로 더욱 안정적인 수영 자세를 만들 수 있습니다.',
-          priority: 'low',
-          estimatedTime: '4-6주',
-          difficulty: 'easy',
-          category: '체력',
-          createdAt: new Date('2024-01-16')
-        }
-      ];
-      setRecommendations(tempRecommendations);
+      const apiClient = (await import('@/utils/api')).default;
+      const response = await apiClient.getStudentRecommendations();
+      
+      if (response.success && response.data) {
+        const recommendationsData = response.data.map((r: any) => ({
+          _id: r._id || '',
+          type: r.type || 'exercise',
+          title: r.title || '추천사항',
+          description: r.description || '',
+          reason: r.reason || '',
+          priority: r.priority || 'medium',
+          estimatedTime: r.estimatedTime || '',
+          difficulty: r.difficulty || 'medium',
+          category: r.category || '기타',
+          createdAt: r.createdAt ? new Date(r.createdAt) : new Date()
+        }));
+        setRecommendations(recommendationsData);
+      }
     } catch (error) {
       console.error('추천사항 로드 실패:', error);
     } finally {

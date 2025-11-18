@@ -105,24 +105,17 @@ const userMenuStructure = {
   student: {
     main: [
       { href: '/dashboard', label: '📊 대시보드' },
+      { href: '/health', label: '🏥 건강관리' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/courses', label: '📚 내 강의' },
       { href: '/payments', label: '💰 결제 내역' },
     ],
-    health: [
-      { href: '/health', label: '🏥 건강관리 홈' },
-      { href: '/swimlab/trial', label: '🏊 스윔랩 체험' },
-      { href: '/health/program', label: '🏊‍♂️ 운동 프로그램' },
-      { href: '/health/history', label: '📋 프로그램 이력' },
-      { href: '/health/measurements', label: '📊 측정 데이터' },
-    ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
-      { href: '/uploads', label: '📹 영상 업로드' },
+      { href: '/video-feedback', label: '🎥 동영상 분석 요청' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     info: [
-      { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
@@ -153,7 +146,6 @@ const userMenuStructure = {
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
     ],
     resources: [
-      { href: '/guide', label: '📖 이용안내' },
       { href: '/news', label: '📢 공지사항' },
       { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
@@ -256,7 +248,6 @@ const userMenuStructure = {
       { href: '/quiz', label: '🧠 퀴즈 체험' },
     ],
     community: [
-      { href: '/guide', label: '📖 이용안내' },
       { href: '/job-board', label: '💼 구인구직' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
@@ -271,7 +262,6 @@ const userMenuStructure = {
     ],
     experience: [
       { href: '/guest-quiz', label: '🧠 퀴즈 체험' },
-      { href: '/swimlab/trial', label: '🏊 스윔랩 체험' },
       { href: '/3d-viewer', label: '🏊‍♂️ 3D 수영 뷰어' },
     ],
     community: [
@@ -287,47 +277,47 @@ const userMenuStructure = {
   }
 };
 
-// 메뉴 그룹화 정의 - 데스크탑과 모바일 모두 동일하게 사용
+// 메뉴 그룹화 정의 - 데스크탑과 모바일 모두 동일하게 사용 (더 직관적으로 정리)
 const menuGrouping = {
   student: [
-    { groupName: '🏠 기본 메뉴', categories: ['main'] },
-    { groupName: '🏥 건강 관리', categories: ['health'] },
-    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
-    { groupName: '🏢 정보 & 커뮤니티', categories: ['info'] },
+    { groupName: '📊 내 학습', categories: ['main'] },
+    { groupName: '🎯 체험 & 도구', categories: ['experience'] },
+    { groupName: '💬 커뮤니티 & 정보', categories: ['info'] },
   ],
   instructor: [
-    { groupName: '⚡ 바로가기', categories: ['quickAccess'] },
-    { groupName: '📚 강의 · 예약', categories: ['classManagement'] },
-    { groupName: '👥 수강생 케어', categories: ['studentCare'] },
+    { groupName: '⚡ 빠른 접근', categories: ['quickAccess'] },
+    { groupName: '📚 강의 관리', categories: ['classManagement'] },
+    { groupName: '👥 수강생 관리', categories: ['studentCare'] },
     { groupName: '🏊 코칭 도구', categories: ['coachingTools'] },
-    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
-    { groupName: '📘 안내 & 지원', categories: ['resources'] },
+    { groupName: '🎯 체험 & 학습', categories: ['experience'] },
+    { groupName: '📘 정보 & 지원', categories: ['resources'] },
   ],
   centerAdmin: [
-    { groupName: '📊 센터 관리', categories: ['dashboard'] },
+    { groupName: '📊 센터 운영', categories: ['dashboard'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
-    { groupName: '🔗 추가 서비스', categories: ['tools'] },
+    { groupName: '🛠️ 도구 & 서비스', categories: ['tools'] },
   ],
   'center-admin': [
-    { groupName: '📊 센터 관리', categories: ['dashboard'] },
+    { groupName: '📊 센터 운영', categories: ['dashboard'] },
     { groupName: '⚙️ 센터 설정', categories: ['center'] },
     { groupName: '💬 커뮤니티', categories: ['community'] },
-    { groupName: '🔗 추가 서비스', categories: ['tools'] },
+    { groupName: '🛠️ 도구 & 서비스', categories: ['tools'] },
   ],
   superAdmin: [
-    { groupName: '🎯 핵심 관리', categories: ['core'] },
-    { groupName: '🏢 비즈니스 관리', categories: ['business'] },
-    { groupName: '💰 매출 관리', categories: ['revenue'] },
-    { groupName: '📚 콘텐츠 관리', categories: ['content'] },
-    { groupName: '🎧 운영 지원', categories: ['operations'] },
-    { groupName: '🛠️ 도구 & 체험', categories: ['tools'] },
+    { groupName: '🎯 시스템 관리', categories: ['core'] },
+    { groupName: '🏢 비즈니스', categories: ['business'] },
+    { groupName: '💰 매출', categories: ['revenue'] },
+    { groupName: '📚 콘텐츠', categories: ['content'] },
+    { groupName: '🎧 운영', categories: ['operations'] },
+    { groupName: '🛠️ 도구', categories: ['tools'] },
     { groupName: '🌐 커뮤니티', categories: ['community'] },
   ],
   guest: [
-    { groupName: '🏠 JJ Swim Lab', categories: ['main'] },
-    { groupName: '🎯 체험 메뉴', categories: ['experience'] },
-    { groupName: '💬 커뮤니티 & 상점', categories: ['community'] }
+    { groupName: '🏠 홈', categories: ['main'] },
+    { groupName: '🎯 체험', categories: ['experience'] },
+    { groupName: '💬 커뮤니티', categories: ['community'] },
+    { groupName: '🔑 로그인', categories: ['auth'] }
   ]
 };
 
@@ -721,8 +711,6 @@ export default function Navigation() {
                         (href === resolveHref('/center/default/admin/manage') && pathname.startsWith(href)) ||
                         (href === '/health' && pathname.startsWith('/health')) ||
                         (href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
-                        (href === '/health/program' && pathname === '/health/program') ||
-                        (href === '/health/history' && pathname === '/health/history') ||
                         (href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine');
                       return (
                       <Link

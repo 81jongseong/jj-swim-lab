@@ -164,16 +164,16 @@ export default function PaymentTable({
               <div className="mt-3 flex gap-2">
                 {/* 카드 결제: 결제 취소 버튼 (대기중/완료 모두 노출, 이미 취소/환불 제외) */}
                 {payment.paymentMethod === 'card' && !['cancelled', 'refunded'].includes(payment.status) && onCancel && (
-                  <Button onClick={() => onCancel(payment._id)} size="sm" variant="outline" className="gap-1">
+                      <Button onClick={() => onCancel(payment._id)} size="sm" variant="outline" className="gap-1">
                     <XCircle className="w-4 h-4" /> 결제 취소
-                  </Button>
-                )}
+                      </Button>
+                    )}
                 {/* 현금 결제: 환불 버튼 (대기중/완료 모두 노출, 이미 취소/환불 제외) */}
                 {payment.paymentMethod === 'cash' && !['cancelled', 'refunded'].includes(payment.status) && onRefund && (
-                  <Button onClick={() => onRefund(payment._id)} size="sm" variant="danger" className="gap-1">
-                    <RotateCcw className="w-4 h-4" /> 환불
-                  </Button>
-                )}
+                      <Button onClick={() => onRefund(payment._id)} size="sm" variant="danger" className="gap-1">
+                        <RotateCcw className="w-4 h-4" /> 환불
+                      </Button>
+                    )}
                 {/* 완료된 이후의 보조 버튼 (유지) */}
                 {payment.status === 'completed' && (
                   <>

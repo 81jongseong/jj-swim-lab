@@ -159,7 +159,9 @@ export default function ProgramHistoryPage() {
   };
 
   const handleViewProgram = (program: ProgramHistory) => {
-    window.location.href = `/health/program?programId=${program.id}`;
+    // 운동프로그램 페이지가 삭제되어 프로그램 이력 페이지에서 상세 정보 표시
+    // 필요시 모달이나 다른 방식으로 상세 정보 표시 가능
+    console.log('프로그램 상세:', program);
   };
 
   const handleEditProgram = (program: ProgramHistory) => {

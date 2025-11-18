@@ -363,10 +363,46 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
 });
+router.get('/instructors', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        const User = require('mongoose').model('User');
+        const userDoc = await User.findById(user._id);
+        const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || null;
+        const query = { userType: 'instructor', isActive: true };
+        const instructors = await User.find(query)
+            .select('name userId email phone centerId instructorInfo')
+            .populate('centerId', 'name')
+            .lean();
+        const instructorsByCenter = instructors.map((instructor) => ({
+            _id: instructor._id,
+            name: instructor.name || instructor.userId || '이름 없음',
+            userId: instructor.userId,
+            email: instructor.email,
+            phone: instructor.phone,
+            centerName: instructor.centerId?.name || '센터 없음',
+            centerId: instructor.centerId?._id || null,
+            isMyCenter: userCenterId && instructor.centerId?._id?.toString() === userCenterId.toString(),
+            instructorType: instructor.instructorInfo?.instructorType || 'instructor',
+            analysisFee: instructor.instructorInfo?.analysisFee || 10000
+        }));
+        res.json({
+            success: true,
+            data: {
+                instructors: instructorsByCenter,
+                myCenterId: userCenterId
+            }
+        });
+    }
+    catch (error) {
+        console.error('강사 목록 조회 오류:', error);
+        res.status(500).json({ error: error.message || '강사 목록 조회에 실패했습니다.' });
+    }
+});
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const user = req.user;
-        const { youtubeUrl, title, description, visibility } = req.body;
+        const { youtubeUrl, title, description, visibility, analysisRequest } = req.body;
         if (!youtubeUrl) {
             return res.status(400).json({ error: '유튜브 링크가 필요합니다.' });
         }
@@ -374,7 +410,9 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         if (!youtubeRegex.test(youtubeUrl)) {
             return res.status(400).json({ error: '올바른 유튜브 링크를 입력해주세요.' });
         }
-        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const User = require('mongoose').model('User');
+        const Payment = require('mongoose').model('Payment');
+        const userDoc = await User.findById(user._id);
         const ownerCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || null;
         const visibilitySettings = {
             myCenterInstructors: visibility?.myCenterInstructors || false,
@@ -385,6 +423,52 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         if (!Object.values(visibilitySettings).some(v => v === true)) {
             return res.status(400).json({ error: '최소 하나의 공개 범위를 선택해주세요.' });
         }
+        let analysisRequestData = {
+            type: 'public',
+            requestedInstructors: [],
+            analysisFee: 0,
+            paymentStatus: 'pending'
+        };
+        if (analysisRequest) {
+            analysisRequestData.type = analysisRequest.type || 'public';
+            if (analysisRequest.type === 'specific' && analysisRequest.requestedInstructors?.length > 0) {
+                analysisRequestData.requestedInstructors = analysisRequest.requestedInstructors;
+                const requestedInstructors = await User.find({
+                    _id: { $in: analysisRequest.requestedInstructors },
+                    userType: 'instructor'
+                }).select('instructorInfo');
+                let totalFee = 0;
+                for (const instructor of requestedInstructors) {
+                    const fee = instructor.instructorInfo?.analysisFee || 10000;
+                    totalFee += fee;
+                }
+                analysisRequestData.analysisFee = totalFee;
+                if (totalFee > 0) {
+                    const payment = await Payment.create({
+                        user: user._id,
+                        centerId: ownerCenterId,
+                        amount: totalFee,
+                        paymentMethod: analysisRequest.paymentMethod || 'card',
+                        status: 'pending',
+                        purpose: 'video_analysis',
+                        description: `동영상 분석 요청 (${requestedInstructors.length}명의 강사)`,
+                        metadata: {
+                            videoTitle: title || '제목 없음',
+                            requestedInstructors: analysisRequest.requestedInstructors,
+                            instructorCount: requestedInstructors.length
+                        }
+                    });
+                    analysisRequestData.paymentId = payment._id;
+                    analysisRequestData.paymentStatus = 'pending';
+                }
+            }
+            else if (analysisRequest.type === 'center') {
+                analysisRequestData.analysisFee = 0;
+            }
+            else {
+                analysisRequestData.analysisFee = 0;
+            }
+        }
         const doc = await Video_1.Video.create({
             owner: user._id,
             ownerCenterId,
@@ -392,12 +476,21 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
             title: title || '제목 없음',
             description: description || '',
             visibility: visibilitySettings,
+            analysisRequest: analysisRequestData,
             status: 'pending',
         });
         res.status(201).json({
             success: true,
-            message: '동영상이 등록되었습니다.',
-            data: { id: doc._id, url: `/api/uploads/${doc._id}` }
+            message: analysisRequestData.analysisFee > 0
+                ? `동영상이 등록되었습니다. 분석 요청 비용 ${analysisRequestData.analysisFee.toLocaleString()}원이 결제 대기 중입니다.`
+                : '동영상이 등록되었습니다.',
+            data: {
+                id: doc._id,
+                url: `/api/uploads/${doc._id}`,
+                analysisFee: analysisRequestData.analysisFee,
+                paymentId: analysisRequestData.paymentId,
+                requiresPayment: analysisRequestData.analysisFee > 0
+            }
         });
     }
     catch (error) {
@@ -405,8 +498,75 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message || '동영상 등록에 실패했습니다.' });
     }
 });
+router.get('/', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const user = req.user;
+        const { status, page = 1, limit = 10, myVideos = 'false' } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const userDoc = await require('mongoose').model('User').findById(user._id);
+        const userCenterId = userDoc?.centerId || userDoc?.studentInfo?.centerId || userDoc?.instructorInfo?.assignedCenters?.[0];
+        const isInstructor = ['instructor', 'centerAdmin', 'superAdmin'].includes(user.userType);
+        const filter = {};
+        if (myVideos === 'true') {
+            filter.owner = user._id;
+        }
+        else {
+            const orConditions = [];
+            orConditions.push({ owner: user._id });
+            if (isInstructor) {
+                orConditions.push({ 'visibility.allInstructors': true });
+                if (userCenterId) {
+                    orConditions.push({
+                        'visibility.myCenterInstructors': true,
+                        ownerCenterId: userCenterId
+                    });
+                }
+            }
+            orConditions.push({ 'visibility.allMembers': true });
+            if (userCenterId) {
+                orConditions.push({
+                    'visibility.myCenterMembers': true,
+                    ownerCenterId: userCenterId
+                });
+            }
+            filter.$or = orConditions;
+        }
+        if (status)
+            filter.status = status;
+        const items = await Video_1.Video.find(filter)
+            .populate('owner', 'name userId')
+            .populate('ownerCenterId', 'name')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+        const total = await Video_1.Video.countDocuments(filter);
+        res.json({
+            success: true,
+            data: {
+                items,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    pages: Math.ceil(total / Number(limit))
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('동영상 목록 조회 오류:', error);
+        res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
+    }
+});
 router.get('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
+        const id = req.params.id;
+        if (id === 'my' || id === 'all' || id === 'admin' || !id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({
+                error: '올바른 동영상 ID를 입력해주세요.',
+                hint: '동영상 목록은 /api/uploads?myVideos=true 형식으로 조회하세요.'
+            });
+        }
         const video = await Video_1.Video.findById(req.params.id)
             .populate('owner', 'name userId')
             .populate('ownerCenterId', 'name')

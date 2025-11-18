@@ -334,23 +334,23 @@ export default function MemberDashboard() {
         {stats && (
           <Suspense
             fallback={
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-gray-200 rounded-lg w-12 h-12"></div>
-                      <div className="ml-4 flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
-                        <div className="h-8 bg-gray-200 rounded w-16"></div>
-                      </div>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+                <div className="flex items-center">
+                  <div className="p-2 bg-gray-200 rounded-lg w-12 h-12"></div>
+                  <div className="ml-4 flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
                   </div>
-                ))}
+                </div>
               </div>
+            ))}
+          </div>
             }
           >
-            <StatsCards stats={stats} />
-          </Suspense>
+          <StatsCards stats={stats} />
+        </Suspense>
         )}
 
         {/* 건강 대시보드 - 코드 스플리팅 적용 */}

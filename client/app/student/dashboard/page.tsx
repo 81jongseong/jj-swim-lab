@@ -102,15 +102,58 @@ const StudentDashboard: React.FC = () => {
     // 실제 데이터 로드 로직
     const loadStudentData = async () => {
       try {
-        // API 호출 로직
-        console.log('학생 데이터 로드 중...');
+        const apiClient = (await import('../../../utils/api')).default;
+        const response = await apiClient.getStudentDashboard();
+        
+        if (response.success && response.data) {
+          const dashboardData = response.data;
+          
+          // 통계 데이터 설정
+          if (dashboardData.stats) {
+            setStats({
+              enrolledCourses: dashboardData.stats.enrolledCourses || 0,
+              completedSessions: dashboardData.stats.completedSessions || 0,
+              totalSessions: dashboardData.stats.totalSessions || 0,
+              currentStreak: dashboardData.stats.currentStreak || 0,
+              averageRating: dashboardData.stats.averageRating || 0,
+              weeklyGoal: dashboardData.stats.weeklyGoal || 3
+            });
+          }
+          
+          // 진행률 데이터 설정
+          if (dashboardData.progressData && dashboardData.progressData.length > 0) {
+            const progress = dashboardData.progressData.map((p: any) => ({
+              skill: p.skill || '기술',
+              level: p.currentLevel === 0 ? '입문' : p.currentLevel === 1 ? '초급' : p.currentLevel === 2 ? '중급' : '고급',
+              progress: p.progress || 0,
+              nextMilestone: p.currentLevel < 5 ? `${p.currentLevel + 1}단계 달성` : '마스터'
+            }));
+            setProgressData(progress);
+          }
+          
+          // 다음 수업 데이터 설정
+          if (dashboardData.upcomingClasses && dashboardData.upcomingClasses.length > 0) {
+            const upcoming = dashboardData.upcomingClasses.map((c: any) => ({
+              id: c.id || '',
+              title: c.courseName || '수업',
+              instructor: c.instructorName || '강사 미배정',
+              date: c.date || '',
+              time: c.time || '',
+              location: c.location || '위치 미지정',
+              status: c.status === 'confirmed' || c.status === 'approved' ? 'confirmed' : 'pending'
+            }));
+            setUpcomingClasses(upcoming);
+          }
+        }
       } catch (error) {
         console.error('학생 데이터 로드 실패:', error);
       }
     };
 
-    loadStudentData();
-  }, []);
+    if (user) {
+      loadStudentData();
+    }
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     return status === 'confirmed' 

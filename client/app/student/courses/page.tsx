@@ -43,71 +43,29 @@ function StudentCourses() {
   const loadCourses = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempCourses: Course[] = [
-        {
-          _id: '1',
-          name: '초급 자유형 클래스',
-          description: '수영을 처음 배우는 분들을 위한 기초 자유형 클래스입니다.',
-          level: 'beginner',
-          category: '자유형',
+      const apiClient = (await import('@/utils/api')).default;
+      const response = await apiClient.getStudentCourses();
+      
+      if (response.success && response.data) {
+        const coursesData = response.data.map((course: any) => ({
+          _id: course.id || course._id || '',
+          name: course.name || '제목 없음',
+          description: `${course.level || 'beginner'} 레벨 강의`,
+          level: course.level || 'beginner',
+          category: course.name?.includes('자유형') ? '자유형' : course.name?.includes('배영') ? '배영' : course.name?.includes('평영') ? '평영' : course.name?.includes('접영') ? '접영' : '기타',
           duration: 60,
-          maxStudents: 8,
-          price: 80000,
-          instructorId: 'instructor001',
-          instructorName: '김강사',
-          schedule: [
-            { dayOfWeek: 1, startTime: '10:00', endTime: '11:00' },
-            { dayOfWeek: 3, startTime: '10:00', endTime: '11:00' },
-            { dayOfWeek: 5, startTime: '10:00', endTime: '11:00' }
-          ],
-          enrolledStudents: 6,
-          rating: 4.8,
-          status: 'active',
+          maxStudents: 10,
+          price: 0,
+          instructorId: course.instructorId || '',
+          instructorName: course.instructorName || '강사 미배정',
+          schedule: course.schedule ? [{ dayOfWeek: 1, startTime: course.schedule.split(' ')[0] || '10:00', endTime: course.schedule.split(' ')[2] || '11:00' }] : [],
+          enrolledStudents: 0,
+          rating: 4.5,
+          status: course.status === 'active' ? 'active' : 'inactive',
           enrolled: true
-        },
-        {
-          _id: '2',
-          name: '중급 배영 클래스',
-          description: '배영 기술을 향상시키고 싶은 분들을 위한 중급 클래스입니다.',
-          level: 'intermediate',
-          category: '배영',
-          duration: 60,
-          maxStudents: 6,
-          price: 100000,
-          instructorId: 'instructor002',
-          instructorName: '이코치',
-          schedule: [
-            { dayOfWeek: 2, startTime: '14:00', endTime: '15:00' },
-            { dayOfWeek: 4, startTime: '14:00', endTime: '15:00' }
-          ],
-          enrolledStudents: 4,
-          rating: 4.6,
-          status: 'active',
-          enrolled: false
-        },
-        {
-          _id: '3',
-          name: '고급 접영 클래스',
-          description: '접영 기술을 완성하고 싶은 고급자들을 위한 클래스입니다.',
-          level: 'advanced',
-          category: '접영',
-          duration: 90,
-          maxStudents: 4,
-          price: 120000,
-          instructorId: 'instructor001',
-          instructorName: '김강사',
-          schedule: [
-            { dayOfWeek: 1, startTime: '16:00', endTime: '17:30' },
-            { dayOfWeek: 3, startTime: '16:00', endTime: '17:30' }
-          ],
-          enrolledStudents: 3,
-          rating: 4.9,
-          status: 'active',
-          enrolled: false
-        }
-      ];
-      setCourses(tempCourses);
+        }));
+        setCourses(coursesData);
+      }
     } catch (error) {
       console.error('강의 목록 로드 실패:', error);
     } finally {

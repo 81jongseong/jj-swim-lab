@@ -1,12 +1,12 @@
 /**
  * JJ Swim Lab - 센터 회원 관리 페이지
- *
+ * 
  * 연동 데이터
  * - GET    /api/center-admin/members             : 센터 회원 목록 조회
  * - GET    /api/center-admin/courses             : 배정 가능한 과정 목록 조회
  * - PUT    /api/center-admin/members/:id/course  : 회원 과정 배정
  * - DELETE /api/center-admin/members/:id/course/:courseId : 회원 과정 배정 해제
- *
+ * 
  * 연동 훅 및 컴포넌트
  * - useAuth (현재 로그인 사용자 정보 확인)
  * - apiClient (공통 API 호출 래퍼)
@@ -135,7 +135,7 @@ const CenterMembersPage: React.FC = () => {
         `/api/center-admin/members/${memberId}/course`,
         { courseId }
       );
-
+      
       if (!response.success) {
         alert(response.message ?? '과정 배정에 실패했습니다.');
         return;
@@ -159,7 +159,7 @@ const CenterMembersPage: React.FC = () => {
       const response = await apiClient.delete<ApiListResponse<unknown>>(
         `/api/center-admin/members/${memberId}/course/${courseId}`
       );
-
+      
       if (!response.success) {
         alert(response.message ?? '과정 배정 해제에 실패했습니다.');
         return;
@@ -218,7 +218,7 @@ const CenterMembersPage: React.FC = () => {
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
-          </div>
+        </div>
         )}
 
         <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between">
@@ -227,15 +227,15 @@ const CenterMembersPage: React.FC = () => {
               <label className="text-sm font-medium text-gray-700" htmlFor="member-search">
                 검색 (이름, 이메일, 연락처)
               </label>
-              <input
+                <input
                 id="member-search"
-                type="text"
-                value={searchTerm}
+                  type="text"
+                  value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="홍길동 / hong@example.com"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
+                />
+              </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="status-filter">
                 상태 필터
@@ -268,15 +268,15 @@ const CenterMembersPage: React.FC = () => {
               </select>
             </div>
           </div>
-          <button
+                <button
             type="button"
             onClick={() => void loadMembers()}
             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
+                            >
             새로 고침
-          </button>
+                            </button>
         </section>
-
+              
         <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -329,15 +329,15 @@ const CenterMembersPage: React.FC = () => {
                                   <span className="font-medium">{course.courseName}</span>
                                   {course.instructorName && (
                                     <span className="ml-1 text-gray-500">(강사: {course.instructorName})</span>
-                                  )}
+                )}
                                 </span>
-                                <button
+                <button
                                   type="button"
                                   onClick={() => void handleUnassignCourse(member._id, course.courseId)}
                                   className="text-xs font-semibold text-red-600 hover:text-red-700"
-                                >
+                >
                                   해제
-                                </button>
+                </button>
                               </li>
                             ))}
                           </ul>
@@ -367,15 +367,15 @@ const CenterMembersPage: React.FC = () => {
                               </option>
                             ))}
                           </select>
-                          <button
+                <button
                             type="button"
                             onClick={() => void handleAssignCourse(member._id)}
                             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                             disabled={!selectedCourseId}
                           >
                             과정 배정
-                          </button>
-                        </div>
+                </button>
+              </div>
                       </td>
                     </tr>
                   );

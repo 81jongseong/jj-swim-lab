@@ -3,7 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSettlementStats = exports.processSettlements = exports.createSettlementItem = void 0;
+exports.createSettlementItem = createSettlementItem;
+exports.processSettlements = processSettlements;
+exports.getSettlementStats = getSettlementStats;
 const mongoose_1 = __importDefault(require("mongoose"));
 const Settlement_1 = require("../models/Settlement");
 const PersonalLesson_1 = require("../models/PersonalLesson");
@@ -152,7 +154,6 @@ async function createSettlementItem(personalLessonId) {
         throw error;
     }
 }
-exports.createSettlementItem = createSettlementItem;
 async function processSettlements(periodStart, periodEnd) {
     const errors = [];
     let processed = 0;
@@ -188,7 +189,6 @@ async function processSettlements(periodStart, periodEnd) {
         throw error;
     }
 }
-exports.processSettlements = processSettlements;
 async function getSettlementStats(recipientType, recipientId, startDate, endDate) {
     try {
         const query = {};
@@ -237,5 +237,4 @@ async function getSettlementStats(recipientType, recipientId, startDate, endDate
         throw error;
     }
 }
-exports.getSettlementStats = getSettlementStats;
 //# sourceMappingURL=settlementService.js.map

@@ -482,4 +482,374 @@ router.get('/bookings', authMiddleware, requirePermission('canManageBookings'), 
   }
 });
 
+/**
+ * @route GET /api/student/progress
+ * @description 학생의 학습 진행상황을 조회합니다.
+ * @access Private (student 권한 필요)
+ */
+router.get('/progress', authMiddleware, async (req, res) => {
+  try {
+    const studentId = (req as any).user?._id;
+    logger.info(`📊 학생 진행상황 조회 요청: ${studentId}`);
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: '학생 ID가 없습니다.'
+      });
+    }
+
+    // 등록된 코스 조회
+    const enrolledCourses = await Course.find({
+      'enrolledStudents.student': new mongoose.Types.ObjectId(studentId),
+      'enrolledStudents.status': 'active'
+    })
+    .populate('instructor', 'name')
+    .lean();
+
+    // 개인레슨 조회
+    const personalLessons = await PersonalLesson.find({
+      studentId: new mongoose.Types.ObjectId(studentId),
+      status: { $in: ['approved', 'completed'] }
+    })
+    .populate('instructorId', 'name')
+    .lean();
+
+    // 완료된 예약 조회
+    const completedBookings = await Booking.find({
+      studentId: new mongoose.Types.ObjectId(studentId),
+      status: 'completed'
+    })
+    .populate('courseId', 'name')
+    .lean();
+
+    // 진행상황 데이터 변환
+    const progressData = enrolledCourses.map((course: any) => {
+      const enrollment = (course.enrolledStudents || []).find((e: any) => 
+        e.student?.toString() === studentId.toString()
+      );
+      const progress = enrollment?.progress?.percentage || 0;
+      const completedSessions = Math.floor((progress / 100) * (course.totalSessions || 0));
+      const totalSessions = course.totalSessions || 0;
+      const attendanceRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
+
+      // 기술 수준 계산 (진행률 기반)
+      const skillLevel = Math.floor(progress / 20) + 1; // 1-5 레벨
+      const skills = [
+        { skill: '자유형 팔 동작', level: skillLevel, lastUpdated: new Date() },
+        { skill: '자유형 발차기', level: Math.max(1, skillLevel - 1), lastUpdated: new Date() },
+        { skill: '호흡법', level: Math.max(1, skillLevel - 1), lastUpdated: new Date() }
+      ];
+
+      // 업적 계산
+      const achievements = [];
+      if (completedSessions >= 1) {
+        achievements.push({
+          name: '첫 수업 완료',
+          earnedAt: new Date(),
+          description: '첫 번째 수업을 완료했습니다'
+        });
+      }
+      if (completedSessions >= 5) {
+        achievements.push({
+          name: '5회 수업 완료',
+          earnedAt: new Date(),
+          description: '5회 이상 수업을 완료했습니다'
+        });
+      }
+      if (attendanceRate >= 90) {
+        achievements.push({
+          name: '완벽한 출석',
+          earnedAt: new Date(),
+          description: '90% 이상 출석률을 달성했습니다'
+        });
+      }
+
+      return {
+        _id: course._id?.toString(),
+        courseId: course._id?.toString(),
+        courseName: course.name || '제목 없음',
+        level: course.level || 'beginner',
+        startDate: course.startDate || new Date(),
+        currentSkills: skills,
+        achievements,
+        totalClasses: totalSessions,
+        attendanceRate: Math.round(attendanceRate * 10) / 10,
+        lastClassDate: completedBookings.length > 0 
+          ? completedBookings[completedBookings.length - 1].date 
+          : undefined
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: '학생 진행상황 조회 성공',
+      data: progressData,
+    });
+  } catch (error: any) {
+    logger.error(`❌ 학생 진행상황 조회 중 오류 발생: ${error.message}`);
+    errorHandler(error, req, res, () => {});
+  }
+});
+
+/**
+ * @route GET /api/student/learning-progress
+ * @description 학생의 학습 진도를 조회합니다.
+ * @access Private (student 권한 필요)
+ */
+router.get('/learning-progress', authMiddleware, async (req, res) => {
+  try {
+    const studentId = (req as any).user?._id;
+    logger.info(`📈 학생 학습 진도 조회 요청: ${studentId}`);
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: '학생 ID가 없습니다.'
+      });
+    }
+
+    // 등록된 코스 조회
+    const enrolledCourses = await Course.find({
+      'enrolledStudents.student': new mongoose.Types.ObjectId(studentId),
+      'enrolledStudents.status': 'active'
+    })
+    .populate('instructor', 'name')
+    .lean();
+
+    // 완료된 예약 조회
+    const completedBookings = await Booking.find({
+      studentId: new mongoose.Types.ObjectId(studentId),
+      status: 'completed'
+    })
+    .populate('courseId', 'name')
+    .sort({ date: -1 })
+    .lean();
+
+    // 학습 진도 데이터 변환
+    const learningProgressData = enrolledCourses.map((course: any) => {
+      const enrollment = (course.enrolledStudents || []).find((e: any) => 
+        e.student?.toString() === studentId.toString()
+      );
+      const progress = enrollment?.progress?.percentage || 0;
+      const completedSessions = Math.floor((progress / 100) * (course.totalSessions || 0));
+      const totalSessions = course.totalSessions || 0;
+      const attendanceRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
+
+      // 기술 수준 계산
+      const skillLevel = Math.floor(progress / 20) + 1;
+      const skills = [
+        { skill: '자유형 팔 동작', level: skillLevel, lastUpdated: new Date() },
+        { skill: '자유형 발차기', level: Math.max(1, skillLevel - 1), lastUpdated: new Date() },
+        { skill: '호흡법', level: Math.max(1, skillLevel - 1), lastUpdated: new Date() }
+      ];
+
+      // 업적 계산
+      const achievements = [];
+      if (completedSessions >= 1) {
+        achievements.push({
+          name: '첫 수영 완주',
+          earnedAt: new Date(),
+          description: '25m 자유형을 완주했습니다'
+        });
+      }
+      if (completedSessions >= 5) {
+        achievements.push({
+          name: '5회 수업 완료',
+          earnedAt: new Date(),
+          description: '5회 이상 수업을 완료했습니다'
+        });
+      }
+      if (attendanceRate >= 90) {
+        achievements.push({
+          name: '완벽한 출석',
+          earnedAt: new Date(),
+          description: '한 달간 완벽한 출석률을 달성했습니다'
+        });
+      }
+
+      // 다음 목표 설정
+      let nextGoal = '50m 자유형 완주';
+      if (progress >= 50) {
+        nextGoal = '100m 자유형 완주';
+      }
+      if (progress >= 80) {
+        nextGoal = '자유형 마스터';
+      }
+
+      return {
+        _id: course._id?.toString(),
+        courseId: course._id?.toString(),
+        courseName: course.name || '제목 없음',
+        level: course.level || 'beginner',
+        startDate: course.startDate || new Date(),
+        currentSkills: skills,
+        achievements,
+        totalClasses: totalSessions,
+        attendanceRate: Math.round(attendanceRate * 10) / 10,
+        lastClassDate: completedBookings.length > 0 
+          ? completedBookings[0].date 
+          : undefined,
+        nextGoal
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: '학생 학습 진도 조회 성공',
+      data: learningProgressData,
+    });
+  } catch (error: any) {
+    logger.error(`❌ 학생 학습 진도 조회 중 오류 발생: ${error.message}`);
+    errorHandler(error, req, res, () => {});
+  }
+});
+
+/**
+ * @route GET /api/student/recommendations
+ * @description 학생에게 맞춤형 추천사항을 조회합니다.
+ * @access Private (student 권한 필요)
+ */
+router.get('/recommendations', authMiddleware, async (req, res) => {
+  try {
+    const studentId = (req as any).user?._id;
+    logger.info(`💡 학생 추천사항 조회 요청: ${studentId}`);
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: '학생 ID가 없습니다.'
+      });
+    }
+
+    const { User } = require('../models/User');
+    const student = await User.findById(studentId).lean();
+
+    // 등록된 코스 조회
+    const enrolledCourses = await Course.find({
+      'enrolledStudents.student': new mongoose.Types.ObjectId(studentId),
+      'enrolledStudents.status': 'active'
+    })
+    .populate('instructor', 'name')
+    .lean();
+
+    // 학생의 현재 수준 분석
+    let currentLevel = 'beginner';
+    let currentSkills: string[] = [];
+    
+    if (enrolledCourses.length > 0) {
+      const course = enrolledCourses[0];
+      currentLevel = course.level || 'beginner';
+      const enrollment = (course.enrolledStudents || []).find((e: any) => 
+        e.student?.toString() === studentId.toString()
+      );
+      const progress = enrollment?.progress?.percentage || 0;
+      
+      if (progress >= 80) {
+        currentLevel = 'advanced';
+      } else if (progress >= 50) {
+        currentLevel = 'intermediate';
+      }
+
+      // 코스 이름에서 기술 추출
+      if (course.name) {
+        if (course.name.includes('자유형')) currentSkills.push('freestyle');
+        if (course.name.includes('배영')) currentSkills.push('backstroke');
+        if (course.name.includes('평영')) currentSkills.push('breaststroke');
+        if (course.name.includes('접영')) currentSkills.push('butterfly');
+      }
+    }
+
+    // 추천사항 생성
+    const recommendations = [];
+
+    // 강의 추천
+    if (currentLevel === 'beginner' && !currentSkills.includes('backstroke')) {
+      recommendations.push({
+        _id: 'rec1',
+        type: 'course',
+        title: '중급 배영 클래스 추천',
+        description: '현재 자유형 기초를 잘 마스터하고 계시니, 배영으로 확장해보시는 것을 추천합니다.',
+        reason: '자유형 팔 동작이 3단계에 도달하여 배영 학습에 적합한 시점입니다.',
+        priority: 'high',
+        estimatedTime: '4-6주',
+        difficulty: 'medium',
+        category: '배영',
+        createdAt: new Date()
+      });
+    }
+
+    // 운동 추천
+    if (currentLevel === 'beginner') {
+      recommendations.push({
+        _id: 'rec2',
+        type: 'exercise',
+        title: '호흡법 개선 운동',
+        description: '자유형 호흡법을 더욱 자연스럽게 만들기 위한 특별 운동입니다.',
+        reason: '현재 호흡법이 2단계로 개선이 필요한 상태입니다.',
+        priority: 'medium',
+        estimatedTime: '2-3주',
+        difficulty: 'easy',
+        category: '자유형',
+        createdAt: new Date()
+      });
+    }
+
+    // 기술 추천
+    if (currentLevel === 'beginner') {
+      recommendations.push({
+        _id: 'rec3',
+        type: 'technique',
+        title: '발차기 기술 향상',
+        description: '자유형 발차기의 효율성을 높이는 기술 연습을 추천합니다.',
+        reason: '발차기 기술이 2단계로 기본 동작을 더욱 정교하게 만들어야 합니다.',
+        priority: 'medium',
+        estimatedTime: '3-4주',
+        difficulty: 'medium',
+        category: '자유형',
+        createdAt: new Date()
+      });
+    }
+
+    // 목표 설정
+    if (enrolledCourses.length > 0) {
+      recommendations.push({
+        _id: 'rec4',
+        type: 'goal',
+        title: '50m 자유형 완주 목표',
+        description: '현재 25m를 완주하고 계시니, 다음 목표로 50m 완주를 설정해보세요.',
+        reason: '25m 완주 성취를 바탕으로 더 긴 거리에 도전할 준비가 되었습니다.',
+        priority: 'high',
+        estimatedTime: '6-8주',
+        difficulty: 'medium',
+        category: '자유형',
+        createdAt: new Date()
+      });
+    }
+
+    // 체력 추천
+    recommendations.push({
+      _id: 'rec5',
+      type: 'exercise',
+      title: '코어 강화 운동',
+      description: '수영에 필요한 핵심 근육을 강화하는 운동 프로그램입니다.',
+      reason: '코어 근육 강화로 더욱 안정적인 수영 자세를 만들 수 있습니다.',
+      priority: 'low',
+      estimatedTime: '4-6주',
+      difficulty: 'easy',
+      category: '체력',
+      createdAt: new Date()
+    });
+
+    res.status(200).json({
+      success: true,
+      message: '학생 추천사항 조회 성공',
+      data: recommendations,
+    });
+  } catch (error: any) {
+    logger.error(`❌ 학생 추천사항 조회 중 오류 발생: ${error.message}`);
+    errorHandler(error, req, res, () => {});
+  }
+});
+
 export default router;

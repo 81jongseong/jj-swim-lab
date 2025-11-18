@@ -3,7 +3,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requestLogging = exports.securityHeaders = exports.validateSession = exports.refreshToken = exports.checkRole = exports.checkPermission = exports.requireCenterAccess = exports.requireAdminPermission = exports.requireDeletePermission = exports.requireWritePermission = exports.requireReadPermission = exports.requireGuest = exports.requireStudent = exports.requireInstructor = exports.requireCenterAdmin = exports.requireSuperAdmin = exports.authenticate = exports.hasCenterAccess = exports.hasRole = exports.hasPermission = exports.extractUserFromToken = exports.verifyToken = void 0;
+exports.requireAdminPermission = exports.requireDeletePermission = exports.requireWritePermission = exports.requireReadPermission = exports.requireGuest = exports.requireStudent = exports.requireInstructor = exports.requireCenterAdmin = exports.requireSuperAdmin = void 0;
+exports.verifyToken = verifyToken;
+exports.extractUserFromToken = extractUserFromToken;
+exports.hasPermission = hasPermission;
+exports.hasRole = hasRole;
+exports.hasCenterAccess = hasCenterAccess;
+exports.authenticate = authenticate;
+exports.requireCenterAccess = requireCenterAccess;
+exports.checkPermission = checkPermission;
+exports.checkRole = checkRole;
+exports.refreshToken = refreshToken;
+exports.validateSession = validateSession;
+exports.securityHeaders = securityHeaders;
+exports.requestLogging = requestLogging;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 function verifyToken(token) {
     try {
@@ -19,7 +32,6 @@ function verifyToken(token) {
         return null;
     }
 }
-exports.verifyToken = verifyToken;
 function extractUserFromToken(token) {
     const payload = verifyToken(token);
     if (!payload)
@@ -34,19 +46,15 @@ function extractUserFromToken(token) {
         tokenExpiry: new Date(payload.exp * 1000)
     };
 }
-exports.extractUserFromToken = extractUserFromToken;
 function hasPermission(userPermissions, requiredPermissions) {
     return requiredPermissions.every(permission => userPermissions.includes(permission));
 }
-exports.hasPermission = hasPermission;
 function hasRole(userRole, requiredRoles) {
     return requiredRoles.includes(userRole);
 }
-exports.hasRole = hasRole;
 function hasCenterAccess(userCenterId, requiredCenterId) {
     return userCenterId === requiredCenterId;
 }
-exports.hasCenterAccess = hasCenterAccess;
 function authenticate(options = {}) {
     return (req, res, next) => {
         try {
@@ -121,7 +129,6 @@ function authenticate(options = {}) {
         }
     };
 }
-exports.authenticate = authenticate;
 exports.requireSuperAdmin = authenticate({ roles: ['superAdmin'] });
 exports.requireCenterAdmin = authenticate({ roles: ['superAdmin', 'centerAdmin'] });
 exports.requireInstructor = authenticate({ roles: ['superAdmin', 'centerAdmin', 'instructor'] });
@@ -134,7 +141,6 @@ exports.requireAdminPermission = authenticate({ permissions: ['admin'] });
 function requireCenterAccess(centerId) {
     return authenticate({ centerId });
 }
-exports.requireCenterAccess = requireCenterAccess;
 function checkPermission(permission) {
     return (req, res, next) => {
         if (!req.user) {
@@ -154,7 +160,6 @@ function checkPermission(permission) {
         next();
     };
 }
-exports.checkPermission = checkPermission;
 function checkRole(role) {
     return (req, res, next) => {
         if (!req.user) {
@@ -174,7 +179,6 @@ function checkRole(role) {
         next();
     };
 }
-exports.checkRole = checkRole;
 function refreshToken(req, res, next) {
     if (!req.user || !req.token) {
         return next();
@@ -189,7 +193,6 @@ function refreshToken(req, res, next) {
     }
     next();
 }
-exports.refreshToken = refreshToken;
 function generateRefreshToken(user) {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
@@ -217,7 +220,6 @@ function validateSession(req, res, next) {
     }
     next();
 }
-exports.validateSession = validateSession;
 function securityHeaders(req, res, next) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -235,7 +237,6 @@ function securityHeaders(req, res, next) {
         "form-action 'self';");
     next();
 }
-exports.securityHeaders = securityHeaders;
 function requestLogging(req, res, next) {
     const startTime = Date.now();
     res.on('finish', () => {
@@ -254,7 +255,6 @@ function requestLogging(req, res, next) {
     });
     next();
 }
-exports.requestLogging = requestLogging;
 exports.default = {
     authenticate,
     requireSuperAdmin: exports.requireSuperAdmin,

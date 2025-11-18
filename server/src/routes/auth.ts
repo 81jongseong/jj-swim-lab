@@ -347,8 +347,23 @@ router.post('/verify-email-code', async (req: Request, res: Response) => {
  */
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { userId, name, email, password, phone, address, userType, location, phoneVerified } = req.body;
+    const { userId, name, email, password, phone, address, birthDate, gender, userType, location, phoneVerified, studentInfo } = req.body;
     void phoneVerified;
+    
+    // 회원가입 요청 데이터 로깅
+    console.log('📤 회원가입 요청 받음:', {
+      name,
+      email,
+      phone,
+      address,
+      birthDate,
+      gender,
+      userType,
+      hasStudentInfo: !!studentInfo,
+      studentInfoHeight: studentInfo?.height,
+      studentInfoWeight: studentInfo?.weight,
+      studentInfo: studentInfo
+    });
 
     // 필수 필드 검증 (소셜 로그인인 경우 password는 선택)
     if (!name || !email) {
@@ -533,6 +548,8 @@ router.post('/signup', async (req: Request, res: Response) => {
       email,
       phone,
       address,
+      birthDate: birthDate || '',
+      gender: gender || '',
       // 서버 스키마(enum)와 일치하도록 기본값 및 값 보정
       userType: ['student', 'instructor', 'centerAdmin', 'superAdmin'].includes(userType)
         ? userType
@@ -563,7 +580,32 @@ router.post('/signup', async (req: Request, res: Response) => {
     }
 
     // 사용자 타입별 추가 필드
-    if (userData.userType === 'instructor') {
+    if (userData.userType === 'student') {
+      // studentInfo 객체 형태로 받기
+      const studentInfoData = req.body.studentInfo || {};
+      userData.studentInfo = {
+        height: studentInfoData.height,
+        weight: studentInfoData.weight,
+        emergencyContact: studentInfoData.emergencyContact || '',
+        emergencyPhone: studentInfoData.emergencyPhone || '',
+        swimmingLevel: studentInfoData.swimmingLevel || studentInfoData.currentLevel,
+        currentLevel: studentInfoData.currentLevel || studentInfoData.swimmingLevel,
+        swimmingProfile: studentInfoData.swimmingProfile || {},
+        medicalConditions: studentInfoData.medicalConditions || '',
+        age: studentInfoData.age,
+        enrolledCourses: studentInfoData.enrolledCourses || [],
+        completedCourses: studentInfoData.completedCourses || [],
+        status: studentInfoData.status || 'active'
+      };
+      
+      console.log('✅ studentInfo 저장 데이터:', {
+        height: userData.studentInfo.height,
+        weight: userData.studentInfo.weight,
+        emergencyContact: userData.studentInfo.emergencyContact,
+        swimmingLevel: userData.studentInfo.swimmingLevel,
+        hasSwimmingProfile: !!userData.studentInfo.swimmingProfile
+      });
+    } else if (userData.userType === 'instructor') {
       // instructorInfo 객체 형태로 받기
       const instructorInfo = req.body.instructorInfo || {};
       userData.instructorInfo = {
@@ -585,8 +627,25 @@ router.post('/signup', async (req: Request, res: Response) => {
       };
     }
 
+    console.log('💾 저장할 userData:', {
+      birthDate: userData.birthDate,
+      gender: userData.gender,
+      hasStudentInfo: !!userData.studentInfo,
+      studentInfoHeight: userData.studentInfo?.height,
+      studentInfoWeight: userData.studentInfo?.weight
+    });
+    
     const user = new User(userData);
     await user.save();
+    
+    console.log('✅ 사용자 저장 완료:', {
+      userId: user._id,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      hasStudentInfo: !!user.studentInfo,
+      studentInfoHeight: (user.studentInfo as any)?.height,
+      studentInfoWeight: (user.studentInfo as any)?.weight
+    });
 
     // JWT 토큰 생성 - 모든 필요한 필드 포함
     const tokenPayload = {
@@ -615,16 +674,24 @@ router.post('/signup', async (req: Request, res: Response) => {
       }
     );
 
+    // 저장 후 다시 조회하여 모든 필드 포함
+    const savedUser = await User.findById(user._id).select('-password').lean();
+    
     return res.status(201).json({
       success: true,
       message: '회원가입이 완료되었습니다.',
       token,
       user: {
-        id: user._id,
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        userType: user.userType
+        id: savedUser?._id || user._id,
+        userId: savedUser?.userId || user.userId,
+        name: savedUser?.name || user.name,
+        email: savedUser?.email || user.email,
+        phone: savedUser?.phone || user.phone,
+        address: savedUser?.address || user.address,
+        birthDate: savedUser?.birthDate || user.birthDate,
+        gender: savedUser?.gender || user.gender,
+        userType: savedUser?.userType || user.userType,
+        studentInfo: savedUser?.studentInfo || user.studentInfo
       }
     });
   } catch (error: any) {
@@ -884,6 +951,8 @@ router.post('/login', async (req: Request, res: Response) => {
         userId: user.userId,
         name: user.name,
         email: user.email,
+        phone: user.phone,
+        address: user.address,
         userType: user.userType,
         level: user.level,
         centerId: user.centerId,
@@ -915,14 +984,53 @@ router.get('/profile', async (req: Request, res: Response) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const user = await User.findById(decoded.userId).select('-password');
+    // phone, address, studentInfo.healthProfile 등 모든 필드 포함 (password만 제외)
+    const user = await User.findById(decoded.userId)
+      .select('-password')
+      .lean();
 
     if (!user) {
       return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });
     }
 
+    // phone, address, birthDate, gender, healthProfile이 제대로 포함되도록 확인
+    console.log('📋 프로필 조회:', {
+      userId: user.userId || user._id,
+      hasPhone: !!user.phone,
+      hasAddress: !!user.address,
+      phone: user.phone,
+      address: user.address,
+      birthDate: (user as any).birthDate,
+      gender: (user as any).gender,
+      hasStudentInfo: !!user.studentInfo,
+      studentInfoHeight: (user.studentInfo as any)?.height,
+      studentInfoWeight: (user.studentInfo as any)?.weight,
+      hasHealthProfile: !!(user.studentInfo as any)?.healthProfile,
+      healthProfileHeight: (user.studentInfo as any)?.healthProfile?.height,
+      healthProfileWeight: (user.studentInfo as any)?.healthProfile?.weight,
+      healthProfile: (user.studentInfo as any)?.healthProfile,
+      fullUser: JSON.stringify(user, null, 2)
+    });
+
+    // birthDate, gender, studentInfo.height, studentInfo.weight가 명시적으로 포함되도록 보장
+    const responseUser: any = { ...user };
+    if (!responseUser.birthDate && (user as any).birthDate) {
+      responseUser.birthDate = (user as any).birthDate;
+    }
+    if (!responseUser.gender && (user as any).gender) {
+      responseUser.gender = (user as any).gender;
+    }
+    if (responseUser.studentInfo) {
+      if (!responseUser.studentInfo.height && (user.studentInfo as any)?.height) {
+        responseUser.studentInfo.height = (user.studentInfo as any).height;
+      }
+      if (!responseUser.studentInfo.weight && (user.studentInfo as any)?.weight) {
+        responseUser.studentInfo.weight = (user.studentInfo as any).weight;
+      }
+    }
+
     return res.json({
-      user
+      user: responseUser
     });
   } catch (error) {
     console.error('프로필 조회 오류:', error);

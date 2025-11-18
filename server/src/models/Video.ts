@@ -31,6 +31,15 @@ export interface IVideo extends Document {
     allMembers: boolean; // 모든 회원들
   };
   
+  // 분석 요청 설정
+  analysisRequest: {
+    type: 'public' | 'center' | 'specific'; // 공개, 센터, 특정 강사
+    requestedInstructors?: mongoose.Types.ObjectId[]; // 특정 강사 ID 배열
+    analysisFee?: number; // 분석 요청 비용 (특정 강사 요청 시)
+    paymentId?: mongoose.Types.ObjectId; // 결제 ID (과금된 경우)
+    paymentStatus?: 'pending' | 'completed' | 'failed'; // 결제 상태
+  };
+  
   // 피드백 시스템
   feedbacks: {
     reviewer: mongoose.Types.ObjectId; // 피드백 작성자
@@ -74,6 +83,15 @@ const videoSchema = new Schema<IVideo>({
     allInstructors: { type: Boolean, default: false },
     myCenterMembers: { type: Boolean, default: false },
     allMembers: { type: Boolean, default: false }
+  },
+  
+  // 분석 요청 설정
+  analysisRequest: {
+    type: { type: String, enum: ['public', 'center', 'specific'], default: 'public' },
+    requestedInstructors: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    analysisFee: { type: Number, default: 0 },
+    paymentId: { type: Schema.Types.ObjectId, ref: 'Payment' },
+    paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' }
   },
   
   // 피드백 배열

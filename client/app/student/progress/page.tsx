@@ -40,32 +40,24 @@ function StudentProgress() {
   const loadProgress = async () => {
     try {
       setIsLoading(true);
-      // 임시 데이터
-      const tempProgress: Progress[] = [
-        {
-          _id: '1',
-          courseId: 'course001',
-          courseName: '초급 자유형 클래스',
-          level: 'beginner',
-          startDate: new Date('2024-01-01'),
-          currentSkills: [
-            { skill: '자유형 팔 동작', level: 3, lastUpdated: new Date('2024-01-20') },
-            { skill: '자유형 발차기', level: 2, lastUpdated: new Date('2024-01-18') },
-            { skill: '호흡법', level: 2, lastUpdated: new Date('2024-01-19') }
-          ],
-          achievements: [
-            {
-              name: '첫 수영 완주',
-              earnedAt: new Date('2024-01-15'),
-              description: '25m 자유형을 완주했습니다'
-            }
-          ],
-          totalClasses: 8,
-          attendanceRate: 87.5,
-          lastClassDate: new Date('2024-01-20')
-        }
-      ];
-      setProgress(tempProgress);
+      const apiClient = (await import('@/utils/api')).default;
+      const response = await apiClient.getStudentProgress();
+      
+      if (response.success && response.data) {
+        const progressData = response.data.map((p: any) => ({
+          _id: p._id || p.courseId || '',
+          courseId: p.courseId || '',
+          courseName: p.courseName || '제목 없음',
+          level: p.level || 'beginner',
+          startDate: p.startDate ? new Date(p.startDate) : new Date(),
+          currentSkills: p.currentSkills || [],
+          achievements: p.achievements || [],
+          totalClasses: p.totalClasses || 0,
+          attendanceRate: p.attendanceRate || 0,
+          lastClassDate: p.lastClassDate ? new Date(p.lastClassDate) : undefined
+        }));
+        setProgress(progressData);
+      }
     } catch (error) {
       console.error('진도 로드 실패:', error);
     } finally {

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 interface ExecOptions {
     cwd?: string;
     env?: NodeJS.ProcessEnv;

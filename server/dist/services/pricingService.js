@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserDiscountRate = exports.getCurrentPricingPolicy = exports.updatePricingPolicy = exports.calculatePricing = exports.checkUserCenterAffiliation = void 0;
+exports.checkUserCenterAffiliation = checkUserCenterAffiliation;
+exports.calculatePricing = calculatePricing;
+exports.updatePricingPolicy = updatePricingPolicy;
+exports.getCurrentPricingPolicy = getCurrentPricingPolicy;
+exports.getUserDiscountRate = getUserDiscountRate;
 const User_1 = require("../models/User");
 const SwimmingCenter_1 = require("../models/SwimmingCenter");
 const DEFAULT_PRICING_POLICY = {
@@ -65,7 +69,6 @@ async function checkUserCenterAffiliation(userId) {
         return { hasCenterAffiliation: false, isCenterSponsored: false };
     }
 }
-exports.checkUserCenterAffiliation = checkUserCenterAffiliation;
 async function calculatePricing(userId, billingPeriod = 'monthly') {
     try {
         const user = await User_1.User.findById(userId);
@@ -176,15 +179,12 @@ async function calculatePricing(userId, billingPeriod = 'monthly') {
         throw error;
     }
 }
-exports.calculatePricing = calculatePricing;
 function updatePricingPolicy(newPolicy) {
     Object.assign(DEFAULT_PRICING_POLICY, newPolicy);
 }
-exports.updatePricingPolicy = updatePricingPolicy;
 function getCurrentPricingPolicy() {
     return { ...DEFAULT_PRICING_POLICY };
 }
-exports.getCurrentPricingPolicy = getCurrentPricingPolicy;
 async function getUserDiscountRate(userId) {
     try {
         const user = await User_1.User.findById(userId);
@@ -216,5 +216,4 @@ async function getUserDiscountRate(userId) {
         return { discountRate: 0, reason: '' };
     }
 }
-exports.getUserDiscountRate = getUserDiscountRate;
 //# sourceMappingURL=pricingService.js.map

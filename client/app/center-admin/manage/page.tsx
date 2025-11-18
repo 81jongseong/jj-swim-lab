@@ -302,19 +302,19 @@ function IntegratedManagement() {
             : payment.purpose;
           const displayStatus = payment.purpose === 'course' && payment.status === 'pending' ? 'completed' : payment.status;
           return {
-            _id: payment._id,
-            userId: payment.user?._id || payment.user || payment.userId,
-            userName: payment.user?.name || payment.userName || '알 수 없음',
-            userEmail: payment.user?.email || payment.userEmail || '',
-            amount: payment.amount,
-            currency: payment.currency || 'KRW',
-            paymentMethod: payment.paymentMethod,
+          _id: payment._id,
+          userId: payment.user?._id || payment.user || payment.userId,
+          userName: payment.user?.name || payment.userName || '알 수 없음',
+          userEmail: payment.user?.email || payment.userEmail || '',
+          amount: payment.amount,
+          currency: payment.currency || 'KRW',
+          paymentMethod: payment.paymentMethod,
             status: displayStatus,
             description: payment.relatedCourse?.name || (payment.purpose === 'course' ? '강습 결제' : purposeLabel || ''),
-            createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
-            completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
-            transactionId: payment.transactionId,
-            refundAmount: payment.refundAmount
+          createdAt: payment.createdAt ? new Date(payment.createdAt) : new Date(),
+          completedAt: payment.processedAt ? new Date(payment.processedAt) : undefined,
+          transactionId: payment.transactionId,
+          refundAmount: payment.refundAmount
           };
         });
         // (debug) 결제 데이터 로드 로그

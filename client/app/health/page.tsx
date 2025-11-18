@@ -12,7 +12,8 @@ import {
   Clock,
   ArrowRight,
   Plus,
-  Edit
+  Edit,
+  FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import StatCard from '@/components/StatCard';
@@ -76,14 +77,14 @@ export default function HealthPage() {
           </div>
         </Link>
 
-        <Link href="/health/program">
+        <Link href="/health/history">
           <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium">운동 프로그램</h3>
-              <Target className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-medium">📋 프로그램 이력</h3>
+              <FileText className="h-4 w-4 text-gray-500" />
             </div>
-            <div className="text-2xl font-bold">프로그램 보기</div>
-            <p className="text-xs text-gray-500">맞춤형 수영 프로그램을 확인하세요</p>
+            <div className="text-2xl font-bold">프로그램 관리</div>
+            <p className="text-xs text-gray-500">생성된 운동 프로그램을 확인하고 관리하세요</p>
           </div>
         </Link>
 
@@ -212,9 +213,9 @@ export default function HealthPage() {
             </h3>
             <p className="text-sm text-gray-600">이번 주 운동 계획을 확인하세요</p>
           </div>
-          <Link href="/health/program">
+          <Link href="/health/history">
             <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              전체 보기
+              프로그램 이력 보기
               <ArrowRight className="h-4 w-4" />
             </button>
           </Link>

@@ -379,16 +379,16 @@ const CenterHomePage: React.FC = () => {
         
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
           {hasMounted && !viewOnly && (
-            <div className="absolute top-6 right-6">
-              <Button
-                onClick={() => startEdit('hero')}
-                variant="outline"
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/30 shadow-lg hover:shadow-xl transition-all"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                편집
-              </Button>
-            </div>
+          <div className="absolute top-6 right-6">
+            <Button
+              onClick={() => startEdit('hero')}
+              variant="outline"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/30 shadow-lg hover:shadow-xl transition-all"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              편집
+            </Button>
+          </div>
           )}
           
           {/* 로고 이미지 표시 */}
@@ -645,16 +645,16 @@ const CenterHomePage: React.FC = () => {
       {/* 시설 소개 섹션 */}
       <section id="facilities" className="py-20 bg-gradient-to-b from-white to-gray-50 relative">
         {hasMounted && !viewOnly && (
-          <div className="absolute top-6 right-6 z-10">
-            <Button
-              onClick={() => startEdit('facilities')}
-              variant="outline"
-              className="bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm text-gray-700 border-gray-200"
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              편집
-            </Button>
-          </div>
+        <div className="absolute top-6 right-6 z-10">
+          <Button
+            onClick={() => startEdit('facilities')}
+            variant="outline"
+            className="bg-white/80 hover:bg-white shadow-lg backdrop-blur-sm text-gray-700 border-gray-200"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            편집
+          </Button>
+        </div>
         )}
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -906,7 +906,7 @@ const CenterHomePage: React.FC = () => {
               ))}
             </div>
             <div className="text-center mt-16">
-              <Button 
+                <Button 
                 onClick={() => {
                   if (viewOnly) {
                     window.open(`/center/${targetSlug}/admin/courses?viewOnly=true`, '_blank', 'noopener,noreferrer');
@@ -914,14 +914,14 @@ const CenterHomePage: React.FC = () => {
                     window.location.href = '/center-admin/courses';
                   }
                 }}
-                className="text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full"
-                style={{ 
-                  background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
-                }}
-              >
-                전체 강습 과정 보기
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                  className="text-white px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 rounded-full"
+                  style={{ 
+                    background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` 
+                  }}
+                >
+                  전체 강습 과정 보기
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
             </div>
           </div>
         </section>

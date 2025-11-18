@@ -48,6 +48,15 @@ const userSchema = new mongoose_1.default.Schema({
         type: String,
         default: '',
     },
+    birthDate: {
+        type: String,
+        default: '',
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other', ''],
+        default: '',
+    },
     location: {
         type: {
             type: String,
@@ -188,7 +197,44 @@ const userSchema = new mongoose_1.default.Schema({
                         hba1c: { type: Number }
                     },
                     notes: { type: String }
-                }]
+                }],
+            privacySettings: {
+                height: { type: Boolean, default: true },
+                weight: { type: Boolean, default: true },
+                bmi: { type: Boolean, default: true },
+                waist_circumference: { type: Boolean, default: false },
+                heart_rate: { type: Boolean, default: false },
+                max_heart_rate: { type: Boolean, default: false },
+                blood_pressure_systolic: { type: Boolean, default: false },
+                blood_pressure_diastolic: { type: Boolean, default: false },
+                beta_blocker: { type: Boolean, default: false },
+                muscle_mass: { type: Boolean, default: true },
+                body_fat: { type: Boolean, default: false },
+                lung_capacity: { type: Boolean, default: false },
+                bone_density: { type: Boolean, default: false },
+                cholesterol_total: { type: Boolean, default: false },
+                cholesterol_ldl: { type: Boolean, default: false },
+                cholesterol_hdl: { type: Boolean, default: false },
+                cholesterol_triglycerides: { type: Boolean, default: false },
+                blood_sugar_fasting: { type: Boolean, default: false },
+                blood_sugar_postprandial: { type: Boolean, default: false },
+                blood_sugar_hba1c: { type: Boolean, default: false },
+                egfr: { type: Boolean, default: false },
+                swim_level: { type: Boolean, default: true },
+                css_freestyle: { type: Boolean, default: true },
+                css_backstroke: { type: Boolean, default: true },
+                css_breaststroke: { type: Boolean, default: true },
+                css_butterfly: { type: Boolean, default: true },
+                vo2max: { type: Boolean, default: false },
+                sessions_per_week: { type: Boolean, default: true },
+                session_duration: { type: Boolean, default: true },
+                pool_length: { type: Boolean, default: true },
+                exercise_goals: { type: Boolean, default: true },
+                adherence_rate: { type: Boolean, default: true },
+                chronic_conditions: { type: Boolean, default: false },
+                medications: { type: Boolean, default: false },
+                allergies: { type: Boolean, default: false }
+            }
         },
         swimmingProfile: {
             css: {
@@ -249,6 +295,10 @@ const userSchema = new mongoose_1.default.Schema({
             type: String,
             enum: ['instructor', 'lifeguard'],
             default: 'instructor'
+        },
+        analysisFee: {
+            type: Number,
+            default: 10000
         },
         experience: { type: String, default: '' },
         certifications: [{ type: String }],

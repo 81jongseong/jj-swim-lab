@@ -23,7 +23,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
-import { Plus, Youtube, Eye, MessageSquare, Star, Users, Lock, Globe, Building2, UserCheck } from 'lucide-react';
+import { Plus, Youtube, Eye, MessageSquare, Star, Users, Lock, Globe, Building2, UserCheck, HelpCircle, ExternalLink, Copy, CheckCircle } from 'lucide-react';
 
 interface Video {
   _id: string;
@@ -90,6 +90,14 @@ function VideoFeedbackPage() {
   });
   const [uploading, setUploading] = useState(false);
   
+  // 분석 요청 설정
+  const [analysisRequestType, setAnalysisRequestType] = useState<'public' | 'center' | 'specific'>('public');
+  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
+  const [availableInstructors, setAvailableInstructors] = useState<any[]>([]);
+  const [loadingInstructors, setLoadingInstructors] = useState(false);
+  const [analysisFee, setAnalysisFee] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'transfer'>('card');
+  
   // 피드백 작성 상태
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackRating, setFeedbackRating] = useState<number>(0);
@@ -98,8 +106,56 @@ function VideoFeedbackPage() {
   useEffect(() => {
     if (user) {
       loadVideos();
+      if (analysisRequestType === 'specific') {
+        loadInstructors();
+      }
     }
-  }, [user, filter]);
+  }, [user, filter, analysisRequestType]);
+  
+  // 강사 목록 로드
+  const loadInstructors = async () => {
+    try {
+      setLoadingInstructors(true);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const response = await fetch('http://localhost:5000/api/uploads/instructors', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('강사 목록 조회 실패');
+      }
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        setAvailableInstructors(result.data.instructors || []);
+      }
+    } catch (error) {
+      console.error('강사 목록 조회 실패:', error);
+    } finally {
+      setLoadingInstructors(false);
+    }
+  };
+  
+  // 선택된 강사 변경 시 분석 비용 계산
+  useEffect(() => {
+    if (analysisRequestType === 'specific' && selectedInstructors.length > 0) {
+      let totalFee = 0;
+      selectedInstructors.forEach(instructorId => {
+        const instructor = availableInstructors.find(i => i._id === instructorId);
+        if (instructor) {
+          totalFee += instructor.analysisFee || 10000;
+        }
+      });
+      setAnalysisFee(totalFee);
+    } else {
+      setAnalysisFee(0);
+    }
+  }, [selectedInstructors, availableInstructors, analysisRequestType]);
 
   const loadVideos = async () => {
     try {
@@ -155,6 +211,19 @@ function VideoFeedbackPage() {
         return;
       }
 
+      // 분석 요청 데이터 구성
+      const analysisRequestData: any = {
+        type: analysisRequestType
+      };
+      
+      if (analysisRequestType === 'specific' && selectedInstructors.length > 0) {
+        analysisRequestData.requestedInstructors = selectedInstructors;
+        analysisRequestData.paymentMethod = paymentMethod;
+      } else if (analysisRequestType === 'specific' && selectedInstructors.length === 0) {
+        alert('특정 강사를 선택해주세요.');
+        return;
+      }
+
       const response = await fetch('http://localhost:5000/api/uploads', {
         method: 'POST',
         headers: {
@@ -165,7 +234,8 @@ function VideoFeedbackPage() {
           youtubeUrl: youtubeUrl.trim(),
           title: title.trim() || undefined,
           description: description.trim() || undefined,
-          visibility
+          visibility,
+          analysisRequest: analysisRequestData
         })
       });
 
@@ -175,7 +245,16 @@ function VideoFeedbackPage() {
         throw new Error(result.error || '동영상 등록 실패');
       }
 
-      alert('동영상이 등록되었습니다!');
+      if (result.data?.requiresPayment) {
+        const confirmMessage = `동영상이 등록되었습니다!\n\n분석 요청 비용: ${result.data.analysisFee?.toLocaleString()}원\n결제를 진행하시겠습니까?`;
+        if (confirm(confirmMessage)) {
+          // 결제 페이지로 이동 또는 결제 모달 표시
+          window.location.href = `/payments?paymentId=${result.data.paymentId}`;
+        }
+      } else {
+        alert('동영상이 등록되었습니다!');
+      }
+      
       setShowUploadForm(false);
       setYoutubeUrl('');
       setTitle('');
@@ -186,6 +265,9 @@ function VideoFeedbackPage() {
         myCenterMembers: false,
         allMembers: false
       });
+      setAnalysisRequestType('public');
+      setSelectedInstructors([]);
+      setAnalysisFee(0);
       loadVideos();
     } catch (error: any) {
       console.error('동영상 등록 실패:', error);
@@ -311,8 +393,11 @@ function VideoFeedbackPage() {
       <div className="max-w-7xl mx-auto p-6">
         {/* 헤더 */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎥 동영상 기술 피드백</h1>
-          <p className="text-gray-600">유튜브 동영상을 공유하고 강사 및 회원들의 피드백을 받아보세요</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎥 동영상 분석 요청</h1>
+          <p className="text-gray-600">
+            유튜브 동영상을 공유하고 강사에게 분석을 요청하세요. 
+            <span className="text-blue-600 font-medium"> 모두 공개(무료), 본인 센터(무료), 특정 강사(유료)</span> 중 선택할 수 있습니다.
+          </p>
         </div>
 
         {/* 필터 및 업로드 버튼 */}
@@ -348,6 +433,117 @@ function VideoFeedbackPage() {
         {showUploadForm && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">새 동영상 등록</h2>
+            
+            {/* 유튜브 업로드 가이드 */}
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-5">
+              <div className="flex items-start gap-3 mb-4">
+                <HelpCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">📹 유튜브에 영상 올리는 방법</h3>
+                  <p className="text-sm text-gray-700 mb-4">
+                    영상은 유튜브에 직접 업로드한 후, 링크만 여기에 입력하시면 됩니다.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {/* 스텝 1: 유튜브 업로드 */}
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                    <h4 className="font-semibold text-gray-900">유튜브에 영상 업로드하기</h4>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700 ml-2">
+                    <li>
+                      <a 
+                        href="https://www.youtube.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                      >
+                        유튜브(YouTube)
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      에 로그인하세요
+                    </li>
+                    <li>우측 상단의 <strong className="text-blue-600">"만들기"</strong> 버튼을 클릭하세요</li>
+                    <li><strong className="text-blue-600">"동영상 업로드"</strong>를 선택하세요</li>
+                    <li>업로드할 영상 파일을 선택하거나 드래그 앤 드롭하세요</li>
+                    <li>제목, 설명 등을 입력하세요</li>
+                    <li>
+                      <strong className="text-blue-600">공개 설정</strong>을 선택하세요:
+                      <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                        <li><strong>"링크가 있는 사용자만"</strong> (권장) - 링크를 아는 사람만 볼 수 있습니다</li>
+                        <li>"비공개" - 본인만 볼 수 있습니다</li>
+                        <li>"공개" - 누구나 검색해서 볼 수 있습니다</li>
+                      </ul>
+                    </li>
+                    <li><strong className="text-blue-600">"게시"</strong> 버튼을 클릭하여 업로드를 완료하세요</li>
+                  </ol>
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <div className="font-semibold mb-2">🔒 "링크가 있는 사용자만" 설정하는 방법:</div>
+                    <ol className="list-decimal list-inside space-y-1 ml-1">
+                      <li>업로드 중 또는 업로드 완료 후 <strong>"공개 설정"</strong> 또는 <strong>"가시성"</strong> 버튼을 클릭하세요</li>
+                      <li><strong>"링크가 있는 사용자만"</strong> 옵션을 선택하세요</li>
+                      <li>이렇게 설정하면 유튜브에서 검색되지 않지만, 링크를 아는 사람은 모두 볼 수 있습니다</li>
+                      <li>본인 센터 강사나 회원들에게만 링크를 공유하고 싶을 때 유용합니다</li>
+                    </ol>
+                  </div>
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                    💡 <strong>팁:</strong> "링크가 있는 사용자만" 또는 "비공개"로 설정해도 링크만 있으면 접근 가능합니다. 
+                    개인정보가 포함된 영상은 주의하세요.
+                  </div>
+                </div>
+
+                {/* 스텝 2: 링크 가져오기 */}
+                <div className="bg-white rounded-lg p-4 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                    <h4 className="font-semibold text-gray-900">유튜브 링크 가져오기</h4>
+                  </div>
+                  <div className="space-y-3 text-sm text-gray-700">
+                    <div>
+                      <p className="font-medium mb-2">방법 1: 업로드 완료 후 바로 복사</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>업로드가 완료되면 나타나는 <strong className="text-blue-600">"공유"</strong> 버튼을 클릭하세요</li>
+                        <li><strong className="text-blue-600">"링크 복사"</strong>를 클릭하세요</li>
+                        <li>아래 입력란에 붙여넣기(Ctrl+V 또는 Cmd+V)하세요</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-2">방법 2: 이미 업로드된 영상에서 가져오기</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>
+                          <a 
+                            href="https://www.youtube.com/my_videos" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            내 동영상
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                          페이지로 이동하세요
+                        </li>
+                        <li>원하는 영상을 클릭하여 재생하세요</li>
+                        <li>영상 아래의 <strong className="text-blue-600">"공유"</strong> 버튼을 클릭하세요</li>
+                        <li><strong className="text-blue-600">"링크 복사"</strong>를 클릭하거나</li>
+                        <li>브라우저 주소창의 URL을 복사하세요</li>
+                      </ol>
+                    </div>
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                      <p className="font-medium text-green-800 mb-1">✅ 올바른 링크 형식 예시:</p>
+                      <div className="space-y-1 text-xs font-mono text-green-700">
+                        <div>• https://www.youtube.com/watch?v=VIDEO_ID</div>
+                        <div>• https://youtu.be/VIDEO_ID</div>
+                        <div>• https://youtube.com/watch?v=VIDEO_ID</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -361,7 +557,9 @@ function VideoFeedbackPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
-                <p className="mt-1 text-sm text-gray-500">유튜브 동영상 URL을 입력해주세요</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  위 가이드를 참고하여 유튜브 링크를 입력해주세요
+                </p>
               </div>
 
               <div>
@@ -386,10 +584,166 @@ function VideoFeedbackPage() {
                 />
               </div>
 
+              {/* 분석 요청 설정 */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  📊 분석 요청 설정 <span className="text-red-500">*</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  누가 이 동영상을 분석해줄지 선택하세요. 특정 강사에게 요청하면 분석 비용이 발생할 수 있습니다.
+                </p>
+                
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="analysisRequestType"
+                      value="public"
+                      checked={analysisRequestType === 'public'}
+                      onChange={(e) => {
+                        setAnalysisRequestType('public');
+                        setSelectedInstructors([]);
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">모두 공개 (무료)</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        모든 회원과 강사가 볼 수 있고, 누구나 피드백을 남길 수 있습니다.
+                      </div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="analysisRequestType"
+                      value="center"
+                      checked={analysisRequestType === 'center'}
+                      onChange={(e) => {
+                        setAnalysisRequestType('center');
+                        setSelectedInstructors([]);
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">본인 센터 (무료)</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        본인 센터의 강사와 회원만 볼 수 있습니다.
+                      </div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="analysisRequestType"
+                      value="specific"
+                      checked={analysisRequestType === 'specific'}
+                      onChange={(e) => {
+                        setAnalysisRequestType('specific');
+                        if (!availableInstructors.length) {
+                          loadInstructors();
+                        }
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 flex items-center gap-2">
+                        특정 강사에게 요청
+                        {analysisFee > 0 && (
+                          <span className="text-sm text-blue-600 font-bold">
+                            ({analysisFee.toLocaleString()}원)
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        원하는 강사를 선택하여 분석을 요청합니다. 강사별로 분석 비용이 다를 수 있습니다.
+                      </div>
+                      
+                      {/* 강사 선택 UI */}
+                      {analysisRequestType === 'specific' && (
+                        <div className="mt-3 space-y-2">
+                          {loadingInstructors ? (
+                            <div className="text-sm text-gray-500">강사 목록을 불러오는 중...</div>
+                          ) : availableInstructors.length === 0 ? (
+                            <div className="text-sm text-red-500">등록된 강사가 없습니다.</div>
+                          ) : (
+                            <>
+                              <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-2">
+                                {availableInstructors.map((instructor) => (
+                                  <label
+                                    key={instructor._id}
+                                    className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedInstructors.includes(instructor._id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedInstructors([...selectedInstructors, instructor._id]);
+                                        } else {
+                                          setSelectedInstructors(selectedInstructors.filter(id => id !== instructor._id));
+                                        }
+                                      }}
+                                      className="w-4 h-4 text-blue-600 rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {instructor.name}
+                                        {instructor.isMyCenter && (
+                                          <span className="ml-2 text-xs text-blue-600">(본인 센터)</span>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {instructor.centerName} · {instructor.analysisFee?.toLocaleString()}원
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                              
+                              {selectedInstructors.length > 0 && (
+                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <div className="text-sm font-medium text-blue-900 mb-2">
+                                    선택된 강사: {selectedInstructors.length}명
+                                  </div>
+                                  <div className="text-sm text-blue-800">
+                                    총 분석 비용: <strong>{analysisFee.toLocaleString()}원</strong>
+                                  </div>
+                                  
+                                  <div className="mt-3">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      결제 방법
+                                    </label>
+                                    <select
+                                      value={paymentMethod}
+                                      onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'cash' | 'transfer')}
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    >
+                                      <option value="card">카드</option>
+                                      <option value="cash">현금</option>
+                                      <option value="transfer">계좌 이체</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   공개 범위 <span className="text-red-500">*</span>
                 </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  동영상을 누가 볼 수 있는지 설정합니다. (분석 요청과는 별개입니다)
+                </p>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input

@@ -1,12 +1,12 @@
 /**
  * JJ Swim Lab - 센터별 회원 관리 페이지
- *
+ * 
  * 연동 데이터
  * - GET    /api/center-admin/members             : 센터 회원 목록 조회
  * - GET    /api/center-admin/courses             : 배정 가능한 과정 목록 조회
  * - PUT    /api/center-admin/members/:id/course  : 회원 과정 배정
  * - DELETE /api/center-admin/members/:id/course/:courseId : 회원 과정 배정 해제
- *
+ * 
  * 연동 훅 및 컴포넌트
  * - useAuth (로그인 상태 및 권한 확인)
  * - useParams (현재 센터 식별자 추출)
@@ -96,7 +96,7 @@ const CenterAdminMembersPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const loadMembers = useCallback(async () => {
-    setIsLoading(true);
+      setIsLoading(true);
     setError(null);
     try {
       const response = await apiClient.get<ApiListResponse<Member[]>>('/api/center-admin/members');
@@ -142,7 +142,7 @@ const CenterAdminMembersPage: React.FC = () => {
         `/api/center-admin/members/${memberId}/course`,
         { courseId }
       );
-
+      
       if (!response.success) {
         alert(response.message ?? '과정 배정에 실패했습니다.');
         return;
@@ -166,7 +166,7 @@ const CenterAdminMembersPage: React.FC = () => {
       const response = await apiClient.delete<ApiListResponse<unknown>>(
         `/api/center-admin/members/${memberId}/course/${courseId}`
       );
-
+      
       if (!response.success) {
         alert(response.message ?? '과정 배정 해제에 실패했습니다.');
         return;
@@ -264,7 +264,7 @@ const CenterAdminMembersPage: React.FC = () => {
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="text-xs text-gray-500">전체 회원</div>
             <div className="mt-1 text-2xl font-semibold text-gray-900">{stats.total}</div>
-          </div>
+        </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="text-xs text-gray-500">활성</div>
             <div className="mt-1 text-2xl font-semibold text-emerald-700">{stats.active}</div>
@@ -290,7 +290,7 @@ const CenterAdminMembersPage: React.FC = () => {
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
-          </div>
+        </div>
         )}
 
         <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between sticky top-0 z-10">
@@ -299,15 +299,15 @@ const CenterAdminMembersPage: React.FC = () => {
               <label className="text-sm font-medium text-gray-700" htmlFor="member-search">
                 검색 (이름, 이메일, 연락처)
               </label>
-              <input
+                <input
                 id="member-search"
-                type="text"
-                value={searchTerm}
+                  type="text"
+                  value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="홍길동 / hong@example.com"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
+                />
+              </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="status-filter">
                 상태 필터
@@ -355,24 +355,24 @@ const CenterAdminMembersPage: React.FC = () => {
                   <option value="status">상태</option>
                   <option value="courses">배정 코스 수</option>
                 </select>
-                <button
+                            <button
                   type="button"
                   onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
                   aria-label="정렬 방향 전환"
                 >
                   {sortDir === 'asc' ? '오름차순' : '내림차순'}
-                </button>
-              </div>
-            </div>
-          </div>
-          <button
+                            </button>
+                          </div>
+                        </div>
+                    </div>
+                <button
             type="button"
             onClick={() => void loadMembers()}
             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
+                >
             새로 고침
-          </button>
+                </button>
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -427,19 +427,19 @@ const CenterAdminMembersPage: React.FC = () => {
                                   <span className="font-medium">{course.courseName}</span>
                                   {course.instructorName && (
                                     <span className="ml-1 text-gray-500">(강사: {course.instructorName})</span>
-                                  )}
+                )}
                                 </span>
-                                <button
+                <button
                                   type="button"
                                   onClick={() => void handleUnassignCourse(member._id, course.courseId)}
                                   className="text-xs font-semibold text-red-600 hover:text-red-700"
-                                >
+                >
                                   해제
-                                </button>
+                </button>
                               </li>
                             ))}
                           </ul>
-                        )}
+        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-xs text-gray-600 whitespace-pre-line">
@@ -465,27 +465,27 @@ const CenterAdminMembersPage: React.FC = () => {
                               </option>
                             ))}
                           </select>
-                          <button
+                <button
                             type="button"
                             onClick={() => void handleAssignCourse(member._id)}
                             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                             disabled={!selectedCourseId}
                           >
                             과정 배정
-                          </button>
-                        </div>
+                </button>
+              </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          </div>
+                      </div>
           {/* 페이지네이션 */}
           <div className="flex items-center justify-between border-t border-gray-200 p-3 text-sm">
             <div className="text-gray-600">
               총 {filteredMembers.length}명 · {page} / {Math.max(1, Math.ceil(filteredMembers.length / pageSize))} 페이지
-            </div>
+                    </div>
             <div className="flex items-center gap-2">
               <label className="text-gray-600" htmlFor="page-size">페이지당</label>
               <select

@@ -30,6 +30,8 @@ import {
   Save,
   ArrowRight
 } from 'lucide-react';
+import { useAuth } from 'hooks/useAuth';
+import apiClient from '@/utils/api';
 import { allJointConditions } from '../../../data/joint-conditions';
 import AllConditionsDrawer from '@/components/swimlab/AllConditionsDrawer';
 import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSection';
@@ -51,6 +53,10 @@ interface HealthInput {
     totalCholesterol?: number;
     ldlCholesterol?: number;
     hdlCholesterol?: number;
+  };
+  labs?: {
+    hba1c?: number;   // 당화혈색소 (%)
+    egfr?: number;    // 신사구체여과율 (mL/min/1.73㎡)
   };
   conditions: {
     hypertension: string;
@@ -92,8 +98,10 @@ interface HealthInput {
 export default function HealthInputPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user: authUser } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
   
   // 단계 변경 시 페이지 맨 위로 스크롤
   const handleStepChange = (step: number) => {
@@ -106,6 +114,90 @@ export default function HealthInputPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
+  
+  // 기존 건강 정보 불러오기
+  useEffect(() => {
+    const loadExistingHealthData = async () => {
+      if (!authUser?._id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const response = await apiClient.get<any>('/api/auth/profile');
+        const user = (response as any)?.user ?? (response as any)?.data?.user ?? response;
+        
+        if (user?.studentInfo?.healthProfile) {
+          const hp = user.studentInfo.healthProfile;
+          
+          // 기존 데이터로 healthData 초기화
+          setHealthData((prev) => ({
+            demographics: {
+              age: hp.age || prev.demographics.age,
+              sex: hp.sex || prev.demographics.sex
+            },
+            anthropometrics: {
+              height_cm: hp.height || prev.anthropometrics.height_cm,
+              weight_kg: hp.weight || prev.anthropometrics.weight_kg
+            },
+            vitals: {
+              rest_hr: hp.restingHeartRate || hp.heart_rate || prev.vitals.rest_hr,
+              rest_bp: {
+                sbp: hp.blood_pressure_systolic || hp.bloodPressure?.systolic || prev.vitals.rest_bp.sbp,
+                dbp: hp.blood_pressure_diastolic || hp.bloodPressure?.diastolic || prev.vitals.rest_bp.dbp
+              },
+              on_beta_blocker: hp.beta_blocker || prev.vitals.on_beta_blocker,
+              bloodSugar: hp.blood_sugar_fasting || hp.bloodSugar || prev.vitals.bloodSugar,
+              totalCholesterol: hp.cholesterol_total || hp.totalCholesterol || prev.vitals.totalCholesterol,
+              ldlCholesterol: hp.cholesterol_ldl || hp.ldlCholesterol || prev.vitals.ldlCholesterol,
+              hdlCholesterol: hp.cholesterol_hdl || hp.hdlCholesterol || prev.vitals.hdlCholesterol
+            },
+            labs: {
+              hba1c: hp.hba1c || hp.blood_sugar_hba1c || prev.labs?.hba1c,
+              egfr: hp.egfr || prev.labs?.egfr
+            },
+            conditions: {
+              hypertension: hp.hypertension || prev.conditions.hypertension,
+              obesity: hp.obesity || prev.conditions.obesity,
+              dyslipidemia: hp.dyslipidemia || prev.conditions.dyslipidemia,
+              diabetes: hp.diabetes || prev.conditions.diabetes,
+              heartDisease: hp.heartDisease || hp.cardiovascular || prev.conditions.heartDisease,
+              respiratoryDisease: hp.respiratoryDisease || hp.respiratory || prev.conditions.respiratoryDisease,
+              mentalHealth: hp.mentalHealth || prev.conditions.mentalHealth
+            },
+            orthopedics: hp.orthopedics || hp.chronicConditions || prev.orthopedics,
+            swim_profile: {
+              level: hp.swim_level || hp.level || prev.swim_profile.level,
+              grade: hp.grade || prev.swim_profile.grade,
+              css: hp.css || prev.swim_profile.css,
+              cssMeasurementPoolLength: hp.cssMeasurementPoolLength || prev.swim_profile.cssMeasurementPoolLength,
+              mainStrokes: hp.mainStrokes || prev.swim_profile.mainStrokes,
+              excludedStrokes: hp.excludedStrokes || prev.swim_profile.excludedStrokes,
+              trainingDays: hp.trainingDays || prev.swim_profile.trainingDays,
+              daysPerWeek: hp.sessions_per_week || hp.daysPerWeek || prev.swim_profile.daysPerWeek,
+              sessionDuration: hp.session_duration || hp.sessionDuration || prev.swim_profile.sessionDuration,
+              poolLength: hp.pool_length || hp.poolLength || prev.swim_profile.poolLength,
+              vo2max: hp.vo2max || prev.swim_profile.vo2max,
+              maxHeartRate: hp.max_heart_rate || hp.maxHeartRate || prev.swim_profile.maxHeartRate,
+              restingHeartRate: hp.restingHeartRate || prev.swim_profile.restingHeartRate
+            },
+            goals: {
+              primary: hp.primaryGoal || hp.goals?.primary || prev.goals?.primary,
+              secondary: hp.secondaryGoal || hp.goals?.secondary || prev.goals?.secondary,
+              target: hp.target || hp.goals?.target || prev.goals?.target
+            }
+          }));
+        }
+      } catch (error) {
+        console.error('건강 정보 불러오기 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadExistingHealthData();
+  }, [authUser?._id]);
+  
   const [healthData, setHealthData] = useState<HealthInput>({
     demographics: { age: 30, sex: 'male' },
     anthropometrics: { height_cm: 170, weight_kg: 70 },
@@ -117,6 +209,10 @@ export default function HealthInputPage() {
       totalCholesterol: 0,
       ldlCholesterol: 0,
       hdlCholesterol: 0
+    },
+    labs: {
+      hba1c: undefined,   // 당화혈색소 (%)
+      egfr: undefined     // 신사구체여과율 (mL/min/1.73㎡)
     },
     conditions: {
       hypertension: 'none',
@@ -584,7 +680,8 @@ export default function HealthInputPage() {
         vo2max: healthData.swim_profile.vo2max,
         maxHeartRate: healthData.swim_profile.maxHeartRate,
         restingHeartRate: healthData.swim_profile.restingHeartRate,
-        intensityPercent: healthAnalysis.baseIntensity / 100 // 과학적 강도 조절: 70% → 0.7
+        intensityPercent: healthAnalysis.baseIntensity / 100, // 과학적 강도 조절: 70% → 0.7
+        labs: healthData.labs // eGFR, HbA1c 등 검사실 수치 전달
       };
       
       console.log('🏊 엔진 입력:', engineInput);
@@ -756,6 +853,33 @@ export default function HealthInputPage() {
                     value={healthData.vitals.totalCholesterol || ''}
                     onChange={(e) => handleInputChange('vitals.totalCholesterol', parseInt(e.target.value) || 0)}
                     placeholder="200"
+                  />
+              </div>
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    당화혈색소 (HbA1c, %)
+                    <span className="ml-2 text-xs text-gray-500">정상: 4~5.6%, 당뇨: 6.5% 이상</span>
+                  </label>
+                <input
+                    type="number"
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={healthData.labs?.hba1c || ''}
+                    onChange={(e) => handleInputChange('labs.hba1c', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    placeholder="5.5"
+                  />
+              </div>
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    신사구체여과율 (eGFR, mL/min/1.73㎡)
+                    <span className="ml-2 text-xs text-gray-500">정상: 90 이상</span>
+                  </label>
+                <input
+                    type="number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={healthData.labs?.egfr || ''}
+                    onChange={(e) => handleInputChange('labs.egfr', e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder="90"
                   />
               </div>
             </div>
@@ -1284,6 +1408,19 @@ export default function HealthInputPage() {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">건강 정보를 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">

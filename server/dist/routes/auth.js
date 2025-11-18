@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const bcrypt = __importStar(require("bcryptjs"));
@@ -197,8 +207,21 @@ router.post('/verify-email-code', async (req, res) => {
 });
 router.post('/signup', async (req, res) => {
     try {
-        const { userId, name, email, password, phone, address, userType, location, phoneVerified } = req.body;
+        const { userId, name, email, password, phone, address, birthDate, gender, userType, location, phoneVerified, studentInfo } = req.body;
         void phoneVerified;
+        console.log('📤 회원가입 요청 받음:', {
+            name,
+            email,
+            phone,
+            address,
+            birthDate,
+            gender,
+            userType,
+            hasStudentInfo: !!studentInfo,
+            studentInfoHeight: studentInfo?.height,
+            studentInfoWeight: studentInfo?.weight,
+            studentInfo: studentInfo
+        });
         if (!name || !email) {
             return res.status(400).json({
                 success: false,
@@ -331,6 +354,8 @@ router.post('/signup', async (req, res) => {
             email,
             phone,
             address,
+            birthDate: birthDate || '',
+            gender: gender || '',
             userType: ['student', 'instructor', 'centerAdmin', 'superAdmin'].includes(userType)
                 ? userType
                 : 'student'
@@ -352,7 +377,31 @@ router.post('/signup', async (req, res) => {
             };
             console.log('✅ 위치 정보 저장:', userData.location);
         }
-        if (userData.userType === 'instructor') {
+        if (userData.userType === 'student') {
+            const studentInfoData = req.body.studentInfo || {};
+            userData.studentInfo = {
+                height: studentInfoData.height,
+                weight: studentInfoData.weight,
+                emergencyContact: studentInfoData.emergencyContact || '',
+                emergencyPhone: studentInfoData.emergencyPhone || '',
+                swimmingLevel: studentInfoData.swimmingLevel || studentInfoData.currentLevel,
+                currentLevel: studentInfoData.currentLevel || studentInfoData.swimmingLevel,
+                swimmingProfile: studentInfoData.swimmingProfile || {},
+                medicalConditions: studentInfoData.medicalConditions || '',
+                age: studentInfoData.age,
+                enrolledCourses: studentInfoData.enrolledCourses || [],
+                completedCourses: studentInfoData.completedCourses || [],
+                status: studentInfoData.status || 'active'
+            };
+            console.log('✅ studentInfo 저장 데이터:', {
+                height: userData.studentInfo.height,
+                weight: userData.studentInfo.weight,
+                emergencyContact: userData.studentInfo.emergencyContact,
+                swimmingLevel: userData.studentInfo.swimmingLevel,
+                hasSwimmingProfile: !!userData.studentInfo.swimmingProfile
+            });
+        }
+        else if (userData.userType === 'instructor') {
             const instructorInfo = req.body.instructorInfo || {};
             userData.instructorInfo = {
                 experience: instructorInfo.experience || instructorInfo.teachingExperiences?.[0]?.centerName ?
@@ -373,8 +422,23 @@ router.post('/signup', async (req, res) => {
                 permissions: req.body.permissions || undefined,
             };
         }
+        console.log('💾 저장할 userData:', {
+            birthDate: userData.birthDate,
+            gender: userData.gender,
+            hasStudentInfo: !!userData.studentInfo,
+            studentInfoHeight: userData.studentInfo?.height,
+            studentInfoWeight: userData.studentInfo?.weight
+        });
         const user = new User_1.User(userData);
         await user.save();
+        console.log('✅ 사용자 저장 완료:', {
+            userId: user._id,
+            birthDate: user.birthDate,
+            gender: user.gender,
+            hasStudentInfo: !!user.studentInfo,
+            studentInfoHeight: user.studentInfo?.height,
+            studentInfoWeight: user.studentInfo?.weight
+        });
         const tokenPayload = {
             id: user._id,
             userId: user._id,
@@ -394,16 +458,22 @@ router.post('/signup', async (req, res) => {
             issuer: 'jj-swim-lab',
             audience: 'jj-swim-lab-users'
         });
+        const savedUser = await User_1.User.findById(user._id).select('-password').lean();
         return res.status(201).json({
             success: true,
             message: '회원가입이 완료되었습니다.',
             token,
             user: {
-                id: user._id,
-                userId: user.userId,
-                name: user.name,
-                email: user.email,
-                userType: user.userType
+                id: savedUser?._id || user._id,
+                userId: savedUser?.userId || user.userId,
+                name: savedUser?.name || user.name,
+                email: savedUser?.email || user.email,
+                phone: savedUser?.phone || user.phone,
+                address: savedUser?.address || user.address,
+                birthDate: savedUser?.birthDate || user.birthDate,
+                gender: savedUser?.gender || user.gender,
+                userType: savedUser?.userType || user.userType,
+                studentInfo: savedUser?.studentInfo || user.studentInfo
             }
         });
     }
@@ -584,6 +654,8 @@ router.post('/login', async (req, res) => {
                 userId: user.userId,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                address: user.address,
                 userType: user.userType,
                 level: user.level,
                 centerId: user.centerId,
@@ -612,12 +684,46 @@ router.get('/profile', async (req, res) => {
             return res.status(401).json({ error: '인증 토큰이 필요합니다.' });
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-        const user = await User_1.User.findById(decoded.userId).select('-password');
+        const user = await User_1.User.findById(decoded.userId)
+            .select('-password')
+            .lean();
         if (!user) {
             return res.status(401).json({ error: '유효하지 않은 토큰입니다.' });
         }
+        console.log('📋 프로필 조회:', {
+            userId: user.userId || user._id,
+            hasPhone: !!user.phone,
+            hasAddress: !!user.address,
+            phone: user.phone,
+            address: user.address,
+            birthDate: user.birthDate,
+            gender: user.gender,
+            hasStudentInfo: !!user.studentInfo,
+            studentInfoHeight: user.studentInfo?.height,
+            studentInfoWeight: user.studentInfo?.weight,
+            hasHealthProfile: !!user.studentInfo?.healthProfile,
+            healthProfileHeight: user.studentInfo?.healthProfile?.height,
+            healthProfileWeight: user.studentInfo?.healthProfile?.weight,
+            healthProfile: user.studentInfo?.healthProfile,
+            fullUser: JSON.stringify(user, null, 2)
+        });
+        const responseUser = { ...user };
+        if (!responseUser.birthDate && user.birthDate) {
+            responseUser.birthDate = user.birthDate;
+        }
+        if (!responseUser.gender && user.gender) {
+            responseUser.gender = user.gender;
+        }
+        if (responseUser.studentInfo) {
+            if (!responseUser.studentInfo.height && user.studentInfo?.height) {
+                responseUser.studentInfo.height = user.studentInfo.height;
+            }
+            if (!responseUser.studentInfo.weight && user.studentInfo?.weight) {
+                responseUser.studentInfo.weight = user.studentInfo.weight;
+            }
+        }
         return res.json({
-            user
+            user: responseUser
         });
     }
     catch (error) {

@@ -370,7 +370,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManag
 });
 router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { userId, name, email, phone, address, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
+        const { userId, name, email, phone, address, birthDate, gender, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
         const currentUser = req.user;
         const targetUserId = req.params.id;
         if (currentUser._id?.toString() !== targetUserId) {
@@ -413,6 +413,10 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
                 updateData.phone = phone;
             if (address)
                 updateData.address = address;
+            if (req.body.birthDate)
+                updateData.birthDate = req.body.birthDate;
+            if (req.body.gender)
+                updateData.gender = req.body.gender;
         }
         else {
             console.log('🔒 개인정보 수정 제한: 관리자는 개인정보를 수정할 수 없습니다.');

@@ -100,6 +100,10 @@ export interface User {
   userId: string;
   name: string;
   email: string;
+  phone?: string; // 연락처
+  address?: string; // 주소
+  birthDate?: string; // 생년월일
+  gender?: string; // 성별
   userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
   level: string;
   centerId?: string;

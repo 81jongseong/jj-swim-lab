@@ -1,27 +1,3 @@
-/// <reference types="mongoose/types/aggregate" />
-/// <reference types="mongoose/types/callback" />
-/// <reference types="mongoose/types/collection" />
-/// <reference types="mongoose/types/connection" />
-/// <reference types="mongoose/types/cursor" />
-/// <reference types="mongoose/types/document" />
-/// <reference types="mongoose/types/error" />
-/// <reference types="mongoose/types/expressions" />
-/// <reference types="mongoose/types/helpers" />
-/// <reference types="mongoose/types/middlewares" />
-/// <reference types="mongoose/types/indexes" />
-/// <reference types="mongoose/types/models" />
-/// <reference types="mongoose/types/mongooseoptions" />
-/// <reference types="mongoose/types/pipelinestage" />
-/// <reference types="mongoose/types/populate" />
-/// <reference types="mongoose/types/query" />
-/// <reference types="mongoose/types/schemaoptions" />
-/// <reference types="mongoose/types/schematypes" />
-/// <reference types="mongoose/types/session" />
-/// <reference types="mongoose/types/types" />
-/// <reference types="mongoose/types/utility" />
-/// <reference types="mongoose/types/validation" />
-/// <reference types="mongoose/types/virtuals" />
-/// <reference types="mongoose/types/inferschematype" />
 import mongoose from 'mongoose';
 interface IUser extends mongoose.Document {
     userId?: string;
@@ -30,6 +6,8 @@ interface IUser extends mongoose.Document {
     password: string;
     phone: string;
     address: string;
+    birthDate?: string;
+    gender?: 'male' | 'female' | 'other' | '';
     socialAccounts?: Array<{
         provider: 'kakao' | 'naver' | 'google' | 'facebook';
         providerId: string;
@@ -145,6 +123,43 @@ interface IUser extends mongoose.Document {
                 };
                 notes?: string;
             }>;
+            privacySettings?: {
+                height?: boolean;
+                weight?: boolean;
+                bmi?: boolean;
+                waist_circumference?: boolean;
+                heart_rate?: boolean;
+                max_heart_rate?: boolean;
+                blood_pressure_systolic?: boolean;
+                blood_pressure_diastolic?: boolean;
+                beta_blocker?: boolean;
+                muscle_mass?: boolean;
+                body_fat?: boolean;
+                lung_capacity?: boolean;
+                bone_density?: boolean;
+                cholesterol_total?: boolean;
+                cholesterol_ldl?: boolean;
+                cholesterol_hdl?: boolean;
+                cholesterol_triglycerides?: boolean;
+                blood_sugar_fasting?: boolean;
+                blood_sugar_postprandial?: boolean;
+                blood_sugar_hba1c?: boolean;
+                egfr?: boolean;
+                swim_level?: boolean;
+                css_freestyle?: boolean;
+                css_backstroke?: boolean;
+                css_breaststroke?: boolean;
+                css_butterfly?: boolean;
+                vo2max?: boolean;
+                sessions_per_week?: boolean;
+                session_duration?: boolean;
+                pool_length?: boolean;
+                exercise_goals?: boolean;
+                adherence_rate?: boolean;
+                chronic_conditions?: boolean;
+                medications?: boolean;
+                allergies?: boolean;
+            };
         };
         swimmingProfile?: {
             css?: {
@@ -200,6 +215,7 @@ interface IUser extends mongoose.Document {
         certifications?: string[];
         specialties?: string[];
         instructorLevel?: 'junior' | 'senior' | 'master' | 'expert';
+        analysisFee?: number;
         assignedCenters?: mongoose.Types.ObjectId[];
         maxStudents?: number;
         currentStudents?: number;

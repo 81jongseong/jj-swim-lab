@@ -205,10 +205,10 @@ const HealthDashboard: React.FC<HealthDashboardProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">주간 운동 프로그램</h3>
           {weeklyProgram.length > 0 && weeklyProgram[0]?.programId && (
             <button 
-              onClick={() => window.location.href = `/health/program?programId=${weeklyProgram[0].programId}`}
+              onClick={() => window.location.href = `/health/history`}
               className="text-blue-600 hover:text-blue-700 font-medium text-sm"
             >
-              상세 보기
+              프로그램 이력 보기
             </button>
           )}
         </div>
@@ -229,7 +229,7 @@ const HealthDashboard: React.FC<HealthDashboardProps> = ({
                   className="p-3 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg text-center cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => {
                     if (day.programId) {
-                      window.location.href = `/health/program?programId=${day.programId}`;
+                      window.location.href = `/health/history`;
                     }
                   }}
                 >

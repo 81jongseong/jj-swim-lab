@@ -620,6 +620,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       email,   // 사용자 이메일
       phone,   // 전화번호
       address, // 주소
+      birthDate, // 생년월일
+      gender,    // 성별
       userType, // 사용자 타입 (student/instructor/centerAdmin/superAdmin)
       level,    // 사용자 레벨
       password, // 비밀번호 (있는 경우 해싱 처리)
@@ -683,6 +685,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       }
       if (phone) updateData.phone = phone;      // 전화번호  
       if (address) updateData.address = address; // 주소
+      if (req.body.birthDate) updateData.birthDate = req.body.birthDate; // 생년월일
+      if (req.body.gender) updateData.gender = req.body.gender; // 성별
     } else {
       // 타인인 경우 개인정보 수정 불가 (관리적 기능만 가능)
       console.log('🔒 개인정보 수정 제한: 관리자는 개인정보를 수정할 수 없습니다.');

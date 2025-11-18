@@ -216,6 +216,7 @@ import medicalExercisePrescriptionRoutes from './routes/medicalExercisePrescript
 import healthExerciseAIRoutes from './routes/health-exercise-ai';
 import exercisePrescriptionRoutes from './routes/exercise-prescription';
 import healthInputRoutes from './routes/health-input';
+import healthMeasurementsRoutes from './routes/health-measurements';
 import swimEngineRoutes from './routes/swim-engine';
 import geoAggregateRoutes from './routes/geo-aggregate';
 import geoDistributionVisibilityRoutes from './routes/geo-distribution-visibility';
@@ -554,6 +555,7 @@ app.use('/api/medical-exercise-prescription', medicalExercisePrescriptionRoutes)
 app.use('/api/health-exercise-ai', healthExerciseAIRoutes);
 app.use('/api/exercise-prescription', exercisePrescriptionRoutes);
 app.use('/api/health', healthInputRoutes);
+app.use('/api/health', healthMeasurementsRoutes);
 app.use('/api/swim-engine', swimEngineRoutes);
 app.use('/api/geo', geoAggregateRoutes);
 app.use('/api/geo-distribution-visibility', geoDistributionVisibilityRoutes);

@@ -2441,27 +2441,116 @@ router.get('/members', authMiddleware, requireCenterAdmin, async (req: AuthReque
           goals: [],
           centerMemo: member.studentInfo?.centerMemo || '',
           centerMemos: member.studentInfo?.centerMemos || [],
-          healthProfile: member.studentInfo?.healthProfile ? {
-            height: member.studentInfo.healthProfile.height,
-            weight: member.studentInfo.healthProfile.weight,
-            bmi: member.studentInfo.healthProfile.bmi,
-            bloodType: member.studentInfo.healthProfile.bloodType,
-            allergies: member.studentInfo.healthProfile.allergies || [],
-            chronicConditions: member.studentInfo.healthProfile.chronicConditions || [],
-            medications: member.studentInfo.healthProfile.medications || [],
-            emergencyContact: member.studentInfo.healthProfile.emergencyContact,
-            fitnessGoals: member.studentInfo.healthProfile.fitnessGoals || [],
-            activityLevel: member.studentInfo.healthProfile.activityLevel,
-            targetWeight: member.studentInfo.healthProfile.targetWeight,
-            targetBMI: member.studentInfo.healthProfile.targetBMI,
-            lastHealthCheck: member.studentInfo.healthProfile.lastHealthCheck,
-            bloodPressure: member.studentInfo.healthProfile.bloodPressure,
-            cholesterol: member.studentInfo.healthProfile.cholesterol,
-            bloodSugar: member.studentInfo.healthProfile.bloodSugar,
-            swimmingRelatedConditions: member.studentInfo.healthProfile.swimmingRelatedConditions,
-            fitnessMetrics: member.studentInfo.healthProfile.fitnessMetrics,
-            healthHistory: member.studentInfo.healthProfile.healthHistory || []
-          } : null
+          healthProfile: member.studentInfo?.healthProfile ? (() => {
+            const healthProfile = member.studentInfo.healthProfile;
+            const privacySettings = healthProfile.privacySettings || {};
+            
+            // 비공개 정보 필터링
+            const filteredProfile: any = {};
+            
+            // 기본 정보 (공개 설정 확인)
+            if (healthProfile.height !== undefined && privacySettings.height !== false) {
+              filteredProfile.height = healthProfile.height;
+            }
+            if (healthProfile.weight !== undefined && privacySettings.weight !== false) {
+              filteredProfile.weight = healthProfile.weight;
+            }
+            if (healthProfile.bmi !== undefined && privacySettings.bmi !== false) {
+              filteredProfile.bmi = healthProfile.bmi;
+            }
+            
+            // 혈압 (둘 다 공개일 때만)
+            if (healthProfile.bloodPressure && 
+                privacySettings.blood_pressure_systolic !== false && 
+                privacySettings.blood_pressure_diastolic !== false) {
+              filteredProfile.bloodPressure = healthProfile.bloodPressure;
+            }
+            
+            // 콜레스테롤 (공개된 항목만)
+            if (healthProfile.cholesterol) {
+              const filteredChol: any = {};
+              if (privacySettings.cholesterol_total !== false && healthProfile.cholesterol.total !== undefined) {
+                filteredChol.total = healthProfile.cholesterol.total;
+              }
+              if (privacySettings.cholesterol_ldl !== false && healthProfile.cholesterol.ldl !== undefined) {
+                filteredChol.ldl = healthProfile.cholesterol.ldl;
+              }
+              if (privacySettings.cholesterol_hdl !== false && healthProfile.cholesterol.hdl !== undefined) {
+                filteredChol.hdl = healthProfile.cholesterol.hdl;
+              }
+              if (privacySettings.cholesterol_triglycerides !== false && healthProfile.cholesterol.triglycerides !== undefined) {
+                filteredChol.triglycerides = healthProfile.cholesterol.triglycerides;
+              }
+              if (Object.keys(filteredChol).length > 0) {
+                filteredProfile.cholesterol = filteredChol;
+              }
+            }
+            
+            // 혈당 (공개된 항목만)
+            if (healthProfile.bloodSugar) {
+              const filteredSugar: any = {};
+              if (privacySettings.blood_sugar_fasting !== false && healthProfile.bloodSugar.fasting !== undefined) {
+                filteredSugar.fasting = healthProfile.bloodSugar.fasting;
+              }
+              if (privacySettings.blood_sugar_postprandial !== false && healthProfile.bloodSugar.postprandial !== undefined) {
+                filteredSugar.postprandial = healthProfile.bloodSugar.postprandial;
+              }
+              if (privacySettings.blood_sugar_hba1c !== false && healthProfile.bloodSugar.hba1c !== undefined) {
+                filteredSugar.hba1c = healthProfile.bloodSugar.hba1c;
+              }
+              if (Object.keys(filteredSugar).length > 0) {
+                filteredProfile.bloodSugar = filteredSugar;
+              }
+            }
+            
+            // 체성분 (공개된 항목만)
+            if (healthProfile.fitnessMetrics) {
+              const filteredFitness: any = {};
+              if (privacySettings.muscle_mass !== false && healthProfile.fitnessMetrics.muscleMass !== undefined) {
+                filteredFitness.muscleMass = healthProfile.fitnessMetrics.muscleMass;
+              }
+              if (privacySettings.body_fat !== false && healthProfile.fitnessMetrics.bodyFatPercentage !== undefined) {
+                filteredFitness.bodyFatPercentage = healthProfile.fitnessMetrics.bodyFatPercentage;
+              }
+              if (privacySettings.heart_rate !== false && healthProfile.fitnessMetrics.restingHeartRate !== undefined) {
+                filteredFitness.restingHeartRate = healthProfile.fitnessMetrics.restingHeartRate;
+              }
+              if (privacySettings.max_heart_rate !== false && healthProfile.fitnessMetrics.maxHeartRate !== undefined) {
+                filteredFitness.maxHeartRate = healthProfile.fitnessMetrics.maxHeartRate;
+              }
+              if (Object.keys(filteredFitness).length > 0) {
+                filteredProfile.fitnessMetrics = filteredFitness;
+              }
+            }
+            
+            // 수영 프로필 (기본 공개)
+            if (member.studentInfo?.swimmingProfile) {
+              filteredProfile.swimmingProfile = member.studentInfo.swimmingProfile;
+            }
+            
+            // 기타 정보 (공개 설정 확인)
+            if (privacySettings.chronic_conditions !== false) {
+              filteredProfile.chronicConditions = healthProfile.chronicConditions || [];
+            }
+            if (privacySettings.medications !== false) {
+              filteredProfile.medications = healthProfile.medications || [];
+            }
+            if (privacySettings.allergies !== false) {
+              filteredProfile.allergies = healthProfile.allergies || [];
+            }
+            
+            // 항상 공개되는 정보
+            filteredProfile.bloodType = healthProfile.bloodType;
+            filteredProfile.emergencyContact = healthProfile.emergencyContact;
+            filteredProfile.fitnessGoals = healthProfile.fitnessGoals || [];
+            filteredProfile.activityLevel = healthProfile.activityLevel;
+            filteredProfile.targetWeight = healthProfile.targetWeight;
+            filteredProfile.targetBMI = healthProfile.targetBMI;
+            filteredProfile.lastHealthCheck = healthProfile.lastHealthCheck;
+            filteredProfile.swimmingRelatedConditions = healthProfile.swimmingRelatedConditions;
+            
+            return Object.keys(filteredProfile).length > 0 ? filteredProfile : null;
+          })() : null
         },
         
         // 특정 강습 과정 배정 상태

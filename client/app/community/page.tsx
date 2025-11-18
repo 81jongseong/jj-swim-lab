@@ -557,7 +557,6 @@ export default function CommunityPage() {
             <div className="flex items-start gap-4">
               <div className="text-5xl">🎁</div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-purple-900 mb-2">체험 회원으로 이용 중입니다</h3>
                 <div className="space-y-2 text-sm text-gray-700">
                   <p className="flex items-center gap-2">
                     <span className="text-green-600">✅</span>

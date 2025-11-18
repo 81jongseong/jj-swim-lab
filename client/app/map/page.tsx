@@ -907,7 +907,7 @@ export default function MapPage() {
 
           const rawSlug = center.slug || center._id || center.name || `center-${index}`;
           const normalizedSlug = String(rawSlug).trim().replace(/\s+/g, '-');
-
+          
           return {
             id: center._id || `center-${index}`,
             name: center.name || '이름 없음',
@@ -2152,7 +2152,7 @@ export default function MapPage() {
                   const distance = userLocation 
                     ? calculateDistance(userLocation.lat, userLocation.lng, center.position.lat, center.position.lng)
                     : null;
-
+                  
                   const animationStyles = sortAnimation
                     ? {
                         animationName: 'slideIn',

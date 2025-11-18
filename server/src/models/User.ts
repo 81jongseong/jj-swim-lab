@@ -101,6 +101,8 @@ interface IUser extends mongoose.Document {
   password: string;
   phone: string;
   address: string;
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other' | '';
   // 소셜 로그인 정보 (같은 이메일로 여러 소셜 로그인 연결 가능)
   socialAccounts?: Array<{
     provider: 'kakao' | 'naver' | 'google' | 'facebook';
@@ -224,6 +226,44 @@ interface IUser extends mongoose.Document {
         };
         notes?: string;
       }>;
+      // 개인정보 공개 설정 (각 항목별 공개/비공개)
+      privacySettings?: {
+        height?: boolean;
+        weight?: boolean;
+        bmi?: boolean;
+        waist_circumference?: boolean;
+        heart_rate?: boolean;
+        max_heart_rate?: boolean;
+        blood_pressure_systolic?: boolean;
+        blood_pressure_diastolic?: boolean;
+        beta_blocker?: boolean;
+        muscle_mass?: boolean;
+        body_fat?: boolean;
+        lung_capacity?: boolean;
+        bone_density?: boolean;
+        cholesterol_total?: boolean;
+        cholesterol_ldl?: boolean;
+        cholesterol_hdl?: boolean;
+        cholesterol_triglycerides?: boolean;
+        blood_sugar_fasting?: boolean;
+        blood_sugar_postprandial?: boolean;
+        blood_sugar_hba1c?: boolean;
+        egfr?: boolean;
+        swim_level?: boolean;
+        css_freestyle?: boolean;
+        css_backstroke?: boolean;
+        css_breaststroke?: boolean;
+        css_butterfly?: boolean;
+        vo2max?: boolean;
+        sessions_per_week?: boolean;
+        session_duration?: boolean;
+        pool_length?: boolean;
+        exercise_goals?: boolean;
+        adherence_rate?: boolean;
+        chronic_conditions?: boolean;
+        medications?: boolean;
+        allergies?: boolean;
+      };
     };
     // 수영 관련 개인 정보
     swimmingProfile?: {
@@ -282,6 +322,7 @@ interface IUser extends mongoose.Document {
     certifications?: string[];
     specialties?: string[];
     instructorLevel?: 'junior' | 'senior' | 'master' | 'expert';
+    analysisFee?: number; // 동영상 분석 요청 비용 (기본 10,000원)
     assignedCenters?: mongoose.Types.ObjectId[];
     maxStudents?: number;
     currentStudents?: number;
@@ -480,6 +521,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  // 생년월일
+  birthDate: {
+    type: String,
+    default: '',
+  },
+  // 성별
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', ''],
+    default: '',
+  },
   // 🆕 위치 정보 (GeoJSON 형식 - 지도 표시용)
   location: {
     type: {
@@ -632,7 +684,45 @@ const userSchema = new mongoose.Schema({
           hba1c: { type: Number }
         },
         notes: { type: String }
-      }]
+      }],
+      // 개인정보 공개 설정 (각 항목별 공개/비공개)
+      privacySettings: {
+        height: { type: Boolean, default: true },
+        weight: { type: Boolean, default: true },
+        bmi: { type: Boolean, default: true },
+        waist_circumference: { type: Boolean, default: false },
+        heart_rate: { type: Boolean, default: false },
+        max_heart_rate: { type: Boolean, default: false },
+        blood_pressure_systolic: { type: Boolean, default: false },
+        blood_pressure_diastolic: { type: Boolean, default: false },
+        beta_blocker: { type: Boolean, default: false },
+        muscle_mass: { type: Boolean, default: true },
+        body_fat: { type: Boolean, default: false },
+        lung_capacity: { type: Boolean, default: false },
+        bone_density: { type: Boolean, default: false },
+        cholesterol_total: { type: Boolean, default: false },
+        cholesterol_ldl: { type: Boolean, default: false },
+        cholesterol_hdl: { type: Boolean, default: false },
+        cholesterol_triglycerides: { type: Boolean, default: false },
+        blood_sugar_fasting: { type: Boolean, default: false },
+        blood_sugar_postprandial: { type: Boolean, default: false },
+        blood_sugar_hba1c: { type: Boolean, default: false },
+        egfr: { type: Boolean, default: false },
+        swim_level: { type: Boolean, default: true },
+        css_freestyle: { type: Boolean, default: true },
+        css_backstroke: { type: Boolean, default: true },
+        css_breaststroke: { type: Boolean, default: true },
+        css_butterfly: { type: Boolean, default: true },
+        vo2max: { type: Boolean, default: false },
+        sessions_per_week: { type: Boolean, default: true },
+        session_duration: { type: Boolean, default: true },
+        pool_length: { type: Boolean, default: true },
+        exercise_goals: { type: Boolean, default: true },
+        adherence_rate: { type: Boolean, default: true },
+        chronic_conditions: { type: Boolean, default: false },
+        medications: { type: Boolean, default: false },
+        allergies: { type: Boolean, default: false }
+      }
     },
     // 수영 관련 개인 정보
     swimmingProfile: {
@@ -699,6 +789,10 @@ const userSchema = new mongoose.Schema({
       type: String,
       enum: ['instructor', 'lifeguard'], // ⭐ 강습 강사 / 안전 요원
       default: 'instructor'
+    },
+    analysisFee: {
+      type: Number,
+      default: 10000 // 기본 분석 비용 10,000원
     },
     experience: { type: String, default: '' },
     certifications: [{ type: String }],

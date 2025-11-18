@@ -1,1 +1,1 @@
-{"version":3,"file":"ShopOrder.d.ts","sourceRoot":"","sources":["../../src/models/ShopOrder.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAmBhC,eAAO,MAAM,SAAS,2CAA4E,CAAC"}
+{"version":3,"file":"ShopOrder.d.ts","sourceRoot":"","sources":["../../src/models/ShopOrder.ts"],"names":[],"mappings":"AAAA,OAAO,QAAQ,MAAM,UAAU,CAAC;AAmBhC,eAAO,MAAM,SAAS,2CAA4E,CAAC"}

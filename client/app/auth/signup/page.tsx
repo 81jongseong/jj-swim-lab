@@ -874,7 +874,7 @@ export default function SignupPage() {
 
                 <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div>
+                <div>
                       <h3 className="text-base font-semibold text-gray-800">수영 숙련도 *</h3>
                       <p className="text-xs text-gray-500">완영 가능한 최고 영법을 선택해주세요.</p>
                     </div>
@@ -887,8 +887,8 @@ export default function SignupPage() {
                           formData.swimProficiency === option.id
                             ? 'border-blue-500 bg-white shadow-sm'
                             : 'border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
+                    }`}
+                  >
                         <input
                           type="radio"
                           name="swimProficiency"
@@ -1259,16 +1259,16 @@ export default function SignupPage() {
               <>
                 <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div>
+                <div>
                       <h3 className="text-base font-semibold text-gray-800">질환·특수상황 선택</h3>
                       <p className="text-xs text-gray-500">
                         수영 엔진의 안전 조정을 위해 해당되는 질환이나 특수상황을 선택해주세요.
                       </p>
-                    </div>
+                </div>
                     <span className="text-xs text-gray-500">
                       선택됨: <strong className="text-blue-600">{formData.conditionIds.length}</strong>개
                     </span>
-                  </div>
+                </div>
                   <ConditionQuickPick
                     value={formData.conditionIds}
                     onChange={(ids) => setFormData({ ...formData, conditionIds: ids })}
@@ -1280,12 +1280,12 @@ export default function SignupPage() {
 
                 <div className="border border-purple-200 rounded-lg p-4 space-y-4 bg-purple-50/40">
                   <div className="flex items-center justify-between">
-                    <div>
+                <div>
                       <h3 className="text-base font-semibold text-purple-900">운동 목표 선택</h3>
                       <p className="text-xs text-purple-700">
                         수영 엔진에서 제공하는 10가지 목표 중 하나를 선택해주세요.
                       </p>
-                    </div>
+                </div>
                     <span className="text-xs text-purple-700">
                       현재 선택: <strong className="text-purple-600">{formData.fitnessGoals}</strong>
                     </span>

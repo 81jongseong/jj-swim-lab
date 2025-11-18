@@ -108,7 +108,7 @@ function pickSafeStrokes(orthos:string[]): Stroke[] {
 }
 
 function handleSpecialConditions(healthData: any): { strokes: Stroke[], constraints: string[], intensityReduction: number } {
-  const { specialConditions } = healthData;
+  const { specialConditions, labs, conditions } = healthData;
   let strokes: Stroke[] = ['freestyle','backstroke','breaststroke','butterfly','elementary_backstroke','sidestroke'];
   let constraints: string[] = [];
   let intensityReduction = 0;
@@ -150,6 +150,61 @@ function handleSpecialConditions(healthData: any): { strokes: Stroke[], constrai
         constraints.push('수술 후 만성기 - 정상 운동 가능', '의료진 상담 권장');
         intensityReduction = conditionData.exerciseRestrictions.intensityReduction;
       }
+    }
+  }
+
+  // 신사구체여과율(eGFR) 기반 신장 기능 평가
+  if (labs?.egfr !== undefined) {
+    const egfr = labs.egfr;
+    if (egfr < 60) {
+      // 신장 기능 저하 (만성 신장 질환 3기 이상)
+      intensityReduction = Math.max(intensityReduction, 20); // 최소 20% 강도 감소
+      constraints.push(`신장 기능 저하 (eGFR: ${egfr}mL/min/1.73㎡) - 저강도 운동 권장`);
+      constraints.push('운동 중 혈압 모니터링 필수', '충분한 수분 섭취 필요');
+      
+      if (egfr < 30) {
+        // 신장 기능 심각 저하 (만성 신장 질환 4-5기)
+        intensityReduction = Math.max(intensityReduction, 40); // 최소 40% 강도 감소
+        constraints.push('의료진 상담 필수', '고강도 운동 금지');
+        // 고강도 영법 제한
+        strokes = strokes.filter(s => s !== 'butterfly');
+      }
+    }
+  }
+
+  // 당화혈색소(HbA1c) 기반 당뇨병 관리 상태 평가
+  if (labs?.hba1c !== undefined || conditions?.diabetes) {
+    const hba1c = labs?.hba1c;
+    const hasDiabetes = conditions?.diabetes || false;
+    
+    if (hasDiabetes || (hba1c !== undefined && hba1c >= 6.5)) {
+      // 당뇨병 진단 또는 HbA1c 6.5% 이상
+      constraints.push('당뇨병: 운동 전후 혈당 모니터링 필수');
+      constraints.push('저혈당 증상 모니터링 필요', '발 상태 정기 점검 권장');
+      
+      if (hba1c !== undefined) {
+        if (hba1c >= 8.0) {
+          // 혈당 조절 불량 (HbA1c 8.0% 이상)
+          intensityReduction = Math.max(intensityReduction, 25); // 25% 강도 감소
+          constraints.push(`혈당 조절 불량 (HbA1c: ${hba1c}%) - 중등도 강도 운동 권장`);
+          constraints.push('의료진 상담 후 운동 시작 권장');
+        } else if (hba1c >= 7.0) {
+          // 혈당 조절 개선 필요 (HbA1c 7.0-7.9%)
+          intensityReduction = Math.max(intensityReduction, 15); // 15% 강도 감소
+          constraints.push(`혈당 조절 개선 필요 (HbA1c: ${hba1c}%) - 점진적 운동 강도 증가`);
+        } else if (hba1c < 7.0 && hba1c >= 6.5) {
+          // 혈당 조절 양호 (HbA1c 6.5-6.9%)
+          intensityReduction = Math.max(intensityReduction, 10); // 10% 강도 감소
+          constraints.push(`혈당 조절 양호 (HbA1c: ${hba1c}%) - 정상 운동 가능하나 주의 필요`);
+        }
+      } else {
+        // HbA1c 수치 없이 당뇨병 진단만 있는 경우
+        intensityReduction = Math.max(intensityReduction, 15); // 기본 15% 강도 감소
+      }
+    } else if (hba1c !== undefined && hba1c >= 5.7 && hba1c < 6.5) {
+      // 당뇨 전단계 (HbA1c 5.7-6.4%)
+      constraints.push(`당뇨 전단계 (HbA1c: ${hba1c}%) - 정기적인 운동으로 당뇨 예방 권장`);
+      // 강도 감소는 없지만 주의사항 추가
     }
   }
 
