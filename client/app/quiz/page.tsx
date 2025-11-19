@@ -296,6 +296,10 @@ export default function QuizPage() {
       case 'easy': return '쉬움';
       case 'medium': return '보통';
       case 'hard': return '어려움';
+      case 'beginner': return '초급';
+      case 'intermediate': return '중급';
+      case 'advanced': return '고급';
+      case 'none': return '';
       default: return difficulty;
     }
   };
@@ -545,9 +549,11 @@ export default function QuizPage() {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">{quiz.title}</h3>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(quiz.difficulty)}`}>
-                    {getDifficultyText(quiz.difficulty)}
-                  </span>
+                  {quiz.difficulty && quiz.difficulty !== 'none' && (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(quiz.difficulty)}`}>
+                      {getDifficultyText(quiz.difficulty)}
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-gray-600 text-sm mb-4">{quiz.description}</p>

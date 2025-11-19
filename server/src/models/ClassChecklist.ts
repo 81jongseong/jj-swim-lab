@@ -104,7 +104,9 @@ const ClassChecklistSchema = new Schema<IClassChecklist>({
   timestamps: true
 });
 
-// 반 ID로 유니크 인덱스 생성 (템플릿 기반이므로 레벨은 제거)
-ClassChecklistSchema.index({ classId: 1 }, { unique: true });
+// 인덱스 설정 (쿼리 최적화)
+ClassChecklistSchema.index({ classId: 1 }, { unique: true }); // 반 ID로 유니크 인덱스
+ClassChecklistSchema.index({ isActive: 1, updatedAt: -1 }); // 활성 체크리스트 최신 조회 최적화
+ClassChecklistSchema.index({ templateId: 1 }); // 템플릿 기반 조회 최적화
 
 export const ClassChecklist = mongoose.model<IClassChecklist>('ClassChecklist', ClassChecklistSchema);

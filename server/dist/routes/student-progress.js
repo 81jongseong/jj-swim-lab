@@ -6,36 +6,55 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const logger_1 = require("../utils/logger");
+const StudentProgress_1 = require("../models/StudentProgress");
+const Course_1 = require("../models/Course");
 const router = express_1.default.Router();
 router.get('/class/:classId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
         const { classId } = req.params;
-        const mockProgress = [
-            {
-                _id: 'progress1',
-                studentId: 'student1',
-                studentName: '김학생',
-                checklistId: 'checklist1',
-                completedItems: ['item1'],
-                totalItems: 3,
-                progressPercentage: 33,
-                lastUpdated: new Date()
-            },
-            {
-                _id: 'progress2',
-                studentId: 'student2',
-                studentName: '이학생',
-                checklistId: 'checklist1',
-                completedItems: ['item1', 'item2'],
-                totalItems: 3,
-                progressPercentage: 67,
-                lastUpdated: new Date()
+        const course = await Course_1.Course.findById(classId)
+            .populate('enrolledStudents.student', 'name email');
+        if (!course) {
+            return res.status(404).json({ error: '반을 찾을 수 없습니다.' });
+        }
+        const enrolledStudents = course.enrolledStudents.filter((enrollment) => enrollment.status === 'enrolled' || enrollment.status === 'active');
+        const progressList = await Promise.all(enrolledStudents.map(async (enrollment) => {
+            const studentId = enrollment.student?._id || enrollment.student;
+            const progress = await StudentProgress_1.StudentProgress.findOne({
+                studentId: studentId,
+                classId: classId
+            }).populate('classChecklistId');
+            if (progress) {
+                const totalItems = progress.items.length;
+                const completedItems = progress.items.filter((item) => item.isCompleted);
+                return {
+                    _id: progress._id.toString(),
+                    studentId: studentId.toString(),
+                    studentName: enrollment.student?.name || '이름 없음',
+                    checklistId: progress.classChecklistId?.toString() || '',
+                    completedItems: completedItems.map((item) => item._id.toString()),
+                    totalItems: totalItems,
+                    progressPercentage: progress.overallProgress || 0,
+                    lastUpdated: progress.lastUpdated || new Date()
+                };
             }
-        ];
-        (0, logger_1.logInfo)('학생 진행도 조회', { classId, studentCount: mockProgress.length });
+            else {
+                return {
+                    _id: '',
+                    studentId: studentId.toString(),
+                    studentName: enrollment.student?.name || '이름 없음',
+                    checklistId: '',
+                    completedItems: [],
+                    totalItems: 0,
+                    progressPercentage: 0,
+                    lastUpdated: new Date()
+                };
+            }
+        }));
+        (0, logger_1.logInfo)('학생 진행도 조회', { classId, studentCount: progressList.length });
         res.json({
             success: true,
-            data: mockProgress
+            data: progressList
         });
     }
     catch (error) {

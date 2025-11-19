@@ -100,7 +100,8 @@ interface LevelChecklistItem {
   description?: string;
   level: 'beginner' | 'intermediate' | 'advanced';
   category: ChecklistCategory;
-  checked: boolean;
+  checked: boolean; // 실제 수업 체크리스트에서 집계된 완료 상태 (읽기 전용)
+  checkedAt?: Date; // 완료 일시 (집계된 데이터)
   sourceMethodId?: string | null;
   sourceMethodName?: string | null;
 }
@@ -679,6 +680,7 @@ function InstructorProgress() {
           setHomework((prev) => ({ ...prev, [selectedStudent.id]: mappedHomework }));
         }
 
+        // 레벨 체크리스트는 서버에서 실제 수업 체크리스트에서 실시간 집계된 데이터 사용
         if (Array.isArray(progress.levelChecklist)) {
           const mappedChecklist: LevelChecklistItem[] = progress.levelChecklist.map((item: any) => ({
             id: item.itemId || item.id || createId(),
@@ -688,11 +690,15 @@ function InstructorProgress() {
             category: ['stroke', 'technique', 'endurance', 'safety'].includes(item.category)
               ? (item.category as ChecklistCategory)
               : 'technique',
-            checked: Boolean(item.checked),
+            checked: Boolean(item.checked), // 서버에서 집계된 완료 상태 사용
+            checkedAt: item.checkedAt ? new Date(item.checkedAt) : undefined,
             sourceMethodId: item.sourceMethodId || null,
             sourceMethodName: item.sourceMethodName || null
           }));
           setLevelChecklist((prev) => ({ ...prev, [selectedStudent.id]: mappedChecklist }));
+          
+          // 템플릿도 집계된 데이터로 업데이트 (다음 조회 시 병합을 위해)
+          setChecklistTemplates((prev) => ({ ...prev, [selectedStudent.id]: mappedChecklist }));
         }
 
         setStatusBanner(null);
@@ -707,120 +713,9 @@ function InstructorProgress() {
     loadProgress();
   }, [dialogOpen, selectedStudent?.id]);
 
-  useEffect(() => {
-    if (!selectedStudent) return;
-    const studentId = selectedStudent.id;
-
-    const existingTemplate = checklistTemplates[studentId];
-    if (existingTemplate) {
-      setLevelChecklist((prev) => {
-        const merged = mergeChecklistWithExisting(existingTemplate, prev[studentId]);
-        if (!isChecklistDifferent(prev[studentId], merged)) {
-          return prev;
-        }
-        return {
-          ...prev,
-          [studentId]: merged
-        };
-      });
-      return;
-    }
-
-    let isMounted = true;
-
-    const extractMethods = (response: any) => {
-      if (!response) return [];
-      if (Array.isArray(response.data)) return response.data;
-      if (Array.isArray(response)) return response;
-      if (response.data?.teachingMethods && Array.isArray(response.data.teachingMethods)) {
-        return response.data.teachingMethods;
-      }
-      return [];
-    };
-
-    const loadTemplate = async () => {
-      setIsChecklistLoading(true);
-      setChecklistError(null);
-      try {
-        const nextLevel = resolveNextLevel(selectedStudent.level);
-        const currentLevelLabel = mapStudentLevelToTeachingMethodLevel(selectedStudent.level);
-        const nextLevelLabel = mapStudentLevelToTeachingMethodLevel(nextLevel);
-
-        const [currentLevelRes, nextLevelRes] = await Promise.all([
-          apiClient.getTeachingMethods({ difficulty: currentLevelLabel }),
-          apiClient.getTeachingMethods({ difficulty: nextLevelLabel })
-        ]);
-
-        let currentMethods = extractMethods(currentLevelRes);
-        let nextMethods = extractMethods(nextLevelRes);
-
-        if (currentMethods.length === 0) {
-          const fallbackCurrent = await apiClient.getTeachingMethods({ difficulty: selectedStudent.level });
-          currentMethods = extractMethods(fallbackCurrent);
-        }
-
-        if (nextMethods.length === 0) {
-          const fallbackNext = await apiClient.getTeachingMethods({ difficulty: nextLevel });
-          nextMethods = extractMethods(fallbackNext);
-        }
-
-        const combined = [...currentMethods, ...nextMethods];
-
-        const superAdminFiltered = combined.filter((method: any) => {
-          const role =
-            method?.createdByRole ||
-            method?.createdBy?.userType ||
-            method?.ownerRole ||
-            method?.createdByRoleName;
-          return !role || role === 'superAdmin';
-        });
-
-        const templateCandidates = superAdminFiltered.length > 0 ? superAdminFiltered : combined;
-        const templateBase = buildChecklistFromTeachingMethods(templateCandidates, selectedStudent.level);
-        const useFallbackTemplate = templateBase.length === 0;
-        const template = useFallbackTemplate ? buildFallbackChecklist(selectedStudent) : templateBase;
-
-        if (!isMounted) return;
-
-        setChecklistTemplates((prev) => ({ ...prev, [studentId]: template }));
-        setLevelChecklist((prev) => {
-          const merged = mergeChecklistWithExisting(template, prev[studentId]);
-          return {
-            ...prev,
-            [studentId]: merged
-          };
-        });
-        setChecklistError(
-          useFallbackTemplate
-            ? '슈퍼관리자 강습법에서 체크리스트 항목을 찾을 수 없어 기본 항목을 사용합니다.'
-            : null
-        );
-      } catch (error) {
-        console.error('레벨 체크리스트 템플릿 로드 실패:', error);
-        if (!isMounted) return;
-        const fallback = buildFallbackChecklist(selectedStudent);
-        setChecklistTemplates((prev) => ({ ...prev, [studentId]: fallback }));
-        setLevelChecklist((prev) => {
-          const merged = mergeChecklistWithExisting(fallback, prev[studentId]);
-          return {
-            ...prev,
-            [studentId]: merged
-          };
-        });
-        setChecklistError('강습법 체크리스트를 불러오지 못해 기본 항목을 사용합니다.');
-      } finally {
-        if (isMounted) {
-          setIsChecklistLoading(false);
-        }
-      }
-    };
-
-    loadTemplate();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedStudent, checklistTemplates, levelChecklist]);
+  // 레벨 체크리스트는 서버에서 실제 수업 체크리스트에서 실시간 집계되므로
+  // 클라이언트에서 템플릿을 생성하지 않고 서버에서 집계된 데이터 사용
+  // loadProgress()에서 이미 집계된 레벨 체크리스트를 가져오므로 별도 로드 불필요
 
   const currentWeekRange = useMemo(() => {
     const start = getWeekStart(new Date());
@@ -1178,32 +1073,24 @@ function InstructorProgress() {
     setAttendance((prev) => ({ ...prev, [sessionId]: status }));
   };
 
+  // 레벨 체크리스트는 실제 수업 체크리스트에서 집계되므로 직접 체크 불가
+  // 실제 수업 체크리스트(/instructor/checklist)에서만 체크 가능
   const handleToggleChecklistItem = (studentId: string, itemId: string) => {
-    setLevelChecklist((prev) => {
-      const template = checklistTemplates[studentId];
-      const current = prev[studentId] ?? template ?? [];
-      const updated = current.map((item) =>
-        item.id === itemId ? { ...item, checked: !item.checked } : item
-      );
-      return {
-        ...prev,
-        [studentId]: updated
-      };
+    // 레벨 체크리스트는 읽기 전용 - 직접 체크 불가
+    // 실제 수업 체크리스트에서 체크해야 함
+    setStatusBanner({ 
+      type: 'info', 
+      message: '레벨 체크리스트는 실제 수업 체크리스트에서 자동으로 집계됩니다. 실제 수업 체크리스트에서 체크해주세요.' 
     });
   };
 
+  // 레벨 체크리스트는 실제 수업 체크리스트에서 집계되므로 리셋 불가
   const handleResetChecklist = (studentId: string) => {
-    const student = students.find((item) => item.id === studentId);
-    if (!student) return;
-    const template = checklistTemplates[studentId] || buildFallbackChecklist(student);
-    setChecklistTemplates((prev) => ({
-      ...prev,
-      [studentId]: template
-    }));
-    setLevelChecklist((prev) => ({
-      ...prev,
-      [studentId]: template.map((item) => ({ ...item, checked: false }))
-    }));
+    // 레벨 체크리스트는 읽기 전용 - 리셋 불가
+    setStatusBanner({ 
+      type: 'info', 
+      message: '레벨 체크리스트는 실제 수업 체크리스트에서 자동으로 집계됩니다. 리셋할 수 없습니다.' 
+    });
   };
 
   const handleRecommendPromotion = async () => {
@@ -1363,17 +1250,8 @@ function InstructorProgress() {
           completed: task.completed,
           completedAt: task.completedAt || null
         })),
-        levelChecklist: (levelChecklist[selectedStudent.id] || []).map((item) => ({
-          itemId: item.id,
-          label: item.label,
-          description: item.description,
-          level: item.level,
-          category: item.category,
-          checked: item.checked,
-          checkedAt: item.checked ? new Date().toISOString() : null,
-          sourceMethodId: item.sourceMethodId,
-          sourceMethodName: item.sourceMethodName
-        }))
+        // 레벨 체크리스트는 실제 수업 체크리스트에서 실시간 집계되므로 저장하지 않음
+        levelChecklist: []
       };
 
       await apiClient.post(`/api/instructor/progress/student/${selectedStudent.id}`, payload);
@@ -2197,9 +2075,10 @@ function InstructorProgress() {
                             <label key={item.id} className="flex items-start gap-2 text-sm text-slate-600">
                               <input
                                 type="checkbox"
-                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-200"
+                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 checked={item.checked}
-                                onChange={() => selectedStudent && handleToggleChecklistItem(selectedStudent.id, item.id)}
+                                disabled={true}
+                                title="레벨 체크리스트는 실제 수업 체크리스트에서 자동으로 집계됩니다"
                               />
                               <span>
                                 <span className="font-medium text-slate-800">{item.label}</span>

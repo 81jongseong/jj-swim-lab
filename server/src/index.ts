@@ -232,6 +232,8 @@ import myProgramsRoutes from './routes/my-programs';
 // import availabilityRoutes from './routes/availability'; // 중복 임포트 제거 (아래에서 이미 임포트됨)
 import centerScheduleRoutes from './routes/center-schedule'; // ⭐ 추가
 import instructorProgressRoutes from './routes/instructor-progress';
+import aiRoutineRecommendationsRoutes from './routes/ai-routine-recommendations'; // AI 기반 개인별 운동 루틴 추천
+import quizQuestionGeneratorRoutes from './routes/quiz-question-generator'; // 퀴즈 문제 자동 생성
 
 // Models (for database connection) - Checklist를 가장 먼저 등록
 console.log('📦 모델 import 시작...');
@@ -474,6 +476,7 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/quiz-question-generator', quizQuestionGeneratorRoutes); // 퀴즈 문제 자동 생성
 app.use('/api/membership', membershipRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/ai-config', aiConfigRoutes);
@@ -577,6 +580,7 @@ app.use('/api/swim-program-completions', swimProgramCompletionsRoutes); // ⭐ �
 app.use('/api/swim-program-day-condition', swimProgramDayConditionRoutes); // ⭐ 추가
 app.use('/api/instructor-progress', instructorProgressRoutes);
 app.use('/api/instructor/progress', instructorProgressRoutes);
+app.use('/api/ai-routine-recommendations', aiRoutineRecommendationsRoutes); // AI 기반 개인별 운동 루틴 추천
 
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);

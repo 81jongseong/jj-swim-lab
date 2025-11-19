@@ -113,5 +113,7 @@ const ClassChecklistSchema = new mongoose_1.Schema({
     timestamps: true
 });
 ClassChecklistSchema.index({ classId: 1 }, { unique: true });
+ClassChecklistSchema.index({ isActive: 1, updatedAt: -1 });
+ClassChecklistSchema.index({ templateId: 1 });
 exports.ClassChecklist = mongoose_1.default.model('ClassChecklist', ClassChecklistSchema);
 //# sourceMappingURL=ClassChecklist.js.map

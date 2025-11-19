@@ -106,6 +106,7 @@ const userMenuStructure = {
     main: [
       { href: '/dashboard', label: '📊 대시보드' },
       { href: '/health', label: '🏥 건강관리' },
+      { href: '/routine-recommendation', label: '🤖 AI 루틴 추천' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/courses', label: '📚 내 강의' },
       { href: '/payments', label: '💰 결제 내역' },
@@ -133,13 +134,18 @@ const userMenuStructure = {
     ],
     studentCare: [
       { href: '/instructor/students', label: '👥 수강생 관리' },
+      { href: '/instructor/checklist', label: '📋 체크리스트 관리' },
       { href: '/instructor/progress', label: '📈 진행 · 출석 관리' },
       { href: '/instructor/reviews', label: '📝 업로드 리뷰' },
     ],
-    coachingTools: [
-      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 맞춤형 수영 계획' },
-      { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
+    teachingMethods: [
       { href: '/instructor/teaching-methods', label: '🏊‍♂️ 강습법 관리' },
+    ],
+    programGeneration: [
+      { href: '/instructor/swim-training-plan', label: '🏊‍♂️ 프로그램 생성' },
+    ],
+    coachingTools: [
+      { href: '/instructor/health/overview', label: '📊 학생 건강 현황' },
     ],
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
@@ -236,6 +242,7 @@ const userMenuStructure = {
       { href: '/admin/teaching-methods', label: '📚 강습법 관리' },
       { href: '/admin/course-oversight', label: '👁️ 강습 과정 감독' },
       { href: '/admin/quiz', label: '🧠 퀴즈 관리' },
+      { href: '/admin/quiz-question-generator', label: '🤖 문제 자동 생성' },
       { href: '/admin/swim-training-engine', label: '🏊‍♂️ 수영 트레이닝 규칙 엔진' },
       { href: '/admin/health/overview', label: '📊 전체 건강 현황 및 통계' },
     ],
@@ -288,7 +295,9 @@ const menuGrouping = {
     { groupName: '⚡ 빠른 접근', categories: ['quickAccess'] },
     { groupName: '📚 강의 관리', categories: ['classManagement'] },
     { groupName: '👥 수강생 관리', categories: ['studentCare'] },
-    { groupName: '🏊 코칭 도구', categories: ['coachingTools'] },
+    { groupName: '📖 강습법 관리', categories: ['teachingMethods'] },
+    { groupName: '🏊 프로그램 생성', categories: ['programGeneration'] },
+    { groupName: '🛠️ 코칭 도구', categories: ['coachingTools'] },
     { groupName: '🎯 체험 & 학습', categories: ['experience'] },
     { groupName: '📘 정보 & 지원', categories: ['resources'] },
   ],
@@ -564,7 +573,45 @@ export default function Navigation() {
   };
   const { user, logout, hasPermission, hasUserType, loading } = useAuth();
   const isLoggedIn = !!user;
-  const userName = user?.name || '';
+  
+  // 사용자 이름이 사용자 타입 라벨과 같은 경우 처리
+  const getUserDisplayName = () => {
+    if (!user?.name) return '';
+    
+    const userTypeLabels: { [key: string]: string } = {
+      'student': '회원',
+      'instructor': '강사',
+      'centerAdmin': '센터 관리자',
+      'center-admin': '센터 관리자',
+      'superAdmin': '최고 관리자'
+    };
+    
+    // user.name이 userType 라벨과 같거나 잘못된 경우 처리
+    const userTypeLabel = userTypeLabels[user.userType] || '';
+    
+    // superAdmin인데 name이 "센터 관리자"인 경우
+    if (user.userType === 'superAdmin' && (user.name === '센터 관리자' || user.name === userTypeLabel)) {
+      // 이메일에서 이름 부분 추출 또는 userId 사용
+      const emailName = user.email?.split('@')[0];
+      if (emailName && emailName !== 'admin' && emailName !== 'superadmin') {
+        return emailName;
+      }
+      return user.userId || '최고 관리자';
+    }
+    
+    // 다른 타입도 동일하게 처리
+    if (user.name === userTypeLabel) {
+      const emailName = user.email?.split('@')[0];
+      if (emailName) {
+        return emailName;
+      }
+      return user.userId || '사용자';
+    }
+    
+    return user.name;
+  };
+  
+  const userName = getUserDisplayName();
 
   const handleLogout = () => {
     logout();
@@ -637,7 +684,9 @@ export default function Navigation() {
             </div>
             {group.categories && group.categories.map && group.categories.map(category => {
               const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
-              const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
+              let menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
+              // 유료 강사 전용 메뉴 필터링
+              menuItems = filterMenuByPermissions(menuItems, normalizedUserType);
               return menuItems.map((item, itemIndex) => {
                 const href = resolveHref(item.href);
                 return (
@@ -703,7 +752,9 @@ export default function Navigation() {
                 </div>
                   {group.categories && group.categories.map && group.categories.map(category => {
                     const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
-              const menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
+                    let menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
+                    // 유료 강사 전용 메뉴 필터링
+                    menuItems = filterMenuByPermissions(menuItems, normalizedUserType);
                     return menuItems.map((item, itemIndex) => {
                       const href = resolveHref(item.href);
                       const isActive =

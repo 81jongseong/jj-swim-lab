@@ -7,7 +7,114 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = require("mongoose");
 const auth_1 = require("../middleware/auth");
 const InstructorProgress_1 = require("../models/InstructorProgress");
+const Checklist_1 = require("../models/Checklist");
+const StudentProgress_1 = require("../models/StudentProgress");
+const ClassChecklist_1 = require("../models/ClassChecklist");
+const TeachingMethod_1 = require("../models/TeachingMethod");
+const User_1 = require("../models/User");
 const router = express_1.default.Router();
+const aggregateLevelChecklist = async (studentId, studentLevel) => {
+    const studentObjectId = new mongoose_1.Types.ObjectId(studentId);
+    const levelMap = {
+        'beginner': '초급',
+        'intermediate': '중급',
+        'advanced': '고급'
+    };
+    const reverseLevelMap = {
+        '초급': 'beginner',
+        '중급': 'intermediate',
+        '고급': 'advanced'
+    };
+    const currentLevelEnglish = reverseLevelMap[studentLevel] || 'beginner';
+    const nextLevelEnglish = currentLevelEnglish === 'beginner' ? 'intermediate' :
+        currentLevelEnglish === 'intermediate' ? 'advanced' : 'advanced';
+    const teachingMethods = await TeachingMethod_1.TeachingMethod.find({
+        isActive: true,
+        level: { $in: [currentLevelEnglish, nextLevelEnglish] },
+        $or: [
+            { createdByRole: 'superAdmin' },
+            { createdByRole: { $exists: false } },
+            { createdByRole: null }
+        ]
+    }).sort({ order: 1, createdAt: 1 });
+    const individualChecklists = await Checklist_1.Checklist.find({
+        studentId: studentObjectId,
+        status: { $in: ['active', 'completed'] }
+    }).lean();
+    const studentProgressRecords = await StudentProgress_1.StudentProgress.find({
+        studentId: studentObjectId,
+        status: { $in: ['active', 'completed'] }
+    }).populate('classChecklistId').lean();
+    const completedItemsMap = new Map();
+    individualChecklists.forEach((checklist) => {
+        checklist.items?.forEach((item) => {
+            if (item.isCompleted && item.teachingMethodId && item.stepName) {
+                const key = `${item.teachingMethodId.toString()}-${item.stepName}`;
+                const existing = completedItemsMap.get(key);
+                if (!existing || !existing.completedAt || (item.completedAt && new Date(item.completedAt) > new Date(existing.completedAt))) {
+                    completedItemsMap.set(key, {
+                        completedAt: item.completedAt ? new Date(item.completedAt) : new Date(),
+                        checked: true
+                    });
+                }
+            }
+        });
+    });
+    for (const progress of studentProgressRecords) {
+        const classChecklist = progress.classChecklistId;
+        if (!classChecklist)
+            continue;
+        const classChecklistData = await ClassChecklist_1.ClassChecklist.findById(classChecklist._id || classChecklist).lean();
+        if (!classChecklistData)
+            continue;
+        (progress.items || []).forEach((item, index) => {
+            if (item.isCompleted && item.stepName) {
+                const classItem = (classChecklistData.items || []).find((ci) => ci.stepName === item.stepName || ci.stepOrder === item.stepOrder);
+                if (classItem && classItem.teachingMethodId) {
+                    const key = `${classItem.teachingMethodId.toString()}-${item.stepName}`;
+                    const existing = completedItemsMap.get(key);
+                    if (!existing || !existing.completedAt || (item.completedAt && new Date(item.completedAt) > new Date(existing.completedAt))) {
+                        completedItemsMap.set(key, {
+                            completedAt: item.completedAt ? new Date(item.completedAt) : new Date(),
+                            checked: true
+                        });
+                    }
+                }
+            }
+        });
+    }
+    const levelChecklist = [];
+    const usedSlugs = new Set();
+    teachingMethods.forEach((method) => {
+        const checklistItems = Array.isArray(method.checklist) ? method.checklist : [];
+        checklistItems.forEach((item, index) => {
+            const slug = `${method._id.toString()}-${item}-${index}`;
+            if (usedSlugs.has(slug))
+                return;
+            usedSlugs.add(slug);
+            const key = `${method._id.toString()}-${item}`;
+            const completedInfo = completedItemsMap.get(key);
+            const methodLevel = method.level === 'beginner' ? 'beginner' :
+                method.level === 'intermediate' ? 'intermediate' :
+                    method.level === 'advanced' ? 'advanced' : 'beginner';
+            const category = method.category?.includes('stroke') ? 'stroke' :
+                method.category?.includes('endurance') ? 'endurance' :
+                    method.category?.includes('safety') ? 'safety' : 'technique';
+            levelChecklist.push({
+                itemId: slug,
+                label: item,
+                description: method.name ? `${method.name} · ${method.description || '핵심 체크포인트'}` : method.description,
+                category,
+                level: methodLevel,
+                checked: completedInfo?.checked || false,
+                checkedAt: completedInfo?.completedAt || null,
+                sourceMethodId: method._id.toString(),
+                sourceMethodName: method.name || null
+            });
+        });
+    });
+    return levelChecklist.slice(0, 100);
+};
 router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor']), async (req, res) => {
     try {
         const instructorId = req.user?.id;
@@ -15,14 +122,26 @@ router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)
         if (!mongoose_1.Types.ObjectId.isValid(studentId)) {
             return res.status(400).json({ success: false, message: '유효하지 않은 학생 ID 입니다.' });
         }
+        const studentObjectId = new mongoose_1.Types.ObjectId(studentId);
+        const student = await User_1.User.findById(studentObjectId).lean();
+        const studentLevel = student?.studentInfo?.currentLevel || student?.studentInfo?.swimmingLevel || '초급';
         const progress = await InstructorProgress_1.InstructorProgress.findOne({
             instructorId: new mongoose_1.Types.ObjectId(instructorId),
-            studentId: new mongoose_1.Types.ObjectId(studentId)
+            studentId: studentObjectId
         }).lean();
-        if (!progress) {
-            return res.json({ success: true, data: null });
-        }
-        res.json({ success: true, data: progress });
+        const levelChecklist = await aggregateLevelChecklist(studentObjectId, studentLevel);
+        const result = progress ? {
+            ...progress,
+            levelChecklist
+        } : {
+            instructorId: new mongoose_1.Types.ObjectId(instructorId),
+            studentId: studentObjectId,
+            levelChecklist,
+            sessions: [],
+            notes: [],
+            homework: []
+        };
+        res.json({ success: true, data: result });
     }
     catch (error) {
         console.error('❌ 진행 관리 조회 실패:', error);
@@ -72,31 +191,24 @@ router.post('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole
                 completedAt: task.completedAt ? new Date(task.completedAt) : null
             }))
             : [];
-        const normalizedChecklist = Array.isArray(levelChecklist)
-            ? levelChecklist.map((item) => ({
-                itemId: item.itemId || item.id,
-                label: item.label,
-                description: item.description,
-                category: ['stroke', 'technique', 'endurance', 'safety'].includes(item.category)
-                    ? item.category
-                    : 'technique',
-                level: ['beginner', 'intermediate', 'advanced'].includes(item.level) ? item.level : 'beginner',
-                checked: Boolean(item.checked),
-                checkedAt: item.checkedAt ? new Date(item.checkedAt) : item.checked ? new Date() : null,
-                sourceMethodId: item.sourceMethodId || item.sourceId || null,
-                sourceMethodName: item.sourceMethodName || item.sourceName || item.source || null
-            }))
-            : [];
         const updated = await InstructorProgress_1.InstructorProgress.findOneAndUpdate({ instructorId: instructorObjectId, studentId: studentObjectId }, {
             instructorId: instructorObjectId,
             studentId: studentObjectId,
             courseName,
             sessions: normalizedSessions,
             notes: normalizedNotes,
-            homework: normalizedHomework,
-            levelChecklist: normalizedChecklist
+            homework: normalizedHomework
         }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
-        res.json({ success: true, data: updated });
+        const student = await User_1.User.findById(studentObjectId).lean();
+        const studentLevel = student?.studentInfo?.currentLevel || student?.studentInfo?.swimmingLevel || '초급';
+        const aggregatedLevelChecklist = await aggregateLevelChecklist(studentObjectId, studentLevel);
+        res.json({
+            success: true,
+            data: {
+                ...updated,
+                levelChecklist: aggregatedLevelChecklist
+            }
+        });
     }
     catch (error) {
         console.error('❌ 진행 관리 저장 실패:', error);

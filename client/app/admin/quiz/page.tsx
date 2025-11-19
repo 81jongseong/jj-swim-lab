@@ -5,6 +5,19 @@ import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 
+const QUIZ_CATEGORIES = [
+  '운동생리학',
+  '수영기술',
+  '안전수칙',
+  '체력향상',
+  '기초기술',
+  '수영 이론',
+  '수영 기술',
+  '안전 수칙',
+  '건강 관리',
+  '기타'
+] as const;
+
 interface Quiz {
   id: string;
   title: string;
@@ -55,13 +68,35 @@ export default function QuizManagementPage() {
     correctAnswer: number | string;
     explanation: string;
     points: number;
+    // 문제 은행을 위한 메타데이터
+    conceptBlock?: {
+      title?: string;
+      theory?: string[];
+    };
+    originalExplanation?: {
+      summary?: string;
+      keyPoints?: string[];
+    };
+    incorrectPoolDetails?: Array<{
+      option: string;
+      whyIncorrect?: string;
+    }>;
+    correctPool?: string[];
+    incorrectPool?: string[];
+    metadata?: any;
   }>({
     type: 'multiple-choice',
     question: '',
     options: ['', '', '', ''],
     correctAnswer: 0,
     explanation: '',
-    points: 10
+    points: 10,
+    conceptBlock: undefined,
+    originalExplanation: undefined,
+    incorrectPoolDetails: [],
+    correctPool: [],
+    incorrectPool: [],
+    metadata: {}
   });
 
   useEffect(() => {
@@ -219,7 +254,7 @@ export default function QuizManagementPage() {
             title: fullQuiz.title,
             description: fullQuiz.description,
             category: fullQuiz.category,
-            difficulty: fullQuiz.difficulty || 'beginner',
+            difficulty: fullQuiz.difficulty === 'none' ? 'none' : (fullQuiz.difficulty || 'beginner'),
             type: fullQuiz.type || 'practice',
             timeLimit: fullQuiz.timeLimit || 30,
             isActive: fullQuiz.isActive,
@@ -263,7 +298,13 @@ export default function QuizManagementPage() {
       options: ['', '', '', ''],
       correctAnswer: 0,
       explanation: '',
-      points: 10
+      points: 10,
+      conceptBlock: undefined,
+      originalExplanation: undefined,
+      incorrectPoolDetails: [],
+      correctPool: [],
+      incorrectPool: [],
+      metadata: {}
     });
     setEditingQuestion(null);
     setEditingQuestionIndex(-1);
@@ -342,7 +383,22 @@ export default function QuizManagementPage() {
   const startEditQuestion = (question: any, index: number) => {
     setEditingQuestion(question);
     setEditingQuestionIndex(index);
-    setQuestionForm(question);
+    // 모든 메타데이터 포함하여 폼에 설정
+    setQuestionForm({
+      type: question.type || 'multiple-choice',
+      question: question.question || '',
+      options: question.options || ['', '', '', ''],
+      correctAnswer: question.correctAnswer ?? 0,
+      explanation: question.explanation || '',
+      points: question.points || 10,
+      // 문제 은행 메타데이터
+      conceptBlock: question.conceptBlock,
+      originalExplanation: question.originalExplanation,
+      incorrectPoolDetails: question.incorrectPoolDetails || [],
+      correctPool: question.correctPool || [],
+      incorrectPool: question.incorrectPool || [],
+      metadata: question.metadata || {}
+    });
     setShowQuestionModal(true);
   };
 
@@ -489,10 +545,12 @@ export default function QuizManagementPage() {
                     <div className="text-gray-500">카테고리</div>
                     <div className="font-medium">{quiz.category}</div>
                   </div>
-                  <div className="bg-gray-50 p-2 rounded">
-                    <div className="text-gray-500">난이도</div>
-                    <div className="font-medium">{quiz.level}</div>
-                  </div>
+                  {quiz.level && quiz.level !== 'none' && (
+                    <div className="bg-gray-50 p-2 rounded">
+                      <div className="text-gray-500">난이도</div>
+                      <div className="font-medium">{quiz.level}</div>
+                    </div>
+                  )}
                   <div className="bg-gray-50 p-2 rounded">
                     <div className="text-gray-500">문제 수</div>
                     <div className="font-medium">{quiz.questionsCount || quiz.questions?.length || 0}개</div>
@@ -573,10 +631,12 @@ export default function QuizManagementPage() {
                   <div className="text-sm font-medium text-gray-500 mb-1">카테고리</div>
                   <div className="text-gray-900">{selectedQuiz.category}</div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="text-sm font-medium text-gray-500 mb-1">난이도</div>
-                  <div className="text-gray-900">{selectedQuiz.level}</div>
-                </div>
+                {selectedQuiz.level && selectedQuiz.level !== 'none' && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm font-medium text-gray-500 mb-1">난이도</div>
+                    <div className="text-gray-900">{selectedQuiz.level}</div>
+                  </div>
+                )}
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="text-sm font-medium text-gray-500 mb-1">문제 수</div>
                   <div className="text-gray-900">{selectedQuiz.questionsCount || selectedQuiz.questions?.length || 0}개</div>
@@ -693,10 +753,9 @@ export default function QuizManagementPage() {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="수영 이론">수영 이론</option>
-                    <option value="수영 기술">수영 기술</option>
-                    <option value="안전 수칙">안전 수칙</option>
-                    <option value="건강 관리">건강 관리</option>
+                    {QUIZ_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -710,6 +769,7 @@ export default function QuizManagementPage() {
                     <option value="beginner">초급</option>
                     <option value="intermediate">중급</option>
                     <option value="advanced">고급</option>
+                    <option value="none">없음</option>
                   </select>
                 </div>
               </div>
@@ -985,6 +1045,244 @@ export default function QuizManagementPage() {
                   min="1"
                 />
               </div>
+
+              {/* 최고 관리자만 보이는 문제 은행 메타데이터 편집 */}
+              {user?.userType === 'superAdmin' && (
+                <div className="border-t pt-6 mt-6 space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 문제 은행 메타데이터 (최고 관리자 전용)</h3>
+                  
+                  {/* 개념 블록 */}
+                  <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-md">
+                    <div className="flex items-center mb-4">
+                      <div className="w-1 h-8 bg-blue-600 rounded-full mr-3"></div>
+                      <h4 className="text-lg font-bold text-blue-900">개념 요약</h4>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                      <input
+                        type="text"
+                        value={questionForm.conceptBlock?.title || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          conceptBlock: { ...questionForm.conceptBlock, title: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="개념 블록 제목"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">이론 (한 줄에 하나씩)</label>
+                      <textarea
+                        value={questionForm.conceptBlock?.theory?.join('\n') || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          conceptBlock: { 
+                            ...questionForm.conceptBlock, 
+                            theory: e.target.value.split('\n').filter(line => line.trim())
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        rows={6}
+                        placeholder="이론을 한 줄에 하나씩 입력하세요"
+                      />
+                      {questionForm.conceptBlock?.theory && questionForm.conceptBlock.theory.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {questionForm.conceptBlock.theory.map((theory, idx) => (
+                            <div key={idx} className="p-3 bg-white rounded-lg border border-blue-100">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                                  {idx + 1}
+                                </div>
+                                <p className="text-gray-800 leading-relaxed">{theory}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 원문 풀이 */}
+                  <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl shadow-md">
+                    <div className="flex items-center mb-4">
+                      <div className="w-1 h-8 bg-purple-600 rounded-full mr-3"></div>
+                      <h4 className="text-lg font-bold text-purple-900">원문 풀이</h4>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">요약</label>
+                      <textarea
+                        value={questionForm.originalExplanation?.summary || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          originalExplanation: { 
+                            ...questionForm.originalExplanation, 
+                            summary: e.target.value
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        rows={3}
+                        placeholder="원문 풀이 요약"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">핵심 포인트 (한 줄에 하나씩)</label>
+                      <textarea
+                        value={questionForm.originalExplanation?.keyPoints?.join('\n') || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          originalExplanation: { 
+                            ...questionForm.originalExplanation, 
+                            keyPoints: e.target.value.split('\n').filter(line => line.trim())
+                          }
+                        })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                        rows={4}
+                        placeholder="핵심 포인트를 한 줄에 하나씩 입력하세요"
+                      />
+                      {questionForm.originalExplanation?.keyPoints && questionForm.originalExplanation.keyPoints.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {questionForm.originalExplanation.keyPoints.map((point, idx) => (
+                            <div key={idx} className="p-3 bg-white rounded-lg border border-purple-100">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 w-5 h-5 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                                  {idx + 1}
+                                </div>
+                                <p className="text-gray-700 leading-relaxed">{point}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 정답 Pool과 오답 Pool */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 정답 Pool */}
+                    <div className="p-6 bg-green-50 border border-green-200 rounded-xl shadow-md">
+                      <div className="flex items-center mb-4">
+                        <div className="w-1 h-8 bg-green-600 rounded-full mr-3"></div>
+                        <h4 className="text-lg font-bold text-green-800">
+                          정답 Pool ({questionForm.correctPool?.length || 0}개)
+                        </h4>
+                      </div>
+                      <textarea
+                        value={questionForm.correctPool?.join('\n') || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          correctPool: e.target.value.split('\n').filter(line => line.trim())
+                        })}
+                        className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 mb-3"
+                        rows={8}
+                        placeholder="정답 Pool을 한 줄에 하나씩 입력하세요"
+                      />
+                      {questionForm.correctPool && questionForm.correctPool.length > 0 && (
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {questionForm.correctPool.map((item, idx) => (
+                            <div key={idx} className="p-3 bg-white border border-green-200 rounded-lg">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                                  {idx + 1}
+                                </div>
+                                <p className="text-green-800 leading-relaxed flex-1">{item}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 오답 Pool */}
+                    <div className="p-6 bg-red-50 border border-red-200 rounded-xl shadow-md">
+                      <div className="flex items-center mb-4">
+                        <div className="w-1 h-8 bg-red-600 rounded-full mr-3"></div>
+                        <h4 className="text-lg font-bold text-red-800">
+                          오답 Pool ({questionForm.incorrectPool?.length || 0}개)
+                        </h4>
+                      </div>
+                      <textarea
+                        value={questionForm.incorrectPool?.join('\n') || ''}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          incorrectPool: e.target.value.split('\n').filter(line => line.trim())
+                        })}
+                        className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 mb-3"
+                        rows={8}
+                        placeholder="오답 Pool을 한 줄에 하나씩 입력하세요"
+                      />
+                      {questionForm.incorrectPool && questionForm.incorrectPool.length > 0 && (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {questionForm.incorrectPool.map((item, idx) => {
+                            const detail = questionForm.incorrectPoolDetails?.find(d => d.option === item);
+                            return (
+                              <div key={idx} className="p-3 bg-white border border-red-200 rounded-lg">
+                                <div className="flex items-start">
+                                  <div className="flex-shrink-0 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                                    {idx + 1}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-red-800 leading-relaxed font-medium mb-1">{item}</p>
+                                    {detail?.whyIncorrect && (
+                                      <div className="mt-2 p-2 bg-red-100 rounded border-l-4 border-red-400">
+                                        <p className="text-xs font-semibold text-red-700 mb-1">❌ 왜 틀렸나요?</p>
+                                        <p className="text-xs text-red-600 leading-relaxed">{detail.whyIncorrect}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 오답 Pool 상세 정보 편집 */}
+                  <div className="p-6 bg-orange-50 border border-orange-200 rounded-xl shadow-md">
+                    <div className="flex items-center mb-4">
+                      <div className="w-1 h-8 bg-orange-600 rounded-full mr-3"></div>
+                      <h4 className="text-lg font-bold text-orange-800">오답 Pool 상세 정보 (JSON)</h4>
+                    </div>
+                    <textarea
+                      value={questionForm.incorrectPoolDetails ? JSON.stringify(questionForm.incorrectPoolDetails, null, 2) : '[]'}
+                      onChange={(e) => {
+                        try {
+                          const parsed = JSON.parse(e.target.value);
+                          setQuestionForm({ ...questionForm, incorrectPoolDetails: parsed });
+                        } catch {
+                          // JSON 파싱 실패 시 무시
+                        }
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-xs"
+                      rows={8}
+                      placeholder='[{"option": "오답", "whyIncorrect": "이유"}]'
+                    />
+                  </div>
+
+                  {/* 기타 메타데이터 */}
+                  <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl shadow-md">
+                    <div className="flex items-center mb-4">
+                      <div className="w-1 h-8 bg-gray-600 rounded-full mr-3"></div>
+                      <h4 className="text-lg font-bold text-gray-800">기타 메타데이터 (JSON)</h4>
+                    </div>
+                    <textarea
+                      value={questionForm.metadata ? JSON.stringify(questionForm.metadata, null, 2) : '{}'}
+                      onChange={(e) => {
+                        try {
+                          const parsed = JSON.parse(e.target.value);
+                          setQuestionForm({ ...questionForm, metadata: parsed });
+                        } catch {
+                          // JSON 파싱 실패 시 무시
+                        }
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-500 font-mono text-xs"
+                      rows={4}
+                      placeholder='{"key": "value"}'
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">

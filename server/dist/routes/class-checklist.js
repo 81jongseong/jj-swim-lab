@@ -19,10 +19,29 @@ router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instru
         let items = [];
         let finalLevel = '';
         if (isPrivateLesson) {
-            const allTeachingMethods = await TeachingMethod_1.TeachingMethod.find({});
+            const userId = req.user?._id;
+            const teachingMethodQuery = {
+                isActive: true,
+                $or: [
+                    { createdByRole: 'superAdmin' },
+                    { createdByRole: { $exists: false } },
+                    { createdByRole: null },
+                    {
+                        createdByRole: 'instructor',
+                        createdBy: userId
+                    }
+                ]
+            };
+            const allTeachingMethods = await TeachingMethod_1.TeachingMethod.find(teachingMethodQuery)
+                .sort({ order: 1, createdAt: 1 });
             if (!allTeachingMethods || allTeachingMethods.length === 0) {
-                return res.status(404).json({ error: '강습법을 찾을 수 없습니다.' });
+                return res.status(404).json({ error: '강습법을 찾을 수 없습니다. 최고관리자 강습법 또는 본인이 등록한 강습법이 필요합니다.' });
             }
+            (0, logger_1.logInfo)('개인레슨 체크리스트용 강습법 조회', {
+                userId,
+                methodCount: allTeachingMethods.length,
+                methodIds: allTeachingMethods.map(m => m._id)
+            });
             let stepOrder = 1;
             allTeachingMethods.forEach((method) => {
                 method.steps.forEach((step, stepIndex) => {
@@ -58,13 +77,34 @@ router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instru
             }
         }
         else if (level) {
+            const userId = req.user?._id;
             const englishLevel = level === '초급' ? 'beginner' :
                 level === '중급' ? 'intermediate' :
                     level === '고급' ? 'advanced' : 'beginner';
-            const teachingMethods = await TeachingMethod_1.TeachingMethod.find({ level: englishLevel });
+            const teachingMethodQuery = {
+                isActive: true,
+                level: englishLevel,
+                $or: [
+                    { createdByRole: 'superAdmin' },
+                    { createdByRole: { $exists: false } },
+                    { createdByRole: null },
+                    {
+                        createdByRole: 'instructor',
+                        createdBy: userId
+                    }
+                ]
+            };
+            const teachingMethods = await TeachingMethod_1.TeachingMethod.find(teachingMethodQuery)
+                .sort({ order: 1, createdAt: 1 });
             if (!teachingMethods || teachingMethods.length === 0) {
-                return res.status(404).json({ error: '해당 레벨의 강습법을 찾을 수 없습니다.' });
+                return res.status(404).json({ error: `해당 레벨(${level})의 강습법을 찾을 수 없습니다. 최고관리자 강습법 또는 본인이 등록한 강습법이 필요합니다.` });
             }
+            (0, logger_1.logInfo)('반 체크리스트용 강습법 조회', {
+                userId,
+                level: englishLevel,
+                methodCount: teachingMethods.length,
+                methodIds: teachingMethods.map(m => m._id)
+            });
             let stepOrder = 1;
             teachingMethods.forEach((method) => {
                 method.steps.forEach((step, stepIndex) => {

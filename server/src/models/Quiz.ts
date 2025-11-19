@@ -14,6 +14,23 @@ export interface IQuiz extends Document {
     correctAnswer: string | number | string[]; // 4지선다/OX: 정답 인덱스, 단답형: 정답 텍스트/배열
     explanation?: string;
     points: number;
+    // 추가 메타데이터 (문제 생성 시 사용한 정보)
+    conceptBlock?: {
+      title?: string;
+      theory?: string[];
+    };
+    originalExplanation?: {
+      summary?: string;
+      keyPoints?: string[];
+    };
+    incorrectPoolDetails?: Array<{
+      option: string;
+      whyIncorrect?: string;
+    }>;
+    // 정답/오답 Pool (문제 생성 시 사용한 전체 Pool)
+    correctPool?: string[];
+    incorrectPool?: string[];
+    metadata?: any; // 기타 JSON 데이터
   }>;
   timeLimit?: number; // 분 단위
   passingScore: number;
@@ -22,6 +39,7 @@ export interface IQuiz extends Document {
   createdBy: mongoose.Types.ObjectId;
   assignedTo?: mongoose.Types.ObjectId[]; // 특정 사용자/그룹에게 할당
   tags: string[];
+  metadata?: any; // 퀴즈 전체 메타데이터 (JSON 형태로 저장)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,7 +62,7 @@ const QuizSchema = new Schema<IQuiz>({
   },
   difficulty: { 
     type: String, 
-    enum: ['beginner', 'intermediate', 'advanced'], 
+    enum: ['beginner', 'intermediate', 'advanced', 'none'], 
     default: 'beginner' 
   },
   type: { 
@@ -83,6 +101,25 @@ const QuizSchema = new Schema<IQuiz>({
       type: Number, 
       required: true, 
       default: 1 
+    },
+    // 추가 메타데이터
+    conceptBlock: {
+      type: Schema.Types.Mixed
+    },
+    originalExplanation: {
+      type: Schema.Types.Mixed
+    },
+    incorrectPoolDetails: [{
+      type: Schema.Types.Mixed
+    }],
+    correctPool: [{
+      type: String
+    }],
+    incorrectPool: [{
+      type: String
+    }],
+    metadata: {
+      type: Schema.Types.Mixed
     }
   }],
   timeLimit: { 
@@ -117,7 +154,11 @@ const QuizSchema = new Schema<IQuiz>({
   tags: [{ 
     type: String, 
     trim: true 
-  }]
+  }],
+  metadata: {
+    type: Schema.Types.Mixed,
+    default: {}
+  }
 }, { 
   timestamps: true 
 });

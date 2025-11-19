@@ -222,7 +222,24 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
                 });
             }
         }
-        const updatedQuiz = await Quiz_1.Quiz.findByIdAndUpdate(req.params.id, { ...req.body, updatedAt: new Date() }, { new: true, runValidators: true });
+        const updateData = {
+            ...req.body,
+            updatedAt: new Date()
+        };
+        if (req.body.questions && Array.isArray(req.body.questions)) {
+            updateData.questions = req.body.questions;
+        }
+        if (req.body.metadata !== undefined) {
+            updateData.metadata = req.body.metadata;
+        }
+        console.log('🔍 퀴즈 수정 데이터:', {
+            id: req.params.id,
+            hasQuestions: !!updateData.questions,
+            questionsCount: updateData.questions?.length,
+            firstQuestionHasMetadata: updateData.questions?.[0]?.conceptBlock || updateData.questions?.[0]?.originalExplanation || updateData.questions?.[0]?.metadata,
+            hasMetadata: !!updateData.metadata
+        });
+        const updatedQuiz = await Quiz_1.Quiz.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
         res.json({
             success: true,
             message: '퀴즈가 성공적으로 수정되었습니다!',

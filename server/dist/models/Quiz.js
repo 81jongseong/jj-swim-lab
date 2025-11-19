@@ -53,7 +53,7 @@ const QuizSchema = new mongoose_1.Schema({
     },
     difficulty: {
         type: String,
-        enum: ['beginner', 'intermediate', 'advanced'],
+        enum: ['beginner', 'intermediate', 'advanced', 'none'],
         default: 'beginner'
     },
     type: {
@@ -92,6 +92,24 @@ const QuizSchema = new mongoose_1.Schema({
                 type: Number,
                 required: true,
                 default: 1
+            },
+            conceptBlock: {
+                type: mongoose_1.Schema.Types.Mixed
+            },
+            originalExplanation: {
+                type: mongoose_1.Schema.Types.Mixed
+            },
+            incorrectPoolDetails: [{
+                    type: mongoose_1.Schema.Types.Mixed
+                }],
+            correctPool: [{
+                    type: String
+                }],
+            incorrectPool: [{
+                    type: String
+                }],
+            metadata: {
+                type: mongoose_1.Schema.Types.Mixed
             }
         }],
     timeLimit: {
@@ -126,7 +144,11 @@ const QuizSchema = new mongoose_1.Schema({
     tags: [{
             type: String,
             trim: true
-        }]
+        }],
+    metadata: {
+        type: mongoose_1.Schema.Types.Mixed,
+        default: {}
+    }
 }, {
     timestamps: true
 });

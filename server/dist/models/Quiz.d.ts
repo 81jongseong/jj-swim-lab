@@ -13,6 +13,21 @@ export interface IQuiz extends Document {
         correctAnswer: string | number | string[];
         explanation?: string;
         points: number;
+        conceptBlock?: {
+            title?: string;
+            theory?: string[];
+        };
+        originalExplanation?: {
+            summary?: string;
+            keyPoints?: string[];
+        };
+        incorrectPoolDetails?: Array<{
+            option: string;
+            whyIncorrect?: string;
+        }>;
+        correctPool?: string[];
+        incorrectPool?: string[];
+        metadata?: any;
     }>;
     timeLimit?: number;
     passingScore: number;
@@ -21,6 +36,7 @@ export interface IQuiz extends Document {
     createdBy: mongoose.Types.ObjectId;
     assignedTo?: mongoose.Types.ObjectId[];
     tags: string[];
+    metadata?: any;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -129,10 +129,12 @@ const ChecklistSchema = new Schema<IChecklist>({
   timestamps: true
 });
 
-// 인덱스 설정
+// 인덱스 설정 (쿼리 최적화)
 ChecklistSchema.index({ studentId: 1, courseId: 1 });
 ChecklistSchema.index({ instructorId: 1, status: 1 });
 ChecklistSchema.index({ lastUpdated: -1 });
+ChecklistSchema.index({ studentId: 1, status: 1, lastUpdated: -1 }); // 복합 인덱스: 학생별 활성 체크리스트 최신 조회 최적화
+ChecklistSchema.index({ instructorId: 1, lastUpdated: -1 }); // 강사별 최신 체크리스트 조회 최적화
 
 // 진행률 자동 계산 미들웨어
 ChecklistSchema.pre('save', function(next) {

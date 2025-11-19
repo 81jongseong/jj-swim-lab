@@ -275,9 +275,33 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
       }
     }
 
+    // 요청 본문에서 모든 필드 추출 (questions 배열의 메타데이터 포함)
+    const updateData: any = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+
+    // questions 배열이 있으면 그대로 저장 (모든 메타데이터 포함)
+    if (req.body.questions && Array.isArray(req.body.questions)) {
+      updateData.questions = req.body.questions;
+    }
+
+    // metadata가 있으면 저장
+    if (req.body.metadata !== undefined) {
+      updateData.metadata = req.body.metadata;
+    }
+
+    console.log('🔍 퀴즈 수정 데이터:', {
+      id: req.params.id,
+      hasQuestions: !!updateData.questions,
+      questionsCount: updateData.questions?.length,
+      firstQuestionHasMetadata: updateData.questions?.[0]?.conceptBlock || updateData.questions?.[0]?.originalExplanation || updateData.questions?.[0]?.metadata,
+      hasMetadata: !!updateData.metadata
+    });
+
     const updatedQuiz = await Quiz.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, updatedAt: new Date() },
+      updateData,
       { new: true, runValidators: true }
     );
 

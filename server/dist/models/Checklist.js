@@ -136,6 +136,8 @@ const ChecklistSchema = new mongoose_1.Schema({
 ChecklistSchema.index({ studentId: 1, courseId: 1 });
 ChecklistSchema.index({ instructorId: 1, status: 1 });
 ChecklistSchema.index({ lastUpdated: -1 });
+ChecklistSchema.index({ studentId: 1, status: 1, lastUpdated: -1 });
+ChecklistSchema.index({ instructorId: 1, lastUpdated: -1 });
 ChecklistSchema.pre('save', function (next) {
     if (this.items && this.items.length > 0) {
         const completedItems = this.items.filter(item => item.isCompleted).length;

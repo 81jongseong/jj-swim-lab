@@ -21,10 +21,36 @@ router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin
     
     // 개인레슨인 경우 - 모든 레벨의 항목을 통합
     if (isPrivateLesson) {
-      const allTeachingMethods = await TeachingMethod.find({});
+      const userId = (req as any).user?._id;
+      
+      // 최고관리자 강습법 또는 해당 강사가 직접 등록한 강습법만 조회
+      // - createdByRole이 'superAdmin'이거나 null(기존 데이터는 최고관리자로 간주)
+      // - createdByRole이 'instructor'이고 createdBy가 현재 사용자 ID
+      const teachingMethodQuery: any = {
+        isActive: true,
+        $or: [
+          { createdByRole: 'superAdmin' },
+          { createdByRole: { $exists: false } }, // 기존 데이터는 최고관리자 강습법으로 간주
+          { createdByRole: null },
+          {
+            createdByRole: 'instructor',
+            createdBy: userId
+          }
+        ]
+      };
+      
+      const allTeachingMethods = await TeachingMethod.find(teachingMethodQuery)
+        .sort({ order: 1, createdAt: 1 });
+      
       if (!allTeachingMethods || allTeachingMethods.length === 0) {
-        return res.status(404).json({ error: '강습법을 찾을 수 없습니다.' });
+        return res.status(404).json({ error: '강습법을 찾을 수 없습니다. 최고관리자 강습법 또는 본인이 등록한 강습법이 필요합니다.' });
       }
+      
+      logInfo('개인레슨 체크리스트용 강습법 조회', { 
+        userId, 
+        methodCount: allTeachingMethods.length,
+        methodIds: allTeachingMethods.map(m => m._id)
+      });
       
       // 모든 강습법의 단계를 통합하여 개인레슨 체크리스트 생성
       let stepOrder = 1;
@@ -72,14 +98,41 @@ router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin
     } 
     // 기존 방식 (TeachingMethod 기반)
     else if (level) {
+      const userId = (req as any).user?._id;
       const englishLevel = level === '초급' ? 'beginner' : 
                           level === '중급' ? 'intermediate' : 
                           level === '고급' ? 'advanced' : 'beginner';
       
-      const teachingMethods = await TeachingMethod.find({ level: englishLevel });
+      // 최고관리자 강습법 또는 해당 강사가 직접 등록한 강습법만 조회
+      // - createdByRole이 'superAdmin'이거나 null(기존 데이터는 최고관리자로 간주)
+      // - createdByRole이 'instructor'이고 createdBy가 현재 사용자 ID
+      const teachingMethodQuery: any = {
+        isActive: true,
+        level: englishLevel,
+        $or: [
+          { createdByRole: 'superAdmin' },
+          { createdByRole: { $exists: false } }, // 기존 데이터는 최고관리자 강습법으로 간주
+          { createdByRole: null },
+          {
+            createdByRole: 'instructor',
+            createdBy: userId
+          }
+        ]
+      };
+      
+      const teachingMethods = await TeachingMethod.find(teachingMethodQuery)
+        .sort({ order: 1, createdAt: 1 });
+      
       if (!teachingMethods || teachingMethods.length === 0) {
-        return res.status(404).json({ error: '해당 레벨의 강습법을 찾을 수 없습니다.' });
+        return res.status(404).json({ error: `해당 레벨(${level})의 강습법을 찾을 수 없습니다. 최고관리자 강습법 또는 본인이 등록한 강습법이 필요합니다.` });
       }
+      
+      logInfo('반 체크리스트용 강습법 조회', { 
+        userId, 
+        level: englishLevel,
+        methodCount: teachingMethods.length,
+        methodIds: teachingMethods.map(m => m._id)
+      });
       
       // 모든 강습법의 단계를 반 체크리스트로 통합
       let stepOrder = 1;
