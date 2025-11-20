@@ -1,0 +1,4285 @@
+
+> jj-swim-lab-server@1.0.0 test C:\Users\user\jj-swim-lab\server
+> jest
+
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/user/jj-swim-lab/server/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+🌍 전역 테스트 설정 시작...
+📁 테스트 업로드 디렉토리 생성: C:\Users\user\jj-swim-lab\server\test-uploads
+📁 테스트 로그 디렉토리 생성: C:\Users\user\jj-swim-lab\server\test-logs
+✅ 테스트 데이터 준비 완료
+✅ 전역 테스트 설정 완료
+FAIL __tests__/models/Booking.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+  ● 예약 모델 테스트 › 모델 스키마 검증 › 유효한 예약 데이터를 생성할 수 있어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 121 |[39m
+     [90m 122 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 123 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 124 |[39m     })[33m;[39m
+     [90m 125 |[39m
+     [90m 126 |[39m     it([32m'기본값이 올바르게 설정되어야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:123:13)
+
+  ● 예약 모델 테스트 › 모델 스키마 검증 › 기본값이 올바르게 설정되어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 예약 상태 관리 › 예약 상태를 변경할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 예약 상태 관리 › 취소된 예약에 취소 사유를 설정할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 과거 날짜로 예약을 생성할 수 없어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 199 |[39m
+     [90m 200 |[39m       [90m// 과거 날짜 검증은 미들웨어나 비즈니스 로직에서 처리될 수 있음[39m
+    [31m[1m>[22m[39m[90m 201 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 202 |[39m     })[33m;[39m
+     [90m 203 |[39m
+     [90m 204 |[39m     it([32m'시작 시간이 종료 시간보다 늦으면 에러를 발생시켜야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:201:13)
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 시작 시간이 종료 시간보다 늦으면 에러를 발생시켜야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 214 |[39m
+     [90m 215 |[39m       [90m// 시간 검증은 미들웨어에서 처리될 수 있음[39m
+    [31m[1m>[22m[39m[90m 216 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 217 |[39m     })[33m;[39m
+     [90m 218 |[39m
+     [90m 219 |[39m     it([32m'유효한 시간 형식을 사용해야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:216:13)
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 유효한 시간 형식을 사용해야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 227 |[39m
+     [90m 228 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 229 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 230 |[39m     })[33m;[39m
+     [90m 231 |[39m   })[33m;[39m
+     [90m 232 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:229:13)
+
+  ● 예약 모델 테스트 › 결제 상태 관리 › 결제 상태를 업데이트할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 결제 상태 관리 › 환불 정보를 저장할 수 있어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 263 |[39m
+     [90m 264 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 265 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 266 |[39m     })[33m;[39m
+     [90m 267 |[39m   })[33m;[39m
+     [90m 268 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:265:13)
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › studentId로 예약을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › instructorId로 예약 목록을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › 날짜별로 예약을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › 상태별로 예약을 필터링할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 비즈니스 로직 검증 › 예약 수정 시 수정 이력을 남겨야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 비즈니스 로직 검증 › 예약 완료 시 완료 정보를 저장해야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 데이터 검증 및 정제 › 예약 메모에서 HTML 태그를 제거해야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 데이터 검증 및 정제 › 과도한 메모 길이를 제한해야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 418 |[39m
+     [90m 419 |[39m       [90m// 너무 긴 메모는 저장 실패하거나 잘려야 함[39m
+    [31m[1m>[22m[39m[90m 420 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 421 |[39m     })[33m;[39m
+     [90m 422 |[39m   })[33m;[39m
+     [90m 423 |[39m })[33m;[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:420:13)
+
+FAIL __tests__/models/Payment.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+  ● Payment 모델 테스트 › Payment 생성 › 유효한 데이터로 결제를 생성할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 사용자별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 상태별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 결제 방법별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 수정 › 결제 정보를 수정할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 삭제 › 결제를 삭제할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › 기본값 설정 › 기본값이 올바르게 설정되어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › 고유성 검증 › 중복된 거래 ID를 거부해야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+FAIL __tests__/models/Course.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+  ● Course 모델 테스트 › Course 생성 › 유효한 데이터로 강의를 생성할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 레벨별로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 강사별로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 가격 범위로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 수정 › 강의 정보를 수정할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 삭제 › 강의를 삭제할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 유효성 검증 › 음수 가격을 허용해야 함 (모델에서 검증하지 않음)
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 유효성 검증 › 음수 최대 학생 수를 허용해야 함 (모델에서 검증하지 않음)
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 클래스 정보 관리 › 클래스 정보를 설정할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+PASS __tests__/models/User.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+PASS __tests__/utils/performance.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+PASS __tests__/models/AIAnalysis.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+PASS __tests__/utils/logger.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m테스트 정보 로그[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33m테스트 경고 로그[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31m테스트 에러 로그[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37m테스트 디버그 로그[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m메타데이터 테스트[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31m에러 발생[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mnull 테스트[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mundefined 테스트[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m:
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m복잡한 메타데이터 테스트[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 0[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 1[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 2[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 3[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 4[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 5[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 6[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 7[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 8[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 9[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 10[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 11[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 12[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 13[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 14[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 15[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 16[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 17[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 18[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 19[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 20[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 21[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 22[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 23[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 24[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 25[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 26[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 27[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 28[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 29[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 30[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 31[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 32[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 33[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 34[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 35[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 36[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 37[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 38[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 39[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 40[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 41[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 42[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 43[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 44[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 45[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 46[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 47[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 48[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 49[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 50[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 51[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 52[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 53[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 54[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 55[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 56[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 57[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 58[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 59[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 60[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 61[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 62[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 63[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 64[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 65[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 66[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 67[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 68[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 69[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 70[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 71[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 72[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 73[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 74[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 75[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 76[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 77[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 78[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 79[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 80[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 81[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 82[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 83[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 84[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 85[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 86[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 87[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 88[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 89[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 90[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 91[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 92[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 93[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 94[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 95[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 96[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 97[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 98[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32m로그 메시지 99[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 0[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 0[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 0[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 0[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 1[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 1[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 1[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 1[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 2[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 2[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 2[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 2[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 3[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 3[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 3[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 3[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 4[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 4[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 4[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 4[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 5[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 5[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 5[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 5[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 6[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 6[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 6[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 6[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 7[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 7[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 7[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 7[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 8[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 8[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 8[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 8[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 9[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 9[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 9[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 9[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 10[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 10[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 10[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 10[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 11[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 11[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 11[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 11[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 12[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 12[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 12[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 12[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 13[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 13[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 13[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 13[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 14[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 14[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 14[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 14[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 15[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 15[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 15[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 15[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 16[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 16[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 16[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 16[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 17[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 17[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 17[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 17[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 18[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 18[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 18[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 18[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 19[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 19[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 19[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 19[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 20[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 20[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 20[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 20[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 21[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 21[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 21[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 21[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 22[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 22[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 22[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 22[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 23[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 23[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 23[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 23[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 24[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 24[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 24[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 24[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 25[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 25[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 25[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 25[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 26[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 26[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 26[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 26[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 27[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 27[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 27[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 27[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 28[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 28[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 28[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 28[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 29[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 29[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 29[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 29[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 30[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 30[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 30[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 30[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 31[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 31[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 31[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 31[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 32[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 32[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 32[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 32[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 33[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 33[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 33[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 33[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 34[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 34[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 34[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 34[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 35[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 35[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 35[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 35[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 36[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 36[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 36[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 36[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 37[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 37[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 37[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 37[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 38[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 38[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 38[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 38[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 39[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 39[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 39[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 39[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 40[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 40[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 40[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 40[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 41[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 41[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 41[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 41[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 42[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 42[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 42[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 42[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 43[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 43[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 43[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 43[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 44[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 44[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 44[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 44[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 45[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 45[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 45[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 45[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 46[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 46[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 46[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 46[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 47[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 47[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 47[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 47[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 48[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 48[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 48[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 48[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [32m[32minfo[32m[39m: [32m[32mInfo 49[32m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [33m[33mwarn[33m[39m: [33m[33mWarn 49[33m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [31m[31merror[31m[39m: [31m[31mError 49[31m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      2025-11-21 08:44:27:4427 [37m[37mdebug[37m[39m: [37m[37mDebug 49[37m[39m
+
+      at Console.log (../node_modules/.pnpm/winston@3.17.0/node_modules/winston/lib/winston/transports/console.js:87:23)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+PASS __tests__/models/Center.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+PASS __tests__/utils/validation.test.ts
+  ● Console
+
+    console.log
+      ✅ 테스트 환경 설정 완료
+
+      at setupTestEnvironment (__tests__/setup.ts:115:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 데이터베이스 정리 완료
+
+      at clearDatabase (__tests__/setup.ts:152:13)
+
+    console.log
+      ✅ 테스트 환경 정리 완료
+
+      at cleanupTestEnvironment (__tests__/setup.ts:135:13)
+
+FAIL __tests__/routes/users.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users.test.ts:6:1)
+
+FAIL __tests__/routes/users-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users-real.test.ts:6:1)
+
+FAIL __tests__/routes/users-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users-actual.test.ts:2:1)
+
+FAIL __tests__/routes/uploads.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/uploads.test.ts:6:1)
+
+FAIL __tests__/routes/uploads-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/uploads-actual.test.ts:2:1)
+
+FAIL __tests__/routes/system-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/system-actual.test.ts:2:1)
+
+FAIL __tests__/routes/stats.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/stats.test.ts:6:1)
+
+FAIL __tests__/routes/stats-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/stats-actual.test.ts:2:1)
+
+FAIL __tests__/routes/payments.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/payments.test.ts:6:1)
+
+FAIL __tests__/routes/payments-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/payments-actual.test.ts:2:1)
+
+FAIL __tests__/routes/notifications.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notifications.test.ts:6:1)
+
+FAIL __tests__/routes/notifications-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notifications-actual.test.ts:2:1)
+
+FAIL __tests__/routes/notices.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notices.test.ts:6:1)
+
+FAIL __tests__/routes/notices-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notices-actual.test.ts:2:1)
+
+FAIL __tests__/routes/dashboard.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/dashboard.test.ts:6:1)
+
+FAIL __tests__/routes/dashboard-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/dashboard-actual.test.ts:2:1)
+
+FAIL __tests__/routes/courses.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses.test.ts:6:1)
+
+FAIL __tests__/routes/courses-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses-real.test.ts:6:1)
+
+FAIL __tests__/routes/courses-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses-actual.test.ts:2:1)
+
+FAIL __tests__/routes/centers.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../src/routes/community' from '__tests__/testApp.ts'
+
+    Require stack:
+      __tests__/testApp.ts
+      __tests__/routes/centers.test.ts
+
+    [0m [90m 94 |[39m [36mimport[39m paymentRoutes [36mfrom[39m [32m'../src/routes/payments'[39m[33m;[39m
+     [90m 95 |[39m [36mimport[39m noticeRoutes [36mfrom[39m [32m'../src/routes/notices'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 96 |[39m [36mimport[39m communityRoutes [36mfrom[39m [32m'../src/routes/community'[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 97 |[39m [36mimport[39m shopRoutes [36mfrom[39m [32m'../src/routes/shop'[39m[33m;[39m
+     [90m 98 |[39m [36mimport[39m lessonPlanRoutes [36mfrom[39m [32m'../src/routes/lesson-plans'[39m[33m;[39m
+     [90m 99 |[39m [36mimport[39m exerciseRoutes [36mfrom[39m [32m'../src/routes/exercise'[39m[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (__tests__/testApp.ts:96:1)
+      at Object.<anonymous> (__tests__/routes/centers.test.ts:89:1)
+
+FAIL __tests__/routes/centers-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/centers-actual.test.ts:2:1)
+
+FAIL __tests__/routes/bookings.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/bookings.test.ts:55:1)
+
+FAIL __tests__/routes/bookings-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/bookings-actual.test.ts:2:1)
+
+FAIL __tests__/routes/auth.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth.test.ts:34:1)
+
+FAIL __tests__/routes/auth-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth-real.test.ts:6:1)
+
+FAIL __tests__/routes/auth-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth-actual.test.ts:2:1)
+
+FAIL __tests__/routes/ai.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/ai.test.ts:55:1)
+
+FAIL __tests__/middleware/validation.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/validation.test.ts:6:1)
+
+FAIL __tests__/middleware/errorHandler.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/errorHandler.test.ts:6:1)
+
+FAIL __tests__/middleware/auth.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/auth.test.ts:32:1)
+
+📦 report is created on: C:\Users\user\jj-swim-lab\server\coverage\test-report.html
+Summary of all failing tests
+FAIL __tests__/models/Booking.test.ts
+  ● 예약 모델 테스트 › 모델 스키마 검증 › 유효한 예약 데이터를 생성할 수 있어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 121 |[39m
+     [90m 122 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 123 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 124 |[39m     })[33m;[39m
+     [90m 125 |[39m
+     [90m 126 |[39m     it([32m'기본값이 올바르게 설정되어야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:123:13)
+
+  ● 예약 모델 테스트 › 모델 스키마 검증 › 기본값이 올바르게 설정되어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 예약 상태 관리 › 예약 상태를 변경할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 예약 상태 관리 › 취소된 예약에 취소 사유를 설정할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 과거 날짜로 예약을 생성할 수 없어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 199 |[39m
+     [90m 200 |[39m       [90m// 과거 날짜 검증은 미들웨어나 비즈니스 로직에서 처리될 수 있음[39m
+    [31m[1m>[22m[39m[90m 201 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 202 |[39m     })[33m;[39m
+     [90m 203 |[39m
+     [90m 204 |[39m     it([32m'시작 시간이 종료 시간보다 늦으면 에러를 발생시켜야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:201:13)
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 시작 시간이 종료 시간보다 늦으면 에러를 발생시켜야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 214 |[39m
+     [90m 215 |[39m       [90m// 시간 검증은 미들웨어에서 처리될 수 있음[39m
+    [31m[1m>[22m[39m[90m 216 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 217 |[39m     })[33m;[39m
+     [90m 218 |[39m
+     [90m 219 |[39m     it([32m'유효한 시간 형식을 사용해야 함'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:216:13)
+
+  ● 예약 모델 테스트 › 시간 및 날짜 검증 › 유효한 시간 형식을 사용해야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 227 |[39m
+     [90m 228 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 229 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 230 |[39m     })[33m;[39m
+     [90m 231 |[39m   })[33m;[39m
+     [90m 232 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:229:13)
+
+  ● 예약 모델 테스트 › 결제 상태 관리 › 결제 상태를 업데이트할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 결제 상태 관리 › 환불 정보를 저장할 수 있어야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 263 |[39m
+     [90m 264 |[39m       [36mconst[39m booking [33m=[39m [36mnew[39m [33mBooking[39m(bookingData)[33m;[39m
+    [31m[1m>[22m[39m[90m 265 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 266 |[39m     })[33m;[39m
+     [90m 267 |[39m   })[33m;[39m
+     [90m 268 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:265:13)
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › studentId로 예약을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › instructorId로 예약 목록을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › 날짜별로 예약을 조회할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 인덱스 및 쿼리 › 상태별로 예약을 필터링할 수 있어야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 비즈니스 로직 검증 › 예약 수정 시 수정 이력을 남겨야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 비즈니스 로직 검증 › 예약 완료 시 완료 정보를 저장해야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 데이터 검증 및 정제 › 예약 메모에서 HTML 태그를 제거해야 함
+
+    ValidationError: Booking validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● 예약 모델 테스트 › 데이터 검증 및 정제 › 과도한 메모 길이를 제한해야 함
+
+    expect(received).resolves.toBeDefined()
+
+    Received promise rejected instead of resolved
+    Rejected to value: [ValidationError: Booking validation failed: centerId: Path `centerId` is required.]
+
+    [0m [90m 418 |[39m
+     [90m 419 |[39m       [90m// 너무 긴 메모는 저장 실패하거나 잘려야 함[39m
+    [31m[1m>[22m[39m[90m 420 |[39m       [36mawait[39m expect(booking[33m.[39msave())[33m.[39mresolves[33m.[39mtoBeDefined()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 421 |[39m     })[33m;[39m
+     [90m 422 |[39m   })[33m;[39m
+     [90m 423 |[39m })[33m;[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (__tests__/models/Booking.test.ts:420:13)
+
+FAIL __tests__/models/Payment.test.ts
+  ● Payment 모델 테스트 › Payment 생성 › 유효한 데이터로 결제를 생성할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 사용자별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 상태별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 조회 › 결제 방법별로 결제를 찾을 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 수정 › 결제 정보를 수정할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › Payment 삭제 › 결제를 삭제할 수 있어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › 기본값 설정 › 기본값이 올바르게 설정되어야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Payment 모델 테스트 › 고유성 검증 › 중복된 거래 ID를 거부해야 함
+
+    ValidationError: Payment validation failed: centerId: Path `centerId` is required., pricingInfo.baseAmount: Path `pricingInfo.baseAmount` is required., pricingInfo.userType: Path `pricingInfo.userType` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+FAIL __tests__/models/Course.test.ts
+  ● Course 모델 테스트 › Course 생성 › 유효한 데이터로 강의를 생성할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 레벨별로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 강사별로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 조회 › 가격 범위로 강의를 찾을 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 수정 › 강의 정보를 수정할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › Course 삭제 › 강의를 삭제할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 유효성 검증 › 음수 가격을 허용해야 함 (모델에서 검증하지 않음)
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 유효성 검증 › 음수 최대 학생 수를 허용해야 함 (모델에서 검증하지 않음)
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+  ● Course 모델 테스트 › 클래스 정보 관리 › 클래스 정보를 설정할 수 있어야 함
+
+    ValidationError: Course validation failed: centerId: Path `centerId` is required.
+
+      at model.Object.<anonymous>.Document.invalidate (../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3219:32)
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/document.js:3012:17
+      at ../node_modules/.pnpm/mongoose@7.8.7/node_modules/mongoose/lib/schematype.js:1368:9
+
+FAIL __tests__/routes/users.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users.test.ts:6:1)
+
+FAIL __tests__/routes/users-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users-real.test.ts:6:1)
+
+FAIL __tests__/routes/users-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/users-actual.test.ts:2:1)
+
+FAIL __tests__/routes/uploads.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/uploads.test.ts:6:1)
+
+FAIL __tests__/routes/uploads-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/uploads-actual.test.ts:2:1)
+
+FAIL __tests__/routes/system-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/system-actual.test.ts:2:1)
+
+FAIL __tests__/routes/stats.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/stats.test.ts:6:1)
+
+FAIL __tests__/routes/stats-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/stats-actual.test.ts:2:1)
+
+FAIL __tests__/routes/payments.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/payments.test.ts:6:1)
+
+FAIL __tests__/routes/payments-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/payments-actual.test.ts:2:1)
+
+FAIL __tests__/routes/notifications.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notifications.test.ts:6:1)
+
+FAIL __tests__/routes/notifications-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notifications-actual.test.ts:2:1)
+
+FAIL __tests__/routes/notices.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notices.test.ts:6:1)
+
+FAIL __tests__/routes/notices-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/notices-actual.test.ts:2:1)
+
+FAIL __tests__/routes/dashboard.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/dashboard.test.ts:6:1)
+
+FAIL __tests__/routes/dashboard-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/dashboard-actual.test.ts:2:1)
+
+FAIL __tests__/routes/courses.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses.test.ts:6:1)
+
+FAIL __tests__/routes/courses-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses-real.test.ts:6:1)
+
+FAIL __tests__/routes/courses-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/courses-actual.test.ts:2:1)
+
+FAIL __tests__/routes/centers.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../src/routes/community' from '__tests__/testApp.ts'
+
+    Require stack:
+      __tests__/testApp.ts
+      __tests__/routes/centers.test.ts
+
+    [0m [90m 94 |[39m [36mimport[39m paymentRoutes [36mfrom[39m [32m'../src/routes/payments'[39m[33m;[39m
+     [90m 95 |[39m [36mimport[39m noticeRoutes [36mfrom[39m [32m'../src/routes/notices'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 96 |[39m [36mimport[39m communityRoutes [36mfrom[39m [32m'../src/routes/community'[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 97 |[39m [36mimport[39m shopRoutes [36mfrom[39m [32m'../src/routes/shop'[39m[33m;[39m
+     [90m 98 |[39m [36mimport[39m lessonPlanRoutes [36mfrom[39m [32m'../src/routes/lesson-plans'[39m[33m;[39m
+     [90m 99 |[39m [36mimport[39m exerciseRoutes [36mfrom[39m [32m'../src/routes/exercise'[39m[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (__tests__/testApp.ts:96:1)
+      at Object.<anonymous> (__tests__/routes/centers.test.ts:89:1)
+
+FAIL __tests__/routes/centers-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/centers-actual.test.ts:2:1)
+
+FAIL __tests__/routes/bookings.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/bookings.test.ts:55:1)
+
+FAIL __tests__/routes/bookings-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/bookings-actual.test.ts:2:1)
+
+FAIL __tests__/routes/auth.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth.test.ts:34:1)
+
+FAIL __tests__/routes/auth-real.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth-real.test.ts:6:1)
+
+FAIL __tests__/routes/auth-actual.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/auth-actual.test.ts:2:1)
+
+FAIL __tests__/routes/ai.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/routes/ai.test.ts:55:1)
+
+FAIL __tests__/middleware/validation.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/validation.test.ts:6:1)
+
+FAIL __tests__/middleware/errorHandler.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/errorHandler.test.ts:6:1)
+
+FAIL __tests__/middleware/auth.test.ts
+  ● Test suite failed to run
+
+    ❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.
+
+    [0m [90m 100 |[39m [90m// 로컬 MongoDB 연결 시도 차단[39m
+     [90m 101 |[39m [36mif[39m (process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m [33m&&[39m process[33m.[39menv[33m.[39m[33mMONGODB_URI[39m[33m.[39mincludes([32m'localhost'[39m)) {
+    [31m[1m>[22m[39m[90m 102 |[39m   [36mthrow[39m [36mnew[39m [33mError[39m([32m'❌ 로컬 MongoDB 사용 금지! Atlas만 사용 가능합니다.'[39m)[33m;[39m
+     [90m     |[39m         [31m[1m^[22m[39m
+     [90m 103 |[39m }
+     [90m 104 |[39m
+     [90m 105 |[39m [90m// 환경 변수 디버깅[39m[0m
+
+      at Object.<anonymous> (src/db.ts:102:9)
+      at Object.<anonymous> (src/index.ts:127:1)
+      at Object.<anonymous> (__tests__/middleware/auth.test.ts:32:1)
+
+
+Test Suites: 33 failed, 6 passed, 39 total
+Tests:       34 failed, 111 passed, 145 total
+Snapshots:   0 total
+Time:        16.092 s
+Ran all test suites.
+🧹 전역 테스트 정리 시작...
+✅ 환경 변수 정리 완료
+✅ 외부 서비스 정리 완료
+✅ 테스트 데이터 정리 완료
+✅ 파일 시스템 정리 완료
+✅ 네트워크 연결 정리 완료
+✅ 전역 테스트 정리 완료
+ ELIFECYCLE  Test failed. See above for more details.

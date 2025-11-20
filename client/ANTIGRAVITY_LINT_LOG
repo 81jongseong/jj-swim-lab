@@ -1,0 +1,10 @@
+
+> client@0.1.0 lint C:\Users\user\jj-swim-lab\client
+> next lint
+
+
+./app/dashboard/page.tsx
+194:13  Error: 'setRecentBookings' is not defined.  no-undef
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+ ELIFECYCLE  Command failed with exit code 1.

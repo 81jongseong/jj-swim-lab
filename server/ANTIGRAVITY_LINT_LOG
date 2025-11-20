@@ -1,0 +1,50 @@
+
+> jj-swim-lab-server@1.0.0 lint C:\Users\user\jj-swim-lab\server
+> eslint src/**/*.{ts,js}
+
+
+C:\Users\user\jj-swim-lab\server\src\routes\approvals.ts
+  358:19  warning  'PersonalLesson' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\health-measurements.ts
+  367:11  warning  'viewerType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\instructor-progress.ts
+   16:10  warning  'Course' is defined but never used                   @typescript-eslint/no-unused-vars
+   25:9   warning  'levelMap' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   93:48  warning  'index' is defined but never used                    @typescript-eslint/no-unused-vars
+  205:67  warning  'levelChecklist' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\quiz-question-generator.ts
+  165:7  warning  'difficulty' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\student-progress.ts
+  6:10  warning  'User' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\student.ts
+  511:11  warning  'personalLessons' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  726:11  warning  'student' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  738:9   error    'currentSkills' is never reassigned. Use 'const' instead  prefer-const
+
+C:\Users\user\jj-swim-lab\server\src\routes\swim-programs.ts
+  27:10  warning  'cacheMiddleware' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\routes\uploads.ts
+  581:9  error  'analysisRequestData' is never reassigned. Use 'const' instead  prefer-const
+
+C:\Users\user\jj-swim-lab\server\src\routes\users.ts
+  623:7  warning  'birthDate' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  624:7  warning  'gender' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\user\jj-swim-lab\server\src\services\aiRoutineRecommendationService.ts
+  25:10  warning  'Checklist' is defined but never used                         @typescript-eslint/no-unused-vars
+  76:22  warning  'healthData' is assigned a value but never used               @typescript-eslint/no-unused-vars
+  94:9   warning  'completedSessions' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  94:9   error    'completedSessions' is never reassigned. Use 'const' instead  prefer-const
+  95:9   warning  'totalSessions' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  95:9   error    'totalSessions' is never reassigned. Use 'const' instead      prefer-const
+
+✖ 21 problems (4 errors, 17 warnings)
+  4 errors and 0 warnings potentially fixable with the `--fix` option.
+
+ ELIFECYCLE  Command failed with exit code 1.

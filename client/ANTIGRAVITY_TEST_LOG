@@ -1,0 +1,430 @@
+
+> client@0.1.0 test C:\Users\user\jj-swim-lab\client
+> jest
+
+FAIL swim-training-engine/dist/tests/guardrails.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/tests/ortho-filter.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/dist/tests/progression.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/tests/guardrails.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/dist/tests/ortho-filter.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL __tests__/utils/api.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/tests/progression.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL __tests__/components/Button.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL __tests__/components/Modal.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL __tests__/hooks/useAuth.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL __tests__/components/Card.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL lib/__tests__/planner.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/dist/tests/dose.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+FAIL swim-training-engine/tests/dose.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '../build/Release/canvas.node'
+    Require stack:
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\bindings.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\lib\canvas.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\canvas@2.11.2\node_modules\canvas\index.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\utils.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\MouseEvent-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\MouseEvent.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\aborting\AbortSignal-impl.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AbortSignal.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\AddEventListenerOptions.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\generated\EventTarget.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\living\interfaces.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\jsdom\browser\Window.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jsdom@20.0.3_canvas@2.11.2\node_modules\jsdom\lib\api.js
+    - C:\Users\user\jj-swim-lab\node_modules\.pnpm\jest-environment-jsdom@29.7.0_canvas@2.11.2\node_modules\jest-environment-jsdom\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\requireOrImportModule.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\node_modules\jest-util\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\ScriptTransformer.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\@jest\transform\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runtime\build\index.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-runner\build\testWorker.js
+    - C:\Users\user\jj-swim-lab\client\node_modules\jest-worker\build\workers\processChild.js
+
+      at Object.<anonymous> (../node_modules/.pnpm/canvas@2.11.2/node_modules/canvas/lib/bindings.js:3:18)
+
+Test Suites: 14 failed, 14 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.799 s
+Ran all test suites.
+ ELIFECYCLE  Test failed. See above for more details.
