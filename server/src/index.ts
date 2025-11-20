@@ -290,6 +290,7 @@ import './models/CenterSchedule'; // ⭐ 추가
 import './models/InstructorProgress'; // ⭐ 추가
 
 console.log('🚀 index.ts 모듈 로딩 시작...');
+console.log('📦 모든 모델 import 완료, 다음 단계로 진행...');
 
 // 모델 등록 확인 (모든 모델 import 후)
 setTimeout(() => {
@@ -358,7 +359,9 @@ console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGO
 console.log('   - PORT:', process.env.PORT || '기본값 5000');
 console.log('   - NODE_ENV:', process.env.NODE_ENV || '기본값 development');
 
+console.log('🌐 Express 앱 생성 중...');
 const app = express();
+console.log('✅ Express 앱 생성 완료');
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -366,8 +369,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+console.log('✅ Socket.IO 서버 초기화 완료');
 
 // Socket.IO 연결 처리
+console.log('🔌 Socket.IO 이벤트 리스너 등록 중...');
 io.on('connection', (socket) => {
   console.log('🔌 클라이언트 연결됨:', socket.id);
   
@@ -381,13 +386,17 @@ io.on('connection', (socket) => {
     console.log(`🔌 클라이언트 ${socket.id}가 ${room}에 참여`);
   });
 });
+console.log('✅ Socket.IO 이벤트 리스너 등록 완료');
 
 const PORT = process.env.PORT || 5000;
+console.log(`📡 포트 설정: ${PORT}`);
 
 // MongoDB 연결은 db.ts 모듈에서 처리
 
+console.log('🛡️ 보안 미들웨어 적용 중...');
 // 보안 미들웨어 적용
 app.use(securityMiddleware);
+console.log('✅ 보안 미들웨어 적용 완료');
 
 // 점검 모드 체크 (가장 먼저 적용) - 임시 비활성화
 // app.use(maintenanceModeMiddleware);
@@ -582,17 +591,22 @@ app.use('/api/instructor-progress', instructorProgressRoutes);
 app.use('/api/instructor/progress', instructorProgressRoutes);
 app.use('/api/ai-routine-recommendations', aiRoutineRecommendationsRoutes); // AI 기반 개인별 운동 루틴 추천
 
+console.log('🚦 라우트 및 미들웨어 설정 완료...');
+
 // 404 에러 처리 (라우트 등록 후)
 app.use(notFoundHandler);
 
 // 에러 처리 미들웨어 (마지막에 위치)
 app.use(errorTracking);
 app.use(errorHandler);
+console.log('✅ 에러 처리 미들웨어 설정 완료');
 
 // 서버 시작 (테스트 환경이 아닐 때만)
+console.log(`🔍 NODE_ENV 확인: ${process.env.NODE_ENV || 'undefined (기본값: development)'}`);
 if (process.env.NODE_ENV !== 'test') {
   console.log('🚀 서버 시작 준비 중...');
   console.log(`📡 포트: ${PORT}`);
+  console.log('⏳ server.listen() 호출 중...');
 
   server.listen(PORT, async () => {
   console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
