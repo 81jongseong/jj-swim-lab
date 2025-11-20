@@ -146,6 +146,7 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
   
   // 건강 관련 상태
   const [healthData, setHealthData] = useState<HealthData | null>(null);
