@@ -1,7 +1,25 @@
+/**
+ * 📝 퀴즈 관리 API 라우트
+ * 
+ * 📋 **파일 목적**
+ * - 퀴즈 CRUD 작업 (생성, 조회, 수정, 삭제)
+ * - 퀴즈 시도 기록 관리
+ * - 권한별 퀴즈 필터링
+ * 
+ * 🔄 **연동되는 모델**
+ * - Quiz (퀴즈 모델)
+ * - QuizAttempt (퀴즈 시도 기록 모델)
+ * - User (사용자 모델 - populate용)
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-XX: 초기 퀴즈 관리 API 구현
+ */
+
 import express from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { Quiz } from '../models/Quiz';
 import { QuizAttempt } from '../models/QuizAttempt';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthenticatedRequest extends express.Request {
   user?: {
@@ -62,7 +80,7 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res) => {
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('퀴즈 목록 조회 실패:', error);
+    logError('퀴즈 목록 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 목록 조회에 실패했습니다.'
@@ -107,7 +125,7 @@ router.get('/attempts/user', authMiddleware, async (req: AuthenticatedRequest, r
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('퀴즈 시도 기록 조회 실패:', error);
+    logError('퀴즈 시도 기록 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 시도 기록 조회에 실패했습니다.'
@@ -143,7 +161,7 @@ router.get('/:id', authMiddleware, async (req: AuthenticatedRequest, res) => {
       data: quiz
     });
   } catch (error) {
-    console.error('퀴즈 조회 실패:', error);
+    logError('퀴즈 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 조회에 실패했습니다.'
@@ -234,7 +252,7 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin', 'supe
       data: quiz
     });
   } catch (error) {
-    console.error('퀴즈 생성 실패:', error);
+    logError('퀴즈 생성 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 생성에 실패했습니다.'
@@ -264,7 +282,7 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
     // 권한 확인 (superAdmin은 모든 퀴즈 수정 가능)
     if ((req as any).user.userType === 'superAdmin') {
       // superAdmin은 모든 퀴즈 수정 가능 (생성자가 null이어도 OK)
-      console.log('✅ superAdmin 권한으로 퀴즈 수정 진행');
+      logInfo('superAdmin 권한으로 퀴즈 수정 진행', { quizId: req.params.id });
     } else {
       // 일반 사용자는 본인이 생성한 퀴즈만 수정 가능
       if (!quiz.createdBy || quiz.createdBy.toString() !== (req as any).user._id.toString()) {
@@ -291,7 +309,7 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
       updateData.metadata = req.body.metadata;
     }
 
-    console.log('🔍 퀴즈 수정 데이터:', {
+    logDebug('퀴즈 수정 데이터', {
       id: req.params.id,
       hasQuestions: !!updateData.questions,
       questionsCount: updateData.questions?.length,
@@ -311,7 +329,7 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
       data: updatedQuiz
     });
   } catch (error) {
-    console.error('퀴즈 수정 실패:', error);
+    logError('퀴즈 수정 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 수정에 실패했습니다.'
@@ -322,7 +340,7 @@ router.put('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'su
 // 퀴즈 삭제 (생성자 또는 슈퍼 관리자만)
 router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
   try {
-    console.log(`🗑️ 퀴즈 삭제 요청: ID=${req.params.id}, 사용자=${(req as any).user?.userType}`);
+    logInfo('퀴즈 삭제 요청', { quizId: req.params.id, userType: (req as any).user?.userType });
 
     if (!(req as any).user?._id) {
       return res.status(401).json({
@@ -334,22 +352,22 @@ router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 
     const quiz = await Quiz.findById(req.params.id);
 
     if (!quiz) {
-      console.log(`❌ 퀴즈를 찾을 수 없음: ${req.params.id}`);
+      logWarn('퀴즈를 찾을 수 없음', { quizId: req.params.id });
       return res.status(404).json({
         success: false,
         message: '퀴즈를 찾을 수 없습니다.'
       });
     }
 
-    console.log(`📋 퀴즈 정보: 제목="${quiz.title}", 생성자=${quiz.createdBy}, 활성=${quiz.isActive}`);
+    logDebug('퀴즈 정보', { title: quiz.title, createdBy: quiz.createdBy, isActive: quiz.isActive });
 
     // 권한 확인 (superAdmin은 모든 퀴즈 삭제 가능)
     if ((req as any).user.userType === 'superAdmin') {
-      console.log('✅ superAdmin 권한으로 퀴즈 삭제 진행');
+      logInfo('superAdmin 권한으로 퀴즈 삭제 진행', { quizId: req.params.id });
     } else {
       // 일반 사용자는 본인이 생성한 퀴즈만 삭제 가능
       if (!quiz.createdBy || quiz.createdBy.toString() !== (req as any).user._id.toString()) {
-        console.log(`❌ 권한 없음: 요청자=${(req as any).user._id}, 생성자=${quiz.createdBy}`);
+        logWarn('퀴즈 삭제 권한 없음', { requesterId: (req as any).user._id, creatorId: quiz.createdBy });
         return res.status(403).json({
           success: false,
           message: '이 퀴즈를 삭제할 권한이 없습니다.'
@@ -361,19 +379,19 @@ router.delete('/:id', authMiddleware, requireRole(['instructor', 'centerAdmin', 
     try {
       quiz.isActive = false;
       const savedQuiz = await quiz.save();
-      console.log(`✅ 퀴즈 소프트 삭제 완료: ${savedQuiz.title}`);
+      logInfo('퀴즈 소프트 삭제 완료', { quizId: savedQuiz._id, title: savedQuiz.title });
 
       res.json({
         success: true,
         message: '퀴즈가 성공적으로 삭제되었습니다!'
       });
     } catch (saveError) {
-      console.error('❌ 퀴즈 저장 실패:', saveError);
+      logError('퀴즈 저장 실패', saveError);
       throw saveError;
     }
 
   } catch (error) {
-    console.error('❌ 퀴즈 삭제 실패:', error);
+    logError('퀴즈 삭제 실패', error);
     res.status(500).json({
       success: false,
       message: `퀴즈 삭제에 실패했습니다: ${error.message}`
@@ -453,7 +471,7 @@ router.get('/stats/overview', authMiddleware, requireRole(['instructor', 'center
       }
     });
   } catch (error) {
-    console.error('퀴즈 통계 조회 실패:', error);
+    logError('퀴즈 통계 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 통계 조회에 실패했습니다.'
@@ -499,7 +517,7 @@ router.post('/:id/copy', authMiddleware, requireRole(['instructor', 'centerAdmin
       data: copiedQuiz
     });
   } catch (error) {
-    console.error('퀴즈 복사 실패:', error);
+    logError('퀴즈 복사 실패', error);
     res.status(500).json({
       success: false,
       message: '퀴즈 복사에 실패했습니다.'
