@@ -74,7 +74,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from './button';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
+import { Card, CardContent, CardHeader, CardTitle } from './Card';
 
 interface Props {
   children: ReactNode;
