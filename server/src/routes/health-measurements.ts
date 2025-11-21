@@ -18,6 +18,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -241,7 +242,7 @@ router.post('/measurements', authMiddleware, async (req: AuthRequest, res: Respo
     });
 
   } catch (error) {
-    console.error('건강 측정 데이터 저장 오류:', error);
+    logError('건강 측정 데이터 저장 오류', error);
     res.status(500).json({
       success: false,
       message: '측정 데이터 저장 중 오류가 발생했습니다.'
@@ -285,7 +286,7 @@ router.get('/measurements', authMiddleware, async (req: AuthRequest, res: Respon
     });
 
   } catch (error) {
-    console.error('건강 측정 데이터 조회 오류:', error);
+    logError('건강 측정 데이터 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '측정 데이터 조회 중 오류가 발생했습니다.'
@@ -348,7 +349,7 @@ router.put('/measurements/privacy', authMiddleware, async (req: AuthRequest, res
     });
 
   } catch (error) {
-    console.error('공개 설정 저장 오류:', error);
+    logError('공개 설정 저장 오류', error);
     res.status(500).json({
       success: false,
       message: '공개 설정 저장 중 오류가 발생했습니다.'
@@ -484,7 +485,7 @@ router.get('/measurements/:userId', authMiddleware, requireRole(['centerAdmin', 
     });
 
   } catch (error) {
-    console.error('회원 건강 정보 조회 오류:', error);
+    logError('회원 건강 정보 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '건강 정보 조회 중 오류가 발생했습니다.'
@@ -653,7 +654,7 @@ router.get('/measurements/center/statistics', authMiddleware, requireRole(['cent
     });
 
   } catch (error) {
-    console.error('센터 건강 통계 조회 오류:', error);
+    logError('센터 건강 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '건강 통계 조회 중 오류가 발생했습니다.'

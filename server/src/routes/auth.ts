@@ -319,7 +319,7 @@ router.post('/verify-email-code', async (req: Request, res: Response) => {
       verified: true
     });
   } catch (error) {
-    console.error('이메일 인증 코드 검증 오류:', error);
+    logError('이메일 인증 코드 검증 오류', error);
     return res.status(500).json({
       success: false,
       error: '이메일 인증 코드 검증에 실패했습니다.'

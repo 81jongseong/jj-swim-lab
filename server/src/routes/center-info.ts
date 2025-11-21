@@ -60,6 +60,7 @@ import { authMiddleware } from '../middleware/auth';
 import { requireRole } from '../middleware/auth';
 import { Center } from '../models/Center';
 import { User } from '../models/User';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -153,7 +154,7 @@ router.get('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asyn
       }
     });
   } catch (error) {
-    console.error('센터 정보 조회 오류:', error);
+    logError('센터 정보 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 정보 조회 중 오류가 발생했습니다.'
@@ -235,7 +236,7 @@ router.put('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asyn
       }
     });
   } catch (error) {
-    console.error('센터 정보 수정 오류:', error);
+    logError('센터 정보 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 정보 수정 중 오류가 발생했습니다.'
@@ -314,7 +315,7 @@ router.post('/images',
         }
       });
     } catch (error) {
-      console.error('이미지 업로드 오류:', error);
+      logError('이미지 업로드 오류', error);
       res.status(500).json({
         success: false,
         message: '이미지 업로드 중 오류가 발생했습니다.'
@@ -396,7 +397,7 @@ router.delete('/images/:imageUrl', authMiddleware, requireRole(['centerAdmin', '
       }
     });
   } catch (error) {
-    console.error('이미지 삭제 오류:', error);
+    logError('이미지 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '이미지 삭제 중 오류가 발생했습니다.'
@@ -504,7 +505,7 @@ router.get('/settings', authMiddleware, requireRole(['centerAdmin', 'superAdmin'
       data: settingsData
     });
   } catch (error) {
-    console.error('센터 설정 조회 오류:', error);
+    logError('센터 설정 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 설정 조회 중 오류가 발생했습니다.'
@@ -600,7 +601,7 @@ router.put('/settings', authMiddleware, requireRole(['centerAdmin', 'superAdmin'
       }
     });
   } catch (error) {
-    console.error('센터 설정 수정 오류:', error);
+    logError('센터 설정 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 설정 수정 중 오류가 발생했습니다.'

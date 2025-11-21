@@ -1193,7 +1193,7 @@ router.get('/courses', authMiddleware, requireCenterAdmin, async (req: AuthReque
         console.log('🔄 레인 자동 복원 완료:', restoredLanes);
       }
     } catch (restoreError) {
-      console.error('⚠️ 레인 복원 실패 (무시하고 계속 진행):', restoreError);
+      logWarn('레인 복원 실패 (무시하고 계속 진행)', restoreError);
     }
 
     // 센터의 강습 과정 조회 (강사 정보 포함)
@@ -2876,10 +2876,11 @@ router.put('/members/:memberId/course', authMiddleware, requireCenterAdmin, asyn
       }
     });
   } catch (error) {
-    console.error('❌ 회원 과정 배정 오류:', error);
-    console.error('❌ 오류 스택:', error.stack);
-    console.error('❌ 오류 타입:', typeof error);
-    console.error('❌ 오류 메시지:', error.message);
+    logError('회원 과정 배정 오류', { 
+      message: error.message, 
+      stack: error.stack, 
+      type: typeof error 
+    });
     
     res.status(500).json({
       success: false,
