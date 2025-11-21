@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui';
-import { Card } from '../../components/ui/card';
+import { Card } from '../../components/ui/Card';
 
 /**
  * 🤖 AI 평가 페이지

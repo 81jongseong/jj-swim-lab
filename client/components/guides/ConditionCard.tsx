@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, XCircle, AlertTriangle, Wrench, Dumbbell, Clock } from 'lucide-react';
 import { Condition, Evidence } from '@/content/swim-joint-guide/types';

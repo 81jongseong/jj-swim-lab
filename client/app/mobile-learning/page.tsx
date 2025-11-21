@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui';
-import { Card } from '../../components/ui/card';
+import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui';
 import { Progress    } from '../../components/ui/progress';
 

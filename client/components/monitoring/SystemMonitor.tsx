@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Card from '@/components/ui/card';
+import Card from '@/components/ui/Card';
 import Button from '@/components/ui/button';
 import { Badge } from '@/components/ui';
 import { Progress } from '@/components/ui/progress';

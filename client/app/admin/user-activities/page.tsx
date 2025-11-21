@@ -7,8 +7,8 @@
 
 import React from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import UserActivityDashboard from '../../../components/ui/card';
-import { Card } from '../../../components/ui/card';
+import UserActivityDashboard from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Activity, Users, BarChart3, AlertTriangle } from 'lucide-react';
 

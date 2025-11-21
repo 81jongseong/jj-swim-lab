@@ -126,7 +126,7 @@ export { Progress } from './progress';
 // export { Alert, AlertTitle, AlertDescription } from './alert';
 // export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 // export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
 // export { default as Textarea } from './textarea';
 // export { Label } from './label';
 // export { default as Slider } from './slider';

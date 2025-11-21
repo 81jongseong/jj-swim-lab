@@ -20,7 +20,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/Button';
 import { Building2, User, MapPin, Phone, Mail, FileText, Clock, Car, Waves } from 'lucide-react';
 

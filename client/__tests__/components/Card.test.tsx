@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import Card from './../components/ui/card';
+import Card from './../components/ui/Card';
 
 describe('Card Component', () => {
   describe('기본 렌더링', () => {

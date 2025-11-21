@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import { Evidence } from '@/content/swim-joint-guide/types';

@@ -76,7 +76,7 @@
 import { useState, useEffect } from 'react';
 import useEnhancedOffline from '../hooks/useEnhancedOffline';
 import Button from './ui/button';
-import Card from './ui/card';
+import Card from './ui/Card';
 import { Badge } from '@/components/ui';
 
 export default function EnhancedOfflineIndicator() {

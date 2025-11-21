@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Card } from './ui/card';
+import { Card } from './ui/Card';
 import { Input } from './ui/input';
 import { Badge } from '@/components/ui';
 

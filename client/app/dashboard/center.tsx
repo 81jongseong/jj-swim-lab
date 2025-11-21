@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
-import Card from "@/components/ui/card";
+import Card from "@/components/ui/Card";
 import Button from "@/components/Button";
 import { Badge } from "@/components/ui";
 

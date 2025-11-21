@@ -43,7 +43,7 @@ import { Users, TrendingUp, AlertTriangle, CheckCircle, Clock, Activity, HeartPu
 import apiClient from '@/utils/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -666,8 +666,8 @@ export default function InstructorHealthOverview() {
                   ]}
                 />
                 <div className="flex flex-wrap gap-4 text-xs text-gray-600">
-                  <span className="flex items-center gap-2"><span className="h-2 w-8 rounded bg-[#2563eb]"></span> 평균 BMI</span>
-                  <span className="flex items-center gap-2"><span className="h-2 w-8 rounded bg-[#10b981]"></span> 평균 준수율</span>
+                  <span className="flex items-center gap-2"><span className="h-2 w-8 rounded bg-primary-600"></span> 평균 BMI</span>
+                  <span className="flex items-center gap-2"><span className="h-2 w-8 rounded bg-success-500"></span> 평균 준수율</span>
                 </div>
               </div>
             ) : (

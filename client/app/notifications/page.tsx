@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '@/components/ui';
 import { Input } from '../../components/ui/input';

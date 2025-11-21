@@ -22,7 +22,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Users, Calendar, Star, Eye, Search, List } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';

@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Calendar, Users, BookOpen, TrendingUp, Clock, Star } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 
 interface DashboardStats {
   totalStudents: number;

@@ -7,8 +7,8 @@
 
 import React from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import BackupManager from '../../../components/ui/card';
-import { Card } from '../../../components/ui/card';
+import BackupManager from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Database, Download, Upload, AlertTriangle } from 'lucide-react';
 
