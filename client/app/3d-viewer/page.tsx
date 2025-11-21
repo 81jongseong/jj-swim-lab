@@ -44,15 +44,15 @@ export default function ThreeDViewerPage() {
   
   // 통합 데이터 관리 (영법 + 드릴)
   const [dataType, setDataType] = useState<'strokes' | 'drills'>('strokes'); // 영법 or 드릴
-  const [swimmingStyles, setSwimmingStyles] = useState<any[]>([]);
-  const [drills, setDrills] = useState<any[]>([]);
+  const [swimmingStyles, setSwimmingStyles] = useState<Array<{ _id: string; displayName: string; [key: string]: unknown }>>([]);
+  const [drills, setDrills] = useState<Array<{ _id: string; title: string; [key: string]: unknown }>>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<{ _id: string; [key: string]: unknown } | null>(null);
   const [isLoading, setIsLoading] = useState(false); // 초기 로딩 비활성화
   
   // 필터링 상태
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [filteredContent, setFilteredContent] = useState<any[]>([]);
+  const [filteredContent, setFilteredContent] = useState<Array<{ _id: string; [key: string]: unknown }>>([]);
   
   // 영법 폼
   const [styleForm, setStyleForm] = useState({
@@ -592,7 +592,7 @@ export default function ThreeDViewerPage() {
                     <p>등록된 영법이 없습니다. "영법 추가" 버튼을 눌러 추가하세요.</p>
                   </div>
                 ) : (
-                  swimmingStyles.map((style: any) => (
+                  swimmingStyles.map((style) => (
                     <div key={style._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ export default function ThreeDViewerPage() {
                     <p>등록된 드릴이 없습니다. "드릴 추가" 버튼을 눌러 추가하세요.</p>
                   </div>
                 ) : (
-                  drills.map((drill: any) => (
+                  drills.map((drill) => (
                     <div key={drill._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">

@@ -556,7 +556,7 @@ export default function ProfilePage() {
   }, [profile]);
 
   // 건강 프로필 수정 핸들러
-  const handleHealthProfileChange = (field: string, value: any) => {
+  const handleHealthProfileChange = (field: string, value: string | number | boolean | null | undefined) => {
     setProfile((prev) => {
       if (!prev) return prev;
       const nextStudentInfo = {
@@ -639,7 +639,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleStudentInfoChange = (field: keyof NonNullable<ProfileUser['studentInfo']>, value: any) => {
+  const handleStudentInfoChange = (field: keyof NonNullable<ProfileUser['studentInfo']>, value: string | number | boolean | null | undefined) => {
     setProfile((prev) => {
       if (!prev) return prev;
       const nextStudentInfo = {
@@ -654,7 +654,7 @@ export default function ProfilePage() {
   };
 
   // swimmingProfile 수정 핸들러
-  const handleSwimmingProfileChange = (field: string, value: any) => {
+  const handleSwimmingProfileChange = (field: string, value: string | number | boolean | null | undefined) => {
     setProfile((prev) => {
       if (!prev) return prev;
       const currentSwimmingProfile = prev.studentInfo?.swimmingProfile ?? {};
@@ -1222,16 +1222,16 @@ export default function ProfilePage() {
     },
     {
       label: '혈액형',
-      value: (healthProfile as any)?.bloodType,
+      value: (healthProfile as Record<string, unknown>)?.bloodType as string | undefined,
       icon: <Shield className="h-4 w-4" />,
     },
     // 수영 관련 건강 상태
-    ...(Object.values((healthProfile as any)?.swimmingRelatedConditions || {}).some((v: any) => v === true) 
+    ...(Object.values((healthProfile as Record<string, unknown>)?.swimmingRelatedConditions || {}).some((v: unknown) => v === true) 
       ? [{
           label: '건강 상태',
-          value: Object.entries((healthProfile as any)?.swimmingRelatedConditions || {})
-            .filter(([_, v]: [string, any]) => v === true)
-            .map(([k]: [string, any]) => {
+          value: Object.entries((healthProfile as Record<string, unknown>)?.swimmingRelatedConditions || {})
+            .filter(([_, v]: [string, unknown]) => v === true)
+            .map(([k]: [string, unknown]) => {
               const labels: Record<string, string> = {
                 cardiovascular: '심장 질환',
                 respiratory: '호흡기 질환',
