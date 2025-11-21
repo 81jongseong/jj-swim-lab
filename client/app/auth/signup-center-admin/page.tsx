@@ -252,7 +252,7 @@ export default function SignupCenterAdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
-  const updateFormData = (field: keyof FormData, value: any) => {
+  const updateFormData = (field: keyof FormData, value: string | number | boolean | PoolInfo[] | FacilityDetail[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -267,7 +267,7 @@ export default function SignupCenterAdminPage() {
     }
 
     new window.daum.Postcode({
-      oncomplete: function(data: any) {
+      oncomplete: function(data: { zonecode: string; roadAddress?: string; jibunAddress?: string; sido: string; sigungu: string }) {
         // 선택한 주소 정보를 formData에 설정
         updateFormData('postalCode', data.zonecode);
         updateFormData('address1', data.roadAddress || data.jibunAddress);
@@ -362,7 +362,7 @@ export default function SignupCenterAdminPage() {
   };
 
   // 시설 상세 정보 업데이트
-  const updateFacilityDetail = (index: number, field: string, value: any) => {
+  const updateFacilityDetail = (index: number, field: string, value: string | number | boolean | { type?: string; description?: string }) => {
     setFormData(prev => ({
       ...prev,
       facilities: prev.facilities.map((f, i) => 
