@@ -1340,11 +1340,10 @@ router.put('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
       }
     });
   } catch (error) {
-    console.error('❌ 센터 정보 수정 오류:', error);
-    if (error instanceof Error) {
-      console.error('❌ 오류 메시지:', error.message);
-      console.error('❌ 오류 스택:', error.stack);
-    }
+    logError('센터 정보 수정 오류', { 
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     res.status(500).json({
       success: false,
       message: '센터 정보 수정에 실패했습니다.',
