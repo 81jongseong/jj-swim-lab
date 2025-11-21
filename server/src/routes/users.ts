@@ -30,6 +30,7 @@
  * - User 모델 (../models/User)
  * - 인증 미들웨어 (../middleware/auth)
  * - MongoDB Atlas (데이터 저장)
+ * - logger (로깅 유틸리티)
  * 
  * ⚠️ **개발 시 주의사항**
  * 1. 사용자 권한 및 역할 검증 필수
@@ -109,6 +110,7 @@ import {
   requirePermission, 
   // requireLevel
 } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -204,11 +206,11 @@ router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Respon
         // 단체반 회원들 ID 수집
         const groupStudentIds = groupClasses.flatMap(gc => {
           const activeStudents = gc.students.filter(s => s.status === 'active');
-          console.log(`  - ${gc.className}: ${activeStudents.length}명`);
+          logDebug('단체반 학생 수', { className: gc.className, count: activeStudents.length });
           return activeStudents.map(s => s.userId);
         });
         
-        console.log(`📝 총 단체반 학생 ID: ${groupStudentIds.length}개`);
+        logDebug('총 단체반 학생 ID', { count: groupStudentIds.length });
         
         if (groupStudentIds.length > 0) {
           // 단체반 회원들의 상세 정보 가져오기
@@ -216,7 +218,7 @@ router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Respon
             _id: { $in: groupStudentIds }
           }).select('-password');
           
-          console.log(`✅ 단체반 회원 ${groupUsers.length}명 조회됨`);
+          logInfo('단체반 회원 조회됨', { count: groupUsers.length });
           
           // 기존 사용자와 단체반 회원 합치기 (중복 제거)
           const existingIds = users.map(u => u._id.toString());
@@ -224,12 +226,12 @@ router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Respon
             !existingIds.includes(gu._id.toString())
           );
           
-          console.log(`➕ 새로운 단체반 회원 ${newGroupUsers.length}명 추가`);
+          logInfo('새로운 단체반 회원 추가', { count: newGroupUsers.length });
           
           users = [...users, ...newGroupUsers];
         }
       } catch (groupError) {
-        console.error('❌ 단체반 회원 조회 실패:', groupError);
+        logError('단체반 회원 조회 실패', groupError);
       }
     }
     
@@ -249,7 +251,7 @@ router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Respon
       }
     });
   } catch (err) {
-    console.error('센터 사용자 목록 조회 오류:', err);
+    logError('센터 사용자 목록 조회 오류', err);
     return res.status(500).json({ 
       success: false,
       message: '센터 사용자 목록을 불러오는 데 실패했습니다.' 
@@ -280,11 +282,11 @@ router.get('/:id', authMiddleware, async (req, res) => {
     
     const user = await User.findById(req.params.id).select('-password');
     if (!user) {
-      console.log('❌ 사용자를 찾을 수 없음:', req.params.id);
+      logWarn('사용자를 찾을 수 없음', { id: req.params.id });
       return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
     }
     
-    console.log('✅ 사용자 찾음:', {
+    logDebug('사용자 찾음', {
       id: user._id,
       name: user.name,
       email: user.email
@@ -305,7 +307,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     
     return res.json(user);
   } catch (err) {
-    console.error('사용자 조회 오류:', err);
+    logError('사용자 조회 오류', err);
     return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
   }
 });
@@ -351,7 +353,7 @@ router.get('/', authMiddleware, requirePermission('userManagement'), async (req:
       if (adminCenterId) {
         // centerId를 ObjectId로 변환
         const centerIdObjectId = new mongoose.Types.ObjectId(adminCenterId);
-        console.log('🔍 ObjectId 변환 디버깅:', {
+        logDebug('ObjectId 변환 디버깅', {
           originalCenterId: adminCenterId,
           centerIdType: typeof adminCenterId,
           centerIdConstructor: adminCenterId?.constructor?.name,
@@ -366,12 +368,12 @@ router.get('/', authMiddleware, requirePermission('userManagement'), async (req:
         ];
         // 센터 관리자는 강사와 회원만 조회 가능
         query.userType = { $in: ['instructor', 'student'] };
-        console.log('🔍 센터 필터링 쿼리:', {
+        logDebug('센터 필터링 쿼리', {
           $or: query['$or'],
           userType: query.userType
         });
       } else {
-        console.log('⚠️ 센터 관리자에게 centerId가 없음');
+        logWarn('센터 관리자에게 centerId가 없음');
         // centerId가 없으면 모든 강사와 회원 반환 (임시)
         query.userType = { $in: ['instructor', 'student'] };
       }
@@ -411,7 +413,7 @@ router.get('/', authMiddleware, requirePermission('userManagement'), async (req:
       ];
     }
     
-    console.log('🔍 실제 쿼리 실행:', query);
+    logDebug('실제 쿼리 실행', { query });
     
     const users = await User.find(query)
       .select('-password')
@@ -421,7 +423,7 @@ router.get('/', authMiddleware, requirePermission('userManagement'), async (req:
     
     const total = await User.countDocuments(query);
     
-    console.log('🔍 쿼리 실행 결과:', {
+    logDebug('쿼리 실행 결과', {
       count: users.length,
       total,
       firstUser: users[0] ? {
@@ -442,7 +444,7 @@ router.get('/', authMiddleware, requirePermission('userManagement'), async (req:
       }
     });
   } catch (err) {
-    console.error('사용자 목록 조회 오류:', err);
+    logError('사용자 목록 조회 오류', err);
     return res.status(500).json({ error: '사용자 목록을 불러오는 데 실패했습니다.' });
   }
 });
@@ -464,7 +466,7 @@ router.get('/stats/by-type', authMiddleware, requirePermission('reports'), async
     
     return res.json({ stats });
   } catch (err) {
-    console.error('사용자 통계 조회 오류:', err);
+    logError('사용자 통계 조회 오류', err);
     return res.status(500).json({ error: '사용자 통계를 불러오는 데 실패했습니다.' });
   }
 });
@@ -505,7 +507,7 @@ router.get('/stats/by-level', authMiddleware, requirePermission('reports'), asyn
     
     return res.json({ stats });
   } catch (err) {
-    console.error('레벨별 통계 조회 오류:', err);
+    logError('레벨별 통계 조회 오류', err);
     return res.status(500).json({ error: '레벨별 통계를 불러오는 데 실패했습니다.' });
   }
 });
@@ -577,7 +579,7 @@ router.post('/', authMiddleware, requirePermission('userManagement'), async (req
       data: { user: userResponse }
     });
   } catch (err) {
-    console.error('사용자 생성 오류:', err);
+    logError('사용자 생성 오류', err);
     return res.status(400).json({ 
       success: false,
       error: '사용자 생성에 실패했습니다.' 
@@ -725,7 +727,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     // ⚙️ 계정 활성/비활성 상태 업데이트 (관리자 권한)
     if (typeof req.body.isActive === 'boolean') {
       updateData.isActive = req.body.isActive;
-      console.log(`🔒 계정 상태 변경: ${updateData.isActive ? '활성' : '비활성'}`);
+      logInfo('계정 상태 변경', { isActive: updateData.isActive });
     }
     
     // 🎓 학생 전용 정보 업데이트
@@ -770,7 +772,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     
     return res.json(user);
   } catch (err) {
-    console.error('사용자 업데이트 오류:', err);
+    logError('사용자 업데이트 오류', err);
     return res.status(400).json({ error: '사용자 정보 업데이트에 실패했습니다.' });
   }
 });
@@ -820,7 +822,7 @@ router.patch('/:id/upgrade-level', authMiddleware, requirePermission('userManage
       user: updatedUser
     });
   } catch (err) {
-    console.error('레벨 업그레이드 오류:', err);
+    logError('레벨 업그레이드 오류', err);
     return res.status(400).json({ error: '레벨 업그레이드에 실패했습니다.' });
   }
 });
@@ -844,7 +846,7 @@ router.delete('/:id', authMiddleware, requirePermission('userManagement'), async
     await User.findByIdAndDelete(req.params.id);
     return res.json({ message: '사용자가 성공적으로 삭제되었습니다.' });
   } catch (err) {
-    console.error('사용자 삭제 오류:', err);
+    logError('사용자 삭제 오류', err);
     return res.status(500).json({ error: '사용자 삭제에 실패했습니다.' });
   }
 });
@@ -878,7 +880,7 @@ router.patch('/:id/conditions', authMiddleware, async (req, res) => {
       conditionIds: (updatedUser as any)?.healthInfo?.conditionIds || []
     });
   } catch (err) {
-    console.error('질환 업데이트 오류:', err);
+    logError('질환 업데이트 오류', err);
     return res.status(500).json({ error: '질환 업데이트에 실패했습니다.' });
   }
 });
@@ -899,7 +901,7 @@ router.patch('/:id/toggle-status', authMiddleware, requirePermission('userManage
       isActive: user.isActive
     });
   } catch (err) {
-    console.error('사용자 상태 변경 오류:', err);
+    logError('사용자 상태 변경 오류', err);
     return res.status(500).json({ error: '사용자 상태 변경에 실패했습니다.' });
   }
 });
@@ -1077,7 +1079,7 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
     
     await user.save();
     
-    console.log(`✅ CSS 저장 완료: ${user.name}`, (user.studentInfo as any).swimmingProfile.css);
+    logInfo('CSS 저장 완료', { userName: user.name, css: (user.studentInfo as any).swimmingProfile.css });
     
     return res.json({
       success: true,
@@ -1089,7 +1091,7 @@ router.put('/:userId/swimming-profile/css', authMiddleware, async (req, res) => 
       }
     });
   } catch (err) {
-    console.error('CSS 업데이트 오류:', err);
+    logError('CSS 업데이트 오류', err);
     return res.status(500).json({ error: 'CSS 업데이트에 실패했습니다.' });
   }
 });
@@ -1233,7 +1235,7 @@ router.put('/:userId/swimming-profile', authMiddleware, async (req, res) => {
       data: (user.studentInfo as any).swimmingProfile
     });
   } catch (err) {
-    console.error('수영 프로필 업데이트 오류:', err);
+    logError('수영 프로필 업데이트 오류', err);
     return res.status(500).json({ error: '수영 프로필 업데이트에 실패했습니다.' });
   }
 });
@@ -1293,7 +1295,7 @@ router.post('/:userId/swimming-profile/approve-changes', authMiddleware, async (
       data: profile
     });
   } catch (err) {
-    console.error('변경사항 승인 오류:', err);
+    logError('변경사항 승인 오류', err);
     return res.status(500).json({ error: '변경사항 승인에 실패했습니다.' });
   }
 });
@@ -1332,7 +1334,7 @@ router.post('/:userId/swimming-profile/reject-changes', authMiddleware, async (r
       message: '변경사항이 거부되었습니다.'
     });
   } catch (err) {
-    console.error('변경사항 거부 오류:', err);
+    logError('변경사항 거부 오류', err);
     return res.status(500).json({ error: '변경사항 거부에 실패했습니다.' });
   }
 });
@@ -1356,7 +1358,7 @@ async function getInstructorCourses(instructorId: mongoose.Types.ObjectId | stri
 
     return courses.map(course => course._id as mongoose.Types.ObjectId);
   } catch (error) {
-    console.error('강사 코스 조회 실패:', {
+    logError('강사 코스 조회 실패', {
       instructorId,
       error
     });
