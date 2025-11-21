@@ -1,3 +1,18 @@
+/**
+ * 📝 3D 동영상 분석 API 라우트
+ * 
+ * 📋 **파일 목적**
+ * - 3D 동영상 분석 및 변환 처리
+ * - 동영상 업로드 및 분석 결과 저장
+ * 
+ * 🔄 **연동되는 모델**
+ * - Video3DConversionEngine (3D 변환 엔진)
+ * - VideoAnalysisResult (분석 결과 모델)
+ * 
+ * 📅 **개발 히스토리**
+ * - 초기 3D 동영상 분석 API 구현
+ */
+
 import express, { Response } from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -6,6 +21,7 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { Video3DConversionEngine } from '../utils/Video3DConversionEngine';
 import { VideoAnalysisResult } from '../models/VideoAnalysisCriteria';
 import { execAsync } from '../utils/execAsync';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -183,7 +199,7 @@ router.post('/upload', authMiddleware, requireRole(['instructor', 'centerAdmin',
       swimming3DAnalysis = result.swimming3DAnalysis;
       console.log('✅ 데이터를 result.swimming3DAnalysis에서 찾았습니다');
     } else {
-      console.error('❌ swimming3DAnalysis 데이터를 찾을 수 없습니다');
+      logError('swimming3DAnalysis 데이터를 찾을 수 없습니다');
       return res.status(500).json({
         success: false,
         message: '분석 데이터를 찾을 수 없습니다.'
@@ -273,7 +289,7 @@ router.post('/upload', authMiddleware, requireRole(['instructor', 'centerAdmin',
     console.log('✅ 응답 전송 완료');
 
   } catch (error) {
-    console.error('❌ 3D 동영상 분석 오류:', error);
+    logError('3D 동영상 분석 오류', error);
     res.status(500).json({
       success: false,
       message: '3D 동영상 분석 중 오류가 발생했습니다.'

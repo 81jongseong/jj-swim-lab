@@ -33,6 +33,7 @@ import { CenterSchedule } from '../models/CenterSchedule';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
 import { requireCenterAdmin } from '../middleware/role';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -138,7 +139,7 @@ router.get('/', async (req: any, res: Response) => {
     }
 
   } catch (error) {
-    console.error('센터 스케줄 조회 오류:', error);
+    logError('센터 스케줄 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -174,7 +175,7 @@ router.put('/', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('센터 스케줄 업데이트 오류:', error);
+    logError('센터 스케줄 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -216,7 +217,7 @@ router.put('/operating-hours', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('운영 시간 설정 오류:', error);
+    logError('운영 시간 설정 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -254,7 +255,7 @@ router.put('/personal-lesson', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('개인레슨 설정 오류:', error);
+    logError('개인레슨 설정 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -292,7 +293,7 @@ router.put('/lane-rental', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 설정 오류:', error);
+    logError('레인대여 설정 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -361,7 +362,7 @@ router.put('/instructor/:instructorId/availability', async (req: any, res: Respo
     });
 
   } catch (error) {
-    console.error('강사 가능 시간 설정 오류:', error);
+    logError('강사 가능 시간 설정 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -399,7 +400,7 @@ router.put('/lane-availability', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인 사용 가능 상태 설정 오류:', error);
+    logError('레인 사용 가능 상태 설정 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -439,7 +440,7 @@ router.post('/special-schedule', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('특별 일정 추가 오류:', error);
+    logError('특별 일정 추가 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -479,7 +480,7 @@ router.delete('/special-schedule/:scheduleId', async (req: any, res: Response) =
     });
 
   } catch (error) {
-    console.error('특별 일정 삭제 오류:', error);
+    logError('특별 일정 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -546,7 +547,7 @@ router.post('/personal-lesson/time-slots', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('개인레슨 시간 슬롯 생성 오류:', error);
+    logError('개인레슨 시간 슬롯 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -598,7 +599,7 @@ router.put('/personal-lesson/time-slots/:slotIndex', async (req: any, res: Respo
     });
 
   } catch (error) {
-    console.error('개인레슨 시간 슬롯 업데이트 오류:', error);
+    logError('개인레슨 시간 슬롯 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -648,7 +649,7 @@ router.delete('/personal-lesson/time-slots/:slotIndex', async (req: any, res: Re
     });
 
   } catch (error) {
-    console.error('개인레슨 시간 슬롯 삭제 오류:', error);
+    logError('개인레슨 시간 슬롯 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -714,7 +715,7 @@ router.post('/lane-rental/time-slots', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 시간 슬롯 생성 오류:', error);
+    logError('레인대여 시간 슬롯 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -766,7 +767,7 @@ router.put('/lane-rental/time-slots/:slotIndex', async (req: any, res: Response)
     });
 
   } catch (error) {
-    console.error('레인대여 시간 슬롯 업데이트 오류:', error);
+    logError('레인대여 시간 슬롯 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -816,7 +817,7 @@ router.delete('/lane-rental/time-slots/:slotIndex', async (req: any, res: Respon
     });
 
   } catch (error) {
-    console.error('레인대여 시간 슬롯 삭제 오류:', error);
+    logError('레인대여 시간 슬롯 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -842,7 +843,7 @@ router.get('/instructor-availability', async (req: any, res: Response) => {
       data: schedule.instructorAvailability || []
     });
   } catch (error) {
-    console.error('강사별 가능 시간 조회 실패:', error);
+    logError('강사별 가능 시간 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -907,7 +908,7 @@ router.post('/instructor-availability', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('강사별 가능 시간 설정 실패:', error);
+    logError('강사별 가능 시간 설정 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -951,7 +952,7 @@ router.delete('/instructor-availability/:instructorId', async (req: any, res: Re
     });
 
   } catch (error) {
-    console.error('강사별 가능 시간 삭제 실패:', error);
+    logError('강사별 가능 시간 삭제 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -1012,7 +1013,7 @@ router.get('/available-instructors', async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('가능한 강사 조회 실패:', error);
+    logError('가능한 강사 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
