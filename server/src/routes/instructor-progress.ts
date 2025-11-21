@@ -13,6 +13,7 @@ import { StudentProgress } from '../models/StudentProgress';
 import { ClassChecklist } from '../models/ClassChecklist';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // import { Course } from '../models/Course'; // 사용되지 않음
 
 const router = express.Router();
@@ -193,7 +194,7 @@ router.get('/student/:studentId', authMiddleware, requireRole(['instructor']), a
 
     res.json({ success: true, data: result });
   } catch (error) {
-    console.error('❌ 진행 관리 조회 실패:', error);
+    logError('진행 관리 조회 실패', error);
     res.status(500).json({ success: false, message: '진행 관리 데이터를 불러오는 중 오류가 발생했습니다.' });
   }
 });
@@ -280,7 +281,7 @@ router.post('/student/:studentId', authMiddleware, requireRole(['instructor']), 
       }
     });
   } catch (error) {
-    console.error('❌ 진행 관리 저장 실패:', error);
+    logError('진행 관리 저장 실패', error);
     res.status(500).json({ success: false, message: '진행 관리 데이터를 저장하는 중 오류가 발생했습니다.' });
   }
 });

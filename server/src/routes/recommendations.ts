@@ -10,6 +10,7 @@ import { Recommendation } from '../models/Recommendation';
 import { LearningProgress } from '../models/LearningProgress';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: 
       data: recommendations
     });
   } catch (error) {
-    console.error('❌ 추천 목록 조회 오류:', error);
+    logError('추천 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '추천 목록 조회 중 오류가 발생했습니다.'
@@ -153,7 +154,7 @@ router.post('/generate', authMiddleware, requireRole(['student']), async (req: a
       message: `${savedRecommendations.length}개의 추천이 생성되었습니다.`
     });
   } catch (error) {
-    console.error('❌ 추천 생성 오류:', error);
+    logError('추천 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '추천 생성 중 오류가 발생했습니다.'
@@ -190,7 +191,7 @@ router.put('/:recommendationId/complete', authMiddleware, requireRole(['student'
       message: '추천이 완료되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 추천 완료 처리 오류:', error);
+    logError('추천 완료 처리 오류', error);
     res.status(500).json({
       success: false,
       message: '추천 완료 처리 중 오류가 발생했습니다.'
@@ -227,7 +228,7 @@ router.put('/:recommendationId/dismiss', authMiddleware, requireRole(['student']
       message: '추천이 거부되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 추천 거부 처리 오류:', error);
+    logError('추천 거부 처리 오류', error);
     res.status(500).json({
       success: false,
       message: '추천 거부 처리 중 오류가 발생했습니다.'
@@ -285,7 +286,7 @@ router.get('/analysis', authMiddleware, requireRole(['student']), async (req: an
       }
     });
   } catch (error) {
-    console.error('❌ 학습 분석 조회 오류:', error);
+    logError('학습 분석 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '학습 분석 조회 중 오류가 발생했습니다.'

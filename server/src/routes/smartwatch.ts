@@ -12,6 +12,7 @@ import express, { Response } from 'express';
 import { SmartWatchData } from '../models/SmartWatchData';
 import { IntegratedAIEngine } from '../utils/IntegratedAIEngine';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -51,7 +52,7 @@ router.post('/sync', authMiddleware, requireRole(['student', 'instructor', 'cent
       try {
         await processSmartWatchData(smartWatchData._id.toString());
       } catch (error) {
-        console.error('스마트 워치 데이터 AI 분석 오류:', error);
+        logError('스마트 워치 데이터 AI 분석 오류', error);
       }
     });
 
@@ -62,7 +63,7 @@ router.post('/sync', authMiddleware, requireRole(['student', 'instructor', 'cent
     });
 
   } catch (error) {
-    console.error('스마트 워치 데이터 동기화 오류:', error);
+    logError('스마트 워치 데이터 동기화 오류', error);
     res.status(500).json({
       success: false,
       message: '데이터 동기화 중 오류가 발생했습니다.'
@@ -115,7 +116,7 @@ router.get('/data', authMiddleware, requireRole(['student', 'instructor', 'cente
     });
 
   } catch (error) {
-    console.error('스마트 워치 데이터 조회 오류:', error);
+    logError('스마트 워치 데이터 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '데이터 조회 중 오류가 발생했습니다.'
@@ -152,7 +153,7 @@ router.get('/data/:sessionId', authMiddleware, requireRole(['student', 'instruct
     });
 
   } catch (error) {
-    console.error('스마트 워치 데이터 상세 조회 오류:', error);
+    logError('스마트 워치 데이터 상세 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '데이터 조회 중 오류가 발생했습니다.'
@@ -203,7 +204,7 @@ router.get('/analysis/:sessionId', authMiddleware, requireRole(['student', 'inst
     });
 
   } catch (error) {
-    console.error('AI 분석 결과 조회 오류:', error);
+    logError('AI 분석 결과 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '분석 결과 조회 중 오류가 발생했습니다.'
@@ -260,7 +261,7 @@ router.post('/integrated-analysis', authMiddleware, requireRole(['instructor', '
     });
 
   } catch (error) {
-    console.error('통합 AI 분석 오류:', error);
+    logError('통합 AI 분석 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 분석 중 오류가 발생했습니다.'
@@ -303,7 +304,7 @@ async function processSmartWatchData(dataId: string) {
     console.log(`스마트 워치 데이터 AI 분석 완료: ${dataId}`);
 
   } catch (error) {
-    console.error('스마트 워치 데이터 AI 분석 처리 오류:', error);
+    logError('스마트 워치 데이터 AI 분석 처리 오류', error);
   }
 }
 
