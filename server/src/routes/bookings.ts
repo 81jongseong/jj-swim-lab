@@ -38,6 +38,7 @@
  */
 
 import express, { Request, Response } from 'express';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 import mongoose from 'mongoose';
 import { PersonalLesson } from '../models/PersonalLesson';
 import { LaneRental } from '../models/LaneRental';
@@ -45,6 +46,7 @@ import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
 import { LaneAllocationService } from '../services/laneAllocationService';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -170,7 +172,7 @@ router.get('/', async (req: any, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('예약 목록 조회 오류:', error);
+    logError('예약 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'
@@ -271,7 +273,7 @@ router.get('/dashboard', async (req: any, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('예약 현황 조회 오류:', error);
+    logError('예약 현황 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -309,7 +311,7 @@ router.get('/personal-lessons', async (req: any, res: Response) => {
       data: personalLessons
     });
   } catch (error) {
-    console.error('개인레슨 조회 오류:', error);
+    logError('개인레슨 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -362,7 +364,7 @@ router.put('/:id', async (req: any, res: Response) => {
       message: '예약을 찾을 수 없습니다.'
     });
   } catch (error: any) {
-    console.error('예약 상태 변경 오류:', error);
+    logError('예약 상태 변경 오류', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'
@@ -427,7 +429,7 @@ router.patch('/personal-lessons/:id/status', authMiddleware, async (req: any, re
       data: personalLesson
     });
   } catch (error) {
-    console.error('개인레슨 상태 변경 오류:', error);
+    logError('개인레슨 상태 변경 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -461,7 +463,7 @@ router.get('/lane-rentals', async (req: any, res: Response) => {
       data: laneRentals
     });
   } catch (error) {
-    console.error('레인대여 조회 오류:', error);
+    logError('레인대여 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -503,7 +505,7 @@ router.patch('/lane-rentals/:id/status', async (req: any, res: Response) => {
       data: laneRental
     });
   } catch (error) {
-    console.error('레인대여 상태 변경 오류:', error);
+    logError('레인대여 상태 변경 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -538,7 +540,7 @@ router.patch('/lane-rentals/:id/lane', async (req: any, res: Response) => {
     await laneRental.save();
     return res.json({ success: true, message: '레인 번호가 변경되었습니다.', data: laneRental });
   } catch (error) {
-    console.error('레인 번호 변경 오류:', error);
+    logError('레인 번호 변경 오류', error);
     return res.status(500).json({ success: false, message: '레인 번호 변경 중 오류가 발생했습니다.' });
   }
 });
@@ -597,7 +599,7 @@ router.get('/lane-rentals/:id/availability', async (req: any, res: Response) => 
       data: { currentLane, totalLanes, occupied, available }
     });
   } catch (error) {
-    console.error('레인 가용 조회 오류:', error);
+    logError('레인 가용 조회 오류', error);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -621,7 +623,7 @@ router.get('/:id/student', async (req: any, res: Response) => {
     }
     return res.status(404).json({ success: false, message: '예약을 찾을 수 없습니다.' });
   } catch (error) {
-    console.error('예약 학생 ID 조회 오류:', error);
+    logError('예약 학생 ID 조회 오류', error);
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -648,7 +650,7 @@ router.get('/instructors', async (req: any, res: Response) => {
       data: instructors
     });
   } catch (error) {
-    console.error('강사 목록 조회 오류:', error);
+    logError('강사 목록 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -725,7 +727,7 @@ router.get('/statistics', async (req: any, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('예약 통계 조회 오류:', error);
+    logError('예약 통계 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -820,7 +822,7 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
       assignedLane = adjustmentResult.personalLessonLane || 1;
       console.log('✅ 레인 자동 조정 완료:', adjustmentResult);
     } catch (adjustmentError) {
-      console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
+      logWarn('레인 자동 조정 실패', adjustmentError);
       // 레인 조정 실패해도 개인레슨 신청은 진행됨
     }
 
@@ -855,7 +857,7 @@ router.post('/personal-lessons/request', async (req: Request, res: Response) => 
     });
 
   } catch (error) {
-    console.error('개인레슨 신청 실패:', error);
+    logError('개인레슨 신청 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -893,7 +895,7 @@ async function updateInstructorBookingCount(instructorId: string, startTime: str
       }
     }
   } catch (error) {
-    console.error('강사별 예약 수 업데이트 실패:', error);
+    logError('강사별 예약 수 업데이트 실패', error);
   }
 }
 
@@ -985,7 +987,7 @@ router.post('/lane-rentals/request', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 신청 실패:', error);
+    logError('레인대여 신청 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -1040,7 +1042,7 @@ router.get('/my-bookings', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('회원 예약 내역 조회 실패:', error);
+    logError('회원 예약 내역 조회 실패', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -1081,7 +1083,7 @@ router.patch('/personal-lessons/:id/instructor', authMiddleware, async (req: any
     await lesson.save();
     return res.json({ success: true, message: '강사가 배정되었습니다.', data: lesson });
   } catch (error) {
-    console.error('개인레슨 강사 배정 오류:', error);
+    logError('개인레슨 강사 배정 오류', error);
     return res.status(500).json({ success: false, message: '개인레슨 강사 배정 중 오류가 발생했습니다.' });
   }
 });
