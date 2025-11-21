@@ -25,8 +25,8 @@ const aggregateLevelChecklist = async (studentId: Types.ObjectId, studentLevel: 
   // const levelMap: { [key: string]: string } = { // 사용되지 않음
   //   'beginner': '초급',
   //   'intermediate': '중급',
-    'advanced': '고급'
-  };
+  //   'advanced': '고급'
+  // };
   
   const reverseLevelMap: { [key: string]: string } = {
     '초급': 'beginner',
