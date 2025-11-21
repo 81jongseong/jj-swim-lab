@@ -97,6 +97,7 @@ import apiClient from '../../utils/api';
 // 동적 임포트로 코드 스플리팅 적용
 const StatsCards = lazy(() => import('../../components/dashboard/StatsCards'));
 const HealthDashboard = lazy(() => import('../../components/HealthDashboard'));
+const RecentBookings = lazy(() => import('../../components/dashboard/RecentBookings'));
 
 interface MemberStats {
   totalBookings: number;
@@ -216,6 +217,15 @@ export default function MemberDashboard() {
             totalPayments: d.totalPayments || 0,
             nextLesson: d.nextClass || null,
           });
+          
+          // 최근 예약 내역 설정
+          if (Array.isArray(d.recentBookings)) {
+            setRecentBookings(d.recentBookings);
+          } else if (Array.isArray(d.bookings)) {
+            setRecentBookings(d.bookings);
+          } else {
+            setRecentBookings([]);
+          }
           // 건강 데이터 로드 (샘플 데이터)
           setHealthData({
             riskLevel: 'medium',

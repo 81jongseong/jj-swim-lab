@@ -3,7 +3,7 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { logInfo, logError } from '../utils/logger';
 import { StudentProgress } from '../models/StudentProgress';
 import { Course } from '../models/Course';
-import { User } from '../models/User';
+// import { User } from '../models/User'; // 사용되지 않음
 
 const router: express.Router = express.Router();
 

@@ -22,7 +22,7 @@ import { User } from '../models/User';
 import SwimProgram from '../models/SwimProgram';
 import { HealthData } from '../models/HealthData';
 import { LearningProgress } from '../models/LearningProgress';
-import { Checklist } from '../models/Checklist';
+// import { Checklist } from '../models/Checklist'; // 사용되지 않음
 import { ExercisePrescriptionSystem } from '../utils/ExercisePrescriptionSystem';
 
 interface UserPatternAnalysis {
@@ -91,8 +91,8 @@ export class AIRoutineRecommendationService {
     const daysOfWeek: number[] = [];
     const intensities: string[] = [];
     const strokes: string[] = [];
-    let completedSessions = 0;
-    let totalSessions = 0;
+    const completedSessions = 0;
+    const totalSessions = 0;
 
     // 완료율 데이터 분리 (강사 설정 vs 개인 완료율)
     const instructorCompletions: number[] = [];

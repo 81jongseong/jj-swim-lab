@@ -735,7 +735,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
     // 학생의 현재 수준 분석
     let currentLevel = 'beginner';
-    let currentSkills: string[] = [];
+    const currentSkills: string[] = [];
     
     if (enrolledCourses.length > 0) {
       const course = enrolledCourses[0];

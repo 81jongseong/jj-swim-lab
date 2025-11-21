@@ -620,8 +620,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       email,   // 사용자 이메일
       phone,   // 전화번호
       address, // 주소
-      birthDate, // 생년월일
-      gender,    // 성별
+      // birthDate, // 생년월일 (사용되지 않음)
+      // gender,    // 성별 (사용되지 않음)
       userType, // 사용자 타입 (student/instructor/centerAdmin/superAdmin)
       level,    // 사용자 레벨
       password, // 비밀번호 (있는 경우 해싱 처리)

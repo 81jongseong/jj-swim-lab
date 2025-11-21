@@ -13,7 +13,7 @@ import { StudentProgress } from '../models/StudentProgress';
 import { ClassChecklist } from '../models/ClassChecklist';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
-import { Course } from '../models/Course';
+// import { Course } from '../models/Course'; // 사용되지 않음
 
 const router = express.Router();
 
@@ -22,9 +22,9 @@ const aggregateLevelChecklist = async (studentId: Types.ObjectId, studentLevel: 
   const studentObjectId = new Types.ObjectId(studentId);
   
   // 1. 학생의 현재 레벨과 다음 레벨 결정
-  const levelMap: { [key: string]: string } = {
-    'beginner': '초급',
-    'intermediate': '중급',
+  // const levelMap: { [key: string]: string } = { // 사용되지 않음
+  //   'beginner': '초급',
+  //   'intermediate': '중급',
     'advanced': '고급'
   };
   
