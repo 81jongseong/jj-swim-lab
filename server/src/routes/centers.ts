@@ -2537,8 +2537,7 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
           console.warn(`⚠️ 센터를 찾을 수 없음: centerId=${centerId}`);
         }
       } catch (dbError: any) {
-        console.error('센터 조회 오류:', dbError);
-        console.error('센터 조회 오류 스택:', dbError?.stack);
+        logError('센터 조회 오류', { message: dbError?.message, stack: dbError?.stack });
         // 센터 조회 실패해도 기본 설정으로 진행
       }
     } else {
