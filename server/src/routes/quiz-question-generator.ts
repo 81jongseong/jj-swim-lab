@@ -5,10 +5,29 @@
  * @author JJ Swim Lab
  */
 
+/**
+ * 📝 퀴즈 문제 자동 생성 API 라우트
+ * 
+ * 📋 **파일 목적**
+ * - 사용자가 제공한 정답 Pool, 오답 Pool을 기반으로 문제 생성
+ * - 같은 카테고리 문제를 하나의 퀴즈로 묶어서 저장
+ * - 퀴즈 문제 메타데이터 관리 (conceptBlock, originalExplanation 등)
+ * 
+ * 🔄 **연동되는 모델**
+ * - Quiz (퀴즈 모델)
+ * - QuizQuestionGeneratorService (문제 생성 서비스)
+ * 
+ * 📅 **개발 히스토리**
+ * - 2025-01-13: 초기 퀴즈 문제 자동 생성 API 구현
+ * - 2025-01-19: 같은 카테고리 문제 묶기 기능 추가
+ * - 2025-01-19: 메타데이터 저장 기능 추가
+ */
+
 import express from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { QuizQuestionGeneratorService, QuestionPoolInput } from '../services/quizQuestionGeneratorService';
 import { Quiz } from '../models/Quiz';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -80,7 +99,7 @@ router.post('/generate', authMiddleware, requireRole(['instructor', 'centerAdmin
       data: result
     });
   } catch (error: any) {
-    console.error('문제 생성 실패:', error);
+    logError('문제 생성 실패', error);
     res.status(500).json({
       success: false,
       message: error.message || '문제 생성 중 오류가 발생했습니다.',
@@ -134,7 +153,7 @@ router.post('/generate-multiple', authMiddleware, requireRole(['instructor', 'ce
       data: results
     });
   } catch (error: any) {
-    console.error('문제 생성 실패:', error);
+    logError('문제 생성 실패', error);
     res.status(500).json({
       success: false,
       message: error.message || '문제 생성 중 오류가 발생했습니다.',
@@ -183,7 +202,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
         isActive: true
       }).sort({ createdAt: -1 });
       
-      console.log('🔍 기존 퀴즈 검색 (여러 문제):', {
+      logDebug('기존 퀴즈 검색 (여러 문제)', {
         category: normalizedCategory,
         userId: (req as any).user._id,
         found: !!existingQuiz,
@@ -211,7 +230,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
 
       if (existingQuiz) {
         // 기존 퀴즈에 문제 추가
-        console.log(`✅ 기존 퀴즈에 ${questions.length}개 문제 추가:`, existingQuiz._id);
+        logInfo('기존 퀴즈에 문제 추가', { quizId: existingQuiz._id, questionCount: questions.length });
         existingQuiz.questions.push(...questions);
         existingQuiz.title = title || existingQuiz.title || `${normalizedCategory} 관련 문제 세트`;
         existingQuiz.description = description || existingQuiz.description || `${existingQuiz.questions.length}개의 문제가 포함된 세트입니다.`;
@@ -219,7 +238,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
           existingQuiz.tags = [...new Set([...existingQuiz.tags, ...tags])];
         }
         await existingQuiz.save();
-        console.log(`✅ 저장 완료: 총 ${existingQuiz.questions.length}개 문제`);
+        logInfo('퀴즈 저장 완료', { quizId: existingQuiz._id, totalQuestions: existingQuiz.questions.length });
 
         res.status(200).json({
           success: true,
@@ -231,7 +250,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
         });
       } else {
         // 새 퀴즈 생성
-        console.log(`📝 새 퀴즈 생성: ${normalizedCategory} 카테고리`);
+        logInfo('새 퀴즈 생성', { category: normalizedCategory });
         const quiz = new Quiz({
           title: title || `${normalizedCategory} 관련 문제 세트`,
           description: description || `${generatedQuestions.length}개의 문제가 포함된 세트입니다.`,
@@ -275,7 +294,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
         isActive: true
       }).sort({ createdAt: -1 });
       
-      console.log('🔍 기존 퀴즈 검색 (단일 문제):', {
+      logDebug('기존 퀴즈 검색 (단일 문제)', {
         category: normalizedCategory,
         userId: (req as any).user._id,
         found: !!existingQuiz,
@@ -303,7 +322,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
 
       if (existingQuiz) {
         // 기존 퀴즈에 문제 추가
-        console.log(`✅ 기존 퀴즈에 문제 추가:`, existingQuiz._id);
+        logInfo('기존 퀴즈에 문제 추가', { quizId: existingQuiz._id });
         existingQuiz.questions.push(question);
         existingQuiz.title = title || existingQuiz.title;
         existingQuiz.description = description || existingQuiz.description || `${existingQuiz.questions.length}개의 문제가 포함된 세트입니다.`;
@@ -311,7 +330,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
           existingQuiz.tags = [...new Set([...existingQuiz.tags, ...tags])];
         }
         await existingQuiz.save();
-        console.log(`✅ 저장 완료: 총 ${existingQuiz.questions.length}개 문제`);
+        logInfo('퀴즈 저장 완료', { quizId: existingQuiz._id, totalQuestions: existingQuiz.questions.length });
 
         res.status(200).json({
           success: true,
@@ -323,7 +342,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
         });
       } else {
         // 새 퀴즈 생성
-        console.log(`📝 새 퀴즈 생성: ${normalizedCategory} 카테고리`);
+        logInfo('새 퀴즈 생성', { category: normalizedCategory });
         const quiz = new Quiz({
           title: title || `${generatedQuestion.topic} 관련 문제`,
           description: description || `${generatedQuestion.topic}에 대한 자동 생성 문제입니다.`,
@@ -357,7 +376,7 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
       });
     }
   } catch (error: any) {
-    console.error('퀴즈 저장 실패:', error);
+    logError('퀴즈 저장 실패', error);
     res.status(500).json({
       success: false,
       message: error.message || '퀴즈 저장 중 오류가 발생했습니다.'
@@ -429,7 +448,7 @@ router.post('/merge-by-category', authMiddleware, requireRole(['instructor', 'ce
       { isActive: false }
     );
 
-    console.log(`✅ ${normalizedCategory} 카테고리의 ${quizzes.length}개 퀴즈를 하나로 합침`);
+    logInfo('퀴즈 합치기 완료', { category: normalizedCategory, mergedCount: quizzes.length });
 
     res.status(200).json({
       success: true,
@@ -443,7 +462,7 @@ router.post('/merge-by-category', authMiddleware, requireRole(['instructor', 'ce
       }
     });
   } catch (error: any) {
-    console.error('퀴즈 합치기 실패:', error);
+    logError('퀴즈 합치기 실패', error);
     res.status(500).json({
       success: false,
       message: error.message || '퀴즈 합치기 중 오류가 발생했습니다.'

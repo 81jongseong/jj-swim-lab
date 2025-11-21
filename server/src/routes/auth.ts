@@ -28,6 +28,7 @@
  * - Express.js Router
  * - bcryptjs (비밀번호 해싱)
  * - jsonwebtoken (JWT 토큰)
+ * - logger (로깅 유틸리티)
  * - User 모델 (../models/User)
  * - 인증 미들웨어 (../middleware/auth)
  * 
@@ -106,6 +107,7 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { LoginLog } from '../models/LoginLog';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router: Router = Router();
 
@@ -156,7 +158,7 @@ router.post('/send-verification-code', async (req: Request, res: Response) => {
 
     // TODO: 실제 SMS 발송 API 연동
     // 예시: await sendSMS(phone, `JJ Swim Lab 인증번호: ${code}`);
-    console.log(`📱 [개발용] ${phone}로 인증 코드 발송: ${code}`);
+    logDebug('인증 코드 발송 (개발용)', { phone, code });
 
     return res.status(200).json({
       success: true,
@@ -165,7 +167,7 @@ router.post('/send-verification-code', async (req: Request, res: Response) => {
       ...(process.env.NODE_ENV === 'development' && { code })
     });
   } catch (error: any) {
-    console.error('인증 코드 발송 오류:', error);
+    logError('인증 코드 발송 오류', error);
     return res.status(500).json({ 
       success: false,
       error: '인증 코드 발송에 실패했습니다.' 
@@ -223,7 +225,7 @@ router.post('/verify-phone-code', async (req: Request, res: Response) => {
       verified: true
     });
   } catch (error: any) {
-    console.error('인증 코드 검증 오류:', error);
+    logError('인증 코드 검증 오류', error);
     return res.status(500).json({ 
       success: false,
       error: '인증 코드 검증에 실패했습니다.' 
@@ -256,7 +258,7 @@ router.post('/send-email-code', async (req: Request, res: Response) => {
     const expiresAt = Date.now() + 5 * 60 * 1000;
     emailVerificationCodes.set(normalizedEmail, { code, expiresAt });
 
-    console.log(`📧 [개발용] ${normalizedEmail}로 이메일 인증 코드 발송: ${code}`);
+    logDebug('이메일 인증 코드 발송 (개발용)', { email: normalizedEmail, code });
 
     return res.status(200).json({
       success: true,
@@ -264,7 +266,7 @@ router.post('/send-email-code', async (req: Request, res: Response) => {
       ...(process.env.NODE_ENV === 'development' && { code })
     });
   } catch (error) {
-    console.error('이메일 인증 코드 발송 오류:', error);
+    logError('이메일 인증 코드 발송 오류', error);
     return res.status(500).json({
       success: false,
       error: '이메일 인증 코드 발송에 실패했습니다.'
@@ -695,7 +697,7 @@ router.post('/signup', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('회원가입 오류:', error);
+    logError('회원가입 오류', error);
     // 더 자세한 에러 메시지 제공
     const errorMessage = error.message || '서버 오류가 발생했습니다.';
     const statusCode = error.statusCode || 500;
@@ -765,11 +767,11 @@ router.get('/verify', async (req: Request, res: Response) => {
         }
       });
     } catch (jwtError) {
-      console.error('JWT 토큰 검증 실패:', jwtError);
+      logError('JWT 토큰 검증 실패', jwtError);
       return res.status(401).json({ error: '토큰이 만료되었거나 유효하지 않습니다.' });
     }
   } catch (error) {
-    console.error('토큰 검증 오류:', error);
+    logError('토큰 검증 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -800,11 +802,11 @@ router.post('/login', async (req: Request, res: Response) => {
     // 클라이언트에서 잘못된 필드명으로 전달될 수 있어 userId 우선, 없으면 email을 userId처럼 허용
     const { userId, email, password } = req.body;
 
-    console.log('🔍 요청 데이터 파싱:', { userId, email, password: password ? '***' : 'undefined' });
+    logDebug('요청 데이터 파싱', { userId, email, hasPassword: !!password });
 
     // 필수 필드 검증
     if (!(userId || email) || !password) {
-      console.log('❌ 필수 필드 누락:', { userId: !!userId, email: !!email, password: !!password });
+      logWarn('필수 필드 누락', { hasUserId: !!userId, hasEmail: !!email, hasPassword: !!password });
       return res.status(400).json({ error: 'ID와 비밀번호를 입력해주세요.' });
     }
 
@@ -814,17 +816,17 @@ router.post('/login', async (req: Request, res: Response) => {
     
     if (userId) {
       searchQuery = { $or: [{ userId }, { username: userId }, { email: userId }] };
-      console.log('🔍 userId로 검색:', searchQuery);
+      logDebug('userId로 검색', { searchQuery });
     } else if (email) {
       searchQuery = { $or: [{ email }, { username: email }] };
-      console.log('🔍 email로 검색:', searchQuery);
+      logDebug('email로 검색', { searchQuery });
     }
     
     user = await User.findOne(searchQuery).select('+centerId');
-    console.log('🔍 사용자 검색 결과:', user ? { userId: user.userId, email: user.email, userType: user.userType } : '사용자 없음');
+    logDebug('사용자 검색 결과', user ? { userId: user.userId, email: user.email, userType: user.userType } : { result: '사용자 없음' });
     
     if (!user) {
-      console.log('❌ 사용자를 찾을 수 없음');
+      logWarn('사용자를 찾을 수 없음');
       return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
     }
 
@@ -850,23 +852,23 @@ router.post('/login', async (req: Request, res: Response) => {
       if (Array.isArray(user.studentInfo.enrolledCourses) && 
           user.studentInfo.enrolledCourses.length > 0 && 
           typeof user.studentInfo.enrolledCourses[0] === 'string') {
-        console.log('🔧 enrolledCourses 데이터 정리:', user.studentInfo.enrolledCourses);
+        logDebug('enrolledCourses 데이터 정리', { count: user.studentInfo.enrolledCourses.length });
         user.studentInfo.enrolledCourses = [];
       }
       
       if (Array.isArray(user.studentInfo.completedCourses) && 
           user.studentInfo.completedCourses.length > 0 && 
           typeof user.studentInfo.completedCourses[0] === 'string') {
-        console.log('🔧 completedCourses 데이터 정리:', user.studentInfo.completedCourses);
+        logDebug('completedCourses 데이터 정리', { count: user.studentInfo.completedCourses.length });
         user.studentInfo.completedCourses = [];
       }
     }
     
     try {
       await user.save();
-      console.log('✅ 사용자 정보 저장 성공');
+      logInfo('사용자 정보 저장 성공', { userId: user._id });
     } catch (saveError) {
-      console.warn('⚠️ 사용자 정보 저장 실패, 로그인은 계속 진행:', saveError.message);
+      logWarn('사용자 정보 저장 실패, 로그인은 계속 진행', { message: saveError.message });
       // 저장 실패해도 로그인은 계속 진행
     }
 
@@ -906,14 +908,14 @@ router.post('/login', async (req: Request, res: Response) => {
         centerIdConstructor: user.centerId?.constructor?.name
       });
     } else {
-      console.log('⚠️ JWT 토큰에 centerId 미포함:', {
+      logDebug('JWT 토큰에 centerId 미포함', {
         userType: user.userType,
         centerId: user.centerId,
         centerIdExists: !!user.centerId
       });
     }
     
-    console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
+    logDebug('JWT 토큰 페이로드', tokenPayload);
     
     const token = jwt.sign(
       tokenPayload,
@@ -936,9 +938,9 @@ router.post('/login', async (req: Request, res: Response) => {
         isActive: true
       });
       await loginLog.save();
-      console.log('✅ 로그인 로그 기록 완료');
+      logInfo('로그인 로그 기록 완료', { userId: user._id });
     } catch (logError) {
-      console.warn('⚠️ 로그인 로그 기록 실패:', logError);
+      logWarn('로그인 로그 기록 실패', logError);
       // 로그 기록 실패해도 로그인은 계속 진행
     }
 
@@ -965,8 +967,8 @@ router.post('/login', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('❌ 로그인 오류 상세:', error);
-    console.error('❌ 오류 스택:', error instanceof Error ? error.stack : '스택 없음');
+    logError('로그인 오류 상세', error);
+    logError('로그인 오류 스택', { stack: error instanceof Error ? error.stack : '스택 없음' });
     return res.status(500).json({ 
       error: '서버 오류가 발생했습니다.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -1033,7 +1035,7 @@ router.get('/profile', async (req: Request, res: Response) => {
       user: responseUser
     });
   } catch (error) {
-    console.error('프로필 조회 오류:', error);
+    logError('프로필 조회 오류', error);
     return res.status(401).json({ error: '인증에 실패했습니다.' });
   }
 });
