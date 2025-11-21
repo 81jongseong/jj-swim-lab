@@ -118,6 +118,7 @@ import { Booking } from '../models/Booking';
 import mongoose from 'mongoose';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 // Request 타입 확장
 interface AuthRequest extends Request {
@@ -171,7 +172,7 @@ router.get('/public/center/:centerId', async (req: Request, res: Response) => {
       data: normalized
     });
   } catch (error) {
-    console.error('공개 강습 과정 조회 오류:', error);
+    logError('공개 강습 과정 조회 오류', error);
     return res.status(500).json({
       success: false,
       message: '강습 정보를 조회할 수 없습니다.'
@@ -255,7 +256,7 @@ router.get('/public/:courseId', async (req: Request, res: Response) => {
       data: normalized
     });
   } catch (error) {
-    console.error('공개 강습 상세 조회 오류:', error);
+    logError('공개 강습 상세 조회 오류', error);
     return res.status(500).json({
       success: false,
       message: '강습 정보를 조회할 수 없습니다.'
@@ -369,7 +370,7 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
         }
       }
     } catch (e) {
-      console.error('결제 후 배정 처리 실패(무시):', e);
+      logWarn('결제 후 배정 처리 실패(무시)', e);
     }
 
     return res.status(201).json({
@@ -389,7 +390,7 @@ router.post('/public/:courseId/apply', authMiddleware, requireRole(['student']),
       }
     });
   } catch (error) {
-    console.error('공개 강습 신청 오류:', error);
+    logError('공개 강습 신청 오류', error);
     return res.status(500).json({
       success: false,
       message: '수강 신청 처리 중 오류가 발생했습니다.'
@@ -579,12 +580,12 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
             refundPolicyMap.set(center._id.toString(), formattedPolicy);
             console.log(`✅ 센터 ${center._id} 환불 정책 포맷팅 결과:`, formattedPolicy);
           } catch (err) {
-            console.error('환불 정책 매핑 오류:', err);
+            logError('환불 정책 매핑 오류', err);
           }
         });
       }
     } catch (err) {
-      console.error('센터 환불 정책 조회 오류:', err);
+      logError('센터 환불 정책 조회 오류', err);
     }
 
     // ⭐ 환불 신청 상태 조회
@@ -742,14 +743,14 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
                     }
                   }
                 } catch (timeError) {
-                  console.error('시간 파싱 오류:', timeError);
+                  logError('시간 파싱 오류', timeError);
                   continue;
                 }
               }
             }
             return null;
           } catch (err) {
-            console.error('다음 수업 날짜 계산 오류:', err);
+            logError('다음 수업 날짜 계산 오류', err);
             return null;
           }
         })(),
@@ -841,7 +842,7 @@ router.get('/student/enrolled', authMiddleware, requireRole(['student']), async 
       data: allCourses
     });
   } catch (error) {
-    console.error('학생 강습 목록 조회 오류:', error);
+    logError('학생 강습 목록 조회 오류', error);
     return res.status(500).json({
       success: false,
       message: '내 강습 정보를 가져오는 중 오류가 발생했습니다.'
@@ -882,7 +883,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
     return res.json({ success: true, message: '강습 과정 조회 성공!', data: courses });
   } catch (error) {
-    console.error('강습 과정 조회 오류:', error);
+    logError('강습 과정 조회 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -900,7 +901,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     return res.json({ course });
   } catch (error) {
-    console.error('강습 과정 조회 오류:', error);
+    logError('강습 과정 조회 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -937,14 +938,14 @@ router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRe
 
     // 필수 필드 검증 (description은 선택사항)
     if (!name || !level || !duration || price === undefined || !maxStudents) {
-      console.error('❌ 필수 필드 누락:', { name, level, duration, price, maxStudents });
+      logError('필수 필드 누락', { name, level, duration, price, maxStudents });
       return res.status(400).json({ error: '필수 필드가 누락되었습니다.' });
     }
 
     // 사용자 정보 조회
     const user = await User.findById(req.user.userId);
     if (!user) {
-      console.error('❌ 사용자를 찾을 수 없음:', req.user.userId);
+      logError('사용자를 찾을 수 없음', { userId: req.user.userId });
       return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
     }
 
@@ -974,7 +975,7 @@ router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRe
     console.log('🏢 centerId:', centerId, 'userType:', user.userType, 'hasCenterId:', !!user.centerId, 'hasManagedCenters:', !!user.centerAdminInfo?.managedCenters);
 
     if (!centerId) {
-      console.error('❌ centerId를 찾을 수 없음 - 사용자 정보:', {
+      logError('centerId를 찾을 수 없음', {
         userType: user.userType,
         centerId: user.centerId,
         managedCenters: user.centerAdminInfo?.managedCenters,
@@ -1125,7 +1126,7 @@ router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRe
         const instructor = await User.findById(instructorId).select('name');
         finalInstructorName = instructor?.name || '';
       } catch (error) {
-        console.error('강사 이름 조회 실패:', error);
+        logError('강사 이름 조회 실패', error);
       }
     }
 
@@ -1294,7 +1295,7 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
     });
     
     if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
-      console.error('❌ 권한 없음:', { userType: user?.userType, userId: req.user.userId });
+      logError('권한 없음', { userType: user?.userType, userId: req.user.userId });
       return res.status(403).json({ error: '수정 권한이 없습니다.' });
     }
     
@@ -1336,7 +1337,7 @@ router.put('/:id', authenticateToken, requireInstructorOrAdmin, async (req: Auth
           instructorName = instructor?.name || '';
           updateData.instructorName = instructorName;
         } catch (error) {
-          console.error('강사 이름 조회 실패:', error);
+          logError('강사 이름 조회 실패', error);
         }
       }
       
@@ -1624,7 +1625,7 @@ router.delete('/:id', authenticateToken, requireInstructorOrAdmin, async (req: A
     });
     
     if (!isSuperAdmin && !isCenterAdmin && !isOwnCourse) {
-      console.error('❌ 삭제 권한 없음:', { userType: user?.userType, userId: req.user.userId });
+      logError('삭제 권한 없음', { userType: user?.userType, userId: req.user.userId });
       return res.status(403).json({ error: '삭제 권한이 없습니다.' });
     }
 
@@ -1751,7 +1752,7 @@ router.delete('/:id', authenticateToken, requireInstructorOrAdmin, async (req: A
 
     return res.json({ success: true, message: '강습 과정이 삭제되었습니다.' });
   } catch (error) {
-    console.error('강습 과정 삭제 오류:', error);
+    logError('강습 과정 삭제 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -1801,7 +1802,7 @@ router.post('/:id/enroll', authenticateToken, async (req: AuthRequest, res: Resp
 
     return res.json({ message: '강습 과정에 등록되었습니다.' });
   } catch (error) {
-    console.error('강습 과정 등록 오류:', error);
+    logError('강습 과정 등록 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -1828,7 +1829,7 @@ router.post('/:id/cancel', authenticateToken, async (req: AuthRequest, res: Resp
 
     return res.json({ message: '강습 과정이 취소되었습니다.' });
   } catch (error) {
-    console.error('강습 과정 취소 오류:', error);
+    logError('강습 과정 취소 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -1883,7 +1884,7 @@ router.post('/:courseId/enroll', authenticateToken, async (req: AuthRequest, res
       data: course
     });
   } catch (error) {
-    console.error('강습 과정 등록 오류:', error);
+    logError('강습 과정 등록 오류', error);
     res.status(500).json({ error: '강습 과정 등록에 실패했습니다.' });
   }
 });
@@ -1924,7 +1925,7 @@ router.post('/:courseId/unenroll', authenticateToken, async (req: AuthRequest, r
       data: course
     });
   } catch (error) {
-    console.error('강습 과정 해제 오류:', error);
+    logError('강습 과정 해제 오류', error);
     res.status(500).json({ error: '강습 과정 해제에 실패했습니다.' });
   }
 });
@@ -1977,7 +1978,7 @@ router.put('/:courseId/progress/:studentId', authenticateToken, async (req: Auth
       data: enrollment.progress
     });
   } catch (error) {
-    console.error('진도율 업데이트 오류:', error);
+    logError('진도율 업데이트 오류', error);
     res.status(500).json({ error: '진도율 업데이트에 실패했습니다.' });
   }
 });
@@ -2028,7 +2029,7 @@ router.get('/:courseId/student/:studentId', authenticateToken, async (req: AuthR
       }
     });
   } catch (error) {
-    console.error('학생 정보 조회 오류:', error);
+    logError('학생 정보 조회 오류', error);
     res.status(500).json({ error: '학생 정보 조회에 실패했습니다.' });
   }
 });
@@ -2108,7 +2109,7 @@ router.get('/instructor/:instructorId/students', authenticateToken, async (req: 
       }
     });
   } catch (error) {
-    console.error('강사별 학생 목록 조회 오류:', error);
+    logError('강사별 학생 목록 조회 오류', error);
     res.status(500).json({ error: '학생 목록 조회에 실패했습니다.' });
   }
 });
@@ -2186,7 +2187,7 @@ router.get('/instructor/:instructorId/stats', authenticateToken, async (req: Aut
       }
     });
   } catch (error) {
-    console.error('강사별 통계 조회 오류:', error);
+    logError('강사별 통계 조회 오류', error);
     res.status(500).json({ error: '통계 조회에 실패했습니다.' });
   }
 });
@@ -2227,7 +2228,7 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('강사 반 목록 조회 실패:', error);
+    logError('강사 반 목록 조회 실패', error);
     res.status(500).json({ success: false, message: '강사 반 목록 조회에 실패했습니다.' });
   }
 });
@@ -2334,7 +2335,7 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('반 회원 진도 조회 실패:', error);
+    logError('반 회원 진도 조회 실패', error);
     res.status(500).json({ success: false, message: '반 회원 진도 조회에 실패했습니다.' });
   }
 });
@@ -2407,7 +2408,7 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
       }
     });
   } catch (error) {
-    console.error('체크리스트 단계 완료 처리 실패:', error);
+    logError('체크리스트 단계 완료 처리 실패', error);
     res.status(500).json({ success: false, message: '체크리스트 단계 완료 처리에 실패했습니다.' });
   }
 });
@@ -2462,7 +2463,7 @@ router.post('/:courseId/enroll', authenticateToken, async (req: AuthRequest, res
       data: course
     });
   } catch (error) {
-    console.error('강습 과정 등록 오류:', error);
+    logError('강습 과정 등록 오류', error);
     res.status(500).json({ error: '강습 과정 등록에 실패했습니다.' });
   }
 });
@@ -2503,7 +2504,7 @@ router.post('/:courseId/unenroll', authenticateToken, async (req: AuthRequest, r
       data: course
     });
   } catch (error) {
-    console.error('강습 과정 해제 오류:', error);
+    logError('강습 과정 해제 오류', error);
     res.status(500).json({ error: '강습 과정 해제에 실패했습니다.' });
   }
 });
@@ -2556,7 +2557,7 @@ router.put('/:courseId/progress/:studentId', authenticateToken, async (req: Auth
       data: enrollment.progress
     });
   } catch (error) {
-    console.error('진도율 업데이트 오류:', error);
+    logError('진도율 업데이트 오류', error);
     res.status(500).json({ error: '진도율 업데이트에 실패했습니다.' });
   }
 });
@@ -2607,7 +2608,7 @@ router.get('/:courseId/student/:studentId', authenticateToken, async (req: AuthR
       }
     });
   } catch (error) {
-    console.error('학생 정보 조회 오류:', error);
+    logError('학생 정보 조회 오류', error);
     res.status(500).json({ error: '학생 정보 조회에 실패했습니다.' });
   }
 });
@@ -2687,7 +2688,7 @@ router.get('/instructor/:instructorId/students', authenticateToken, async (req: 
       }
     });
   } catch (error) {
-    console.error('강사별 학생 목록 조회 오류:', error);
+    logError('강사별 학생 목록 조회 오류', error);
     res.status(500).json({ error: '학생 목록 조회에 실패했습니다.' });
   }
 });
@@ -2765,7 +2766,7 @@ router.get('/instructor/:instructorId/stats', authenticateToken, async (req: Aut
       }
     });
   } catch (error) {
-    console.error('강사별 통계 조회 오류:', error);
+    logError('강사별 통계 조회 오류', error);
     res.status(500).json({ error: '통계 조회에 실패했습니다.' });
   }
 });
@@ -2806,7 +2807,7 @@ router.get('/instructor/:instructorId/classes', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('강사 반 목록 조회 실패:', error);
+    logError('강사 반 목록 조회 실패', error);
     res.status(500).json({ success: false, message: '강사 반 목록 조회에 실패했습니다.' });
   }
 });
@@ -2913,7 +2914,7 @@ router.get('/class/:classId/students/progress', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('반 회원 진도 조회 실패:', error);
+    logError('반 회원 진도 조회 실패', error);
     res.status(500).json({ success: false, message: '반 회원 진도 조회에 실패했습니다.' });
   }
 });
@@ -2986,7 +2987,7 @@ router.post('/class/:classId/student/:studentId/complete-step', async (req, res)
       }
     });
   } catch (error) {
-    console.error('체크리스트 단계 완료 처리 실패:', error);
+    logError('체크리스트 단계 완료 처리 실패', error);
     res.status(500).json({ success: false, message: '체크리스트 단계 완료 처리에 실패했습니다.' });
   }
 });
@@ -3022,7 +3023,7 @@ router.get('/my-courses', authMiddleware, requireRole(['instructor']), async (re
       }
     });
   } catch (error) {
-    console.error('강사 강습 과정 조회 오류:', error);
+    logError('강사 강습 과정 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 강습 과정 조회에 실패했습니다.'
@@ -3114,7 +3115,7 @@ router.get('/oversight', authMiddleware, requireRole(['superAdmin']), async (req
     });
     
   } catch (error) {
-    console.error('강습 과정 감독 데이터 조회 오류:', error);
+    logError('강습 과정 감독 데이터 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강습 과정 감독 데이터 조회 중 오류가 발생했습니다.',
@@ -3174,7 +3175,7 @@ router.get('/center-stats', authMiddleware, requireRole(['superAdmin']), async (
     });
     
   } catch (error) {
-    console.error('센터별 강습 통계 조회 오류:', error);
+    logError('센터별 강습 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터별 강습 통계 조회 중 오류가 발생했습니다.',
@@ -3222,7 +3223,7 @@ router.put('/:id/approval', authMiddleware, requireRole(['superAdmin']), async (
     });
     
   } catch (error) {
-    console.error('강습 과정 승인 처리 오류:', error);
+    logError('강습 과정 승인 처리 오류', error);
     res.status(500).json({
       success: false,
       message: '강습 과정 승인 처리 중 오류가 발생했습니다.',
@@ -3327,7 +3328,7 @@ router.put('/:id/teaching-methods', authMiddleware, requireRole(['instructor', '
       data: updatedCourse
     });
   } catch (error) {
-    console.error('강좌별 강습법 지정 오류:', error);
+    logError('강좌별 강습법 지정 오류', error);
     res.status(500).json({
       success: false,
       message: '강좌별 강습법 지정 중 오류가 발생했습니다.',
@@ -3383,7 +3384,7 @@ router.get('/:id/teaching-methods', authMiddleware, async (req: AuthRequest, res
       }
     });
   } catch (error) {
-    console.error('강좌별 강습법 조회 오류:', error);
+    logError('강좌별 강습법 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강좌별 강습법 조회 중 오류가 발생했습니다.',
@@ -3580,7 +3581,7 @@ router.post('/:courseId/refund-request', authMiddleware, requireRole(['student']
       refundRequestId: refundRequest._id
     });
   } catch (error) {
-    console.error('환불 신청 오류:', error);
+    logError('환불 신청 오류', error);
     res.status(500).json({ success: false, message: '환불 신청 중 오류가 발생했습니다.' });
   }
 });
@@ -3616,7 +3617,7 @@ router.delete('/:courseId/refund-request', authMiddleware, requireRole(['student
       message: '환불 신청이 취소되었습니다.'
     });
   } catch (error) {
-    console.error('환불 신청 취소 오류:', error);
+    logError('환불 신청 취소 오류', error);
     res.status(500).json({ success: false, message: '환불 신청 취소 중 오류가 발생했습니다.' });
   }
 });
