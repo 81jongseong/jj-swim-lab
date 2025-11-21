@@ -323,7 +323,7 @@ router.get('/results/:analysisId', authMiddleware, requireRole(['instructor', 'c
     });
 
   } catch (error) {
-    console.error('❌ 3D 분석 결과 조회 오류:', error);
+    logError('3D 분석 결과 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '3D 분석 결과 조회 중 오류가 발생했습니다.'
@@ -357,7 +357,7 @@ router.get('/student/:studentId', authMiddleware, requireRole(['instructor', 'ce
     });
 
   } catch (error) {
-    console.error('❌ 학생 3D 분석 결과 조회 오류:', error);
+    logError('학생 3D 분석 결과 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 3D 분석 결과 조회 중 오류가 발생했습니다.'
@@ -388,7 +388,7 @@ router.delete('/results/:analysisId', authMiddleware, requireRole(['centerAdmin'
     });
 
   } catch (error) {
-    console.error('❌ 3D 분석 결과 삭제 오류:', error);
+    logError('3D 분석 결과 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '3D 분석 결과 삭제 중 오류가 발생했습니다.'
@@ -403,7 +403,7 @@ function calculateOverallScore3D(swimming3DAnalysis: any): number {
   console.log('🔍 swimming3DAnalysis keys:', Object.keys(swimming3DAnalysis || {}));
   
   if (!swimming3DAnalysis) {
-    console.error('❌ swimming3DAnalysis is undefined');
+    logError('swimming3DAnalysis is undefined');
     return 0;
   }
   
@@ -412,7 +412,7 @@ function calculateOverallScore3D(swimming3DAnalysis: any): number {
   console.log('🔍 actualAnalysisData:', JSON.stringify(actualAnalysisData, null, 2));
   
   if (!actualAnalysisData) {
-    console.error('❌ actualAnalysisData is undefined');
+    logError('actualAnalysisData is undefined');
     return 0;
   }
   
@@ -462,7 +462,7 @@ function calculateOverallScore3D(swimming3DAnalysis: any): number {
       console.log('❌ efficiency3D.score not found');
     }
   } catch (error) {
-    console.error('❌ Error extracting scores:', error);
+    logError('Error extracting scores', error);
   }
   
   const scores = [bodyAlignmentScore, strokeTechniqueScore, breathingPatternScore, efficiencyScore];
@@ -703,7 +703,7 @@ router.get('/download/:analysisId', async (req, res) => {
     // 파일 다운로드
     res.download(video3DPath, `3d_analysis_${analysisId}.mp4`, (err) => {
       if (err) {
-        console.error('3D 영상 다운로드 오류:', err);
+        logError('3D 영상 다운로드 오류', err);
         if (!res.headersSent) {
           res.status(500).json({
             success: false,
@@ -716,7 +716,7 @@ router.get('/download/:analysisId', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('3D 영상 다운로드 오류:', error);
+    logError('3D 영상 다운로드 오류', error);
     res.status(500).json({
       success: false,
       message: '3D 영상 다운로드 중 오류가 발생했습니다.'
@@ -762,13 +762,13 @@ router.get('/download-3d-model/:analysisId', async (req, res) => {
     
     res.download(filePath, `3d_model_${analysisId}_${targetFile}`, (err) => {
       if (err) {
-        console.error('3D 모델 다운로드 오류:', err);
+        logError('3D 모델 다운로드 오류', err);
         res.status(500).json({ error: '3D 모델 파일 다운로드 중 오류가 발생했습니다.' });
       }
     });
     
   } catch (error) {
-    console.error('3D 모델 다운로드 오류:', error);
+    logError('3D 모델 다운로드 오류', error);
     res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -797,7 +797,7 @@ router.get('/threejs-data/*', async (req, res) => {
     res.json(jsonData);
     
   } catch (error) {
-    console.error('Three.js 데이터 제공 오류:', error);
+    logError('Three.js 데이터 제공 오류', error);
     res.status(500).json({
       success: false,
       message: 'Three.js 데이터 제공 중 오류가 발생했습니다.'
@@ -864,16 +864,16 @@ async function convertWithCustomModel(
         console.log('✅ 사용자 모델 변환 결과 파싱 성공');
         return result;
       } catch (parseError) {
-        console.error('❌ JSON 파싱 오류:', parseError);
+        logError('JSON 파싱 오류', parseError);
         throw new Error(`JSON 파싱 실패: ${parseError.message}`);
       }
     } else {
-      console.error('❌ JSON 결과를 찾을 수 없습니다');
+      logError('JSON 결과를 찾을 수 없습니다');
       throw new Error('Python 스크립트에서 JSON 결과를 찾을 수 없습니다');
     }
     
   } catch (error) {
-    console.error('❌ 사용자 모델 변환 오류:', error);
+    logError('사용자 모델 변환 오류', error);
     throw error;
   }
 }
