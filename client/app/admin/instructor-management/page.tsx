@@ -971,7 +971,7 @@ export default function InstructorManagementPage() {
                   const startDate = new Date(firstDay);
                   startDate.setDate(startDate.getDate() - firstDay.getDay());
                   
-                  const days = [];
+                  const days: Date[] = [];
                   for (let i = 0; i < 42; i++) {
                     const date = new Date(startDate);
                     date.setDate(startDate.getDate() + i);
@@ -1357,7 +1357,10 @@ export default function InstructorManagementPage() {
               
               <StatCard
                 title="평균 급여"
-                value={`${Math.round(filteredInstructors.reduce((sum, instructor) => sum + instructor.salary, 0) / filteredInstructors.length / 10000)}만원`}
+                value={`${Math.round(filteredInstructors.reduce((sum, instructor) => {
+                  const salary = typeof instructor.salary === 'number' ? instructor.salary : (instructor.salary as any)?.base || 0;
+                  return sum + salary;
+                }, 0) / filteredInstructors.length / 10000)}만원`}
                 icon="💰"
                 color="yellow"
                 subtitle="강사 평균"
@@ -1402,7 +1405,7 @@ export default function InstructorManagementPage() {
                           {instructor.experience}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {Math.round(instructor.salary / 10000)}만원
+                          {Math.round((typeof instructor.salary === 'number' ? instructor.salary : instructor.salary.base) / 10000)}만원
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${

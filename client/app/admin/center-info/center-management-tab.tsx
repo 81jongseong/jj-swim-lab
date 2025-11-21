@@ -207,8 +207,11 @@ export default function CenterManagementTab() {
   const loadCenterAdmins = async () => {
     try {
       const response = await apiClient.get('/api/center-management/admins');
-      if (response.success && response.data && 'admins' in response.data && Array.isArray(response.data.admins)) {
-        setCenterAdmins(response.data.admins);
+      if (response.success && response.data && typeof response.data === 'object' && response.data !== null && 'admins' in response.data) {
+        const data = response.data as { admins?: any[] };
+        if (Array.isArray(data.admins)) {
+          setCenterAdmins(data.admins);
+        }
       }
     } catch (error) {
       console.error('센터 관리자 목록 로드 실패:', error);

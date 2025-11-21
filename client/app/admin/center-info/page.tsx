@@ -115,11 +115,14 @@ function CenterInfoManagement() {
               try {
                 // 센터 정보 API 호출
                 const response = await apiClient.get(`/api/center-management/${centerId}`);
-                if (response.success && response.data && 'center' in response.data && response.data.center) {
-                  return {
-                    _id: centerId,
-                    name: response.data.center.name || `센터 ${centerId}`
-                  };
+                if (response.success && response.data && typeof response.data === 'object' && response.data !== null && 'center' in response.data) {
+                  const centerData = response.data as { center?: { name?: string } };
+                  if (centerData.center) {
+                    return {
+                      _id: centerId,
+                      name: centerData.center.name || `센터 ${centerId}`
+                    };
+                  }
                 }
               } catch (error) {
                 console.error(`센터 ${centerId} 정보 조회 실패:`, error);
