@@ -116,6 +116,7 @@ const courseSchema = new mongoose.Schema({
   level: {
     type: String,
     // ⭐ 한글 레벨 사용 (초급, 중급, 고급, 전문가, 마스터)
+    enum: ['초급', '중급', '고급', '전문가', '마스터'],
     required: true,
   },
   duration: {
@@ -150,9 +151,9 @@ const courseSchema = new mongoose.Schema({
   // 반 정보 추가
   classInfo: {
     className: { type: String, required: true }, // 예: "자유형 기초반 A"
-    classType: { 
-      type: String, 
-      enum: ['regular', 'intensive', 'private'], 
+    classType: {
+      type: String,
+      enum: ['regular', 'intensive', 'private'],
       default: 'regular',
       required: true
     },
@@ -235,7 +236,7 @@ const courseSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-    default: function() {
+    default: function () {
       const date = new Date();
       date.setMonth(date.getMonth() + 1);
       return date;
@@ -258,7 +259,7 @@ const courseSchema = new mongoose.Schema({
     },
     progress: {
       percentage: { type: Number, default: 0 },
-      completedSteps: [{ 
+      completedSteps: [{
         methodId: { type: mongoose.Schema.Types.ObjectId, ref: 'TeachingMethod' },
         stepName: { type: String, required: true },
         completedAt: { type: Date, default: Date.now },
@@ -292,8 +293,8 @@ const courseSchema = new mongoose.Schema({
     enum: ['group', 'personal', 'freeSwim'],
     default: 'group'
   }
-}, { 
-  timestamps: true 
+}, {
+  timestamps: true
 });
 
 // 성능 최적화를 위한 인덱스 설정

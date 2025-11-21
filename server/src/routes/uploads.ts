@@ -578,7 +578,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     }
     
     // 분석 요청 설정 처리
-      const analysisRequestData: any = {
+    const analysisRequestData: any = {
       type: 'public',
       requestedInstructors: [],
       analysisFee: 0,

@@ -364,7 +364,7 @@ router.get('/measurements/:userId', authMiddleware, requireRole(['centerAdmin', 
   try {
     const { userId } = req.params;
     const viewerId = req.user?._id || req.user?.userId;
-    const viewerType = req.user?.userType;
+    // const viewerType = req.user?.userType; // 사용하지 않음
 
     if (!userId || !viewerId) {
       return res.status(400).json({

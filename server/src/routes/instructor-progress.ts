@@ -25,8 +25,8 @@ const aggregateLevelChecklist = async (studentId: Types.ObjectId, studentLevel: 
   // const levelMap: { [key: string]: string } = { // 사용되지 않음
   //   'beginner': '초급',
   //   'intermediate': '중급',
-    'advanced': '고급'
-  };
+  //   'advanced': '고급'
+  // };
   
   const reverseLevelMap: { [key: string]: string } = {
     '초급': 'beginner',
@@ -90,7 +90,7 @@ const aggregateLevelChecklist = async (studentId: Types.ObjectId, studentLevel: 
     const classChecklistData = await ClassChecklist.findById(classChecklist._id || classChecklist).lean();
     if (!classChecklistData) continue;
     
-    (progress.items || []).forEach((item: any, index: number) => {
+    (progress.items || []).forEach((item: any) => {
       if (item.isCompleted && item.stepName) {
         // stepName으로 ClassChecklist의 항목 찾기
         const classItem = (classChecklistData.items || []).find((ci: any) => 
@@ -202,7 +202,8 @@ router.post('/student/:studentId', authMiddleware, requireRole(['instructor']), 
   try {
     const instructorId = req.user?.id;
     const { studentId } = req.params;
-    const { courseName, sessions = [], notes = [], homework = [], levelChecklist = [] } = req.body || {};
+    const { courseName, sessions = [], notes = [], homework = [] } = req.body || {};
+    // levelChecklist는 서버에서 집계되므로 클라이언트에서 전송하지 않음
 
     if (!Types.ObjectId.isValid(studentId)) {
       return res.status(400).json({ success: false, message: '유효하지 않은 학생 ID 입니다.' });

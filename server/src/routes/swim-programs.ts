@@ -24,7 +24,7 @@ import SwimProgram from '../models/SwimProgram';
 import { authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
 import { generateProgramFromTeachingMethod, generateDefaultTechniqueProgram } from '../utils/teachingMethodToProgramConverter';
-import { cacheMiddleware } from '../middleware/cache'; // 캐싱 미들웨어 추가
+// import { cacheMiddleware } from '../middleware/cache'; // 캐싱 미들웨어 추가 (사용하지 않음)
 // 실제 수영 엔진 v3.1 사용
 // import { generateAdvancedCSSProgram } from '../utils/advancedProgramGenerator';
 

@@ -265,6 +265,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'cancelled',
         notes: '환불 요청 - 개인 사정'
       };
@@ -331,6 +332,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'pending'
       };
 

@@ -20,7 +20,12 @@ describe('Payment 모델 테스트', () => {
         purpose: 'course',
         transactionId: 'txn_123456789',
         notes: '수영 강의 수강료',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -54,7 +59,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -73,7 +83,12 @@ describe('Payment 모델 테스트', () => {
         purpose: 'course',
         status: 'pending',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -91,7 +106,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'transfer',
         purpose: 'course',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -112,7 +132,12 @@ describe('Payment 모델 테스트', () => {
         purpose: 'course',
         status: 'pending',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -136,7 +161,12 @@ describe('Payment 모델 테스트', () => {
         purpose: 'course',
         status: 'completed',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -157,7 +187,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'invalid_method', // 유효하지 않은 결제 방법
         purpose: 'course',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -171,7 +206,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'invalid_purpose', // 유효하지 않은 목적
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -186,7 +226,12 @@ describe('Payment 모델 테스트', () => {
         purpose: 'course',
         status: 'invalid_status', // 유효하지 않은 상태
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment = new Payment(paymentData);
@@ -202,7 +247,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         transactionId: 'txn_123456789',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
         // currency와 status는 기본값 사용
       };
 
@@ -222,7 +272,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         transactionId: 'txn_duplicate',
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 50000,
+          pricingTier: 'standard'
+        }
       };
 
       const paymentData2 = {
@@ -231,7 +286,12 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'booking',
         transactionId: 'txn_duplicate', // 동일한 거래 ID
-        centerId: new mongoose.Types.ObjectId()
+        centerId: new mongoose.Types.ObjectId(),
+        pricingInfo: {
+          userType: 'student',
+          baseAmount: 30000,
+          pricingTier: 'standard'
+        }
       };
 
       const payment1 = new Payment(paymentData1);

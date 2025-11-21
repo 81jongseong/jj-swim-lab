@@ -507,8 +507,9 @@ router.get('/progress', authMiddleware, async (req, res) => {
     .populate('instructor', 'name')
     .lean();
 
-    // 개인레슨 조회
-    const personalLessons = await PersonalLesson.find({
+    // 개인레슨 조회 (사용하지 않음 - 주석 처리)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _personalLessons = await PersonalLesson.find({
       studentId: new mongoose.Types.ObjectId(studentId),
       status: { $in: ['approved', 'completed'] }
     })
@@ -723,7 +724,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
     }
 
     const { User } = require('../models/User');
-    const student = await User.findById(studentId).lean();
+    await User.findById(studentId).lean(); // student 변수는 사용하지 않음
 
     // 등록된 코스 조회
     const enrolledCourses = await Course.find({
@@ -735,7 +736,7 @@ router.get('/recommendations', authMiddleware, async (req, res) => {
 
     // 학생의 현재 수준 분석
     let currentLevel = 'beginner';
-    const currentSkills: string[] = [];
+    // const currentSkills: string[] = []; // 사용하지 않는 변수 제거
     
     if (enrolledCourses.length > 0) {
       const course = enrolledCourses[0];

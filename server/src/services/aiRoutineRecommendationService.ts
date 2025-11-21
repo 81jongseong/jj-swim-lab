@@ -73,7 +73,7 @@ export class AIRoutineRecommendationService {
    */
   static async analyzeUserPattern(userId: string | mongoose.Types.ObjectId): Promise<UserPatternAnalysis> {
     const userIdObject = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
-    const [programs, healthData, progress] = await Promise.all([
+    const [programs, , progress] = await Promise.all([
       SwimProgram.find({ athleteId: userIdObject })
         .sort({ createdAt: -1 })
         .limit(20)
@@ -91,8 +91,7 @@ export class AIRoutineRecommendationService {
     const daysOfWeek: number[] = [];
     const intensities: string[] = [];
     const strokes: string[] = [];
-    const completedSessions = 0;
-    const totalSessions = 0;
+
 
     // 완료율 데이터 분리 (강사 설정 vs 개인 완료율)
     const instructorCompletions: number[] = [];
@@ -114,7 +113,7 @@ export class AIRoutineRecommendationService {
           if (exec.completion?.completionRate) {
             const inputByRole = exec.completion.inputByRole || 'self';
             const rate = exec.completion.completionRate;
-            
+
             if (inputByRole === 'instructor') {
               instructorCompletions.push(rate);
               totalSessionsWithInstructorRate++;
@@ -139,8 +138,8 @@ export class AIRoutineRecommendationService {
       : 14; // 기본 오후 2시
     const preferredTimeOfDay: 'morning' | 'afternoon' | 'evening' | 'flexible' =
       avgHour < 10 ? 'morning' :
-      avgHour < 17 ? 'afternoon' :
-      avgHour < 21 ? 'evening' : 'flexible';
+        avgHour < 17 ? 'afternoon' :
+          avgHour < 21 ? 'evening' : 'flexible';
 
     // 평균 세션 시간
     const avgDuration = sessionDurations.length > 0
@@ -160,15 +159,15 @@ export class AIRoutineRecommendationService {
     // 유료 회원 여부 확인 (membership 또는 subscription 정보)
     // TODO: 실제 membership 모델과 연동 필요
     const user = await User.findById(userId).lean();
-    const isPaidMember = (user as any)?.membership || 
-                         (user as any)?.subscription || 
-                         ((user as any)?.studentInfo?.membershipTier && 
-                          (user as any)?.studentInfo?.membershipTier !== 'guest') ||
-                         false; // 기본값: 무료 회원
+    const isPaidMember = (user as any)?.membership ||
+      (user as any)?.subscription ||
+      ((user as any)?.studentInfo?.membershipTier &&
+        (user as any)?.studentInfo?.membershipTier !== 'guest') ||
+      false; // 기본값: 무료 회원
 
     // 완료율 계산 (유료/무료 회원에 따라 우선순위 다름)
     let completionRate = 70; // 기본값
-    
+
     if (isPaidMember) {
       // 유료 회원: 개인 완료율(self) 우선, 없으면 강사 완료율(instructor), 없으면 기본값
       if (totalSessionsWithSelfRate > 0) {
@@ -192,7 +191,7 @@ export class AIRoutineRecommendationService {
         if (!e.completion?.completionRate) return false;
         const rate = e.completion.completionRate;
         const inputByRole = e.completion.inputByRole || 'self';
-        
+
         if (isPaidMember) {
           // 유료 회원: self 우선
           return rate >= 80 && inputByRole === 'self';
@@ -321,14 +320,14 @@ export class AIRoutineRecommendationService {
         '복합 훈련'
       ];
 
-      const intensityLevels: ('low' | 'moderate' | 'high')[] = 
+      const intensityLevels: ('low' | 'moderate' | 'high')[] =
         pattern.intensityPreference === 'varied'
           ? ['low', 'moderate', 'high']
           : pattern.intensityPreference === 'low'
-          ? ['low', 'moderate']
-          : pattern.intensityPreference === 'high'
-          ? ['moderate', 'high']
-          : ['moderate'];
+            ? ['low', 'moderate']
+            : pattern.intensityPreference === 'high'
+              ? ['moderate', 'high']
+              : ['moderate'];
 
       const intensity = intensityLevels[index % intensityLevels.length];
 
@@ -350,7 +349,7 @@ export class AIRoutineRecommendationService {
     const totalWeeklyDistance = Math.round(totalWeeklyDuration * avgPace * 10); // 대략적인 거리
 
     // 예상 완료율
-    const expectedCompletionRate = Math.min(100, pattern.completionRate + 
+    const expectedCompletionRate = Math.min(100, pattern.completionRate +
       (pattern.consistencyScore > 80 ? 10 : 0) -
       (pattern.consistencyScore < 60 ? 10 : 0)
     );
@@ -360,8 +359,8 @@ export class AIRoutineRecommendationService {
       (pattern.completionRate * 0.3) +
       (pattern.consistencyScore * 0.3) +
       (expectedCompletionRate * 0.2) +
-      (pattern.improvementTrend === 'improving' ? 20 : 
-       pattern.improvementTrend === 'stable' ? 10 : 0)
+      (pattern.improvementTrend === 'improving' ? 20 :
+        pattern.improvementTrend === 'stable' ? 10 : 0)
     );
 
     // 추천 이유
@@ -414,8 +413,8 @@ export class AIRoutineRecommendationService {
       const variation = i === 0
         ? []
         : i === 1
-        ? ['체력 중심']
-        : ['기술 중심'];
+          ? ['체력 중심']
+          : ['기술 중심'];
 
       const recommendation = await this.generateRoutineRecommendation(userIdObject, variation);
       recommendations.push({

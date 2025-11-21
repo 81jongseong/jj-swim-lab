@@ -162,8 +162,8 @@ router.post('/save-quiz', authMiddleware, requireRole(['instructor', 'centerAdmi
       title,
       description,
       category,
-      difficulty,
       tags
+      // difficulty는 사용하지 않음 (난이도는 항상 intermediate로 고정)
     } = req.body;
 
     // 여러 문제가 제공된 경우 (같은 카테고리로 묶어서 저장)

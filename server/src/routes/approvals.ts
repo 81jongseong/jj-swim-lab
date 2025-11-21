@@ -355,7 +355,7 @@ async function processApprovedRequest(approval: any) {
           const { Payment } = require('../models/Payment');
           const { Course } = require('../models/Course');
           const { Booking } = require('../models/Booking');
-          const { PersonalLesson } = require('../models/PersonalLesson');
+          // const { PersonalLesson } = require('../models/PersonalLesson'); // 사용하지 않음
           
           // 1. 관련 Payment 찾기 및 환불 처리
           const payment = await Payment.findOne({

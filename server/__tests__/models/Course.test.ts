@@ -16,7 +16,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '초급 수영 강의',
         description: '수영 초보자를 위한 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
@@ -59,7 +59,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '초급 강의',
         description: '초급자용 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
@@ -77,9 +77,9 @@ describe('Course 모델 테스트', () => {
       const course = new Course(courseData);
       await course.save();
 
-      const beginnerCourses = await Course.find({ level: 'beginner' });
+      const beginnerCourses = await Course.find({ level: '초급' });
       expect(beginnerCourses.length).toBeGreaterThan(0);
-      expect(beginnerCourses[0].level).toBe('beginner');
+      expect(beginnerCourses[0].level).toBe('초급');
     });
 
     it('강사별로 강의를 찾을 수 있어야 함', async () => {
@@ -87,7 +87,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '강사별 강의',
         description: '특정 강사의 강의',
-        level: 'intermediate',
+        level: '중급',
         duration: 90,
         price: 75000,
         maxStudents: 8,
@@ -114,7 +114,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '고가 강의',
         description: '고가 강의',
-        level: 'advanced',
+        level: '고급',
         duration: 120,
         price: 100000,
         maxStudents: 5,
@@ -143,7 +143,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '수정 테스트 강의',
         description: '원본 설명',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
@@ -177,7 +177,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '삭제 대상 강의',
         description: '삭제될 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
@@ -230,7 +230,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '유효성 테스트 강의',
         description: '유효성 테스트용 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: -1000, // 음수 가격 (모델에서 검증하지 않음)
         maxStudents: 10,
@@ -254,7 +254,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '유효성 테스트 강의',
         description: '유효성 테스트용 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: -5, // 음수 최대 학생 수 (모델에서 검증하지 않음)
@@ -280,7 +280,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '클래스 테스트 강의',
         description: '클래스 테스트용 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
@@ -307,7 +307,7 @@ describe('Course 모델 테스트', () => {
       const courseData = {
         name: '유효성 테스트 강의',
         description: '유효성 테스트용 강의',
-        level: 'beginner',
+        level: '초급',
         duration: 60,
         price: 50000,
         maxStudents: 10,
