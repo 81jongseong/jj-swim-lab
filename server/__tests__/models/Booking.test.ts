@@ -114,6 +114,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         purpose: 'lesson',
         status: 'pending',
         notes: '첫 번째 수영 강습'
@@ -129,7 +130,8 @@ describe('예약 모델 테스트', () => {
         date: new Date('2024-12-25'),
         startTime: '14:00',
         endTime: '15:00',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const booking = new Booking(bookingData);
@@ -151,6 +153,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'pending'
       };
 
@@ -170,6 +173,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'cancelled',
         notes: '개인 사정으로 취소'
       };
@@ -192,7 +196,8 @@ describe('예약 모델 테스트', () => {
         date: pastDate,
         startTime: '14:00',
         endTime: '15:00',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const booking = new Booking(bookingData);
@@ -207,7 +212,8 @@ describe('예약 모델 테스트', () => {
         date: new Date('2024-12-25'),
         startTime: '15:00',
         endTime: '14:00', // 시작 시간보다 빠름
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const booking = new Booking(bookingData);
@@ -222,7 +228,8 @@ describe('예약 모델 테스트', () => {
         date: new Date('2024-12-25'),
         startTime: '09:30',
         endTime: '10:30',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const booking = new Booking(bookingData);
@@ -238,6 +245,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'confirmed'
       };
 
@@ -274,7 +282,8 @@ describe('예약 모델 테스트', () => {
         date: new Date('2024-12-25'),
         startTime: '14:00',
         endTime: '15:00',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       await Booking.create(bookingData);
@@ -290,6 +299,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         instructor: instructorId
       };
 
@@ -305,7 +315,8 @@ describe('예약 모델 테스트', () => {
         date: targetDate,
         startTime: '14:00',
         endTime: '15:00',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       await Booking.create(bookingData);
@@ -329,6 +340,7 @@ describe('예약 모델 테스트', () => {
         startTime: '15:00',
         endTime: '16:00',
         laneNumber: 2,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'confirmed'
       };
 
@@ -348,7 +360,8 @@ describe('예약 모델 테스트', () => {
         date: new Date('2024-12-25'),
         startTime: '14:00',
         endTime: '15:00',
-        laneNumber: 1
+        laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const booking = new Booking(bookingData);
@@ -370,6 +383,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         status: 'confirmed'
       };
 
@@ -393,6 +407,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         notes: '<p>첫 번째 수영 강습입니다.</p>'
       };
 
@@ -411,6 +426,7 @@ describe('예약 모델 테스트', () => {
         startTime: '14:00',
         endTime: '15:00',
         laneNumber: 1,
+        centerId: new mongoose.Types.ObjectId(),
         notes: longNotes
       };
 

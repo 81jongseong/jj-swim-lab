@@ -2,6 +2,7 @@
  * 📚 Course 모델 테스트
  */
 
+import mongoose from 'mongoose';
 import { Course } from '../../src/models/Course';
 import { clearDatabase } from '../setup';
 
@@ -20,6 +21,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -62,6 +64,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -89,6 +92,7 @@ describe('Course 모델 테스트', () => {
         price: 75000,
         maxStudents: 8,
         instructor: instructorId,
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 중급반 B',
           classType: 'regular',
@@ -115,6 +119,7 @@ describe('Course 모델 테스트', () => {
         price: 100000,
         maxStudents: 5,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 고급반 C',
           classType: 'private',
@@ -143,6 +148,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -176,6 +182,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -205,6 +212,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -227,6 +235,7 @@ describe('Course 모델 테스트', () => {
         price: -1000, // 음수 가격 (모델에서 검증하지 않음)
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -250,6 +259,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: -5, // 음수 최대 학생 수 (모델에서 검증하지 않음)
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'regular',
@@ -275,6 +285,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'intensive',
@@ -301,6 +312,7 @@ describe('Course 모델 테스트', () => {
         price: 50000,
         maxStudents: 10,
         instructor: '507f1f77bcf86cd799439011',
+        centerId: new mongoose.Types.ObjectId(),
         classInfo: {
           className: '자유형 기초반 A',
           classType: 'invalidType', // 유효하지 않은 클래스 타입

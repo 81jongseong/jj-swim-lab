@@ -2,6 +2,7 @@
  * 💳 Payment 모델 테스트
  */
 
+import mongoose from 'mongoose';
 import { Payment } from '../../src/models/Payment';
 import { clearDatabase } from '../setup';
 
@@ -18,7 +19,8 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         transactionId: 'txn_123456789',
-        notes: '수영 강의 수강료'
+        notes: '수영 강의 수강료',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -51,7 +53,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'card',
         purpose: 'course',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -69,7 +72,8 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         status: 'pending',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -86,7 +90,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'transfer',
         purpose: 'course',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -106,7 +111,8 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         status: 'pending',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -129,7 +135,8 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         status: 'completed',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -149,7 +156,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'invalid_method', // 유효하지 않은 결제 방법
         purpose: 'course',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -162,7 +170,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'card',
         purpose: 'invalid_purpose', // 유효하지 않은 목적
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -176,7 +185,8 @@ describe('Payment 모델 테스트', () => {
         paymentMethod: 'card',
         purpose: 'course',
         status: 'invalid_status', // 유효하지 않은 상태
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment = new Payment(paymentData);
@@ -191,7 +201,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'card',
         purpose: 'course',
-        transactionId: 'txn_123456789'
+        transactionId: 'txn_123456789',
+        centerId: new mongoose.Types.ObjectId()
         // currency와 status는 기본값 사용
       };
 
@@ -210,7 +221,8 @@ describe('Payment 모델 테스트', () => {
         amount: 50000,
         paymentMethod: 'card',
         purpose: 'course',
-        transactionId: 'txn_duplicate'
+        transactionId: 'txn_duplicate',
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const paymentData2 = {
@@ -218,7 +230,8 @@ describe('Payment 모델 테스트', () => {
         amount: 30000,
         paymentMethod: 'card',
         purpose: 'booking',
-        transactionId: 'txn_duplicate' // 동일한 거래 ID
+        transactionId: 'txn_duplicate', // 동일한 거래 ID
+        centerId: new mongoose.Types.ObjectId()
       };
 
       const payment1 = new Payment(paymentData1);
