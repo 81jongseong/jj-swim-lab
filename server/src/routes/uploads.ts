@@ -61,6 +61,7 @@ import fs from 'fs';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { Video } from '../models/Video';
 import { SecureExcelParser } from '../utils/secureExcelParser';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 
 const router: express.Router = express.Router();
@@ -301,7 +302,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
             console.warn('⚠️ Excel 파일에 데이터가 없습니다');
           }
         } catch (excelError) {
-          console.error('❌ Excel 파일 파싱 실패:', excelError);
+          logError('Excel 파일 파싱 실패', excelError);
           
           // xlsx 라이브러리 실패 시 기존 방식으로 폴백
           try {
@@ -335,7 +336,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
               console.log('✅ Excel 파일 기반 샘플 데이터 생성 완료');
             }
           } catch (fallbackError) {
-            console.error('❌ 폴백 방식도 실패:', fallbackError);
+            logError('폴백 방식도 실패', fallbackError);
             parsedData = [];
           }
         }
@@ -403,7 +404,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
           console.log('✅ TeachingMethod 모델 로드 성공:', typeof TeachingMethod);
           console.log('🔍 TeachingMethod 모델 이름:', TeachingMethod.modelName);
         } catch (modelError) {
-          console.error('❌ TeachingMethod 모델 로드 실패:', modelError);
+          logError('TeachingMethod 모델 로드 실패', modelError);
           throw new Error('TeachingMethod 모델을 로드할 수 없습니다');
         }
         
@@ -458,7 +459,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
             console.log(`✅ 저장 완료: ${methodData.name} (ID: ${newMethod._id})`);
             
           } catch (saveError) {
-            console.error(`❌ 저장 실패: ${methodData.name}`, saveError);
+            logError(`저장 실패: ${methodData.name}`, saveError);
             errorCount++;
           }
         }
@@ -466,7 +467,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
         console.log(`💾 데이터베이스 저장 완료: ${savedCount}개 성공, ${errorCount}개 실패`);
         
       } catch (dbError) {
-        console.error('❌ 데이터베이스 저장 중 오류:', dbError);
+        logError('데이터베이스 저장 중 오류', dbError);
       }
     }
     
@@ -489,7 +490,7 @@ router.post('/excel', authMiddleware, requireRole(['instructor', 'centerAdmin', 
     });
 
   } catch (error) {
-    console.error('엑셀 업로드 오류:', error);
+    logError('엑셀 업로드 오류', error);
     res.status(500).json({ 
       error: '엑셀 파일 업로드 중 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -537,7 +538,7 @@ router.get('/instructors', authMiddleware, async (req: Request, res: Response) =
       }
     });
   } catch (error: any) {
-    console.error('강사 목록 조회 오류:', error);
+    logError('강사 목록 조회 오류', error);
     res.status(500).json({ error: error.message || '강사 목록 조회에 실패했습니다.' });
   }
 });
@@ -660,7 +661,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('동영상 등록 오류:', error);
+    logError('동영상 등록 오류', error);
     res.status(500).json({ error: error.message || '동영상 등록에 실패했습니다.' });
   }
 });
@@ -737,7 +738,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('동영상 목록 조회 오류:', error);
+    logError('동영상 목록 조회 오류', error);
     res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
   }
 });
@@ -799,7 +800,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
       data: video
     });
   } catch (error: any) {
-    console.error('동영상 조회 오류:', error);
+    logError('동영상 조회 오류', error);
     res.status(500).json({ error: error.message || '조회에 실패했습니다.' });
   }
 });
@@ -827,7 +828,7 @@ router.get('/:id/download', authMiddleware, async (req: Request, res: Response) 
 
     res.download(filePath, originalName);
   } catch (error) {
-    console.error('다운로드 오류:', error);
+    logError('다운로드 오류', error);
     res.status(500).json({ error: '다운로드에 실패했습니다.' });
   }
 });
@@ -897,7 +898,7 @@ router.post('/:id/feedback', authMiddleware, async (req: Request, res: Response)
       data: feedback
     });
   } catch (error: any) {
-    console.error('피드백 추가 오류:', error);
+    logError('피드백 추가 오류', error);
     res.status(500).json({ error: error.message || '피드백 등록에 실패했습니다.' });
   }
 });
@@ -919,7 +920,7 @@ router.patch('/:id/review', authMiddleware, requireRole(['instructor', 'centerAd
     if (!video) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
     res.json(video);
   } catch (error) {
-    console.error('리뷰 업데이트 오류:', error);
+    logError('리뷰 업데이트 오류', error);
     res.status(500).json({ error: '리뷰 업데이트에 실패했습니다.' });
   }
 });
@@ -996,7 +997,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('동영상 목록 조회 오류:', error);
+    logError('동영상 목록 조회 오류', error);
     res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
   }
 });
@@ -1017,7 +1018,7 @@ router.get('/admin/review-queue/list', authMiddleware, requireRole(['instructor'
     const total = await Video.countDocuments(filter);
     res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
   } catch (error) {
-    console.error('리뷰 큐 조회 오류:', error);
+    logError('리뷰 큐 조회 오류', error);
     res.status(500).json({ error: '리뷰 큐 조회에 실패했습니다.' });
   }
 });

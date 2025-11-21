@@ -74,6 +74,7 @@ import { Payment } from '../models/Payment'; // Added Payment import
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -150,8 +151,7 @@ router.get('/resolve-slug/:slug', async (req: AuthRequest, res: Response) => {
     console.warn(`❌ 센터를 찾을 수 없음: ${slug}`);
     return res.status(404).json({ success: false, message: '센터를 찾을 수 없습니다.' });
   } catch (error: any) {
-    console.error('resolve-slug 오류:', error);
-    console.error('에러 스택:', error?.stack);
+    logError('resolve-slug 오류', { message: error?.message, stack: error?.stack });
     return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -216,7 +216,7 @@ router.get('/public', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('센터 목록 조회 오류:', error);
+    logError('센터 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 목록 조회 중 오류가 발생했습니다.'
@@ -245,7 +245,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'centerAdmin', 'instr
       }
     });
   } catch (error) {
-    console.error('센터 목록 조회 오류:', error);
+    logError('센터 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 목록 조회 중 오류가 발생했습니다.'
@@ -308,7 +308,7 @@ router.post('/my-center/upload-logo',
         }
       });
     } catch (error: any) {
-      console.error('로고 업로드 오류:', error);
+      logError('로고 업로드 오류', error);
       res.status(500).json({
         success: false,
         message: error.message || '로고 업로드 중 오류가 발생했습니다.'
@@ -366,7 +366,7 @@ router.post('/my-center/upload-main-image',
         }
       });
     } catch (error: any) {
-      console.error('메인 이미지 업로드 오류:', error);
+      logError('메인 이미지 업로드 오류', error);
       res.status(500).json({
         success: false,
         message: error.message || '메인 이미지 업로드 중 오류가 발생했습니다.'
@@ -529,7 +529,7 @@ router.get('/dashboard-stats', authMiddleware, requireRole(['centerAdmin']), asy
     });
 
   } catch (error) {
-    console.error('센터 통계 조회 오류:', error);
+    logError('센터 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 통계 조회에 실패했습니다.'
@@ -646,7 +646,7 @@ router.get('/instructor-dashboard-stats', authMiddleware, requireRole(['instruct
     });
 
   } catch (error) {
-    console.error('강사 통계 조회 오류:', error);
+    logError('강사 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 통계 조회에 실패했습니다.'
@@ -1035,7 +1035,7 @@ router.get('/student-dashboard-stats', authMiddleware, requireRole(['student']),
     });
 
   } catch (error) {
-    console.error('학생 통계 조회 오류:', error);
+    logError('학생 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 통계 조회에 실패했습니다.'
@@ -1055,7 +1055,7 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     
     // ObjectId 유효성 검사
     if (!req.user._id || !/^[0-9a-fA-F]{24}$/.test(req.user._id)) {
-      console.error('❌ 유효하지 않은 사용자 ID:', req.user._id);
+      logError('유효하지 않은 사용자 ID', { userId: req.user._id });
       return res.status(400).json({
         success: false,
         message: '유효하지 않은 사용자 ID입니다.'
@@ -1073,7 +1073,7 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
                      centerAdmin?.centerAdminInfo?.managedCenters?.[0];
     
     if (!centerId) {
-      console.error('❌ 관리하는 센터가 없음');
+      logError('관리하는 센터가 없음');
       return res.status(404).json({
         success: false,
         message: '관리하는 센터가 없습니다.'
@@ -1087,7 +1087,7 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     console.log('🏢 센터 조회 결과:', center ? `${center.name} 찾음` : '센터 없음');
 
     if (!center) {
-      console.error('❌ 센터 정보를 찾을 수 없음');
+      logError('센터 정보를 찾을 수 없음');
       return res.status(404).json({
         success: false,
         message: '센터 정보를 찾을 수 없습니다.'
@@ -1108,7 +1108,7 @@ router.get('/my-center', authMiddleware, requireRole(['centeradmin', 'centerAdmi
       data: center
     });
   } catch (error) {
-    console.error('❌ 센터 정보 조회 오류:', error);
+    logError('센터 정보 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 정보 조회에 실패했습니다.'
@@ -1438,7 +1438,7 @@ router.post('/instructors', authMiddleware, requireRole(['centerAdmin']), async 
       }
     });
   } catch (error) {
-    console.error('강사 계정 생성 오류:', error);
+    logError('강사 계정 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 계정 생성에 실패했습니다.'
@@ -1470,7 +1470,7 @@ router.get('/instructors', authMiddleware, requireRole(['centerAdmin']), async (
       data: instructors
     });
   } catch (error) {
-    console.error('강사 목록 조회 오류:', error);
+    logError('강사 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 목록 조회에 실패했습니다.'
@@ -1522,7 +1522,7 @@ router.put('/instructors/:id/permissions', authMiddleware, requireRole(['centerA
       data: instructor.accessPermissions
     });
   } catch (error) {
-    console.error('강사 권한 수정 오류:', error);
+    logError('강사 권한 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 권한 수정에 실패했습니다.'
@@ -1581,7 +1581,7 @@ router.put('/instructors/:id', authMiddleware, requireRole(['centerAdmin']), asy
       }
     });
   } catch (error) {
-    console.error('강사 정보 수정 오류:', error);
+    logError('강사 정보 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 정보 수정에 실패했습니다.'
@@ -1630,7 +1630,7 @@ router.delete('/instructors/:id', authMiddleware, requireRole(['centerAdmin']), 
       message: '강사가 성공적으로 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('강사 삭제 오류:', error);
+    logError('강사 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '강사 삭제에 실패했습니다.'
@@ -1756,7 +1756,7 @@ router.put('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       }
     });
   } catch (error) {
-    console.error('센터 정보 수정 오류:', error);
+    logError('센터 정보 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 정보 수정에 실패했습니다.'
@@ -1818,7 +1818,7 @@ router.get('/dashboard', authMiddleware, requireRole(['centerAdmin']), async (re
       data: dashboardData
     });
   } catch (error) {
-    console.error('센터 대시보드 조회 오류:', error);
+    logError('센터 대시보드 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 대시보드 조회에 실패했습니다.'
@@ -1858,7 +1858,7 @@ router.put('/operating-hours', authMiddleware, requireRole(['centerAdmin']), asy
       data: center.operatingHours
     });
   } catch (error) {
-    console.error('운영 시간 수정 오류:', error);
+    logError('운영 시간 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '운영 시간 수정에 실패했습니다.'
@@ -1898,7 +1898,7 @@ router.put('/facilities', authMiddleware, requireRole(['centerAdmin']), async (r
       data: center.facilities
     });
   } catch (error) {
-    console.error('시설 정보 수정 오류:', error);
+    logError('시설 정보 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '시설 정보 수정에 실패했습니다.'
@@ -2062,7 +2062,7 @@ router.get('/analytics', authMiddleware, requireRole(['centerAdmin']), async (re
       data: analyticsData
     });
   } catch (error) {
-    console.error('센터 수익성 분석 오류:', error);
+    logError('센터 수익성 분석 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 수익성 분석에 실패했습니다.'
@@ -2107,7 +2107,7 @@ router.post('/promotions', authMiddleware, requireRole(['centerAdmin']), async (
       data: promotion
     });
   } catch (error) {
-    console.error('프로모션 생성 오류:', error);
+    logError('프로모션 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '프로모션 생성에 실패했습니다.'
@@ -2162,7 +2162,7 @@ router.get('/optimization-suggestions', authMiddleware, requireRole(['centerAdmi
       data: suggestions
     });
   } catch (error) {
-    console.error('최적화 제안 조회 오류:', error);
+    logError('최적화 제안 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '최적화 제안 조회에 실패했습니다.'
@@ -2218,7 +2218,7 @@ router.get('/my-center/stats', authMiddleware, requireRole(['centerAdmin']), asy
       data: stats
     });
   } catch (error) {
-    console.error('센터 통계 조회 오류:', error);
+    logError('센터 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 통계 조회에 실패했습니다.'
@@ -2278,7 +2278,7 @@ router.get('/my-center/courses', authMiddleware, requireRole(['centerAdmin']), a
       }
     });
   } catch (error) {
-    console.error('센터 강습 과정 조회 오류:', error);
+    logError('센터 강습 과정 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 강습 과정 조회에 실패했습니다.'
@@ -2302,7 +2302,7 @@ router.get('/guest', async (req, res) => {
 
     res.json(centers);
   } catch (error) {
-    console.error('게스트 센터 목록 조회 실패:', error);
+    logError('게스트 센터 목록 조회 실패', error);
     res.status(500).json({ 
       error: '센터 목록을 불러올 수 없습니다.',
       message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -2382,7 +2382,7 @@ router.post('/fix-center-admin-link', authMiddleware, requireRole(['superAdmin']
       }
     });
   } catch (error) {
-    console.error('❌ 센터 관리자 연결 수정 오류:', error);
+    logError('센터 관리자 연결 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 관리자 연결 수정에 실패했습니다.'
@@ -2447,7 +2447,7 @@ router.get('/availability', authMiddleware, async (req: AuthRequest, res: Respon
       }
     });
   } catch (error) {
-    console.error('센터 가능시간 설정 조회 오류:', error);
+    logError('센터 가능시간 설정 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
