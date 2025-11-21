@@ -1676,7 +1676,7 @@ router.get('/info', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), 
       }
     });
   } catch (error) {
-    console.error('센터 정보 조회 오류:', error);
+    logError('센터 정보 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 정보 조회에 실패했습니다.'
