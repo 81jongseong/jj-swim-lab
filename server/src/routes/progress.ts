@@ -71,6 +71,7 @@ import { Course } from '../models/Course';
 import { Evaluation } from '../models/Evaluation';
 import { Payment } from '../models/Payment';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends express.Request {
   user?: any;
@@ -104,7 +105,7 @@ router.get('/instructor/:instructorId', authMiddleware, requireRole(['instructor
       data: progress
     });
   } catch (error) {
-    console.error('강사별 학생 진도 현황 조회 오류:', error);
+    logError('강사별 학생 진도 현황 조회 오류', error);
     res.status(500).json({ error: '진도 현황 조회에 실패했습니다.' });
   }
 });
@@ -136,7 +137,7 @@ router.get('/instructor/:instructorId/checklist', authMiddleware, requireRole(['
       data: checklists
     });
   } catch (error) {
-    console.error('강사별 학생 체크리스트 현황 조회 오류:', error);
+    logError('강사별 학생 체크리스트 현황 조회 오류', error);
     res.status(500).json({ error: '체크리스트 현황 조회에 실패했습니다.' });
   }
 });
@@ -194,7 +195,7 @@ router.put('/student/:studentId', authMiddleware, requireRole(['instructor']), a
       data: progress
     });
   } catch (error) {
-    console.error('학생 진도 업데이트 오류:', error);
+    logError('학생 진도 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 진도 업데이트에 실패했습니다.'
@@ -244,7 +245,7 @@ router.post('/checklist/:studentId', authMiddleware, requireRole(['instructor'])
       data: checklist
     });
   } catch (error) {
-    console.error('체크리스트 생성 오류:', error);
+    logError('체크리스트 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '체크리스트 생성에 실패했습니다.'
@@ -304,7 +305,7 @@ router.post('/evaluation/:studentId', authMiddleware, requireRole(['instructor']
       data: evaluation
     });
   } catch (error) {
-    console.error('학생 평가 저장 오류:', error);
+    logError('학생 평가 저장 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 평가 저장에 실패했습니다.'
@@ -367,7 +368,7 @@ router.get('/instructor/:instructorId/stats', authMiddleware, requireRole(['inst
       }
     });
   } catch (error) {
-    console.error('강사별 통계 조회 오류:', error);
+    logError('강사별 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '통계 조회에 실패했습니다.'
@@ -406,7 +407,7 @@ router.get('/schedule-optimization', authMiddleware, requireRole(['instructor'])
       data: scheduleAnalysis
     });
   } catch (error) {
-    console.error('스케줄 최적화 분석 오류:', error);
+    logError('스케줄 최적화 분석 오류', error);
     res.status(500).json({
       success: false,
       message: '스케줄 최적화 분석에 실패했습니다.'
@@ -438,7 +439,7 @@ router.get('/my-progress', authMiddleware, requireRole(['student']), async (req:
       }
     });
   } catch (error) {
-    console.error('진도 현황 조회 오류:', error);
+    logError('진도 현황 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '진도 현황 조회에 실패했습니다.'
@@ -463,7 +464,7 @@ router.get('/my-checklist', authMiddleware, requireRole(['student']), async (req
       data: checklists
     });
   } catch (error) {
-    console.error('체크리스트 조회 오류:', error);
+    logError('체크리스트 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '체크리스트 조회에 실패했습니다.'

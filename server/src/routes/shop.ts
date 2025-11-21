@@ -109,6 +109,7 @@ import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import Product from '../models/Product';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -188,7 +189,7 @@ router.get('/orders', authMiddleware, requireRole(['superAdmin', 'admin', 'cente
       }
     });
   } catch (error) {
-    console.error('주문 조회 오류:', error);
+    logError('주문 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '주문을 불러오는 중 오류가 발생했습니다.'
@@ -255,7 +256,7 @@ router.get('/products', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('상품 목록 조회 오류:', error);
+    logError('상품 목록 조회 오류', error);
     res.status(500).json({ 
       success: false,
       error: '상품 목록을 불러오는데 실패했습니다.' 
@@ -300,7 +301,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       product 
     });
   } catch (error) {
-    console.error('상품 조회 오류:', error);
+    logError('상품 조회 오류', error);
     res.status(500).json({ 
       success: false,
       error: '상품 정보를 불러오는데 실패했습니다.' 
@@ -369,7 +370,7 @@ router.get('/admin/products', authMiddleware, requireRole(['superAdmin', 'admin'
       }
     });
   } catch (error) {
-    console.error('관리자 상품 목록 조회 오류:', error);
+    logError('관리자 상품 목록 조회 오류', error);
     res.status(500).json({ 
       success: false,
       error: '상품 목록을 불러오는데 실패했습니다.' 
@@ -462,7 +463,7 @@ router.post('/admin/products', authMiddleware, requireRole(['superAdmin', 'admin
       product: savedProduct
     });
   } catch (error) {
-    console.error('상품 생성 오류:', error);
+    logError('상품 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '상품 생성 중 오류가 발생했습니다.'
@@ -538,7 +539,7 @@ router.put('/admin/products/:id', authMiddleware, requireRole(['superAdmin', 'ad
       product: updatedProduct
     });
   } catch (error) {
-    console.error('상품 수정 오류:', error);
+    logError('상품 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '상품 수정 중 오류가 발생했습니다.'
@@ -584,7 +585,7 @@ router.delete('/admin/products/:id', authMiddleware, requireRole(['superAdmin', 
       message: '상품이 성공적으로 중단되었습니다.'
     });
   } catch (error) {
-    console.error('상품 삭제 오류:', error);
+    logError('상품 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '상품 삭제 중 오류가 발생했습니다.'
@@ -639,7 +640,7 @@ router.patch('/admin/products/:id/status', authMiddleware, requireRole(['superAd
       product
     });
   } catch (error) {
-    console.error('상품 상태 업데이트 오류:', error);
+    logError('상품 상태 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '상품 상태 업데이트 중 오류가 발생했습니다.'
@@ -699,7 +700,7 @@ router.get('/admin/stats', authMiddleware, requireRole(['superAdmin', 'admin', '
       }
     });
   } catch (error) {
-    console.error('상품 통계 조회 오류:', error);
+    logError('상품 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '상품 통계를 불러오는 중 오류가 발생했습니다.'
@@ -722,7 +723,7 @@ router.get('/categories/list', async (req: Request, res: Response) => {
       subCategories: subCategories.sort()
     });
   } catch (error) {
-    console.error('카테고리 목록 조회 오류:', error);
+    logError('카테고리 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '카테고리 목록을 불러오는 중 오류가 발생했습니다.'
