@@ -2558,8 +2558,7 @@ router.get('/settings', authMiddleware, async (req: AuthRequest, res: Response) 
 
     return res.json({ success: true, data: merged });
   } catch (error: any) {
-    console.error('설정 조회/머지 오류:', error);
-    console.error('에러 스택:', error?.stack);
+    logError('설정 조회/머지 오류', { message: error?.message, stack: error?.stack });
     return res.status(500).json({ 
       success: false, 
       message: '설정 조회 중 오류가 발생했습니다.',
