@@ -202,7 +202,7 @@ export const connectDB = async () => {
         console.log('⏳ 연결 진행 중... 5초 더 대기...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         
-        if (mongoose.connection.readyState === 1) {
+        if (mongoose.connection.readyState === 1 as any) {
           console.log('✅ 추가 대기 후 연결 성공!');
         } else {
           throw timeoutError;
