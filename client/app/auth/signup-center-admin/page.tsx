@@ -297,7 +297,9 @@ export default function SignupCenterAdminPage() {
     try {
       // 실제로는 서버에서 이메일 발송
       // 여기서는 콘솔에 출력 (테스트용)
-      console.log(`인증 코드: ${code}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`인증 코드: ${code}`);
+      }
       alert(`인증 코드가 ${formData.representativeEmail}로 발송되었습니다.\n(테스트: ${code})`);
     } catch (error) {
       console.error('이메일 발송 오류:', error);
@@ -547,7 +549,9 @@ export default function SignupCenterAdminPage() {
         }
       };
 
-      console.log('📤 센터 등록 신청 데이터:', requestData);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📤 센터 등록 신청 데이터:', requestData);
+      }
 
       const response = await fetch('http://localhost:5000/api/center-registrations', {
         method: 'POST',
@@ -559,7 +563,9 @@ export default function SignupCenterAdminPage() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ 센터 등록 성공:', result);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 센터 등록 성공:', result);
+        }
         alert('센터 등록 신청이 완료되었습니다. 관리자 승인 후 이용하실 수 있습니다.');
         router.push('/');
       } else {

@@ -161,7 +161,9 @@ export default function ProgramHistoryPage() {
   const handleViewProgram = (program: ProgramHistory) => {
     // 운동프로그램 페이지가 삭제되어 프로그램 이력 페이지에서 상세 정보 표시
     // 필요시 모달이나 다른 방식으로 상세 정보 표시 가능
-    console.log('프로그램 상세:', program);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('프로그램 상세:', program);
+    }
   };
 
   const handleEditProgram = (program: ProgramHistory) => {
@@ -170,7 +172,9 @@ export default function ProgramHistoryPage() {
 
   const handleDuplicateProgram = (program: ProgramHistory) => {
     // 프로그램 복제 로직
-    console.log('프로그램 복제:', program.id);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('프로그램 복제:', program.id);
+    }
   };
 
   const handleDeleteProgram = (program: ProgramHistory) => {
