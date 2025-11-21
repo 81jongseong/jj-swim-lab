@@ -19,7 +19,7 @@ import React, { useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { SwimmingPoseModel } from './swimmingposemodel';
-import { ErrorBoundary } from './errorboundary';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface PoseData {
   joints: Array<{
