@@ -18,7 +18,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
 import Link from 'next/link';
-import RegionSelector, { CITIES_BY_PROVINCE } from '../../../components/map/RegionSelector';
+import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import DatePicker from '@/components/common/DatePicker';
 
 interface Certificate {
   name: string;
@@ -246,11 +247,18 @@ export default function InstructorSignupPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">📍 근무 가능 지역</h2>
               
-              <RegionSelector
-                selectedSido={selectedSido}
+              <UnifiedRegionSelector
                 selectedRegions={selectedRegions}
-                showDistrictSelection={showDistrictSelection}
-                onSidoSelect={(sido) => {
+                onRegionsChange={(regions) => {
+                  const newRegions = regions instanceof Set ? regions : new Set(regions);
+                  setSelectedRegions(newRegions);
+                  if (newRegions.size === 0) {
+                    setSelectedSido('');
+                    setShowDistrictSelection(false);
+                  }
+                }}
+                selectedSido={selectedSido}
+                onSidoChange={(sido) => {
                   if (sido === '전국') {
                     setSelectedRegions(new Set(['전국']));
                     setSelectedSido('');
@@ -261,38 +269,8 @@ export default function InstructorSignupPage() {
                     setSelectedRegions(new Set());
                   }
                 }}
-                onDistrictToggle={(district) => {
-                  const newRegions = new Set(selectedRegions);
-                  if (newRegions.has(district)) {
-                    newRegions.delete(district);
-                    if (newRegions.size === 0) {
-                      setSelectedSido('');
-                      setShowDistrictSelection(false);
-                    }
-                  } else {
-                    newRegions.add(district);
-                  }
-                  setSelectedRegions(newRegions);
-                }}
-                onSelectAll={() => {
-                  if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
-                    const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
-                    const newRegions = new Set(selectedRegions);
-                    
-                    if (allDistrictsSelected) {
-                      // 모두 해제
-                      CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
-                    } else {
-                      // 모두 선택
-                      CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
-                    }
-                    setSelectedRegions(newRegions);
-                  }
-                }}
-                onClose={() => {
-                  setShowDistrictSelection(false);
-                  setSelectedSido('');
-                }}
+                layout="simple"
+                showDistricts={showDistrictSelection && !!selectedSido}
               />
             </div>
 
@@ -369,11 +347,9 @@ export default function InstructorSignupPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       취득일 <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
+                    <DatePicker
                       value={cert.acquiredDate}
-                      onChange={(e) => handleCertificateChange(index, 'acquiredDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(value) => handleCertificateChange(index, 'acquiredDate', value)}
                     />
                   </div>
                 </div>

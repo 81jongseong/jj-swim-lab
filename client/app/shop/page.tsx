@@ -6,6 +6,8 @@ import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Grid, List } from 'lucide-react';
+import SearchBar from '@/components/common/SearchBar';
+import SortOptions from '@/components/common/SortOptions';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -431,12 +433,10 @@ export default function ShopPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <input
-                type="text"
-                placeholder="상품명 또는 설명으로 검색..."
+              <SearchBar
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={setSearchTerm}
+                placeholder="상품명 또는 설명으로 검색..."
               />
             </div>
             <div>
@@ -453,17 +453,11 @@ export default function ShopPage() {
               </select>
             </div>
             <div>
-              <select
+              <SortOptions
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSortBy}
+                options={sortOptions}
+              />
             </div>
           </div>
         </div>

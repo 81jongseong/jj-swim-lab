@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
+import { CardGrid } from '@/components/common';
 
 interface InstructorCourse {
   _id: string;
@@ -472,7 +473,7 @@ function InstructorCoursesManagement() {
                       검색 조건에 해당하는 강의가 없습니다.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <CardGrid mobileCols={1} desktopCols={3} gap={6}>
                       {filteredCourses.map(course => (
                         <Card
                           key={course._id}
@@ -543,7 +544,7 @@ function InstructorCoursesManagement() {
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
+                    </CardGrid>
                   )}
                 </>
               )}

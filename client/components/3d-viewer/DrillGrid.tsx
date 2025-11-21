@@ -24,6 +24,7 @@ import React, { useMemo, useState } from 'react';
 import { getPublicDrills } from '../../data/drills3d';
 import DrillCard from './DrillCard';
 import type { StrokeType } from '../../types/drill3d';
+import { CardGrid } from '../common';
 
 export default function DrillGrid() {
   const [stroke, setStroke] = useState<'ALL' | StrokeType>('ALL');
@@ -79,11 +80,11 @@ export default function DrillGrid() {
 
       {/* 카드 그리드 */}
       {filteredList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <CardGrid mobileCols={1} desktopCols={4} gap={4}>
           {filteredList.map((item) => (
             <DrillCard key={item.id} item={item} />
           ))}
-        </div>
+        </CardGrid>
       ) : (
         <div className="text-center py-12">
           <div className="text-4xl mb-4">🔍</div>

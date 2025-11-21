@@ -26,7 +26,8 @@ import {
   Target,
   EyeOff
 } from 'lucide-react';
-import RegionSelector, { CITIES_BY_PROVINCE } from '@/components/map/RegionSelector';
+import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import DatePicker from '@/components/common/DatePicker';
 import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSection';
 import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
 import ConditionQuickPick from '@/components/swimlab/ConditionQuickPick';
@@ -748,15 +749,11 @@ export default function SignupPage() {
                   <Calendar className="w-4 h-4 inline mr-2" />
                   생년월일 *
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.birthDate}
-                  onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.birthDate ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  onChange={(value) => setFormData({ ...formData, birthDate: value })}
+                  error={errors.birthDate}
                 />
-                {errors.birthDate && <p className="text-red-500 text-sm mt-1">{errors.birthDate}</p>}
               </div>
 
               <div>
@@ -1097,15 +1094,13 @@ export default function SignupPage() {
                           <label className="block text-xs font-medium text-gray-700 mb-1">
                             취득일 <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={cert.acquiredDate}
-                            onChange={(e) => {
+                            onChange={(value) => {
                               const updated = [...certificates];
-                              updated[index] = { ...updated[index], acquiredDate: e.target.value };
+                              updated[index] = { ...updated[index], acquiredDate: value };
                               setCertificates(updated);
                             }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           />
                         </div>
                       </div>
@@ -1189,18 +1184,15 @@ export default function SignupPage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            시작 날짜 <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="date"
+                          <DatePicker
                             value={exp.startDate}
-                            onChange={(e) => {
+                            onChange={(value) => {
                               const updated = [...teachingExperiences];
-                              updated[index] = { ...updated[index], startDate: e.target.value };
+                              updated[index] = { ...updated[index], startDate: value };
                               setTeachingExperiences(updated);
                             }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            label="시작 날짜"
+                            required
                           />
                         </div>
 
@@ -1208,16 +1200,14 @@ export default function SignupPage() {
                           <label className="block text-xs font-medium text-gray-700 mb-1">
                             종료 날짜 <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="date"
-                            value={exp.endDate}
-                            onChange={(e) => {
-                              const updated = [...teachingExperiences];
-                              updated[index] = { ...updated[index], endDate: e.target.value };
-                              setTeachingExperiences(updated);
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
+                            <DatePicker
+                              value={exp.endDate}
+                              onChange={(value) => {
+                                const updated = [...teachingExperiences];
+                                updated[index] = { ...updated[index], endDate: value };
+                                setTeachingExperiences(updated);
+                              }}
+                            />
                         </div>
                       </div>
                     </div>
@@ -1322,11 +1312,18 @@ export default function SignupPage() {
                     <MapPin className="w-4 h-4 inline mr-2" />
                     근무 가능 지역 *
                   </label>
-                  <RegionSelector
-                    selectedSido={selectedSido}
+                  <UnifiedRegionSelector
                     selectedRegions={selectedRegions}
-                    showDistrictSelection={showDistrictSelection}
-                    onSidoSelect={(sido) => {
+                    onRegionsChange={(regions) => {
+                      const newRegions = regions instanceof Set ? regions : new Set(regions);
+                      setSelectedRegions(newRegions);
+                      if (newRegions.size === 0) {
+                        setSelectedSido('');
+                        setShowDistrictSelection(false);
+                      }
+                    }}
+                    selectedSido={selectedSido}
+                    onSidoChange={(sido) => {
                       if (sido === '전국') {
                         setSelectedRegions(new Set(['전국']));
                         setSelectedSido('');
@@ -1337,38 +1334,8 @@ export default function SignupPage() {
                         setSelectedRegions(new Set());
                       }
                     }}
-                    onDistrictToggle={(district) => {
-                      const newRegions = new Set(selectedRegions);
-                      if (newRegions.has(district)) {
-                        newRegions.delete(district);
-                        if (newRegions.size === 0) {
-                          setSelectedSido('');
-                          setShowDistrictSelection(false);
-                        }
-                      } else {
-                        newRegions.add(district);
-                      }
-                      setSelectedRegions(newRegions);
-                    }}
-                    onSelectAll={() => {
-                      if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
-                        const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
-                        const newRegions = new Set(selectedRegions);
-                        
-                        if (allDistrictsSelected) {
-                          // 모두 해제
-                          CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
-                        } else {
-                          // 모두 선택
-                          CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
-                        }
-                        setSelectedRegions(newRegions);
-                      }
-                    }}
-                    onClose={() => {
-                      setShowDistrictSelection(false);
-                      setSelectedSido('');
-                    }}
+                    layout="simple"
+                    showDistricts={showDistrictSelection && !!selectedSido}
                   />
                   {errors.availableRegions && <p className="text-red-500 text-sm mt-1">{errors.availableRegions}</p>}
                 </div>

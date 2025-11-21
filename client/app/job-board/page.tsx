@@ -54,6 +54,8 @@ import {
   Calendar,
   Clock
 } from 'lucide-react';
+import SearchBar from '@/components/common/SearchBar';
+import { CardGrid } from '@/components/common';
 
 interface JobPost {
   _id: string;
@@ -618,13 +620,10 @@ function JobBoardPage() {
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="검색..."
+                <SearchBar
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  onChange={setSearchTerm}
+                  placeholder="검색..."
                 />
               </div>
               
@@ -658,7 +657,7 @@ function JobBoardPage() {
 
         {/* 채용 공고 목록 */}
         {filteredPosts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardGrid mobileCols={1} desktopCols={3} gap={4}>
             {filteredPosts.map((post) => {
               // 강사 구직 이력서인 경우 강사 프로필 카드 사용
               if (post.roomSpecific.jobBoard.jobType === 'resume' && post.roomSpecific.jobBoard.position === 'instructor') {
@@ -734,7 +733,7 @@ function JobBoardPage() {
                 />
               )
             })}
-          </div>
+          </CardGrid>
         ) : (
           <div className="text-center py-16 bg-white rounded-lg shadow-sm">
             <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -1095,7 +1094,7 @@ function JobBoardPage() {
 
             <div className="p-6">
               {myApplications.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <CardGrid mobileCols={1} desktopCols={3} gap={4}>
                   {myApplications.map((app: any) => (
                     <MyApplicationCard
                       key={app._id}
@@ -1155,7 +1154,7 @@ function JobBoardPage() {
                       }}
                     />
                   ))}
-                </div>
+                </CardGrid>
               ) : (
                 <div className="text-center py-16">
                   <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />

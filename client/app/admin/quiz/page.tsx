@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
+import { CardGrid } from '@/components/common';
 
 const QUIZ_CATEGORIES = [
   '운동생리학',
@@ -517,7 +518,7 @@ export default function QuizManagementPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardGrid mobileCols={2} desktopCols={4} gap={4}>
             {filteredQuizzes.map((quiz) => (
               <div 
                 key={quiz.id} 
@@ -582,7 +583,7 @@ export default function QuizManagementPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardGrid>
         )}
       </div>
 

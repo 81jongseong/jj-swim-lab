@@ -43,6 +43,7 @@ import {
   type RaceTarget 
 } from '@/lib/swimlab/utils/athletes';
 import MemberSelectModal from './MemberSelectModal';
+import SearchBar from '@/components/common/SearchBar';
 
 // MultiEventPicker 모의 컴포넌트 (실제로는 import)
 function MultiEventPicker({ value, onChange }: { value: RaceTarget[]; onChange: (v: RaceTarget[]) => void }) {
@@ -128,12 +129,11 @@ export default function AthleteProfileBar({
     <div className="space-y-3">
       {/* 검색창 - 항상 표시 */}
       <div className="bg-white border-2 border-gray-200 rounded-lg p-3">
-        <input
-          type="text"
-          placeholder="🔍 회원 이름 검색..."
+        <SearchBar
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+          onChange={setSearchQuery}
+          placeholder="🔍 회원 이름 검색..."
+          icon={<span className="text-lg">🔍</span>}
         />
         {searchQuery && (
           <div className="text-xs text-gray-500 mt-2">
