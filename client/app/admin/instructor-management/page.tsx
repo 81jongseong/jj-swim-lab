@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import InstructorScheduleCard from '@/components/InstructorScheduleCard';
 
 interface Instructor {
@@ -630,18 +630,22 @@ export default function InstructorManagementPage() {
                           <p className="text-lg font-semibold text-yellow-600">{instructor.rating}</p>
                         </div>
                             <div className="flex space-x-2">
-                          <button 
+                          <Button 
                               onClick={() => {
                                 setSelectedInstructor(instructor);
                               setShowInstructorDetail(true);
                             }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            variant="primary"
+                            size="md"
                           >
                             상세보기
-                          </button>
-                          <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                          </Button>
+                          <Button 
+                            variant="secondary"
+                            size="md"
+                          >
                             수정
-                          </button>
+                          </Button>
                       </div>
                         </div>
                         </div>
