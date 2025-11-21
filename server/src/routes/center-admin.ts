@@ -708,8 +708,7 @@ router.put('/instructors/:instructorId', authMiddleware, requireCenterAdmin, asy
       data: updatedInstructor
     });
   } catch (error: any) {
-    console.error('❌ 강사 정보 수정 오류:', error.message);
-    console.error('📋 에러 상세:', error);
+    logError('강사 정보 수정 오류', { message: error.message, error });
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.',
