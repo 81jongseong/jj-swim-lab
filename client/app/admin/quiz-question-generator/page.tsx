@@ -13,6 +13,7 @@ import { Button } from '../../../components/ui';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui';
 import { Badge } from '../../../components/ui';
+import { CardGrid } from '@/components/common';
 
 const QUIZ_CATEGORIES = [
   '운동생리학',
@@ -894,7 +895,7 @@ export default function QuizQuestionGeneratorPage() {
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+              <CardGrid mobileCols={2} desktopCols={4} gap={2} className="max-h-40 overflow-y-auto">
                 {generatedQuestions.map((q, idx) => (
                   <button
                     key={idx}
@@ -909,7 +910,7 @@ export default function QuizQuestionGeneratorPage() {
                     <div className="text-xs opacity-75 mt-1">#{idx + 1}</div>
                   </button>
                 ))}
-              </div>
+              </CardGrid>
             </Card>
           )}
 

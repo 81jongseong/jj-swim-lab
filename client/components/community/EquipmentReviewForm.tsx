@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import FileUploader from '@/components/common/FileUploader';
 import { motion } from 'framer-motion';
 import { 
   Star, 
@@ -467,30 +468,14 @@ export const EquipmentReviewForm: React.FC<EquipmentReviewFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">사진 첨부</label>
-              <div 
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-                <Camera className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  사용 사진을 업로드하세요
-                </p>
-                <p className="text-sm text-gray-500">
-                  제품 사진, 착용 사진, 사용 전후 비교 사진 등
-                </p>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    setImages(prev => [...prev, ...files]);
-                  }}
-                  className="hidden"
-                />
-              </div>
+              <FileUploader
+                onUpload={(files) => setImages(prev => [...prev, ...files])}
+                accept="image/*"
+                multiple={true}
+                label="사진 첨부"
+                maxSize={10}
+                showPreview={true}
+              />
               
               {images.length > 0 && (
                 <div className="mt-4 grid grid-cols-3 gap-2">

@@ -24,6 +24,7 @@ import withAuth from '../../../components/withAuth';
 import { Users, Heart, AlertTriangle, CheckCircle, XCircle, Info, Eye } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { CenterSelector } from '@/components/common';
 
 interface MemberHealthInfo {
   id: string;
@@ -50,6 +51,7 @@ const InstructorStudentsPage: React.FC = () => {
   const [selectedMember, setSelectedMember] = useState<MemberHealthInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
 
   // 샘플 데이터 (실제로는 API에서 가져옴)
   useEffect(() => {
@@ -562,6 +564,13 @@ const InstructorStudentsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 센터 선택 드롭다운 */}
+        <div className="mb-6 flex justify-end">
+          <CenterSelector
+            selectedCenterId={selectedCenterId}
+            onCenterChange={setSelectedCenterId}
+          />
+        </div>
         {/* 헤더 */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

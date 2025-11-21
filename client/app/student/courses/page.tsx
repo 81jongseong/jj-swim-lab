@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Users, Clock, Star, Search, Plus } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { CenterSelector } from '@/components/common';
 
 interface Course {
   _id: string;
@@ -33,6 +34,7 @@ function StudentCourses() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
+  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -150,10 +152,19 @@ function StudentCourses() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          강의 관리
-        </h1>
-        <p className="text-gray-600">수영 강의를 찾고 등록하세요</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              강의 관리
+            </h1>
+            <p className="text-gray-600">수영 강의를 찾고 등록하세요</p>
+          </div>
+          {/* 센터 선택 드롭다운 */}
+          <CenterSelector
+            selectedCenterId={selectedCenterId}
+            onCenterChange={setSelectedCenterId}
+          />
+        </div>
       </div>
 
       {/* 통계 카드 */}

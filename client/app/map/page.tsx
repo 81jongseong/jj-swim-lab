@@ -15,7 +15,8 @@ import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
-import RegionSelector, { CITIES_BY_PROVINCE } from '@/components/map/RegionSelector';
+import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import SortOptions from '@/components/common/SortOptions';
 import ModernButton from '@/components/map/ModernButton';
 import FilterOptions from '@/components/map/FilterOptions';
 
@@ -1332,13 +1333,20 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* 지역 선택 - 컴포넌트화 */}
+          {/* 지역 선택 - 통합 컴포넌트 */}
           {searchType === 'region' && (
-            <RegionSelector
-              selectedSido={selectedSido}
+            <UnifiedRegionSelector
               selectedRegions={selectedRegions}
-              showDistrictSelection={showDistrictSelection}
-              onSidoSelect={(sido) => {
+              onRegionsChange={(regions) => {
+                const newRegions = regions instanceof Set ? regions : new Set(regions);
+                setSelectedRegions(newRegions);
+                if (newRegions.size === 0) {
+                  setSelectedSido('');
+                  setShowDistrictSelection(false);
+                }
+              }}
+              selectedSido={selectedSido}
+              onSidoChange={(sido) => {
                 if (sido === '전국') {
                   setSelectedRegions(new Set(['전국']));
                   setSelectedSido('');
@@ -1349,38 +1357,8 @@ export default function MapPage() {
                   setSelectedRegions(new Set());
                 }
               }}
-              onDistrictToggle={(district) => {
-                const newRegions = new Set(selectedRegions);
-                if (newRegions.has(district)) {
-                  newRegions.delete(district);
-                  if (newRegions.size === 0) {
-                    setSelectedSido('');
-                    setShowDistrictSelection(false);
-                  }
-                } else {
-                  newRegions.add(district);
-                }
-                setSelectedRegions(newRegions);
-              }}
-              onSelectAll={() => {
-                if (selectedSido && CITIES_BY_PROVINCE[selectedSido]) {
-                  const allDistrictsSelected = CITIES_BY_PROVINCE[selectedSido].every(city => selectedRegions.has(city));
-                  const newRegions = new Set(selectedRegions);
-                  
-                  if (allDistrictsSelected) {
-                    // 모두 해제
-                    CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.delete(city));
-                  } else {
-                    // 모두 선택
-                    CITIES_BY_PROVINCE[selectedSido].forEach(city => newRegions.add(city));
-                  }
-                  setSelectedRegions(newRegions);
-                }
-              }}
-              onClose={() => {
-                setShowDistrictSelection(false);
-                setSelectedSido('');
-              }}
+              layout="simple"
+              showDistricts={showDistrictSelection}
             />
           )}
 
@@ -2104,47 +2082,25 @@ export default function MapPage() {
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSortBy('name')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      sortBy === 'name'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🔤 가나다순
-                  </button>
-                  <button
-                    onClick={getMyLocation}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      sortBy === 'distance'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    📍 가까운 순
-                  </button>
-                  <button
-                    onClick={() => setSortBy('rating')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      sortBy === 'rating'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    ⭐ 평점순
-                  </button>
-                  <button
-                    onClick={() => setSortBy('price')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      sortBy === 'price'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    💰 가격순
-                  </button>
+                <div className="flex items-center gap-2">
+                  <SortOptions
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value as 'name' | 'distance' | 'rating' | 'price')}
+                    options={[
+                      { value: 'name', label: '🔤 가나다순' },
+                      { value: 'distance', label: '📍 가까운 순' },
+                      { value: 'rating', label: '⭐ 평점순' },
+                      { value: 'price', label: '💰 가격순' }
+                    ]}
+                  />
+                  {sortBy === 'distance' && (
+                    <button
+                      onClick={getMyLocation}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500 text-white shadow-md hover:bg-blue-600"
+                    >
+                      📍 내 위치
+                    </button>
+                  )}
                 </div>
               </div>
               <div className={`space-y-2 max-h-80 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${sortAnimation ? 'opacity-50' : 'opacity-100'}`}>

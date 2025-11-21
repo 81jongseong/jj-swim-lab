@@ -43,6 +43,7 @@ import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
+import { CardGrid } from '@/components/common';
 import BookingManagementContent from './booking-management-content';
 
 // Course 타입 정의 (서버 모델과 일치)
@@ -1000,7 +1001,7 @@ function CoursesManagement() {
             });
             return filteredCourses.length > 0;
           })() ? (
-            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+            <CardGrid gap={6}>
               {filteredCourses.map((course) => (
                 <CourseCard
                   key={course._id || Math.random()}
@@ -1011,7 +1012,7 @@ function CoursesManagement() {
                   onAssignMembers={handleOpenMemberAssignment}
                 />
               ))}
-            </div>
+            </CardGrid>
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
               <p className="text-gray-500 text-lg">표시할 강습 과정이 없습니다.</p>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
+import FileUploader from '@/components/common/FileUploader';
 
 interface CenterInfoEditorProps {
   centerInfo: any;
@@ -315,32 +316,26 @@ export default function CenterInfoEditor({ centerInfo, onSave, onCancel }: Cente
           
           {/* 메인 이미지 */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              메인 이미지
-            </label>
-            <input
-              type="file"
+            <FileUploader
+              onUpload={handleMainImageUpload}
               accept="image/*"
-              onChange={(e) => setMainImageFile(e.target.files?.[0] || null)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              multiple={false}
+              label="메인 이미지"
+              maxSize={5}
+              showPreview={true}
             />
           </div>
 
           {/* 갤러리 이미지 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              갤러리 이미지
-            </label>
-            <input
-              type="file"
+            <FileUploader
+              onUpload={handleGalleryUpload}
               accept="image/*"
-              multiple
-              onChange={(e) => setGalleryFiles(Array.from(e.target.files || []))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              multiple={true}
+              label="갤러리 이미지"
+              maxSize={5}
+              showPreview={true}
             />
-            <p className="text-sm text-gray-500 mt-1">
-              여러 이미지를 선택할 수 있습니다
-            </p>
           </div>
         </div>
 

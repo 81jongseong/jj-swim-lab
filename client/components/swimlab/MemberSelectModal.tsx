@@ -17,6 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/api';
 import { convertHealthToConditions } from '@/lib/swimlab/utils/healthToCondition';
+import { CardGrid } from '@/components/common';
 
 interface User {
   _id: string;
@@ -304,7 +305,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                     <span>단체반</span>
                     <span className="text-sm text-gray-500">({filteredGroups.length}개)</span>
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                  <CardGrid mobileCols={1} desktopCols={3} gap={4} className="auto-rows-fr">
                     {filteredGroups.map((gc) => {
                       const isSelected = selectedGroups.some(g => g._id === gc._id);
                       
@@ -364,7 +365,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                         </div>
                       );
                     })}
-                  </div>
+                  </CardGrid>
                 </div>
               )}
               
@@ -376,7 +377,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                     <span>개인 PT 회원</span>
                     <span className="text-sm text-gray-500">({filteredMembers.length}명)</span>
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                  <CardGrid mobileCols={1} desktopCols={3} gap={4} className="auto-rows-fr">
                     {filteredMembers.map((member) => {
                 const isSelected = selectedUsers.some(u => u._id === member._id);
                 
@@ -486,7 +487,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                 </div>
               );
               })}
-                  </div>
+                  </CardGrid>
                 </div>
               )}
               

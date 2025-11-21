@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
+import { CardGrid } from '@/components/common';
 
 /**
  * 🧠 퀴즈 페이지
@@ -543,7 +544,7 @@ export default function QuizPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <CardGrid>
           {quizzes.map((quiz) => (
             <div key={quiz._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
               <div className="p-6">
@@ -581,7 +582,7 @@ export default function QuizPage() {
               </div>
             </div>
           ))}
-        </div>
+        </CardGrid>
 
         {quizzes.length === 0 && (
           <div className="text-center py-12">
