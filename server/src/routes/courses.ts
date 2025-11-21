@@ -1244,11 +1244,10 @@ router.post('/', authenticateToken, requireInstructorOrAdmin, async (req: AuthRe
       data: populatedCourse
     });
   } catch (error) {
-    console.error('💥 강습 과정 생성 오류:', error);
-    if (error instanceof Error) {
-      console.error('💥 에러 메시지:', error.message);
-      console.error('💥 에러 스택:', error.stack);
-    }
+    logError('강습 과정 생성 오류', { 
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return res.status(500).json({ 
       error: '서버 오류가 발생했습니다.',
       details: error instanceof Error ? error.message : String(error)
