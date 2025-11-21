@@ -59,14 +59,31 @@ REM 원격 저장소와 로컬 브랜치 동기화
 echo [3-1/4] 원격 저장소와 동기화...
 git pull origin glb-debug-viewer --no-rebase
 if errorlevel 1 (
-    echo [ERROR] 업데이트 실패
+    echo [ERROR] 업데이트 실패 - 충돌 발생
     echo.
-    echo 충돌이 발생했을 수 있습니다.
-    echo 다음 명령어로 확인하세요:
-    echo   git status
-    echo.
-    pause
-    exit /b 1
+    echo 충돌을 자동으로 해결하시겠습니까? (Y/N)
+    set /p CONFLICT_RESOLVE=
+    if /i "%CONFLICT_RESOLVE%"=="Y" (
+        echo.
+        echo [INFO] 충돌 해결 스크립트 실행 중...
+        if exist "resolve-all-conflicts.bat" (
+            call resolve-all-conflicts.bat
+        ) else (
+            echo [WARN] resolve-all-conflicts.bat 파일이 없습니다.
+            echo [INFO] 수동으로 해결하세요:
+            echo   git checkout --theirs .
+            echo   git add .
+            echo   git commit -m "Merge conflict resolved"
+        )
+    ) else (
+        echo.
+        echo 충돌을 수동으로 해결하세요:
+        echo   git status
+        echo   또는 resolve-all-conflicts.bat 실행
+        echo.
+        pause
+        exit /b 1
+    )
 )
 echo [OK] 업데이트 완료
 echo.
