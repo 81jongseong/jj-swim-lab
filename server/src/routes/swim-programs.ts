@@ -19,11 +19,28 @@
  * - GET /api/swim-programs/athlete/:athleteId/history - 최근 3주 훈련법 이력
  */
 
+/**
+ * 📝 수영 프로그램 이력 API 라우트
+ * 
+ * 📋 **파일 목적**
+ * - 수영 프로그램 생성 및 저장
+ * - 회원별 프로그램 조회
+ * - 프로그램 실행 기록 업데이트
+ * 
+ * 🔄 **연동되는 모델**
+ * - SwimProgram (프로그램 이력)
+ * - User (회원 정보)
+ * 
+ * 📅 **개발 히스토리**
+ * - 초기 수영 프로그램 이력 API 구현
+ */
+
 import express from 'express';
 import SwimProgram from '../models/SwimProgram';
 import { authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
 import { generateProgramFromTeachingMethod, generateDefaultTechniqueProgram } from '../utils/teachingMethodToProgramConverter';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // import { cacheMiddleware } from '../middleware/cache'; // 캐싱 미들웨어 추가 (사용하지 않음)
 // 실제 수영 엔진 v3.1 사용
 // import { generateAdvancedCSSProgram } from '../utils/advancedProgramGenerator';
@@ -175,7 +192,7 @@ router.post('/', authMiddleware, async (req, res) => {
       usedMethodIds: program.usedMethodIds
     });
   } catch (error: any) {
-    console.error('프로그램 저장 실패:', error);
+    logError('프로그램 저장 실패', error);
     res.status(500).json({ error: '프로그램 저장에 실패했습니다.', details: error.message });
   }
 });
@@ -214,7 +231,7 @@ router.get('/athlete/:athleteId/history', authMiddleware, async (req, res) => {
       }))
     });
   } catch (error: any) {
-    console.error('이력 조회 실패:', error);
+    logError('이력 조회 실패', error);
     res.status(500).json({ error: '이력 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -251,7 +268,7 @@ router.get('/all', authMiddleware, async (req, res) => {
       programs
     });
   } catch (error: any) {
-    console.error('전체 프로그램 조회 실패:', error);
+    logError('전체 프로그램 조회 실패', error);
     res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -275,7 +292,7 @@ router.get('/athlete/:athleteId', authMiddleware, async (req, res) => {
       programs
     });
   } catch (error: any) {
-    console.error('프로그램 조회 실패:', error);
+    logError('프로그램 조회 실패', error);
     res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -296,7 +313,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     
     res.json(program);
   } catch (error: any) {
-    console.error('프로그램 조회 실패:', error);
+    logError('프로그램 조회 실패', error);
     res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -366,7 +383,7 @@ router.patch('/:id/execution', authMiddleware, async (req, res) => {
       executionHistory: program.executionHistory
     });
   } catch (error: any) {
-    console.error('실행 기록 업데이트 실패:', error);
+    logError('실행 기록 업데이트 실패', error);
     res.status(500).json({ error: '실행 기록 업데이트에 실패했습니다.', details: error.message });
   }
 });
@@ -409,7 +426,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
       data: program 
     });
   } catch (error: any) {
-    console.error('프로그램 수정 실패:', error);
+    logError('프로그램 수정 실패', error);
     res.status(500).json({ success: false, error: '프로그램 수정에 실패했습니다.', details: error.message });
   }
 });
@@ -430,7 +447,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     console.log(`✅ 프로그램 삭제 성공: ${id}`);
     res.json({ success: true, message: '프로그램이 삭제되었습니다.' });
   } catch (error: any) {
-    console.error('프로그램 삭제 실패:', error);
+    logError('프로그램 삭제 실패', error);
     res.status(500).json({ success: false, error: '프로그램 삭제에 실패했습니다.', details: error.message });
   }
 });

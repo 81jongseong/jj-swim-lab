@@ -1,3 +1,20 @@
+/**
+ * 📝 AI 분석 API 라우트
+ * 
+ * 📋 **파일 목적**
+ * - AI 기반 수영 자세 분석
+ * - AI 분석 결과 저장 및 조회
+ * - AI 대시보드 데이터 제공
+ * 
+ * 🔄 **연동되는 모델**
+ * - AIAnalysis (AI 분석 결과)
+ * - EvaluationCriteria (평가 기준)
+ * - Checklist (체크리스트)
+ * 
+ * 📅 **개발 히스토리**
+ * - 초기 AI 분석 API 구현
+ */
+
 import express, { Response } from 'express';
 import { AIAnalysis } from '../models/AIAnalysis';
 import { EvaluationCriteria } from '../models/AIEvaluationCriteria';
@@ -5,6 +22,7 @@ import { Checklist } from '../models/Checklist';
 import { AIEngine } from '../utils/AIEngine';
 import { AdvancedAIEngine } from '../utils/AdvancedAIEngine';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -73,7 +91,7 @@ router.post('/analyze', authMiddleware, requireRole(['instructor', 'centerAdmin'
     });
     
   } catch (error) {
-    console.error('AI 분석 오류:', error);
+    logError('AI 분석 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 분석 중 오류가 발생했습니다.'
@@ -109,7 +127,7 @@ router.get('/analysis/:studentId', authMiddleware, requireRole(['instructor', 'c
     });
     
   } catch (error) {
-    console.error('AI 분석 조회 오류:', error);
+    logError('AI 분석 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 분석 조회 중 오류가 발생했습니다.'
@@ -158,7 +176,7 @@ router.get('/dashboard/:studentId', authMiddleware, requireRole(['instructor', '
     });
     
   } catch (error) {
-    console.error('AI 대시보드 조회 오류:', error);
+    logError('AI 대시보드 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 대시보드 조회 중 오류가 발생했습니다.'
@@ -194,7 +212,7 @@ router.put('/analysis/:analysisId', authMiddleware, requireRole(['instructor', '
     });
     
   } catch (error) {
-    console.error('AI 분석 업데이트 오류:', error);
+    logError('AI 분석 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 분석 업데이트 중 오류가 발생했습니다.'
