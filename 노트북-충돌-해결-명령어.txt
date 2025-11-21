@@ -1,0 +1,89 @@
+========================================
+노트북에서 충돌 해결 명령어 (즉시 실행 가능)
+========================================
+
+스크립트 파일 없이 바로 실행할 수 있는 명령어입니다.
+
+========================================
+모든 충돌을 원격 버전으로 해결
+========================================
+
+다음 명령어를 순서대로 실행하세요:
+
+1. 프로젝트 디렉토리로 이동
+cd C:\Users\JJS\jj-swim-lab
+
+2. 모든 충돌 파일을 원격 버전으로 해결
+git checkout --theirs .
+
+3. 모든 파일 스테이징
+git add .
+
+4. 병합 커밋
+git commit -m "Merge conflict resolved - use remote version"
+
+5. 의존성 업데이트 (package.json 충돌 해결됨)
+pnpm install
+
+6. 서버 빌드 (dist 폴더 재생성)
+cd server
+npm run build
+cd ..
+
+7. 완료 확인
+git status
+
+========================================
+개별 파일 충돌 해결 (선택적)
+========================================
+
+원하는 파일만 선택적으로 해결하려면:
+
+# README.md
+git checkout --theirs README.md
+git add README.md
+
+# client/app/admin/quiz/page.tsx
+git checkout --theirs client/app/admin/quiz/page.tsx
+git add client/app/admin/quiz/page.tsx
+
+# client/app/page.tsx
+git checkout --theirs client/app/page.tsx
+git add client/app/page.tsx
+
+# client/components/Navigation.tsx
+git checkout --theirs client/components/Navigation.tsx
+git add client/components/Navigation.tsx
+
+# client/package.json
+git checkout --theirs client/package.json
+git add client/package.json
+
+# pnpm-lock.yaml
+git checkout --theirs pnpm-lock.yaml
+git add pnpm-lock.yaml
+
+# 삭제된 파일 처리 (ai-analysis/page.tsx)
+git rm client/app/ai-analysis/page.tsx
+
+# 삭제된 문서 파일 처리
+git rm docs/프로젝트-가이드.md
+git rm docs/현재-작업-상황.md
+
+# 그 다음 병합 커밋
+git commit -m "Merge conflict resolved"
+
+========================================
+가장 간단한 방법 (권장)
+========================================
+
+모든 충돌을 한 번에 해결:
+
+cd C:\Users\JJS\jj-swim-lab
+git checkout --theirs .
+git add .
+git commit -m "Merge conflict resolved"
+pnpm install
+
+========================================
+
