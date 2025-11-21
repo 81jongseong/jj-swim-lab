@@ -201,7 +201,7 @@ router.get('/center-users', authMiddleware, async (req: AuthRequest, res: Respon
         const GroupClass = require('../models/GroupClass').default;
         const groupClasses = await GroupClass.find({ status: 'active' });
         
-        console.log(`📚 활성 단체반 ${groupClasses.length}개 발견`);
+        logDebug('활성 단체반 발견', { count: groupClasses.length });
         
         // 단체반 회원들 ID 수집
         const groupStudentIds = groupClasses.flatMap(gc => {
