@@ -21,8 +21,8 @@
  * 
  * 📅 **수정 히스토리**:
  * - 2025-01-22: 초기 구조 생성 (스켈레톤)
- * - TODO: Three.js 통합
- * - TODO: DB API 연동
+ * - ✅ Three.js 통합 완료 (@react-three/fiber 사용)
+ * - ⚠️ DB API 연동 필요 (현재는 로컬 데이터 사용)
  */
 
 'use client';

@@ -318,8 +318,10 @@ class ApiClient {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const centerId = typeof window !== 'undefined' ? (localStorage.getItem('centerId') || '') : '';
     
-    console.log(`🔍 API 요청: ${this.baseURL}${endpoint}`);
-    console.log(`🔑 인증 토큰: ${token ? '있음' : '없음'}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 API 요청: ${this.baseURL}${endpoint}`);
+        console.log(`🔑 인증 토큰: ${token ? '있음' : '없음'}`);
+      }
 
     const config: RequestInit = {
       headers: {
@@ -335,8 +337,10 @@ class ApiClient {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
       const data = await response.json();
       
-      console.log(`📡 응답 상태: ${response.status} ${response.statusText}`);
-      console.log(`📊 응답 데이터:`, data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📡 응답 상태: ${response.status} ${response.statusText}`);
+        console.log(`📊 응답 데이터:`, data);
+      }
 
       if (!response.ok) {
         const errorMessage = data.error || data.message || '알 수 없는 오류';
@@ -346,7 +350,9 @@ class ApiClient {
         
         // 401 Unauthorized 오류 시 자동 로그아웃 처리
         if (response.status === 401) {
-          console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리');
+          }
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           sessionStorage.removeItem('token');
