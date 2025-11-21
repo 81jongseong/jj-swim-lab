@@ -20,6 +20,7 @@ import { Booking } from '../models/Booking';
 import { Course } from '../models/Course';
 import { Approval } from '../models/Approval';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // 사용되지 않는 import 제거됨:
 // import { Course } from '../models/Course';
 
@@ -171,7 +172,7 @@ router.get('/', authMiddleware, requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('승인 요청 목록 조회 오류:', error);
+    logError('승인 요청 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '승인 요청 목록 조회 중 오류가 발생했습니다.'
@@ -202,7 +203,7 @@ router.get('/:id', authMiddleware, requireAdmin, async (req, res) => {
       data: approval
     });
   } catch (error) {
-    console.error('승인 요청 상세 조회 오류:', error);
+    logError('승인 요청 상세 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '승인 요청 상세 조회 중 오류가 발생했습니다.'
@@ -257,7 +258,7 @@ router.put('/:id/process', authMiddleware, requireAdmin, async (req, res) => {
       data: approval
     });
   } catch (error) {
-    console.error('승인 처리 오류:', error);
+    logError('승인 처리 오류', error);
     res.status(500).json({
       success: false,
       message: '승인 처리 중 오류가 발생했습니다.'
@@ -412,7 +413,7 @@ async function processApprovedRequest(approval: any) {
         break;
     }
   } catch (error) {
-    console.error('승인된 요청 처리 오류:', error);
+    logError('승인된 요청 처리 오류', error);
     throw error;
   }
 }
@@ -493,7 +494,7 @@ router.get('/stats/overview', authMiddleware, requireAdmin, async (req, res) => 
       }
     });
   } catch (error) {
-    console.error('승인 통계 조회 오류:', error);
+    logError('승인 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '승인 통계 조회 중 오류가 발생했습니다.'
