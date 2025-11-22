@@ -80,7 +80,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
-import RegionNavigation from '@/components/RegionNavigation';
+import UnifiedRegionSelector from '@/components/common/UnifiedRegionSelector';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 
@@ -168,56 +169,58 @@ export default function CenterManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
-  // 지역 필터 상태 추가
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  // 지역 필터 상태 추가 (Set으로 통일하여 UnifiedRegionSelector와 호환)
+  const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+  const [selectedSido, setSelectedSido] = useState<string>('');
+  const [showDistrictSelection, setShowDistrictSelection] = useState(false);
   
   // 관리자 할당 관련 상태
   const [showAssignAdminModal, setShowAssignAdminModal] = useState(false);
   const [centerAdmins, setCenterAdmins] = useState<Array<{ _id: string; name: string; email: string; managedCentersCount: number }>>([]);
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
 
-  // 지역 데이터 (센터 통계 페이지와 동일)
-  // 센터 데이터만 정의 (시/도, 시/군/구는 컴포넌트 내장)
-  const centerData = {
-    '서울특별시': {
-      '강남구': ['강남센터', '역삼센터', '논현센터', '삼성센터'],
-      '강동구': ['강동센터', '천호센터', '성내센터'],
-      '강북구': ['강북센터', '수유센터'],
-      '강서구': ['강서센터', '화곡센터', '등촌센터'],
-      '관악구': ['관악센터', '신림센터', '서원센터'],
-      '광진구': ['광진센터', '구의센터', '자양센터'],
-      '구로구': ['구로센터', '가리봉센터', '신도림센터'],
-      '금천구': ['금천센터', '시흥센터'],
-      '노원구': ['노원센터', '상계센터', '중계센터'],
-      '도봉구': ['도봉센터', '쌍문센터'],
-      '동대문구': ['동대문센터', '청량리센터', '회기센터'],
-      '동작구': ['동작센터', '사당센터', '대방센터'],
-      '마포구': ['마포센터', '홍대센터', '공덕센터', '상암센터'],
-      '서대문구': ['서대문센터', '신촌센터', '연희센터'],
-      '서초구': ['서초센터', '방배센터', '내곡센터'],
-      '성동구': ['성동센터', '왕십리센터', '마장센터'],
-      '성북구': ['성북센터', '돈암센터', '안암센터'],
-      '송파구': ['송파센터', '잠실센터', '문정센터', '가락센터'],
-      '양천구': ['양천센터', '목동센터', '신정센터'],
-      '영등포구': ['영등포센터', '여의도센터', '당산센터'],
-      '용산구': ['용산센터', '이촌센터', '한남센터'],
-      '은평구': ['은평센터', '불광센터', '진관센터'],
-      '종로구': ['종로센터', '혜화센터', '이화센터'],
-      '중구': ['중구센터', '명동센터', '을지로센터'],
-      '중랑구': ['중랑센터', '상봉센터', '망우센터']
+  // 실제 센터 데이터를 기반으로 동적으로 지역 데이터 생성
+  const [centerData, setCenterData] = useState<{ [key: string]: { [key: string]: string[] } }>({});
+  
+  // 센터 목록을 기반으로 지역별 센터 데이터 생성
+  useEffect(() => {
+    if (centers.length > 0) {
+      const groupedData: { [key: string]: { [key: string]: string[] } } = {};
+      
+      centers.forEach((center: any) => {
+        const province = center.address?.province || center.address?.city || '';
+        const district = center.address?.district || center.address?.address2 || '';
+        const centerName = center.name || '';
+        
+        if (province && district && centerName) {
+          if (!groupedData[province]) {
+            groupedData[province] = {};
+          }
+          if (!groupedData[province][district]) {
+            groupedData[province][district] = [];
+          }
+          if (!groupedData[province][district].includes(centerName)) {
+            groupedData[province][district].push(centerName);
+          }
+        }
+      });
+      
+      setCenterData(groupedData);
     }
-  };
+  }, [centers]);
 
-  // 지역 필터 핸들러
+  // 지역 필터 핸들러 (Set 기반으로 변경)
   const handleRegionToggle = (region: string) => {
     setSelectedRegions(prev => {
-      if (prev.includes(region)) {
-        return prev.filter(r => r !== region);
+      const newSet = new Set(prev);
+      if (newSet.has(region)) {
+        newSet.delete(region);
       } else {
-        return [...prev, region];
+        newSet.add(region);
       }
+      return newSet;
     });
   };
 
@@ -236,7 +239,7 @@ export default function CenterManagement() {
   useEffect(() => {
     loadCenters();
     loadStats();
-  }, [currentPage, searchTerm, statusFilter, gradeFilter, selectedRegions, selectedDistricts]);
+  }, [currentPage, searchTerm, statusFilter, gradeFilter, selectedRegions, selectedDistricts, selectedCenters, selectedSido]);
 
   useEffect(() => {
     if (!showAssignAdminModal) return;
@@ -266,6 +269,10 @@ export default function CenterManagement() {
     try {
       setLoading(true);
       const params = new URLSearchParams({
+        // 지역 필터 추가 (Set을 배열로 변환)
+        ...(selectedRegions.size > 0 && { regions: Array.from(selectedRegions).join(',') }),
+        ...(selectedDistricts.length > 0 && { districts: selectedDistricts.join(',') }),
+        ...(selectedCenters.length > 0 && { centers: selectedCenters.join(',') }),
         page: currentPage.toString(),
         limit: '10'
       });
@@ -289,8 +296,36 @@ export default function CenterManagement() {
       if ((response as any).success) {
         let filteredCenters = (response as any).data.centers;
         
-        // 클라이언트 측 추가 필터링 (서버에서 처리되지 않은 필터들)
-        // RegionNavigation으로 대체됨
+        // 클라이언트 측 지역 필터링 (서버에서 처리되지 않은 경우를 대비)
+        if (selectedRegions.size > 0 || selectedDistricts.length > 0 || selectedCenters.length > 0) {
+          filteredCenters = filteredCenters.filter((center: any) => {
+            const centerProvince = center.address?.province || center.address?.city || '';
+            const centerDistrict = center.address?.district || center.address?.address2 || '';
+            const centerName = center.name || '';
+            
+            // 시/도 필터
+            if (selectedSido && centerProvince !== selectedSido) {
+              return false;
+            }
+            
+            // 구/군 필터
+            if (selectedDistricts.length > 0 && !selectedDistricts.includes(centerDistrict)) {
+              return false;
+            }
+            
+            // 지역 필터 (구/군이 선택된 경우, Set 사용)
+            if (selectedRegions.size > 0 && !selectedRegions.has(centerDistrict)) {
+              return false;
+            }
+            
+            // 센터명 필터
+            if (selectedCenters.length > 0 && !selectedCenters.includes(centerName)) {
+              return false;
+            }
+            
+            return true;
+          });
+        }
         
         if (gradeFilter !== 'all') {
           filteredCenters = filteredCenters.filter((center: any) => 
@@ -491,16 +526,16 @@ export default function CenterManagement() {
         </div>
       )}
 
-      {/* 지역 필터 */}
-      <RegionNavigation
+      {/* 지역 필터 - RegionSelectorWrapper 적용 */}
+      <RegionSelectorWrapper
         selectedRegions={selectedRegions}
-        setSelectedRegions={setSelectedRegions}
-        selectedDistricts={selectedDistricts}
-        setSelectedDistricts={setSelectedDistricts}
-        selectedCenters={selectedCenters}
-        setSelectedCenters={setSelectedCenters}
+        onRegionsChange={(regions) => {
+          setSelectedRegions(regions);
+        }}
+        onSidoChange={(sido) => {
+          setSelectedSido(sido);
+        }}
         centerData={centerData}
-        comparisonMode={false}
         layout="dropdown"
       />
 
@@ -562,8 +597,11 @@ export default function CenterManagement() {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
-                  setSelectedRegions([]);
+                  setSelectedRegions(new Set());
                   setSelectedDistricts([]);
+                  setSelectedCenters([]);
+                  setSelectedSido('');
+                  setShowDistrictSelection(false);
                   setGradeFilter('all');
                   setCurrentPage(1);
                 }}
@@ -575,10 +613,10 @@ export default function CenterManagement() {
         </form>
         
         {/* 활성 필터 표시 */}
-        {(searchTerm || statusFilter !== 'all' || gradeFilter !== 'all') && (
+        {(searchTerm || statusFilter !== 'all' || gradeFilter !== 'all' || selectedRegions.size > 0 || selectedDistricts.length > 0 || selectedCenters.length > 0 || selectedSido) && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-blue-800">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-blue-800">
                 <span className="font-medium">🔍 활성 필터:</span>
                 {searchTerm && (
                   <span className="px-2 py-1 bg-blue-200 rounded-full">
@@ -599,13 +637,36 @@ export default function CenterManagement() {
                            gradeFilter === 'gold' ? '⭐⭐⭐ 3급' : '⭐⭐⭐⭐ 특급'}
                   </span>
                 )}
+                {selectedSido && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    지역: {selectedSido}
+                  </span>
+                )}
+                {selectedRegions.size > 0 && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    구/군: {Array.from(selectedRegions).slice(0, 3).join(', ')}{selectedRegions.size > 3 ? ` 외 ${selectedRegions.size - 3}개` : ''}
+                  </span>
+                )}
+                {selectedDistricts.length > 0 && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    구/군: {selectedDistricts.slice(0, 3).join(', ')}{selectedDistricts.length > 3 ? ` 외 ${selectedDistricts.length - 3}개` : ''}
+                  </span>
+                )}
+                {selectedCenters.length > 0 && (
+                  <span className="px-2 py-1 bg-blue-200 rounded-full">
+                    센터: {selectedCenters.slice(0, 2).join(', ')}{selectedCenters.length > 2 ? ` 외 ${selectedCenters.length - 2}개` : ''}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('all');
-                  setSelectedRegions([]);
+                  setSelectedRegions(new Set());
                   setSelectedDistricts([]);
+                  setSelectedCenters([]);
+                  setSelectedSido('');
+                  setShowDistrictSelection(false);
                   setGradeFilter('all');
                   setCurrentPage(1);
                 }}

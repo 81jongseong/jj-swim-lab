@@ -12,6 +12,7 @@
 'use client';
 
 import React from 'react';
+import RegionSelectorWrapper from './common/RegionSelectorWrapper';
 
 interface CenterData {
   id: string;
@@ -138,124 +139,57 @@ export default function RegionNavigation({
     return regionOfDistrict ? centerData[regionOfDistrict][district] || [] : [];
   });
 
+  // RegionSelectorWrapper와 호환을 위해 Set으로 변환
+  const selectedRegionsSet = new Set(selectedRegions);
+  const selectedDistrictsSet = new Set(selectedDistricts);
+
+  // RegionSelectorWrapper의 변경사항을 배열로 변환하여 처리
+  const handleRegionsChange = (regions: Set<string>) => {
+    const newRegions = Array.from(regions);
+    setSelectedRegions(newRegions);
+    
+    // 선택 해제된 지역의 구/시와 센터도 제거
+    const removedRegions = selectedRegions.filter(r => !regions.has(r));
+    removedRegions.forEach(region => {
+      const districtsToRemove = regionData[region] || [];
+      setSelectedDistricts(prev => prev.filter(d => !districtsToRemove.includes(d)));
+      
+      const centersToRemove = districtsToRemove.flatMap(district => 
+        centerData[region]?.[district] || []
+      );
+      setSelectedCenters(prev => prev.filter(c => !centersToRemove.includes(c)));
+    });
+  };
+
   if (layout === 'list') {
     return (
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">지역 필터</h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* 시/도 선택 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value && !selectedRegions.includes(value)) {
-                  setSelectedRegions([...selectedRegions, value]);
-                }
+          {/* 시/도 및 시/군/구 선택 - RegionSelectorWrapper 사용 */}
+          <div className="lg:col-span-2">
+            <RegionSelectorWrapper
+              selectedRegions={selectedDistrictsSet} // 시/군/구를 선택된 지역으로 사용
+              onRegionsChange={(regions) => {
+                const newDistricts = Array.from(regions);
+                setSelectedDistricts(newDistricts);
+                
+                // 선택 해제된 구/시의 센터도 제거
+                const removedDistricts = selectedDistricts.filter(d => !regions.has(d));
+                removedDistricts.forEach(district => {
+                  const regionOfDistrict = Object.keys(centerData).find(region => 
+                    Object.keys(centerData[region]).includes(district)
+                  );
+                  if (regionOfDistrict) {
+                    const centersToRemove = centerData[regionOfDistrict]?.[district] || [];
+                    setSelectedCenters(prev => prev.filter(c => !centersToRemove.includes(c)));
+                  }
+                });
               }}
-              value=""
-            >
-              <option value="">시/도 선택</option>
-              {Object.keys(regionData).map(sido => (
-                <option key={sido} value={sido}>
-                  {sido}
-                </option>
-              ))}
-            </select>
-            {selectedRegions.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedRegions.map(sido => (
-                  <button
-                    key={sido}
-                    onClick={() => {
-                      // 해당 지역만 제거
-                      setSelectedRegions(selectedRegions.filter(r => r !== sido));
-                      
-                      // 해당 지역의 구/시만 제거
-                      const districtsToRemove = regionData[sido] || [];
-                      setSelectedDistricts(selectedDistricts.filter(d => !districtsToRemove.includes(d)));
-                      
-                      // 해당 지역의 센터만 제거
-                      const centersToRemove = districtsToRemove.flatMap(district => 
-                        centerData[sido]?.[district] || []
-                      );
-                      setSelectedCenters(selectedCenters.filter(c => !centersToRemove.includes(c)));
-                    }}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200"
-                  >
-                    {sido} ×
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 시/군/구 선택 */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">시/군/구</label>
-              {selectedRegions.length > 0 && (
-                <button
-                  onClick={() => {
-                    const allDistricts = selectedRegions.flatMap(sido => regionData[sido] || []);
-                    setSelectedDistricts(allDistricts);
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800"
-                >
-                  모두 선택
-                </button>
-              )}
-            </div>
-            
-            {selectedDistricts.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {selectedDistricts.map(district => (
-                  <span
-                    key={district}
-                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                  >
-                    {district}
-                  </span>
-                ))}
-              </div>
-            )}
-            
-            {selectedRegions.length > 0 ? (
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-3">
-                {selectedRegions.map(region => (
-                  <div key={region} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-gray-800 bg-gray-100 px-2 py-1 rounded-md">
-                        {region}
-                      </h4>
-                      <span className="text-xs text-gray-500">
-                        ({regionData[region]?.length || 0}개)
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 ml-4">
-                      {regionData[region]?.map(district => (
-                        <button
-                          key={district}
-                          onClick={() => handleDistrictToggle(district)}
-                          className={`text-left px-2 py-1 text-xs rounded-md transition-colors ${
-                            selectedDistricts.includes(district)
-                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                              : 'hover:bg-gray-100'
-                          }`}
-                        >
-                          {district}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-gray-500 text-sm py-2 text-center w-full">
-                먼저 시/도를 선택해주세요
-              </div>
-            )}
+              centerData={centerData}
+              layout="list"
+              className="mb-4"
+            />
           </div>
 
           {/* 센터 선택 */}
@@ -370,106 +304,30 @@ export default function RegionNavigation({
       <h2 className="text-xl font-semibold mb-6">지역 및 센터 필터</h2>
       
       <div className="space-y-6">
-        {/* 시/도 선택 */}
+        {/* 시/도 및 시/군/구 선택 - RegionSelectorWrapper 사용 (회원분포 페이지와 동일한 컴포넌트) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">시/도</label>
-          <select
-            value=""
-            onChange={(e) => e.target.value && handleRegionChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">시/도 선택</option>
-            {Object.keys(regionData).map(sido => (
-              <option key={sido} value={sido}>
-                {sido}
-              </option>
-            ))}
-          </select>
-          
-          {selectedRegions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {selectedRegions.map(region => (
-                <button
-                  key={region}
-                  onClick={() => {
-                    setSelectedRegions(selectedRegions.filter(r => r !== region));
-                    setSelectedDistricts([]);
-                    setSelectedCenters([]);
-                  }}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200"
-                >
-                  {region} ×
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* 시/군/구 선택 */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">시/군/구</label>
-            {selectedRegions.length > 0 && (
-              <button
-                onClick={() => {
-                  const allDistricts = selectedRegions.flatMap(sido => regionData[sido] || []);
-                  setSelectedDistricts(allDistricts);
-                }}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                모두 선택
-              </button>
-            )}
-          </div>
-          
-          {selectedDistricts.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {selectedDistricts.map(district => (
-                <span
-                  key={district}
-                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                >
-                  {district}
-                </span>
-              ))}
-            </div>
-          )}
-          
-          {selectedRegions.length > 0 ? (
-            <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md p-3 space-y-4">
-              {selectedRegions.map(region => (
-                <div key={region} className="space-y-2">
-                  <div className="flex items-center gap-2 sticky top-0 bg-white pb-2">
-                    <h4 className="text-sm font-semibold text-gray-800 bg-gray-100 px-3 py-1.5 rounded-md">
-                      {region}
-                    </h4>
-                    <span className="text-xs text-gray-500">
-                      ({regionData[region]?.length || 0}개)
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 ml-2">
-                    {regionData[region]?.map(district => (
-                      <button
-                        key={district}
-                        onClick={() => handleDistrictToggle(district)}
-                        className={`text-left px-2 py-1.5 text-xs rounded-md transition-colors ${
-                          selectedDistricts.includes(district)
-                            ? 'bg-blue-600 text-white font-semibold'
-                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {district}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-500 text-sm py-4 text-center w-full border border-gray-200 rounded-md">
-              먼저 시/도를 선택해주세요
-            </div>
-          )}
+          <RegionSelectorWrapper
+            selectedRegions={new Set(selectedDistricts)} // 시/군/구를 선택된 지역으로 사용
+            onRegionsChange={(regions) => {
+              const newDistricts = Array.from(regions);
+              setSelectedDistricts(newDistricts);
+              
+              // 선택 해제된 구/시의 센터도 제거
+              const removedDistricts = selectedDistricts.filter(d => !regions.has(d));
+              removedDistricts.forEach(district => {
+                const regionOfDistrict = Object.keys(centerData).find(region => 
+                  Object.keys(centerData[region]).includes(district)
+                );
+                if (regionOfDistrict) {
+                  const centersToRemove = centerData[regionOfDistrict]?.[district] || [];
+                  setSelectedCenters(prev => prev.filter(c => !centersToRemove.includes(c)));
+                }
+              });
+            }}
+            centerData={centerData}
+            layout={layout === 'dropdown' ? 'dropdown' : 'simple'}
+            className="mb-4"
+          />
         </div>
 
         {/* 센터 선택 */}

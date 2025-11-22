@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Card } from './ui/Card';
+import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from '@/components/ui';
 
@@ -100,7 +100,7 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
       if (response.ok) {
         const data = await response.json();
         const apiVideos = data.data || data;
-        
+
         if (Array.isArray(apiVideos)) {
           setVideos(apiVideos);
         } else {
@@ -181,10 +181,10 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
         teachingMethodId: teachingMethodId || null
       };
 
-      const url = editingVideo 
+      const url = editingVideo
         ? `http://localhost:5000/api/youtube-videos/${editingVideo._id}`
         : 'http://localhost:5000/api/youtube-videos';
-      
+
       const method = editingVideo ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -302,11 +302,10 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
       {/* 비디오 목록 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredVideos.map((video) => (
-          <Card 
-            key={video._id} 
-            className={`hover:shadow-lg transition-shadow duration-200 cursor-pointer ${
-              selectedVideoId === video._id ? 'ring-2 ring-blue-500' : ''
-            }`}
+          <Card
+            key={video._id}
+            className={`hover:shadow-lg transition-shadow duration-200 cursor-pointer ${selectedVideoId === video._id ? 'ring-2 ring-blue-500' : ''
+              }`}
             onClick={() => handleVideoSelect(video)}
           >
             <div className="p-6">
@@ -347,9 +346,9 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
               {/* 액션 버튼들 */}
               <div className="flex gap-2 pt-4 border-t">
                 <Button
-      onClick={() => {
-        window.open(`https://www.youtube.com/watch?v=${video.videoId}`, '_blank');
-      }}
+                  onClick={() => {
+                    window.open(`https://www.youtube.com/watch?v=${video.videoId}`, '_blank');
+                  }}
                   variant="outline"
                   className="flex-1 bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
                 >

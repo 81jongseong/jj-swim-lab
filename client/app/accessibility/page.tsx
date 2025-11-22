@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import Switch from '../../components/ui/Switch';
-import { Select } from '../../components/ui/Select';
-import Slider from '../../components/ui/Slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
+import Switch from '../../components/ui/switch';
+import { Select } from '../../components/ui/select';
+import Slider from '../../components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Badge } from '@/components/ui';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/Label';
-import Textarea from '../../components/ui/Textarea';
+import { Label } from '../../components/ui/label';
+import Textarea from '../../components/ui/textarea';
 import withAuth from '../../components/withAuth';
 import Link from 'next/link';
 
@@ -21,27 +21,27 @@ interface AccessibilitySettings {
   colorBlindMode: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia';
   reduceMotion: boolean;
   darkMode: boolean;
-  
+
   // 청각적 설정
   soundNotifications: boolean;
   visualNotifications: boolean;
   subtitleSize: number;
-  
+
   // 운동성 설정
   largeClickTargets: boolean;
   keyboardNavigation: boolean;
   voiceControl: boolean;
-  
+
   // 인지적 설정
   simplifiedLayout: boolean;
   stepByStepGuide: boolean;
   autoSave: boolean;
-  
+
   // 언어 및 지역화
   language: string;
   timezone: string;
   dateFormat: string;
-  
+
   // 개인화 설정
   theme: 'default' | 'highContrast' | 'largeText' | 'dyslexia' | 'custom';
   customColors: {
@@ -106,7 +106,7 @@ function AccessibilityPage() {
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings));
     }
-    
+
     // 설정 적용
     applySettings(settings);
   }, []);
@@ -115,31 +115,31 @@ function AccessibilityPage() {
     // CSS 변수로 설정 적용
     document.documentElement.style.setProperty('--font-size', `${newSettings.fontSize}px`);
     document.documentElement.style.setProperty('--subtitle-size', `${newSettings.subtitleSize}px`);
-    
+
     if (newSettings.highContrast) {
       document.body.classList.add('high-contrast');
     } else {
       document.body.classList.remove('high-contrast');
     }
-    
+
     if (newSettings.darkMode) {
       document.body.classList.add('dark-mode');
     } else {
       document.body.classList.remove('dark-mode');
     }
-    
+
     if (newSettings.reduceMotion) {
       document.body.classList.add('reduce-motion');
     } else {
       document.body.classList.remove('reduce-motion');
     }
-    
+
     if (newSettings.largeClickTargets) {
       document.body.classList.add('large-targets');
     } else {
       document.body.classList.remove('large-targets');
     }
-    
+
     if (newSettings.simplifiedLayout) {
       document.body.classList.add('simplified-layout');
     } else {
@@ -159,7 +159,7 @@ function AccessibilityPage() {
     const newSettings = { ...settings, customColors: newCustomColors };
     setSettings(newSettings);
     localStorage.setItem('accessibilitySettings', JSON.stringify(newSettings));
-    
+
     // 사용자 정의 색상 적용
     document.documentElement.style.setProperty(`--${colorKey}-color`, value);
   };
@@ -172,9 +172,9 @@ function AccessibilityPage() {
 
   const exportSettings = () => {
     const dataStr = JSON.stringify(settings, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     const exportFileDefaultName = 'accessibility-settings.json';
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -236,7 +236,7 @@ function AccessibilityPage() {
                   min={12}
                   max={24}
                   step={1}
-                  className="w-full"
+                  className="w-full focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 />
               </div>
 
@@ -245,6 +245,7 @@ function AccessibilityPage() {
                 <Switch
                   checked={settings.highContrast}
                   onCheckedChange={(checked) => handleSettingChange('highContrast', checked)}
+                  className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 />
               </div>
 
@@ -253,6 +254,7 @@ function AccessibilityPage() {
                 <Select
                   value={settings.colorBlindMode}
                   onValueChange={(value) => handleSettingChange('colorBlindMode', value)}
+                  className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
                   <option value="none">없음</option>
                   <option value="protanopia">적색맹</option>

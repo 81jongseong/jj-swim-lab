@@ -19,7 +19,7 @@ import React, { useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { SwimmingPoseModel } from './swimmingposemodel';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from './errorboundary';
 
 interface PoseData {
   joints: Array<{
@@ -76,7 +76,7 @@ function analyzePoseDifference(reference: PoseData, current: PoseData): PoseAnal
       const diffY = Math.abs(refJoint.y - currJoint.y);
       const diffZ = Math.abs(refJoint.z - currJoint.z);
       const totalDiff = Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ);
-      
+
       totalDifference += totalDiff;
 
       let severity: 'low' | 'medium' | 'high' = 'low';
@@ -116,7 +116,7 @@ function analyzePoseDifference(reference: PoseData, current: PoseData): PoseAnal
   }
 
   // 가장 큰 차이를 보이는 관절에 대한 구체적인 권장사항
-  const worstJoint = jointDifferences.reduce((prev, current) => 
+  const worstJoint = jointDifferences.reduce((prev, current) =>
     prev.difference > current.difference ? prev : current
   );
 
@@ -156,7 +156,7 @@ function PoseComparisonScene({
       <ambientLight intensity={0.6} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
       <directionalLight position={[-10, 10, 5]} intensity={0.5} />
-      
+
       {/* 참조 자세 (왼쪽) */}
       <group position={[-2, 0, 0]}>
         <SwimmingPoseModel
@@ -167,7 +167,7 @@ function PoseComparisonScene({
           showSkeleton={true}
           showJoints={true}
         />
-        
+
         {/* 참조 자세 라벨 */}
         <mesh position={[0, 2.5, 0]}>
           <boxGeometry args={[2, 0.3, 0.1]} />
@@ -185,7 +185,7 @@ function PoseComparisonScene({
           showSkeleton={true}
           showJoints={true}
         />
-        
+
         {/* 현재 자세 라벨 */}
         <mesh position={[0, 2.5, 0]}>
           <boxGeometry args={[2, 0.3, 0.1]} />
@@ -199,12 +199,12 @@ function PoseComparisonScene({
           {/* 점수 표시 */}
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[1.5, 0.8, 0.1]} />
-            <meshStandardMaterial 
+            <meshStandardMaterial
               color={
                 analysis.overallScore >= 80 ? '#4ade80' :
-                analysis.overallScore >= 60 ? '#fbbf24' :
-                '#ef4444'
-              } 
+                  analysis.overallScore >= 60 ? '#fbbf24' :
+                    '#ef4444'
+              }
             />
           </mesh>
         </group>
@@ -270,9 +270,9 @@ export function PoseComparisonViewer({
   if (hasError) {
     return (
       <div className={`w-full h-96 bg-gray-100 rounded-lg ${className}`}>
-        <ErrorFallback 
-          error={new Error('자세 비교 뷰어 초기화 실패')} 
-          resetErrorBoundary={handleReset} 
+        <ErrorFallback
+          error={new Error('자세 비교 뷰어 초기화 실패')}
+          resetErrorBoundary={handleReset}
         />
       </div>
     );
@@ -280,7 +280,7 @@ export function PoseComparisonViewer({
 
   return (
     <div className={`w-full h-96 bg-gray-900 rounded-lg overflow-hidden ${className}`}>
-      <ErrorBoundary 
+      <ErrorBoundary
         fallback={<ErrorFallback error={new Error('자세 비교 렌더링 오류')} resetErrorBoundary={handleReset} />}
         onError={handleError}
       >
@@ -296,21 +296,21 @@ export function PoseComparisonViewer({
             showAnalysis={showAnalysis}
             onAnalysisUpdate={onAnalysisUpdate}
           />
-          
+
           {/* 환경 조명 */}
           {showEnvironment && (
             <Environment preset="sunset" />
           )}
-          
+
           {/* 카메라 컨트롤 */}
-          <OrbitControls 
+          <OrbitControls
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
             minDistance={5}
             maxDistance={20}
           />
-          
+
           {/* 성능 통계 (개발 환경에서만) */}
           {showStats && process.env.NODE_ENV === 'development' && (
             <Stats />

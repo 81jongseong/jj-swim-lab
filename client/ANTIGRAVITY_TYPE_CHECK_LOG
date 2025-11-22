@@ -1,7 +1,0 @@
-
-> client@0.1.0 type-check C:\Users\user\jj-swim-lab\client
-> tsc --noEmit --project tsconfig.instructor.json
-
-app/instructor/progress/page.tsx(1082,7): error TS2322: Type '"info"' is not assignable to type '"success" | "error"'.
-app/instructor/progress/page.tsx(1091,7): error TS2322: Type '"info"' is not assignable to type '"success" | "error"'.
- ELIFECYCLE  Command failed with exit code 2.

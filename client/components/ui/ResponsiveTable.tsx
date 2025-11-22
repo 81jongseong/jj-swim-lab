@@ -14,7 +14,7 @@
  * 
  * 🔧 **사용 방법**
  * ```tsx
- * import { ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/ResponsiveTable';
+ * import { ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/responsivetable';
  * 
  * <ResponsiveTable>
  *   <TableHeader>
@@ -69,14 +69,14 @@ interface TableCellProps {
 /**
  * 반응형 테이블 컨테이너
  */
-export const ResponsiveTable: React.FC<ResponsiveTableProps> = ({ 
-  children, 
-  className = '', 
-  maxHeight = '70vh' 
+export const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
+  children,
+  className = '',
+  maxHeight = '70vh'
 }) => {
   return (
     <div className={`bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden ${className}`}>
-      <div 
+      <div
         className="overflow-x-auto overflow-y-auto"
         style={{ maxHeight }}
       >
@@ -113,13 +113,13 @@ export const TableBody: React.FC<TableBodyProps> = ({ children, className = '' }
 /**
  * 테이블 행
  */
-export const TableRow: React.FC<TableRowProps> = ({ 
-  children, 
-  className = '', 
-  onClick 
+export const TableRow: React.FC<TableRowProps> = ({
+  children,
+  className = '',
+  onClick
 }) => {
   return (
-    <tr 
+    <tr
       className={`hover:bg-gray-50 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
@@ -131,28 +131,28 @@ export const TableRow: React.FC<TableRowProps> = ({
 /**
  * 테이블 셀
  */
-export const TableCell: React.FC<TableCellProps> = ({ 
-  children, 
-  className = '', 
+export const TableCell: React.FC<TableCellProps> = ({
+  children,
+  className = '',
   header = false,
   align = 'left',
   width,
   minWidth = '120px'
 }) => {
-  const baseClasses = header 
+  const baseClasses = header
     ? 'px-3 sm:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider'
     : 'px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900';
-    
+
   const alignClasses = {
     left: 'text-left',
-    center: 'text-center', 
+    center: 'text-center',
     right: 'text-right'
   };
 
   const Tag = header ? 'th' : 'td';
 
   return (
-    <Tag 
+    <Tag
       className={`${baseClasses} ${alignClasses[align]} ${className}`}
       style={{ width, minWidth }}
     >

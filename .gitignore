@@ -47,6 +47,19 @@ Thumbs.db
 # Logs
 logs
 *.log
+*.txt
+!docs/**/*.txt
+!노트북-*.txt
+!README*.txt
+
+# Backup files
+*.backup
+backups/
+
+# Temporary files
+temp-*.tsx
+temp-*.ts
+temp-*.js
 
 # Runtime data
 pids

@@ -27,6 +27,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import DatePicker from '@/components/common/DatePicker';
 import CSSInputSection from '@/components/swimlab/member-variables/CSSInputSection';
 import StrokesSelectionSection from '@/components/swimlab/member-variables/StrokesSelectionSection';
@@ -1312,30 +1313,12 @@ export default function SignupPage() {
                     <MapPin className="w-4 h-4 inline mr-2" />
                     근무 가능 지역 *
                   </label>
-                  <UnifiedRegionSelector
+                  <RegionSelectorWrapper
                     selectedRegions={selectedRegions}
                     onRegionsChange={(regions) => {
-                      const newRegions = regions instanceof Set ? regions : new Set(regions);
-                      setSelectedRegions(newRegions);
-                      if (newRegions.size === 0) {
-                        setSelectedSido('');
-                        setShowDistrictSelection(false);
-                      }
-                    }}
-                    selectedSido={selectedSido}
-                    onSidoChange={(sido) => {
-                      if (sido === '전국') {
-                        setSelectedRegions(new Set(['전국']));
-                        setSelectedSido('');
-                        setShowDistrictSelection(false);
-                      } else {
-                        setSelectedSido(sido);
-                        setShowDistrictSelection(true);
-                        setSelectedRegions(new Set());
-                      }
+                      setSelectedRegions(regions);
                     }}
                     layout="simple"
-                    showDistricts={showDistrictSelection && !!selectedSido}
                   />
                   {errors.availableRegions && <p className="text-red-500 text-sm mt-1">{errors.availableRegions}</p>}
                 </div>

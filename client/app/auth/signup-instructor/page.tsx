@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
 import Link from 'next/link';
 import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import DatePicker from '@/components/common/DatePicker';
 
 interface Certificate {
@@ -247,30 +248,12 @@ export default function InstructorSignupPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-gray-900 border-b pb-2">📍 근무 가능 지역</h2>
               
-              <UnifiedRegionSelector
+              <RegionSelectorWrapper
                 selectedRegions={selectedRegions}
                 onRegionsChange={(regions) => {
-                  const newRegions = regions instanceof Set ? regions : new Set(regions);
-                  setSelectedRegions(newRegions);
-                  if (newRegions.size === 0) {
-                    setSelectedSido('');
-                    setShowDistrictSelection(false);
-                  }
-                }}
-                selectedSido={selectedSido}
-                onSidoChange={(sido) => {
-                  if (sido === '전국') {
-                    setSelectedRegions(new Set(['전국']));
-                    setSelectedSido('');
-                    setShowDistrictSelection(false);
-                  } else {
-                    setSelectedSido(sido);
-                    setShowDistrictSelection(true);
-                    setSelectedRegions(new Set());
-                  }
+                  setSelectedRegions(regions);
                 }}
                 layout="simple"
-                showDistricts={showDistrictSelection && !!selectedSido}
               />
             </div>
 

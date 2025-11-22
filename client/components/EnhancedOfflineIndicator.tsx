@@ -76,12 +76,12 @@
 import { useState, useEffect } from 'react';
 import useEnhancedOffline from '../hooks/useEnhancedOffline';
 import Button from './ui/button';
-import Card from './ui/Card';
+import Card from './ui/card';
 import { Badge } from '@/components/ui';
 
 export default function EnhancedOfflineIndicator() {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // 클라이언트에서만 훅 사용 (hydration 오류 방지)
   const {
     isOnline,
@@ -112,7 +112,7 @@ export default function EnhancedOfflineIndicator() {
     <div className="fixed bottom-4 right-4 z-50">
       {/* 온라인/오프라인 상태 표시 */}
       <div className="mb-2">
-        <Badge 
+        <Badge
           variant={isOnline ? "default" : "destructive"}
           className="text-xs"
         >

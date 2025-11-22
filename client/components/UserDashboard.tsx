@@ -72,18 +72,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
+import Card, { CardContent, CardHeader, CardTitle } from './ui/card';
 import Button from './ui/button';
 import { Progress } from './ui/progress';
 import { Badge } from '@/components/ui';
-import { 
-  User, 
-  BookOpen, 
-  Calendar, 
-  CreditCard, 
-  Bell, 
-  TrendingUp, 
-  Users, 
+import {
+  User,
+  BookOpen,
+  Calendar,
+  CreditCard,
+  Bell,
+  TrendingUp,
+  Users,
   Settings,
   GraduationCap,
   Award,
@@ -415,8 +415,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
       case 'superAdmin':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300" 
+            <Card
+              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
                 console.log('사용자 관리 카드 클릭됨');
                 window.location.href = '/admin/users';
@@ -436,8 +436,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
               </CardContent>
             </Card>
 
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300" 
+            <Card
+              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
                 console.log('강습법 관리 카드 클릭됨');
                 window.location.href = '/admin/teaching-methods';
@@ -457,8 +457,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
               </CardContent>
             </Card>
 
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300" 
+            <Card
+              className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
                 console.log('시스템 관리 카드 클릭됨');
                 window.location.href = '/admin/system';
@@ -517,19 +517,17 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
               return (
                 <div
                   key={step}
-                  className={`flex items-center justify-between p-4 rounded-lg border ${
-                    isCurrent ? 'border-blue-500 bg-blue-50' :
-                    isCompleted ? 'border-green-500 bg-green-50' :
-                    isAvailable ? 'border-gray-200 bg-white' :
-                    'border-gray-200 bg-gray-50'
-                  }`}
+                  className={`flex items-center justify-between p-4 rounded-lg border ${isCurrent ? 'border-blue-500 bg-blue-50' :
+                      isCompleted ? 'border-green-500 bg-green-50' :
+                        isAvailable ? 'border-gray-200 bg-white' :
+                          'border-gray-200 bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${
-                      isCurrent ? 'bg-blue-500 text-white' :
-                      isCompleted ? 'bg-green-500 text-white' :
-                      'bg-gray-200 text-gray-600'
-                    }`}>
+                    <div className={`p-2 rounded-full ${isCurrent ? 'bg-blue-500 text-white' :
+                        isCompleted ? 'bg-green-500 text-white' :
+                          'bg-gray-200 text-gray-600'
+                      }`}>
                       {React.createElement(stepConfig.icon, { size: 16 })}
                     </div>
                     <div>

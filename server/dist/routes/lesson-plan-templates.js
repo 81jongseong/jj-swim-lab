@@ -149,7 +149,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
 });
-router.post('/:templateId/create-plan', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin']), async (req, res) => {
+router.post('/:templateId/create-plan', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'instructor']), async (req, res) => {
     try {
         const user = req.user;
         const { templateId } = req.params;

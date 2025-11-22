@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDefaultTechniqueProgram = exports.generateProgramFromTeachingMethod = exports.convertTeachingStepToTrainingSet = exports.getNextTeachingStep = void 0;
+exports.getNextTeachingStep = getNextTeachingStep;
+exports.convertTeachingStepToTrainingSet = convertTeachingStepToTrainingSet;
+exports.generateProgramFromTeachingMethod = generateProgramFromTeachingMethod;
+exports.generateDefaultTechniqueProgram = generateDefaultTechniqueProgram;
 const TeachingMethod = require('../models/TeachingMethod').default;
 const LEVEL_DISTANCES = {
     beginner: {
@@ -83,7 +86,6 @@ async function getNextTeachingStep(userId, teachingProgress, preferredStrokes = 
         return null;
     }
 }
-exports.getNextTeachingStep = getNextTeachingStep;
 function convertTeachingStepToTrainingSet(step, stroke, level, poolLength = 25) {
     const distances = LEVEL_DISTANCES[level] || LEVEL_DISTANCES.beginner;
     const description = step.description || '';
@@ -124,7 +126,6 @@ function convertTeachingStepToTrainingSet(step, stroke, level, poolLength = 25) 
         equipment: step.equipment || []
     };
 }
-exports.convertTeachingStepToTrainingSet = convertTeachingStepToTrainingSet;
 async function generateProgramFromTeachingMethod(userId, teachingProgress, memberData) {
     try {
         const { currentLevel, preferredStrokes, poolLength, sessionDuration } = memberData;
@@ -186,7 +187,6 @@ async function generateProgramFromTeachingMethod(userId, teachingProgress, membe
         return null;
     }
 }
-exports.generateProgramFromTeachingMethod = generateProgramFromTeachingMethod;
 function generateDefaultTechniqueProgram(currentLevel, mainStrokes = ['freestyle'], poolLength = 25, sessionDuration = 60) {
     const distances = LEVEL_DISTANCES[currentLevel] || LEVEL_DISTANCES.beginner;
     const primaryStroke = mainStrokes[0] || 'freestyle';
@@ -248,5 +248,4 @@ function generateDefaultTechniqueProgram(currentLevel, mainStrokes = ['freestyle
         ]
     };
 }
-exports.generateDefaultTechniqueProgram = generateDefaultTechniqueProgram;
 //# sourceMappingURL=teachingMethodToProgramConverter.js.map

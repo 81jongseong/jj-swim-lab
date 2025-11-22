@@ -46,14 +46,16 @@ function insideBBox(lng: number, lat: number, b = BBOX_SEOUL) {
 
 // DB에서 블록 집계 읽어오기
 // ⚠️ 실제 DB 데이터 사용 - 서버 API 호출
-async function fetchAggBlocks(precision: number, dong?: string, memberType?: string, authToken?: string, centerId?: string): Promise<Row[]> {
+async function fetchAggBlocks(precision: number, dong?: string, memberType?: string, authToken?: string, centerId?: string, noNoise?: boolean, noRound?: boolean): Promise<Row[]> {
   try {
     // 서버 API에서 실제 회원 데이터 가져오기
     const serverUrl = process.env.SERVER_URL || 'http://localhost:5000';
     const queryParams = new URLSearchParams({
       precision: String(precision),
       ...(memberType && memberType !== 'all' && { memberType }),
-      ...(centerId && centerId !== 'all' && centerId !== '' && { centerId }) // ✅ centerId 전달
+      ...(centerId && centerId !== 'all' && centerId !== '' && { centerId }), // ✅ centerId 전달
+      ...(noNoise && { noNoise: 'true' }), // 노이즈 제거 옵션
+      ...(noRound && { noRound: 'true' })   // 반올림 제거 옵션
     });
     
     // ✅ 인증 토큰 포함 (센터 관리자 필터링을 위해)
@@ -67,14 +69,20 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     
     console.log('📡 서버 API 호출:', `${serverUrl}/api/geo/aggregate?${queryParams.toString()}`);
     console.log('📡 centerId 전달:', centerId || '없음');
+    // ObjectId 형식 체크 (24자리 16진수 문자열)
+    const isObjectIdFormat = centerId && /^[0-9a-fA-F]{24}$/.test(centerId);
+    console.log('📡 centerId 타입:', typeof centerId, centerId ? (isObjectIdFormat ? 'ObjectId 형식' : '센터 이름') : '없음');
     
     const response = await fetch(`${serverUrl}/api/geo/aggregate?${queryParams.toString()}`, {
       cache: 'no-store',
       headers
     });
 
+    console.log('📡 서버 API 응답 상태:', response.status, response.statusText);
+
     if (!response.ok) {
-      console.warn(`⚠️ 서버 API 호출 실패 (${response.status})`);
+      const errorText = await response.text();
+      console.warn(`⚠️ 서버 API 호출 실패 (${response.status}):`, errorText);
       console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
       return []; // ⚠️ 목업 데이터 반환하지 않음 - 센터 관리자는 본인 센터 회원만 조회
     }
@@ -95,6 +103,7 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     console.log('📡 서버 API 응답:', {
       hasSuccess: !!result?.success,
       hasData: !!result?.data,
+      cellsCount: cells.length,
       hasCells: !!result?.data?.cells,
       hasCellsTopLevel: !!result?.cells,
       cellsLength: cells.length,
@@ -486,20 +495,42 @@ export async function GET(req: NextRequest) {
     const k = Number(req.nextUrl.searchParams.get('k') || K);
     const memberType = req.nextUrl.searchParams.get('memberType') || 'all';
     const zoom = Number(req.nextUrl.searchParams.get('zoom') || '12'); // 줌 레벨 추가
-    const centerId = req.nextUrl.searchParams.get('centerId') || undefined; // ✅ centerId 파라미터 추가
+    const centerId = req.nextUrl.searchParams.get('centerId') || undefined; // ✅ centerId 파라미터 추가 (단일 센터)
+    const centerIds = req.nextUrl.searchParams.get('centerIds') || undefined; // ✅ centerIds 파라미터 추가 (여러 센터, 쉼표로 구분)
+    const noNoise = req.nextUrl.searchParams.get('noNoise') === 'true'; // 노이즈 제거 옵션
+    const noRound = req.nextUrl.searchParams.get('noRound') === 'true'; // 반올림 제거 옵션
 
-    console.log(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}, centerId=${centerId || '없음'}`);
+    console.log(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}, centerId=${centerId || '없음'}, centerIds=${centerIds || '없음'}, noNoise=${noNoise}, noRound=${noRound}`);
 
     // ✅ 인증 토큰 추출 (센터 관리자 필터링을 위해)
+    // 클라이언트에서 전달된 Authorization 헤더를 그대로 서버로 전달
     const authHeader = req.headers.get('authorization');
     const authToken = authHeader?.replace('Bearer ', '') || undefined;
     
     console.log('🔑 인증 토큰:', authToken ? '있음' : '없음 (최고관리자 또는 인증 불필요)');
+    console.log('🔑 Authorization 헤더:', authHeader ? '있음' : '없음');
 
     // fetchAggBlocks는 실제 DB 데이터만 반환 (목업 데이터 사용 안 함)
     let rows: Row[] = [];
     try {
-      rows = await fetchAggBlocks(p, dong, memberType, authToken, centerId); // ✅ centerId 전달
+      // centerIds가 있으면 여러 센터에 대해 각각 호출하고 결과 합치기
+      if (centerIds) {
+        const centerIdArray = centerIds.split(',').map(id => id.trim()).filter(id => id);
+        console.log(`📊 여러 센터 필터링: ${centerIdArray.length}개 센터`, centerIdArray);
+        
+        // 서버 API가 센터 이름도 처리할 수 있으므로 그대로 전달
+        const allRows: Row[] = [];
+               for (const cId of centerIdArray) {
+                 console.log(`🔍 센터 데이터 조회: ${cId}`);
+                 const centerRows = await fetchAggBlocks(p, dong, memberType, authToken, cId, noNoise, noRound);
+                 allRows.push(...centerRows);
+                 console.log(`  ✅ ${cId}: ${centerRows.length}개 rows`);
+               }
+               rows = allRows;
+               console.log(`📊 여러 센터 결과 합계: ${rows.length}개 rows`);
+             } else {
+               rows = await fetchAggBlocks(p, dong, memberType, authToken, centerId, noNoise, noRound); // ✅ centerId, noNoise, noRound 전달
+             }
     } catch (fetchError) {
       console.error('❌ fetchAggBlocks 호출 오류:', fetchError);
       console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
@@ -690,17 +721,16 @@ export async function GET(req: NextRequest) {
     let totalApproxCount = 0;
 
     for (const [aggregationKey, obj] of byAggregation.entries()) {
-      const total = obj.count; // 해당 센터의 총 인원수
+      // ⚠️ 중요: obj.count는 rows에서 가져온 값으로, 서버에서 이미 처리된 값입니다.
+      // noNoise=true, noRound=true일 때는 실제 DB 데이터를 사용합니다.
+      // 서버에서 이미 노이즈/반올림이 제거된 값이므로 그대로 사용합니다.
+      const total = obj.count; // 해당 센터의 총 인원수 (서버에서 이미 처리된 값)
       totalOriginalCount += total;
-
-      // ⚠️ 중요: 서버에서 이미 k-익명성 필터링과 노이즈 처리를 했으므로
-      // 클라이언트에서는 k-익명성 필터링을 다시 하지 않음
-      // 서버에서 이미 필터링된 데이터만 반환되므로, 여기서는 모든 데이터를 사용
-      // 단, 노이즈는 서버에서 이미 적용되었으므로, 클라이언트에서는 추가 노이즈를 적용하지 않음
       
       // ✅ 서버에서 이미 처리된 countApprox 사용 (rows에서 가져온 값)
-      // rows의 count는 이미 서버에서 노이즈 처리된 값
-      const countApprox = total; // 서버에서 이미 노이즈 처리된 값 사용
+      // noNoise=true, noRound=true일 때는 실제 DB 데이터를 사용
+      // rows의 count는 서버에서 noNoise/noRound 옵션에 따라 처리된 값
+      const countApprox = total; // 서버에서 이미 처리된 값 사용 (노이즈/반올림 제거 옵션 반영됨)
       
       if (countApprox <= 0) {
         hiddenBlocks++;
@@ -804,35 +834,25 @@ export async function GET(req: NextRequest) {
     console.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
     console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
     
-    // 에러 발생 시에도 목업 데이터 반환 (안정성)
-    try {
-      const memberType = req.nextUrl.searchParams.get('memberType') || 'all';
-      const mockRows = getMockData(memberType);
-      console.log('⚠️ 에러 발생, 목업 데이터 사용:', mockRows.length, '개 블록');
-      
-      // 목업 데이터로 기본 응답 생성
-      return NextResponse.json({
-        success: true,
-        data: {
-          spots: [],
-          metadata: {
-            totalSpots: 0,
-            hiddenBlocks: 0,
-            totalOriginalCount: 0,
-            totalApproxCount: 0,
-            precision: 7,
-            warning: '서버 오류로 인해 목업 데이터를 사용할 수 없습니다.'
-          }
-        }
-      });
-    } catch (fallbackError) {
-      console.error('❌ 목업 데이터 로딩 실패:', fallbackError);
+    // 에러 발생 시 빈 데이터 반환 (목업 데이터 사용 안 함)
+    console.error('❌ 지오해시 블록 스팟 API 오류:', error);
     return NextResponse.json({
       success: false,
       error: '지오해시 블록 스팟 데이터를 가져오는 중 오류가 발생했습니다.',
-        errorDetail: error instanceof Error ? error.message : String(error),
-      data: { spots: [] }
+      errorDetail: error instanceof Error ? error.message : String(error),
+      data: { 
+        spots: [],
+        metadata: {
+          totalSpots: 0,
+          hiddenBlocks: 0,
+          totalOriginalCount: 0,
+          totalApproxCount: 0,
+          precision: 7,
+          administrativeUnit: '블록 단위',
+          zoom: 12,
+          privacyNotice: '서버 오류로 인해 데이터를 가져올 수 없습니다.'
+        }
+      }
     }, { status: 500 });
-    }
   }
 }

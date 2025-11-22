@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '@/components/ui';
+import { Skeleton } from '../../components/ui/skeleton';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger   } from '../../components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import apiClient from '../../utils/api';
 import withAuth from '../../components/withAuth';
 
@@ -56,7 +57,7 @@ function MembershipPage() {
   const [loading, setLoading] = useState(true);
   const [showCreatePlan, setShowCreatePlan] = useState(false);
   const [showCreateMembership, setShowCreateMembership] = useState(false);
-  
+
   const [newPlan, setNewPlan] = useState({
     name: '',
     description: '',
@@ -173,8 +174,23 @@ function MembershipPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">로딩 중...</div>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-6 w-96" />
+        </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -355,34 +371,34 @@ function MembershipPage() {
               <Input
                 placeholder="플랜 이름"
                 value={newPlan.name}
-                onChange={(e) => setNewPlan({...newPlan, name: e.target.value})}
+                onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
                 required
               />
               <Input
                 placeholder="설명"
                 value={newPlan.description}
-                onChange={(e) => setNewPlan({...newPlan, description: e.target.value})}
+                onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
                 required
               />
               <Input
                 type="number"
                 placeholder="가격 (원)"
                 value={newPlan.price.toString()}
-                onChange={(e) => setNewPlan({...newPlan, price: Number(e.target.value)})}
+                onChange={(e) => setNewPlan({ ...newPlan, price: Number(e.target.value) })}
                 required
               />
               <Input
                 type="number"
                 placeholder="기간 (개월)"
                 value={newPlan.duration.toString()}
-                onChange={(e) => setNewPlan({...newPlan, duration: Number(e.target.value)})}
+                onChange={(e) => setNewPlan({ ...newPlan, duration: Number(e.target.value) })}
                 required
               />
               <div className="flex space-x-2">
                 <Button type="submit" className="flex-1">생성</Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setShowCreatePlan(false)}
                 >
@@ -403,10 +419,10 @@ function MembershipPage() {
               <Input
                 placeholder="사용자 ID"
                 value={newMembership.userId}
-                onChange={(e) => setNewMembership({...newMembership, userId: e.target.value})}
+                onChange={(e) => setNewMembership({ ...newMembership, userId: e.target.value })}
                 required
               />
-              <Select value={newMembership.planId} onValueChange={(value) => setNewMembership({...newMembership, planId: value})}>
+              <Select value={newMembership.planId} onValueChange={(value) => setNewMembership({ ...newMembership, planId: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="멤버십 플랜 선택" />
                 </SelectTrigger>
@@ -421,27 +437,27 @@ function MembershipPage() {
               <Input
                 type="date"
                 value={newMembership.startDate}
-                onChange={(e) => setNewMembership({...newMembership, startDate: e.target.value})}
+                onChange={(e) => setNewMembership({ ...newMembership, startDate: e.target.value })}
                 required
               />
               <Input
                 type="date"
                 value={newMembership.endDate}
-                onChange={(e) => setNewMembership({...newMembership, endDate: e.target.value})}
+                onChange={(e) => setNewMembership({ ...newMembership, endDate: e.target.value })}
                 required
               />
               <Input
                 type="number"
                 placeholder="총 결제 금액"
                 value={newMembership.totalPaid.toString()}
-                onChange={(e) => setNewMembership({...newMembership, totalPaid: Number(e.target.value)})}
+                onChange={(e) => setNewMembership({ ...newMembership, totalPaid: Number(e.target.value) })}
                 required
               />
               <div className="flex space-x-2">
                 <Button type="submit" className="flex-1">생성</Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setShowCreateMembership(false)}
                 >

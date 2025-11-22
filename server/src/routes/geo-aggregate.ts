@@ -128,7 +128,11 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
     const K_THRESHOLD = isDevelopment ? 1 : 5;
 
     // 쿼리 파라미터 추출
-    const { centerId, from, to, memberType } = req.query;
+    const { centerId, from, to, memberType, noNoise, noRound } = req.query;
+    const skipNoise = noNoise === 'true' || (typeof noNoise === 'boolean' && noNoise); // 노이즈 제거 옵션
+    const skipRound = noRound === 'true' || (typeof noRound === 'boolean' && noRound); // 반올림 제거 옵션
+    
+    console.log(`🔍 노이즈/반올림 옵션: noNoise=${noNoise}, noRound=${noRound}, skipNoise=${skipNoise}, skipRound=${skipRound}`);
 
     // 필터 조건 구성
     const filter: any = {};
@@ -187,7 +191,28 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       // superAdmin은 모든 센터 접근 가능, centerId가 있으면 필터링
       // centerId가 없으면 모든 센터 조회 (필터 없음)
       if (centerId !== 'all' && centerId !== null && centerId !== undefined && centerId !== '') {
-        filter.centerId = centerId;
+        // centerId가 ObjectId 형식이 아니면 센터 이름으로 조회
+        const centerIdStr = Array.isArray(centerId) ? String(centerId[0]) : String(centerId);
+        if (mongoose.Types.ObjectId.isValid(centerIdStr)) {
+          filter.centerId = centerIdStr;
+        } else {
+          // 센터 이름으로 센터 조회
+          logInfo('센터 이름으로 ObjectId 조회 시도', { centerId, centerIdType: typeof centerId });
+          const center = await Center.findOne({ name: centerId }).select('_id name').lean();
+          if (center) {
+            filter.centerId = center._id;
+            logInfo('센터 이름으로 ObjectId 변환 성공', { 
+              centerName: centerId, 
+              centerId: center._id.toString(),
+              centerNameFromDB: center.name 
+            });
+            console.log(`  ✅ 센터 이름으로 ObjectId 변환: ${centerId} -> ${center._id}`);
+          } else {
+            logWarn('센터를 찾을 수 없음', { centerId, centerIdType: typeof centerId });
+            console.warn(`  ⚠️ 센터를 찾을 수 없음: ${centerId}`);
+            // 센터를 찾을 수 없으면 필터를 적용하지 않음 (모든 센터 조회)
+          }
+        }
       }
     }
 
@@ -693,11 +718,27 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
 
     console.log(`🔒 k-익명성 필터링 후: ${filteredCells}개 셀 (k≥${K_THRESHOLD})${isDevelopment ? ' (개발 모드: k=1)' : ''}`);
 
-    // 노이즈 추가 및 반올림
+    // 노이즈 추가 및 반올림 (옵션에 따라)
     cells.forEach(cell => {
-      cell.countApprox = addNoiseAndRound(cell.count, 1.0);
-      // 원본 count 제거 (보안)
+      // 원본 count 저장
       const originalCount = cell.count;
+      
+      if (skipNoise && skipRound) {
+        // 노이즈와 반올림 모두 제거 (실제 DB 데이터)
+        cell.countApprox = originalCount;
+      } else if (skipNoise) {
+        // 노이즈만 제거, 반올림은 적용
+        cell.countApprox = Math.max(1, Math.round(originalCount));
+      } else if (skipRound) {
+        // 반올림만 제거, 노이즈는 적용
+        const noisy = originalCount + laplaceNoise(1.0);
+        cell.countApprox = Math.max(1, noisy);
+      } else {
+        // 기본: 노이즈와 반올림 모두 적용
+        cell.countApprox = addNoiseAndRound(originalCount, 1.0); // epsilon=1.0
+      }
+      
+      // 원본 count 제거 (보안)
       delete cell.count;
       
       // ✅ centers 배열 생성 (클라이언트에서 사용)
@@ -707,7 +748,23 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
         cell.centers = Object.entries(cell.centerCounts).map(([centerId, count]: [string, any]) => {
           // 각 센터의 비율에 따라 countApprox 분배
           const ratio = Number(count) / Number(totalCount);
-          const centerApprox = Math.max(1, Math.round(Number(cell.countApprox) * ratio));
+          // 노이즈/반올림 옵션에 따라 처리
+          let centerApprox: number;
+          if (skipNoise && skipRound) {
+            // 실제 DB 데이터 사용 (노이즈/반올림 없음)
+            // 원본 count를 직접 사용 (비율 계산 불필요, count가 이미 센터별 실제 인원수)
+            centerApprox = Math.max(1, Number(count));
+          } else if (skipNoise) {
+            // 반올림만 적용 (노이즈 없음)
+            centerApprox = Math.max(1, Math.round(Number(cell.countApprox) * ratio));
+          } else if (skipRound) {
+            // 반올림 제거, 노이즈는 이미 cell.countApprox에 적용됨
+            // 노이즈가 적용된 값에서 반올림만 제거 (소수점 유지)
+            centerApprox = Math.max(1, Number(cell.countApprox) * ratio);
+          } else {
+            // 기본: 반올림 적용 (노이즈는 이미 cell.countApprox에 적용됨)
+            centerApprox = Math.max(1, Math.round(Number(cell.countApprox) * ratio));
+          }
           return {
             centerId: centerId,
             countApprox: centerApprox

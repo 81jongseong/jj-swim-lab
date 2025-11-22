@@ -94,14 +94,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
+import Card, { CardContent, CardHeader, CardTitle } from './ui/card';
 import Button from './ui/button';
 import { Badge } from '@/components/ui';
-import { 
-  Brain, 
-  TrendingUp, 
-  Target, 
-  BarChart3, 
+import {
+  Brain,
+  TrendingUp,
+  Target,
+  BarChart3,
   Lightbulb,
   Clock,
   CheckCircle,
@@ -154,7 +154,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setDashboardData(data.data);
@@ -246,7 +246,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">AI 분석 대시보드</h2>
         <div className="flex space-x-2">
-          <Button 
+          <Button
             onClick={() => runAnalysis('progress')}
             variant="outline"
             size="sm"
@@ -254,7 +254,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
             <TrendingUp className="w-4 h-4 mr-2" />
             진도 분석
           </Button>
-          <Button 
+          <Button
             onClick={() => runAnalysis('recommendation')}
             variant="outline"
             size="sm"
@@ -262,7 +262,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
             <Lightbulb className="w-4 h-4 mr-2" />
             추천 생성
           </Button>
-          <Button 
+          <Button
             onClick={() => runAnalysis('performance')}
             size="sm"
           >
@@ -336,9 +336,8 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
               {dashboardData.recentAnalyses.map((analysis) => (
                 <div
                   key={analysis.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedAnalysis === analysis.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
-                  }`}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedAnalysis === analysis.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                    }`}
                   onClick={() => setSelectedAnalysis(
                     selectedAnalysis === analysis.id ? null : analysis.id
                   )}
@@ -358,7 +357,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
                   <p className="text-sm text-gray-700 mt-2">{analysis.summary}</p>
                 </div>
               ))}
-              
+
               {dashboardData.recentAnalyses.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Brain className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -388,7 +387,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
                   <p className="text-sm text-gray-700">{recommendation}</p>
                 </div>
               ))}
-              
+
               {dashboardData.recommendations.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Lightbulb className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -415,15 +414,15 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
               <div className="flex items-center space-x-2">
                 {getTrendIcon(dashboardData.progressTrend.direction)}
                 <span className="text-lg font-medium">
-                  {dashboardData.progressTrend.direction === 'up' ? '상승' : 
-                   dashboardData.progressTrend.direction === 'down' ? '하락' : '안정'}
+                  {dashboardData.progressTrend.direction === 'up' ? '상승' :
+                    dashboardData.progressTrend.direction === 'down' ? '하락' : '안정'}
                 </span>
               </div>
               <div className="text-sm text-gray-600">
                 {dashboardData.progressTrend.trend > 0 ? '+' : ''}{dashboardData.progressTrend.trend}점 변화
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => runAnalysis('progress')}
               variant="outline"
               size="sm"

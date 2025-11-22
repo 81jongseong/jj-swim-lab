@@ -75,6 +75,14 @@ export default function CenterInfoEditor({ centerInfo, onSave, onCancel }: Cente
     }));
   };
 
+  const handleMainImageUpload = (file: File) => {
+    setMainImageFile(file);
+  };
+
+  const handleGalleryUpload = (files: File[]) => {
+    setGalleryFiles(files);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

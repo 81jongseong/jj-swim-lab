@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Calendar, Clock, Users, Target, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Calendar, Clock, Users, Target, Plus, Edit, Trash2, Eye, FileText, Sparkles } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 
 interface LessonPlan {
@@ -24,17 +24,67 @@ interface LessonPlan {
   updatedAt: Date;
 }
 
+interface LessonPlanTemplate {
+  _id: string;
+  templateName: string;
+  description: string;
+  category: string;
+  level: string;
+  totalDuration: number;
+  totalSessions: number;
+  sessionDuration: number;
+  stages: Array<{
+    stageNumber: number;
+    stageName: string;
+    duration: number;
+    sessions: number;
+    objectives: string[];
+    teachingMethods: string[];
+    assessmentCriteria: string[];
+    materials: string[];
+    safetyNotes: string[];
+    progressRequirements: string[];
+  }>;
+  isPublic: boolean;
+  usageCount?: number;
+}
+
 function LessonPlanner() {
   const { user } = useAuth();
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [templates, setTemplates] = useState<LessonPlanTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<LessonPlanTemplate | null>(null);
 
   useEffect(() => {
     if (user) {
       loadLessonPlans();
+      loadTemplates();
     }
   }, [user]);
+
+  const loadTemplates = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/lesson-plan-templates?isPublic=true', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setTemplates(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('템플릿 로드 실패:', error);
+    }
+  };
 
   const loadLessonPlans = async () => {
     try {
@@ -228,13 +278,20 @@ function LessonPlanner() {
         </div>
 
         {/* 새 계획 작성 버튼 */}
-        <div className="mb-6">
+        <div className="mb-6 flex gap-3">
           <button
             onClick={() => setIsCreating(true)}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Plus className="w-5 h-5 mr-2" />
             새 수업 계획 작성
+          </button>
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            템플릿에서 시작하기
           </button>
         </div>
 
@@ -343,6 +400,156 @@ function LessonPlanner() {
           </div>
         )}
       </div>
+
+      {/* 템플릿 선택 모달 */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
+              <h3 className="text-xl font-bold text-gray-900">
+                📋 강습 계획 템플릿 선택
+              </h3>
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false);
+                  setSelectedTemplate(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <p className="text-gray-600 mb-4">
+                최고 관리자가 작성한 템플릿을 선택하여 강습 계획서를 빠르게 작성하세요.
+              </p>
+              
+              {templates.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">사용 가능한 템플릿이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map((template) => (
+                    <div
+                      key={template._id}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        selectedTemplate?._id === template._id
+                          ? 'border-purple-600 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                      onClick={() => setSelectedTemplate(template)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{template.templateName}</h4>
+                        {selectedTemplate?._id === template._id && (
+                          <span className="text-purple-600">✓</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                          {template.category === 'freestyle' ? '🏊‍♂️ 자유형' :
+                           template.category === 'backstroke' ? '🏊‍♀️ 배영' :
+                           template.category === 'breaststroke' ? '🐸 평영' :
+                           template.category === 'butterfly' ? '🦋 접영' :
+                           template.category}
+                        </span>
+                        <span className={`px-2 py-1 rounded ${
+                          template.level === 'beginner' ? 'bg-green-100 text-green-800' :
+                          template.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {template.level === 'beginner' ? '🥉 초급' :
+                           template.level === 'intermediate' ? '🥈 중급' :
+                           '🥇 고급'}
+                        </span>
+                        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                          ⏱️ {template.sessionDuration}분
+                        </span>
+                        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                          📚 {template.totalSessions}회
+                        </span>
+                      </div>
+                      {template.usageCount && template.usageCount > 0 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          {template.usageCount}명이 사용함
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-shrink-0 p-6 border-t bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false);
+                  setSelectedTemplate(null);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={async () => {
+                  if (!selectedTemplate) {
+                    alert('템플릿을 선택해주세요.');
+                    return;
+                  }
+                  
+                  try {
+                    const token = localStorage.getItem('token');
+                    // 템플릿 내용을 기반으로 강습 계획서 폼에 자동 입력
+                    const firstStage = selectedTemplate.stages[0];
+                    const newPlan: Partial<LessonPlan> = {
+                      title: selectedTemplate.templateName,
+                      description: selectedTemplate.description,
+                      level: selectedTemplate.level as 'beginner' | 'intermediate' | 'advanced',
+                      duration: selectedTemplate.sessionDuration,
+                      objectives: firstStage?.objectives.filter(o => o.trim()) || [],
+                      activities: firstStage ? [{
+                        name: firstStage.stageName,
+                        duration: Math.floor(selectedTemplate.sessionDuration / selectedTemplate.stages.length),
+                        description: firstStage.objectives.join(', '),
+                        equipment: firstStage.materials.filter(m => m.trim())
+                      }] : [],
+                      materials: firstStage?.materials.filter(m => m.trim()) || [],
+                      notes: `템플릿: ${selectedTemplate.templateName}에서 생성됨`
+                    };
+                    
+                    // 강습 계획서 목록에 추가 (실제로는 서버에 저장)
+                    setLessonPlans(prev => [...prev, {
+                      ...newPlan,
+                      _id: `temp-${Date.now()}`,
+                      createdAt: new Date(),
+                      updatedAt: new Date()
+                    } as LessonPlan]);
+                    
+                    setShowTemplateModal(false);
+                    setSelectedTemplate(null);
+                    alert('템플릿을 기반으로 강습 계획서가 생성되었습니다. 내용을 확인하고 수정해주세요.');
+                  } catch (error) {
+                    console.error('템플릿 적용 실패:', error);
+                    alert('템플릿 적용 중 오류가 발생했습니다.');
+                  }
+                }}
+                disabled={!selectedTemplate}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  selectedTemplate
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                이 템플릿 사용하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

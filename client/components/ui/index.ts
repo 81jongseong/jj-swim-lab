@@ -99,7 +99,7 @@ export { default as BarChart } from './barchart';
 export { default as LoadingSpinner } from './loadingspinner';
 export { ThemeProvider, useTheme } from './themeprovider';
 export { Input } from './input';
-export { Badge } from './Badge';
+export { Badge } from './badge';
 export { default as Modal } from './modal';
 export { Button } from './button';
 
@@ -126,7 +126,7 @@ export { Progress } from './progress';
 // export { Alert, AlertTitle, AlertDescription } from './alert';
 // export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 // export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
 // export { default as Textarea } from './textarea';
 // export { Label } from './label';
 // export { default as Slider } from './slider';

@@ -42,8 +42,8 @@ import { useAuth } from '../../../../hooks/useAuth';
 import { Users, TrendingUp, AlertTriangle, CheckCircle, Clock, Activity, HeartPulse, Thermometer } from 'lucide-react';
 import apiClient from '@/utils/api';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
   Dialog,

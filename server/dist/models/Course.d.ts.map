@@ -1,1 +1,1 @@
-{"version":3,"file":"Course.d.ts","sourceRoot":"","sources":["../../src/models/Course.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAwGA,OAAO,QAAQ,MAAM,UAAU,CAAC;AA6MhC,eAAO,MAAM,MAAM,2CAAmE,CAAC"}
+{"version":3,"file":"Course.d.ts","sourceRoot":"","sources":["../../src/models/Course.ts"],"names":[],"mappings":"AAwGA,OAAO,QAAQ,MAAM,UAAU,CAAC;AA6MhC,eAAO,MAAM,MAAM,2CAAmE,CAAC"}

@@ -18,7 +18,7 @@
 import React, { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
-import { ErrorBoundary } from './ErrorBoundary';
+import { ErrorBoundary } from './errorboundary';
 
 interface ThreeDViewerProps {
   className?: string;
@@ -34,18 +34,18 @@ function BasicScene() {
       {/* 기본 조명 */}
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
-      
+
       {/* 간단한 3D 객체들 */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="blue" />
       </mesh>
-      
+
       <mesh position={[2, 0, 0]}>
         <sphereGeometry args={[0.5, 32, 32]} />
         <meshStandardMaterial color="red" />
       </mesh>
-      
+
       <mesh position={[-2, 0, 0]}>
         <cylinderGeometry args={[0.5, 0.5, 1, 32]} />
         <meshStandardMaterial color="green" />
@@ -91,11 +91,11 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
   );
 }
 
-export function ThreeDViewer({ 
-  className = '', 
-  showStats = false, 
+export function ThreeDViewer({
+  className = '',
+  showStats = false,
   showEnvironment = true,
-  onError 
+  onError
 }: ThreeDViewerProps) {
   const [hasError, setHasError] = useState(false);
 
@@ -113,9 +113,9 @@ export function ThreeDViewer({
   if (hasError) {
     return (
       <div className={`w-full h-96 bg-gray-100 rounded-lg ${className}`}>
-        <ErrorFallback 
-          error={new Error('3D 뷰어 초기화 실패')} 
-          resetErrorBoundary={handleReset} 
+        <ErrorFallback
+          error={new Error('3D 뷰어 초기화 실패')}
+          resetErrorBoundary={handleReset}
         />
       </div>
     );
@@ -123,7 +123,7 @@ export function ThreeDViewer({
 
   return (
     <div className={`w-full h-96 bg-gray-900 rounded-lg overflow-hidden ${className}`}>
-      <ErrorBoundary 
+      <ErrorBoundary
         fallback={<ErrorFallback error={new Error('3D 렌더링 오류')} resetErrorBoundary={handleReset} />}
         onError={handleError}
       >
@@ -135,21 +135,21 @@ export function ThreeDViewer({
         >
           <Suspense fallback={null}>
             <BasicScene />
-            
+
             {/* 환경 조명 */}
             {showEnvironment && (
               <Environment preset="sunset" />
             )}
-            
+
             {/* 카메라 컨트롤 */}
-            <OrbitControls 
+            <OrbitControls
               enablePan={true}
               enableZoom={true}
               enableRotate={true}
               minDistance={2}
               maxDistance={20}
             />
-            
+
             {/* 성능 통계 (개발 환경에서만) */}
             {showStats && process.env.NODE_ENV === 'development' && (
               <Stats />

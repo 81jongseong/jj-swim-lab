@@ -16,7 +16,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
-import RegionNavigation from '@/components/RegionNavigation';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import StatCard from '@/components/StatCard';
 
 interface CenterData {
@@ -103,10 +103,12 @@ export default function CenterStatisticsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailModalContent, setDetailModalContent] = useState<{title: string, content: any}>({title: '', content: null});
 
-  // 지역 필터 상태
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  // 지역 필터 상태 (RegionSelectorWrapper는 Set<string> 사용)
+  const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedCenters, setSelectedCenters] = useState<string[]>([]);
+  // 현재 선택된 시/도 목록 (여러 시/도 비교를 위해)
+  const [selectedSidos, setSelectedSidos] = useState<Set<string>>(new Set());
 
   // Mock data for center status (실제 구현에서는 API에서 가져옴)
   const mockCenterData: CenterData[] = [
@@ -302,42 +304,41 @@ export default function CenterStatisticsPage() {
     }
   };
 
-  // 지역 필터 핸들러
-  const handleRegionToggle = (region: string) => {
-    setSelectedRegions(prev => {
-      if (prev.includes(region)) {
-        return prev.filter(r => r !== region);
-      } else {
-        return [...prev, region];
-      }
-    });
-  };
+  // 지역 필터 핸들러 (RegionNavigation이 자동으로 처리)
 
-  const handleDistrictToggle = (district: string) => {
-    setSelectedDistricts(prev => {
-      if (prev.includes(district)) {
-        return prev.filter(d => d !== district);
-      } else {
-        return [...prev, district];
-      }
-    });
-  };
-
-  const handleCenterToggle = (center: string) => {
-    setSelectedCenters(prev => {
-      if (prev.includes(center)) {
-        return prev.filter(c => c !== center);
-      } else {
-        return [...prev, center];
-      }
-    });
-  };
-
-  // 필터링된 통계 데이터
+  // 필터링된 통계 데이터 (Set을 사용하여 필터링)
   const filteredStatistics = statistics ? {
     ...statistics,
-    regionStats: selectedRegions.length > 0 
-      ? statistics.regionStats.filter(stat => selectedRegions.includes(stat.region))
+    regionStats: selectedRegions.size > 0 
+      ? statistics.regionStats.filter(stat => {
+          // 선택된 지역(구/군)이 해당 시/도에 속하는지 확인
+          const regionName = stat.region;
+          const normalizedRegion = regionName === '서울특별시' ? '서울시' : 
+                                  regionName === '인천광역시' ? '인천시' :
+                                  regionName === '부산광역시' ? '부산시' :
+                                  regionName === '대구광역시' ? '대구시' :
+                                  regionName === '광주광역시' ? '광주시' :
+                                  regionName === '대전광역시' ? '대전시' :
+                                  regionName === '울산광역시' ? '울산시' :
+                                  regionName === '세종특별자치시' ? '세종시' :
+                                  regionName;
+          
+          // 선택된 구/군이 해당 시/도에 속하는지 확인
+          return Array.from(selectedRegions).some(selectedRegion => {
+            // 선택된 지역이 시/도 이름과 일치하거나, 해당 시/도의 구/군인지 확인
+            if (selectedRegion === regionName || selectedRegion === normalizedRegion) {
+              return true;
+            }
+            // centerData에서 해당 구/군이 속한 시/도를 찾기
+            if (centerData[regionName] && Object.keys(centerData[regionName]).includes(selectedRegion)) {
+              return true;
+            }
+            if (centerData[normalizedRegion] && Object.keys(centerData[normalizedRegion]).includes(selectedRegion)) {
+              return true;
+            }
+            return false;
+          });
+        })
       : statistics.regionStats,
     centerStats: selectedCenters.length > 0 
       ? statistics.centerStats.filter(stat => selectedCenters.includes(stat.centerName))
@@ -380,22 +381,60 @@ export default function CenterStatisticsPage() {
         <p className="text-gray-600">전체 센터의 통계 데이터를 분석하고 성과를 모니터링합니다.</p>
       </div>
 
-      {/* 지역 필터 */}
-      <RegionNavigation
-        selectedRegions={selectedRegions}
-        setSelectedRegions={setSelectedRegions}
-        selectedDistricts={selectedDistricts}
-        setSelectedDistricts={setSelectedDistricts}
-        selectedCenters={selectedCenters}
-        setSelectedCenters={setSelectedCenters}
-        centerData={centerData}
-        comparisonMode={false}
-        layout="dropdown"
-        centerDataMap={mockCenterData.reduce((acc, center) => {
-          acc[center.name] = center;
-          return acc;
-        }, {} as { [key: string]: CenterData })}
-      />
+      {/* 지역 필터 - RegionSelectorWrapper 사용 (여러 시/도 비교 지원) */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 className="text-xl font-semibold mb-4">지역 필터</h2>
+        <RegionSelectorWrapper
+          selectedRegions={selectedRegions}
+          onRegionsChange={(regions) => {
+            setSelectedRegions(regions);
+            // 지역 선택 시 해당 지역의 센터 목록 자동 필터링
+            if (regions.size > 0) {
+              const availableCenters: string[] = [];
+              Array.from(regions).forEach(selectedRegion => {
+                // 선택된 지역이 구/군인 경우 해당 센터 추가
+                Object.keys(centerData).forEach(sido => {
+                  if (centerData[sido][selectedRegion]) {
+                    availableCenters.push(...centerData[sido][selectedRegion]);
+                  }
+                });
+              });
+              // 중복 제거
+              setSelectedCenters([...new Set(availableCenters)]);
+            } else {
+              setSelectedCenters([]);
+            }
+          }}
+          onSidoChange={(sido) => {
+            // 시/도 선택 시 기존 선택을 유지하고, 새로운 시/도만 추가
+            if (sido && sido !== '전국') {
+              setSelectedSidos(prev => {
+                const newSidos = new Set(prev);
+                newSidos.add(sido);
+                return newSidos;
+              });
+              // 기존 선택된 지역은 유지 (초기화하지 않음)
+            } else if (sido === '전국' || !sido) {
+              // 전국 선택 또는 시/도 해제 시 모든 시/도 선택 해제
+              setSelectedSidos(new Set());
+            }
+          }}
+          centerData={centerData}
+          layout="dropdown"
+          allowMultipleSidos={true}
+        />
+        {/* 선택된 시/도 표시 (여러 시/도 비교 시) */}
+        {selectedSidos.size > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm font-medium text-blue-800 mb-2">
+              비교 중인 시/도: {Array.from(selectedSidos).join(', ')}
+            </p>
+            <p className="text-xs text-blue-600">
+              여러 시/도의 구/군을 선택하여 비교할 수 있습니다.
+            </p>
+          </div>
+        )}
+      </div>
 
       {filteredStatistics && (
         <>

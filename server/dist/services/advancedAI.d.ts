@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 export interface SwimmingPoseAnalysis {
     timestamp: Date;
     userId: string;

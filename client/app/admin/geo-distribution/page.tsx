@@ -32,6 +32,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { getAddressFromGeohash, getBlockCenterCoordinates } from '../../../lib/utils/address-utils';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 
 // 동적 import로 SSR 문제 방지 및 성능 최적화
 let maplibregl: any;
@@ -75,6 +76,29 @@ const getCenterColor = (centerId: string, isVisible: boolean = true): [number, n
     return [128, 128, 128, 150]; // 비공개 센터는 회색
   }
   
+  // 실제 센터 이름 매핑 (예: 'JJ 수영장 강남점' -> '강남센터')
+  const centerNameMap: Record<string, string> = {
+    'JJ 수영장 강남점': '강남센터',
+    'JJ 수영장 홍대점': '홍대센터',
+    'JJ 수영장 송파점': '송파센터',
+    'JJ 수영장 마포점': '마포센터',
+    'JJ 수영장 수원점': '수원센터',
+    'JJ 수영장 성남점': '성남센터',
+    'JJ 수영장 인천점': '인천센터',
+    'JJ 수영장 부산점': '부산센터',
+    'JJ 수영장 해운대점': '해운대센터',
+    'JJ 수영장 대구점': '대구센터',
+    'JJ 수영장 광주점': '광주센터',
+    'JJ 수영장 대전점': '대전센터',
+    'JJ 수영장 울산점': '울산센터',
+    'JJ 수영장 세종점': '세종센터',
+    'JJ 수영장 춘천점': '춘천센터',
+    'JJ 수영장 강릉점': '강릉센터',
+  };
+  
+  // 센터 이름 정규화
+  const normalizedCenterId = centerNameMap[centerId] || centerId;
+  
   const colors: Record<string, [number, number, number, number]> = {
     '강남센터': [255, 99, 132, 200],   // 빨간색
     '홍대센터': [54, 162, 235, 200],   // 파란색
@@ -84,6 +108,7 @@ const getCenterColor = (centerId: string, isVisible: boolean = true): [number, n
     '성남센터': [255, 159, 64, 200],   // 주황색
     '인천센터': [199, 199, 199, 200],  // 회색
     '부산센터': [83, 102, 255, 200],   // 진파랑
+    '해운대센터': [255, 140, 0, 200],  // 주황색
     '대구센터': [255, 99, 255, 200],   // 분홍색
     '광주센터': [99, 255, 132, 200],   // 연두색
     '대전센터': [255, 205, 86, 200],   // 노란색
@@ -93,13 +118,49 @@ const getCenterColor = (centerId: string, isVisible: boolean = true): [number, n
     '강릉센터': [255, 159, 64, 200],   // 주황색
     'anonymous': [200, 200, 200, 150], // 익명화된 센터
   };
-  return colors[centerId] || [153, 102, 255, 200]; // 기본 보라색
+  
+  // 색상이 없으면 해시 기반으로 고유 색상 생성
+  if (!colors[normalizedCenterId]) {
+    let hash = 0;
+    for (let i = 0; i < normalizedCenterId.length; i++) {
+      hash = normalizedCenterId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const r = Math.max(50, (hash & 0xFF0000) >> 16);
+    const g = Math.max(50, (hash & 0x00FF00) >> 8);
+    const b = Math.max(50, hash & 0x0000FF);
+    return [r, g, b, 200];
+  }
+  
+  return colors[normalizedCenterId];
 };
 
 const getCenterColorCSS = (centerId: string, isVisible: boolean = true): string => {
   if (!isVisible) {
     return 'rgb(128, 128, 128)'; // 비공개 센터는 회색
   }
+  
+  // 실제 센터 이름 매핑 (예: 'JJ 수영장 강남점' -> '강남센터')
+  const centerNameMap: Record<string, string> = {
+    'JJ 수영장 강남점': '강남센터',
+    'JJ 수영장 홍대점': '홍대센터',
+    'JJ 수영장 송파점': '송파센터',
+    'JJ 수영장 마포점': '마포센터',
+    'JJ 수영장 수원점': '수원센터',
+    'JJ 수영장 성남점': '성남센터',
+    'JJ 수영장 인천점': '인천센터',
+    'JJ 수영장 부산점': '부산센터',
+    'JJ 수영장 해운대점': '해운대센터',
+    'JJ 수영장 대구점': '대구센터',
+    'JJ 수영장 광주점': '광주센터',
+    'JJ 수영장 대전점': '대전센터',
+    'JJ 수영장 울산점': '울산센터',
+    'JJ 수영장 세종점': '세종센터',
+    'JJ 수영장 춘천점': '춘천센터',
+    'JJ 수영장 강릉점': '강릉센터',
+  };
+  
+  // 센터 이름 정규화
+  const normalizedCenterId = centerNameMap[centerId] || centerId;
   
   const colors: Record<string, string> = {
     '강남센터': 'rgb(255, 99, 132)',
@@ -110,6 +171,7 @@ const getCenterColorCSS = (centerId: string, isVisible: boolean = true): string 
     '성남센터': 'rgb(255, 159, 64)',
     '인천센터': 'rgb(199, 199, 199)',
     '부산센터': 'rgb(83, 102, 255)',
+    '해운대센터': 'rgb(255, 140, 0)',
     '대구센터': 'rgb(255, 99, 255)',
     '광주센터': 'rgb(99, 255, 132)',
     '대전센터': 'rgb(255, 205, 86)',
@@ -119,7 +181,21 @@ const getCenterColorCSS = (centerId: string, isVisible: boolean = true): string 
     '강릉센터': 'rgb(255, 159, 64)',
     'anonymous': 'rgb(200, 200, 200)',
   };
-  return colors[centerId] || 'rgb(153, 102, 255)';
+  
+  // 색상이 없으면 해시 기반으로 고유 색상 생성
+  if (!colors[normalizedCenterId]) {
+    // 센터 이름을 해시하여 일관된 색상 생성
+    let hash = 0;
+    for (let i = 0; i < normalizedCenterId.length; i++) {
+      hash = normalizedCenterId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const r = (hash & 0xFF0000) >> 16;
+    const g = (hash & 0x00FF00) >> 8;
+    const b = hash & 0x0000FF;
+    return `rgb(${Math.max(50, r)}, ${Math.max(50, g)}, ${Math.max(50, b)})`;
+  }
+  
+  return colors[normalizedCenterId];
 };
 
 // 구/군 선택 컴포넌트
@@ -256,9 +332,8 @@ export default function GeoDistributionPage() {
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
   const [regionCenters, setRegionCenters] = useState<Record<string, string[]>>({});
   
-  // 2단계 선택 상태
-  const [selectedSido, setSelectedSido] = useState<string>('');
-  const [showDistrictSelection, setShowDistrictSelection] = useState(false);
+  // RegionSelectorWrapper에서 선택된 시/도 추적 (센터 목록 표시용)
+  const [currentSelectedSido, setCurrentSelectedSido] = useState<string>('');
   
   // 센터 관리 상태 (centerAdmin용, 최고관리자는 사용하지 않음)
   const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
@@ -266,15 +341,19 @@ export default function GeoDistributionPage() {
 
   // 지역별 센터 매핑 초기화
   useEffect(() => {
-    // 실제로는 API에서 가져와야 하지만, 모의 데이터로 초기화
+    console.log('🔄 regionCenters 초기화 시작');
+    
+    // 실제 DB의 센터 이름 사용 (API 응답에서 가져온 센터 이름과 일치하도록)
+    // 주의: 실제 DB의 센터 이름을 사용해야 함 ('JJ 수영장 강남점' 등)
     const mockRegionCenters: Record<string, string[]> = {
-      '전국': ['홍대센터', '강남센터', '송파센터', '마포센터', '기타'],
+      '전국': ['JJ 수영장 홍대점', 'JJ 수영장 강남점', 'JJ Swim Center', 'JJ 수영장 송파점', 'JJ 수영장 마포점', '기타'],
       
-      // 서울시
-      '서울시': ['홍대센터', '강남센터', '송파센터', '마포센터', '기타'],
-      '강남구': ['강남센터'],
-      '송파구': ['송파센터'],
-      '마포구': ['홍대센터', '마포센터'],
+      // 서울시 (UnifiedRegionSelector는 '서울특별시' 사용)
+      '서울시': ['JJ 수영장 홍대점', 'JJ 수영장 강남점', 'JJ Swim Center', 'JJ 수영장 송파점', 'JJ 수영장 마포점', '기타'],
+      '서울특별시': ['JJ 수영장 홍대점', 'JJ 수영장 강남점', 'JJ Swim Center', 'JJ 수영장 송파점', 'JJ 수영장 마포점', '기타'],
+      '강남구': ['JJ 수영장 강남점', 'JJ Swim Center'], // 강남구에 등록된 센터 (실제 DB 기준)
+      '송파구': ['JJ 수영장 송파점'],
+      '마포구': ['JJ 수영장 홍대점', 'JJ 수영장 마포점'],
       '서초구': ['기타'],
       '용산구': ['기타'],
       '성동구': ['기타'],
@@ -295,9 +374,9 @@ export default function GeoDistributionPage() {
       '강동구': ['기타'],
       
       // 경기도
-      '경기도': ['수원센터', '성남센터', '기타'],
-      '수원시': ['수원센터'],
-      '성남시': ['성남센터'],
+      '경기도': ['JJ 수영장 수원점', 'JJ 수영장 성남점', '기타'],
+      '수원시': ['JJ 수영장 수원점'],
+      '성남시': ['JJ 수영장 성남점'],
       '의정부시': ['기타'],
       '안양시': ['기타'],
       '부천시': ['기타'],
@@ -323,8 +402,9 @@ export default function GeoDistributionPage() {
       '가평군': ['기타'],
       '연천군': ['기타'],
       
-      // 인천시
+      // 인천시 (UnifiedRegionSelector는 '인천광역시' 사용)
       '인천시': ['인천센터', '기타'],
+      '인천광역시': ['인천센터', '기타'],
       '인천중구': ['인천센터'],
       '인천동구': ['기타'],
       '미추홀구': ['기타'],
@@ -336,9 +416,10 @@ export default function GeoDistributionPage() {
       '강화군': ['기타'],
       '옹진군': ['기타'],
       
-      // 부산시
-      '부산시': ['부산센터', '해운대센터', '기타'],
-      '부산중구': ['부산센터'],
+      // 부산시 (UnifiedRegionSelector는 '부산광역시' 사용)
+      '부산시': ['JJ 수영장 부산점', 'JJ 수영장 해운대점', '기타'],
+      '부산광역시': ['JJ 수영장 부산점', 'JJ 수영장 해운대점', '기타'],
+      '부산중구': ['JJ 수영장 부산점'],
       '부산서구': ['기타'],
       '부산동구': ['기타'],
       '영도구': ['기타'],
@@ -355,8 +436,9 @@ export default function GeoDistributionPage() {
       '사상구': ['기타'],
       '기장군': ['기타'],
       
-      // 대구시
+      // 대구시 (UnifiedRegionSelector는 '대구광역시' 사용)
       '대구시': ['대구센터', '기타'],
+      '대구광역시': ['대구센터', '기타'],
       '대구중구': ['대구센터'],
       '대구동구': ['기타'],
       '대구서구': ['기타'],
@@ -367,32 +449,36 @@ export default function GeoDistributionPage() {
       '달성군': ['기타'],
       '대구군위군': ['기타'],
       
-      // 광주시
-      '광주시': ['광주센터', '기타'],
-      '광주동구': ['광주센터'],
+      // 광주시 (UnifiedRegionSelector는 '광주광역시' 사용)
+      '광주시': ['JJ 수영장 광주점', '기타'],
+      '광주광역시': ['JJ 수영장 광주점', '기타'],
+      '광주동구': ['JJ 수영장 광주점'],
       '광주서구': ['기타'],
       '광주남구': ['기타'],
       '광주북구': ['기타'],
       '광산구': ['기타'],
       
-      // 대전시
+      // 대전시 (UnifiedRegionSelector는 '대전광역시' 사용)
       '대전시': ['대전센터', '기타'],
+      '대전광역시': ['대전센터', '기타'],
       '대전동구': ['대전센터'],
       '대전중구': ['기타'],
       '대전서구': ['기타'],
       '유성구': ['기타'],
       '대덕구': ['기타'],
       
-      // 울산시
+      // 울산시 (UnifiedRegionSelector는 '울산광역시' 사용)
       '울산시': ['울산센터', '기타'],
+      '울산광역시': ['울산센터', '기타'],
       '울산중구': ['울산센터'],
       '울산남구': ['기타'],
       '울산동구': ['기타'],
       '울산북구': ['기타'],
       '울주군': ['기타'],
       
-      // 세종시
-      '세종시': ['세종센터', '기타'],
+      // 세종시 (UnifiedRegionSelector는 '세종특별자치시' 사용)
+      '세종시': ['JJ 수영장 세종점', '기타'],
+      '세종특별자치시': ['JJ 수영장 세종점', '기타'],
       
       // 강원도
       '강원도': ['춘천센터', '강릉센터', '기타'],
@@ -536,18 +622,38 @@ export default function GeoDistributionPage() {
       '거창군': ['기타'],
       '합천군': ['기타'],
       
-      // 제주도
+      // 제주도 (UnifiedRegionSelector는 '제주특별자치도' 사용)
       '제주도': ['기타'],
+      '제주특별자치도': ['기타'],
       '제주시': ['기타'],
       '서귀포시': ['기타']
     };
+    console.log('✅ regionCenters 초기화 완료:', Object.keys(mockRegionCenters).length, '개 지역');
+    console.log('📋 regionCenters 샘플 키:', Object.keys(mockRegionCenters).slice(0, 10));
     setRegionCenters(mockRegionCenters);
   }, []);
+
+  // 지역 이름 매핑 (UnifiedRegionSelector의 지역 이름을 regionCenters 키로 변환)
+  const normalizeRegionName = (region: string): string => {
+    const mapping: Record<string, string> = {
+      '서울특별시': '서울시',
+      '인천광역시': '인천시',
+      '부산광역시': '부산시',
+      '대구광역시': '대구시',
+      '광주광역시': '광주시',
+      '대전광역시': '대전시',
+      '울산광역시': '울산시',
+      '세종특별자치시': '세종시',
+      '제주특별자치도': '제주도'
+    };
+    return mapping[region] || region;
+  };
 
   // 선택된 지역에 따른 센터 목록 업데이트
   useEffect(() => {
     console.log('🔍 지역 선택 변경 감지:', Array.from(selectedRegions));
-    console.log('🗺️ 지역별 센터 매핑:', regionCenters);
+    console.log('🗺️ regionCenters 키 목록:', Object.keys(regionCenters));
+    console.log('🗺️ regionCenters 전체 데이터:', regionCenters);
     
     const selectedRegionList = Array.from(selectedRegions);
     let availableCenters: string[] = [];
@@ -559,10 +665,39 @@ export default function GeoDistributionPage() {
       availableCenters = regionCenters['전국'] || [];
       console.log('🌏 전국 선택 - 모든 센터:', availableCenters);
     } else {
-      for (const region of selectedRegionList) {
-        if (regionCenters[region]) {
-          console.log(`📍 ${region} 센터:`, regionCenters[region]);
-          availableCenters = [...availableCenters, ...regionCenters[region]];
+      // 구/군이 선택된 경우
+      if (selectedRegionList.length > 0) {
+        for (const region of selectedRegionList) {
+          console.log(`🔎 처리 중인 지역: "${region}"`);
+          // UnifiedRegionSelector의 지역 이름을 regionCenters 키로 변환
+          const normalizedRegion = normalizeRegionName(region);
+          console.log(`   → 정규화된 지역: "${normalizedRegion}"`);
+          
+          // 1. 정규화된 이름으로 찾기
+          if (regionCenters[normalizedRegion]) {
+            console.log(`   ✅ ${normalizedRegion} 키로 찾음:`, regionCenters[normalizedRegion]);
+            availableCenters = [...availableCenters, ...regionCenters[normalizedRegion]];
+          } 
+          // 2. 원래 이름으로 찾기
+          else if (regionCenters[region]) {
+            console.log(`   ✅ ${region} 키로 찾음:`, regionCenters[region]);
+            availableCenters = [...availableCenters, ...regionCenters[region]];
+          } 
+          // 3. 찾지 못한 경우
+          else {
+            console.log(`   ❌ ${region} (${normalizedRegion})에 대한 센터 매핑이 없습니다.`);
+            console.log(`   📋 사용 가능한 키들:`, Object.keys(regionCenters).filter(k => k.includes(region) || k.includes(normalizedRegion)));
+          }
+        }
+      }
+      
+      // 시/도만 선택하고 구/군을 선택하지 않은 경우
+      if (currentSelectedSido && currentSelectedSido !== '전국' && availableCenters.length === 0) {
+        const normalizedSido = normalizeRegionName(currentSelectedSido);
+        const sidoCenters = regionCenters[normalizedSido] || regionCenters[currentSelectedSido] || [];
+        if (sidoCenters.length > 0) {
+          console.log(`📍 시/도만 선택됨 - ${currentSelectedSido} (${normalizedSido}) 센터:`, sidoCenters);
+          availableCenters = sidoCenters;
         }
       }
       // 중복 제거
@@ -576,40 +711,69 @@ export default function GeoDistributionPage() {
       console.log('🎯 최종 사용 가능한 센터:', availableCenters);
     }
     
+    console.log('📊 센터 목록 업데이트:', availableCenters);
+    
+    // ⚠️ 중요: 지역 선택 시 센터 목록만 표시하고, activeCenters는 비워둠
+    // 사용자가 센터를 선택할 때까지 데이터 로딩하지 않음
     setCenterList(availableCenters);
     
-    // 현재 활성화된 센터 중에서 사용 가능한 센터만 유지
-    const validActiveCenters = new Set<string>();
-    const activeCentersArray = Array.from(activeCenters);
-    for (const center of activeCentersArray) {
-      if (availableCenters.includes(center)) {
-        validActiveCenters.add(center);
+    // activeCenters는 사용자가 직접 선택할 때까지 비워둠
+    // 기존에 선택된 센터가 새로운 센터 목록에 없으면 제거
+    if (activeCenters.size > 0) {
+      const validActiveCenters = new Set<string>();
+      for (const center of activeCenters) {
+        if (availableCenters.includes(center)) {
+          validActiveCenters.add(center);
+        }
       }
+      // 유효하지 않은 센터가 있으면 제거
+      if (validActiveCenters.size !== activeCenters.size) {
+        setActiveCenters(validActiveCenters);
+      }
+    } else {
+      // activeCenters가 비어있으면 그대로 유지 (사용자가 선택할 때까지)
+      setActiveCenters(new Set());
     }
-    console.log('✅ 유효한 활성 센터:', Array.from(validActiveCenters));
-    setActiveCenters(validActiveCenters);
-  }, [selectedRegions, regionCenters]);
-
-  // 지역 선택 변경 시 데이터 다시 로딩
-  useEffect(() => {
-    if (selectedRegions.size > 0 && mapInstanceRef.current) {
-      console.log('🔄 지역 선택 변경 - 데이터 다시 로딩');
-      fetchSpotsData();
-    } else if (selectedRegions.size === 0) {
-      console.log('🚫 지역 선택 해제 - 스팟 데이터 초기화');
+    
+    // 지역 선택 시 데이터 초기화 (센터 선택 전까지는 데이터 표시 안 함)
+    if (availableCenters.length === 0) {
+      setSpots([]);
+      setMetadata(null);
+    } else if (activeCenters.size === 0) {
+      // 센터 목록은 있지만 선택되지 않은 경우 - 데이터 초기화
       setSpots([]);
       setMetadata(null);
     }
-  }, [selectedRegions]);
+    
+    console.log('✅ 센터 목록 업데이트 완료:', {
+      availableCenters: availableCenters.length,
+      activeCenters: activeCenters.size,
+      selectedRegions: Array.from(selectedRegions)
+    });
+  }, [selectedRegions, regionCenters, currentSelectedSido]);
+
+  // activeCenters가 업데이트된 후 데이터 로딩 (fetchSpotsData 정의 후에 useEffect 추가)
 
   // 인증 확인 - 최고 관리자만 접근
   useEffect(() => {
-    if (!loading && user) {
-      if (user.userType !== 'superAdmin') {
-        router.push('/');
-        return;
-      }
+    // 로딩 중이면 아무것도 하지 않음
+    if (loading) return;
+    
+    // 사용자가 없으면 홈으로 리다이렉트
+    if (!user) {
+      router.push('/');
+      return;
     }
+    
+    // 최고관리자가 아니면 홈으로 리다이렉트
+    if (user.userType !== 'superAdmin') {
+      console.warn('⚠️ 최고관리자 권한이 없습니다. 홈으로 리다이렉트합니다.');
+      router.push('/');
+      return;
+    }
+    
+    // 최고관리자이면 페이지에 머무름
+    console.log('✅ 최고관리자 인증 확인 완료');
   }, [user, loading, router]);
 
   // 라이브러리 동적 로딩
@@ -782,19 +946,55 @@ export default function GeoDistributionPage() {
 
 
   // 스팟 데이터 로딩 함수 (useEffect 밖으로 이동)
-  const fetchSpotsData = async () => {
+  const fetchSpotsData = useCallback(async () => {
     setLoadingData(true);
     try {
+      // 최신 activeCenters 상태 가져오기
+      const currentActiveCenters = activeCenters;
       console.log('🗺️ 지오해시 블록 스팟 데이터 로딩 시작');
+      console.log('🔍 활성 센터:', Array.from(currentActiveCenters));
+      console.log('🔍 선택된 지역:', Array.from(selectedRegions));
       
       const params = new URLSearchParams({
         k: '5',
         memberType: memberType,
-        zoom: currentZoom.toString()
+        zoom: currentZoom.toString(),
+        // 최고관리자는 실제 DB 데이터를 볼 수 있도록 노이즈/반올림 제거 옵션 추가
+        noNoise: 'true', // 노이즈 제거
+        noRound: 'true'  // 반올림 제거
       });
+      
+      // 활성 센터가 있으면 전달 (여러 센터는 쉼표로 구분)
+      if (currentActiveCenters.size > 0) {
+        const centersArray = Array.from(currentActiveCenters);
+        // API가 여러 센터를 받을 수 있도록 쉼표로 구분된 문자열로 전달
+        const centersString = centersArray.join(',');
+        params.append('centerIds', centersString);
+        console.log('📤 centerIds 파라미터 전달:', centersString);
+      } else {
+        console.log('⚠️ 활성 센터가 없어서 centerIds 파라미터를 전달하지 않습니다.');
+      }
 
+      // 인증 토큰 가져오기
+      const token = typeof window !== 'undefined' 
+        ? localStorage.getItem('token') || sessionStorage.getItem('token')
+        : null;
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('🔑 클라이언트에서 인증 토큰 전달');
+      } else {
+        console.warn('⚠️ 인증 토큰이 없습니다.');
+      }
 
-      const response = await fetch(`/api/geo/spots?${params}`, { cache: 'no-store' });
+      const response = await fetch(`/api/geo/spots?${params}`, { 
+        cache: 'no-store',
+        headers
+      });
       const result = await response.json();
       
       console.log('📊 스팟 데이터 응답:', result);
@@ -809,13 +1009,28 @@ export default function GeoDistributionPage() {
         setSpots(result.data.spots);
         setMetadata(result.data.metadata);
         
-        // 센터 목록 업데이트 (중복 제거, "기타" 제외)
+        // API 응답에서 센터 목록 추출 (중복 제거, "기타" 제외)
         const allCenters = Array.from(new Set(result.data.spots.map((s: Spot) => s.dominantCenter))) as string[];
         const centers = allCenters.filter(c => c !== '기타'); // "기타" 센터 제외
-        console.log('🏢 센터 목록 (중복 제거):', allCenters);
-        console.log('🏢 활성 센터 (기타 제외):', centers);
-        setCenterList(centers);
-        setActiveCenters(new Set(centers)); // "기타"는 activeCenters에 포함하지 않음
+        console.log('🏢 API 응답 센터 목록 (중복 제거):', allCenters);
+        console.log('🏢 API 응답 활성 센터 (기타 제외):', centers);
+        
+        // ⚠️ 중요: centerList는 지역 선택 시 설정된 센터 목록을 유지해야 함
+        // API 응답의 센터 목록으로 centerList를 덮어쓰지 않음 (선택하지 않은 센터가 사라지는 것을 방지)
+        // API 응답의 센터 목록은 참고용으로만 사용
+        if (centers.length > 0) {
+          console.log('✅ API 응답 센터 목록 (참고용):', centers);
+          console.log('📋 현재 centerList (유지):', centerList);
+          
+          // ⚠️ 중요: centerList는 지역 선택 시 설정된 목록을 유지
+          // API 응답의 센터 목록으로 업데이트하지 않음
+          // 대신, centerList에 있는 센터 중 API 응답에 없는 센터는 제거하지 않음
+          // (사용자가 선택하지 않은 센터도 목록에 계속 표시되어야 함)
+          
+          // ⚠️ 중요: activeCenters는 사용자가 직접 선택한 것이므로 변경하지 않음
+          // API 응답에 없는 센터가 activeCenters에 있어도 제거하지 않음
+          // (사용자가 선택한 센터는 유지)
+        }
         
         console.log('✅ 스팟 데이터 로딩 완료:', result.data.spots.length, '개 스팟');
         console.log('📊 스팟 통계:', result.data.metadata);
@@ -827,27 +1042,60 @@ export default function GeoDistributionPage() {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [activeCenters, selectedRegions, memberType, currentZoom, currentSelectedSido]); // currentSelectedSido 추가
 
-  // 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
+  // ⚠️ 중요: activeCenters가 업데이트된 후에만 데이터 로딩 (사용자가 센터를 선택했을 때)
   useEffect(() => {
-    if (librariesLoaded) {
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
-      fetchSpotsData();
+    if (!librariesLoaded || !mapInstanceRef.current || loadingData) return;
+    
+    // 센터가 선택되었고, 지역도 선택된 경우에만 데이터 로딩
+    if (activeCenters.size > 0 && selectedRegions.size > 0) {
+      const timeoutId = setTimeout(() => {
+        if (loadingData) return; // 로딩 중이면 건너뜀
+        console.log('🔄 사용자가 센터를 선택함 - 데이터 로딩 시작');
+        console.log('🔍 활성 센터:', Array.from(activeCenters));
+        fetchSpotsData();
+      }, 500); // 500ms 디바운스
+      
+      return () => clearTimeout(timeoutId);
+    } else if (activeCenters.size === 0 && selectedRegions.size > 0) {
+      // 지역은 선택되었지만 센터가 선택되지 않은 경우 - 데이터 초기화
+      console.log('⏳ 지역 선택됨, 센터 선택 대기 중 - 데이터 초기화');
+      setSpots([]);
+      setMetadata(null);
+    } else if (selectedRegions.size === 0) {
+      // 지역 선택 해제
+      console.log('🚫 지역 선택 해제 - 스팟 데이터 초기화');
+      setSpots([]);
+      setMetadata(null);
     }
-  }, [librariesLoaded, memberType, selectedCenterId]);
+  }, [activeCenters, selectedRegions, librariesLoaded]); // fetchSpotsData 의존성 제거
 
-  // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용)
+  // 필터 변경 시 데이터 재로딩 (디바운스 적용, 중복 호출 방지)
   useEffect(() => {
-    if (!librariesLoaded) return;
+    if (!librariesLoaded || loadingData) return;
     
     const timeoutId = setTimeout(() => {
+      if (loadingData) return; // 로딩 중이면 건너뜀
+      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+      fetchSpotsData();
+    }, 500); // 500ms 디바운스 증가
+    
+    return () => clearTimeout(timeoutId);
+  }, [librariesLoaded, memberType, selectedCenterId]); // fetchSpotsData 의존성 제거
+
+  // 줌 레벨 변경 시 데이터 재로딩 (디바운스 적용, 중복 호출 방지)
+  useEffect(() => {
+    if (!librariesLoaded || loadingData) return;
+    
+    const timeoutId = setTimeout(() => {
+      if (loadingData) return; // 로딩 중이면 건너뜀
       console.log('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
       fetchSpotsData();
-    }, 500); // 500ms 디바운스
+    }, 800); // 800ms 디바운스 증가 (줌은 더 자주 변경되므로)
 
     return () => clearTimeout(timeoutId);
-  }, [currentZoom, librariesLoaded]);
+  }, [currentZoom, librariesLoaded]); // fetchSpotsData 의존성 제거
 
   // 스팟 크기 계산 함수 (지도 비율에 맞춘 적절한 크기)
   const scaleRadius = useCallback((n: number, memberType?: string) => {
@@ -898,10 +1146,15 @@ export default function GeoDistributionPage() {
     // ⚠️ 중요: 필터링 시 "기타" 센터 제외 (센터별 색상 구분을 위해)
     // - activeCenters에 포함된 센터만 표시
     // - "기타"는 색상 구분이 없으므로 제외
+    // - activeCenters가 비어있으면 아무것도 표시하지 않음
     const filteredSpots = spots.filter(s => {
       // null/undefined 체크
       if (!s || !s.dominantCenter) {
         console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
+        return false;
+      }
+      // activeCenters가 비어있으면 아무것도 표시하지 않음
+      if (activeCenters.size === 0) {
         return false;
       }
       // activeCenters에 포함된 센터만 표시 ("기타" 제외)
@@ -1134,133 +1387,67 @@ export default function GeoDistributionPage() {
     return spotsLayer;
   }, [spots, activeCenters, currentZoom, scaleRadius]);
 
-  // 스팟 레이어 업데이트
+  // 스팟 레이어 업데이트 (디바운스 적용하여 불필요한 업데이트 방지)
   useEffect(() => {
-    console.log('🔍 스팟 레이어 업데이트 체크:', {
-      hasOverlay: !!overlayRef.current,
-      spotsLength: spots?.length || 0,
-      spots: spots?.slice(0, 3),
-      activeCentersSize: activeCenters?.size || 0,
-      activeCenters: Array.from(activeCenters || [])
-    });
-
-    if (!overlayRef.current || !spots || !spots.length) {
-      console.log('⚠️ 스팟 레이어 업데이트 건너뜀:', {
-        hasOverlay: !!overlayRef.current,
-        spotsLength: spots?.length || 0
-      });
+    if (!overlayRef.current) {
+      return;
+    }
+    
+    // activeCenters가 비어있으면 레이어 제거
+    if (activeCenters.size === 0) {
+      try {
+        overlayRef.current?.setProps({
+          layers: []
+        });
+        console.log('🚫 활성 센터가 없어서 레이어 제거');
+      } catch (error) {
+        console.error('❌ 레이어 제거 오류:', error);
+      }
+      return;
+    }
+    
+    // spots가 없으면 레이어 제거
+    if (!spots || !spots.length) {
+      try {
+        overlayRef.current?.setProps({
+          layers: []
+        });
+      } catch (error) {
+        console.error('❌ 레이어 제거 오류:', error);
+      }
       return;
     }
 
-    console.log('🔧 스팟 레이어 업데이트 시작:', spots.length, '개 스팟');
-    console.log('🗺️ 현재 줌 레벨:', currentZoom);
-    console.log('🎯 활성 센터:', Array.from(activeCenters));
-    const sampleSpots = spots.slice(0, 5).map(s => ({
-      geohash: s.geohash,
-      lat: s.lat,
-      lng: s.lng,
-      totalApprox: s.totalApprox,
-      dominantCenter: s.dominantCenter,
-      coordinates: `[${s.lng}, ${s.lat}]`,
-      centers: s.centers || []
-    }));
-    console.log('📊 원본 스팟 샘플 (전체):', sampleSpots);
-    console.log('📊 강남센터 스팟만 필터:', sampleSpots.filter(s => s.dominantCenter === '강남센터'));
-    const mapInstance = mapInstanceRef.current;
-    console.log('🗺️ 지도 중심점:', mapInstance ? [mapInstance.getCenter().lng, mapInstance.getCenter().lat] : '지도 없음');
-    console.log('🔍 지도 줌 레벨:', mapInstance ? mapInstance.getZoom() : '지도 없음');
-    
-    const layer = buildSpotsLayer();
-    console.log('📦 생성된 레이어:', layer);
-    
-    // 레이어가 배열인지 단일인지 확인
-    const layers = Array.isArray(layer) ? layer : [layer];
-    const spotsLayer = layers.find((l: any) => l?.id === 'spots');
-    const textLayer = layers.find((l: any) => l?.id === 'spots-text');
-    
-    console.log('📊 스팟 레이어 데이터 개수:', spotsLayer?.props?.data?.length || 0);
-    console.log('📊 텍스트 레이어 데이터 개수:', textLayer?.props?.data?.length || 0);
-    
-    if (spotsLayer?.props?.data?.length > 0) {
-      const layerDataSample = spotsLayer.props.data.slice(0, 3).map((d: Spot) => ({
-        lat: d.lat,
-        lng: d.lng,
-        totalApprox: d.totalApprox,
-        dominantCenter: d.dominantCenter
-      }));
-      console.log('📊 스팟 레이어 데이터 샘플:', layerDataSample);
-    }
-    
-    // 레이어 속성 상세 확인
-    if (spotsLayer) {
-      console.log('🔍 스팟 레이어 속성:', {
-        id: spotsLayer.id,
-        pickable: spotsLayer.props?.pickable,
-        radiusUnits: spotsLayer.props?.radiusUnits,
-        stroked: spotsLayer.props?.stroked,
-        hasGetPosition: typeof spotsLayer.props?.getPosition === 'function',
-        hasGetFillColor: typeof spotsLayer.props?.getFillColor === 'function',
-        hasGetRadius: typeof spotsLayer.props?.getRadius === 'function'
-      });
-    }
-    
-    // buildSpotsLayer는 배열을 반환 ([spotsLayer, textLayer])
-    const layersArray = Array.isArray(layer) ? layer : [layer];
-    
-    console.log('📦 전달할 레이어 개수:', layersArray.length);
-    console.log('📦 레이어 상세 정보:', layersArray.map((l: any) => ({
-      id: l?.id,
-      type: l?.constructor?.name,
-      dataLength: l?.props?.data?.length || 0,
-      hasData: !!l?.props?.data
-    })));
-    
-    // MapboxOverlay에 레이어 전달
-    try {
-      overlayRef.current.setProps({
-        layers: layersArray
-      });
+    // 디바운스 적용 (300ms) - 불필요한 리렌더링 방지
+    const timeoutId = setTimeout(() => {
+      const layer = buildSpotsLayer();
+      const layersArray = Array.isArray(layer) ? layer : [layer];
       
-      console.log('✅ 레이어 setProps 호출 완료');
-      
-      // Deck.gl이 레이어를 처리할 시간을 주고 확인 (이중 requestAnimationFrame)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // MapboxOverlay의 내부 Deck 인스턴스 확인
-          const deckInstance = overlayRef.current?.deck;
-          if (deckInstance) {
-            const layerManager = deckInstance.layerManager;
-            const layers = layerManager?.layers || [];
-            console.log('📋 Deck.gl 레이어 목록:', layers.map((l: any) => ({
-              id: l.id,
-              count: l.count,
-              lifecycle: l.lifecycle,
-              props: {
-                dataLength: l.props?.data?.length || 0
-              }
-            })));
-            
-            // 레이어가 비어있으면 경고
-            if (layers.length === 0) {
-              console.warn('⚠️ Deck.gl 레이어가 등록되지 않았습니다. MapboxOverlay 초기화 확인 필요.');
-            }
-          } else {
-            // Deck 인스턴스 초기화 지연은 정상적인 현상 (타이밍 이슈)
-            // 레이어는 이미 setProps로 설정되었으므로 렌더링은 정상 작동함
-            // 경고는 디버깅 목적이므로 주석 처리하거나 레벨을 낮춤
-            // console.warn('⚠️ Deck 인스턴스를 찾을 수 없습니다. overlayRef.current?.deck:', overlayRef.current?.deck);
-          }
+      // MapboxOverlay에 레이어 전달
+      try {
+        overlayRef.current?.setProps({
+          layers: layersArray
         });
-      });
-    } catch (error) {
-      console.error('❌ 레이어 설정 오류:', error);
-    }
-    
-    console.log('✅ 스팟 레이어 업데이트 완료');
-  }, [spots, activeCenters, memberType, currentZoom, buildSpotsLayer]);
+        console.log('✅ 스팟 레이어 업데이트 완료:', layersArray.length, '개 레이어');
+      } catch (error) {
+        console.error('❌ 레이어 설정 오류:', error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [spots, activeCenters, buildSpotsLayer]); // activeCenters 추가
 
   // 센터 필터 토글
-  const toggleCenter = (centerId: string, checked: boolean) => {
+  const toggleCenter = (centerId: string, checked: boolean, event?: React.MouseEvent | MouseEvent) => {
+    // 이벤트 전파 방지 (Navigation 컴포넌트로 이벤트가 전파되어 페이지 이동 방지)
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.(); // 즉시 전파 중지
+    }
+    
+    console.log('🔘 센터 토글:', { centerId, checked, activeCenters: Array.from(activeCenters) });
+    
     const newActiveCenters = new Set(activeCenters);
     if (checked) {
       newActiveCenters.add(centerId);
@@ -1268,6 +1455,9 @@ export default function GeoDistributionPage() {
       newActiveCenters.delete(centerId);
     }
     setActiveCenters(newActiveCenters);
+    
+    // activeCenters가 변경되면 스팟 레이어가 자동으로 업데이트됨 (buildSpotsLayer가 activeCenters를 의존성으로 사용)
+    // 하지만 API에서 데이터를 다시 가져올 필요는 없음 (이미 모든 스팟 데이터가 있으므로)
   };
 
   // CSV 내보내기
@@ -1322,111 +1512,48 @@ export default function GeoDistributionPage() {
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-wrap items-center gap-4 mb-4">
             {/* 지역 선택 */}
-            <div className="text-sm w-full">
-              <label className="block font-medium mb-3">지역 선택:</label>
-              {/* 1단계: 시/도 선택 */}
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-600 mb-2">시/도 선택:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {[
-                    { id: '전국', name: '🌏 전국' },
-                    { id: '서울시', name: '🏙️ 서울시' },
-                    { id: '경기도', name: '🌳 경기도' },
-                    { id: '인천시', name: '🌊 인천시' },
-                    { id: '부산시', name: '🌊 부산시' },
-                    { id: '대구시', name: '🏔️ 대구시' },
-                    { id: '광주시', name: '🌅 광주시' },
-                    { id: '대전시', name: '🔬 대전시' },
-                    { id: '울산시', name: '🏭 울산시' },
-                    { id: '세종시', name: '🏛️ 세종시' },
-                    { id: '강원도', name: '⛰️ 강원도' },
-                    { id: '충청북도', name: '🌲 충청북도' },
-                    { id: '충청남도', name: '🌾 충청남도' },
-                    { id: '전라북도', name: '🌾 전라북도' },
-                    { id: '전라남도', name: '🌊 전라남도' },
-                    { id: '경상북도', name: '🏔️ 경상북도' },
-                    { id: '경상남도', name: '🌊 경상남도' },
-                    { id: '제주도', name: '🏝️ 제주도' }
-                  ].map(sido => (
-                    <button
-                      key={sido.id}
-                      onClick={() => {
-                        setSelectedSido(sido.id);
-                        setShowDistrictSelection(sido.id !== '전국');
-                        if (sido.id === '전국') {
-                          setSelectedRegions(new Set(['전국']));
-                        } else {
-                          setSelectedRegions(new Set());
-                        }
-                      }}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                        selectedSido === sido.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {sido.name}
-                    </button>
-                  ))}
-                </div>
+            <div className="w-full mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-3">지역 선택:</label>
+              {/* 지역 선택 - RegionSelectorWrapper 적용 */}
+              <div className="bg-white p-3 rounded border">
+                <RegionSelectorWrapper
+                selectedRegions={selectedRegions}
+                onRegionsChange={(regions) => {
+                  console.log('🔍 회원분포도 - 지역 선택 변경:', Array.from(regions));
+                  setSelectedRegions(regions);
+                }}
+                onSidoChange={(sido) => {
+                  console.log('🔍 회원분포도 - 시/도 선택:', sido);
+                  console.log('🔍 현재 selectedRegions:', Array.from(selectedRegions));
+                  console.log('🔍 regionCenters 상태:', Object.keys(regionCenters).length > 0 ? '초기화됨' : '초기화 안됨');
+                  setCurrentSelectedSido(sido);
+                  // regionCenters가 초기화된 후에만 센터 목록 업데이트
+                  if (Object.keys(regionCenters).length > 0) {
+                    // 시/도만 선택하고 구/군을 선택하지 않은 경우 즉시 센터 목록 업데이트
+                    if (sido && sido !== '전국' && selectedRegions.size === 0) {
+                      const normalizedSido = normalizeRegionName(sido);
+                      const sidoCenters = regionCenters[normalizedSido] || regionCenters[sido] || [];
+                      console.log(`📍 시/도만 선택 - ${sido} (${normalizedSido}) 센터 찾기:`, sidoCenters);
+                      console.log(`📋 regionCenters에서 찾은 키:`, normalizedSido, sido);
+                      if (sidoCenters.length > 0) {
+                        console.log(`✅ 시/도 센터 목록 설정:`, sidoCenters);
+                        setCenterList(sidoCenters);
+                      } else {
+                        console.log(`⚠️ ${sido} (${normalizedSido})에 대한 센터가 없습니다.`);
+                        console.log(`📋 regionCenters 전체 키:`, Object.keys(regionCenters));
+                        console.log(`📋 관련 키들:`, Object.keys(regionCenters).filter(k => k.includes(sido) || k.includes(normalizedSido)));
+                      }
+                    }
+                  } else {
+                    console.log('⏳ regionCenters가 아직 초기화되지 않았습니다. useEffect에서 처리됩니다.');
+                  }
+                }}
+                layout="simple"
+                className="w-full"
+              />
               </div>
-
-              {/* 2단계: 구/군 선택 (시/도가 선택된 경우만) */}
-              {showDistrictSelection && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-medium text-gray-600">
-                      {selectedSido} 구/군 선택:
-                    </label>
-                    <button
-                      onClick={() => setShowDistrictSelection(false)}
-                      className="text-xs text-gray-500 hover:text-gray-700"
-                    >
-                      ✕ 닫기
-                    </button>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
-                    <DistrictSelector 
-                      sido={selectedSido}
-                      selectedRegions={selectedRegions}
-                      setSelectedRegions={setSelectedRegions}
-                      setSelectedSido={setSelectedSido}
-                      setShowDistrictSelection={setShowDistrictSelection}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 선택된 지역 표시 */}
-              <div className="mt-3">
-                <div className="text-xs font-medium text-gray-600 mb-2">
-                  선택된 지역 ({selectedRegions.size}개):
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(selectedRegions).map(region => (
-                    <span
-                      key={region}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                    >
-                      {region}
-                      <button
-                        onClick={() => {
-                          const newRegions = new Set(selectedRegions);
-                          newRegions.delete(region);
-                          setSelectedRegions(newRegions);
-                        }}
-                        className="ml-1 text-blue-600 hover:text-blue-800"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                {selectedRegions.size === 0 && (
-                  <div className="text-xs text-gray-400 italic">
-                    지역을 선택해주세요 (지역 선택 후 센터 필터가 활성화됩니다)
-                  </div>
-                )}
+              <div className="mt-2 text-xs text-gray-500">
+                💡 시/도를 선택하면 해당 지역의 센터 목록이 표시됩니다.
               </div>
             </div>
 
@@ -1499,33 +1626,92 @@ export default function GeoDistributionPage() {
           </div>
         </div>
 
-        {/* 센터 필터 - 지역이 선택된 경우만 표시 */}
-        {selectedRegions.size > 0 && (
-          <div className="mb-4">
+        {/* 센터 필터 - 지역이 선택되었거나 센터 목록이 있는 경우 표시 */}
+        {(selectedRegions.size > 0 || currentSelectedSido || centerList.length > 0) && (
+          <div 
+            className="mb-4 relative" 
+            style={{ zIndex: 10000, position: 'relative' }} // Navigation 드롭다운(z-9999)보다 높게 설정
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseUp={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">센터 필터</label>
               <div className="text-xs text-gray-500">
-                선택된 지역: {Array.from(selectedRegions).join(', ')} ({centerList.length}개 센터)
+                선택된 지역: {selectedRegions.size > 0 
+                  ? Array.from(selectedRegions).join(', ') 
+                  : currentSelectedSido || '없음'} ({centerList.length}개 센터)
               </div>
             </div>
             {centerList.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {centerList.map((centerId, index) => (
-                  <label key={`center-filter-${centerId}-${index}`} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={activeCenters.has(centerId)}
-                      onChange={(e) => toggleCenter(centerId, e.target.checked)}
-                      className="rounded"
-                    />
-                    <span 
-                      className="px-2 py-1 rounded text-white text-xs"
-                      style={{ backgroundColor: getCenterColorCSS(centerId, true) }}
+                {centerList.map((centerId, index) => {
+                  const isActive = activeCenters.has(centerId);
+                  const centerColor = getCenterColorCSS(centerId, true);
+                  
+                  return (
+                    <button
+                      key={`center-filter-${centerId}-${index}`}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation?.(); // 즉시 전파 중지
+                        console.log('🔘 센터 버튼 클릭:', { centerId, isActive, event: e.type });
+                        toggleCenter(centerId, !isActive, e);
+                        return false; // 추가 안전장치
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // mousedown 이벤트도 차단
+                        e.stopPropagation();
+                        e.stopImmediatePropagation?.();
+                        console.log('🔘 센터 버튼 mousedown:', { centerId });
+                        return false;
+                      }}
+                      onMouseUp={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation?.();
+                        return false;
+                      }}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                        flex items-center gap-2 relative
+                        ${isActive 
+                          ? 'text-white shadow-md transform scale-105' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-transparent'
+                        }
+                      `}
+                      style={isActive ? { 
+                        backgroundColor: centerColor,
+                        borderColor: centerColor,
+                        zIndex: 10001, // Navigation 드롭다운보다 높게
+                        position: 'relative'
+                      } : {
+                        zIndex: 10001, // Navigation 드롭다운보다 높게
+                        position: 'relative'
+                      }}
                     >
-                      {centerId}
-                    </span>
-                  </label>
-                ))}
+                      <div 
+                        className={`w-3 h-3 rounded-full ${isActive ? 'bg-white' : 'bg-gray-400'}`}
+                        style={!isActive ? { backgroundColor: centerColor } : {}}
+                      ></div>
+                      <span>{centerId}</span>
+                      {isActive && (
+                        <span className="text-xs opacity-90">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-xs text-gray-400 italic">

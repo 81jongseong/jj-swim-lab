@@ -350,18 +350,35 @@ class ApiClient {
         
         // 401 Unauthorized 오류 시 자동 로그아웃 처리
         if (response.status === 401) {
+          const isTokenExpired = data.code === 'TOKEN_EXPIRED' || 
+                                 data.error?.includes('만료') || 
+                                 data.message?.includes('만료');
+          
           if (process.env.NODE_ENV === 'development') {
-            console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리');
+            console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리', {
+              isTokenExpired,
+              code: data.code,
+              error: data.error
+            });
           }
+          
+          // 토큰 및 사용자 정보 제거
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
           
-          // 현재 페이지가 인증 관련 페이지나 홈이 아닌 경우에만 리다이렉트
-          if (typeof window !== 'undefined' && 
-              !window.location.pathname.includes('/auth/') && 
-              window.location.pathname !== '/') {
+          // 토큰 만료인 경우 사용자에게 알림 (선택적)
+          if (isTokenExpired && typeof window !== 'undefined') {
+            // 이미 로그인 페이지나 홈이 아닌 경우에만 리다이렉트
+            if (!window.location.pathname.includes('/auth/') && 
+                window.location.pathname !== '/') {
+              // 토큰 만료 메시지와 함께 홈으로 리다이렉트
+              window.location.href = '/?expired=true';
+            }
+          } else if (typeof window !== 'undefined' && 
+                     !window.location.pathname.includes('/auth/') && 
+                     window.location.pathname !== '/') {
             window.location.href = '/';
           }
         }

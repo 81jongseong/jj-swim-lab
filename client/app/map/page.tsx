@@ -16,6 +16,8 @@ import Button from '@/components/Button';
 import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
 import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
+import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
+import CenterSearch from '@/components/map/CenterSearch';
 import SortOptions from '@/components/common/SortOptions';
 import ModernButton from '@/components/map/ModernButton';
 import FilterOptions from '@/components/map/FilterOptions';
@@ -1312,30 +1314,18 @@ export default function MapPage() {
           {/* 검색 타입 선택 - 컴포넌트화 */}
           <SearchTabs activeTab={searchType} onTabChange={setSearchType} />
 
-          {/* 센터명 검색 */}
+          {/* 센터명 검색 - 컴포넌트화 */}
           {searchType === 'center' && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">센터명 입력</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="예: JJ Swim Lab 강남점"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <Button
-                  onClick={() => alert('센터 검색 기능은 준비 중입니다.')}
-                  variant="primary"
-                  size="md"
-                >
-                  🔍 검색
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* 지역 선택 - 통합 컴포넌트 */}
-          {searchType === 'region' && (
-            <UnifiedRegionSelector
+            <CenterSearch
+              searchTerm=""
+              onSearchTermChange={(term) => {
+                // 센터명 검색어로 필터링 로직 추가 가능
+                console.log('센터 검색어:', term);
+              }}
+              onSearch={(term) => {
+                // 센터 검색 실행
+                console.log('센터 검색 실행:', term);
+              }}
               selectedRegions={selectedRegions}
               onRegionsChange={(regions) => {
                 const newRegions = regions instanceof Set ? regions : new Set(regions);
@@ -1357,8 +1347,19 @@ export default function MapPage() {
                   setSelectedRegions(new Set());
                 }
               }}
+              showDistrictSelection={showDistrictSelection}
+              onShowDistrictSelectionChange={setShowDistrictSelection}
+            />
+          )}
+
+          {/* 지역 선택 - 통합 컴포넌트 */}
+          {searchType === 'region' && (
+            <RegionSelectorWrapper
+              selectedRegions={selectedRegions}
+              onRegionsChange={(regions) => {
+                setSelectedRegions(regions);
+              }}
               layout="simple"
-              showDistricts={showDistrictSelection}
             />
           )}
 

@@ -163,7 +163,15 @@ export const verifyToken = (token: string, secret: string): Promise<Authenticate
     // issuer/audience 검증을 일시적으로 제거하여 401 오류 해결
     jwt.verify(token, secret, (err, decoded) => {
       if (err) {
-        console.error('❌ JWT 토큰 검증 실패:', err.message);
+        // 토큰 만료 오류는 상세 정보와 함께 전달
+        if (err.name === 'TokenExpiredError') {
+          console.error('❌ JWT 토큰 만료:', {
+            message: err.message,
+            expiredAt: (err as any).expiredAt
+          });
+        } else {
+          console.error('❌ JWT 토큰 검증 실패:', err.message);
+        }
         reject(err);
       } else {
         console.log('✅ JWT 토큰 검증 성공:', decoded);
@@ -258,16 +266,27 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     console.log('🔍 설정된 사용자 정보:', (req as any).user);
     
     next();
-  } catch (error) {
-    console.error('인증 오류:', error);
-    
+  } catch (error: any) {
+    // 토큰 만료 오류 처리
     if (error.name === 'TokenExpiredError') {
+      const expiredAt = error.expiredAt ? new Date(error.expiredAt).toISOString() : '알 수 없음';
+      console.log('❌ JWT 토큰 만료:', {
+        expiredAt,
+        endpoint: req.originalUrl,
+        method: req.method,
+        ip: req.ip
+      });
+      
       return res.status(401).json({
         error: '토큰이 만료되었습니다.',
         message: '다시 로그인해주세요.',
         code: 'TOKEN_EXPIRED',
+        expiredAt: expiredAt
       });
     }
+    
+    // 기타 인증 오류 처리
+    console.error('인증 오류:', error);
     
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({

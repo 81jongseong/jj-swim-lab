@@ -183,8 +183,8 @@ router.delete('/:id', authMiddleware, requireRole(['superAdmin']), async (req: R
   }
 });
 
-// 6. 템플릿으로부터 강습 계획 생성 (센터관리자)
-router.post('/:templateId/create-plan', authMiddleware, requireRole(['centerAdmin']), async (req: Request, res: Response) => {
+// 6. 템플릿으로부터 강습 계획 생성 (센터관리자, 강사)
+router.post('/:templateId/create-plan', authMiddleware, requireRole(['centerAdmin', 'instructor']), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { templateId } = req.params;

@@ -30,7 +30,15 @@ const verifyToken = (token, secret) => {
     return new Promise((resolve, reject) => {
         jsonwebtoken_1.default.verify(token, secret, (err, decoded) => {
             if (err) {
-                console.error('❌ JWT 토큰 검증 실패:', err.message);
+                if (err.name === 'TokenExpiredError') {
+                    console.error('❌ JWT 토큰 만료:', {
+                        message: err.message,
+                        expiredAt: err.expiredAt
+                    });
+                }
+                else {
+                    console.error('❌ JWT 토큰 검증 실패:', err.message);
+                }
                 reject(err);
             }
             else {
@@ -95,14 +103,22 @@ const authMiddleware = async (req, res, next) => {
         next();
     }
     catch (error) {
-        console.error('인증 오류:', error);
         if (error.name === 'TokenExpiredError') {
+            const expiredAt = error.expiredAt ? new Date(error.expiredAt).toISOString() : '알 수 없음';
+            console.log('❌ JWT 토큰 만료:', {
+                expiredAt,
+                endpoint: req.originalUrl,
+                method: req.method,
+                ip: req.ip
+            });
             return res.status(401).json({
                 error: '토큰이 만료되었습니다.',
                 message: '다시 로그인해주세요.',
                 code: 'TOKEN_EXPIRED',
+                expiredAt: expiredAt
             });
         }
+        console.error('인증 오류:', error);
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({
                 error: '유효하지 않은 토큰입니다.',

@@ -94,7 +94,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from 'hooks/useAuth';
 import NotificationsBell from './NotificationsBell';
 import { TenantLogo } from './TenantBranding';
@@ -115,12 +115,15 @@ const userMenuStructure = {
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/video-feedback', label: '🎥 동영상 분석 요청' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/mobile-learning', label: '📱 모바일 학습' },
     ],
     info: [
       { href: '/news', label: '📢 공지사항' },
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/profile', label: '👤 프로필' },
+      { href: '/localization', label: '🌐 언어 설정' },
+      { href: '/accessibility', label: '♿ 접근성 설정' },
     ]
   },
   instructor: {
@@ -150,6 +153,7 @@ const userMenuStructure = {
     experience: [
       { href: '/quiz', label: '🧠 퀴즈' },
       { href: '/3d-viewer', label: '🎨 3D 뷰어' },
+      { href: '/mobile-learning', label: '📱 모바일 학습' },
     ],
     resources: [
       { href: '/news', label: '📢 공지사항' },
@@ -158,6 +162,8 @@ const userMenuStructure = {
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/profile', label: '👤 프로필' },
+      { href: '/localization', label: '🌐 언어 설정' },
+      { href: '/accessibility', label: '♿ 접근성 설정' },
     ]
   },
   centerAdmin: {
@@ -170,6 +176,7 @@ const userMenuStructure = {
       { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
       { href: '/center/default/admin/reports', label: '📊 센터 통계' },
       { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
+      { href: '/membership', label: '💳 멤버십 관리' },
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
@@ -187,6 +194,8 @@ const userMenuStructure = {
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/center-admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
+      { href: '/localization', label: '🌐 언어 설정' },
+      { href: '/accessibility', label: '♿ 접근성 설정' },
     ]
   },
   'center-admin': {
@@ -199,6 +208,7 @@ const userMenuStructure = {
       { href: '/center/default/admin/courses', label: '📚 센터 강의 관리' },
       { href: '/center/default/admin/reports', label: '📊 센터 통계' },
       { href: '/center/default/admin/notices', label: '📢 공지사항 관리' },
+      { href: '/membership', label: '💳 멤버십 관리' },
     ],
     center: [
       { href: '/center/default/admin/info', label: '⚙️ 센터 정보 관리' },
@@ -216,6 +226,8 @@ const userMenuStructure = {
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
       { href: '/center-admin/geo-distribution', label: '🗺️ 회원 분포 지도' },
+      { href: '/localization', label: '🌐 언어 설정' },
+      { href: '/accessibility', label: '♿ 접근성 설정' },
     ]
   },
   superAdmin: {
@@ -236,6 +248,7 @@ const userMenuStructure = {
     revenue: [
       { href: '/admin/total-revenue-management', label: '💎 총 매출 관리' },
       { href: '/admin/revenue-management', label: '💰 센터별 매출 관리' },
+      { href: '/membership', label: '💳 멤버십 관리' },
     ],
     content: [
       { href: '/admin/lesson-plans', label: '📋 강습 계획 템플릿' },
@@ -259,6 +272,8 @@ const userMenuStructure = {
       { href: '/community', label: '💬 커뮤니티' },
       { href: '/shop', label: '🛍️ 상점' },
       { href: '/map', label: '🗺️ 수영센터 찾기' },
+      { href: '/localization', label: '🌐 언어 설정' },
+      { href: '/accessibility', label: '♿ 접근성 설정' },
     ]
   },
   guest: {
@@ -333,6 +348,7 @@ const menuGrouping = {
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [centerName, setCenterName] = useState('JJ Swim Lab');
   const [centerSlug, setCenterSlug] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState<string | undefined>(undefined);
@@ -701,8 +717,24 @@ export default function Navigation() {
                       : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                   }`}
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
+                    // stopImmediatePropagation은 존재할 때만 호출
+                    if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                      e.stopImmediatePropagation();
+                    }
+                    // Link의 기본 동작을 막고 명시적으로 라우터로 이동
+                    if (href) {
+                      router.push(href);
+                    }
                     setIsMenuOpen(false);
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                      e.stopImmediatePropagation();
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -785,7 +817,43 @@ export default function Navigation() {
                               })
                         }}
                         onClick={(e) => {
+                          // 이벤트 전파 완전 차단
+                          e.preventDefault();
                           e.stopPropagation();
+                          // stopImmediatePropagation은 존재할 때만 호출
+                          if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                            e.stopImmediatePropagation();
+                          }
+                          
+                          console.log('🔗 Navigation 링크 클릭:', { 
+                            label: item.label, 
+                            href, 
+                            resolvedHref: href, 
+                            originalHref: item.href,
+                            category,
+                            itemIndex,
+                            groupName: group.groupName
+                          });
+                          
+                          // href 검증 및 수정
+                          let targetHref = href;
+                          if (item.href === '/admin/center-management' && href !== '/admin/center-management') {
+                            console.error('❌ 센터 관리 링크 오류 감지, 수정:', { originalHref: item.href, resolvedHref: href });
+                            targetHref = '/admin/center-management';
+                          } else if (item.href !== href) {
+                            console.warn('⚠️ href 불일치:', { itemHref: item.href, resolvedHref: href, label: item.label });
+                            targetHref = item.href; // 원본 href 사용
+                          }
+                          
+                          // 명시적으로 라우터로 이동
+                          router.push(targetHref);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                            e.stopImmediatePropagation();
+                          }
                         }}
                       >
                         {item.label}

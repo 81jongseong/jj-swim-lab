@@ -124,7 +124,10 @@ export default function UnifiedRegionSelector({
       if (onSidoChange) onSidoChange('');
     } else {
       if (onSidoChange) onSidoChange(sido);
-      onRegionsChange(new Set());
+      // 시/도 선택 시 기존 지역 선택은 유지하되, 전국 선택은 해제
+      const newRegions = new Set(regionsSet);
+      newRegions.delete('전국');
+      onRegionsChange(newRegions);
     }
   };
   
@@ -189,8 +192,8 @@ export default function UnifiedRegionSelector({
           </div>
         </div>
 
-        {/* 구/군 선택 */}
-        {showDistricts && selectedSido && CITIES_BY_PROVINCE[selectedSido] && (
+        {/* 구/군 선택 - selectedSido가 있고 전국이 아니고 해당 시/도의 구/군 데이터가 있을 때 표시 (showDistricts가 false가 아닌 경우) */}
+        {selectedSido && selectedSido !== '전국' && CITIES_BY_PROVINCE[selectedSido] && (showDistricts !== false) && (
           <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl border-2 border-blue-200">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -307,8 +310,8 @@ export default function UnifiedRegionSelector({
             )}
           </div>
 
-          {/* 구/군 선택 */}
-          {showDistricts && selectedSido && (
+          {/* 구/군 선택 - selectedSido가 있고 전국이 아닐 때 표시 (showDistricts가 false가 아닌 경우) */}
+          {selectedSido && selectedSido !== '전국' && (showDistricts !== false) && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-700">시/군/구</label>
@@ -375,8 +378,8 @@ export default function UnifiedRegionSelector({
           </select>
         </div>
 
-        {/* 구/군 선택 */}
-        {showDistricts && selectedSido && (
+        {/* 구/군 선택 - selectedSido가 있고 전국이 아닐 때 표시 (showDistricts가 false가 아닌 경우) */}
+        {selectedSido && selectedSido !== '전국' && (showDistricts !== false) && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">시/군/구</label>
             {selectedSido && CITIES_BY_PROVINCE[selectedSido] && (

@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Check, Trash2, Filter } from 'lucide-react';
 import Button from './ui/button';
-import Card from './ui/Card';
+import Card from './ui/card';
 import { Badge } from '@/components/ui';
 
 interface Notification {
@@ -99,9 +99,9 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
       });
 
       if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif._id === notificationId 
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif._id === notificationId
               ? { ...notif, isRead: true }
               : notif
           )
@@ -128,7 +128,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
       });
 
       if (response.ok) {
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(notif => ({ ...notif, isRead: true }))
         );
         setUnreadCount(0);
@@ -288,9 +288,8 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
               filteredNotifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                    !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">

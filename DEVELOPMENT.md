@@ -51,6 +51,28 @@
 
 ### 🔴 반복 발생 오류
 
+#### 0. **JWT 토큰 만료 오류**
+- **오류 메시지**: `JWT 토큰 검증 실패: jwt expired`, `TokenExpiredError: jwt expired`
+- **발생 위치**: `server/src/middleware/auth.ts:164`, `client/utils/api.ts:352`
+- **원인**: 
+  - JWT 토큰이 만료되었는데 클라이언트에서 계속 사용하려고 시도
+  - 토큰 만료 시간(expiredAt)이 지나면 서버에서 401 오류 반환
+  - 클라이언트에서 만료된 토큰을 자동으로 제거하지 않음
+- **해결 방법**:
+  1. 서버의 `auth.ts` 미들웨어에서 토큰 만료 오류를 명확하게 처리:
+     - `TokenExpiredError` 감지 시 만료 시간 정보와 함께 401 응답
+     - 응답에 `code: 'TOKEN_EXPIRED'` 포함
+  2. 클라이언트의 `api.ts`에서 토큰 만료 오류 감지:
+     - 401 응답의 `code`가 `TOKEN_EXPIRED`인 경우 자동 로그아웃
+     - localStorage와 sessionStorage에서 토큰 및 사용자 정보 제거
+     - 홈 페이지로 리다이렉트 (로그인 페이지가 아닌 경우)
+  3. 토큰 만료 시 사용자에게 친화적인 메시지 표시
+- **예방 방법**:
+  - 토큰 만료 시간을 적절하게 설정 (예: 24시간)
+  - 토큰 만료 전 자동 갱신 로직 구현 (향후)
+  - 클라이언트에서 토큰 만료 시간을 확인하고 만료 전에 갱신 요청
+- **상태**: ✅ 해결됨 (2025-01-22)
+
 #### 1. **JSX 구문 오류 - React Fragment 미닫힘**
 - **오류 메시지**: `Unexpected token 'div'. Expected jsx identifier`, `Expected corresponding closing tag for JSX fragment`
 - **발생 위치**: `client/app/instructor/checklist/page.tsx:301`, `client/app/instructor/checklist/page.tsx:664`

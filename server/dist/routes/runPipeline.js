@@ -3,7 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.downloadPipelineResult = exports.checkPipelineStatus = exports.runPipeline = void 0;
+exports.runPipeline = runPipeline;
+exports.checkPipelineStatus = checkPipelineStatus;
+exports.downloadPipelineResult = downloadPipelineResult;
 const express_1 = require("express");
 const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
@@ -110,7 +112,6 @@ async function runPipeline(req, res) {
         res.status(500).json(errorResult);
     }
 }
-exports.runPipeline = runPipeline;
 async function extractMetadata(keypointsPath, videoPath) {
     try {
         const keypointsData = await promises_1.default.readFile(keypointsPath, 'utf-8');
@@ -172,7 +173,6 @@ async function checkPipelineStatus(req, res) {
         res.status(500).json({ error: '상태 확인 실패' });
     }
 }
-exports.checkPipelineStatus = checkPipelineStatus;
 async function downloadPipelineResult(req, res) {
     try {
         const { outputDir, fileType } = req.query;
@@ -209,7 +209,6 @@ async function downloadPipelineResult(req, res) {
         res.status(500).json({ error: '다운로드 실패' });
     }
 }
-exports.downloadPipelineResult = downloadPipelineResult;
 router.post('/run', runPipeline);
 router.get('/status/:jobId', checkPipelineStatus);
 router.get('/download/:jobId', downloadPipelineResult);
