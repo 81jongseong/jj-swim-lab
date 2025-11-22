@@ -66,10 +66,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
-    
+
     // 60초마다 자동 새로고침 (API 호출 빈도 감소)
     const interval = setInterval(fetchDashboardStats, 60000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -107,8 +107,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* 시스템 상태 카드 */}
-      <div className="mb-8">
-        <div className="border-l-4 border-l-blue-500 bg-white rounded-lg shadow p-6">
+      <div className="mb-8 animate-fade-in-up">
+        <div className="card-premium border-l-4 border-l-blue-500 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">🖥️ 시스템 상태</h2>
             <div className={`px-3 py-1 rounded-full text-white ${getHealthColor(stats.systemHealth)}`}>
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{stats.totalRevenue.toLocaleString()}원</div>
               <div className="text-sm text-gray-500">총 매출</div>
-              <button 
+              <button
                 className="mt-2 text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded"
                 onClick={() => window.location.href = '/admin/revenue'}
               >
@@ -143,8 +143,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* 승인 대기 항목 카드 */}
-      <div className="mb-8">
-        <div className="border-l-4 border-l-red-500 bg-white rounded-lg shadow p-6">
+      <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="card-premium border-l-4 border-l-red-500 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">⚠️ 승인 대기 항목</h2>
             <div className="px-3 py-1 rounded-full text-white bg-red-500">
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-red-50 rounded-lg p-4 cursor-pointer hover:bg-red-100 transition-colors"
-                 onClick={() => router.push('/admin/approvals')}>
+              onClick={() => router.push('/admin/approvals')}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-bold text-red-600">{pendingApprovals.centerRegistrations}</div>
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="bg-orange-50 rounded-lg p-4 cursor-pointer hover:bg-orange-100 transition-colors"
-                 onClick={() => router.push('/admin/instructor-management')}>
+              onClick={() => router.push('/admin/instructor-management')}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-bold text-orange-600">{pendingApprovals.instructorRegistrations}</div>
@@ -219,13 +219,13 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 성능 모니터링</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300">
+          <div className="card-premium p-6 border-2 border-transparent hover:border-blue-300 animate-scale-in" style={{ animationDelay: '0.2s' }}>
             <h3 className="text-lg font-semibold mb-4">📊 성능 모니터링 (임시 비활성화)</h3>
             <p className="text-gray-600">PerformanceMonitor 컴포넌트를 임시로 비활성화했습니다.</p>
           </div>
-          
+
           {/* 시스템 리소스 모니터링 */}
-          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-purple-300">
+          <div className="card-premium p-6 border-2 border-transparent hover:border-purple-300 animate-scale-in" style={{ animationDelay: '0.3s' }}>
             <h3 className="text-lg font-semibold mb-4">🖥️ 시스템 리소스</h3>
             <SimpleBarChart
               data={[
@@ -249,8 +249,8 @@ export default function AdminDashboard() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">📞 고객지원 & 공지사항 관리</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 고객지원 관리 카드 */}
-          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-blue-300"
-               onClick={() => router.push('/admin/reports')}>
+          <div className="card-premium p-6 border-2 border-transparent hover:border-blue-300 animate-scale-in" style={{ animationDelay: '0.4s' }}
+            onClick={() => router.push('/admin/reports')}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">🎧 고객지원 관리</h3>
               <span className="text-2xl">📞</span>
@@ -272,8 +272,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* 공지사항 관리 카드 */}
-          <div className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-green-300"
-               onClick={() => router.push('/admin/notices')}>
+          <div className="card-premium p-6 border-2 border-transparent hover:border-green-300 animate-scale-in" style={{ animationDelay: '0.5s' }}
+            onClick={() => router.push('/admin/notices')}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">📢 공지사항 관리</h3>
               <span className="text-2xl">📝</span>
@@ -300,28 +300,28 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">⚡ 빠른 액션</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
+          <button
             onClick={() => window.location.href = '/admin/teaching-methods'}
             className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             📚 강습법 관리
           </button>
-          
-          <button 
+
+          <button
             onClick={() => window.location.href = '/admin/center-levels'}
             className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             🎯 센터별 레벨 관리
           </button>
-          
-          <button 
+
+          <button
             onClick={() => window.location.href = '/admin/bookings'}
             className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             📅 예약 관리
           </button>
-          
-          <button 
+
+          <button
             onClick={() => window.location.href = '/admin/reports'}
             className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
@@ -331,9 +331,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* 최근 활동 */}
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">🕒 최근 활동</h2>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="card-premium p-6">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>

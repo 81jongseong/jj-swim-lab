@@ -47,7 +47,7 @@ export default function HomePage() {
           router.push(`/center/${slug}/admin/home`);
           return;
         }
-        
+
         // 계정 유형별 대시보드로 리다이렉트
         const dashboardRoutes = {
           superAdmin: '/admin/dashboard',
@@ -56,7 +56,7 @@ export default function HomePage() {
         };
 
         const targetRoute = dashboardRoutes[user.userType as keyof typeof dashboardRoutes];
-        
+
         if (targetRoute) {
           console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
           router.push(targetRoute);
@@ -122,7 +122,7 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-background relative">
       {/* 히어로 섹션 */}
-      <HeroWave 
+      <HeroWave
         title={landingContent.title}
         subtitle={landingContent.subtitle}
         description={landingContent.description}
@@ -159,7 +159,7 @@ function LandingPage() {
             {/* 개인화된 학습 */}
             <motion.div
               variants={motionPresets.appear}
-              className="bg-card p-8 rounded-lg shadow-lg text-center"
+              className="card-premium p-8 text-center"
             >
               <div className="text-5xl text-primary mb-4">
                 <i className="fas fa-chart-line"></i>
@@ -173,7 +173,7 @@ function LandingPage() {
             {/* 실시간 피드백 */}
             <motion.div
               variants={motionPresets.appear}
-              className="bg-card p-8 rounded-lg shadow-lg text-center"
+              className="card-premium p-8 text-center"
             >
               <div className="text-5xl text-primary mb-4">
                 <i className="fas fa-comments"></i>

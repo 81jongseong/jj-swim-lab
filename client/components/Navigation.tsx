@@ -760,7 +760,7 @@ export default function Navigation() {
         return (
           <div key={groupIndex} className="relative group">
             <button
-              className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 ${
+              className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 whitespace-nowrap ${
                 group.categories.some(cat => 
                   userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
                     isMenuActive(resolveHref(item.href), pathname)
@@ -770,12 +770,12 @@ export default function Navigation() {
               onMouseEnter={() => openDropdown(`desktop-${groupIndex}`)}
               onMouseLeave={closeDropdown}
             >
-              <span>{group.groupName}</span>
-              <span className="text-xs ml-1">▼</span>
+              <span className="whitespace-nowrap">{group.groupName}</span>
+              <span className="text-xs ml-1 flex-shrink-0">▼</span>
             </button>
             {activeDropdown === `desktop-${groupIndex}` && (
               <div 
-                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] min-w-max overflow-hidden"
+                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-auto min-w-[280px] max-w-[400px] bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999]"
                 onMouseEnter={() => keepDropdownOpen(`desktop-${groupIndex}`)}
                 onMouseLeave={closeDropdown}
               >
@@ -799,23 +799,11 @@ export default function Navigation() {
                       <Link
                         key={`${category}-${itemIndex}`}
                         href={href}
-                        className={`block w-full text-left px-4 py-2 text-sm transition-colors text-white ${
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors whitespace-normal break-words ${
                           isActive
-                            ? 'font-semibold border-r-2' 
-                            : 'hover:opacity-80'
+                            ? 'font-semibold bg-blue-50 text-blue-700 border-r-2 border-blue-500' 
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                         }`}
-                        style={{
-                          ...(isActive
-                            ? {
-                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                                color: '#ffffff',
-                                borderRightColor: '#ffffff'
-                              }
-                            : {
-                                color: '#ffffff',
-                                ...(primaryColor ? { '--hover-bg': `rgba(255, 255, 255, 0.1)` } : {})
-                              })
-                        }}
                         onClick={(e) => {
                           // 이벤트 전파 완전 차단
                           e.preventDefault();
@@ -882,7 +870,7 @@ export default function Navigation() {
       style={navBackgroundStyle}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 min-w-0">
+        <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center space-x-3">
@@ -912,7 +900,7 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation - 반응형으로 자동 조정 */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-2 relative min-w-0 flex-1 justify-center px-4">
+          <div className="hidden lg:flex lg:items-center lg:space-x-2 relative flex-1 justify-center px-4">
             {renderMenuGroups(false)}
           </div>
 

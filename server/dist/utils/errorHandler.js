@@ -129,7 +129,35 @@ const errorHandler = (error, req, res, next) => {
     res.status(appError.statusCode).json(errorResponse);
 };
 exports.errorHandler = errorHandler;
+const IGNORED_PATHS = [
+    '/index.htm',
+    '/index.html',
+    '/favicon.ico',
+    '/robots.txt',
+    '/sitemap.xml',
+    '/.well-known/',
+    '/wp-admin',
+    '/wp-login.php',
+    '/phpmyadmin',
+    '/.env',
+    '/.git',
+    '/admin.php',
+    '/administrator'
+];
 const notFoundHandler = (req, res, next) => {
+    const url = req.originalUrl.split('?')[0];
+    const shouldIgnore = IGNORED_PATHS.some(path => url === path || url.startsWith(path));
+    if (shouldIgnore) {
+        res.status(404).json({
+            success: false,
+            error: {
+                message: 'Not Found',
+                code: ErrorCode.DATA_NOT_FOUND,
+                statusCode: 404
+            }
+        });
+        return;
+    }
     const error = new AppError(`요청한 리소스를 찾을 수 없습니다: ${req.originalUrl}`, 404, ErrorCode.DATA_NOT_FOUND, ErrorSeverity.LOW);
     next(error);
 };

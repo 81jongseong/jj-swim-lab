@@ -298,8 +298,46 @@ export const errorHandler = (
   res.status(appError.statusCode).json(errorResponse);
 };
 
+// 무시해도 되는 일반적인 봇/크롤러 요청 경로
+const IGNORED_PATHS = [
+  '/index.htm',
+  '/index.html',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/.well-known/',
+  '/wp-admin',
+  '/wp-login.php',
+  '/phpmyadmin',
+  '/.env',
+  '/.git',
+  '/admin.php',
+  '/administrator'
+];
+
 // 404 에러 처리 미들웨어
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const url = req.originalUrl.split('?')[0]; // 쿼리 파라미터 제거
+  
+  // 무시해도 되는 경로인지 확인
+  const shouldIgnore = IGNORED_PATHS.some(path => 
+    url === path || url.startsWith(path)
+  );
+  
+  if (shouldIgnore) {
+    // 봇/크롤러 요청은 조용히 404 반환 (로깅 안 함)
+    res.status(404).json({
+      success: false,
+      error: {
+        message: 'Not Found',
+        code: ErrorCode.DATA_NOT_FOUND,
+        statusCode: 404
+      }
+    });
+    return;
+  }
+  
+  // 실제 404 에러는 로깅
   const error = new AppError(
     `요청한 리소스를 찾을 수 없습니다: ${req.originalUrl}`,
     404,
