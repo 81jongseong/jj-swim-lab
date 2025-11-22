@@ -17,17 +17,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary-dynamic text-primary-dynamic shadow hover:opacity-90",
+          "bg-gradient-to-r from-primary-600 to-brand-600 text-white shadow-md hover:shadow-lg hover:from-primary-700 hover:to-brand-700 transition-all duration-300",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background/50 backdrop-blur-sm shadow-sm hover:bg-accent hover:text-accent-foreground transition-all duration-300",
         secondary:
-          "bg-secondary-dynamic text-secondary-dynamic shadow-sm hover:opacity-80",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary-dynamic underline-offset-4 hover:underline",
-        primary: "bg-primary-dynamic text-primary-dynamic shadow hover:opacity-90",
-        success: "bg-green-600 text-white shadow hover:bg-green-700",
+        link: "text-primary underline-offset-4 hover:underline",
+        primary: "bg-gradient-to-r from-primary-600 to-brand-600 text-white shadow-md hover:shadow-lg hover:from-primary-700 hover:to-brand-700 transition-all duration-300",
+        success: "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow hover:from-green-600 hover:to-emerald-700",
       },
       size: {
         default: "h-9 px-4 py-2",
@@ -47,7 +47,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   asChild?: boolean
 }
 

@@ -19,16 +19,16 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         className={cn(
           'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
           {
-            'border-transparent bg-primary text-primary-foreground hover:bg-primary/80': variant === 'default' || variant === 'primary',
+            'border-transparent bg-primary text-primary-foreground hover:bg-primary/80 shadow-sm': variant === 'default' || variant === 'primary',
             'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80': variant === 'secondary',
-            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80': variant === 'destructive' || variant === 'danger',
-            'border-transparent bg-success-500 text-white hover:bg-success-600': variant === 'success',
-            'border-transparent bg-warning-500 text-white hover:bg-warning-600': variant === 'warning',
+            'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80 shadow-sm': variant === 'destructive' || variant === 'danger',
+            'border-transparent bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm': variant === 'success',
+            'border-transparent bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm': variant === 'warning',
             'border-transparent bg-transparent hover:bg-accent hover:text-accent-foreground': variant === 'ghost',
-            'text-foreground': variant === 'outline',
-            'px-2 py-0.5 text-xs': size === 'sm',
-            'px-2.5 py-0.5 text-xs': size === 'md',
-            'px-3 py-1 text-sm': size === 'lg',
+            'text-foreground border-border': variant === 'outline',
+            'px-2.5 py-0.5 text-xs': size === 'sm',
+            'px-3 py-1 text-sm': size === 'md',
+            'px-4 py-1.5 text-base': size === 'lg',
           },
           className
         )}

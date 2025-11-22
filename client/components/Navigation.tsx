@@ -375,7 +375,7 @@ export default function Navigation() {
     if (storedCenterName) {
       setCenterName(storedCenterName);
     }
-    
+
     // localStorage에서 로고 URL 가져오기 (우선순위 1)
     const loadLogoFromLocalStorage = () => {
       const storedLogo = localStorage.getItem('center-logo');
@@ -386,7 +386,7 @@ export default function Navigation() {
       }
       return false;
     };
-    
+
     // localStorage에서 로고 로드 시도
     if (!loadLogoFromLocalStorage()) {
       // localStorage에 없으면 API에서 가져오기
@@ -420,10 +420,10 @@ export default function Navigation() {
           console.error('Navigation: 로고 URL 로드 실패:', error);
         }
       };
-      
+
       loadLogoFromAPI();
     }
-    
+
     // 커스텀 이벤트 리스너 (로고 업데이트 감지)
     const handleLogoUpdate = (event: any) => {
       const logoUrlFromEvent = event.detail?.logoUrl;
@@ -432,9 +432,9 @@ export default function Navigation() {
         setLogoUrl(fullLogoUrl);
       }
     };
-    
+
     window.addEventListener('center-logo-updated', handleLogoUpdate);
-    
+
     // CSS 변수에서 primaryColor와 secondaryColor 가져오기
     const updateColor = () => {
       const primary = getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary-color').trim();
@@ -446,33 +446,33 @@ export default function Navigation() {
         setSecondaryColor(secondary);
       }
     };
-    
+
     updateColor();
-    
+
     // MutationObserver로 CSS 변수 변경 감지
     const observer = new MutationObserver(() => {
       updateColor();
     });
-    
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['style']
     });
-    
+
     // 주기적으로 확인 (백업)
     const interval = setInterval(() => {
       updateColor();
       // 로고도 주기적으로 확인 (localStorage 우선)
       loadLogoFromLocalStorage();
     }, 1000);
-    
+
     // pathname 변경 시에도 색상 확인
     const checkColor = () => {
       updateColor();
     };
-    
+
     window.addEventListener('focus', checkColor);
-    
+
     return () => {
       observer.disconnect();
       clearInterval(interval);
@@ -490,12 +490,12 @@ export default function Navigation() {
   useEffect(() => {
     if (isMenuOpen) {
       setTimeout(() => {
-        
+
         // 정확한 경로 매칭으로 첫 번째 활성 메뉴 항목만 찾기
         const activeMenuItems = document.querySelectorAll('[data-active="true"]');
-        
+
         let targetMenuItem = null;
-        
+
         // href 속성으로 정확한 경로 매칭 우선
         for (let i = 0; i < activeMenuItems.length; i++) {
           const item = activeMenuItems[i] as HTMLElement;
@@ -505,15 +505,15 @@ export default function Navigation() {
             break;
           }
         }
-        
+
         // 정확한 매칭이 없으면 첫 번째 활성 항목 사용
         if (!targetMenuItem && activeMenuItems.length > 0) {
           targetMenuItem = activeMenuItems[0] as HTMLElement;
         }
-        
+
         if (targetMenuItem && typeof targetMenuItem.scrollIntoView === 'function') {
-          targetMenuItem.scrollIntoView({ 
-            behavior: 'smooth', 
+          targetMenuItem.scrollIntoView({
+            behavior: 'smooth',
             block: 'center',
             inline: 'nearest'
           });
@@ -537,10 +537,10 @@ export default function Navigation() {
         const target = event.target as Element;
         const menuElement = document.querySelector('[data-menu="mobile-menu"]');
         const menuButton = document.querySelector('[data-menu="menu-button"]');
-        
-        if (menuElement && menuButton && 
-            !menuElement.contains(target) && 
-            !menuButton.contains(target)) {
+
+        if (menuElement && menuButton &&
+          !menuElement.contains(target) &&
+          !menuButton.contains(target)) {
           setIsMenuOpen(false);
         }
       }
@@ -559,7 +559,7 @@ export default function Navigation() {
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
@@ -571,29 +571,29 @@ export default function Navigation() {
   const isMenuActive = (href: string, currentPath: string): boolean => {
     // 정확한 매칭
     if (currentPath === href) return true;
-    
+
     // 하위 경로 매칭
     if (currentPath.startsWith(href + '/')) return true;
-    
+
     // 특수 케이스: 예약·결제 관리 페이지 (쿼리 파라미터 포함)
     if (href === '/center/default/admin/manage' && currentPath.startsWith('/center/default/admin/manage')) return true;
-    
+
     // 특수 케이스: 건강 관리 관련 페이지들
     if (href === '/health' && currentPath.startsWith('/health')) return true;
-    
+
     // 특수 케이스: 수영트레이닝 규칙엔진 관련 페이지들
-    if (href === '/admin/swim-training-engine' && 
-        currentPath.startsWith('/admin/swim-training-engine')) return true;
-    
+    if (href === '/admin/swim-training-engine' &&
+      currentPath.startsWith('/admin/swim-training-engine')) return true;
+
     return false;
   };
   const { user, logout, hasPermission, hasUserType, loading } = useAuth();
   const isLoggedIn = !!user;
-  
+
   // 사용자 이름이 사용자 타입 라벨과 같은 경우 처리
   const getUserDisplayName = () => {
     if (!user?.name) return '';
-    
+
     const userTypeLabels: { [key: string]: string } = {
       'student': '회원',
       'instructor': '강사',
@@ -601,10 +601,10 @@ export default function Navigation() {
       'center-admin': '센터 관리자',
       'superAdmin': '최고 관리자'
     };
-    
+
     // user.name이 userType 라벨과 같거나 잘못된 경우 처리
     const userTypeLabel = userTypeLabels[user.userType] || '';
-    
+
     // superAdmin인데 name이 "센터 관리자"인 경우
     if (user.userType === 'superAdmin' && (user.name === '센터 관리자' || user.name === userTypeLabel)) {
       // 이메일에서 이름 부분 추출 또는 userId 사용
@@ -614,7 +614,7 @@ export default function Navigation() {
       }
       return user.userId || '최고 관리자';
     }
-    
+
     // 다른 타입도 동일하게 처리
     if (user.name === userTypeLabel) {
       const emailName = user.email?.split('@')[0];
@@ -623,10 +623,10 @@ export default function Navigation() {
       }
       return user.userId || '사용자';
     }
-    
+
     return user.name;
   };
-  
+
   const userName = getUserDisplayName();
 
   const handleLogout = () => {
@@ -660,15 +660,15 @@ export default function Navigation() {
   // 권한 기반 메뉴 필터링 함수
   const filterMenuByPermissions = (menuItems: any[], userType: string) => {
     if (userType === 'guest') return menuItems;
-    
+
     return menuItems.filter(item => {
       if (item.href === '/admin/reports' && !hasUserType('superAdmin')) return false;
       if (item.href === '/ai-config' && !hasUserType('superAdmin')) return false;
       if (item.href === '/admin/ai-config' && !hasUserType('superAdmin')) return false;
-      
+
       if (item.href.startsWith('/admin/') && !hasUserType('centerAdmin') && !hasUserType('superAdmin')) return false;
       if (item.href.startsWith('/instructor/') && !hasUserType('instructor')) return false;
-      
+
       return true;
     });
   };
@@ -689,7 +689,7 @@ export default function Navigation() {
       }
       return href;
     };
-    
+
     return grouping.map((group, groupIndex) => {
       if (isMobile) {
         // 모바일 메뉴 렌더링
@@ -706,52 +706,52 @@ export default function Navigation() {
               return menuItems.map((item, itemIndex) => {
                 const href = resolveHref(item.href);
                 return (
-                <Link
-                  key={`${category}-${itemIndex}`}
-                  href={href}
-                  data-active={isMenuActive(href, pathname).toString()}
-                  data-href={href}
-                  className={`block w-full text-left px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isMenuActive(href, pathname)
-                      ? 'bg-blue-500 text-white font-bold border-l-3 border-blue-700 shadow-sm' 
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
-                  }`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // stopImmediatePropagation은 존재할 때만 호출
-                    if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
-                      e.stopImmediatePropagation();
-                    }
-                    // Link의 기본 동작을 막고 명시적으로 라우터로 이동
-                    if (href) {
-                      router.push(href);
-                    }
-                    setIsMenuOpen(false);
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
-                      e.stopImmediatePropagation();
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                  <Link
+                    key={`${category}-${itemIndex}`}
+                    href={href}
+                    data-active={isMenuActive(href, pathname).toString()}
+                    data-href={href}
+                    className={`block w-full text-left px-3 py-2 text-sm transition-colors rounded-md mx-2 focus:outline-none focus:ring-2 focus:ring-primary ${isMenuActive(href, pathname)
+                      ? 'bg-gradient-to-r from-primary-600 to-brand-600 text-white font-bold shadow-md'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'
+                      }`}
+                    onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
+                      // stopImmediatePropagation은 존재할 때만 호출
+                      if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                        e.stopImmediatePropagation();
+                      }
+                      // Link의 기본 동작을 막고 명시적으로 라우터로 이동
+                      if (href) {
+                        router.push(href);
+                      }
                       setIsMenuOpen(false);
-                      // 페이지 이동 시 항상 상단으로 스크롤
-                      setTimeout(() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 100);
-                    }
-                  }}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  {item.label}
-                </Link>
-              );});
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
+                        e.stopImmediatePropagation();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setIsMenuOpen(false);
+                        // 페이지 이동 시 항상 상단으로 스크롤
+                        setTimeout(() => {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                      }
+                    }}
+                    role="menuitem"
+                    tabIndex={0}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              });
             })}
           </div>
         );
@@ -760,13 +760,12 @@ export default function Navigation() {
         return (
           <div key={groupIndex} className="relative group">
             <button
-              className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 whitespace-nowrap ${
-                group.categories.some(cat => 
-                  userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item => 
-                    isMenuActive(resolveHref(item.href), pathname)
-                  )
-                ) ? 'text-white font-semibold bg-white/30' : ''
-              }`}
+              className={`text-white hover:text-white/80 transition-colors font-medium text-sm flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-white/20 whitespace-nowrap drop-shadow-md ${group.categories.some(cat =>
+                userMenuStructure[(user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest')]?.[cat]?.some(item =>
+                  isMenuActive(resolveHref(item.href), pathname)
+                )
+              ) ? 'text-white font-semibold bg-white/30' : ''
+                }`}
               onMouseEnter={() => openDropdown(`desktop-${groupIndex}`)}
               onMouseLeave={closeDropdown}
             >
@@ -774,7 +773,7 @@ export default function Navigation() {
               <span className="text-xs ml-1 flex-shrink-0">▼</span>
             </button>
             {activeDropdown === `desktop-${groupIndex}` && (
-              <div 
+              <div
                 className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-auto min-w-[280px] max-w-[400px] bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999]"
                 onMouseEnter={() => keepDropdownOpen(`desktop-${groupIndex}`)}
                 onMouseLeave={closeDropdown}
@@ -782,28 +781,27 @@ export default function Navigation() {
                 <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 bg-gray-50">
                   {group.groupName}
                 </div>
-                  {group.categories && group.categories.map && group.categories.map(category => {
-                    const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
-                    let menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
-                    // 유료 강사 전용 메뉴 필터링
-                    menuItems = filterMenuByPermissions(menuItems, normalizedUserType);
-                    return menuItems.map((item, itemIndex) => {
-                      const href = resolveHref(item.href);
-                      const isActive =
-                        pathname === href ||
-                        (href === resolveHref('/center/default/admin/manage') && pathname.startsWith(href)) ||
-                        (href === '/health' && pathname.startsWith('/health')) ||
-                        (href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
-                        (href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine');
-                      return (
+                {group.categories && group.categories.map && group.categories.map(category => {
+                  const normalizedUserType = (user?.userType === 'center-admin' || user?.userType === 'centerAdmin') ? 'centerAdmin' : (user?.userType || 'guest');
+                  let menuItems = userMenuStructure[normalizedUserType]?.[category] || [];
+                  // 유료 강사 전용 메뉴 필터링
+                  menuItems = filterMenuByPermissions(menuItems, normalizedUserType);
+                  return menuItems.map((item, itemIndex) => {
+                    const href = resolveHref(item.href);
+                    const isActive =
+                      pathname === href ||
+                      (href === resolveHref('/center/default/admin/manage') && pathname.startsWith(href)) ||
+                      (href === '/health' && pathname.startsWith('/health')) ||
+                      (href === '/swimlab/trial' && pathname === '/swimlab/trial') ||
+                      (href === '/admin/swim-training-engine' && pathname === '/admin/swim-training-engine');
+                    return (
                       <Link
                         key={`${category}-${itemIndex}`}
                         href={href}
-                        className={`block w-full text-left px-4 py-2 text-sm transition-colors whitespace-normal break-words ${
-                          isActive
-                            ? 'font-semibold bg-blue-50 text-blue-700 border-r-2 border-blue-500' 
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }`}
+                        className={`block w-full text-left px-4 py-2 text-sm transition-colors whitespace-normal break-words ${isActive
+                          ? 'font-semibold bg-blue-50 text-blue-700 border-r-2 border-blue-500'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
                         onClick={(e) => {
                           // 이벤트 전파 완전 차단
                           e.preventDefault();
@@ -812,17 +810,17 @@ export default function Navigation() {
                           if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
                             e.stopImmediatePropagation();
                           }
-                          
-                          console.log('🔗 Navigation 링크 클릭:', { 
-                            label: item.label, 
-                            href, 
-                            resolvedHref: href, 
+
+                          console.log('🔗 Navigation 링크 클릭:', {
+                            label: item.label,
+                            href,
+                            resolvedHref: href,
                             originalHref: item.href,
                             category,
                             itemIndex,
                             groupName: group.groupName
                           });
-                          
+
                           // href 검증 및 수정
                           let targetHref = href;
                           if (item.href === '/admin/center-management' && href !== '/admin/center-management') {
@@ -832,7 +830,7 @@ export default function Navigation() {
                             console.warn('⚠️ href 불일치:', { itemHref: item.href, resolvedHref: href, label: item.label });
                             targetHref = item.href; // 원본 href 사용
                           }
-                          
+
                           // 명시적으로 라우터로 이동
                           router.push(targetHref);
                         }}
@@ -846,8 +844,9 @@ export default function Navigation() {
                       >
                         {item.label}
                       </Link>
-                    );});
-                  })}
+                    );
+                  });
+                })}
               </div>
             )}
           </div>
@@ -857,15 +856,19 @@ export default function Navigation() {
   };
 
   // 배경색 그라데이션 계산 (주요 색상 → 보조 색상)
-  const primaryNavColor = primaryColor || '#3b82f6';
-  const secondaryNavColor = secondaryColor || '#ffffff';
-  const navBackgroundStyle = { 
-    background: `linear-gradient(to right, ${primaryNavColor}, ${secondaryNavColor})`,
-    border: 'none'
+  const primaryNavColor = primaryColor || '#7c3aed';
+  // Premium look: Gradient to a darker shade of violet instead of white to keep text visible
+  const gradientEndColor = '#4c1d95'; // Violet-900
+
+  const navBackgroundStyle = {
+    background: `linear-gradient(to right, ${primaryNavColor}, ${gradientEndColor})`,
+    backdropFilter: 'blur(10px)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
   };
-  
+
   return (
-    <nav 
+    <nav
       className="shadow-lg fixed top-0 left-0 right-0 z-[9999]"
       style={navBackgroundStyle}
     >
@@ -891,7 +894,7 @@ export default function Navigation() {
               ) : (
                 <TenantLogo size="lg" />
               )}
-              <span 
+              <span
                 className="text-xl font-bold leading-tight text-white"
               >
                 {centerName}
@@ -909,26 +912,26 @@ export default function Navigation() {
             {!loading && isLoggedIn ? (
               <>
                 <div className="hidden md:flex items-center space-x-4 flex-nowrap">
-                  <div 
+                  <div
                     className="flex items-center space-x-2 px-3 py-2 rounded-lg flex-shrink-0 shadow-md"
                     style={{ backgroundColor: secondaryColor ? `${secondaryColor}40` : 'rgba(255, 255, 255, 0.95)' }}
                   >
-                  <NotificationsBell />
-                </div>
-                  <div 
+                    <NotificationsBell />
+                  </div>
+                  <div
                     className="flex items-center space-x-3 px-4 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 bg-white/95 backdrop-blur-sm shadow-lg border border-white/20"
                   >
                     <span className="text-sm font-bold text-gray-900 drop-shadow-sm">{userName}님</span>
                     <span className="text-xs text-gray-400 font-medium">|</span>
-                  <button
-                    onClick={handleLogout}
+                    <button
+                      onClick={handleLogout}
                       className="text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-md transition-all font-bold flex items-center space-x-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span>로그아웃</span>
-                  </button>
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>로그아웃</span>
+                    </button>
                   </div>
                 </div>
               </>
@@ -960,14 +963,14 @@ export default function Navigation() {
                 aria-expanded={isMenuOpen}
               >
                 {isMenuOpen ? (
-                  <span 
+                  <span
                     className="text-2xl"
                     style={{ color: primaryColor || '#3b82f6' }}
                   >
                     ✕
                   </span>
                 ) : (
-                  <span 
+                  <span
                     className="text-2xl"
                     style={{ color: primaryColor || '#3b82f6' }}
                   >
@@ -981,7 +984,7 @@ export default function Navigation() {
 
         {/* Mobile Menu - 햄버거 버튼 아래 오른쪽 정렬 */}
         {isMenuOpen && (
-          <div 
+          <div
             data-menu="mobile-menu"
             className="lg:hidden absolute top-16 right-4 z-50 border rounded-lg shadow-xl w-auto min-w-[200px] max-w-[280px]"
             style={{
@@ -993,7 +996,7 @@ export default function Navigation() {
           >
             <div className="px-4 pt-3 pb-3 space-y-1 max-h-[70vh] overflow-y-auto">
               {renderMenuGroups(true)}
-              
+
               {!loading && isLoggedIn ? (
                 <div className="px-4 py-3 border-t-2 border-gray-300 bg-gradient-to-r from-gray-50 to-blue-50 rounded-b-lg">
                   <div className="text-sm font-bold text-gray-900 mb-3 flex items-center space-x-2">
@@ -1019,13 +1022,13 @@ export default function Navigation() {
                   </button>
                 </div>
               ) : !loading ? (
-                <div 
+                <div
                   className="px-3 py-2 border-t rounded-lg mx-2 mb-2"
                   style={{
                     borderTopColor: primaryColor ? `${primaryColor}40` : '#e5e7eb',
-                    background: primaryColor && secondaryColor 
+                    background: primaryColor && secondaryColor
                       ? `linear-gradient(to right, ${primaryColor}20, ${secondaryColor}20)`
-                      : primaryColor 
+                      : primaryColor
                         ? `${primaryColor}20`
                         : '#eff6ff'
                   }}
@@ -1034,15 +1037,15 @@ export default function Navigation() {
                     🎯 더 많은 기능을 체험해보세요!
                   </div>
                   <div className="space-y-2">
-                    <Link 
-                      href="/auth/login" 
+                    <Link
+                      href="/auth/login"
                       className="block w-full text-center px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors bg-white rounded-md border hover:border-blue-300"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       🔑 로그인
                     </Link>
-                    <Link 
-                      href="/auth/signup" 
+                    <Link
+                      href="/auth/signup"
                       className="block w-full text-center px-3 py-2 text-white rounded-md transition-all duration-200 font-semibold"
                       style={{
                         background: primaryColor && secondaryColor
