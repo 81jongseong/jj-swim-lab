@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const User = require('../models/User').default;
 const TeachingMethod = require('../models/TeachingMethod').default;
 const auth_1 = require("../middleware/auth");
@@ -32,7 +33,7 @@ router.get('/:userId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('진행 상황 조회 실패:', error);
+        (0, logger_1.logError)('진행 상황 조회 실패:', error);
         return res.status(500).json({ error: '진행 상황 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -113,7 +114,7 @@ router.post('/:userId/method/:methodId/step', auth_1.authMiddleware, async (req,
         });
     }
     catch (error) {
-        console.error('진행 상황 업데이트 실패:', error);
+        (0, logger_1.logError)('진행 상황 업데이트 실패:', error);
         return res.status(500).json({ error: '진행 상황 업데이트에 실패했습니다.', details: error.message });
     }
 });
@@ -199,7 +200,7 @@ router.get('/:userId/next-recommendation', auth_1.authMiddleware, async (req, re
         });
     }
     catch (error) {
-        console.error('추천 조회 실패:', error);
+        (0, logger_1.logError)('추천 조회 실패:', error);
         return res.status(500).json({ error: '추천 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -265,7 +266,7 @@ router.get('/:userId/summary', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('요약 조회 실패:', error);
+        (0, logger_1.logError)('요약 조회 실패:', error);
         return res.status(500).json({ error: '요약 조회에 실패했습니다.', details: error.message });
     }
 });

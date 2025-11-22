@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const englishToKoreanLevelMap = {
     beginner: '초급',
@@ -131,7 +132,7 @@ router.put('/:studentId/level', auth_1.authMiddleware, (0, auth_1.requireRole)([
         });
     }
     catch (error) {
-        console.error('학생 레벨 변경 오류:', error);
+        (0, logger_1.logError)('학생 레벨 변경 오류', error);
         res.status(500).json({
             success: false,
             message: '학생 레벨 변경에 실패했습니다.'
@@ -185,7 +186,7 @@ router.get('/:studentId/level-history', auth_1.authMiddleware, (0, auth_1.requir
         });
     }
     catch (error) {
-        console.error('학생 레벨 변경 이력 조회 오류:', error);
+        (0, logger_1.logError)('학생 레벨 변경 이력 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '학생 레벨 변경 이력을 조회하는 데 실패했습니다.'
@@ -228,7 +229,7 @@ router.get('/center/:centerId/levels', auth_1.authMiddleware, (0, auth_1.require
         });
     }
     catch (error) {
-        console.error('센터별 학생 레벨 현황 조회 오류:', error);
+        (0, logger_1.logError)('센터별 학생 레벨 현황 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '센터별 학생 레벨 현황을 조회하는 데 실패했습니다.'

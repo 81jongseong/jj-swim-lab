@@ -384,7 +384,7 @@ router.delete('/images/:imageUrl', authMiddleware, requireRole(['centerAdmin', '
 
     // 실제 파일 삭제 (선택사항)
     // fs.unlink(`uploads/center-images/${filename}`, (err) => {
-    //   if (err) console.error('파일 삭제 오류:', err);
+    //   if (err) logError('파일 삭제 오류:', err);
     // });
 
     res.json({

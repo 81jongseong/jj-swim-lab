@@ -14,6 +14,7 @@ import { Course } from '../models/Course';
 import { Booking } from '../models/Booking';
 import { Payment } from '../models/Payment';
 import { Approval } from '../models/Approval';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     res.json(dashboardStats);
 
   } catch (error) {
-    console.error('❌ 대시보드 통계 생성 중 오류 발생:', error);
+    logError('❌ 대시보드 통계 생성 중 오류 발생:', error);
     res.status(500).json({
       error: '대시보드 통계를 가져올 수 없습니다',
       details: error instanceof Error ? error.message : '알 수 없는 오류'

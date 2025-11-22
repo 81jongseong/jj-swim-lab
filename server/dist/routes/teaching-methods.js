@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const TeachingMethod_1 = require("../models/TeachingMethod");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
@@ -56,7 +57,7 @@ router.get('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습법 목록 조회 오류:', error);
+        (0, logger_1.logError)('강습법 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법 목록을 불러오는 데 실패했습니다.'
@@ -80,7 +81,7 @@ router.get('/:id', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습법 조회 오류:', error);
+        (0, logger_1.logError)('강습법 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법을 불러오는 데 실패했습니다.'
@@ -136,7 +137,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
         });
     }
     catch (error) {
-        console.error('강습법 생성 오류:', error);
+        (0, logger_1.logError)('강습법 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법 생성에 실패했습니다.'
@@ -210,7 +211,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
         });
     }
     catch (error) {
-        console.error('강습법 수정 오류:', error);
+        (0, logger_1.logError)('강습법 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법 수정에 실패했습니다.'
@@ -247,7 +248,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
     catch (error) {
-        console.error('강습법 삭제 오류:', error);
+        (0, logger_1.logError)('강습법 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법 삭제에 실패했습니다.'
@@ -274,7 +275,7 @@ router.get('/stats/categories', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('카테고리 통계 조회 오류:', error);
+        (0, logger_1.logError)('카테고리 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '통계 조회에 실패했습니다.'
@@ -301,7 +302,7 @@ router.get('/stats/difficulties', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('난이도 통계 조회 오류:', error);
+        (0, logger_1.logError)('난이도 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '통계 조회에 실패했습니다.'
@@ -351,7 +352,7 @@ router.put('/:id/level', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         });
     }
     catch (error) {
-        console.error('강습법 레벨 수정 오류:', error);
+        (0, logger_1.logError)('강습법 레벨 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '강습법 레벨 수정 중 오류가 발생했습니다.'

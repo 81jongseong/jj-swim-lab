@@ -13,7 +13,7 @@ const ExercisePrescriptionSystem_1 = require("../utils/ExercisePrescriptionSyste
 class AIRoutineRecommendationService {
     static async analyzeUserPattern(userId) {
         const userIdObject = typeof userId === 'string' ? new mongoose_1.default.Types.ObjectId(userId) : userId;
-        const [programs, healthData, progress] = await Promise.all([
+        const [programs, , progress] = await Promise.all([
             SwimProgram_1.default.find({ athleteId: userIdObject })
                 .sort({ createdAt: -1 })
                 .limit(20)
@@ -29,8 +29,6 @@ class AIRoutineRecommendationService {
         const daysOfWeek = [];
         const intensities = [];
         const strokes = [];
-        let completedSessions = 0;
-        let totalSessions = 0;
         const instructorCompletions = [];
         const selfCompletions = [];
         let totalSessionsWithInstructorRate = 0;

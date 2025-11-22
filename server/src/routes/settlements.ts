@@ -12,6 +12,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { Settlement } from '../models/Settlement';
 import { processSettlements, getSettlementStats } from '../services/settlementService';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -79,7 +80,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('정산 목록 조회 실패:', error);
+    logError('정산 목록 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'
@@ -126,7 +127,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error: any) {
-    console.error('정산 상세 조회 실패:', error);
+    logError('정산 상세 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'
@@ -173,7 +174,7 @@ router.get('/stats/overview', authMiddleware, async (req: AuthRequest, res: Resp
     });
 
   } catch (error: any) {
-    console.error('정산 통계 조회 실패:', error);
+    logError('정산 통계 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'
@@ -208,7 +209,7 @@ router.post('/process', authMiddleware, requireRole(['superAdmin', 'centerAdmin'
     });
 
   } catch (error: any) {
-    console.error('정산 처리 실패:', error);
+    logError('정산 처리 실패:', error);
     res.status(500).json({
       success: false,
       message: error.message || '서버 오류가 발생했습니다.'

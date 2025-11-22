@@ -1,6 +1,7 @@
 import express from 'express';
 import { auth as authenticateToken } from '../middleware/auth';
 import { Class } from '../models/Class';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends express.Request { user?: any }
 
@@ -31,7 +32,7 @@ router.post('/classes', authenticateToken, async (req: AuthRequest, res: express
     await cls.save();
     return res.status(201).json({ message: '반이 생성되었습니다.', class: cls });
   } catch (error) {
-    console.error('반 생성 오류:', error);
+    logError('반 생성 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
@@ -53,7 +54,7 @@ router.post('/classes/:id/enroll', authenticateToken, async (req: AuthRequest, r
     }
     return res.json({ message: '학생이 반에 등록되었습니다.', class: cls });
   } catch (error) {
-    console.error('반 학생 등록 오류:', error);
+    logError('반 학생 등록 오류', error);
     return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });

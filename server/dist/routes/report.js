@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Report_1 = require("../models/Report");
 const AdminReport_1 = require("../models/AdminReport");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -42,7 +43,7 @@ router.get('/admin', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('관리자 리포트 조회 오류:', error);
+        (0, logger_1.logError)('관리자 리포트 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -68,7 +69,7 @@ router.post('/admin', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('관리자 리포트 생성 오류:', error);
+        (0, logger_1.logError)('관리자 리포트 생성 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -89,7 +90,7 @@ router.put('/admin/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('관리자 리포트 수정 오류:', error);
+        (0, logger_1.logError)('관리자 리포트 수정 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -108,7 +109,7 @@ router.patch('/admin/:id/status', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('리포트 상태 업데이트 오류:', error);
+        (0, logger_1.logError)('리포트 상태 업데이트 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -125,7 +126,7 @@ router.delete('/admin/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('관리자 리포트 삭제 오류:', error);
+        (0, logger_1.logError)('관리자 리포트 삭제 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -150,7 +151,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터 리포트 생성 오류:', error);
+        (0, logger_1.logError)('센터 리포트 생성 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });

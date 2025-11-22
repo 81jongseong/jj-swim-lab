@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const Center_1 = require("../models/Center");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/public/:centerId', async (req, res) => {
     try {
@@ -60,7 +61,7 @@ router.get('/public/:centerId', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터 소개 정보 조회 오류:', error);
+        (0, logger_1.logError)('센터 소개 정보 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 소개 정보를 조회할 수 없습니다.'
@@ -115,7 +116,7 @@ router.get('/member/:centerId', auth_1.authMiddleware, (0, auth_1.requireRole)([
         });
     }
     catch (error) {
-        console.error('센터 소개 정보 조회 오류:', error);
+        (0, logger_1.logError)('센터 소개 정보 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 소개 정보를 조회할 수 없습니다.'
@@ -197,7 +198,7 @@ router.put('/:centerId', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         });
     }
     catch (error) {
-        console.error('센터 소개 정보 편집 오류:', error);
+        (0, logger_1.logError)('센터 소개 정보 편집 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 소개 정보를 편집할 수 없습니다.'
@@ -262,7 +263,7 @@ router.get('/search', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터 검색 오류:', error);
+        (0, logger_1.logError)('센터 검색 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 검색 중 오류가 발생했습니다.'
@@ -328,7 +329,7 @@ router.post('/:centerId/images', auth_1.authMiddleware, (0, auth_1.requireRole)(
         });
     }
     catch (error) {
-        console.error('센터 이미지 업로드 오류:', error);
+        (0, logger_1.logError)('센터 이미지 업로드 오류:', error);
         res.status(500).json({
             success: false,
             message: '이미지 업로드 중 오류가 발생했습니다.'

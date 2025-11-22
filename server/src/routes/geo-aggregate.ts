@@ -35,6 +35,7 @@ import mongoose from 'mongoose';
 import { authMiddleware } from '../middleware/auth';
 import { User } from '../models/User';
 import Center from '../models/Center';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -609,7 +610,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
           }
         } catch (error) {
           if (processedCount < 3) {
-            console.error(`  ❌ 센터 조회 오류: User ${userItem._id}, Center ${userItem.centerId}`, error);
+            logError(`  ❌ 센터 조회 오류: User ${userItem._id}, Center ${userItem.centerId}`, error);
           }
         }
       }
@@ -762,7 +763,7 @@ router.get('/aggregate', authMiddleware, async (req: Request, res: Response) => 
       },
     });
   } catch (error) {
-    console.error('지리적 분포 집계 오류:', error);
+    logError('지리적 분포 집계 오류:', error);
     res.status(500).json({
       success: false,
       message: '지리적 분포 집계 중 오류가 발생했습니다.',
@@ -802,7 +803,7 @@ router.get('/centers', authMiddleware, async (req: Request, res: Response) => {
       centers,
     });
   } catch (error) {
-    console.error('센터 목록 조회 오류:', error);
+    logError('센터 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 목록 조회 중 오류가 발생했습니다.',

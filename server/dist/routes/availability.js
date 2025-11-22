@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const CenterSchedule_1 = require("../models/CenterSchedule");
 const PersonalLesson_1 = require("../models/PersonalLesson");
+const logger_1 = require("../utils/logger");
 const LaneRental_1 = require("../models/LaneRental");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
@@ -148,7 +149,7 @@ router.get('/personal-lesson/availability', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 가능 시간 조회 오류:', error);
+        (0, logger_1.logError)('개인레슨 가능 시간 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -268,7 +269,7 @@ router.get('/lane-rental/availability', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 가능 시간 조회 오류:', error);
+        (0, logger_1.logError)('레인대여 가능 시간 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -368,7 +369,7 @@ router.get('/instructor/:instructorId/availability', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강사 가능 시간 조회 오류:', error);
+        (0, logger_1.logError)('강사 가능 시간 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'

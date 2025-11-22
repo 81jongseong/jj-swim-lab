@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import SpawnProc from '../utils/spawnProc';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -147,7 +148,7 @@ export async function runPipeline(req: Request, res: Response): Promise<void> {
     res.json(result);
 
   } catch (error) {
-    console.error('[PIPELINE] 파이프라인 실패:', error);
+    logError('[PIPELINE] 파이프라인 실패:', error);
     
     const errorResult: PipelineResult = {
       success: false,
@@ -249,7 +250,7 @@ export async function checkPipelineStatus(req: Request, res: Response): Promise<
     res.json(status);
 
   } catch (error) {
-    console.error('[PIPELINE] 상태 확인 실패:', error);
+    logError('[PIPELINE] 상태 확인 실패:', error);
     res.status(500).json({ error: '상태 확인 실패' });
   }
 }
@@ -297,7 +298,7 @@ export async function downloadPipelineResult(req: Request, res: Response): Promi
     res.download(filePath, fileName);
 
   } catch (error) {
-    console.error('[PIPELINE] 다운로드 실패:', error);
+    logError('[PIPELINE] 다운로드 실패:', error);
     res.status(500).json({ error: '다운로드 실패' });
   }
 }

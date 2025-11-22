@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -163,7 +164,7 @@ router.put('/:studentId/level', authMiddleware, requireRole(['instructor', 'cent
       }
     });
   } catch (error) {
-    console.error('학생 레벨 변경 오류:', error);
+    logError('학생 레벨 변경 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 레벨 변경에 실패했습니다.'
@@ -226,7 +227,7 @@ router.get('/:studentId/level-history', authMiddleware, requireRole(['instructor
     });
 
   } catch (error) {
-    console.error('학생 레벨 변경 이력 조회 오류:', error);
+    logError('학생 레벨 변경 이력 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '학생 레벨 변경 이력을 조회하는 데 실패했습니다.'
@@ -278,7 +279,7 @@ router.get('/center/:centerId/levels', authMiddleware, requireRole(['centerAdmin
     });
 
   } catch (error) {
-    console.error('센터별 학생 레벨 현황 조회 오류:', error);
+    logError('센터별 학생 레벨 현황 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '센터별 학생 레벨 현황을 조회하는 데 실패했습니다.'

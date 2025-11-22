@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const quizQuestionGeneratorService_1 = require("../services/quizQuestionGeneratorService");
 const Quiz_1 = require("../models/Quiz");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
@@ -48,7 +49,7 @@ router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instru
         });
     }
     catch (error) {
-        console.error('문제 생성 실패:', error);
+        (0, logger_1.logError)('문제 생성 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '문제 생성 중 오류가 발생했습니다.',
@@ -84,7 +85,7 @@ router.post('/generate-multiple', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('문제 생성 실패:', error);
+        (0, logger_1.logError)('문제 생성 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '문제 생성 중 오류가 발생했습니다.',
@@ -100,7 +101,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 message: '사용자 인증이 필요합니다.'
             });
         }
-        const { generatedQuestion, generatedQuestions, title, description, category, difficulty, tags } = req.body;
+        const { generatedQuestion, generatedQuestions, title, description, category, tags } = req.body;
         if (generatedQuestions && Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
             if (!category) {
                 return res.status(400).json({
@@ -114,7 +115,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 createdBy: req.user._id,
                 isActive: true
             }).sort({ createdAt: -1 });
-            console.log('🔍 기존 퀴즈 검색 (여러 문제):', {
+            (0, logger_1.logDebug)('기존 퀴즈 검색 (여러 문제)', {
                 category: normalizedCategory,
                 userId: req.user._id,
                 found: !!existingQuiz,
@@ -137,7 +138,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 metadata: q.metadata || {}
             }));
             if (existingQuiz) {
-                console.log(`✅ 기존 퀴즈에 ${questions.length}개 문제 추가:`, existingQuiz._id);
+                (0, logger_1.logInfo)('기존 퀴즈에 문제 추가', { quizId: existingQuiz._id, questionCount: questions.length });
                 existingQuiz.questions.push(...questions);
                 existingQuiz.title = title || existingQuiz.title || `${normalizedCategory} 관련 문제 세트`;
                 existingQuiz.description = description || existingQuiz.description || `${existingQuiz.questions.length}개의 문제가 포함된 세트입니다.`;
@@ -145,7 +146,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                     existingQuiz.tags = [...new Set([...existingQuiz.tags, ...tags])];
                 }
                 await existingQuiz.save();
-                console.log(`✅ 저장 완료: 총 ${existingQuiz.questions.length}개 문제`);
+                (0, logger_1.logInfo)('퀴즈 저장 완료', { quizId: existingQuiz._id, totalQuestions: existingQuiz.questions.length });
                 res.status(200).json({
                     success: true,
                     message: `${generatedQuestions.length}개의 문제가 기존 퀴즈에 추가되었습니다.`,
@@ -156,7 +157,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 });
             }
             else {
-                console.log(`📝 새 퀴즈 생성: ${normalizedCategory} 카테고리`);
+                (0, logger_1.logInfo)('새 퀴즈 생성', { category: normalizedCategory });
                 const quiz = new Quiz_1.Quiz({
                     title: title || `${normalizedCategory} 관련 문제 세트`,
                     description: description || `${generatedQuestions.length}개의 문제가 포함된 세트입니다.`,
@@ -195,7 +196,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 createdBy: req.user._id,
                 isActive: true
             }).sort({ createdAt: -1 });
-            console.log('🔍 기존 퀴즈 검색 (단일 문제):', {
+            (0, logger_1.logDebug)('기존 퀴즈 검색 (단일 문제)', {
                 category: normalizedCategory,
                 userId: req.user._id,
                 found: !!existingQuiz,
@@ -218,7 +219,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 metadata: generatedQuestion.metadata || {}
             };
             if (existingQuiz) {
-                console.log(`✅ 기존 퀴즈에 문제 추가:`, existingQuiz._id);
+                (0, logger_1.logInfo)('기존 퀴즈에 문제 추가', { quizId: existingQuiz._id });
                 existingQuiz.questions.push(question);
                 existingQuiz.title = title || existingQuiz.title;
                 existingQuiz.description = description || existingQuiz.description || `${existingQuiz.questions.length}개의 문제가 포함된 세트입니다.`;
@@ -226,7 +227,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                     existingQuiz.tags = [...new Set([...existingQuiz.tags, ...tags])];
                 }
                 await existingQuiz.save();
-                console.log(`✅ 저장 완료: 총 ${existingQuiz.questions.length}개 문제`);
+                (0, logger_1.logInfo)('퀴즈 저장 완료', { quizId: existingQuiz._id, totalQuestions: existingQuiz.questions.length });
                 res.status(200).json({
                     success: true,
                     message: '문제가 기존 퀴즈에 추가되었습니다.',
@@ -237,7 +238,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
                 });
             }
             else {
-                console.log(`📝 새 퀴즈 생성: ${normalizedCategory} 카테고리`);
+                (0, logger_1.logInfo)('새 퀴즈 생성', { category: normalizedCategory });
                 const quiz = new Quiz_1.Quiz({
                     title: title || `${generatedQuestion.topic} 관련 문제`,
                     description: description || `${generatedQuestion.topic}에 대한 자동 생성 문제입니다.`,
@@ -271,7 +272,7 @@ router.post('/save-quiz', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
         }
     }
     catch (error) {
-        console.error('퀴즈 저장 실패:', error);
+        (0, logger_1.logError)('퀴즈 저장 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '퀴즈 저장 중 오류가 발생했습니다.'
@@ -320,7 +321,7 @@ router.post('/merge-by-category', auth_1.authMiddleware, (0, auth_1.requireRole)
         await baseQuiz.save();
         const otherQuizIds = otherQuizzes.map(q => q._id);
         await Quiz_1.Quiz.updateMany({ _id: { $in: otherQuizIds } }, { isActive: false });
-        console.log(`✅ ${normalizedCategory} 카테고리의 ${quizzes.length}개 퀴즈를 하나로 합침`);
+        (0, logger_1.logInfo)('퀴즈 합치기 완료', { category: normalizedCategory, mergedCount: quizzes.length });
         res.status(200).json({
             success: true,
             message: `${quizzes.length}개의 퀴즈가 하나로 합쳐졌습니다.`,
@@ -334,7 +335,7 @@ router.post('/merge-by-category', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('퀴즈 합치기 실패:', error);
+        (0, logger_1.logError)('퀴즈 합치기 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '퀴즈 합치기 중 오류가 발생했습니다.'

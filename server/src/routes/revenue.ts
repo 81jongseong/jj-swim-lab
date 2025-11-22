@@ -16,6 +16,7 @@ import express from 'express';
 import { auth as authMiddleware } from '../middleware/auth';
 import { Payment } from '../models/Payment';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -162,7 +163,7 @@ router.get('/stats', authMiddleware, requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('총매출 통계 조회 오류:', error);
+    logError('총매출 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '총매출 통계 조회 중 오류가 발생했습니다.'
@@ -231,7 +232,7 @@ router.get('/instructor/:instructorId', authMiddleware, requireAdmin, async (req
       data: instructorRevenue
     });
   } catch (error) {
-    console.error('강사별 매출 현황 조회 오류:', error);
+    logError('강사별 매출 현황 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '강사별 매출 현황 조회 중 오류가 발생했습니다.'
@@ -286,7 +287,7 @@ router.get('/course/:courseId', authMiddleware, requireAdmin, async (req, res) =
       data: courseRevenue
     });
   } catch (error) {
-    console.error('과정별 매출 현황 조회 오류:', error);
+    logError('과정별 매출 현황 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '과정별 매출 현황 조회 중 오류가 발생했습니다.'

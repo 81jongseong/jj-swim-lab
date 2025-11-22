@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const backupService_1 = require("../services/backupService");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/summary', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), (req, res) => {
     try {
@@ -13,7 +14,7 @@ router.get('/summary', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdm
         });
     }
     catch (error) {
-        console.error('백업 요약 조회 실패:', error);
+        (0, logger_1.logError)('백업 요약 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '백업 요약 조회 중 오류가 발생했습니다.'
@@ -39,7 +40,7 @@ router.post('/manual', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdm
         }
     }
     catch (error) {
-        console.error('수동 백업 실행 오류:', error);
+        (0, logger_1.logError)('수동 백업 실행 오류', error);
         res.status(500).json({
             success: false,
             message: '백업 실행 중 오류가 발생했습니다.'

@@ -48,11 +48,11 @@ declare const _default: {
     AppError: typeof AppError;
     ErrorCode: typeof ErrorCode;
     ErrorSeverity: typeof ErrorSeverity;
-    errorHandler: (error: Error | AppError, req: Request, res: Response, next: NextFunction) => void;
-    notFoundHandler: (req: Request, res: Response, next: NextFunction) => void;
-    asyncHandler: (fn: Function) => (req: Request, res: Response, next: NextFunction) => void;
+    errorHandler: (error: Error | AppError, req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => void;
+    notFoundHandler: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => void;
+    asyncHandler: (fn: Function) => (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => void;
     retryOperation: <T>(operation: () => Promise<T>, maxRetries?: number, delay?: number) => Promise<T>;
-    collectErrorMetrics: (error: AppError, req: Request) => void;
+    collectErrorMetrics: (error: AppError, req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>) => void;
 };
 export default _default;
 //# sourceMappingURL=errorHandler.d.ts.map

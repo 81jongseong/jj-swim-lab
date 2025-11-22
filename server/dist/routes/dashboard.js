@@ -6,6 +6,7 @@ const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
 const Payment_1 = require("../models/Payment");
 const Approval_1 = require("../models/Approval");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/stats', async (req, res) => {
     try {
@@ -56,7 +57,7 @@ router.get('/stats', async (req, res) => {
         res.json(dashboardStats);
     }
     catch (error) {
-        console.error('❌ 대시보드 통계 생성 중 오류 발생:', error);
+        (0, logger_1.logError)('❌ 대시보드 통계 생성 중 오류 발생:', error);
         res.status(500).json({
             error: '대시보드 통계를 가져올 수 없습니다',
             details: error instanceof Error ? error.message : '알 수 없는 오류'

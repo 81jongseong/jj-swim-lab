@@ -21,6 +21,7 @@ import { CommunityPost } from '../models/Community';
 import { User } from '../models/User';
 import { Notification } from '../models/Notification';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 // User 모델 import 확인
 import '../models/User';
@@ -113,7 +114,7 @@ router.post('/apply', authMiddleware, async (req: Request, res: Response) => {
       message: '지원이 완료되었습니다.'
     });
   } catch (error: any) {
-    console.error('❌ 지원 등록 오류:', error);
+    logError('❌ 지원 등록 오류:', error);
     res.status(500).json({
       success: false,
       message: error.message || '지원 등록 중 오류가 발생했습니다.'
@@ -186,7 +187,7 @@ router.get('/applications', authMiddleware, async (req: Request, res: Response) 
       data: applications
     });
   } catch (error) {
-    console.error('지원 목록 조회 오류:', error);
+    logError('지원 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '지원 목록 조회 중 오류가 발생했습니다.'
@@ -233,7 +234,7 @@ router.get('/applications/my', authMiddleware, async (req: Request, res: Respons
       data: applications
     });
   } catch (error) {
-    console.error('내 지원 목록 조회 오류:', error);
+    logError('내 지원 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '지원 목록 조회 중 오류가 발생했습니다.'
@@ -402,7 +403,7 @@ router.put('/applications/:id', authMiddleware, async (req: Request, res: Respon
       message: notificationSent ? '지원 상태가 업데이트되었고 면접 알림이 전송되었습니다.' : '지원 상태가 업데이트되었습니다.'
     });
   } catch (error: any) {
-    console.error('지원 상태 업데이트 오류:', error);
+    logError('지원 상태 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: error.message || '지원 상태 업데이트 중 오류가 발생했습니다.'
@@ -599,7 +600,7 @@ router.put('/applications/:id/respond', authMiddleware, async (req: Request, res
       message: response === 'accept' ? '면접을 수락했습니다.' : '면접을 거부했습니다.'
     });
   } catch (error: any) {
-    console.error('면접 응답 오류:', error);
+    logError('면접 응답 오류:', error);
     res.status(500).json({
       success: false,
       message: error.message || '면접 응답 처리 중 오류가 발생했습니다.'
@@ -653,7 +654,7 @@ router.get('/applications/:id', authMiddleware, async (req: Request, res: Respon
       data: application
     });
   } catch (error) {
-    console.error('지원 상세 조회 오류:', error);
+    logError('지원 상세 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '지원 상세 조회 중 오류가 발생했습니다.'
@@ -787,7 +788,7 @@ router.post('/applications/sync-instructors', authMiddleware, async (req: Reques
           status: 'error',
           error: error.message
         });
-        console.error('❌ 강사 계정 동기화 오류:', error);
+        logError('❌ 강사 계정 동기화 오류:', error);
       }
     }
 
@@ -802,7 +803,7 @@ router.post('/applications/sync-instructors', authMiddleware, async (req: Reques
       }
     });
   } catch (error: any) {
-    console.error('강사 계정 동기화 오류:', error);
+    logError('강사 계정 동기화 오류:', error);
     res.status(500).json({
       success: false,
       message: error.message || '동기화 중 오류가 발생했습니다.'

@@ -20,6 +20,7 @@ import express from 'express';
 import SwimProgram from '../models/SwimProgram';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -87,7 +88,7 @@ router.post('/:programId/sessions/:sessionIdx/day-condition', authMiddleware, as
       }
     });
   } catch (error: any) {
-    console.error('당일 컨디션 저장 오류:', error);
+    logError('당일 컨디션 저장 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '당일 컨디션 저장에 실패했습니다.', 

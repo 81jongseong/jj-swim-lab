@@ -5,6 +5,7 @@ const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const LessonTicket_1 = require("../models/LessonTicket");
 const Booking_1 = require("../models/Booking");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centeradmin', 'centerAdmin']), async (req, res) => {
     try {
@@ -105,7 +106,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centeradmin', '
         });
     }
     catch (error) {
-        console.error('센터 회원 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 회원 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '회원 목록 조회에 실패했습니다.'
@@ -166,7 +167,7 @@ router.get('/:memberId', auth_1.authMiddleware, (0, auth_1.requireRole)(['center
         });
     }
     catch (error) {
-        console.error('회원 상세 정보 조회 오류:', error);
+        (0, logger_1.logError)('회원 상세 정보 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '회원 정보 조회에 실패했습니다.'
@@ -212,7 +213,7 @@ router.patch('/:memberId/status', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('회원 상태 변경 오류:', error);
+        (0, logger_1.logError)('회원 상태 변경 오류', error);
         res.status(500).json({
             success: false,
             message: '회원 상태 변경에 실패했습니다.'
@@ -277,7 +278,7 @@ router.post('/:memberId/memo', auth_1.authMiddleware, (0, auth_1.requireRole)(['
         });
     }
     catch (error) {
-        console.error('센터 메모 추가 오류:', error);
+        (0, logger_1.logError)('센터 메모 추가 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 메모 추가에 실패했습니다.'
@@ -317,7 +318,7 @@ router.delete('/:memberId/memo/:memoId', auth_1.authMiddleware, (0, auth_1.requi
         });
     }
     catch (error) {
-        console.error('센터 메모 삭제 오류:', error);
+        (0, logger_1.logError)('센터 메모 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 메모 삭제에 실패했습니다.'
@@ -342,7 +343,7 @@ router.get('/alerts/expiring-tickets', auth_1.authMiddleware, (0, auth_1.require
         });
     }
     catch (error) {
-        console.error('만료 임박 수강권 조회 오류:', error);
+        (0, logger_1.logError)('만료 임박 수강권 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '만료 임박 수강권 조회에 실패했습니다.'
@@ -400,7 +401,7 @@ router.get('/stats/summary', auth_1.authMiddleware, (0, auth_1.requireRole)(['ce
         });
     }
     catch (error) {
-        console.error('회원 통계 조회 오류:', error);
+        (0, logger_1.logError)('회원 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '회원 통계 조회에 실패했습니다.'

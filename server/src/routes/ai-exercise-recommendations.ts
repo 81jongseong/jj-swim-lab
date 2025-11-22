@@ -104,6 +104,7 @@ import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import ExerciseRecommendation from '../models/ExerciseRecommendation';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -139,7 +140,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       recommendations
     });
   } catch (error) {
-    console.error('운동 추천 조회 오류:', error);
+    logError('운동 추천 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 추천을 불러오는 중 오류가 발생했습니다.'
@@ -173,7 +174,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
       recommendation
     });
   } catch (error) {
-    console.error('운동 추천 조회 오류:', error);
+    logError('운동 추천 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 추천을 불러오는 중 오류가 발생했습니다.'
@@ -247,7 +248,7 @@ router.post('/', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAdmi
       recommendation
     });
   } catch (error) {
-    console.error('운동 추천 생성 오류:', error);
+    logError('운동 추천 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 생성 중 오류가 발생했습니다.'
@@ -299,7 +300,7 @@ router.put('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'centerAd
       recommendation: updatedRecommendation
     });
   } catch (error) {
-    console.error('운동 추천 수정 오류:', error);
+    logError('운동 추천 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 수정 중 오류가 발생했습니다.'
@@ -335,7 +336,7 @@ router.delete('/:id', authMiddleware, requireRole(['superAdmin', 'admin', 'cente
       message: '운동 추천이 성공적으로 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('운동 추천 삭제 오류:', error);
+    logError('운동 추천 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 삭제 중 오류가 발생했습니다.'

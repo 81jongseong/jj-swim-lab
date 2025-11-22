@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const PersonalProgramAdjustment_1 = __importDefault(require("../models/PersonalProgramAdjustment"));
+const logger_1 = require("../utils/logger");
 const GroupClass = require('../models/GroupClass').default;
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
@@ -64,7 +65,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 프로그램 조회 실패:', error);
+        (0, logger_1.logError)('❌ 프로그램 조회 실패:', error);
         return res.status(500).json({
             success: false,
             message: '프로그램 조회에 실패했습니다.'

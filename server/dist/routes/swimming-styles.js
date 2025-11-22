@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const SwimmingStyle_1 = require("../models/SwimmingStyle");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
@@ -22,7 +23,7 @@ router.get('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('영법 목록 조회 실패:', error);
+        (0, logger_1.logError)('영법 목록 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '영법 목록 조회에 실패했습니다.'
@@ -44,7 +45,7 @@ router.get('/:id', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('영법 조회 실패:', error);
+        (0, logger_1.logError)('영법 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '영법 조회에 실패했습니다.'
@@ -62,7 +63,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', '
         });
     }
     catch (error) {
-        console.error('영법 생성 실패:', error);
+        (0, logger_1.logError)('영법 생성 실패:', error);
         res.status(500).json({
             success: false,
             message: '영법 생성에 실패했습니다.'
@@ -85,7 +86,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         });
     }
     catch (error) {
-        console.error('영법 수정 실패:', error);
+        (0, logger_1.logError)('영법 수정 실패:', error);
         res.status(500).json({
             success: false,
             message: '영법 수정에 실패했습니다.'
@@ -107,7 +108,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
     catch (error) {
-        console.error('영법 삭제 실패:', error);
+        (0, logger_1.logError)('영법 삭제 실패:', error);
         res.status(500).json({
             success: false,
             message: '영법 삭제에 실패했습니다.'

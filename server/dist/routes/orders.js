@@ -7,6 +7,7 @@ const express_1 = require("express");
 const mongoose_1 = __importDefault(require("mongoose"));
 const Order_1 = __importDefault(require("../models/Order"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -56,7 +57,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('주문 조회 오류:', error);
+        (0, logger_1.logError)('주문 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '주문을 불러오는 중 오류가 발생했습니다.'
@@ -93,7 +94,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('주문 조회 오류:', error);
+        (0, logger_1.logError)('주문 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '주문을 불러오는 중 오류가 발생했습니다.'
@@ -152,7 +153,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'cente
         });
     }
     catch (error) {
-        console.error('주문 생성 오류:', error);
+        (0, logger_1.logError)('주문 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '주문 생성 중 오류가 발생했습니다.'
@@ -197,7 +198,7 @@ router.patch('/:id/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['adm
         });
     }
     catch (error) {
-        console.error('주문 상태 업데이트 오류:', error);
+        (0, logger_1.logError)('주문 상태 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: '주문 상태 업데이트 중 오류가 발생했습니다.'
@@ -242,7 +243,7 @@ router.patch('/:id/payment-status', auth_1.authMiddleware, (0, auth_1.requireRol
         });
     }
     catch (error) {
-        console.error('결제 상태 업데이트 오류:', error);
+        (0, logger_1.logError)('결제 상태 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: '결제 상태 업데이트 중 오류가 발생했습니다.'
@@ -297,7 +298,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', 'cen
         });
     }
     catch (error) {
-        console.error('주문 수정 오류:', error);
+        (0, logger_1.logError)('주문 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '주문 수정 중 오류가 발생했습니다.'
@@ -339,7 +340,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['admin', '
         });
     }
     catch (error) {
-        console.error('주문 삭제 오류:', error);
+        (0, logger_1.logError)('주문 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '주문 삭제 중 오류가 발생했습니다.'
@@ -387,7 +388,7 @@ router.get('/stats/summary', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('주문 통계 조회 오류:', error);
+        (0, logger_1.logError)('주문 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '주문 통계를 불러오는 중 오류가 발생했습니다.'

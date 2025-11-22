@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/:programId/sessions/:sessionIdx/day-condition', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -56,7 +57,7 @@ router.post('/:programId/sessions/:sessionIdx/day-condition', auth_1.authMiddlew
         });
     }
     catch (error) {
-        console.error('당일 컨디션 저장 오류:', error);
+        (0, logger_1.logError)('당일 컨디션 저장 오류:', error);
         res.status(500).json({
             success: false,
             message: '당일 컨디션 저장에 실패했습니다.',

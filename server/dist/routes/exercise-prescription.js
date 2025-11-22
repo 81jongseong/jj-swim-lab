@@ -10,6 +10,7 @@ const User_1 = require("../models/User");
 const HealthData_1 = require("../models/HealthData");
 const ExercisePrescriptionSystem_1 = require("../utils/ExercisePrescriptionSystem");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/create', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -97,7 +98,7 @@ router.post('/create', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 운동 처방 생성 오류:', error);
+        (0, logger_1.logError)('❌ 운동 처방 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 처방 생성 중 오류가 발생했습니다.'
@@ -131,7 +132,7 @@ router.get('/:userId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 운동 처방 조회 오류:', error);
+        (0, logger_1.logError)('❌ 운동 처방 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 처방 조회 중 오류가 발생했습니다.'
@@ -207,7 +208,7 @@ router.post('/:prescriptionId/session', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (error) {
-        console.error('❌ 운동 이력 기록 오류:', error);
+        (0, logger_1.logError)('❌ 운동 이력 기록 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 이력 기록 중 오류가 발생했습니다.'
@@ -286,7 +287,7 @@ router.put('/:prescriptionId/adjust', auth_1.authMiddleware, async (req, res) =>
         });
     }
     catch (error) {
-        console.error('❌ 운동 처방 조정 오류:', error);
+        (0, logger_1.logError)('❌ 운동 처방 조정 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 처방 조정 중 오류가 발생했습니다.'
@@ -329,7 +330,7 @@ router.get('/center/:centerId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 센터별 운동 처방 조회 오류:', error);
+        (0, logger_1.logError)('❌ 센터별 운동 처방 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터별 운동 처방 조회 중 오류가 발생했습니다.'
@@ -375,7 +376,7 @@ router.get('/:prescriptionId/stats', auth_1.authMiddleware, async (req, res) => 
         });
     }
     catch (error) {
-        console.error('❌ 운동 처방 통계 조회 오류:', error);
+        (0, logger_1.logError)('❌ 운동 처방 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 처방 통계 조회 중 오류가 발생했습니다.'

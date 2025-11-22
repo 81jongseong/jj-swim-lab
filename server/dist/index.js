@@ -177,6 +177,7 @@ require("./models/PageVisit");
 require("./models/CenterSchedule");
 require("./models/InstructorProgress");
 console.log('🚀 index.ts 모듈 로딩 시작...');
+console.log('📦 모든 모델 import 완료, 다음 단계로 진행...');
 setTimeout(() => {
     console.log('🔍 모델 등록 상태 확인:');
     console.log('   - AIConfig 모델:', mongoose_1.default.models.AIConfig ? '✅ 등록됨' : '❌ 미등록');
@@ -240,8 +241,10 @@ console.log('   - MONGODB_URI:', process.env.MONGODB_URI ? '✅ 설정됨' : '�
 console.log('   - MONGODB_URI 값:', process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 50) + '...' : '없음');
 console.log('   - PORT:', process.env.PORT || '기본값 5000');
 console.log('   - NODE_ENV:', process.env.NODE_ENV || '기본값 development');
+console.log('🌐 Express 앱 생성 중...');
 const app = (0, express_1.default)();
 exports.app = app;
+console.log('✅ Express 앱 생성 완료');
 const server = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(server, {
     cors: {
@@ -249,6 +252,8 @@ const io = new socket_io_1.Server(server, {
         methods: ["GET", "POST"]
     }
 });
+console.log('✅ Socket.IO 서버 초기화 완료');
+console.log('🔌 Socket.IO 이벤트 리스너 등록 중...');
 io.on('connection', (socket) => {
     console.log('🔌 클라이언트 연결됨:', socket.id);
     socket.on('disconnect', () => {
@@ -259,8 +264,12 @@ io.on('connection', (socket) => {
         console.log(`🔌 클라이언트 ${socket.id}가 ${room}에 참여`);
     });
 });
+console.log('✅ Socket.IO 이벤트 리스너 등록 완료');
 const PORT = process.env.PORT || 5000;
+console.log(`📡 포트 설정: ${PORT}`);
+console.log('🛡️ 보안 미들웨어 적용 중...');
 app.use(security_1.securityMiddleware);
+console.log('✅ 보안 미들웨어 적용 완료');
 app.use((0, compression_1.default)({
     level: 6,
     threshold: 1024,
@@ -422,12 +431,16 @@ app.use('/api/swim-program-day-condition', swim_program_day_condition_1.default)
 app.use('/api/instructor-progress', instructor_progress_1.default);
 app.use('/api/instructor/progress', instructor_progress_1.default);
 app.use('/api/ai-routine-recommendations', ai_routine_recommendations_1.default);
+console.log('🚦 라우트 및 미들웨어 설정 완료...');
 app.use(errorHandler_1.notFoundHandler);
 app.use(monitoring_1.errorTracking);
 app.use(errorHandler_1.errorHandler);
+console.log('✅ 에러 처리 미들웨어 설정 완료');
+console.log(`🔍 NODE_ENV 확인: ${process.env.NODE_ENV || 'undefined (기본값: development)'}`);
 if (process.env.NODE_ENV !== 'test') {
     console.log('🚀 서버 시작 준비 중...');
     console.log(`📡 포트: ${PORT}`);
+    console.log('⏳ server.listen() 호출 중...');
     server.listen(PORT, async () => {
         console.log(`🌐 HTTP 서버 시작... 포트: ${PORT}`);
         console.log(`🔌 WebSocket 서버 시작... 포트: ${PORT}`);

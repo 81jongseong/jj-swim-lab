@@ -13,6 +13,7 @@ import { User } from '../models/User';
 import { Booking } from '../models/Booking';
 import { Course } from '../models/Course';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -60,7 +61,7 @@ router.get('/', authMiddleware, requireRole(['student']), async (req: any, res: 
       data: progressData
     });
   } catch (error) {
-    console.error('❌ 학습 진도 조회 오류:', error);
+    logError('❌ 학습 진도 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '학습 진도 조회 중 오류가 발생했습니다.'
@@ -112,7 +113,7 @@ router.get('/:teachingMethodId', authMiddleware, requireRole(['student']), async
       data: progress
     });
   } catch (error) {
-    console.error('❌ 강습법 진도 조회 오류:', error);
+    logError('❌ 강습법 진도 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '강습법 진도 조회 중 오류가 발생했습니다.'
@@ -166,7 +167,7 @@ router.put('/:teachingMethodId', authMiddleware, requireRole(['student']), async
       data: progress
     });
   } catch (error) {
-    console.error('❌ 학습 진도 업데이트 오류:', error);
+    logError('❌ 학습 진도 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: '학습 진도 업데이트 중 오류가 발생했습니다.'
@@ -237,7 +238,7 @@ router.get('/stats/overview', authMiddleware, requireRole(['student']), async (r
       }
     });
   } catch (error) {
-    console.error('❌ 학습 통계 조회 오류:', error);
+    logError('❌ 학습 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '학습 통계 조회 중 오류가 발생했습니다.'
@@ -278,7 +279,7 @@ router.get('/stats/by-category', authMiddleware, requireRole(['student']), async
       data: categoryStats
     });
   } catch (error) {
-    console.error('❌ 카테고리별 진도 조회 오류:', error);
+    logError('❌ 카테고리별 진도 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '카테고리별 진도 조회 중 오류가 발생했습니다.'
@@ -431,7 +432,7 @@ router.get('/instructor/students', authMiddleware, requireRole(['instructor', 'c
       data: progressData
     });
   } catch (error) {
-    console.error('❌ 강사용 학생 진도 조회 오류:', error);
+    logError('❌ 강사용 학생 진도 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '학생 진도 조회 중 오류가 발생했습니다.'

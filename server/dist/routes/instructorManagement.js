@@ -11,6 +11,7 @@ const Center_1 = require("../models/Center");
 const Booking_1 = require("../models/Booking");
 const Checklist_1 = require("../models/Checklist");
 const HealthData_1 = require("../models/HealthData");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const superAdminOnly = (0, role_1.roleMiddleware)(['superAdmin']);
 router.get('/overview', auth_1.auth, superAdminOnly, async (req, res) => {
@@ -43,7 +44,7 @@ router.get('/overview', auth_1.auth, superAdminOnly, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강사 현황 조회 실패:', error);
+        (0, logger_1.logError)('강사 현황 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사 현황 조회 중 오류가 발생했습니다.'
@@ -121,7 +122,7 @@ router.get('/instructors', auth_1.auth, superAdminOnly, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강사 목록 조회 실패:', error);
+        (0, logger_1.logError)('강사 목록 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사 목록 조회 중 오류가 발생했습니다.'
@@ -164,7 +165,7 @@ router.get('/instructors/:id', auth_1.auth, superAdminOnly, async (req, res) => 
         });
     }
     catch (error) {
-        console.error('강사 상세 정보 조회 실패:', error);
+        (0, logger_1.logError)('강사 상세 정보 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사 상세 정보 조회 중 오류가 발생했습니다.'
@@ -199,7 +200,7 @@ router.put('/instructors/:id', auth_1.auth, superAdminOnly, async (req, res) => 
         });
     }
     catch (error) {
-        console.error('강사 정보 업데이트 실패:', error);
+        (0, logger_1.logError)('강사 정보 업데이트 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사 정보 업데이트 중 오류가 발생했습니다.'
@@ -313,7 +314,7 @@ router.get('/performance/:instructorId', auth_1.auth, superAdminOnly, async (req
         });
     }
     catch (error) {
-        console.error('강사 성과 데이터 조회 실패:', error);
+        (0, logger_1.logError)('강사 성과 데이터 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사 성과 데이터 조회 중 오류가 발생했습니다.'
@@ -373,7 +374,7 @@ router.get('/students/:instructorId', auth_1.auth, superAdminOnly, async (req, r
         });
     }
     catch (error) {
-        console.error('강사별 학생 관리 현황 조회 실패:', error);
+        (0, logger_1.logError)('강사별 학생 관리 현황 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '강사별 학생 관리 현황 조회 중 오류가 발생했습니다.'
@@ -406,7 +407,7 @@ router.get('/centers', auth_1.auth, superAdminOnly, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터별 강사 현황 조회 실패:', error);
+        (0, logger_1.logError)('센터별 강사 현황 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '센터별 강사 현황 조회 중 오류가 발생했습니다.'

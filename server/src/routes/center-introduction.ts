@@ -40,6 +40,7 @@
 import express, { Request, Response } from 'express';
 import { Center } from '../models/Center';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -114,7 +115,7 @@ router.get('/public/:centerId', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('센터 소개 정보 조회 오류:', error);
+    logError('센터 소개 정보 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 소개 정보를 조회할 수 없습니다.'
@@ -184,7 +185,7 @@ router.get('/member/:centerId', authMiddleware, requireRole(['student', 'instruc
     });
 
   } catch (error) {
-    console.error('센터 소개 정보 조회 오류:', error);
+    logError('센터 소개 정보 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 소개 정보를 조회할 수 없습니다.'
@@ -284,7 +285,7 @@ router.put('/:centerId', authMiddleware, requireRole(['centerAdmin', 'superAdmin
     });
 
   } catch (error) {
-    console.error('센터 소개 정보 편집 오류:', error);
+    logError('센터 소개 정보 편집 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 소개 정보를 편집할 수 없습니다.'
@@ -371,7 +372,7 @@ router.get('/search', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('센터 검색 오류:', error);
+    logError('센터 검색 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 검색 중 오류가 발생했습니다.'
@@ -454,7 +455,7 @@ router.post('/:centerId/images', authMiddleware, requireRole(['centerAdmin', 'su
     });
 
   } catch (error) {
-    console.error('센터 이미지 업로드 오류:', error);
+    logError('센터 이미지 업로드 오류:', error);
     res.status(500).json({
       success: false,
       message: '이미지 업로드 중 오류가 발생했습니다.'

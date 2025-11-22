@@ -9,6 +9,7 @@ const StudentGoal_1 = require("../models/StudentGoal");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const LearningProgress_1 = require("../models/LearningProgress");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
@@ -28,7 +29,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
         });
     }
     catch (error) {
-        console.error('❌ 학생 목표 목록 조회 오류:', error);
+        (0, logger_1.logError)('학생 목표 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '학생 목표 목록 조회 중 오류가 발생했습니다.'
@@ -56,7 +57,7 @@ router.get('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student'
         });
     }
     catch (error) {
-        console.error('❌ 학생 목표 조회 오류:', error);
+        (0, logger_1.logError)('학생 목표 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '학생 목표 조회 중 오류가 발생했습니다.'
@@ -101,7 +102,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), as
         });
     }
     catch (error) {
-        console.error('❌ 목표 생성 오류:', error);
+        (0, logger_1.logError)('목표 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 생성 중 오류가 발생했습니다.'
@@ -141,7 +142,7 @@ router.put('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['student'
         });
     }
     catch (error) {
-        console.error('❌ 목표 수정 오류:', error);
+        (0, logger_1.logError)('목표 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 수정 중 오류가 발생했습니다.'
@@ -169,7 +170,7 @@ router.delete('/:goalId', auth_1.authMiddleware, (0, auth_1.requireRole)(['stude
         });
     }
     catch (error) {
-        console.error('❌ 목표 삭제 오류:', error);
+        (0, logger_1.logError)('목표 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 삭제 중 오류가 발생했습니다.'
@@ -214,7 +215,7 @@ router.put('/:goalId/milestones/:milestoneIndex', auth_1.authMiddleware, (0, aut
         });
     }
     catch (error) {
-        console.error('❌ 마일스톤 업데이트 오류:', error);
+        (0, logger_1.logError)('마일스톤 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: '마일스톤 업데이트 중 오류가 발생했습니다.'
@@ -254,7 +255,7 @@ router.put('/:goalId/calculate-progress', auth_1.authMiddleware, (0, auth_1.requ
         });
     }
     catch (error) {
-        console.error('❌ 목표 진행률 계산 오류:', error);
+        (0, logger_1.logError)('목표 진행률 계산 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 진행률 계산 중 오류가 발생했습니다.'
@@ -301,7 +302,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('❌ 목표 통계 조회 오류:', error);
+        (0, logger_1.logError)('목표 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 통계 조회 중 오류가 발생했습니다.'
@@ -380,7 +381,7 @@ router.post('/recommend', auth_1.authMiddleware, (0, auth_1.requireRole)(['stude
         });
     }
     catch (error) {
-        console.error('❌ 목표 추천 생성 오류:', error);
+        (0, logger_1.logError)('목표 추천 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '목표 추천 생성 중 오류가 발생했습니다.'

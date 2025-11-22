@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const TeachingMethod_1 = require("../models/TeachingMethod");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/update-levels', async (req, res) => {
     try {
@@ -45,7 +46,7 @@ router.post('/update-levels', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 레벨 변경 오류:', error);
+        (0, logger_1.logError)('❌ 레벨 변경 오류:', error);
         res.status(500).json({
             success: false,
             message: '레벨 변경에 실패했습니다.',

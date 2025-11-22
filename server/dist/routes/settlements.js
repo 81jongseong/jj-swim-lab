@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Settlement_1 = require("../models/Settlement");
 const settlementService_1 = require("../services/settlementService");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -63,7 +64,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('정산 목록 조회 실패:', error);
+        (0, logger_1.logError)('정산 목록 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -100,7 +101,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('정산 상세 조회 실패:', error);
+        (0, logger_1.logError)('정산 상세 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -133,7 +134,7 @@ router.get('/stats/overview', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('정산 통계 조회 실패:', error);
+        (0, logger_1.logError)('정산 통계 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -157,7 +158,7 @@ router.post('/process', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAd
         });
     }
     catch (error) {
-        console.error('정산 처리 실패:', error);
+        (0, logger_1.logError)('정산 처리 실패:', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'

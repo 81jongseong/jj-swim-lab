@@ -246,3 +246,23 @@
 - **상태**: ✅ 해결됨 (2025-01-18)
 
 ---
+
+#### 8. **routes 파일들의 console.error를 logger로 교체**
+- **요청 사항**: 모든 routes 파일의 console.error를 logger의 logError로 교체
+- **발생 위치**: server/src/routes/*.ts (모든 routes 파일)
+- **해결 방법**:
+  1. logger import가 없는 파일들에 `import { logInfo, logError, logWarn, logDebug } from '../utils/logger';` 추가
+  2. 모든 `console.error` 호출을 `logError`로 교체
+  3. 사용하지 않는 logger import 제거 (logInfo, logWarn, logDebug 등)
+  4. linter 오류 확인 및 수정
+- **처리 결과**:
+  - 총 처리된 파일: 약 56개 routes 파일
+  - 교체된 console.error: 약 365개
+  - 남은 console.error: 0개
+  - linter 오류: 0개
+- **예방 방법**:
+  - 새로운 routes 파일 작성 시 console.error 대신 logError 사용
+  - 코드 리뷰 시 console.error 사용 금지
+- **상태**: ✅ 해결됨 (2025-01-19)
+
+---

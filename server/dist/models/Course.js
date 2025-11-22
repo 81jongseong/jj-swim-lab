@@ -16,6 +16,7 @@ const courseSchema = new mongoose_1.default.Schema({
     },
     level: {
         type: String,
+        enum: ['초급', '중급', '고급', '전문가', '마스터'],
         required: true,
     },
     duration: {

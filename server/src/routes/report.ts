@@ -9,6 +9,7 @@ import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { Report } from '../models/Report';
 import { AdminReport } from '../models/AdminReport';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router: express.Router = express.Router();
 
@@ -48,7 +49,7 @@ router.get('/admin', authMiddleware, async (req: any, res: any) => {
       count: reports.length 
     });
   } catch (error) {
-    console.error('관리자 리포트 조회 오류:', error);
+    logError('관리자 리포트 조회 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -87,7 +88,7 @@ router.post('/admin', authMiddleware, async (req: any, res: any) => {
       message: '관리자 리포트가 성공적으로 생성되었습니다.'
     });
   } catch (error) {
-    console.error('관리자 리포트 생성 오류:', error);
+    logError('관리자 리포트 생성 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -116,7 +117,7 @@ router.put('/admin/:id', authMiddleware, async (req: any, res: any) => {
       message: '관리자 리포트가 성공적으로 수정되었습니다.'
     });
   } catch (error) {
-    console.error('관리자 리포트 수정 오류:', error);
+    logError('관리자 리포트 수정 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -143,7 +144,7 @@ router.patch('/admin/:id/status', authMiddleware, async (req: any, res: any) => 
       message: '리포트 상태가 성공적으로 업데이트되었습니다.'
     });
   } catch (error) {
-    console.error('리포트 상태 업데이트 오류:', error);
+    logError('리포트 상태 업데이트 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -164,7 +165,7 @@ router.delete('/admin/:id', authMiddleware, async (req: any, res: any) => {
       message: '관리자 리포트가 성공적으로 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('관리자 리포트 삭제 오류:', error);
+    logError('관리자 리포트 삭제 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
@@ -202,7 +203,7 @@ router.post('/', authMiddleware, async (req: any, res: any) => {
       message: '센터 리포트가 성공적으로 생성되었습니다.'
     });
   } catch (error) {
-    console.error('센터 리포트 생성 오류:', error);
+    logError('센터 리포트 생성 오류', error);
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });

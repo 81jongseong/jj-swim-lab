@@ -8,6 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/center-users', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -74,26 +75,26 @@ router.get('/center-users', auth_1.authMiddleware, async (req, res) => {
             try {
                 const GroupClass = require('../models/GroupClass').default;
                 const groupClasses = await GroupClass.find({ status: 'active' });
-                console.log(`📚 활성 단체반 ${groupClasses.length}개 발견`);
+                (0, logger_1.logDebug)('활성 단체반 발견', { count: groupClasses.length });
                 const groupStudentIds = groupClasses.flatMap(gc => {
                     const activeStudents = gc.students.filter(s => s.status === 'active');
-                    console.log(`  - ${gc.className}: ${activeStudents.length}명`);
+                    (0, logger_1.logDebug)('단체반 학생 수', { className: gc.className, count: activeStudents.length });
                     return activeStudents.map(s => s.userId);
                 });
-                console.log(`📝 총 단체반 학생 ID: ${groupStudentIds.length}개`);
+                (0, logger_1.logDebug)('총 단체반 학생 ID', { count: groupStudentIds.length });
                 if (groupStudentIds.length > 0) {
                     const groupUsers = await User_1.User.find({
                         _id: { $in: groupStudentIds }
                     }).select('-password');
-                    console.log(`✅ 단체반 회원 ${groupUsers.length}명 조회됨`);
+                    (0, logger_1.logInfo)('단체반 회원 조회됨', { count: groupUsers.length });
                     const existingIds = users.map(u => u._id.toString());
                     const newGroupUsers = groupUsers.filter(gu => !existingIds.includes(gu._id.toString()));
-                    console.log(`➕ 새로운 단체반 회원 ${newGroupUsers.length}명 추가`);
+                    (0, logger_1.logInfo)('새로운 단체반 회원 추가', { count: newGroupUsers.length });
                     users = [...users, ...newGroupUsers];
                 }
             }
             catch (groupError) {
-                console.error('❌ 단체반 회원 조회 실패:', groupError);
+                (0, logger_1.logError)('단체반 회원 조회 실패', groupError);
             }
         }
         const total = await User_1.User.countDocuments(query);
@@ -112,7 +113,7 @@ router.get('/center-users', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (err) {
-        console.error('센터 사용자 목록 조회 오류:', err);
+        (0, logger_1.logError)('센터 사용자 목록 조회 오류', err);
         return res.status(500).json({
             success: false,
             message: '센터 사용자 목록을 불러오는 데 실패했습니다.'
@@ -135,10 +136,10 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         }
         const user = await User_1.User.findById(req.params.id).select('-password');
         if (!user) {
-            console.log('❌ 사용자를 찾을 수 없음:', req.params.id);
+            (0, logger_1.logWarn)('사용자를 찾을 수 없음', { id: req.params.id });
             return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
         }
-        console.log('✅ 사용자 찾음:', {
+        (0, logger_1.logDebug)('사용자 찾음', {
             id: user._id,
             name: user.name,
             email: user.email
@@ -158,7 +159,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         return res.json(user);
     }
     catch (err) {
-        console.error('사용자 조회 오류:', err);
+        (0, logger_1.logError)('사용자 조회 오류', err);
         return res.status(500).json({ error: '사용자 정보를 불러오는 데 실패했습니다.' });
     }
 });
@@ -177,7 +178,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManage
             });
             if (adminCenterId) {
                 const centerIdObjectId = new mongoose_1.default.Types.ObjectId(adminCenterId);
-                console.log('🔍 ObjectId 변환 디버깅:', {
+                (0, logger_1.logDebug)('ObjectId 변환 디버깅', {
                     originalCenterId: adminCenterId,
                     centerIdType: typeof adminCenterId,
                     centerIdConstructor: adminCenterId?.constructor?.name,
@@ -190,13 +191,13 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManage
                     { 'studentInfo.enrolledCenters': centerIdObjectId }
                 ];
                 query.userType = { $in: ['instructor', 'student'] };
-                console.log('🔍 센터 필터링 쿼리:', {
+                (0, logger_1.logDebug)('센터 필터링 쿼리', {
                     $or: query['$or'],
                     userType: query.userType
                 });
             }
             else {
-                console.log('⚠️ 센터 관리자에게 centerId가 없음');
+                (0, logger_1.logWarn)('센터 관리자에게 centerId가 없음');
                 query.userType = { $in: ['instructor', 'student'] };
             }
         }
@@ -230,14 +231,14 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManage
                 { phone: { $regex: search, $options: 'i' } }
             ];
         }
-        console.log('🔍 실제 쿼리 실행:', query);
+        (0, logger_1.logDebug)('실제 쿼리 실행', { query });
         const users = await User_1.User.find(query)
             .select('-password')
             .skip(skip)
             .limit(Number(limit))
             .sort({ createdAt: -1 });
         const total = await User_1.User.countDocuments(query);
-        console.log('🔍 쿼리 실행 결과:', {
+        (0, logger_1.logDebug)('쿼리 실행 결과', {
             count: users.length,
             total,
             firstUser: users[0] ? {
@@ -258,7 +259,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManage
         });
     }
     catch (err) {
-        console.error('사용자 목록 조회 오류:', err);
+        (0, logger_1.logError)('사용자 목록 조회 오류', err);
         return res.status(500).json({ error: '사용자 목록을 불러오는 데 실패했습니다.' });
     }
 });
@@ -278,7 +279,7 @@ router.get('/stats/by-type', auth_1.authMiddleware, (0, auth_1.requirePermission
         return res.json({ stats });
     }
     catch (err) {
-        console.error('사용자 통계 조회 오류:', err);
+        (0, logger_1.logError)('사용자 통계 조회 오류', err);
         return res.status(500).json({ error: '사용자 통계를 불러오는 데 실패했습니다.' });
     }
 });
@@ -315,7 +316,7 @@ router.get('/stats/by-level', auth_1.authMiddleware, (0, auth_1.requirePermissio
         return res.json({ stats });
     }
     catch (err) {
-        console.error('레벨별 통계 조회 오류:', err);
+        (0, logger_1.logError)('레벨별 통계 조회 오류', err);
         return res.status(500).json({ error: '레벨별 통계를 불러오는 데 실패했습니다.' });
     }
 });
@@ -361,7 +362,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManag
         });
     }
     catch (err) {
-        console.error('사용자 생성 오류:', err);
+        (0, logger_1.logError)('사용자 생성 오류', err);
         return res.status(400).json({
             success: false,
             error: '사용자 생성에 실패했습니다.'
@@ -370,7 +371,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('userManag
 });
 router.put('/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const { userId, name, email, phone, address, birthDate, gender, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
+        const { userId, name, email, phone, address, userType, level, password, studentInfo, instructorInfo, centerAdminInfo, superAdminInfo, accessPermissions, featureSequence } = req.body;
         const currentUser = req.user;
         const targetUserId = req.params.id;
         if (currentUser._id?.toString() !== targetUserId) {
@@ -442,7 +443,7 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
         }
         if (typeof req.body.isActive === 'boolean') {
             updateData.isActive = req.body.isActive;
-            console.log(`🔒 계정 상태 변경: ${updateData.isActive ? '활성' : '비활성'}`);
+            (0, logger_1.logInfo)('계정 상태 변경', { isActive: updateData.isActive });
         }
         if (studentInfo) {
             updateData.studentInfo = studentInfo;
@@ -469,7 +470,7 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
         return res.json(user);
     }
     catch (err) {
-        console.error('사용자 업데이트 오류:', err);
+        (0, logger_1.logError)('사용자 업데이트 오류', err);
         return res.status(400).json({ error: '사용자 정보 업데이트에 실패했습니다.' });
     }
 });
@@ -507,7 +508,7 @@ router.patch('/:id/upgrade-level', auth_1.authMiddleware, (0, auth_1.requirePerm
         });
     }
     catch (err) {
-        console.error('레벨 업그레이드 오류:', err);
+        (0, logger_1.logError)('레벨 업그레이드 오류', err);
         return res.status(400).json({ error: '레벨 업그레이드에 실패했습니다.' });
     }
 });
@@ -527,7 +528,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requirePermission)('user
         return res.json({ message: '사용자가 성공적으로 삭제되었습니다.' });
     }
     catch (err) {
-        console.error('사용자 삭제 오류:', err);
+        (0, logger_1.logError)('사용자 삭제 오류', err);
         return res.status(500).json({ error: '사용자 삭제에 실패했습니다.' });
     }
 });
@@ -551,7 +552,7 @@ router.patch('/:id/conditions', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (err) {
-        console.error('질환 업데이트 오류:', err);
+        (0, logger_1.logError)('질환 업데이트 오류', err);
         return res.status(500).json({ error: '질환 업데이트에 실패했습니다.' });
     }
 });
@@ -569,7 +570,7 @@ router.patch('/:id/toggle-status', auth_1.authMiddleware, (0, auth_1.requirePerm
         });
     }
     catch (err) {
-        console.error('사용자 상태 변경 오류:', err);
+        (0, logger_1.logError)('사용자 상태 변경 오류', err);
         return res.status(500).json({ error: '사용자 상태 변경에 실패했습니다.' });
     }
 });
@@ -659,7 +660,7 @@ router.put('/:userId/swimming-profile/css', auth_1.authMiddleware, async (req, r
             updatedByRole: updatedByRole || 'instructor'
         };
         await user.save();
-        console.log(`✅ CSS 저장 완료: ${user.name}`, user.studentInfo.swimmingProfile.css);
+        (0, logger_1.logInfo)('CSS 저장 완료', { userName: user.name, css: user.studentInfo.swimmingProfile.css });
         return res.json({
             success: true,
             message: 'CSS가 성공적으로 업데이트되었습니다.',
@@ -671,7 +672,7 @@ router.put('/:userId/swimming-profile/css', auth_1.authMiddleware, async (req, r
         });
     }
     catch (err) {
-        console.error('CSS 업데이트 오류:', err);
+        (0, logger_1.logError)('CSS 업데이트 오류', err);
         return res.status(500).json({ error: 'CSS 업데이트에 실패했습니다.' });
     }
 });
@@ -796,7 +797,7 @@ router.put('/:userId/swimming-profile', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (err) {
-        console.error('수영 프로필 업데이트 오류:', err);
+        (0, logger_1.logError)('수영 프로필 업데이트 오류', err);
         return res.status(500).json({ error: '수영 프로필 업데이트에 실패했습니다.' });
     }
 });
@@ -849,7 +850,7 @@ router.post('/:userId/swimming-profile/approve-changes', auth_1.authMiddleware, 
         });
     }
     catch (err) {
-        console.error('변경사항 승인 오류:', err);
+        (0, logger_1.logError)('변경사항 승인 오류', err);
         return res.status(500).json({ error: '변경사항 승인에 실패했습니다.' });
     }
 });
@@ -876,7 +877,7 @@ router.post('/:userId/swimming-profile/reject-changes', auth_1.authMiddleware, a
         });
     }
     catch (err) {
-        console.error('변경사항 거부 오류:', err);
+        (0, logger_1.logError)('변경사항 거부 오류', err);
         return res.status(500).json({ error: '변경사항 거부에 실패했습니다.' });
     }
 });
@@ -896,7 +897,7 @@ async function getInstructorCourses(instructorId) {
         return courses.map(course => course._id);
     }
     catch (error) {
-        console.error('강사 코스 조회 실패:', {
+        (0, logger_1.logError)('강사 코스 조회 실패', {
             instructorId,
             error
         });

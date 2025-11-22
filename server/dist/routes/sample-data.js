@@ -11,6 +11,7 @@ const Payment_1 = require("../models/Payment");
 const ExerciseData_1 = require("../models/ExerciseData");
 const HealthData_1 = require("../models/HealthData");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/generate-dashboard-data', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'admin']), async (req, res) => {
     try {
@@ -210,7 +211,7 @@ router.post('/generate-dashboard-data', auth_1.authMiddleware, (0, auth_1.requir
         });
     }
     catch (error) {
-        console.error('❌ 샘플 데이터 생성 실패:', error);
+        (0, logger_1.logError)('❌ 샘플 데이터 생성 실패:', error);
         res.status(500).json({
             success: false,
             message: '샘플 데이터 생성 중 오류가 발생했습니다.',

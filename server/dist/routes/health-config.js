@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const logger_1 = require("../utils/logger");
 const HealthConfig_1 = require("../models/HealthConfig");
 const auth_1 = require("../middleware/auth");
 const EvidenceBasedWeights_1 = require("../utils/EvidenceBasedWeights");
@@ -30,7 +31,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), 
         });
     }
     catch (error) {
-        console.error('건강정보 설정 조회 오류:', error);
+        (0, logger_1.logError)('건강정보 설정 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 설정을 조회할 수 없습니다.'
@@ -76,7 +77,7 @@ router.put('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']), 
         });
     }
     catch (error) {
-        console.error('건강정보 설정 업데이트 오류:', error);
+        (0, logger_1.logError)('건강정보 설정 업데이트 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 설정을 업데이트할 수 없습니다.'
@@ -123,7 +124,7 @@ router.post('/fields', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdm
         });
     }
     catch (error) {
-        console.error('건강정보 항목 추가 오류:', error);
+        (0, logger_1.logError)('건강정보 항목 추가 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 항목을 추가할 수 없습니다.'
@@ -163,7 +164,7 @@ router.put('/fields/:fieldId', auth_1.authMiddleware, (0, auth_1.requireRole)(['
         });
     }
     catch (error) {
-        console.error('건강정보 항목 수정 오류:', error);
+        (0, logger_1.logError)('건강정보 항목 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 항목을 수정할 수 없습니다.'
@@ -200,7 +201,7 @@ router.delete('/fields/:fieldId', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('건강정보 항목 삭제 오류:', error);
+        (0, logger_1.logError)('건강정보 항목 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 항목을 삭제할 수 없습니다.'
@@ -253,7 +254,7 @@ router.put('/ai', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin'])
         });
     }
     catch (error) {
-        console.error('AI 알고리즘 설정 업데이트 오류:', error);
+        (0, logger_1.logError)('AI 알고리즘 설정 업데이트 오류:', error);
         res.status(500).json({
             success: false,
             message: 'AI 알고리즘 설정을 업데이트할 수 없습니다.'
@@ -285,7 +286,7 @@ router.get('/permissions', auth_1.authMiddleware, (0, auth_1.requireRole)(['cent
         });
     }
     catch (error) {
-        console.error('건강정보 권한 조회 오류:', error);
+        (0, logger_1.logError)('건강정보 권한 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강정보 권한을 조회할 수 없습니다.'
@@ -420,7 +421,7 @@ router.get('/evidence-based-weights', auth_1.authMiddleware, async (req, res) =>
         });
     }
     catch (error) {
-        console.error('과학적 근거 기반 가중치 조회 오류:', error);
+        (0, logger_1.logError)('과학적 근거 기반 가중치 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '과학적 근거 기반 가중치 조회 중 오류가 발생했습니다.'
@@ -437,7 +438,7 @@ router.post('/validate-weight-modification', auth_1.authMiddleware, (0, auth_1.r
         });
     }
     catch (error) {
-        console.error('가중치 수정 권한 확인 오류:', error);
+        (0, logger_1.logError)('가중치 수정 권한 확인 오류:', error);
         res.status(500).json({
             success: false,
             message: '가중치 수정 권한 확인 중 오류가 발생했습니다.'
@@ -453,7 +454,7 @@ router.get('/algorithm-evidence', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('알고리즘 과학적 근거 조회 오류:', error);
+        (0, logger_1.logError)('알고리즘 과학적 근거 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '알고리즘 과학적 근거 조회 중 오류가 발생했습니다.'

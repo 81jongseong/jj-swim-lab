@@ -9,6 +9,7 @@ import { refreshRateLimitCache } from '../middleware/dynamicRateLimit';
 import { emailService } from '../services/emailService';
 import { performanceService } from '../services/performanceService';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router: express.Router = express.Router();
 
@@ -53,7 +54,7 @@ router.get('/status', authMiddleware, requireRole(['superAdmin']), async (req: R
       data: systemStatus
     });
   } catch (error) {
-    console.error('시스템 상태 조회 오류:', error);
+    logError('시스템 상태 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '시스템 상태 조회에 실패했습니다.'
@@ -112,7 +113,7 @@ router.get('/settings', authMiddleware, requireRole(['superAdmin']), async (req:
       data: systemConfig
     });
   } catch (error) {
-    console.error('시스템 설정 조회 오류:', error);
+    logError('시스템 설정 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '시스템 설정 조회에 실패했습니다.'
@@ -161,7 +162,7 @@ router.put('/settings', authMiddleware, requireRole(['superAdmin']), async (req:
       data: newSystemConfig
     });
   } catch (error) {
-    console.error('시스템 설정 업데이트 오류:', error);
+    logError('시스템 설정 업데이트 오류', error);
     res.status(500).json({
       success: false,
       message: '시스템 설정 업데이트에 실패했습니다.'
@@ -252,7 +253,7 @@ router.get('/activity', authMiddleware, requireRole(['superAdmin']), async (req:
       data: activityData
     });
   } catch (error) {
-    console.error('사용자 활동 통계 조회 오류:', error);
+    logError('사용자 활동 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 통계 조회에 실패했습니다.'
@@ -282,7 +283,7 @@ router.get('/user-stats', authMiddleware, requireRole(['superAdmin']), async (re
       data: userStats
     });
   } catch (error) {
-    console.error('사용자 통계 조회 오류:', error);
+    logError('사용자 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '사용자 통계 조회에 실패했습니다.'
@@ -307,7 +308,7 @@ router.get('/database-status', authMiddleware, requireRole(['superAdmin']), asyn
       data: dbStatus
     });
   } catch (error) {
-    console.error('데이터베이스 상태 조회 오류:', error);
+    logError('데이터베이스 상태 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '데이터베이스 상태 조회에 실패했습니다.'
@@ -332,7 +333,7 @@ router.post('/backup', authMiddleware, requireRole(['superAdmin']), async (req: 
       data: backupInfo
     });
   } catch (error) {
-    console.error('시스템 백업 오류:', error);
+    logError('시스템 백업 오류', error);
     res.status(500).json({
       success: false,
       message: '시스템 백업에 실패했습니다.'
@@ -367,7 +368,7 @@ router.get('/logs', authMiddleware, requireRole(['superAdmin']), async (req: Req
       data: logs
     });
   } catch (error) {
-    console.error('시스템 로그 조회 오류:', error);
+    logError('시스템 로그 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '시스템 로그 조회에 실패했습니다.'
@@ -396,7 +397,7 @@ router.post('/backup', authMiddleware, requireRole(['superAdmin']), async (req: 
       });
     }
   } catch (error) {
-    console.error('수동 백업 실행 오류:', error);
+    logError('수동 백업 실행 오류', error);
     res.status(500).json({
       success: false,
       message: '백업 실행 중 오류가 발생했습니다.'
@@ -419,7 +420,7 @@ router.get('/performance', authMiddleware, requireRole(['superAdmin']), async (r
       }
     });
   } catch (error) {
-    console.error('성능 메트릭 조회 오류:', error);
+    logError('성능 메트릭 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '성능 메트릭 조회에 실패했습니다.'

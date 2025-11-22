@@ -106,6 +106,7 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { EvaluationCriteria, AIEvaluationResult } from '../models/AIEvaluationCriteria';
 import ExerciseRecommendation from '../models/ExerciseRecommendation';
 import { AdvancedAIEngine } from '../utils/AdvancedAIEngine';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -120,7 +121,7 @@ router.get('/evaluation-criteria', authMiddleware, requireRole(['instructor', 'c
       message: '평가 기준을 성공적으로 조회했습니다.'
     });
   } catch (error) {
-    console.error('평가 기준 조회 오류:', error);
+    logError('평가 기준 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 조회 중 오류가 발생했습니다.'
@@ -155,7 +156,7 @@ router.post('/evaluation-criteria', authMiddleware, requireRole(['centerAdmin', 
       message: '평가 기준을 성공적으로 생성했습니다.'
     });
   } catch (error) {
-    console.error('평가 기준 생성 오류:', error);
+    logError('평가 기준 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 생성 중 오류가 발생했습니다.'
@@ -188,7 +189,7 @@ router.put('/evaluation-criteria/:id', authMiddleware, requireRole(['centerAdmin
       message: '평가 기준을 성공적으로 수정했습니다.'
     });
   } catch (error) {
-    console.error('평가 기준 수정 오류:', error);
+    logError('평가 기준 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 수정 중 오류가 발생했습니다.'
@@ -215,7 +216,7 @@ router.delete('/evaluation-criteria/:id', authMiddleware, requireRole(['superAdm
       message: '평가 기준을 성공적으로 삭제했습니다.'
     });
   } catch (error) {
-    console.error('평가 기준 삭제 오류:', error);
+    logError('평가 기준 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 삭제 중 오류가 발생했습니다.'
@@ -240,7 +241,7 @@ router.get('/exercise-recommendations', authMiddleware, requireRole(['instructor
       message: '운동 추천을 성공적으로 조회했습니다.'
     });
   } catch (error) {
-    console.error('운동 추천 조회 오류:', error);
+    logError('운동 추천 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 조회 중 오류가 발생했습니다.'
@@ -262,7 +263,7 @@ router.post('/exercise-recommendations', authMiddleware, requireRole(['centerAdm
       message: '운동 추천을 성공적으로 생성했습니다.'
     });
   } catch (error) {
-    console.error('운동 추천 생성 오류:', error);
+    logError('운동 추천 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 생성 중 오류가 발생했습니다.'
@@ -295,7 +296,7 @@ router.put('/exercise-recommendations/:id', authMiddleware, requireRole(['center
       message: '운동 추천을 성공적으로 수정했습니다.'
     });
   } catch (error) {
-    console.error('운동 추천 수정 오류:', error);
+    logError('운동 추천 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 수정 중 오류가 발생했습니다.'
@@ -322,7 +323,7 @@ router.delete('/exercise-recommendations/:id', authMiddleware, requireRole(['sup
       message: '운동 추천을 성공적으로 삭제했습니다.'
     });
   } catch (error) {
-    console.error('운동 추천 삭제 오류:', error);
+    logError('운동 추천 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '운동 추천 삭제 중 오류가 발생했습니다.'
@@ -371,7 +372,7 @@ router.post('/evaluate', authMiddleware, requireRole(['instructor', 'centerAdmin
       message: 'AI 평가가 성공적으로 완료되었습니다.'
     });
   } catch (error) {
-    console.error('AI 평가 실행 오류:', error);
+    logError('AI 평가 실행 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 평가 실행 중 오류가 발생했습니다.'
@@ -399,7 +400,7 @@ router.get('/evaluation-results/:studentId', authMiddleware, requireRole(['instr
       message: 'AI 평가 결과를 성공적으로 조회했습니다.'
     });
   } catch (error) {
-    console.error('AI 평가 결과 조회 오류:', error);
+    logError('AI 평가 결과 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 평가 결과 조회 중 오류가 발생했습니다.'
@@ -429,7 +430,7 @@ router.get('/evaluation-results/detail/:id', authMiddleware, requireRole(['instr
       message: 'AI 평가 결과를 성공적으로 조회했습니다.'
     });
   } catch (error) {
-    console.error('AI 평가 결과 상세 조회 오류:', error);
+    logError('AI 평가 결과 상세 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 평가 결과 상세 조회 중 오류가 발생했습니다.'

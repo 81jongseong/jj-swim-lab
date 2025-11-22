@@ -15,29 +15,20 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const bcrypt = __importStar(require("bcryptjs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const User_1 = require("../models/User");
 const LoginLog_1 = require("../models/LoginLog");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 const phoneVerificationCodes = new Map();
 const emailVerificationCodes = new Map();
@@ -64,7 +55,7 @@ router.post('/send-verification-code', async (req, res) => {
         const code = generateVerificationCode();
         const expiresAt = Date.now() + 5 * 60 * 1000;
         phoneVerificationCodes.set(normalizedPhone, { code, expiresAt });
-        console.log(`📱 [개발용] ${phone}로 인증 코드 발송: ${code}`);
+        (0, logger_1.logDebug)('인증 코드 발송 (개발용)', { phone, code });
         return res.status(200).json({
             success: true,
             message: '인증 코드가 발송되었습니다.',
@@ -72,7 +63,7 @@ router.post('/send-verification-code', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('인증 코드 발송 오류:', error);
+        (0, logger_1.logError)('인증 코드 발송 오류', error);
         return res.status(500).json({
             success: false,
             error: '인증 코드 발송에 실패했습니다.'
@@ -118,7 +109,7 @@ router.post('/verify-phone-code', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('인증 코드 검증 오류:', error);
+        (0, logger_1.logError)('인증 코드 검증 오류', error);
         return res.status(500).json({
             success: false,
             error: '인증 코드 검증에 실패했습니다.'
@@ -145,7 +136,7 @@ router.post('/send-email-code', async (req, res) => {
         const code = generateVerificationCode();
         const expiresAt = Date.now() + 5 * 60 * 1000;
         emailVerificationCodes.set(normalizedEmail, { code, expiresAt });
-        console.log(`📧 [개발용] ${normalizedEmail}로 이메일 인증 코드 발송: ${code}`);
+        (0, logger_1.logDebug)('이메일 인증 코드 발송 (개발용)', { email: normalizedEmail, code });
         return res.status(200).json({
             success: true,
             message: '이메일 인증 코드가 발송되었습니다.',
@@ -153,7 +144,7 @@ router.post('/send-email-code', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('이메일 인증 코드 발송 오류:', error);
+        (0, logger_1.logError)('이메일 인증 코드 발송 오류', error);
         return res.status(500).json({
             success: false,
             error: '이메일 인증 코드 발송에 실패했습니다.'
@@ -198,7 +189,7 @@ router.post('/verify-email-code', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('이메일 인증 코드 검증 오류:', error);
+        (0, logger_1.logError)('이메일 인증 코드 검증 오류', error);
         return res.status(500).json({
             success: false,
             error: '이메일 인증 코드 검증에 실패했습니다.'
@@ -478,7 +469,7 @@ router.post('/signup', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('회원가입 오류:', error);
+        (0, logger_1.logError)('회원가입 오류', error);
         const errorMessage = error.message || '서버 오류가 발생했습니다.';
         const statusCode = error.statusCode || 500;
         return res.status(statusCode).json({
@@ -521,12 +512,12 @@ router.get('/verify', async (req, res) => {
             });
         }
         catch (jwtError) {
-            console.error('JWT 토큰 검증 실패:', jwtError);
+            (0, logger_1.logError)('JWT 토큰 검증 실패', jwtError);
             return res.status(401).json({ error: '토큰이 만료되었거나 유효하지 않습니다.' });
         }
     }
     catch (error) {
-        console.error('토큰 검증 오류:', error);
+        (0, logger_1.logError)('토큰 검증 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -534,25 +525,25 @@ router.post('/login', async (req, res) => {
     try {
         console.log('🔍 로그인 요청 받음:', { body: req.body });
         const { userId, email, password } = req.body;
-        console.log('🔍 요청 데이터 파싱:', { userId, email, password: password ? '***' : 'undefined' });
+        (0, logger_1.logDebug)('요청 데이터 파싱', { userId, email, hasPassword: !!password });
         if (!(userId || email) || !password) {
-            console.log('❌ 필수 필드 누락:', { userId: !!userId, email: !!email, password: !!password });
+            (0, logger_1.logWarn)('필수 필드 누락', { hasUserId: !!userId, hasEmail: !!email, hasPassword: !!password });
             return res.status(400).json({ error: 'ID와 비밀번호를 입력해주세요.' });
         }
         let user = null;
         let searchQuery = {};
         if (userId) {
             searchQuery = { $or: [{ userId }, { username: userId }, { email: userId }] };
-            console.log('🔍 userId로 검색:', searchQuery);
+            (0, logger_1.logDebug)('userId로 검색', { searchQuery });
         }
         else if (email) {
             searchQuery = { $or: [{ email }, { username: email }] };
-            console.log('🔍 email로 검색:', searchQuery);
+            (0, logger_1.logDebug)('email로 검색', { searchQuery });
         }
         user = await User_1.User.findOne(searchQuery).select('+centerId');
-        console.log('🔍 사용자 검색 결과:', user ? { userId: user.userId, email: user.email, userType: user.userType } : '사용자 없음');
+        (0, logger_1.logDebug)('사용자 검색 결과', user ? { userId: user.userId, email: user.email, userType: user.userType } : { result: '사용자 없음' });
         if (!user) {
-            console.log('❌ 사용자를 찾을 수 없음');
+            (0, logger_1.logWarn)('사용자를 찾을 수 없음');
             return res.status(401).json({ error: 'ID 또는 비밀번호가 올바르지 않습니다.' });
         }
         console.log('🔍 비밀번호 검증 디버깅:');
@@ -569,22 +560,22 @@ router.post('/login', async (req, res) => {
             if (Array.isArray(user.studentInfo.enrolledCourses) &&
                 user.studentInfo.enrolledCourses.length > 0 &&
                 typeof user.studentInfo.enrolledCourses[0] === 'string') {
-                console.log('🔧 enrolledCourses 데이터 정리:', user.studentInfo.enrolledCourses);
+                (0, logger_1.logDebug)('enrolledCourses 데이터 정리', { count: user.studentInfo.enrolledCourses.length });
                 user.studentInfo.enrolledCourses = [];
             }
             if (Array.isArray(user.studentInfo.completedCourses) &&
                 user.studentInfo.completedCourses.length > 0 &&
                 typeof user.studentInfo.completedCourses[0] === 'string') {
-                console.log('🔧 completedCourses 데이터 정리:', user.studentInfo.completedCourses);
+                (0, logger_1.logDebug)('completedCourses 데이터 정리', { count: user.studentInfo.completedCourses.length });
                 user.studentInfo.completedCourses = [];
             }
         }
         try {
             await user.save();
-            console.log('✅ 사용자 정보 저장 성공');
+            (0, logger_1.logInfo)('사용자 정보 저장 성공', { userId: user._id });
         }
         catch (saveError) {
-            console.warn('⚠️ 사용자 정보 저장 실패, 로그인은 계속 진행:', saveError.message);
+            (0, logger_1.logWarn)('사용자 정보 저장 실패, 로그인은 계속 진행', { message: saveError.message });
         }
         const tokenPayload = {
             id: user._id,
@@ -618,13 +609,13 @@ router.post('/login', async (req, res) => {
             });
         }
         else {
-            console.log('⚠️ JWT 토큰에 centerId 미포함:', {
+            (0, logger_1.logDebug)('JWT 토큰에 centerId 미포함', {
                 userType: user.userType,
                 centerId: user.centerId,
                 centerIdExists: !!user.centerId
             });
         }
-        console.log('🔍 JWT 토큰 페이로드:', tokenPayload);
+        (0, logger_1.logDebug)('JWT 토큰 페이로드', tokenPayload);
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
             expiresIn: '24h',
             issuer: 'jj-swim-lab',
@@ -640,10 +631,10 @@ router.post('/login', async (req, res) => {
                 isActive: true
             });
             await loginLog.save();
-            console.log('✅ 로그인 로그 기록 완료');
+            (0, logger_1.logInfo)('로그인 로그 기록 완료', { userId: user._id });
         }
         catch (logError) {
-            console.warn('⚠️ 로그인 로그 기록 실패:', logError);
+            (0, logger_1.logWarn)('로그인 로그 기록 실패', logError);
         }
         return res.json({
             success: true,
@@ -669,8 +660,8 @@ router.post('/login', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 로그인 오류 상세:', error);
-        console.error('❌ 오류 스택:', error instanceof Error ? error.stack : '스택 없음');
+        (0, logger_1.logError)('로그인 오류 상세', error);
+        (0, logger_1.logError)('로그인 오류 스택', { stack: error instanceof Error ? error.stack : '스택 없음' });
         return res.status(500).json({
             error: '서버 오류가 발생했습니다.',
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -727,7 +718,7 @@ router.get('/profile', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('프로필 조회 오류:', error);
+        (0, logger_1.logError)('프로필 조회 오류', error);
         return res.status(401).json({ error: '인증에 실패했습니다.' });
     }
 });

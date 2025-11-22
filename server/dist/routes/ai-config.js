@@ -9,6 +9,7 @@ const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const auth_2 = require("../middleware/auth");
 const Checklist_1 = require("../models/Checklist");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requirePermission)('aiConfigManagement'), async (req, res) => {
     try {
@@ -581,7 +582,7 @@ router.post('/lesson-plan', auth_1.authMiddleware, (0, auth_2.requireRole)(['stu
         });
     }
     catch (error) {
-        console.error('AI 강습 계획 생성 오류:', error);
+        (0, logger_1.logError)('AI 강습 계획 생성 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 강습 계획 생성에 실패했습니다.'
@@ -719,7 +720,7 @@ router.get('/progress-prediction', auth_1.authMiddleware, (0, auth_2.requireRole
         });
     }
     catch (error) {
-        console.error('AI 진도 예측 조회 오류:', error);
+        (0, logger_1.logError)('AI 진도 예측 조회 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 진도 예측 조회에 실패했습니다.'
@@ -876,7 +877,7 @@ router.get('/instructor-matching', auth_1.authMiddleware, (0, auth_2.requireRole
         });
     }
     catch (error) {
-        console.error('AI 강사 매칭 조회 오류:', error);
+        (0, logger_1.logError)('AI 강사 매칭 조회 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 강사 매칭 조회에 실패했습니다.'

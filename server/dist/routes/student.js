@@ -386,7 +386,7 @@ router.get('/progress', auth_1.authMiddleware, async (req, res) => {
         })
             .populate('instructor', 'name')
             .lean();
-        const personalLessons = await PersonalLesson_1.PersonalLesson.find({
+        const _personalLessons = await PersonalLesson_1.PersonalLesson.find({
             studentId: new mongoose_1.default.Types.ObjectId(studentId),
             status: { $in: ['approved', 'completed'] }
         })
@@ -560,7 +560,7 @@ router.get('/recommendations', auth_1.authMiddleware, async (req, res) => {
             });
         }
         const { User } = require('../models/User');
-        const student = await User.findById(studentId).lean();
+        await User.findById(studentId).lean();
         const enrolledCourses = await Course_1.Course.find({
             'enrolledStudents.student': new mongoose_1.default.Types.ObjectId(studentId),
             'enrolledStudents.status': 'active'
@@ -568,7 +568,7 @@ router.get('/recommendations', auth_1.authMiddleware, async (req, res) => {
             .populate('instructor', 'name')
             .lean();
         let currentLevel = 'beginner';
-        let currentSkills = [];
+        const currentSkills = [];
         if (enrolledCourses.length > 0) {
             const course = enrolledCourses[0];
             currentLevel = course.level || 'beginner';

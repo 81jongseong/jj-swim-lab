@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { execAsync } from '../utils/execAsync';
 import { VideoProcessingJob } from '../models/VideoProcessingJob';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // import { runPipeline, checkPipelineStatus, downloadPipelineResult } from './runPipeline';
 
 const router = express.Router();
@@ -128,7 +129,7 @@ router.post('/upload', upload.fields([
     });
 
   } catch (error) {
-    console.error('동영상 업로드 오류:', error);
+    logError('동영상 업로드 오류', error);
     res.status(500).json({
       success: false,
       message: '동영상 업로드 중 오류가 발생했습니다.',
@@ -167,7 +168,7 @@ async function processVideoAsync(videoId: string, videoPath: string, outputDir: 
     console.log(`OK 비디오 처리 완료: ${videoId}`);
 
   } catch (error) {
-    console.error(`ERROR 비디오 처리 오류 (${videoId}):`, error);
+    logError(`ERROR 비디오 처리 오류 (${videoId}):`, error);
     
     await VideoProcessingJob.findOneAndUpdate(
       { videoId },
@@ -198,7 +199,7 @@ async function extractMotionData(videoPath: string, outputDir: string) {
     if (stderr) console.log('수정된 VideoPose3D 오류:', stderr);
     
   } catch (error) {
-    console.error('수정된 VideoPose3D 실행 오류:', error);
+    logError('수정된 VideoPose3D 실행 오류', error);
     throw new Error('모션 데이터 추출 실패');
   }
 }
@@ -221,7 +222,7 @@ async function generate3DAnimation(videoId: string, outputDir: string) {
     if (stderr) console.log('Blender 오류:', stderr);
     
   } catch (error) {
-    console.error('Blender 실행 오류:', error);
+    logError('Blender 실행 오류', error);
     throw new Error('3D 애니메이션 생성 실패');
   }
 }
@@ -248,7 +249,7 @@ async function generate3DAnimationWithUserModel(videoId: string, outputDir: stri
     if (stderr) console.log('사용자 모델 Blender 오류:', stderr);
     
   } catch (error) {
-    console.error('사용자 모델 Blender 실행 오류:', error);
+    logError('사용자 모델 Blender 실행 오류', error);
     throw new Error('사용자 모델 3D 애니메이션 생성 실패');
   }
 }
@@ -279,7 +280,7 @@ router.get('/status/:videoId', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('상태 조회 오류:', error);
+    logError('상태 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '상태 조회 중 오류가 발생했습니다.'
@@ -345,7 +346,7 @@ router.get('/download/:videoId/:fileType', async (req, res) => {
     res.download(filePath, fileName);
     
   } catch (error) {
-    console.error('파일 다운로드 오류:', error);
+    logError('파일 다운로드 오류', error);
     res.status(500).json({
       success: false,
       message: '파일 다운로드 중 오류가 발생했습니다.'

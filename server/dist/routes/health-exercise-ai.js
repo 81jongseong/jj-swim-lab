@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const HealthBasedExerciseAI_1 = require("../utils/HealthBasedExerciseAI");
 const HealthData_1 = require("../models/HealthData");
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/calculate', auth_1.auth, async (req, res) => {
     try {
@@ -46,7 +47,7 @@ router.post('/calculate', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강정보 기반 운동량 계산 오류:', error);
+        (0, logger_1.logError)('건강정보 기반 운동량 계산 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -76,7 +77,7 @@ router.post('/adjust-realtime', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('실시간 운동량 조정 오류:', error);
+        (0, logger_1.logError)('실시간 운동량 조정 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -134,7 +135,7 @@ router.get('/user/:userId', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강기반 운동 추천 조회 오류:', error);
+        (0, logger_1.logError)('건강기반 운동 추천 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -181,7 +182,7 @@ router.get('/health-weights/:userId', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강정보 가중치 조회 오류:', error);
+        (0, logger_1.logError)('건강정보 가중치 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'

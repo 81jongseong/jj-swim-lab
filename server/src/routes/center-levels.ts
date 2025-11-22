@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { CenterLevel } from '../models/CenterLevel';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -33,7 +34,7 @@ router.get('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asyn
       total: levels.length
     });
   } catch (error) {
-    console.error('센터 레벨 목록 조회 오류:', error);
+    logError('센터 레벨 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 레벨 목록을 불러오는 데 실패했습니다.'
@@ -70,7 +71,7 @@ router.get('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), a
       data: level
     });
   } catch (error) {
-    console.error('센터 레벨 조회 오류:', error);
+    logError('센터 레벨 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 레벨을 불러오는 데 실패했습니다.'
@@ -117,7 +118,7 @@ router.post('/', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), asy
       data: newLevel
     });
   } catch (error) {
-    console.error('센터 레벨 생성 오류:', error);
+    logError('센터 레벨 생성 오류:', error);
     
     if (error.code === 11000) {
       return res.status(400).json({
@@ -177,7 +178,7 @@ router.put('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin']), a
       data: updatedLevel
     });
   } catch (error) {
-    console.error('센터 레벨 수정 오류:', error);
+    logError('센터 레벨 수정 오류:', error);
     
     if (error.code === 11000) {
       return res.status(400).json({
@@ -223,7 +224,7 @@ router.delete('/:id', authMiddleware, requireRole(['centerAdmin', 'superAdmin'])
       message: '센터 레벨이 성공적으로 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('센터 레벨 삭제 오류:', error);
+    logError('센터 레벨 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 레벨 삭제에 실패했습니다.'

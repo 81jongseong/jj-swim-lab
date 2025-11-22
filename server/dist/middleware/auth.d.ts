@@ -52,14 +52,14 @@ export declare const securityLogger: {
     logTokenRefresh: (userId: string, success: boolean, ip: string) => void;
 };
 declare const _default: {
-    authMiddleware: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
-    requireAdmin: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-    requireInstructor: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-    requireStudent: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-    requireCenterAdmin: (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-    requirePermission: (permission: string) => (req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>>;
-    requireCenterOwnership: (req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
-    refreshTokenMiddleware: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+    authMiddleware: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<Response<any, Record<string, any>>>;
+    requireAdmin: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    requireInstructor: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    requireStudent: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    requireCenterAdmin: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    requirePermission: (permission: string) => (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Response<any, Record<string, any>>;
+    requireCenterOwnership: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => void | Response<any, Record<string, any>>;
+    refreshTokenMiddleware: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>) => Promise<Response<any, Record<string, any>>>;
     generateTokens: (user: any) => {
         accessToken: string;
         refreshToken: string;

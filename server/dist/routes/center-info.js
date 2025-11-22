@@ -10,6 +10,7 @@ const auth_1 = require("../middleware/auth");
 const auth_2 = require("../middleware/auth");
 const Center_1 = require("../models/Center");
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
@@ -84,7 +85,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAdmin', '
         });
     }
     catch (error) {
-        console.error('센터 정보 조회 오류:', error);
+        (0, logger_1.logError)('센터 정보 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 정보 조회 중 오류가 발생했습니다.'
@@ -148,7 +149,7 @@ router.put('/', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAdmin', '
         });
     }
     catch (error) {
-        console.error('센터 정보 수정 오류:', error);
+        (0, logger_1.logError)('센터 정보 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 정보 수정 중 오류가 발생했습니다.'
@@ -203,7 +204,7 @@ router.post('/images', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerAd
         });
     }
     catch (error) {
-        console.error('이미지 업로드 오류:', error);
+        (0, logger_1.logError)('이미지 업로드 오류', error);
         res.status(500).json({
             success: false,
             message: '이미지 업로드 중 오류가 발생했습니다.'
@@ -259,7 +260,7 @@ router.delete('/images/:imageUrl', auth_1.authMiddleware, (0, auth_2.requireRole
         });
     }
     catch (error) {
-        console.error('이미지 삭제 오류:', error);
+        (0, logger_1.logError)('이미지 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '이미지 삭제 중 오류가 발생했습니다.'
@@ -356,7 +357,7 @@ router.get('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
         });
     }
     catch (error) {
-        console.error('센터 설정 조회 오류:', error);
+        (0, logger_1.logError)('센터 설정 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 설정 조회 중 오류가 발생했습니다.'
@@ -429,7 +430,7 @@ router.put('/settings', auth_1.authMiddleware, (0, auth_2.requireRole)(['centerA
         });
     }
     catch (error) {
-        console.error('센터 설정 수정 오류:', error);
+        (0, logger_1.logError)('센터 설정 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '센터 설정 수정 중 오류가 발생했습니다.'

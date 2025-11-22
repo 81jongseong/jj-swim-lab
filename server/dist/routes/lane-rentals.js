@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const LaneRental_1 = require("../models/LaneRental");
 const User_1 = require("../models/User");
 const laneAllocationService_1 = require("../services/laneAllocationService");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -56,7 +57,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 신청 실패:', error);
+        (0, logger_1.logError)('레인대여 신청 실패:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -92,7 +93,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 목록 조회 실패:', error);
+        (0, logger_1.logError)('레인대여 목록 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -120,7 +121,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 상세 조회 실패:', error);
+        (0, logger_1.logError)('레인대여 상세 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -156,7 +157,7 @@ router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 취소 실패:', error);
+        (0, logger_1.logError)('레인대여 취소 실패:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -183,7 +184,7 @@ router.get('/availability/:date/:time', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (error) {
-        console.error('사용 가능한 레인 조회 실패:', error);
+        (0, logger_1.logError)('사용 가능한 레인 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'

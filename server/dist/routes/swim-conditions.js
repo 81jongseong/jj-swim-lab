@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const SwimCondition_1 = require("../models/SwimCondition");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', async (req, res) => {
     try {
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('질환 조회 오류:', error);
+        (0, logger_1.logError)('질환 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '질환 조회 중 오류가 발생했습니다',
@@ -56,7 +57,7 @@ router.get('/:id', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('질환 조회 오류:', error);
+        (0, logger_1.logError)('질환 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '질환 조회 중 오류가 발생했습니다',
@@ -79,7 +80,7 @@ router.post('/', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('질환 추가 오류:', error);
+        (0, logger_1.logError)('질환 추가 오류:', error);
         res.status(500).json({
             success: false,
             message: '질환 추가 중 오류가 발생했습니다',
@@ -103,7 +104,7 @@ router.put('/:id', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('질환 수정 오류:', error);
+        (0, logger_1.logError)('질환 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '질환 수정 중 오류가 발생했습니다',
@@ -126,7 +127,7 @@ router.delete('/:id', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('질환 삭제 오류:', error);
+        (0, logger_1.logError)('질환 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '질환 삭제 중 오류가 발생했습니다',

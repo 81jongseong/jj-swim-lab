@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const medicalExercisePrescriptionService_1 = require("../services/medicalExercisePrescriptionService");
 const HealthAssessment_1 = require("../models/HealthAssessment");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/assessment', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -128,7 +129,7 @@ router.post('/assessment', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강 평가 등록 오류:', error);
+        (0, logger_1.logError)('건강 평가 등록 오류:', error);
         res.status(500).json({
             error: '건강 평가 등록에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -362,7 +363,7 @@ router.post('/prescription', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('운동 처방 생성 오류:', error);
+        (0, logger_1.logError)('운동 처방 생성 오류:', error);
         res.status(500).json({
             error: '운동 처방 생성에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -391,7 +392,7 @@ router.get('/clearance/:assessmentId', auth_1.authMiddleware, async (req, res) =
         });
     }
     catch (error) {
-        console.error('운동 허가 확인 오류:', error);
+        (0, logger_1.logError)('운동 허가 확인 오류:', error);
         res.status(500).json({
             error: '운동 허가 확인에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -412,7 +413,7 @@ router.get('/user/:userId/assessments', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (error) {
-        console.error('건강 평가 목록 조회 오류:', error);
+        (0, logger_1.logError)('건강 평가 목록 조회 오류:', error);
         res.status(500).json({
             error: '건강 평가 목록 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -433,7 +434,7 @@ router.get('/high-risk-patients', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('고위험군 조회 오류:', error);
+        (0, logger_1.logError)('고위험군 조회 오류:', error);
         res.status(500).json({
             error: '고위험군 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -454,7 +455,7 @@ router.get('/pending-clearances', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('승인 대기 목록 조회 오류:', error);
+        (0, logger_1.logError)('승인 대기 목록 조회 오류:', error);
         res.status(500).json({
             error: '승인 대기 목록 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -504,7 +505,7 @@ router.put('/:assessmentId/approve', auth_1.authMiddleware, async (req, res) => 
         });
     }
     catch (error) {
-        console.error('승인 처리 오류:', error);
+        (0, logger_1.logError)('승인 처리 오류:', error);
         res.status(500).json({
             error: '승인 처리에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -541,7 +542,7 @@ router.get('/statistics/health', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강 통계 조회 오류:', error);
+        (0, logger_1.logError)('건강 통계 조회 오류:', error);
         res.status(500).json({
             error: '건강 통계 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -597,7 +598,7 @@ router.post('/:assessmentId/vital-signs', auth_1.authMiddleware, async (req, res
         });
     }
     catch (error) {
-        console.error('생체신호 추가 오류:', error);
+        (0, logger_1.logError)('생체신호 추가 오류:', error);
         res.status(500).json({
             error: '생체신호 추가에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'

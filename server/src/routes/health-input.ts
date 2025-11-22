@@ -39,6 +39,7 @@ import express, { Request, Response } from 'express';
 import { User } from '../models/User';
 import { Checklist } from '../models/Checklist';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -139,7 +140,7 @@ router.post('/input', authMiddleware, async (req: AuthRequest, res: Response) =>
     });
 
   } catch (error) {
-    console.error('❌ 건강정보 저장 오류:', error);
+    logError('❌ 건강정보 저장 오류:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.',
@@ -199,7 +200,7 @@ router.get('/checklist', authMiddleware, async (req: AuthRequest, res: Response)
     });
 
   } catch (error) {
-    console.error('❌ 체크리스트 불러오기 오류:', error);
+    logError('❌ 체크리스트 불러오기 오류:', error);
     res.status(500).json({
       success: false,
       message: '체크리스트를 불러오는데 실패했습니다.',
@@ -255,7 +256,7 @@ router.get('/checklist/:checklistId', authMiddleware, async (req: AuthRequest, r
     });
 
   } catch (error) {
-    console.error('❌ 체크리스트 상세 조회 오류:', error);
+    logError('❌ 체크리스트 상세 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '체크리스트 상세 정보를 불러오는데 실패했습니다.',
@@ -294,7 +295,7 @@ router.get('/info', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ 건강정보 조회 오류:', error);
+    logError('❌ 건강정보 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보를 조회하는데 실패했습니다.',

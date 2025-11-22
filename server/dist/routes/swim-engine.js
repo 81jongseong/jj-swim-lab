@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/status', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -32,7 +33,7 @@ router.get('/status', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('수영 트레이닝 엔진 상태 확인 오류:', error);
+        (0, logger_1.logError)('수영 트레이닝 엔진 상태 확인 오류:', error);
         res.status(500).json({
             success: false,
             message: '수영 트레이닝 엔진 상태 확인 중 오류가 발생했습니다.'
@@ -81,7 +82,7 @@ router.post('/generate-plan', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('수영 프로그램 생성 오류:', error);
+        (0, logger_1.logError)('수영 프로그램 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '수영 프로그램 생성 중 오류가 발생했습니다.'
@@ -117,7 +118,7 @@ router.get('/health-policy', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강 정책 정보 조회 오류:', error);
+        (0, logger_1.logError)('건강 정책 정보 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강 정책 정보 조회 중 오류가 발생했습니다.'

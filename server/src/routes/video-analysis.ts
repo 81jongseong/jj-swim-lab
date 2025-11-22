@@ -11,6 +11,7 @@
 import express, { Response } from 'express';
 import { VideoAnalysisCriteria, VideoAnalysisResult } from '../models/VideoAnalysisCriteria';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ router.get('/criteria', authMiddleware, requireRole(['instructor', 'centerAdmin'
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 조회 오류:', error);
+    logError('영상 분석 기준 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 조회 중 오류가 발생했습니다.'
@@ -62,7 +63,7 @@ router.post('/criteria', authMiddleware, requireRole(['instructor', 'centerAdmin
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 생성 오류:', error);
+    logError('영상 분석 기준 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 생성 중 오류가 발생했습니다.'
@@ -99,7 +100,7 @@ router.put('/criteria/:id', authMiddleware, requireRole(['instructor', 'centerAd
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 수정 오류:', error);
+    logError('영상 분석 기준 수정 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 수정 중 오류가 발생했습니다.'
@@ -127,7 +128,7 @@ router.delete('/criteria/:id', authMiddleware, requireRole(['superAdmin']), asyn
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 삭제 오류:', error);
+    logError('영상 분석 기준 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 삭제 중 오류가 발생했습니다.'
@@ -159,7 +160,7 @@ router.patch('/criteria/:id/toggle', authMiddleware, requireRole(['instructor', 
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 토글 오류:', error);
+    logError('영상 분석 기준 토글 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 상태 변경 중 오류가 발생했습니다.'
@@ -185,7 +186,7 @@ router.post('/result', authMiddleware, requireRole(['instructor', 'centerAdmin']
     });
 
   } catch (error) {
-    console.error('영상 분석 결과 저장 오류:', error);
+    logError('영상 분석 결과 저장 오류', error);
     res.status(500).json({
       success: false,
       message: '결과 저장 중 오류가 발생했습니다.'
@@ -235,7 +236,7 @@ router.get('/result', authMiddleware, requireRole(['student', 'instructor', 'cen
     });
 
   } catch (error) {
-    console.error('영상 분석 결과 조회 오류:', error);
+    logError('영상 분석 결과 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '결과 조회 중 오류가 발생했습니다.'
@@ -272,7 +273,7 @@ router.get('/result/:id', authMiddleware, requireRole(['student', 'instructor', 
     });
 
   } catch (error) {
-    console.error('영상 분석 결과 상세 조회 오류:', error);
+    logError('영상 분석 결과 상세 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '결과 조회 중 오류가 발생했습니다.'
@@ -375,7 +376,7 @@ router.post('/criteria/template', authMiddleware, requireRole(['superAdmin']), a
     });
 
   } catch (error) {
-    console.error('영상 분석 기준 템플릿 생성 오류:', error);
+    logError('영상 분석 기준 템플릿 생성 오류', error);
     res.status(500).json({
       success: false,
       message: '기준 템플릿 생성 중 오류가 발생했습니다.'

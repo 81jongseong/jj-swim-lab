@@ -4,6 +4,7 @@ import { authMiddleware, requirePermission } from '../middleware/auth';
 import { User } from '../models/User'; // Added import for User
 import { requireRole } from '../middleware/auth'; // Added import for requireRole
 import { Checklist } from '../models/Checklist'; // Added import for Checklist
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -664,7 +665,7 @@ router.post('/lesson-plan', authMiddleware, requireRole(['student']), async (req
       data: lessonPlan
     });
   } catch (error) {
-    console.error('AI 강습 계획 생성 오류:', error);
+    logError('AI 강습 계획 생성 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 강습 계획 생성에 실패했습니다.'
@@ -817,7 +818,7 @@ router.get('/progress-prediction', authMiddleware, requireRole(['student']), asy
       data: prediction
     });
   } catch (error) {
-    console.error('AI 진도 예측 조회 오류:', error);
+    logError('AI 진도 예측 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 진도 예측 조회에 실패했습니다.'
@@ -980,7 +981,7 @@ router.get('/instructor-matching', authMiddleware, requireRole(['student']), asy
       data: matching
     });
   } catch (error) {
-    console.error('AI 강사 매칭 조회 오류:', error);
+    logError('AI 강사 매칭 조회 오류', error);
     res.status(500).json({
       success: false,
       message: 'AI 강사 매칭 조회에 실패했습니다.'

@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const userActivityService_1 = __importDefault(require("../services/userActivityService"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 const activityService = userActivityService_1.default.getInstance();
 router.get('/', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
@@ -29,7 +30,7 @@ router.get('/', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (r
         });
     }
     catch (error) {
-        console.error('사용자 활동 목록 조회 오류:', error);
+        (0, logger_1.logError)('사용자 활동 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
@@ -51,7 +52,7 @@ router.get('/stats/:userId', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin
         });
     }
     catch (error) {
-        console.error('사용자 활동 통계 조회 실패:', error);
+        (0, logger_1.logError)('사용자 활동 통계 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 통계 조회 중 오류가 발생했습니다.'
@@ -103,7 +104,7 @@ router.get('/:userId', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), a
         });
     }
     catch (error) {
-        console.error('사용자 활동 목록 조회 실패:', error);
+        (0, logger_1.logError)('사용자 활동 목록 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
@@ -129,7 +130,7 @@ router.get('/trends/overview', (0, auth_1.requireRole)(['superAdmin', 'centerAdm
         });
     }
     catch (error) {
-        console.error('활동 트렌드 조회 실패:', error);
+        (0, logger_1.logError)('활동 트렌드 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '활동 트렌드 조회 중 오류가 발생했습니다.'
@@ -153,7 +154,7 @@ router.get('/top-actions/overview', (0, auth_1.requireRole)(['superAdmin', 'cent
         });
     }
     catch (error) {
-        console.error('상위 활동 조회 실패:', error);
+        (0, logger_1.logError)('상위 활동 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '상위 활동 조회 중 오류가 발생했습니다.'
@@ -171,7 +172,7 @@ router.get('/summary/:userId', (0, auth_1.requireRole)(['superAdmin', 'centerAdm
         });
     }
     catch (error) {
-        console.error('사용자 활동 요약 생성 실패:', error);
+        (0, logger_1.logError)('사용자 활동 요약 생성 실패:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 요약 생성 중 오류가 발생했습니다.'
@@ -199,7 +200,7 @@ router.get('/suspicious/:userId', (0, auth_1.requireRole)(['superAdmin']), async
         });
     }
     catch (error) {
-        console.error('의심스러운 활동 감지 실패:', error);
+        (0, logger_1.logError)('의심스러운 활동 감지 실패:', error);
         res.status(500).json({
             success: false,
             message: '의심스러운 활동 감지 중 오류가 발생했습니다.'
@@ -235,7 +236,7 @@ router.get('/system-summary/overview', (0, auth_1.requireRole)(['superAdmin']), 
         });
     }
     catch (error) {
-        console.error('시스템 활동 요약 조회 실패:', error);
+        (0, logger_1.logError)('시스템 활동 요약 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '시스템 활동 요약 조회 중 오류가 발생했습니다.'
@@ -286,7 +287,7 @@ router.get('/search/overview', (0, auth_1.requireRole)(['superAdmin', 'centerAdm
         });
     }
     catch (error) {
-        console.error('사용자 활동 검색 실패:', error);
+        (0, logger_1.logError)('사용자 활동 검색 실패:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 검색 중 오류가 발생했습니다.'

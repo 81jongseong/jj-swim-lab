@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const YouTubeVideo_1 = require("../models/YouTubeVideo");
 const TeachingMethod_1 = require("../models/TeachingMethod");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const extractVideoId = (url) => {
     const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
@@ -51,7 +52,7 @@ router.get('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('YouTube 비디오 목록 조회 오류:', error);
+        (0, logger_1.logError)('YouTube 비디오 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: 'YouTube 비디오 목록을 불러오는 데 실패했습니다.'
@@ -78,7 +79,7 @@ router.get('/:id', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('YouTube 비디오 조회 오류:', error);
+        (0, logger_1.logError)('YouTube 비디오 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: 'YouTube 비디오를 불러오는 데 실패했습니다.'
@@ -142,7 +143,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
         });
     }
     catch (error) {
-        console.error('YouTube 비디오 생성 오류:', error);
+        (0, logger_1.logError)('YouTube 비디오 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: 'YouTube 비디오 생성에 실패했습니다.'
@@ -228,7 +229,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor',
         });
     }
     catch (error) {
-        console.error('YouTube 비디오 수정 오류:', error);
+        (0, logger_1.logError)('YouTube 비디오 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: 'YouTube 비디오 수정에 실패했습니다.'
@@ -265,7 +266,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
     catch (error) {
-        console.error('YouTube 비디오 삭제 오류:', error);
+        (0, logger_1.logError)('YouTube 비디오 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: 'YouTube 비디오 삭제에 실패했습니다.'
@@ -291,7 +292,7 @@ router.get('/teaching-method/:methodId', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습법별 YouTube 비디오 조회 오류:', error);
+        (0, logger_1.logError)('강습법별 YouTube 비디오 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '강습법별 YouTube 비디오 조회에 실패했습니다.'
@@ -318,7 +319,7 @@ router.get('/stats/categories', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('카테고리 통계 조회 오류:', error);
+        (0, logger_1.logError)('카테고리 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '통계 조회에 실패했습니다.'
@@ -345,7 +346,7 @@ router.get('/stats/levels', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레벨 통계 조회 오류:', error);
+        (0, logger_1.logError)('레벨 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '통계 조회에 실패했습니다.'

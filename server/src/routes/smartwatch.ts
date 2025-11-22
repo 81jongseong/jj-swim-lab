@@ -12,7 +12,7 @@ import express, { Response } from 'express';
 import { SmartWatchData } from '../models/SmartWatchData';
 import { IntegratedAIEngine } from '../utils/IntegratedAIEngine';
 import { authMiddleware, requireRole } from '../middleware/auth';
-import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
+import { logError } from '../utils/logger';
 
 const router = express.Router();
 

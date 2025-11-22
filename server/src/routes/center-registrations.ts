@@ -90,6 +90,7 @@ import { User } from '../models/User';
 import { CenterInfo } from '../models/CenterInfo';
 import { SwimmingCenter } from '../models/SwimmingCenter';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
@@ -161,7 +162,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       data: { registration }
     });
   } catch (error) {
-    console.error('센터 등록 신청 생성 오류:', error);
+    logError('센터 등록 신청 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 신청 중 오류가 발생했습니다.'
@@ -212,7 +213,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin', 'admin']), async (req
       }
     });
   } catch (error) {
-    console.error('센터 등록 신청 목록 조회 오류:', error);
+    logError('센터 등록 신청 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 신청 목록 조회 중 오류가 발생했습니다.'
@@ -251,7 +252,7 @@ router.get('/:id', authMiddleware, requireRole(['superAdmin', 'admin']), async (
       data: { registration }
     });
   } catch (error) {
-    console.error('센터 등록 신청 조회 오류:', error);
+    logError('센터 등록 신청 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 신청 조회 중 오류가 발생했습니다.'
@@ -591,10 +592,10 @@ router.post('/:id/approve', authMiddleware, requireRole(['superAdmin', 'admin'])
       }
     });
   } catch (error) {
-    console.error('❌ 센터 등록 승인 오류:');
-    console.error('   오류 메시지:', (error as Error).message);
-    console.error('   오류 스택:', (error as Error).stack);
-    console.error('   전체 오류:', error);
+    logError('❌ 센터 등록 승인 오류:');
+    logError('   오류 메시지:', (error as Error).message);
+    logError('   오류 스택:', (error as Error).stack);
+    logError('   전체 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 승인 중 오류가 발생했습니다.',
@@ -673,7 +674,7 @@ router.post('/:id/reject', authMiddleware, requireRole(['superAdmin', 'admin']),
       data: { registration }
     });
   } catch (error) {
-    console.error('센터 등록 거부 오류:', error);
+    logError('센터 등록 거부 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 거부 중 오류가 발생했습니다.'
@@ -725,7 +726,7 @@ router.post('/:id/review', authMiddleware, requireRole(['superAdmin', 'admin']),
       data: { registration }
     });
   } catch (error) {
-    console.error('센터 등록 검토 시작 오류:', error);
+    logError('센터 등록 검토 시작 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 검토 시작 중 오류가 발생했습니다.'
@@ -764,7 +765,7 @@ router.get('/stats/overview', authMiddleware, requireRole(['superAdmin', 'admin'
       }
     });
   } catch (error) {
-    console.error('센터 등록 통계 조회 오류:', error);
+    logError('센터 등록 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '센터 등록 통계 조회 중 오류가 발생했습니다.'

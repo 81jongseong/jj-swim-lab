@@ -9,6 +9,7 @@ import { authMiddleware } from '../middleware/auth';
 import { LaneRental } from '../models/LaneRental';
 import { User } from '../models/User';
 import { LaneAllocationService } from '../services/laneAllocationService';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -95,7 +96,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 신청 실패:', error);
+    logError('레인대여 신청 실패:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -140,7 +141,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 목록 조회 실패:', error);
+    logError('레인대여 목록 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -176,7 +177,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
 
   } catch (error) {
-    console.error('레인대여 상세 조회 실패:', error);
+    logError('레인대여 상세 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -223,7 +224,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
     });
 
   } catch (error) {
-    console.error('레인대여 취소 실패:', error);
+    logError('레인대여 취소 실패:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'
@@ -264,7 +265,7 @@ router.get('/availability/:date/:time', authMiddleware, async (req: AuthRequest,
     });
 
   } catch (error) {
-    console.error('사용 가능한 레인 조회 실패:', error);
+    logError('사용 가능한 레인 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.'

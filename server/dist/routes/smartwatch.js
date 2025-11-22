@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const SmartWatchData_1 = require("../models/SmartWatchData");
 const IntegratedAIEngine_1 = require("../utils/IntegratedAIEngine");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/sync', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor', 'centerAdmin']), async (req, res) => {
     try {
@@ -32,7 +33,7 @@ router.post('/sync', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 
                 await processSmartWatchData(smartWatchData._id.toString());
             }
             catch (error) {
-                console.error('스마트 워치 데이터 AI 분석 오류:', error);
+                (0, logger_1.logError)('스마트 워치 데이터 AI 분석 오류', error);
             }
         });
         res.json({
@@ -42,7 +43,7 @@ router.post('/sync', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 
         });
     }
     catch (error) {
-        console.error('스마트 워치 데이터 동기화 오류:', error);
+        (0, logger_1.logError)('스마트 워치 데이터 동기화 오류', error);
         res.status(500).json({
             success: false,
             message: '데이터 동기화 중 오류가 발생했습니다.'
@@ -85,7 +86,7 @@ router.get('/data', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', '
         });
     }
     catch (error) {
-        console.error('스마트 워치 데이터 조회 오류:', error);
+        (0, logger_1.logError)('스마트 워치 데이터 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '데이터 조회 중 오류가 발생했습니다.'
@@ -115,7 +116,7 @@ router.get('/data/:sessionId', auth_1.authMiddleware, (0, auth_1.requireRole)(['
         });
     }
     catch (error) {
-        console.error('스마트 워치 데이터 상세 조회 오류:', error);
+        (0, logger_1.logError)('스마트 워치 데이터 상세 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '데이터 조회 중 오류가 발생했습니다.'
@@ -158,7 +159,7 @@ router.get('/analysis/:sessionId', auth_1.authMiddleware, (0, auth_1.requireRole
         });
     }
     catch (error) {
-        console.error('AI 분석 결과 조회 오류:', error);
+        (0, logger_1.logError)('AI 분석 결과 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '분석 결과 조회 중 오류가 발생했습니다.'
@@ -196,7 +197,7 @@ router.post('/integrated-analysis', auth_1.authMiddleware, (0, auth_1.requireRol
         });
     }
     catch (error) {
-        console.error('통합 AI 분석 오류:', error);
+        (0, logger_1.logError)('통합 AI 분석 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 분석 중 오류가 발생했습니다.'
@@ -233,7 +234,7 @@ async function processSmartWatchData(dataId) {
         console.log(`스마트 워치 데이터 AI 분석 완료: ${dataId}`);
     }
     catch (error) {
-        console.error('스마트 워치 데이터 AI 분석 처리 오류:', error);
+        (0, logger_1.logError)('스마트 워치 데이터 AI 분석 처리 오류', error);
     }
 }
 exports.default = router;

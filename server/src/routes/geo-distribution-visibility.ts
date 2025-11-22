@@ -22,6 +22,7 @@ import express, { Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import Center from '../models/Center';
 import { User } from '../models/User';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -89,7 +90,7 @@ router.get('/:centerId', authMiddleware, async (req: any, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('회원분포도 공개 여부 조회 오류:', error);
+    logError('회원분포도 공개 여부 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '회원분포도 공개 여부 조회 중 오류가 발생했습니다.'
@@ -174,7 +175,7 @@ router.put('/:centerId', authMiddleware, async (req: any, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('회원분포도 공개 여부 설정 오류:', error);
+    logError('회원분포도 공개 여부 설정 오류:', error);
     res.status(500).json({
       success: false,
       message: '회원분포도 공개 여부 설정 중 오류가 발생했습니다.'

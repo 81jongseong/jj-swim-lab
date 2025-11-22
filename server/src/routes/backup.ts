@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { backupService } from '../services/backupService';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get('/summary', authMiddleware, requireRole(['superAdmin']), (req: Reques
       data: summary
     });
   } catch (error) {
-    console.error('백업 요약 조회 실패:', error);
+    logError('백업 요약 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '백업 요약 조회 중 오류가 발생했습니다.'
@@ -53,7 +54,7 @@ router.post('/manual', authMiddleware, requireRole(['superAdmin']), async (req: 
       });
     }
   } catch (error) {
-    console.error('수동 백업 실행 오류:', error);
+    logError('수동 백업 실행 오류', error);
     res.status(500).json({
       success: false,
       message: '백업 실행 중 오류가 발생했습니다.'

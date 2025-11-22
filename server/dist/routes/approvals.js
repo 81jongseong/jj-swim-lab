@@ -11,6 +11,7 @@ const Booking_1 = require("../models/Booking");
 const Course_1 = require("../models/Course");
 const Approval_1 = require("../models/Approval");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const requireAdmin = (req, res, next) => {
     const userType = req.user.userType;
@@ -95,7 +96,7 @@ router.get('/', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('승인 요청 목록 조회 오류:', error);
+        (0, logger_1.logError)('승인 요청 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '승인 요청 목록 조회 중 오류가 발생했습니다.'
@@ -122,7 +123,7 @@ router.get('/:id', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('승인 요청 상세 조회 오류:', error);
+        (0, logger_1.logError)('승인 요청 상세 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '승인 요청 상세 조회 중 오류가 발생했습니다.'
@@ -167,7 +168,7 @@ router.put('/:id/process', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('승인 처리 오류:', error);
+        (0, logger_1.logError)('승인 처리 오류', error);
         res.status(500).json({
             success: false,
             message: '승인 처리 중 오류가 발생했습니다.'
@@ -241,7 +242,6 @@ async function processApprovedRequest(approval) {
                     const { Payment } = require('../models/Payment');
                     const { Course } = require('../models/Course');
                     const { Booking } = require('../models/Booking');
-                    const { PersonalLesson } = require('../models/PersonalLesson');
                     const payment = await Payment.findOne({
                         user: approval.userId,
                         relatedCourse: approval.courseId,
@@ -284,7 +284,7 @@ async function processApprovedRequest(approval) {
         }
     }
     catch (error) {
-        console.error('승인된 요청 처리 오류:', error);
+        (0, logger_1.logError)('승인된 요청 처리 오류', error);
         throw error;
     }
 }
@@ -353,7 +353,7 @@ router.get('/stats/overview', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('승인 통계 조회 오류:', error);
+        (0, logger_1.logError)('승인 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '승인 통계 조회 중 오류가 발생했습니다.'

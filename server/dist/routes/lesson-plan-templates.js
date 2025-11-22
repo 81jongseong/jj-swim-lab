@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const LessonPlanTemplate_1 = require("../models/LessonPlanTemplate");
 const LessonPlan_1 = require("../models/LessonPlan");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -48,7 +49,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('템플릿 목록 조회 오류:', error);
+        (0, logger_1.logError)('템플릿 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 목록 조회 중 오류가 발생했습니다.'
@@ -71,7 +72,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('템플릿 상세 조회 오류:', error);
+        (0, logger_1.logError)('템플릿 상세 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 상세 조회 중 오류가 발생했습니다.'
@@ -96,7 +97,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']),
         });
     }
     catch (error) {
-        console.error('템플릿 생성 오류:', error);
+        (0, logger_1.logError)('템플릿 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 생성 중 오류가 발생했습니다.'
@@ -119,7 +120,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin']
         });
     }
     catch (error) {
-        console.error('템플릿 수정 오류:', error);
+        (0, logger_1.logError)('템플릿 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 수정 중 오류가 발생했습니다.'
@@ -141,7 +142,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
     catch (error) {
-        console.error('템플릿 삭제 오류:', error);
+        (0, logger_1.logError)('템플릿 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 삭제 중 오류가 발생했습니다.'
@@ -189,7 +190,7 @@ router.post('/:templateId/create-plan', auth_1.authMiddleware, (0, auth_1.requir
         });
     }
     catch (error) {
-        console.error('템플릿 기반 강습 계획 생성 오류:', error);
+        (0, logger_1.logError)('템플릿 기반 강습 계획 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '강습 계획 생성 중 오류가 발생했습니다.'
@@ -224,7 +225,7 @@ router.post('/:templateId/rate', auth_1.authMiddleware, (0, auth_1.requireRole)(
         });
     }
     catch (error) {
-        console.error('템플릿 평가 오류:', error);
+        (0, logger_1.logError)('템플릿 평가 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 평가 중 오류가 발생했습니다.'
@@ -262,7 +263,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('템플릿 통계 조회 오류:', error);
+        (0, logger_1.logError)('템플릿 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '템플릿 통계 조회 중 오류가 발생했습니다.'

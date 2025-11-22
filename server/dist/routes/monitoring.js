@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const systemMonitor_1 = __importDefault(require("../monitoring/systemMonitor"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 const monitor = systemMonitor_1.default.getInstance();
 router.get('/status', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), (req, res) => {
@@ -38,7 +39,7 @@ router.get('/status', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), (r
         });
     }
     catch (error) {
-        console.error('시스템 상태 조회 실패:', error);
+        (0, logger_1.logError)('시스템 상태 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '시스템 상태 조회 중 오류가 발생했습니다.'
@@ -61,7 +62,7 @@ router.get('/performance', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']
         });
     }
     catch (error) {
-        console.error('성능 통계 조회 실패:', error);
+        (0, logger_1.logError)('성능 통계 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '성능 통계 조회 중 오류가 발생했습니다.'
@@ -90,7 +91,7 @@ router.get('/api-requests', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin'
         });
     }
     catch (error) {
-        console.error('API 요청 조회 실패:', error);
+        (0, logger_1.logError)('API 요청 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: 'API 요청 조회 중 오류가 발생했습니다.'
@@ -117,7 +118,7 @@ router.get('/user-activities', (0, auth_1.requireRole)(['superAdmin', 'centerAdm
         });
     }
     catch (error) {
-        console.error('사용자 활동 조회 실패:', error);
+        (0, logger_1.logError)('사용자 활동 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '사용자 활동 조회 중 오류가 발생했습니다.'
@@ -149,7 +150,7 @@ router.get('/metrics-history', (0, auth_1.requireRole)(['superAdmin', 'centerAdm
         });
     }
     catch (error) {
-        console.error('메트릭 히스토리 조회 실패:', error);
+        (0, logger_1.logError)('메트릭 히스토리 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '메트릭 히스토리 조회 중 오류가 발생했습니다.'
@@ -173,7 +174,7 @@ router.get('/summary', (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), (
         });
     }
     catch (error) {
-        console.error('시스템 요약 조회 실패:', error);
+        (0, logger_1.logError)('시스템 요약 조회 실패:', error);
         res.status(500).json({
             success: false,
             message: '시스템 요약 조회 중 오류가 발생했습니다.'
@@ -196,7 +197,7 @@ router.post('/alerts', (0, auth_1.requireRole)(['superAdmin']), (req, res) => {
         });
     }
     catch (error) {
-        console.error('알림 설정 실패:', error);
+        (0, logger_1.logError)('알림 설정 실패:', error);
         res.status(500).json({
             success: false,
             message: '알림 설정 중 오류가 발생했습니다.'

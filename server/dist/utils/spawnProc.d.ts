@@ -1,3 +1,4 @@
+/// <reference types="node" />
 export interface SpawnOptions {
     label: string;
     cwd?: string;

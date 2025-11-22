@@ -7,6 +7,7 @@ const express_1 = require("express");
 const mongoose_1 = __importDefault(require("mongoose"));
 const ExerciseRecommendation_1 = __importDefault(require("../models/ExerciseRecommendation"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -28,7 +29,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('운동 추천 조회 오류:', error);
+        (0, logger_1.logError)('운동 추천 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 추천을 불러오는 중 오류가 발생했습니다.'
@@ -57,7 +58,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('운동 추천 조회 오류:', error);
+        (0, logger_1.logError)('운동 추천 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 추천을 불러오는 중 오류가 발생했습니다.'
@@ -108,7 +109,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', '
         });
     }
     catch (error) {
-        console.error('운동 추천 생성 오류:', error);
+        (0, logger_1.logError)('운동 추천 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 추천 생성 중 오류가 발생했습니다.'
@@ -147,7 +148,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         });
     }
     catch (error) {
-        console.error('운동 추천 수정 오류:', error);
+        (0, logger_1.logError)('운동 추천 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 추천 수정 중 오류가 발생했습니다.'
@@ -177,7 +178,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
     catch (error) {
-        console.error('운동 추천 삭제 오류:', error);
+        (0, logger_1.logError)('운동 추천 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 추천 삭제 중 오류가 발생했습니다.'

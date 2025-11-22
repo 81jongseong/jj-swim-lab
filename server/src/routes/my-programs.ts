@@ -11,6 +11,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import SwimProgram from '../models/SwimProgram';
 import PersonalProgramAdjustment from '../models/PersonalProgramAdjustment';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 const GroupClass = require('../models/GroupClass').default;
 
 interface AuthRequest extends Request {
@@ -98,7 +99,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
     
   } catch (error: any) {
-    console.error('❌ 프로그램 조회 실패:', error);
+    logError('❌ 프로그램 조회 실패:', error);
     return res.status(500).json({
       success: false,
       message: '프로그램 조회에 실패했습니다.'

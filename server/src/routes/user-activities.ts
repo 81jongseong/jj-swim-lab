@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express';
 import UserActivityService from '../services/userActivityService';
 import { requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 const activityService = UserActivityService.getInstance();
@@ -38,7 +39,7 @@ router.get('/', requireRole(['superAdmin', 'centerAdmin']), async (req: Request,
       }
     });
   } catch (error) {
-    console.error('사용자 활동 목록 조회 오류:', error);
+    logError('사용자 활동 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
@@ -66,7 +67,7 @@ router.get('/stats/:userId', requireRole(['superAdmin', 'centerAdmin']), async (
       }
     });
   } catch (error) {
-    console.error('사용자 활동 통계 조회 실패:', error);
+    logError('사용자 활동 통계 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 통계 조회 중 오류가 발생했습니다.'
@@ -120,7 +121,7 @@ router.get('/:userId', requireRole(['superAdmin', 'centerAdmin']), async (req: R
       }
     });
   } catch (error) {
-    console.error('사용자 활동 목록 조회 실패:', error);
+    logError('사용자 활동 목록 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 목록 조회 중 오류가 발생했습니다.'
@@ -152,7 +153,7 @@ router.get('/trends/overview', requireRole(['superAdmin', 'centerAdmin']), async
       }
     });
   } catch (error) {
-    console.error('활동 트렌드 조회 실패:', error);
+    logError('활동 트렌드 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '활동 트렌드 조회 중 오류가 발생했습니다.'
@@ -182,7 +183,7 @@ router.get('/top-actions/overview', requireRole(['superAdmin', 'centerAdmin']), 
       }
     });
   } catch (error) {
-    console.error('상위 활동 조회 실패:', error);
+    logError('상위 활동 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '상위 활동 조회 중 오류가 발생했습니다.'
@@ -206,7 +207,7 @@ router.get('/summary/:userId', requireRole(['superAdmin', 'centerAdmin']), async
       data: summary
     });
   } catch (error) {
-    console.error('사용자 활동 요약 생성 실패:', error);
+    logError('사용자 활동 요약 생성 실패:', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 요약 생성 중 오류가 발생했습니다.'
@@ -240,7 +241,7 @@ router.get('/suspicious/:userId', requireRole(['superAdmin']), async (req: Reque
       }
     });
   } catch (error) {
-    console.error('의심스러운 활동 감지 실패:', error);
+    logError('의심스러운 활동 감지 실패:', error);
     res.status(500).json({
       success: false,
       message: '의심스러운 활동 감지 중 오류가 발생했습니다.'
@@ -286,7 +287,7 @@ router.get('/system-summary/overview', requireRole(['superAdmin']), async (req: 
       }
     });
   } catch (error) {
-    console.error('시스템 활동 요약 조회 실패:', error);
+    logError('시스템 활동 요약 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '시스템 활동 요약 조회 중 오류가 발생했습니다.'
@@ -346,7 +347,7 @@ router.get('/search/overview', requireRole(['superAdmin', 'centerAdmin']), async
       }
     });
   } catch (error) {
-    console.error('사용자 활동 검색 실패:', error);
+    logError('사용자 활동 검색 실패:', error);
     res.status(500).json({
       success: false,
       message: '사용자 활동 검색 중 오류가 발생했습니다.'

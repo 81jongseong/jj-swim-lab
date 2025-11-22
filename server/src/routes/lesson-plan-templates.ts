@@ -9,6 +9,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { LessonPlanTemplate } from '../models/LessonPlanTemplate';
 import { LessonPlan } from '../models/LessonPlan';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -61,7 +62,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('템플릿 목록 조회 오류:', error);
+    logError('템플릿 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 목록 조회 중 오류가 발생했습니다.'
@@ -87,7 +88,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
       data: template
     });
   } catch (error) {
-    console.error('템플릿 상세 조회 오류:', error);
+    logError('템플릿 상세 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 상세 조회 중 오류가 발생했습니다.'
@@ -115,7 +116,7 @@ router.post('/', authMiddleware, requireRole(['superAdmin']), async (req: Reques
       data: template
     });
   } catch (error) {
-    console.error('템플릿 생성 오류:', error);
+    logError('템플릿 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 생성 중 오류가 발생했습니다.'
@@ -145,7 +146,7 @@ router.put('/:id', authMiddleware, requireRole(['superAdmin']), async (req: Requ
       data: template
     });
   } catch (error) {
-    console.error('템플릿 수정 오류:', error);
+    logError('템플릿 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 수정 중 오류가 발생했습니다.'
@@ -174,7 +175,7 @@ router.delete('/:id', authMiddleware, requireRole(['superAdmin']), async (req: R
       message: '템플릿이 비활성화되었습니다.'
     });
   } catch (error) {
-    console.error('템플릿 삭제 오류:', error);
+    logError('템플릿 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 삭제 중 오류가 발생했습니다.'
@@ -231,7 +232,7 @@ router.post('/:templateId/create-plan', authMiddleware, requireRole(['centerAdmi
       data: lessonPlan
     });
   } catch (error) {
-    console.error('템플릿 기반 강습 계획 생성 오류:', error);
+    logError('템플릿 기반 강습 계획 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '강습 계획 생성 중 오류가 발생했습니다.'
@@ -273,7 +274,7 @@ router.post('/:templateId/rate', authMiddleware, requireRole(['centerAdmin']), a
       message: '템플릿 평가가 완료되었습니다.'
     });
   } catch (error) {
-    console.error('템플릿 평가 오류:', error);
+    logError('템플릿 평가 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 평가 중 오류가 발생했습니다.'
@@ -316,7 +317,7 @@ router.get('/stats/overview', authMiddleware, requireRole(['superAdmin']), async
       }
     });
   } catch (error) {
-    console.error('템플릿 통계 조회 오류:', error);
+    logError('템플릿 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '템플릿 통계 조회 중 오류가 발생했습니다.'

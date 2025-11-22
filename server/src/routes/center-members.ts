@@ -20,6 +20,7 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { User } from '../models/User';
 import { LessonTicket } from '../models/LessonTicket';
 import { Booking } from '../models/Booking';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -163,7 +164,7 @@ router.get('/', authMiddleware, requireRole(['centeradmin', 'centerAdmin']), asy
     });
     
   } catch (error) {
-    console.error('센터 회원 목록 조회 오류:', error);
+    logError('센터 회원 목록 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '회원 목록 조회에 실패했습니다.'
@@ -238,7 +239,7 @@ router.get('/:memberId', authMiddleware, requireRole(['centeradmin', 'centerAdmi
     });
     
   } catch (error) {
-    console.error('회원 상세 정보 조회 오류:', error);
+    logError('회원 상세 정보 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '회원 정보 조회에 실패했습니다.'
@@ -297,7 +298,7 @@ router.patch('/:memberId/status', authMiddleware, requireRole(['centeradmin', 'c
     });
     
   } catch (error) {
-    console.error('회원 상태 변경 오류:', error);
+    logError('회원 상태 변경 오류', error);
     res.status(500).json({
       success: false,
       message: '회원 상태 변경에 실패했습니다.'
@@ -378,7 +379,7 @@ router.post('/:memberId/memo', authMiddleware, requireRole(['centeradmin', 'cent
     });
     
   } catch (error) {
-    console.error('센터 메모 추가 오류:', error);
+    logError('센터 메모 추가 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 메모 추가에 실패했습니다.'
@@ -430,7 +431,7 @@ router.delete('/:memberId/memo/:memoId', authMiddleware, requireRole(['centeradm
     });
     
   } catch (error) {
-    console.error('센터 메모 삭제 오류:', error);
+    logError('센터 메모 삭제 오류', error);
     res.status(500).json({
       success: false,
       message: '센터 메모 삭제에 실패했습니다.'
@@ -461,7 +462,7 @@ router.get('/alerts/expiring-tickets', authMiddleware, requireRole(['centeradmin
     });
     
   } catch (error) {
-    console.error('만료 임박 수강권 조회 오류:', error);
+    logError('만료 임박 수강권 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '만료 임박 수강권 조회에 실패했습니다.'
@@ -533,7 +534,7 @@ router.get('/stats/summary', authMiddleware, requireRole(['centeradmin', 'center
     });
     
   } catch (error) {
-    console.error('회원 통계 조회 오류:', error);
+    logError('회원 통계 조회 오류', error);
     res.status(500).json({
       success: false,
       message: '회원 통계 조회에 실패했습니다.'

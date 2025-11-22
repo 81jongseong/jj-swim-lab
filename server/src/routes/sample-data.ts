@@ -15,6 +15,7 @@ import { Payment } from '../models/Payment';
 import { ExerciseData } from '../models/ExerciseData';
 import { HealthData } from '../models/HealthData';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends express.Request {
   user?: any;
@@ -245,7 +246,7 @@ router.post('/generate-dashboard-data', authMiddleware, requireRole(['student', 
     });
 
   } catch (error) {
-    console.error('❌ 샘플 데이터 생성 실패:', error);
+    logError('❌ 샘플 데이터 생성 실패:', error);
     res.status(500).json({
       success: false,
       message: '샘플 데이터 생성 중 오류가 발생했습니다.',

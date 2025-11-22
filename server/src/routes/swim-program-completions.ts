@@ -22,6 +22,7 @@ import mongoose from 'mongoose';
 import SwimProgram from '../models/SwimProgram';
 import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -133,7 +134,7 @@ router.get('/:programId/sessions', authMiddleware, async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('세션 조회 오류:', error);
+    logError('세션 조회 오류', error);
     next(error);
   }
 });
@@ -249,7 +250,7 @@ router.post('/:programId/sessions/:sessionIndex/completion', authMiddleware, asy
       }
     });
   } catch (error) {
-    console.error('완료율 입력 오류:', error);
+    logError('완료율 입력 오류', error);
     next(error);
   }
 });
@@ -348,7 +349,7 @@ router.get('/:programId/completion-history', authMiddleware, async (req, res, ne
       }
     });
   } catch (error) {
-    console.error('완료율 이력 조회 오류:', error);
+    logError('완료율 이력 조회 오류', error);
     next(error);
   }
 });
@@ -407,7 +408,7 @@ router.get('/athlete/:athleteId/incomplete-sessions', authMiddleware, async (req
       }
     });
   } catch (error) {
-    console.error('미입력 세션 조회 오류:', error);
+    logError('미입력 세션 조회 오류', error);
     next(error);
   }
 });

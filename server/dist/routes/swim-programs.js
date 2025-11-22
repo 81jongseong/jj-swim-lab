@@ -8,6 +8,7 @@ const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const teachingMethodToProgramConverter_1 = require("../utils/teachingMethodToProgramConverter");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -101,7 +102,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('프로그램 저장 실패:', error);
+        (0, logger_1.logError)('프로그램 저장 실패', error);
         res.status(500).json({ error: '프로그램 저장에 실패했습니다.', details: error.message });
     }
 });
@@ -129,7 +130,7 @@ router.get('/athlete/:athleteId/history', auth_1.authMiddleware, async (req, res
         });
     }
     catch (error) {
-        console.error('이력 조회 실패:', error);
+        (0, logger_1.logError)('이력 조회 실패', error);
         res.status(500).json({ error: '이력 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -154,7 +155,7 @@ router.get('/all', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('전체 프로그램 조회 실패:', error);
+        (0, logger_1.logError)('전체 프로그램 조회 실패', error);
         res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -172,7 +173,7 @@ router.get('/athlete/:athleteId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('프로그램 조회 실패:', error);
+        (0, logger_1.logError)('프로그램 조회 실패', error);
         res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -186,7 +187,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         res.json(program);
     }
     catch (error) {
-        console.error('프로그램 조회 실패:', error);
+        (0, logger_1.logError)('프로그램 조회 실패', error);
         res.status(500).json({ error: '프로그램 조회에 실패했습니다.', details: error.message });
     }
 });
@@ -229,7 +230,7 @@ router.patch('/:id/execution', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('실행 기록 업데이트 실패:', error);
+        (0, logger_1.logError)('실행 기록 업데이트 실패', error);
         res.status(500).json({ error: '실행 기록 업데이트에 실패했습니다.', details: error.message });
     }
 });
@@ -258,7 +259,7 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('프로그램 수정 실패:', error);
+        (0, logger_1.logError)('프로그램 수정 실패', error);
         res.status(500).json({ success: false, error: '프로그램 수정에 실패했습니다.', details: error.message });
     }
 });
@@ -275,7 +276,7 @@ router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
         res.json({ success: true, message: '프로그램이 삭제되었습니다.' });
     }
     catch (error) {
-        console.error('프로그램 삭제 실패:', error);
+        (0, logger_1.logError)('프로그램 삭제 실패', error);
         res.status(500).json({ success: false, error: '프로그램 삭제에 실패했습니다.', details: error.message });
     }
 });

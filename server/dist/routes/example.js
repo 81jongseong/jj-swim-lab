@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Class_1 = require("../models/Class");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/classes', auth_1.auth, async (req, res) => {
     try {
@@ -32,7 +33,7 @@ router.post('/classes', auth_1.auth, async (req, res) => {
         return res.status(201).json({ message: '반이 생성되었습니다.', class: cls });
     }
     catch (error) {
-        console.error('반 생성 오류:', error);
+        (0, logger_1.logError)('반 생성 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -54,7 +55,7 @@ router.post('/classes/:id/enroll', auth_1.auth, async (req, res) => {
         return res.json({ message: '학생이 반에 등록되었습니다.', class: cls });
     }
     catch (error) {
-        console.error('반 학생 등록 오류:', error);
+        (0, logger_1.logError)('반 학생 등록 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });

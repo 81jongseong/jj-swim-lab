@@ -46,7 +46,6 @@ import { User } from '../models/User';
 import { authMiddleware } from '../middleware/auth';
 import { requireInstructorOrAdmin } from '../middleware/role';
 import { LaneAllocationService } from '../services/laneAllocationService';
-import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 

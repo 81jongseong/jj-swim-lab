@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const ExerciseData_1 = require("../models/ExerciseData");
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/session/start', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 'instructor']), async (req, res) => {
     try {
@@ -51,7 +52,7 @@ router.post('/session/start', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('운동 세션 시작 오류:', error);
+        (0, logger_1.logError)('운동 세션 시작 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 세션을 시작할 수 없습니다.'
@@ -104,7 +105,7 @@ router.put('/session/:sessionId/update', auth_1.authMiddleware, (0, auth_1.requi
         });
     }
     catch (error) {
-        console.error('운동 데이터 업데이트 오류:', error);
+        (0, logger_1.logError)('운동 데이터 업데이트 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 데이터를 업데이트할 수 없습니다.'
@@ -149,7 +150,7 @@ router.put('/session/:sessionId/complete', (0, auth_1.requireRole)(['student', '
         });
     }
     catch (error) {
-        console.error('운동 세션 완료 오류:', error);
+        (0, logger_1.logError)('운동 세션 완료 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 세션을 완료할 수 없습니다.'
@@ -187,7 +188,7 @@ router.get('/stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['student', 
         });
     }
     catch (error) {
-        console.error('운동 통계 조회 오류:', error);
+        (0, logger_1.logError)('운동 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 통계를 조회할 수 없습니다.'
@@ -229,7 +230,7 @@ router.get('/history', (0, auth_1.requireRole)(['student', 'instructor']), async
         });
     }
     catch (error) {
-        console.error('운동 기록 조회 오류:', error);
+        (0, logger_1.logError)('운동 기록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 기록을 조회할 수 없습니다.'
@@ -253,7 +254,7 @@ router.get('/session/:sessionId', (0, auth_1.requireRole)(['student', 'instructo
         });
     }
     catch (error) {
-        console.error('운동 세션 조회 오류:', error);
+        (0, logger_1.logError)('운동 세션 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 세션을 조회할 수 없습니다.'
@@ -277,7 +278,7 @@ router.delete('/session/:sessionId', (0, auth_1.requireRole)(['student', 'instru
         });
     }
     catch (error) {
-        console.error('운동 기록 삭제 오류:', error);
+        (0, logger_1.logError)('운동 기록 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '운동 기록을 삭제할 수 없습니다.'
@@ -315,7 +316,7 @@ router.put('/health-profile', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('건강상태 업데이트 오류:', error);
+        (0, logger_1.logError)('건강상태 업데이트 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강상태를 업데이트할 수 없습니다.'
@@ -338,7 +339,7 @@ router.get('/health-profile', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('건강상태 조회 오류:', error);
+        (0, logger_1.logError)('건강상태 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '건강상태를 조회할 수 없습니다.'

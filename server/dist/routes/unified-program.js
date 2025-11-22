@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const GroupClass = require('../models/GroupClass').default;
 const router = express_1.default.Router();
 router.post('/generate', auth_1.authMiddleware, async (req, res) => {
@@ -47,7 +48,7 @@ router.post('/generate', auth_1.authMiddleware, async (req, res) => {
                     console.log(`  ✓ ${user.name}: 조정사항 생성`);
                 }
                 catch (error) {
-                    console.error(`  ✗ ${student.userId}: 실패`, error);
+                    (0, logger_1.logError)(`조정사항 생성 실패: ${student.userId}`, error);
                 }
             }
             return res.json({
@@ -81,7 +82,7 @@ router.post('/generate', auth_1.authMiddleware, async (req, res) => {
         }
     }
     catch (error) {
-        console.error('❌ 프로그램 생성 실패:', error);
+        (0, logger_1.logError)('프로그램 생성 실패', error);
         return res.status(500).json({
             success: false,
             message: '프로그램 생성에 실패했습니다.',

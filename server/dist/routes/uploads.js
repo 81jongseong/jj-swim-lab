@@ -10,6 +10,7 @@ const fs_1 = __importDefault(require("fs"));
 const auth_1 = require("../middleware/auth");
 const Video_1 = require("../models/Video");
 const secureExcelParser_1 = require("../utils/secureExcelParser");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const uploadDir = process.env.UPLOAD_PATH || path_1.default.join(process.cwd(), 'uploads');
 if (!fs_1.default.existsSync(uploadDir)) {
@@ -193,7 +194,7 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
                     }
                 }
                 catch (excelError) {
-                    console.error('❌ Excel 파일 파싱 실패:', excelError);
+                    (0, logger_1.logError)('Excel 파일 파싱 실패', excelError);
                     try {
                         const fileBuffer = fs_1.default.readFileSync(file.path);
                         if (fileBuffer.length > 0) {
@@ -225,7 +226,7 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
                         }
                     }
                     catch (fallbackError) {
-                        console.error('❌ 폴백 방식도 실패:', fallbackError);
+                        (0, logger_1.logError)('폴백 방식도 실패', fallbackError);
                         parsedData = [];
                     }
                 }
@@ -281,7 +282,7 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
                     console.log('🔍 TeachingMethod 모델 이름:', TeachingMethod.modelName);
                 }
                 catch (modelError) {
-                    console.error('❌ TeachingMethod 모델 로드 실패:', modelError);
+                    (0, logger_1.logError)('TeachingMethod 모델 로드 실패', modelError);
                     throw new Error('TeachingMethod 모델을 로드할 수 없습니다');
                 }
                 for (const methodData of parsedData) {
@@ -328,14 +329,14 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
                         console.log(`✅ 저장 완료: ${methodData.name} (ID: ${newMethod._id})`);
                     }
                     catch (saveError) {
-                        console.error(`❌ 저장 실패: ${methodData.name}`, saveError);
+                        (0, logger_1.logError)(`저장 실패: ${methodData.name}`, saveError);
                         errorCount++;
                     }
                 }
                 console.log(`💾 데이터베이스 저장 완료: ${savedCount}개 성공, ${errorCount}개 실패`);
             }
             catch (dbError) {
-                console.error('❌ 데이터베이스 저장 중 오류:', dbError);
+                (0, logger_1.logError)('데이터베이스 저장 중 오류', dbError);
             }
         }
         const result = {
@@ -356,7 +357,7 @@ router.post('/excel', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
     catch (error) {
-        console.error('엑셀 업로드 오류:', error);
+        (0, logger_1.logError)('엑셀 업로드 오류', error);
         res.status(500).json({
             error: '엑셀 파일 업로드 중 오류가 발생했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -395,7 +396,7 @@ router.get('/instructors', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강사 목록 조회 오류:', error);
+        (0, logger_1.logError)('강사 목록 조회 오류', error);
         res.status(500).json({ error: error.message || '강사 목록 조회에 실패했습니다.' });
     }
 });
@@ -423,7 +424,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         if (!Object.values(visibilitySettings).some(v => v === true)) {
             return res.status(400).json({ error: '최소 하나의 공개 범위를 선택해주세요.' });
         }
-        let analysisRequestData = {
+        const analysisRequestData = {
             type: 'public',
             requestedInstructors: [],
             analysisFee: 0,
@@ -494,7 +495,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('동영상 등록 오류:', error);
+        (0, logger_1.logError)('동영상 등록 오류', error);
         res.status(500).json({ error: error.message || '동영상 등록에 실패했습니다.' });
     }
 });
@@ -554,7 +555,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('동영상 목록 조회 오류:', error);
+        (0, logger_1.logError)('동영상 목록 조회 오류', error);
         res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
     }
 });
@@ -611,7 +612,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('동영상 조회 오류:', error);
+        (0, logger_1.logError)('동영상 조회 오류', error);
         res.status(500).json({ error: error.message || '조회에 실패했습니다.' });
     }
 });
@@ -635,7 +636,7 @@ router.get('/:id/download', auth_1.authMiddleware, async (req, res) => {
         res.download(filePath, originalName);
     }
     catch (error) {
-        console.error('다운로드 오류:', error);
+        (0, logger_1.logError)('다운로드 오류', error);
         res.status(500).json({ error: '다운로드에 실패했습니다.' });
     }
 });
@@ -696,7 +697,7 @@ router.post('/:id/feedback', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('피드백 추가 오류:', error);
+        (0, logger_1.logError)('피드백 추가 오류', error);
         res.status(500).json({ error: error.message || '피드백 등록에 실패했습니다.' });
     }
 });
@@ -718,7 +719,7 @@ router.patch('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['ins
         res.json(video);
     }
     catch (error) {
-        console.error('리뷰 업데이트 오류:', error);
+        (0, logger_1.logError)('리뷰 업데이트 오류', error);
         res.status(500).json({ error: '리뷰 업데이트에 실패했습니다.' });
     }
 });
@@ -778,7 +779,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('동영상 목록 조회 오류:', error);
+        (0, logger_1.logError)('동영상 목록 조회 오류', error);
         res.status(500).json({ error: error.message || '목록 조회에 실패했습니다.' });
     }
 });
@@ -799,7 +800,7 @@ router.get('/admin/review-queue/list', auth_1.authMiddleware, (0, auth_1.require
         res.json({ items, pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / Number(limit)) } });
     }
     catch (error) {
-        console.error('리뷰 큐 조회 오류:', error);
+        (0, logger_1.logError)('리뷰 큐 조회 오류', error);
         res.status(500).json({ error: '리뷰 큐 조회에 실패했습니다.' });
     }
 });

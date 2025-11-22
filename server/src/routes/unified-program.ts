@@ -11,6 +11,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import SwimProgram from '../models/SwimProgram';
 import { User } from '../models/User';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 const GroupClass = require('../models/GroupClass').default;
 
 interface AuthRequest extends Request {
@@ -80,7 +81,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
           adjustmentCount++;
           console.log(`  ✓ ${user.name}: 조정사항 생성`);
         } catch (error) {
-          console.error(`  ✗ ${student.userId}: 실패`, error);
+          logError(`조정사항 생성 실패: ${student.userId}`, error);
         }
       }
       
@@ -119,7 +120,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     }
     
   } catch (error: any) {
-    console.error('❌ 프로그램 생성 실패:', error);
+    logError('프로그램 생성 실패', error);
     return res.status(500).json({
       success: false,
       message: '프로그램 생성에 실패했습니다.',

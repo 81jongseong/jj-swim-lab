@@ -10,6 +10,7 @@ const SwimmingCenter_1 = require("../models/SwimmingCenter");
 const User_1 = require("../models/User");
 const CenterRegistration_1 = __importDefault(require("../models/CenterRegistration"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'admin']), async (req, res) => {
     try {
@@ -113,8 +114,8 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'a
             console.log(`📊 더미 센터 데이터 반환: ${centers.length}개`);
         }
         catch (centerError) {
-            console.error('❌ Center 조회 오류:', centerError);
-            console.error('❌ 오류 상세:', centerError.stack);
+            (0, logger_1.logError)('❌ Center 조회 오류:', centerError);
+            (0, logger_1.logError)('❌ 오류 상세:', centerError.stack);
             centers = [];
             total = 0;
             console.log('📝 빈 센터 목록 반환');
@@ -139,7 +140,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'a
         });
     }
     catch (error) {
-        console.error('센터 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 목록 조회 중 오류가 발생했습니다.'
@@ -209,7 +210,7 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         });
     }
     catch (error) {
-        console.error('센터 상세 조회 오류:', error);
+        (0, logger_1.logError)('센터 상세 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 상세 조회 중 오류가 발생했습니다.'
@@ -252,7 +253,7 @@ router.patch('/:id/status', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
         });
     }
     catch (error) {
-        console.error('센터 상태 변경 오류:', error);
+        (0, logger_1.logError)('센터 상태 변경 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 상태 변경 중 오류가 발생했습니다.'
@@ -312,7 +313,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         });
     }
     catch (error) {
-        console.error('센터 정보 수정 오류:', error);
+        (0, logger_1.logError)('센터 정보 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 정보 수정 중 오류가 발생했습니다.'
@@ -340,7 +341,7 @@ router.get('/admins', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
     catch (error) {
-        console.error('센터 관리자 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 관리자 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 관리자 목록 조회 중 오류가 발생했습니다.'
@@ -410,7 +411,7 @@ router.post('/centers/:centerId/assign-admin', auth_1.authMiddleware, (0, auth_1
         });
     }
     catch (error) {
-        console.error('센터 관리자 할당 오류:', error);
+        (0, logger_1.logError)('센터 관리자 할당 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 관리자 할당 중 오류가 발생했습니다.'
@@ -451,7 +452,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmi
         });
     }
     catch (error) {
-        console.error('센터 삭제 오류:', error);
+        (0, logger_1.logError)('센터 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 삭제 중 오류가 발생했습니다.'
@@ -501,7 +502,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('센터 통계 조회 오류:', error);
+        (0, logger_1.logError)('센터 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 통계 조회 중 오류가 발생했습니다.'
@@ -558,7 +559,7 @@ router.get('/:id/users', auth_1.authMiddleware, (0, auth_1.requireRole)(['superA
         });
     }
     catch (error) {
-        console.error('센터 사용자 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 사용자 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 사용자 목록 조회 중 오류가 발생했습니다.'
@@ -603,7 +604,7 @@ router.post('/fix-status', auth_1.authMiddleware, (0, auth_1.requireRole)(['supe
         });
     }
     catch (error) {
-        console.error('❌ 센터 데이터 분석 오류:', error);
+        (0, logger_1.logError)('❌ 센터 데이터 분석 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 데이터 분석 중 오류가 발생했습니다.'

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const PersonalProgramAdjustment_1 = __importDefault(require("../models/PersonalProgramAdjustment"));
 const User_1 = require("../models/User");
@@ -87,7 +88,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
                 return adjustment;
             }
             catch (error) {
-                console.error(`  ✗ ${student.userId}: 조정사항 생성 실패:`, error);
+                (0, logger_1.logError)(`조정사항 생성 실패: ${student.userId}`, error);
                 return null;
             }
         });
@@ -107,7 +108,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 단체반 프로그램 생성 실패:', error);
+        (0, logger_1.logError)('단체반 프로그램 생성 실패', error);
         return res.status(500).json({
             success: false,
             message: '단체반 프로그램 생성에 실패했습니다.',
@@ -131,7 +132,7 @@ router.get('/:groupClassId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('단체반 프로그램 조회 실패:', error);
+        (0, logger_1.logError)('단체반 프로그램 조회 실패', error);
         return res.status(500).json({
             success: false,
             message: '프로그램 목록 조회에 실패했습니다.'
@@ -167,7 +168,7 @@ router.get('/:programId/my-adjustment', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (error) {
-        console.error('개인별 조정사항 조회 실패:', error);
+        (0, logger_1.logError)('개인별 조정사항 조회 실패', error);
         return res.status(500).json({
             success: false,
             message: '조정사항 조회에 실패했습니다.'

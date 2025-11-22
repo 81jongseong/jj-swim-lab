@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const Notice_1 = require("../models/Notice");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/', async (req, res) => {
     try {
@@ -24,7 +25,7 @@ router.get('/', async (req, res) => {
         return res.json({ notices });
     }
     catch (error) {
-        console.error('공지사항 조회 오류:', error);
+        (0, logger_1.logError)('공지사항 조회 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -43,7 +44,7 @@ router.get('/:id', async (req, res) => {
         return res.json({ notice });
     }
     catch (error) {
-        console.error('공지사항 조회 오류:', error);
+        (0, logger_1.logError)('공지사항 조회 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -74,7 +75,7 @@ router.post('/', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (re
         });
     }
     catch (error) {
-        console.error('공지사항 생성 오류:', error);
+        (0, logger_1.logError)('공지사항 생성 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -91,7 +92,7 @@ router.put('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), async (
         });
     }
     catch (error) {
-        console.error('공지사항 수정 오류:', error);
+        (0, logger_1.logError)('공지사항 수정 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -105,7 +106,7 @@ router.delete('/:id', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), asyn
         return res.json({ message: '공지사항이 삭제되었습니다.' });
     }
     catch (error) {
-        console.error('공지사항 삭제 오류:', error);
+        (0, logger_1.logError)('공지사항 삭제 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -128,7 +129,7 @@ router.patch('/:id/publish', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
         });
     }
     catch (error) {
-        console.error('공지사항 발행 상태 변경 오류:', error);
+        (0, logger_1.logError)('공지사항 발행 상태 변경 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -148,7 +149,7 @@ router.get('/admin/all', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']), a
         return res.json({ notices });
     }
     catch (error) {
-        console.error('관리자 공지사항 조회 오류:', error);
+        (0, logger_1.logError)('관리자 공지사항 조회 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -174,7 +175,7 @@ router.get('/admin/stats', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']),
         });
     }
     catch (error) {
-        console.error('공지사항 통계 조회 오류:', error);
+        (0, logger_1.logError)('공지사항 통계 조회 오류:', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });

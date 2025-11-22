@@ -11,6 +11,7 @@ const User_1 = require("../models/User");
 const CenterInfo_1 = require("../models/CenterInfo");
 const SwimmingCenter_1 = require("../models/SwimmingCenter");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/', async (req, res) => {
     try {
@@ -55,7 +56,7 @@ router.post('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터 등록 신청 생성 오류:', error);
+        (0, logger_1.logError)('센터 등록 신청 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 신청 중 오류가 발생했습니다.'
@@ -100,7 +101,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'a
         });
     }
     catch (error) {
-        console.error('센터 등록 신청 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 등록 신청 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 신청 목록 조회 중 오류가 발생했습니다.'
@@ -134,7 +135,7 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin',
         });
     }
     catch (error) {
-        console.error('센터 등록 신청 조회 오류:', error);
+        (0, logger_1.logError)('센터 등록 신청 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 신청 조회 중 오류가 발생했습니다.'
@@ -431,10 +432,10 @@ router.post('/:id/approve', auth_1.authMiddleware, (0, auth_1.requireRole)(['sup
         });
     }
     catch (error) {
-        console.error('❌ 센터 등록 승인 오류:');
-        console.error('   오류 메시지:', error.message);
-        console.error('   오류 스택:', error.stack);
-        console.error('   전체 오류:', error);
+        (0, logger_1.logError)('❌ 센터 등록 승인 오류:');
+        (0, logger_1.logError)('   오류 메시지:', error.message);
+        (0, logger_1.logError)('   오류 스택:', error.stack);
+        (0, logger_1.logError)('   전체 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 승인 중 오류가 발생했습니다.',
@@ -500,7 +501,7 @@ router.post('/:id/reject', auth_1.authMiddleware, (0, auth_1.requireRole)(['supe
         });
     }
     catch (error) {
-        console.error('센터 등록 거부 오류:', error);
+        (0, logger_1.logError)('센터 등록 거부 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 거부 중 오류가 발생했습니다.'
@@ -544,7 +545,7 @@ router.post('/:id/review', auth_1.authMiddleware, (0, auth_1.requireRole)(['supe
         });
     }
     catch (error) {
-        console.error('센터 등록 검토 시작 오류:', error);
+        (0, logger_1.logError)('센터 등록 검토 시작 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 검토 시작 중 오류가 발생했습니다.'
@@ -579,7 +580,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('센터 등록 통계 조회 오류:', error);
+        (0, logger_1.logError)('센터 등록 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 등록 통계 조회 중 오류가 발생했습니다.'

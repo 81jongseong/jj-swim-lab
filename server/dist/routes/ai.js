@@ -10,6 +10,7 @@ const Checklist_1 = require("../models/Checklist");
 const AIEngine_1 = require("../utils/AIEngine");
 const AdvancedAIEngine_1 = require("../utils/AdvancedAIEngine");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/analyze', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
     try {
@@ -64,7 +65,7 @@ router.post('/analyze', auth_1.authMiddleware, (0, auth_1.requireRole)(['instruc
         });
     }
     catch (error) {
-        console.error('AI 분석 오류:', error);
+        (0, logger_1.logError)('AI 분석 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 분석 중 오류가 발생했습니다.'
@@ -94,7 +95,7 @@ router.get('/analysis/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole
         });
     }
     catch (error) {
-        console.error('AI 분석 조회 오류:', error);
+        (0, logger_1.logError)('AI 분석 조회 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 분석 조회 중 오류가 발생했습니다.'
@@ -132,7 +133,7 @@ router.get('/dashboard/:studentId', auth_1.authMiddleware, (0, auth_1.requireRol
         });
     }
     catch (error) {
-        console.error('AI 대시보드 조회 오류:', error);
+        (0, logger_1.logError)('AI 대시보드 조회 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 대시보드 조회 중 오류가 발생했습니다.'
@@ -159,7 +160,7 @@ router.put('/analysis/:analysisId', auth_1.authMiddleware, (0, auth_1.requireRol
         });
     }
     catch (error) {
-        console.error('AI 분석 업데이트 오류:', error);
+        (0, logger_1.logError)('AI 분석 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 분석 업데이트 중 오류가 발생했습니다.'
@@ -185,7 +186,7 @@ router.delete('/analysis/:analysisId', auth_1.authMiddleware, (0, auth_1.require
         });
     }
     catch (error) {
-        console.error('AI 분석 삭제 오류:', error);
+        (0, logger_1.logError)('AI 분석 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 분석 삭제 중 오류가 발생했습니다.'
@@ -346,7 +347,7 @@ router.get('/config', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
     catch (error) {
-        console.error('AI 설정 조회 오류:', error);
+        (0, logger_1.logError)('AI 설정 조회 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 설정 조회 중 오류가 발생했습니다.'
@@ -369,7 +370,7 @@ router.put('/config', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructo
         });
     }
     catch (error) {
-        console.error('AI 설정 업데이트 오류:', error);
+        (0, logger_1.logError)('AI 설정 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 설정 업데이트 중 오류가 발생했습니다.'
@@ -422,7 +423,7 @@ router.post('/evaluate', auth_1.authMiddleware, (0, auth_1.requireRole)(['instru
         });
     }
     catch (error) {
-        console.error('고급 AI 평가 오류:', error);
+        (0, logger_1.logError)('고급 AI 평가 오류', error);
         res.status(500).json({
             success: false,
             message: 'AI 평가 중 오류가 발생했습니다.'
@@ -440,7 +441,7 @@ router.get('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['instruc
         });
     }
     catch (error) {
-        console.error('평가 기준 조회 오류:', error);
+        (0, logger_1.logError)('평가 기준 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '평가 기준 조회 중 오류가 발생했습니다.'
@@ -458,7 +459,7 @@ router.post('/criteria', auth_1.authMiddleware, (0, auth_1.requireRole)(['superA
         });
     }
     catch (error) {
-        console.error('평가 기준 저장 오류:', error);
+        (0, logger_1.logError)('평가 기준 저장 오류', error);
         res.status(500).json({
             success: false,
             message: '평가 기준 저장 중 오류가 발생했습니다.'

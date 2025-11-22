@@ -8,6 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const SwimProgram_1 = __importDefault(require("../models/SwimProgram"));
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 async function canEditCompletion(currentUserId, targetUserId, program) {
     if (currentUserId === targetUserId) {
@@ -84,7 +85,7 @@ router.get('/:programId/sessions', auth_1.authMiddleware, async (req, res, next)
         });
     }
     catch (error) {
-        console.error('세션 조회 오류:', error);
+        (0, logger_1.logError)('세션 조회 오류', error);
         next(error);
     }
 });
@@ -172,7 +173,7 @@ router.post('/:programId/sessions/:sessionIndex/completion', auth_1.authMiddlewa
         });
     }
     catch (error) {
-        console.error('완료율 입력 오류:', error);
+        (0, logger_1.logError)('완료율 입력 오류', error);
         next(error);
     }
 });
@@ -258,7 +259,7 @@ router.get('/:programId/completion-history', auth_1.authMiddleware, async (req, 
         });
     }
     catch (error) {
-        console.error('완료율 이력 조회 오류:', error);
+        (0, logger_1.logError)('완료율 이력 조회 오류', error);
         next(error);
     }
 });
@@ -301,7 +302,7 @@ router.get('/athlete/:athleteId/incomplete-sessions', auth_1.authMiddleware, asy
         });
     }
     catch (error) {
-        console.error('미입력 세션 조회 오류:', error);
+        (0, logger_1.logError)('미입력 세션 조회 오류', error);
         next(error);
     }
 });

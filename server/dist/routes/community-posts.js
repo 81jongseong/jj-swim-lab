@@ -7,6 +7,7 @@ const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const Community_1 = require("../models/Community");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/posts', async (req, res) => {
     try {
@@ -30,7 +31,7 @@ router.get('/posts', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('게시글 조회 오류:', error);
+        (0, logger_1.logError)('게시글 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '게시글 조회 중 오류가 발생했습니다.'
@@ -107,7 +108,7 @@ router.post('/posts', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 게시글 작성 오류:', error);
+        (0, logger_1.logError)('게시글 작성 오류', error);
         res.status(500).json({
             success: false,
             message: error.message || '게시글 작성 중 오류가 발생했습니다.'
@@ -156,7 +157,7 @@ router.put('/posts/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('게시글 수정 오류:', error);
+        (0, logger_1.logError)('게시글 수정 오류', error);
         res.status(500).json({
             success: false,
             message: error.message || '게시글 수정 중 오류가 발생했습니다.'
@@ -188,7 +189,7 @@ router.delete('/posts/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('게시글 삭제 오류:', error);
+        (0, logger_1.logError)('게시글 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '게시글 삭제 중 오류가 발생했습니다.'
@@ -218,7 +219,7 @@ router.post('/posts/:id/blind', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('블라인드 처리 오류:', error);
+        (0, logger_1.logError)('블라인드 처리 오류', error);
         res.status(500).json({
             success: false,
             message: '블라인드 처리 중 오류가 발생했습니다.'
@@ -248,7 +249,7 @@ router.post('/posts/:id/unblind', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('블라인드 해제 오류:', error);
+        (0, logger_1.logError)('블라인드 해제 오류', error);
         res.status(500).json({
             success: false,
             message: '블라인드 해제 중 오류가 발생했습니다.'
@@ -280,7 +281,7 @@ router.post('/posts/:id/warn', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('경고 발송 오류:', error);
+        (0, logger_1.logError)('경고 발송 오류', error);
         res.status(500).json({
             success: false,
             message: '경고 발송 중 오류가 발생했습니다.'
@@ -335,7 +336,7 @@ router.post('/posts/:id/join', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('참가 신청 오류:', error);
+        (0, logger_1.logError)('참가 신청 오류', error);
         res.status(500).json({
             success: false,
             message: '참가 신청 중 오류가 발생했습니다.'
@@ -359,7 +360,7 @@ router.put('/rules', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('규칙 저장 오류:', error);
+        (0, logger_1.logError)('규칙 저장 오류', error);
         res.status(500).json({
             success: false,
             message: '규칙 저장 중 오류가 발생했습니다.'

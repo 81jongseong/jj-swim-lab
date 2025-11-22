@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const CenterLevel_1 = require("../models/CenterLevel");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 'superAdmin']), async (req, res) => {
     try {
@@ -28,7 +29,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', '
         });
     }
     catch (error) {
-        console.error('센터 레벨 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 레벨 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 레벨 목록을 불러오는 데 실패했습니다.'
@@ -59,7 +60,7 @@ router.get('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin'
         });
     }
     catch (error) {
-        console.error('센터 레벨 조회 오류:', error);
+        (0, logger_1.logError)('센터 레벨 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 레벨을 불러오는 데 실패했습니다.'
@@ -99,7 +100,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin', 
         });
     }
     catch (error) {
-        console.error('센터 레벨 생성 오류:', error);
+        (0, logger_1.logError)('센터 레벨 생성 오류:', error);
         if (error.code === 11000) {
             return res.status(400).json({
                 success: false,
@@ -151,7 +152,7 @@ router.put('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdmin'
         });
     }
     catch (error) {
-        console.error('센터 레벨 수정 오류:', error);
+        (0, logger_1.logError)('센터 레벨 수정 오류:', error);
         if (error.code === 11000) {
             return res.status(400).json({
                 success: false,
@@ -188,7 +189,7 @@ router.delete('/:id', auth_1.authMiddleware, (0, auth_1.requireRole)(['centerAdm
         });
     }
     catch (error) {
-        console.error('센터 레벨 삭제 오류:', error);
+        (0, logger_1.logError)('센터 레벨 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 레벨 삭제에 실패했습니다.'

@@ -10,6 +10,7 @@ const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
 const pricingService_1 = require("../services/pricingService");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 router.get('/pricing/calculate', auth_1.auth, async (req, res) => {
     try {
@@ -22,7 +23,7 @@ router.get('/pricing/calculate', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('요금 계산 오류:', error);
+        (0, logger_1.logError)('요금 계산 오류', error);
         return res.status(500).json({ error: '요금 계산에 실패했습니다.' });
     }
 });
@@ -176,7 +177,7 @@ router.get('/', auth_1.auth, async (req, res) => {
         return res.json({ success: true, message: '결제 내역 조회 성공!', data: { payments: processedPayments } });
     }
     catch (error) {
-        console.error('결제 내역 조회 오류:', error);
+        (0, logger_1.logError)('결제 내역 조회 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -196,7 +197,7 @@ router.get('/:id', auth_1.auth, async (req, res) => {
         return res.json({ success: true, message: '결제 조회 성공!', data: payment });
     }
     catch (error) {
-        console.error('결제 조회 오류:', error);
+        (0, logger_1.logError)('결제 조회 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -250,7 +251,7 @@ router.post('/', auth_1.auth, async (req, res) => {
                 });
         }
         catch (error) {
-            console.error('결제 처리 중 오류:', error);
+            (0, logger_1.logError)('결제 처리 중 오류', error);
         }
         return res.status(201).json({
             success: true,
@@ -259,7 +260,7 @@ router.post('/', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('결제 생성 오류:', error);
+        (0, logger_1.logError)('결제 생성 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -312,7 +313,7 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
                 });
         }
         catch (error) {
-            console.error('결제 처리 중 오류:', error);
+            (0, logger_1.logError)('결제 처리 중 오류', error);
         }
         return res.json({
             success: true,
@@ -321,7 +322,7 @@ router.post('/:id/complete', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
         });
     }
     catch (error) {
-        console.error('결제 완료 처리 오류:', error);
+        (0, logger_1.logError)('결제 완료 처리 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -361,7 +362,7 @@ router.post('/:id/refund', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']),
                 });
         }
         catch (error) {
-            console.error('결제 처리 중 오류:', error);
+            (0, logger_1.logError)('결제 처리 중 오류', error);
         }
         return res.json({
             success: true,
@@ -370,7 +371,7 @@ router.post('/:id/refund', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']),
         });
     }
     catch (error) {
-        console.error('결제 환불 오류:', error);
+        (0, logger_1.logError)('결제 환불 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -406,7 +407,7 @@ router.get('/stats/summary', auth_1.auth, (0, auth_1.requireRole)(['superAdmin']
         });
     }
     catch (error) {
-        console.error('결제 통계 조회 오류:', error);
+        (0, logger_1.logError)('결제 통계 조회 오류', error);
         return res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
@@ -506,7 +507,7 @@ router.get('/course/:courseId/stats', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습 과정별 결제 통계 조회 오류:', error);
+        (0, logger_1.logError)('강습 과정별 결제 통계 조회 오류', error);
         res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
     }
 });
@@ -560,7 +561,7 @@ router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('학생별 강습 과정 결제 내역 조회 오류:', error);
+        (0, logger_1.logError)('학생별 강습 과정 결제 내역 조회 오류', error);
         res.status(500).json({ error: '결제 내역 조회에 실패했습니다.' });
     }
 });
@@ -632,7 +633,7 @@ router.get('/instructor/:instructorId/courses', auth_1.auth, async (req, res) =>
         });
     }
     catch (error) {
-        console.error('강사별 강습 과정 결제 통계 조회 오류:', error);
+        (0, logger_1.logError)('강사별 강습 과정 결제 통계 조회 오류', error);
         res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
     }
 });
@@ -732,7 +733,7 @@ router.get('/course/:courseId/stats', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강습 과정별 결제 통계 조회 오류:', error);
+        (0, logger_1.logError)('강습 과정별 결제 통계 조회 오류', error);
         res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
     }
 });
@@ -786,7 +787,7 @@ router.get('/student/:studentId/courses', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('학생별 강습 과정 결제 내역 조회 오류:', error);
+        (0, logger_1.logError)('학생별 강습 과정 결제 내역 조회 오류', error);
         res.status(500).json({ error: '결제 내역 조회에 실패했습니다.' });
     }
 });
@@ -858,7 +859,7 @@ router.get('/instructor/:instructorId/courses', auth_1.auth, async (req, res) =>
         });
     }
     catch (error) {
-        console.error('강사별 강습 과정 결제 통계 조회 오류:', error);
+        (0, logger_1.logError)('강사별 강습 과정 결제 통계 조회 오류', error);
         res.status(500).json({ error: '결제 통계 조회에 실패했습니다.' });
     }
 });
@@ -872,7 +873,7 @@ router.get('/pricing/policy', auth_1.auth, (0, auth_1.requireRole)(['superAdmin'
         });
     }
     catch (error) {
-        console.error('요금 정책 조회 오류:', error);
+        (0, logger_1.logError)('요금 정책 조회 오류', error);
         return res.status(500).json({ error: '요금 정책 조회에 실패했습니다.' });
     }
 });
@@ -887,7 +888,7 @@ router.put('/pricing/policy', auth_1.auth, (0, auth_1.requireRole)(['superAdmin'
         });
     }
     catch (error) {
-        console.error('요금 정책 업데이트 오류:', error);
+        (0, logger_1.logError)('요금 정책 업데이트 오류', error);
         return res.status(500).json({ error: '요금 정책 업데이트에 실패했습니다.' });
     }
 });
@@ -914,7 +915,7 @@ router.get('/pricing/discount/:userId', auth_1.auth, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('할인율 조회 오류:', error);
+        (0, logger_1.logError)('할인율 조회 오류', error);
         return res.status(500).json({ error: '할인율 조회에 실패했습니다.' });
     }
 });

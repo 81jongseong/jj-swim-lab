@@ -34,6 +34,7 @@
 
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 // Models - default export 아님
 const User = require('../models/User').default;
@@ -77,7 +78,7 @@ router.get('/:userId', authMiddleware, async (req: Request, res: Response) => {
       teachingProgress
     });
   } catch (error: any) {
-    console.error('진행 상황 조회 실패:', error);
+    logError('진행 상황 조회 실패:', error);
     return res.status(500).json({ error: '진행 상황 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -190,7 +191,7 @@ router.post('/:userId/method/:methodId/step', authMiddleware, async (req: Reques
       progress: progressEntry
     });
   } catch (error: any) {
-    console.error('진행 상황 업데이트 실패:', error);
+    logError('진행 상황 업데이트 실패:', error);
     return res.status(500).json({ error: '진행 상황 업데이트에 실패했습니다.', details: error.message });
   }
 });
@@ -319,7 +320,7 @@ router.get('/:userId/next-recommendation', authMiddleware, async (req: Request, 
       recommendations
     });
   } catch (error: any) {
-    console.error('추천 조회 실패:', error);
+    logError('추천 조회 실패:', error);
     return res.status(500).json({ error: '추천 조회에 실패했습니다.', details: error.message });
   }
 });
@@ -404,7 +405,7 @@ router.get('/:userId/summary', authMiddleware, async (req: Request, res: Respons
       }
     });
   } catch (error: any) {
-    console.error('요약 조회 실패:', error);
+    logError('요약 조회 실패:', error);
     return res.status(500).json({ error: '요약 조회에 실패했습니다.', details: error.message });
   }
 });

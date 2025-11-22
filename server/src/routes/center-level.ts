@@ -1,6 +1,7 @@
 import express from 'express';
 import { CenterLevel } from '../models/CenterLevel';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.get('/', authMiddleware, async (req, res) => {
       data: defaultLevels
     });
   } catch (error) {
-    console.error('센터 레벨 조회 실패:', error);
+    logError('센터 레벨 조회 실패:', error);
     res.status(500).json({ 
       success: false,
       error: '센터 레벨 조회에 실패했습니다.' 
@@ -75,7 +76,7 @@ router.get('/:centerId', authMiddleware, async (req, res) => {
     
     res.json(centerLevel);
   } catch (error) {
-    console.error('센터 레벨 조회 실패:', error);
+    logError('센터 레벨 조회 실패:', error);
     res.status(500).json({ error: '센터 레벨 조회에 실패했습니다.' });
   }
 });
@@ -119,7 +120,7 @@ router.put('/:centerId', authMiddleware, async (req, res) => {
     
     res.json(centerLevel);
   } catch (error) {
-    console.error('센터 레벨 업데이트 실패:', error);
+    logError('센터 레벨 업데이트 실패:', error);
     res.status(500).json({ error: '센터 레벨 업데이트에 실패했습니다.' });
   }
 });
@@ -142,7 +143,7 @@ router.delete('/:centerId', authMiddleware, async (req, res) => {
     
     res.json({ message: '센터 레벨이 비활성화되었습니다.' });
   } catch (error) {
-    console.error('센터 레벨 삭제 실패:', error);
+    logError('센터 레벨 삭제 실패:', error);
     res.status(500).json({ error: '센터 레벨 삭제에 실패했습니다.' });
   }
 });

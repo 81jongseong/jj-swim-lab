@@ -70,8 +70,31 @@ const connectDB = async () => {
             setTimeout(() => reject(new Error('MongoDB 연결 타임아웃 (10초)')), 10000);
         });
         console.log('🔗 Promise.race 대기 중...');
-        await Promise.race([connectionPromise, timeoutPromise]);
-        console.log('🔗 mongoose.connect 완료!');
+        try {
+            await Promise.race([connectionPromise, timeoutPromise]);
+            console.log('🔗 mongoose.connect 완료!');
+        }
+        catch (timeoutError) {
+            console.log('⚠️ 연결 타임아웃 발생, 연결 상태 확인 중...');
+            console.log('   - readyState:', mongoose_1.default.connection.readyState);
+            console.log('   - readyState 설명:', mongoose_1.default.connection.readyState === 0 ? 'disconnected' :
+                mongoose_1.default.connection.readyState === 1 ? 'connected' :
+                    mongoose_1.default.connection.readyState === 2 ? 'connecting' :
+                        mongoose_1.default.connection.readyState === 3 ? 'disconnecting' : 'unknown');
+            if (mongoose_1.default.connection.readyState === 2) {
+                console.log('⏳ 연결 진행 중... 5초 더 대기...');
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                if (mongoose_1.default.connection.readyState === 1) {
+                    console.log('✅ 추가 대기 후 연결 성공!');
+                }
+                else {
+                    throw timeoutError;
+                }
+            }
+            else {
+                throw timeoutError;
+            }
+        }
         const connectionTime = Date.now() - startTime;
         (0, logger_1.logInfo)(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);
         console.log(`✅ MongoDB 연결 완료 (${connectionTime}ms)`);

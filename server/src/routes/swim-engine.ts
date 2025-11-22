@@ -13,6 +13,7 @@
 
 import express, { Request, Response, Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 // import { requireRole } from '../middleware/roleAuth';
 
 const router: Router = express.Router();
@@ -50,7 +51,7 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
       data: engineStatus
     });
   } catch (error) {
-    console.error('수영 트레이닝 엔진 상태 확인 오류:', error);
+    logError('수영 트레이닝 엔진 상태 확인 오류:', error);
     res.status(500).json({
       success: false,
       message: '수영 트레이닝 엔진 상태 확인 중 오류가 발생했습니다.'
@@ -109,7 +110,7 @@ router.post('/generate-plan', authMiddleware, async (req: Request, res: Response
       data: mockPlan
     });
   } catch (error) {
-    console.error('수영 프로그램 생성 오류:', error);
+    logError('수영 프로그램 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '수영 프로그램 생성 중 오류가 발생했습니다.'
@@ -152,7 +153,7 @@ router.get('/health-policy', authMiddleware, async (req: Request, res: Response)
       data: healthPolicy
     });
   } catch (error) {
-    console.error('건강 정책 정보 조회 오류:', error);
+    logError('건강 정책 정보 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강 정책 정보 조회 중 오류가 발생했습니다.'

@@ -7,6 +7,7 @@
 
 import express, { Request, Response, Router } from 'express';
 import { TeachingMethod } from '../models/TeachingMethod';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router: Router = express.Router();
 
@@ -62,7 +63,7 @@ router.post('/update-levels', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ 레벨 변경 오류:', error);
+    logError('❌ 레벨 변경 오류:', error);
     res.status(500).json({
       success: false,
       message: '레벨 변경에 실패했습니다.',

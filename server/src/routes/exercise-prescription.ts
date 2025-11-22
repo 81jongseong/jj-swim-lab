@@ -24,6 +24,7 @@ import { User } from '../models/User';
 import { HealthData } from '../models/HealthData';
 import { ExercisePrescriptionSystem } from '../utils/ExercisePrescriptionSystem';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -143,7 +144,7 @@ router.post('/create', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 운동 처방 생성 오류:', error);
+    logError('❌ 운동 처방 생성 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '운동 처방 생성 중 오류가 발생했습니다.' 
@@ -187,7 +188,7 @@ router.get('/:userId', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 운동 처방 조회 오류:', error);
+    logError('❌ 운동 처방 조회 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '운동 처방 조회 중 오류가 발생했습니다.' 
@@ -297,7 +298,7 @@ router.post('/:prescriptionId/session', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 운동 이력 기록 오류:', error);
+    logError('❌ 운동 이력 기록 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '운동 이력 기록 중 오류가 발생했습니다.' 
@@ -402,7 +403,7 @@ router.put('/:prescriptionId/adjust', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 운동 처방 조정 오류:', error);
+    logError('❌ 운동 처방 조정 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '운동 처방 조정 중 오류가 발생했습니다.' 
@@ -456,7 +457,7 @@ router.get('/center/:centerId', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 센터별 운동 처방 조회 오류:', error);
+    logError('❌ 센터별 운동 처방 조회 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '센터별 운동 처방 조회 중 오류가 발생했습니다.' 
@@ -513,7 +514,7 @@ router.get('/:prescriptionId/stats', authMiddleware, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ 운동 처방 통계 조회 오류:', error);
+    logError('❌ 운동 처방 통계 조회 오류:', error);
     res.status(500).json({ 
       success: false, 
       message: '운동 처방 통계 조회 중 오류가 발생했습니다.' 

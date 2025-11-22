@@ -15,28 +15,19 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const logger_1 = require("../utils/logger");
 const mongoose_1 = __importDefault(require("mongoose"));
 const PersonalLesson_1 = require("../models/PersonalLesson");
 const LaneRental_1 = require("../models/LaneRental");
@@ -147,7 +138,7 @@ router.get('/', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('예약 목록 조회 오류:', error);
+        (0, logger_1.logError)('예약 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -229,7 +220,7 @@ router.get('/dashboard', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('예약 현황 조회 오류:', error);
+        (0, logger_1.logError)('예약 현황 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -260,7 +251,7 @@ router.get('/personal-lessons', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 조회 오류:', error);
+        (0, logger_1.logError)('개인레슨 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -304,7 +295,7 @@ router.put('/:id', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('예약 상태 변경 오류:', error);
+        (0, logger_1.logError)('예약 상태 변경 오류', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -357,7 +348,7 @@ router.patch('/personal-lessons/:id/status', auth_1.authMiddleware, async (req, 
         });
     }
     catch (error) {
-        console.error('개인레슨 상태 변경 오류:', error);
+        (0, logger_1.logError)('개인레슨 상태 변경 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -385,7 +376,7 @@ router.get('/lane-rentals', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 조회 오류:', error);
+        (0, logger_1.logError)('레인대여 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -420,7 +411,7 @@ router.patch('/lane-rentals/:id/status', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 상태 변경 오류:', error);
+        (0, logger_1.logError)('레인대여 상태 변경 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -453,7 +444,7 @@ router.patch('/lane-rentals/:id/lane', async (req, res) => {
         return res.json({ success: true, message: '레인 번호가 변경되었습니다.', data: laneRental });
     }
     catch (error) {
-        console.error('레인 번호 변경 오류:', error);
+        (0, logger_1.logError)('레인 번호 변경 오류', error);
         return res.status(500).json({ success: false, message: '레인 번호 변경 중 오류가 발생했습니다.' });
     }
 });
@@ -502,7 +493,7 @@ router.get('/lane-rentals/:id/availability', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인 가용 조회 오류:', error);
+        (0, logger_1.logError)('레인 가용 조회 오류', error);
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -523,7 +514,7 @@ router.get('/:id/student', async (req, res) => {
         return res.status(404).json({ success: false, message: '예약을 찾을 수 없습니다.' });
     }
     catch (error) {
-        console.error('예약 학생 ID 조회 오류:', error);
+        (0, logger_1.logError)('예약 학생 ID 조회 오류', error);
         return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -546,7 +537,7 @@ router.get('/instructors', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('강사 목록 조회 오류:', error);
+        (0, logger_1.logError)('강사 목록 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -615,7 +606,7 @@ router.get('/statistics', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('예약 통계 조회 오류:', error);
+        (0, logger_1.logError)('예약 통계 조회 오류', error);
         res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
 });
@@ -685,7 +676,7 @@ router.post('/personal-lessons/request', async (req, res) => {
             console.log('✅ 레인 자동 조정 완료:', adjustmentResult);
         }
         catch (adjustmentError) {
-            console.error('⚠️ 레인 자동 조정 실패:', adjustmentError);
+            (0, logger_1.logWarn)('레인 자동 조정 실패', adjustmentError);
         }
         const personalLesson = new PersonalLesson_1.PersonalLesson({
             studentId: applicantId,
@@ -713,7 +704,7 @@ router.post('/personal-lessons/request', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 신청 실패:', error);
+        (0, logger_1.logError)('개인레슨 신청 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -739,7 +730,7 @@ async function updateInstructorBookingCount(instructorId, startTime, endTime, in
         }
     }
     catch (error) {
-        console.error('강사별 예약 수 업데이트 실패:', error);
+        (0, logger_1.logError)('강사별 예약 수 업데이트 실패', error);
     }
 }
 router.post('/lane-rentals/request', async (req, res) => {
@@ -809,7 +800,7 @@ router.post('/lane-rentals/request', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('레인대여 신청 실패:', error);
+        (0, logger_1.logError)('레인대여 신청 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -853,7 +844,7 @@ router.get('/my-bookings', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('회원 예약 내역 조회 실패:', error);
+        (0, logger_1.logError)('회원 예약 내역 조회 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -887,7 +878,7 @@ router.patch('/personal-lessons/:id/instructor', auth_1.authMiddleware, async (r
         return res.json({ success: true, message: '강사가 배정되었습니다.', data: lesson });
     }
     catch (error) {
-        console.error('개인레슨 강사 배정 오류:', error);
+        (0, logger_1.logError)('개인레슨 강사 배정 오류', error);
         return res.status(500).json({ success: false, message: '개인레슨 강사 배정 중 오류가 발생했습니다.' });
     }
 });

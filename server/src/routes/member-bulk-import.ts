@@ -13,6 +13,7 @@ import { authMiddleware, requireCenterAdmin } from '../middleware/auth';
 import { Request } from 'express';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user: any;
@@ -170,7 +171,7 @@ router.post('/upload', authMiddleware, requireCenterAdmin, upload.single('file')
           row: i + 2,
           error: error.message
         });
-        console.error(`❌ ${i + 1}/${data.length} - 오류:`, error.message);
+        logError(`❌ ${i + 1}/${data.length} - 오류:`, error.message);
       }
     }
 
@@ -183,7 +184,7 @@ router.post('/upload', authMiddleware, requireCenterAdmin, upload.single('file')
     });
 
   } catch (error: any) {
-    console.error('❌ 일괄 등록 오류:', error);
+    logError('❌ 일괄 등록 오류:', error);
     res.status(500).json({
       success: false,
       message: '서버 오류가 발생했습니다.',

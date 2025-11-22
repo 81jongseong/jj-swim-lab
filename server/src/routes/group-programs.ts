@@ -10,6 +10,7 @@
 
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -127,7 +128,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         console.log(`  ✓ ${user.name}: 조정사항 생성 완료`);
         return adjustment;
       } catch (error) {
-        console.error(`  ✗ ${student.userId}: 조정사항 생성 실패:`, error);
+        logError(`조정사항 생성 실패: ${student.userId}`, error);
         return null;
       }
     });
@@ -150,7 +151,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     });
     
   } catch (error: any) {
-    console.error('❌ 단체반 프로그램 생성 실패:', error);
+    logError('단체반 프로그램 생성 실패', error);
     return res.status(500).json({
       success: false,
       message: '단체반 프로그램 생성에 실패했습니다.',
@@ -181,7 +182,7 @@ router.get('/:groupClassId', authMiddleware, async (req: AuthRequest, res: Respo
     });
     
   } catch (error: any) {
-    console.error('단체반 프로그램 조회 실패:', error);
+    logError('단체반 프로그램 조회 실패', error);
     return res.status(500).json({
       success: false,
       message: '프로그램 목록 조회에 실패했습니다.'
@@ -229,7 +230,7 @@ router.get('/:programId/my-adjustment', authMiddleware, async (req: AuthRequest,
     });
     
   } catch (error: any) {
-    console.error('개인별 조정사항 조회 실패:', error);
+    logError('개인별 조정사항 조회 실패', error);
     return res.status(500).json({
       success: false,
       message: '조정사항 조회에 실패했습니다.'

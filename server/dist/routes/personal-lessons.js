@@ -11,6 +11,7 @@ const User_1 = require("../models/User");
 const laneAllocationService_1 = require("../services/laneAllocationService");
 const Payment_1 = require("../models/Payment");
 const settlementService_1 = require("../services/settlementService");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/external-request', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -147,7 +148,7 @@ router.post('/external-request', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('외부 회원 개인레슨 요청 실패:', error);
+        (0, logger_1.logError)('외부 회원 개인레슨 요청 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -221,7 +222,7 @@ router.post('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 신청 실패:', error);
+        (0, logger_1.logError)('개인레슨 신청 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -258,7 +259,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 목록 조회 실패:', error);
+        (0, logger_1.logError)('개인레슨 목록 조회 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -286,7 +287,7 @@ router.get('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 상세 조회 실패:', error);
+        (0, logger_1.logError)('개인레슨 상세 조회 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -323,7 +324,7 @@ router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('개인레슨 취소 실패:', error);
+        (0, logger_1.logError)('개인레슨 취소 실패', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -405,7 +406,7 @@ router.post('/:id/payment', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('결제 생성 실패:', error);
+        (0, logger_1.logError)('결제 생성 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'
@@ -459,7 +460,7 @@ router.post('/:id/payment/complete', auth_1.authMiddleware, async (req, res) => 
             await (0, settlementService_1.createSettlementItem)(personalLesson._id.toString());
         }
         catch (settlementError) {
-            console.error('정산 항목 생성 실패:', settlementError);
+            (0, logger_1.logError)('정산 항목 생성 실패', settlementError);
         }
         res.json({
             success: true,
@@ -485,7 +486,7 @@ router.post('/:id/payment/complete', auth_1.authMiddleware, async (req, res) => 
         });
     }
     catch (error) {
-        console.error('결제 완료 처리 실패:', error);
+        (0, logger_1.logError)('결제 완료 처리 실패', error);
         res.status(500).json({
             success: false,
             message: error.message || '서버 오류가 발생했습니다.'

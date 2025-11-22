@@ -9,6 +9,7 @@ const LessonPlan_1 = require("../models/LessonPlan");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const User_1 = require("../models/User");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin']), async (req, res) => {
     try {
@@ -36,7 +37,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'c
         });
     }
     catch (error) {
-        console.error('❌ 수업 계획 목록 조회 오류:', error);
+        (0, logger_1.logError)('❌ 수업 계획 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 계획 목록 조회 중 오류가 발생했습니다.'
@@ -66,7 +67,7 @@ router.get('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instruct
         });
     }
     catch (error) {
-        console.error('❌ 수업 계획 조회 오류:', error);
+        (0, logger_1.logError)('❌ 수업 계획 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 계획 조회 중 오류가 발생했습니다.'
@@ -130,7 +131,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', '
         });
     }
     catch (error) {
-        console.error('❌ 수업 계획 생성 오류:', error);
+        (0, logger_1.logError)('❌ 수업 계획 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 계획 생성 중 오류가 발생했습니다.'
@@ -172,7 +173,7 @@ router.put('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instruct
         });
     }
     catch (error) {
-        console.error('❌ 수업 계획 수정 오류:', error);
+        (0, logger_1.logError)('❌ 수업 계획 수정 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 계획 수정 중 오류가 발생했습니다.'
@@ -200,7 +201,7 @@ router.delete('/:planId', auth_1.authMiddleware, (0, auth_1.requireRole)(['instr
         });
     }
     catch (error) {
-        console.error('❌ 수업 계획 삭제 오류:', error);
+        (0, logger_1.logError)('❌ 수업 계획 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 계획 삭제 중 오류가 발생했습니다.'
@@ -231,7 +232,7 @@ router.put('/:planId/attendance', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('❌ 출석 체크 오류:', error);
+        (0, logger_1.logError)('❌ 출석 체크 오류:', error);
         res.status(500).json({
             success: false,
             message: '출석 체크 중 오류가 발생했습니다.'
@@ -262,7 +263,7 @@ router.put('/:planId/feedback', auth_1.authMiddleware, (0, auth_1.requireRole)([
         });
     }
     catch (error) {
-        console.error('❌ 수업 피드백 오류:', error);
+        (0, logger_1.logError)('❌ 수업 피드백 오류:', error);
         res.status(500).json({
             success: false,
             message: '수업 피드백 중 오류가 발생했습니다.'
@@ -308,7 +309,7 @@ router.get('/stats/instructor', auth_1.authMiddleware, (0, auth_1.requireRole)([
         });
     }
     catch (error) {
-        console.error('❌ 강사 통계 조회 오류:', error);
+        (0, logger_1.logError)('❌ 강사 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '강사 통계 조회 중 오류가 발생했습니다.'
@@ -332,7 +333,7 @@ router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
     catch (error) {
-        console.error('❌ 학생별 수업 계획 조회 오류:', error);
+        (0, logger_1.logError)('❌ 학생별 수업 계획 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '학생별 수업 계획 조회 중 오류가 발생했습니다.'

@@ -8,6 +8,7 @@ import PerformanceAnalyzer from '../utils/performanceAnalyzer';
 import CacheService from '../services/cacheService';
 import QueryOptimizer from '../utils/queryOptimizer';
 import { requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = Router();
 const performanceAnalyzer = PerformanceAnalyzer.getInstance();
@@ -27,7 +28,7 @@ router.get('/analysis', requireRole(['superAdmin']), async (req: Request, res: R
       data: report
     });
   } catch (error) {
-    console.error('성능 분석 리포트 조회 실패:', error);
+    logError('성능 분석 리포트 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '성능 분석 리포트 조회 중 오류가 발생했습니다.'
@@ -48,7 +49,7 @@ router.get('/stats', requireRole(['superAdmin', 'centerAdmin']), (req: Request, 
       data: stats
     });
   } catch (error) {
-    console.error('성능 통계 조회 실패:', error);
+    logError('성능 통계 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '성능 통계 조회 중 오류가 발생했습니다.'
@@ -82,7 +83,7 @@ router.get('/slow-queries', requireRole(['superAdmin']), (req: Request, res: Res
       }
     });
   } catch (error) {
-    console.error('느린 쿼리 조회 실패:', error);
+    logError('느린 쿼리 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '느린 쿼리 조회 중 오류가 발생했습니다.'
@@ -113,7 +114,7 @@ router.get('/poor-queries', requireRole(['superAdmin']), (req: Request, res: Res
       }
     });
   } catch (error) {
-    console.error('성능이 나쁜 쿼리 조회 실패:', error);
+    logError('성능이 나쁜 쿼리 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '성능이 나쁜 쿼리 조회 중 오류가 발생했습니다.'
@@ -134,7 +135,7 @@ router.get('/collection-stats', requireRole(['superAdmin', 'centerAdmin']), (req
       data: collectionStats
     });
   } catch (error) {
-    console.error('컬렉션별 성능 통계 조회 실패:', error);
+    logError('컬렉션별 성능 통계 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '컬렉션별 성능 통계 조회 중 오류가 발생했습니다.'
@@ -167,7 +168,7 @@ router.get('/index-recommendations', requireRole(['superAdmin']), (req: Request,
       }
     });
   } catch (error) {
-    console.error('인덱스 권장사항 조회 실패:', error);
+    logError('인덱스 권장사항 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '인덱스 권장사항 조회 중 오류가 발생했습니다.'
@@ -188,7 +189,7 @@ router.get('/optimization-report', requireRole(['superAdmin']), (req: Request, r
       data: report
     });
   } catch (error) {
-    console.error('쿼리 최적화 리포트 생성 실패:', error);
+    logError('쿼리 최적화 리포트 생성 실패:', error);
     res.status(500).json({
       success: false,
       message: '쿼리 최적화 리포트 생성 중 오류가 발생했습니다.'
@@ -209,7 +210,7 @@ router.get('/cache-stats', requireRole(['superAdmin', 'centerAdmin']), (req: Req
       data: stats
     });
   } catch (error) {
-    console.error('캐시 통계 조회 실패:', error);
+    logError('캐시 통계 조회 실패:', error);
     res.status(500).json({
       success: false,
       message: '캐시 통계 조회 중 오류가 발생했습니다.'
@@ -230,7 +231,7 @@ router.get('/cache-report', requireRole(['superAdmin']), (req: Request, res: Res
       data: report
     });
   } catch (error) {
-    console.error('캐시 리포트 생성 실패:', error);
+    logError('캐시 리포트 생성 실패:', error);
     res.status(500).json({
       success: false,
       message: '캐시 리포트 생성 중 오류가 발생했습니다.'
@@ -264,7 +265,7 @@ router.post('/cache/invalidate', requireRole(['superAdmin']), (req: Request, res
       }
     });
   } catch (error) {
-    console.error('캐시 무효화 실패:', error);
+    logError('캐시 무효화 실패:', error);
     res.status(500).json({
       success: false,
       message: '캐시 무효화 중 오류가 발생했습니다.'
@@ -285,7 +286,7 @@ router.post('/cache/cleanup', requireRole(['superAdmin']), (req: Request, res: R
       message: '캐시 정리가 완료되었습니다.'
     });
   } catch (error) {
-    console.error('캐시 정리 실패:', error);
+    logError('캐시 정리 실패:', error);
     res.status(500).json({
       success: false,
       message: '캐시 정리 중 오류가 발생했습니다.'
@@ -306,7 +307,7 @@ router.delete('/cache/clear', requireRole(['superAdmin']), (req: Request, res: R
       message: '모든 캐시가 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('캐시 삭제 실패:', error);
+    logError('캐시 삭제 실패:', error);
     res.status(500).json({
       success: false,
       message: '캐시 삭제 중 오류가 발생했습니다.'
@@ -328,7 +329,7 @@ router.delete('/metrics/clear', requireRole(['superAdmin']), (req: Request, res:
       message: '성능 메트릭이 초기화되었습니다.'
     });
   } catch (error) {
-    console.error('성능 메트릭 초기화 실패:', error);
+    logError('성능 메트릭 초기화 실패:', error);
     res.status(500).json({
       success: false,
       message: '성능 메트릭 초기화 중 오류가 발생했습니다.'
@@ -363,7 +364,7 @@ router.post('/memory/track', requireRole(['superAdmin']), (req: Request, res: Re
       }
     });
   } catch (error) {
-    console.error('메모리 추적 시작 실패:', error);
+    logError('메모리 추적 시작 실패:', error);
     res.status(500).json({
       success: false,
       message: '메모리 추적 시작 중 오류가 발생했습니다.'
@@ -387,7 +388,7 @@ router.delete('/memory/track', requireRole(['superAdmin']), (req: Request, res: 
       message: '메모리 사용량 추적이 중지되었습니다.'
     });
   } catch (error) {
-    console.error('메모리 추적 중지 실패:', error);
+    logError('메모리 추적 중지 실패:', error);
     res.status(500).json({
       success: false,
       message: '메모리 추적 중지 중 오류가 발생했습니다.'

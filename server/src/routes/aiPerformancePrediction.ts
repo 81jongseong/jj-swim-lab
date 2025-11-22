@@ -7,6 +7,7 @@ import { authMiddleware } from '../middleware/auth';
 import { AIPerformancePredictionService, IPerformancePredictionRequest } from '../services/aiPerformancePredictionService';
 import { PerformancePrediction, SwimmingEvent } from '../models/PerformancePrediction';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -114,7 +115,7 @@ router.post('/predict', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('AI 수영 기록 예측 오류:', error);
+    logError('AI 수영 기록 예측 오류:', error);
     res.status(500).json({ 
       error: 'AI 수영 기록 예측에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -146,7 +147,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기록 예측 조회 오류:', error);
+    logError('기록 예측 조회 오류:', error);
     res.status(500).json({ 
       error: '기록 예측 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -182,7 +183,7 @@ router.get('/user/:userId/latest', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('최신 기록 예측 조회 오류:', error);
+    logError('최신 기록 예측 조회 오류:', error);
     res.status(500).json({ 
       error: '최신 기록 예측 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -222,7 +223,7 @@ router.get('/:predictionId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기록 예측 상세 조회 오류:', error);
+    logError('기록 예측 상세 조회 오류:', error);
     res.status(500).json({ 
       error: '기록 예측 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -282,7 +283,7 @@ router.post('/:predictionId/actual-result', authMiddleware, async (req, res) => 
     });
 
   } catch (error) {
-    console.error('실제 결과 추가 오류:', error);
+    logError('실제 결과 추가 오류:', error);
     res.status(500).json({ 
       error: '실제 결과 추가에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -331,7 +332,7 @@ router.get('/:predictionId/accuracy', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('예측 정확도 조회 오류:', error);
+    logError('예측 정확도 조회 오류:', error);
     res.status(500).json({ 
       error: '예측 정확도 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -368,7 +369,7 @@ router.get('/statistics/events/:event', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('종목별 통계 조회 오류:', error);
+    logError('종목별 통계 조회 오류:', error);
     res.status(500).json({ 
       error: '종목별 통계 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -415,7 +416,7 @@ router.get('/statistics/accuracy', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('정확도 통계 조회 오류:', error);
+    logError('정확도 통계 조회 오류:', error);
     res.status(500).json({ 
       error: '정확도 통계 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -469,7 +470,7 @@ router.put('/:predictionId/expert-validation', authMiddleware, async (req, res) 
     });
 
   } catch (error) {
-    console.error('전문가 검증 업데이트 오류:', error);
+    logError('전문가 검증 업데이트 오류:', error);
     res.status(500).json({ 
       error: '전문가 검증 업데이트에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -519,7 +520,7 @@ router.get('/:predictionId/needs-update', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('업데이트 필요 여부 확인 오류:', error);
+    logError('업데이트 필요 여부 확인 오류:', error);
     res.status(500).json({ 
       error: '업데이트 필요 여부 확인에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -561,7 +562,7 @@ router.delete('/:predictionId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('기록 예측 삭제 오류:', error);
+    logError('기록 예측 삭제 오류:', error);
     res.status(500).json({ 
       error: '기록 예측 삭제에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'

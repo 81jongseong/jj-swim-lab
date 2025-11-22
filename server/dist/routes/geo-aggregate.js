@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -41,6 +31,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const Center_1 = __importDefault(require("../models/Center"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 async function geocodeAddress(address) {
     if (!address || address.trim() === '') {
@@ -475,7 +466,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
                 }
                 catch (error) {
                     if (processedCount < 3) {
-                        console.error(`  ❌ 센터 조회 오류: User ${userItem._id}, Center ${userItem.centerId}`, error);
+                        (0, logger_1.logError)(`  ❌ 센터 조회 오류: User ${userItem._id}, Center ${userItem.centerId}`, error);
                     }
                 }
             }
@@ -594,7 +585,7 @@ router.get('/aggregate', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('지리적 분포 집계 오류:', error);
+        (0, logger_1.logError)('지리적 분포 집계 오류:', error);
         res.status(500).json({
             success: false,
             message: '지리적 분포 집계 중 오류가 발생했습니다.',
@@ -623,7 +614,7 @@ router.get('/centers', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('센터 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '센터 목록 조회 중 오류가 발생했습니다.',

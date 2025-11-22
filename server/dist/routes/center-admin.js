@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -39,6 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const User_1 = require("../models/User");
 const Course_1 = require("../models/Course");
 const Booking_1 = require("../models/Booking");
@@ -219,7 +210,7 @@ router.get('/dashboard', auth_1.authMiddleware, requireCenterAdmin, async (req, 
         });
     }
     catch (error) {
-        console.error('센터 관리자 대시보드 조회 오류:', error);
+        (0, logger_1.logError)('센터 관리자 대시보드 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -255,7 +246,7 @@ router.get('/center-info', auth_1.authMiddleware, requireCenterAdmin, async (req
         });
     }
     catch (error) {
-        console.error('센터 정보 조회 오류:', error);
+        (0, logger_1.logError)('센터 정보 조회 오류', error);
         return res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -349,7 +340,7 @@ router.get('/users', auth_1.authMiddleware, requireCenterAdmin, async (req, res)
         });
     }
     catch (error) {
-        console.error('센터 회원 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 회원 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -445,7 +436,7 @@ router.get('/instructors/stats', auth_1.authMiddleware, requireCenterAdmin, asyn
                 };
             }
             catch (error) {
-                console.error(`강사 ${instructor.name} 통계 계산 오류:`, error);
+                (0, logger_1.logError)(`강사 ${instructor.name} 통계 계산 오류`, error);
                 return {
                     instructorId: instructor._id,
                     name: instructor.name,
@@ -466,7 +457,7 @@ router.get('/instructors/stats', auth_1.authMiddleware, requireCenterAdmin, asyn
         });
     }
     catch (error) {
-        console.error('강사 통계 조회 오류:', error);
+        (0, logger_1.logError)('강사 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -484,7 +475,7 @@ router.get('/instructors', auth_1.authMiddleware, requireCenterAdmin, async (req
         return res.json({ success: true, data: instructors });
     }
     catch (error) {
-        console.error('강사 목록 조회 오류:', error);
+        (0, logger_1.logError)('강사 목록 조회 오류', error);
         return res.status(500).json({ success: false, message: '강사 목록 조회 중 오류가 발생했습니다.' });
     }
 });
@@ -504,7 +495,7 @@ router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
             centerId: centerId?.toString()
         });
         if (!centerId) {
-            console.error('❌ 센터 ID 없음');
+            (0, logger_1.logError)('센터 ID 없음');
             return res.status(400).json({
                 success: false,
                 message: '관리하는 센터가 없습니다.'
@@ -517,7 +508,7 @@ router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
         });
         console.log('👨‍🏫 강사 검색 결과:', instructor ? `${instructor.name} 찾음` : '찾지 못함');
         if (!instructor) {
-            console.error('❌ 강사 없음 또는 권한 없음');
+            (0, logger_1.logError)('강사 없음 또는 권한 없음');
             return res.status(404).json({
                 success: false,
                 message: '해당 강사를 찾을 수 없거나 권한이 없습니다.'
@@ -586,8 +577,7 @@ router.put('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
         });
     }
     catch (error) {
-        console.error('❌ 강사 정보 수정 오류:', error.message);
-        console.error('📋 에러 상세:', error);
+        (0, logger_1.logError)('강사 정보 수정 오류', { message: error.message, error });
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.',
@@ -669,7 +659,7 @@ router.post('/instructors/:instructorId/upload-photo', auth_1.authMiddleware, re
         });
     }
     catch (error) {
-        console.error('강사 사진 업로드 오류:', error);
+        (0, logger_1.logError)('강사 사진 업로드 오류', error);
         res.status(500).json({
             success: false,
             message: error.message || '강사 사진 업로드 중 오류가 발생했습니다.'
@@ -726,7 +716,7 @@ router.get('/bookings/dashboard', auth_1.authMiddleware, requireCenterAdmin, asy
         });
     }
     catch (error) {
-        console.error('예약 대시보드 조회 오류:', error);
+        (0, logger_1.logError)('예약 대시보드 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -802,7 +792,7 @@ router.get('/bookings', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('센터 예약 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 예약 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -853,7 +843,7 @@ router.get('/payments', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('센터 결제 목록 조회 오류:', error);
+        (0, logger_1.logError)('센터 결제 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -896,7 +886,7 @@ router.patch('/payments/:id/complete', auth_1.authMiddleware, requireCenterAdmin
         return res.json({ success: true, message: '결제가 완료 처리되었습니다.', data: payment });
     }
     catch (error) {
-        console.error('결제 완료 처리 오류:', error);
+        (0, logger_1.logError)('결제 완료 처리 오류', error);
         return res.status(500).json({ success: false, message: '결제 완료 처리 중 오류가 발생했습니다.' });
     }
 });
@@ -923,7 +913,7 @@ router.patch('/payments/:id/cancel', auth_1.authMiddleware, requireCenterAdmin, 
         return res.json({ success: true, message: '결제가 취소되었습니다.', data: payment });
     }
     catch (error) {
-        console.error('결제 취소 처리 오류:', error);
+        (0, logger_1.logError)('결제 취소 처리 오류', error);
         return res.status(500).json({ success: false, message: '결제 취소 처리 중 오류가 발생했습니다.' });
     }
 });
@@ -952,7 +942,7 @@ router.patch('/payments/:id/refund', auth_1.authMiddleware, requireCenterAdmin, 
         return res.json({ success: true, message: '결제가 환불 처리되었습니다.', data: payment });
     }
     catch (error) {
-        console.error('결제 환불 처리 오류:', error);
+        (0, logger_1.logError)('결제 환불 처리 오류', error);
         return res.status(500).json({ success: false, message: '결제 환불 처리 중 오류가 발생했습니다.' });
     }
 });
@@ -974,7 +964,7 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
             }
         }
         catch (restoreError) {
-            console.error('⚠️ 레인 복원 실패 (무시하고 계속 진행):', restoreError);
+            (0, logger_1.logWarn)('레인 복원 실패 (무시하고 계속 진행)', restoreError);
         }
         const courses = await Course_1.Course.find({
             centerId: new mongoose_1.default.Types.ObjectId(centerId)
@@ -1041,7 +1031,7 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('센터 강습 과정 조회 오류:', error);
+        (0, logger_1.logError)('센터 강습 과정 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.',
@@ -1083,7 +1073,7 @@ router.get('/schedules', auth_1.authMiddleware, requireCenterAdmin, async (req, 
         });
     }
     catch (error) {
-        console.error('센터 스케줄 조회 오류:', error);
+        (0, logger_1.logError)('센터 스케줄 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1154,7 +1144,7 @@ router.get('/reports', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('센터 통계 조회 오류:', error);
+        (0, logger_1.logError)('센터 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1217,7 +1207,7 @@ router.post('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('강습 과정 생성 오류:', error);
+        (0, logger_1.logError)('강습 과정 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1243,7 +1233,7 @@ router.get('/notices', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('공지사항 조회 오류:', error);
+        (0, logger_1.logError)('공지사항 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1276,7 +1266,7 @@ router.post('/notices', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('공지사항 생성 오류:', error);
+        (0, logger_1.logError)('공지사항 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1302,7 +1292,7 @@ router.get('/payments', auth_1.authMiddleware, requireCenterAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('결제 내역 조회 오류:', error);
+        (0, logger_1.logError)('결제 내역 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1328,7 +1318,7 @@ router.get('/reviews', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('리뷰 조회 오류:', error);
+        (0, logger_1.logError)('리뷰 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1366,7 +1356,7 @@ router.get('/reports', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('리포트 조회 오류:', error);
+        (0, logger_1.logError)('리포트 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1509,7 +1499,7 @@ router.post('/add-sample-data', auth_1.authMiddleware, requireCenterAdmin, async
         });
     }
     catch (error) {
-        console.error('예시 데이터 추가 오류:', error);
+        (0, logger_1.logError)('예시 데이터 추가 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1546,7 +1536,7 @@ router.get('/instructors/:instructorId', auth_1.authMiddleware, requireCenterAdm
         });
     }
     catch (error) {
-        console.error('강사 정보 조회 오류:', error);
+        (0, logger_1.logError)('강사 정보 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1735,7 +1725,7 @@ router.get('/instructors/:instructorId/students-list', auth_1.authMiddleware, re
         });
     }
     catch (error) {
-        console.error('강사별 학생 목록 조회 오류:', error);
+        (0, logger_1.logError)('강사별 학생 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1789,7 +1779,7 @@ router.put('/members/:memberId/memo', auth_1.authMiddleware, requireCenterAdmin,
         });
     }
     catch (error) {
-        console.error('회원 메모 업데이트 오류:', error);
+        (0, logger_1.logError)('회원 메모 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1833,7 +1823,7 @@ router.delete('/members/:memberId/memo/:memoId', auth_1.authMiddleware, requireC
         });
     }
     catch (error) {
-        console.error('회원 메모 삭제 오류:', error);
+        (0, logger_1.logError)('회원 메모 삭제 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -1891,7 +1881,7 @@ router.put('/members/:memberId/memo/:memoId', auth_1.authMiddleware, requireCent
         });
     }
     catch (error) {
-        console.error('메모 수정 오류:', error);
+        (0, logger_1.logError)('메모 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2102,7 +2092,7 @@ router.get('/members', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('회원 목록 조회 오류:', error);
+        (0, logger_1.logError)('회원 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2149,7 +2139,7 @@ router.get('/members/stats/summary', auth_1.authMiddleware, requireCenterAdmin, 
         });
     }
     catch (error) {
-        console.error('회원 통계 조회 오류:', error);
+        (0, logger_1.logError)('회원 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2314,10 +2304,11 @@ router.put('/members/:memberId/course', auth_1.authMiddleware, requireCenterAdmi
         });
     }
     catch (error) {
-        console.error('❌ 회원 과정 배정 오류:', error);
-        console.error('❌ 오류 스택:', error.stack);
-        console.error('❌ 오류 타입:', typeof error);
-        console.error('❌ 오류 메시지:', error.message);
+        (0, logger_1.logError)('회원 과정 배정 오류', {
+            message: error.message,
+            stack: error.stack,
+            type: typeof error
+        });
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.',
@@ -2376,7 +2367,7 @@ router.delete('/members/:memberId/course/:courseId', auth_1.authMiddleware, requ
         });
     }
     catch (error) {
-        console.error('❌ 회원 과정 배정 취소 오류:', error);
+        (0, logger_1.logError)('회원 과정 배정 취소 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.',
@@ -2432,7 +2423,7 @@ router.get('/courses', auth_1.authMiddleware, requireCenterAdmin, async (req, re
         });
     }
     catch (error) {
-        console.error('강습 과정 목록 조회 오류:', error);
+        (0, logger_1.logError)('강습 과정 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2495,7 +2486,7 @@ router.put('/members/:memberId', auth_1.authMiddleware, requireCenterAdmin, asyn
         });
     }
     catch (error) {
-        console.error('회원 정보 수정 오류:', error);
+        (0, logger_1.logError)('회원 정보 수정 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2755,7 +2746,7 @@ router.get('/instructors/:instructorId/lessons', auth_1.authMiddleware, requireC
         });
     }
     catch (error) {
-        console.error('❌ 강사 수업 일정 조회 오류:', error);
+        (0, logger_1.logError)('강사 수업 일정 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2798,7 +2789,7 @@ router.put('/lessons/:lessonId/status', auth_1.authMiddleware, requireCenterAdmi
         });
     }
     catch (error) {
-        console.error('❌ 수업 상태 업데이트 오류:', error);
+        (0, logger_1.logError)('수업 상태 업데이트 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'
@@ -2816,7 +2807,7 @@ router.put('/lessons/:lessonId/progress', auth_1.authMiddleware, requireCenterAd
         });
     }
     catch (error) {
-        console.error('❌ 수업 진행 기록 저장 오류:', error);
+        (0, logger_1.logError)('수업 진행 기록 저장 오류', error);
         res.status(500).json({
             success: false,
             message: '서버 오류가 발생했습니다.'

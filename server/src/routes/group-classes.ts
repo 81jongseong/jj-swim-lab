@@ -32,6 +32,7 @@ import GroupClass from '../models/GroupClass';
 import { User } from '../models/User';
 import SwimProgram from '../models/SwimProgram';
 import { authMiddleware } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
       data: groupClass
     });
   } catch (error) {
-    console.error('단체반 생성 오류:', error);
+    logError('단체반 생성 오류:', error);
     next(error);
   }
 });
@@ -136,7 +137,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('단체반 목록 조회 오류:', error);
+    logError('단체반 목록 조회 오류:', error);
     next(error);
   }
 });
@@ -168,7 +169,7 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
       data: groupClass
     });
   } catch (error) {
-    console.error('단체반 조회 오류:', error);
+    logError('단체반 조회 오류:', error);
     next(error);
   }
 });
@@ -216,7 +217,7 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
       data: groupClass
     });
   } catch (error) {
-    console.error('단체반 수정 오류:', error);
+    logError('단체반 수정 오류:', error);
     next(error);
   }
 });
@@ -257,7 +258,7 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
       message: '단체반이 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('단체반 삭제 오류:', error);
+    logError('단체반 삭제 오류:', error);
     next(error);
   }
 });
@@ -304,7 +305,7 @@ router.post('/:id/students', authMiddleware, async (req, res, next) => {
       data: groupClass
     });
   } catch (error: any) {
-    console.error('학생 추가 오류:', error);
+    logError('학생 추가 오류:', error);
     if (error.message === 'Class is full' || error.message === 'Student already enrolled') {
       return res.status(400).json({
         success: false,
@@ -340,7 +341,7 @@ router.delete('/:id/students/:studentId', authMiddleware, async (req, res, next)
       data: groupClass
     });
   } catch (error: any) {
-    console.error('학생 제거 오류:', error);
+    logError('학생 제거 오류:', error);
     if (error.message === 'Student not found') {
       return res.status(404).json({
         success: false,
@@ -384,7 +385,7 @@ router.put('/:id/students/:studentId/status', authMiddleware, async (req, res, n
       data: groupClass
     });
   } catch (error: any) {
-    console.error('학생 상태 변경 오류:', error);
+    logError('학생 상태 변경 오류:', error);
     if (error.message === 'Student not found') {
       return res.status(404).json({
         success: false,
@@ -463,7 +464,7 @@ router.get('/:id/completion-rates', authMiddleware, async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('완료율 조회 오류:', error);
+    logError('완료율 조회 오류:', error);
     next(error);
   }
 });

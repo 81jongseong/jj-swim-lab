@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const Notification_1 = require("../models/Notification");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -40,7 +41,7 @@ router.get('/', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 알림 목록 조회 오류:', error);
+        (0, logger_1.logError)('❌ 알림 목록 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '알림 목록 조회 중 오류가 발생했습니다.',
@@ -59,7 +60,7 @@ router.get('/unread-count', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 읽지 않은 알림 개수 조회 오류:', error);
+        (0, logger_1.logError)('❌ 읽지 않은 알림 개수 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '읽지 않은 알림 개수 조회 중 오류가 발생했습니다.',
@@ -94,7 +95,7 @@ router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 알림 읽음 처리 오류:', error);
+        (0, logger_1.logError)('❌ 알림 읽음 처리 오류:', error);
         res.status(500).json({
             success: false,
             message: '알림 읽음 처리 중 오류가 발생했습니다.',
@@ -114,7 +115,7 @@ router.put('/read-all', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 모든 알림 읽음 처리 오류:', error);
+        (0, logger_1.logError)('❌ 모든 알림 읽음 처리 오류:', error);
         res.status(500).json({
             success: false,
             message: '모든 알림 읽음 처리 중 오류가 발생했습니다.',
@@ -146,7 +147,7 @@ router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('❌ 알림 삭제 오류:', error);
+        (0, logger_1.logError)('❌ 알림 삭제 오류:', error);
         res.status(500).json({
             success: false,
             message: '알림 삭제 중 오류가 발생했습니다.',
@@ -179,7 +180,7 @@ router.post('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', '
         });
     }
     catch (error) {
-        console.error('❌ 알림 생성 오류:', error);
+        (0, logger_1.logError)('❌ 알림 생성 오류:', error);
         res.status(500).json({
             success: false,
             message: '알림 생성 중 오류가 발생했습니다.',

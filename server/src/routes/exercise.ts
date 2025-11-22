@@ -3,6 +3,7 @@ import { authMiddleware, requireRole } from '../middleware/auth';
 import { ExerciseData } from '../models/ExerciseData';
 import { User } from '../models/User';
 import { Request, Response } from 'express';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router: express.Router = express.Router();
 
@@ -53,7 +54,7 @@ router.post('/session/start', authMiddleware, requireRole(['student', 'instructo
       message: '운동 세션이 시작되었습니다.'
     });
   } catch (error) {
-    console.error('운동 세션 시작 오류:', error);
+    logError('운동 세션 시작 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 세션을 시작할 수 없습니다.'
@@ -125,7 +126,7 @@ router.put('/session/:sessionId/update', authMiddleware, requireRole(['student',
       session: exerciseSession
     });
   } catch (error) {
-    console.error('운동 데이터 업데이트 오류:', error);
+    logError('운동 데이터 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 데이터를 업데이트할 수 없습니다.'
@@ -180,7 +181,7 @@ router.put('/session/:sessionId/complete', requireRole(['student', 'instructor']
       performanceScore
     });
   } catch (error) {
-    console.error('운동 세션 완료 오류:', error);
+    logError('운동 세션 완료 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 세션을 완료할 수 없습니다.'
@@ -226,7 +227,7 @@ router.get('/stats', authMiddleware, requireRole(['student', 'instructor']), asy
       aiRecommendations
     });
   } catch (error) {
-    console.error('운동 통계 조회 오류:', error);
+    logError('운동 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 통계를 조회할 수 없습니다.'
@@ -271,7 +272,7 @@ router.get('/history', requireRole(['student', 'instructor']), async (req: Reque
       }
     });
   } catch (error) {
-    console.error('운동 기록 조회 오류:', error);
+    logError('운동 기록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 기록을 조회할 수 없습니다.'
@@ -298,7 +299,7 @@ router.get('/session/:sessionId', requireRole(['student', 'instructor']), async 
       session: exerciseSession
     });
   } catch (error) {
-    console.error('운동 세션 조회 오류:', error);
+    logError('운동 세션 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 세션을 조회할 수 없습니다.'
@@ -325,7 +326,7 @@ router.delete('/session/:sessionId', requireRole(['student', 'instructor']), asy
       message: '운동 기록이 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('운동 기록 삭제 오류:', error);
+    logError('운동 기록 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '운동 기록을 삭제할 수 없습니다.'
@@ -372,7 +373,7 @@ router.put('/health-profile', authMiddleware, requireRole(['student', 'instructo
       healthProfile: user.studentInfo.healthProfile
     });
   } catch (error) {
-    console.error('건강상태 업데이트 오류:', error);
+    logError('건강상태 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강상태를 업데이트할 수 없습니다.'
@@ -398,7 +399,7 @@ router.get('/health-profile', authMiddleware, requireRole(['student', 'instructo
       healthProfile: user.studentInfo?.healthProfile || {}
     });
   } catch (error) {
-    console.error('건강상태 조회 오류:', error);
+    logError('건강상태 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강상태를 조회할 수 없습니다.'

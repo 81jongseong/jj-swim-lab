@@ -7,6 +7,7 @@ import { authMiddleware } from '../middleware/auth';
 import { AIInjuryPredictionService, IInjuryAssessmentRequest } from '../services/aiInjuryPredictionService';
 import { InjuryPrediction } from '../models/InjuryPrediction';
 import mongoose from 'mongoose';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -103,7 +104,7 @@ router.post('/assess', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('AI 부상 위험 예측 오류:', error);
+    logError('AI 부상 위험 예측 오류:', error);
     res.status(500).json({ 
       error: 'AI 부상 위험 예측에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -135,7 +136,7 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부상 위험 예측 조회 오류:', error);
+    logError('부상 위험 예측 조회 오류:', error);
     res.status(500).json({ 
       error: '부상 위험 예측 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -175,7 +176,7 @@ router.get('/:predictionId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부상 위험 예측 상세 조회 오류:', error);
+    logError('부상 위험 예측 상세 조회 오류:', error);
     res.status(500).json({ 
       error: '부상 위험 예측 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -226,7 +227,7 @@ router.put('/:predictionId/acknowledge-alert', authMiddleware, async (req, res) 
     });
 
   } catch (error) {
-    console.error('알림 확인 처리 오류:', error);
+    logError('알림 확인 처리 오류:', error);
     res.status(500).json({ 
       error: '알림 확인 처리에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -276,7 +277,7 @@ router.post('/:predictionId/add-alert', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('알림 추가 오류:', error);
+    logError('알림 추가 오류:', error);
     res.status(500).json({ 
       error: '알림 추가에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -303,7 +304,7 @@ router.get('/high-risk/users', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('고위험 사용자 조회 오류:', error);
+    logError('고위험 사용자 조회 오류:', error);
     res.status(500).json({ 
       error: '고위험 사용자 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -349,7 +350,7 @@ router.get('/statistics/overview', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부상 위험 통계 조회 오류:', error);
+    logError('부상 위험 통계 조회 오류:', error);
     res.status(500).json({ 
       error: '부상 위험 통계 조회에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -392,7 +393,7 @@ router.put('/:predictionId/update-recommendations', authMiddleware, async (req, 
     });
 
   } catch (error) {
-    console.error('권장사항 업데이트 오류:', error);
+    logError('권장사항 업데이트 오류:', error);
     res.status(500).json({ 
       error: '권장사항 업데이트에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -442,7 +443,7 @@ router.get('/:predictionId/needs-update', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('업데이트 필요 여부 확인 오류:', error);
+    logError('업데이트 필요 여부 확인 오류:', error);
     res.status(500).json({ 
       error: '업데이트 필요 여부 확인에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -484,7 +485,7 @@ router.delete('/:predictionId', authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('부상 위험 예측 삭제 오류:', error);
+    logError('부상 위험 예측 삭제 오류:', error);
     res.status(500).json({ 
       error: '부상 위험 예측 삭제에 실패했습니다.',
       details: error instanceof Error ? error.message : '알 수 없는 오류'

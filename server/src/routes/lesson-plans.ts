@@ -11,6 +11,7 @@ import { LessonPlan } from '../models/LessonPlan';
 import { TeachingMethod } from '../models/TeachingMethod';
 import { User } from '../models/User';
 import { authMiddleware, requireRole } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.get('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), asyn
       data: lessonPlans
     });
   } catch (error) {
-    console.error('❌ 수업 계획 목록 조회 오류:', error);
+    logError('❌ 수업 계획 목록 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 계획 목록 조회 중 오류가 발생했습니다.'
@@ -76,7 +77,7 @@ router.get('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmin']
       data: lessonPlan
     });
   } catch (error) {
-    console.error('❌ 수업 계획 조회 오류:', error);
+    logError('❌ 수업 계획 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 계획 조회 중 오류가 발생했습니다.'
@@ -163,7 +164,7 @@ router.post('/', authMiddleware, requireRole(['instructor', 'centerAdmin']), asy
       message: '수업 계획이 생성되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 수업 계획 생성 오류:', error);
+    logError('❌ 수업 계획 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 계획 생성 중 오류가 발생했습니다.'
@@ -213,7 +214,7 @@ router.put('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmin']
       message: '수업 계획이 수정되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 수업 계획 수정 오류:', error);
+    logError('❌ 수업 계획 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 계획 수정 중 오류가 발생했습니다.'
@@ -246,7 +247,7 @@ router.delete('/:planId', authMiddleware, requireRole(['instructor', 'centerAdmi
       message: '수업 계획이 삭제되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 수업 계획 삭제 오류:', error);
+    logError('❌ 수업 계획 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 계획 삭제 중 오류가 발생했습니다.'
@@ -282,7 +283,7 @@ router.put('/:planId/attendance', authMiddleware, requireRole(['instructor', 'ce
       message: '출석이 기록되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 출석 체크 오류:', error);
+    logError('❌ 출석 체크 오류:', error);
     res.status(500).json({
       success: false,
       message: '출석 체크 중 오류가 발생했습니다.'
@@ -318,7 +319,7 @@ router.put('/:planId/feedback', authMiddleware, requireRole(['instructor', 'cent
       message: '피드백이 기록되었습니다.'
     });
   } catch (error) {
-    console.error('❌ 수업 피드백 오류:', error);
+    logError('❌ 수업 피드백 오류:', error);
     res.status(500).json({
       success: false,
       message: '수업 피드백 중 오류가 발생했습니다.'
@@ -370,7 +371,7 @@ router.get('/stats/instructor', authMiddleware, requireRole(['instructor', 'cent
       }
     });
   } catch (error) {
-    console.error('❌ 강사 통계 조회 오류:', error);
+    logError('❌ 강사 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '강사 통계 조회 중 오류가 발생했습니다.'
@@ -397,7 +398,7 @@ router.get('/student/:studentId', authMiddleware, requireRole(['instructor', 'ce
       data: lessonPlans
     });
   } catch (error) {
-    console.error('❌ 학생별 수업 계획 조회 오류:', error);
+    logError('❌ 학생별 수업 계획 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '학생별 수업 계획 조회 중 오류가 발생했습니다.'

@@ -11,6 +11,7 @@ const User_1 = require("../models/User");
 const Booking_1 = require("../models/Booking");
 const Course_1 = require("../models/Course");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
@@ -50,7 +51,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
         });
     }
     catch (error) {
-        console.error('❌ 학습 진도 조회 오류:', error);
+        (0, logger_1.logError)('❌ 학습 진도 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '학습 진도 조회 중 오류가 발생했습니다.'
@@ -94,7 +95,7 @@ router.get('/:teachingMethodId', auth_1.authMiddleware, (0, auth_1.requireRole)(
         });
     }
     catch (error) {
-        console.error('❌ 강습법 진도 조회 오류:', error);
+        (0, logger_1.logError)('❌ 강습법 진도 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '강습법 진도 조회 중 오류가 발생했습니다.'
@@ -145,7 +146,7 @@ router.put('/:teachingMethodId', auth_1.authMiddleware, (0, auth_1.requireRole)(
         });
     }
     catch (error) {
-        console.error('❌ 학습 진도 업데이트 오류:', error);
+        (0, logger_1.logError)('❌ 학습 진도 업데이트 오류:', error);
         res.status(500).json({
             success: false,
             message: '학습 진도 업데이트 중 오류가 발생했습니다.'
@@ -207,7 +208,7 @@ router.get('/stats/overview', auth_1.authMiddleware, (0, auth_1.requireRole)(['s
         });
     }
     catch (error) {
-        console.error('❌ 학습 통계 조회 오류:', error);
+        (0, logger_1.logError)('❌ 학습 통계 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '학습 통계 조회 중 오류가 발생했습니다.'
@@ -245,7 +246,7 @@ router.get('/stats/by-category', auth_1.authMiddleware, (0, auth_1.requireRole)(
         });
     }
     catch (error) {
-        console.error('❌ 카테고리별 진도 조회 오류:', error);
+        (0, logger_1.logError)('❌ 카테고리별 진도 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '카테고리별 진도 조회 중 오류가 발생했습니다.'
@@ -368,7 +369,7 @@ router.get('/instructor/students', auth_1.authMiddleware, (0, auth_1.requireRole
         });
     }
     catch (error) {
-        console.error('❌ 강사용 학생 진도 조회 오류:', error);
+        (0, logger_1.logError)('❌ 강사용 학생 진도 조회 오류:', error);
         res.status(500).json({
             success: false,
             message: '학생 진도 조회 중 오류가 발생했습니다.'

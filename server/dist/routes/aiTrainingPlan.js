@@ -8,6 +8,7 @@ const auth_1 = require("../middleware/auth");
 const aiTrainingPlanService_1 = require("../services/aiTrainingPlanService");
 const TrainingPlan_1 = require("../models/TrainingPlan");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/generate', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -61,7 +62,7 @@ router.post('/generate', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('AI 훈련 계획 생성 오류:', error);
+        (0, logger_1.logError)('AI 훈련 계획 생성 오류:', error);
         res.status(500).json({
             error: 'AI 훈련 계획 생성에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -82,7 +83,7 @@ router.get('/user/:userId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('훈련 계획 조회 오류:', error);
+        (0, logger_1.logError)('훈련 계획 조회 오류:', error);
         res.status(500).json({
             error: '훈련 계획 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -111,7 +112,7 @@ router.get('/:planId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('훈련 계획 상세 조회 오류:', error);
+        (0, logger_1.logError)('훈련 계획 상세 조회 오류:', error);
         res.status(500).json({
             error: '훈련 계획 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -154,7 +155,7 @@ router.put('/:planId/complete-session', auth_1.authMiddleware, async (req, res) 
         });
     }
     catch (error) {
-        console.error('세션 완료 처리 오류:', error);
+        (0, logger_1.logError)('세션 완료 처리 오류:', error);
         res.status(500).json({
             error: '세션 완료 처리에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -187,7 +188,7 @@ router.put('/:planId/adjust', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('훈련 계획 조정 오류:', error);
+        (0, logger_1.logError)('훈련 계획 조정 오류:', error);
         res.status(500).json({
             error: '훈련 계획 조정에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -231,7 +232,7 @@ router.get('/:planId/next-session', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('다음 세션 조회 오류:', error);
+        (0, logger_1.logError)('다음 세션 조회 오류:', error);
         res.status(500).json({
             error: '다음 세션 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -291,7 +292,7 @@ router.get('/:planId/progress', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('진행 상황 조회 오류:', error);
+        (0, logger_1.logError)('진행 상황 조회 오류:', error);
         res.status(500).json({
             error: '진행 상황 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -321,7 +322,7 @@ router.delete('/:planId', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('훈련 계획 삭제 오류:', error);
+        (0, logger_1.logError)('훈련 계획 삭제 오류:', error);
         res.status(500).json({
             error: '훈련 계획 삭제에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -380,7 +381,7 @@ router.get('/stats/overview', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('통계 조회 오류:', error);
+        (0, logger_1.logError)('통계 조회 오류:', error);
         res.status(500).json({
             error: '통계 조회에 실패했습니다.',
             details: error instanceof Error ? error.message : '알 수 없는 오류'

@@ -12,14 +12,10 @@ const StudentProgress_1 = require("../models/StudentProgress");
 const ClassChecklist_1 = require("../models/ClassChecklist");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const User_1 = require("../models/User");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const aggregateLevelChecklist = async (studentId, studentLevel) => {
     const studentObjectId = new mongoose_1.Types.ObjectId(studentId);
-    const levelMap = {
-        'beginner': '초급',
-        'intermediate': '중급',
-        'advanced': '고급'
-    };
     const reverseLevelMap = {
         '초급': 'beginner',
         '중급': 'intermediate',
@@ -67,7 +63,7 @@ const aggregateLevelChecklist = async (studentId, studentLevel) => {
         const classChecklistData = await ClassChecklist_1.ClassChecklist.findById(classChecklist._id || classChecklist).lean();
         if (!classChecklistData)
             continue;
-        (progress.items || []).forEach((item, index) => {
+        (progress.items || []).forEach((item) => {
             if (item.isCompleted && item.stepName) {
                 const classItem = (classChecklistData.items || []).find((ci) => ci.stepName === item.stepName || ci.stepOrder === item.stepOrder);
                 if (classItem && classItem.teachingMethodId) {
@@ -144,7 +140,7 @@ router.get('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole)
         res.json({ success: true, data: result });
     }
     catch (error) {
-        console.error('❌ 진행 관리 조회 실패:', error);
+        (0, logger_1.logError)('진행 관리 조회 실패', error);
         res.status(500).json({ success: false, message: '진행 관리 데이터를 불러오는 중 오류가 발생했습니다.' });
     }
 });
@@ -152,7 +148,7 @@ router.post('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole
     try {
         const instructorId = req.user?.id;
         const { studentId } = req.params;
-        const { courseName, sessions = [], notes = [], homework = [], levelChecklist = [] } = req.body || {};
+        const { courseName, sessions = [], notes = [], homework = [] } = req.body || {};
         if (!mongoose_1.Types.ObjectId.isValid(studentId)) {
             return res.status(400).json({ success: false, message: '유효하지 않은 학생 ID 입니다.' });
         }
@@ -211,7 +207,7 @@ router.post('/student/:studentId', auth_1.authMiddleware, (0, auth_1.requireRole
         });
     }
     catch (error) {
-        console.error('❌ 진행 관리 저장 실패:', error);
+        (0, logger_1.logError)('진행 관리 저장 실패', error);
         res.status(500).json({ success: false, message: '진행 관리 데이터를 저장하는 중 오류가 발생했습니다.' });
     }
 });

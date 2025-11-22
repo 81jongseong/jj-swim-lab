@@ -8,6 +8,7 @@ const Recommendation_1 = require("../models/Recommendation");
 const LearningProgress_1 = require("../models/LearningProgress");
 const TeachingMethod_1 = require("../models/TeachingMethod");
 const auth_1 = require("../middleware/auth");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), async (req, res) => {
     try {
@@ -33,7 +34,7 @@ router.get('/', auth_1.authMiddleware, (0, auth_1.requireRole)(['student']), asy
         });
     }
     catch (error) {
-        console.error('❌ 추천 목록 조회 오류:', error);
+        (0, logger_1.logError)('추천 목록 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '추천 목록 조회 중 오류가 발생했습니다.'
@@ -127,7 +128,7 @@ router.post('/generate', auth_1.authMiddleware, (0, auth_1.requireRole)(['studen
         });
     }
     catch (error) {
-        console.error('❌ 추천 생성 오류:', error);
+        (0, logger_1.logError)('추천 생성 오류', error);
         res.status(500).json({
             success: false,
             message: '추천 생성 중 오류가 발생했습니다.'
@@ -159,7 +160,7 @@ router.put('/:recommendationId/complete', auth_1.authMiddleware, (0, auth_1.requ
         });
     }
     catch (error) {
-        console.error('❌ 추천 완료 처리 오류:', error);
+        (0, logger_1.logError)('추천 완료 처리 오류', error);
         res.status(500).json({
             success: false,
             message: '추천 완료 처리 중 오류가 발생했습니다.'
@@ -191,7 +192,7 @@ router.put('/:recommendationId/dismiss', auth_1.authMiddleware, (0, auth_1.requi
         });
     }
     catch (error) {
-        console.error('❌ 추천 거부 처리 오류:', error);
+        (0, logger_1.logError)('추천 거부 처리 오류', error);
         res.status(500).json({
             success: false,
             message: '추천 거부 처리 중 오류가 발생했습니다.'
@@ -239,7 +240,7 @@ router.get('/analysis', auth_1.authMiddleware, (0, auth_1.requireRole)(['student
         });
     }
     catch (error) {
-        console.error('❌ 학습 분석 조회 오류:', error);
+        (0, logger_1.logError)('학습 분석 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '학습 분석 조회 중 오류가 발생했습니다.'

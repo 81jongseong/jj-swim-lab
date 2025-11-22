@@ -38,6 +38,7 @@
  */
 
 import express, { Request, Response } from 'express';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 import { HealthConfig } from '../models/HealthConfig';
 import { authMiddleware, requireRole } from '../middleware/auth';
 import { EvidenceBasedWeightSystem } from '../utils/EvidenceBasedWeights';
@@ -80,7 +81,7 @@ router.get('/', authMiddleware, requireRole(['superAdmin']), async (req: AuthReq
     });
 
   } catch (error) {
-    console.error('건강정보 설정 조회 오류:', error);
+    logError('건강정보 설정 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 설정을 조회할 수 없습니다.'
@@ -132,7 +133,7 @@ router.put('/', authMiddleware, requireRole(['superAdmin']), async (req: AuthReq
     });
 
   } catch (error) {
-    console.error('건강정보 설정 업데이트 오류:', error);
+    logError('건강정보 설정 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 설정을 업데이트할 수 없습니다.'
@@ -195,7 +196,7 @@ router.post('/fields', authMiddleware, requireRole(['superAdmin']), async (req: 
     });
 
   } catch (error) {
-    console.error('건강정보 항목 추가 오류:', error);
+    logError('건강정보 항목 추가 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 항목을 추가할 수 없습니다.'
@@ -249,7 +250,7 @@ router.put('/fields/:fieldId', authMiddleware, requireRole(['superAdmin']), asyn
     });
 
   } catch (error) {
-    console.error('건강정보 항목 수정 오류:', error);
+    logError('건강정보 항목 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 항목을 수정할 수 없습니다.'
@@ -300,7 +301,7 @@ router.delete('/fields/:fieldId', authMiddleware, requireRole(['superAdmin']), a
     });
 
   } catch (error) {
-    console.error('건강정보 항목 삭제 오류:', error);
+    logError('건강정보 항목 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 항목을 삭제할 수 없습니다.'
@@ -368,7 +369,7 @@ router.put('/ai', authMiddleware, requireRole(['superAdmin']), async (req: AuthR
     });
 
   } catch (error) {
-    console.error('AI 알고리즘 설정 업데이트 오류:', error);
+    logError('AI 알고리즘 설정 업데이트 오류:', error);
     res.status(500).json({
       success: false,
       message: 'AI 알고리즘 설정을 업데이트할 수 없습니다.'
@@ -414,7 +415,7 @@ router.get('/permissions', authMiddleware, requireRole(['centerAdmin', 'instruct
     });
 
   } catch (error) {
-    console.error('건강정보 권한 조회 오류:', error);
+    logError('건강정보 권한 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '건강정보 권한을 조회할 수 없습니다.'
@@ -556,7 +557,7 @@ router.get('/evidence-based-weights', authMiddleware, async (req: AuthRequest, r
       }
     });
   } catch (error) {
-    console.error('과학적 근거 기반 가중치 조회 오류:', error);
+    logError('과학적 근거 기반 가중치 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '과학적 근거 기반 가중치 조회 중 오류가 발생했습니다.'
@@ -580,7 +581,7 @@ router.post('/validate-weight-modification', authMiddleware, requireRole(['super
       data: validation
     });
   } catch (error) {
-    console.error('가중치 수정 권한 확인 오류:', error);
+    logError('가중치 수정 권한 확인 오류:', error);
     res.status(500).json({
       success: false,
       message: '가중치 수정 권한 확인 중 오류가 발생했습니다.'
@@ -598,7 +599,7 @@ router.get('/algorithm-evidence', authMiddleware, async (req: AuthRequest, res: 
       data: algorithmEvidence
     });
   } catch (error) {
-    console.error('알고리즘 과학적 근거 조회 오류:', error);
+    logError('알고리즘 과학적 근거 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '알고리즘 과학적 근거 조회 중 오류가 발생했습니다.'

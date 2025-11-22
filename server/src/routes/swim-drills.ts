@@ -14,6 +14,7 @@
 import express from 'express';
 import { SwimDrill } from '../models/SwimDrill';
 import { auth } from '../middleware/auth';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.get('/', async (req, res) => {
       data: drills
     });
   } catch (error: any) {
-    console.error('드릴 조회 오류:', error);
+    logError('드릴 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '드릴 조회 중 오류가 발생했습니다',
@@ -64,7 +65,7 @@ router.get('/:id', async (req, res) => {
       data: drill
     });
   } catch (error: any) {
-    console.error('드릴 조회 오류:', error);
+    logError('드릴 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '드릴 조회 중 오류가 발생했습니다',
@@ -90,7 +91,7 @@ router.post('/', auth, async (req, res) => {
       data: drill
     });
   } catch (error: any) {
-    console.error('드릴 추가 오류:', error);
+    logError('드릴 추가 오류:', error);
     res.status(500).json({
       success: false,
       message: '드릴 추가 중 오류가 발생했습니다',
@@ -121,7 +122,7 @@ router.put('/:id', auth, async (req, res) => {
       data: drill
     });
   } catch (error: any) {
-    console.error('드릴 수정 오류:', error);
+    logError('드릴 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '드릴 수정 중 오류가 발생했습니다',
@@ -147,7 +148,7 @@ router.delete('/:id', auth, async (req, res) => {
       message: '드릴이 삭제되었습니다'
     });
   } catch (error: any) {
-    console.error('드릴 삭제 오류:', error);
+    logError('드릴 삭제 오류:', error);
     res.status(500).json({
       success: false,
       message: '드릴 삭제 중 오류가 발생했습니다',

@@ -9,6 +9,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const execAsync_1 = require("../utils/execAsync");
 const VideoProcessingJob_1 = require("../models/VideoProcessingJob");
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const videoStorage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
@@ -108,7 +109,7 @@ router.post('/upload', upload.fields([
         });
     }
     catch (error) {
-        console.error('동영상 업로드 오류:', error);
+        (0, logger_1.logError)('동영상 업로드 오류', error);
         res.status(500).json({
             success: false,
             message: '동영상 업로드 중 오류가 발생했습니다.',
@@ -134,7 +135,7 @@ async function processVideoAsync(videoId, videoPath, outputDir, userModelPath) {
         console.log(`OK 비디오 처리 완료: ${videoId}`);
     }
     catch (error) {
-        console.error(`ERROR 비디오 처리 오류 (${videoId}):`, error);
+        (0, logger_1.logError)(`ERROR 비디오 처리 오류 (${videoId}):`, error);
         await VideoProcessingJob_1.VideoProcessingJob.findOneAndUpdate({ videoId }, {
             status: 'failed',
             error: error instanceof Error ? error.message : '알 수 없는 오류',
@@ -157,7 +158,7 @@ async function extractMotionData(videoPath, outputDir) {
             console.log('수정된 VideoPose3D 오류:', stderr);
     }
     catch (error) {
-        console.error('수정된 VideoPose3D 실행 오류:', error);
+        (0, logger_1.logError)('수정된 VideoPose3D 실행 오류', error);
         throw new Error('모션 데이터 추출 실패');
     }
 }
@@ -176,7 +177,7 @@ async function generate3DAnimation(videoId, outputDir) {
             console.log('Blender 오류:', stderr);
     }
     catch (error) {
-        console.error('Blender 실행 오류:', error);
+        (0, logger_1.logError)('Blender 실행 오류', error);
         throw new Error('3D 애니메이션 생성 실패');
     }
 }
@@ -198,7 +199,7 @@ async function generate3DAnimationWithUserModel(videoId, outputDir, userModelPat
             console.log('사용자 모델 Blender 오류:', stderr);
     }
     catch (error) {
-        console.error('사용자 모델 Blender 실행 오류:', error);
+        (0, logger_1.logError)('사용자 모델 Blender 실행 오류', error);
         throw new Error('사용자 모델 3D 애니메이션 생성 실패');
     }
 }
@@ -225,7 +226,7 @@ router.get('/status/:videoId', async (req, res) => {
         });
     }
     catch (error) {
-        console.error('상태 조회 오류:', error);
+        (0, logger_1.logError)('상태 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '상태 조회 중 오류가 발생했습니다.'
@@ -284,7 +285,7 @@ router.get('/download/:videoId/:fileType', async (req, res) => {
         res.download(filePath, fileName);
     }
     catch (error) {
-        console.error('파일 다운로드 오류:', error);
+        (0, logger_1.logError)('파일 다운로드 오류', error);
         res.status(500).json({
             success: false,
             message: '파일 다운로드 중 오류가 발생했습니다.'

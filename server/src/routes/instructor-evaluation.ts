@@ -16,6 +16,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import InstructorEvaluationCriteria from '../models/InstructorEvaluationCriteria';
 import InstructorEvaluationResult from '../models/InstructorEvaluationResult';
+import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
 
 const router = express.Router();
 
@@ -59,7 +60,7 @@ router.get('/criteria', authMiddleware, async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('평가 기준 조회 오류:', error);
+    logError('평가 기준 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 조회 중 오류가 발생했습니다.',
@@ -117,7 +118,7 @@ router.post('/criteria', authMiddleware, async (req: Request, res: Response) => 
     });
     
   } catch (error) {
-    console.error('평가 기준 생성 오류:', error);
+    logError('평가 기준 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 생성 중 오류가 발생했습니다.',
@@ -184,7 +185,7 @@ router.put('/criteria/:id', authMiddleware, async (req: Request, res: Response) 
     });
     
   } catch (error) {
-    console.error('평가 기준 수정 오류:', error);
+    logError('평가 기준 수정 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 기준 수정 중 오류가 발생했습니다.',
@@ -258,7 +259,7 @@ router.get('/results', authMiddleware, async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('평가 결과 조회 오류:', error);
+    logError('평가 결과 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 결과 조회 중 오류가 발생했습니다.',
@@ -354,7 +355,7 @@ router.post('/submit', authMiddleware, async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('평가 제출 오류:', error);
+    logError('평가 제출 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 제출 중 오류가 발생했습니다.',
@@ -443,7 +444,7 @@ router.get('/statistics', authMiddleware, async (req: Request, res: Response) =>
     });
     
   } catch (error) {
-    console.error('평가 통계 조회 오류:', error);
+    logError('평가 통계 조회 오류:', error);
     res.status(500).json({
       success: false,
       message: '평가 통계 조회 중 오류가 발생했습니다.',
@@ -503,7 +504,7 @@ router.post('/create-default-criteria', authMiddleware, async (req: Request, res
     });
     
   } catch (error) {
-    console.error('기본 평가 기준 생성 오류:', error);
+    logError('기본 평가 기준 생성 오류:', error);
     res.status(500).json({
       success: false,
       message: '기본 평가 기준 생성 중 오류가 발생했습니다.',

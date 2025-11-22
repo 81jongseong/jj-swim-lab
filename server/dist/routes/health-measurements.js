@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const User_1 = require("../models/User");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 router.post('/measurements', auth_1.authMiddleware, async (req, res) => {
     try {
@@ -208,7 +209,7 @@ router.post('/measurements', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강 측정 데이터 저장 오류:', error);
+        (0, logger_1.logError)('건강 측정 데이터 저장 오류', error);
         res.status(500).json({
             success: false,
             message: '측정 데이터 저장 중 오류가 발생했습니다.'
@@ -244,7 +245,7 @@ router.get('/measurements', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('건강 측정 데이터 조회 오류:', error);
+        (0, logger_1.logError)('건강 측정 데이터 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '측정 데이터 조회 중 오류가 발생했습니다.'
@@ -294,7 +295,7 @@ router.put('/measurements/privacy', auth_1.authMiddleware, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('공개 설정 저장 오류:', error);
+        (0, logger_1.logError)('공개 설정 저장 오류', error);
         res.status(500).json({
             success: false,
             message: '공개 설정 저장 중 오류가 발생했습니다.'
@@ -305,7 +306,6 @@ router.get('/measurements/:userId', auth_1.authMiddleware, (0, auth_1.requireRol
     try {
         const { userId } = req.params;
         const viewerId = req.user?._id || req.user?.userId;
-        const viewerType = req.user?.userType;
         if (!userId || !viewerId) {
             return res.status(400).json({
                 success: false,
@@ -403,7 +403,7 @@ router.get('/measurements/:userId', auth_1.authMiddleware, (0, auth_1.requireRol
         });
     }
     catch (error) {
-        console.error('회원 건강 정보 조회 오류:', error);
+        (0, logger_1.logError)('회원 건강 정보 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '건강 정보 조회 중 오류가 발생했습니다.'
@@ -546,7 +546,7 @@ router.get('/measurements/center/statistics', auth_1.authMiddleware, (0, auth_1.
         });
     }
     catch (error) {
-        console.error('센터 건강 통계 조회 오류:', error);
+        (0, logger_1.logError)('센터 건강 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '건강 통계 조회 중 오류가 발생했습니다.'

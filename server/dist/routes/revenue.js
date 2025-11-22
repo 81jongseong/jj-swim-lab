@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const Payment_1 = require("../models/Payment");
 const mongoose_1 = __importDefault(require("mongoose"));
+const logger_1 = require("../utils/logger");
 const router = express_1.default.Router();
 const requireAdmin = (req, res, next) => {
     if (!['superAdmin', 'centerAdmin'].includes(req.user.userType)) {
@@ -136,7 +137,7 @@ router.get('/stats', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('총매출 통계 조회 오류:', error);
+        (0, logger_1.logError)('총매출 통계 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '총매출 통계 조회 중 오류가 발생했습니다.'
@@ -201,7 +202,7 @@ router.get('/instructor/:instructorId', auth_1.auth, requireAdmin, async (req, r
         });
     }
     catch (error) {
-        console.error('강사별 매출 현황 조회 오류:', error);
+        (0, logger_1.logError)('강사별 매출 현황 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '강사별 매출 현황 조회 중 오류가 발생했습니다.'
@@ -252,7 +253,7 @@ router.get('/course/:courseId', auth_1.auth, requireAdmin, async (req, res) => {
         });
     }
     catch (error) {
-        console.error('과정별 매출 현황 조회 오류:', error);
+        (0, logger_1.logError)('과정별 매출 현황 조회 오류', error);
         res.status(500).json({
             success: false,
             message: '과정별 매출 현황 조회 중 오류가 발생했습니다.'
