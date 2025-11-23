@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Grid, List } from 'lucide-react';
 import SearchBar from '@/components/common/SearchBar';

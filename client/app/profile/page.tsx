@@ -42,12 +42,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+} from '@/components/ui';
+import { Input } from '@/components/ui';
+// Textarea는 index.ts에서 export되지 않으므로 직접 import
+import Textarea from '@/components/ui/Textarea';
+import { Button } from '@/components/ui';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui';
 import { Separator } from '@/components/ui/separator';
 
 type ProfileUser = Omit<AuthUser, 'lastLoginAt'> & {

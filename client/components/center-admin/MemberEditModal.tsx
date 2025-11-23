@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import { User, Mail, Phone, Calendar, MapPin, AlertCircle, GraduationCap, Target } from 'lucide-react';
 
 interface Member {

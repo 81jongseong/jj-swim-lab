@@ -26,7 +26,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import apiClient from '@/utils/api';
 import CSSInputSection from './member-variables/CSSInputSection';
 import PhysiologicalMetricsSection from './member-variables/PhysiologicalMetricsSection';

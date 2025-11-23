@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react';
-import Button from './button';
+import { Button } from '@/components/ui';
 
 interface RefreshButtonProps {
   onRefresh?: () => Promise<void> | void;

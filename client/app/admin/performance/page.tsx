@@ -8,7 +8,7 @@
 import React from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import PerformanceDashboard from '../../../components/performance/PerformanceDashboard';
-import { Card     } from '../../../components/ui/Card';
+import { Card     } from '../../../components/ui';
 import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Activity, Zap, Database, TrendingUp, AlertTriangle } from 'lucide-react';
 

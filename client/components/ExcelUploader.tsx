@@ -72,8 +72,7 @@
 
 import { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
-import Button from './ui/button';
-import Card from './ui/card';
+import { Button, Card } from './ui';
 
 interface ExcelUploaderProps {
   onUploadSuccess?: (data: any[]) => void;

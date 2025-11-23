@@ -15,7 +15,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, LoadingSpinner } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import { Users, Search, AlertCircle, Ticket, Calendar, User as UserIcon } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import MemberDetailModal from '@/components/center-admin/MemberDetailModal';

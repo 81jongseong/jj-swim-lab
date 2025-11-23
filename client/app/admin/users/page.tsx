@@ -100,7 +100,7 @@ import withAuth from '../../../components/withAuth';
 import { useAuth } from '../../../hooks/useAuth';
 import RegionNavigation from '@/components/RegionNavigation';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface User {
   _id: string;

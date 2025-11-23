@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { CreditCard, DollarSign, CheckCircle, AlertCircle, XCircle, RotateCcw } from 'lucide-react';
-import { Button } from '../Button';
+import { Button } from '@/components/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../ui';
 
 interface Payment {

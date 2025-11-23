@@ -27,7 +27,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
 

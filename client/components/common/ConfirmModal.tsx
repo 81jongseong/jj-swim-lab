@@ -12,8 +12,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import Modal from '@/components/ui/modal';
+import { Button, Modal } from '@/components/ui';
 
 interface ConfirmModalProps {
   isOpen: boolean;

@@ -94,8 +94,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from './ui/card';
-import Button from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle, Button } from './ui';
 import { Badge } from '@/components/ui';
 import {
   Brain,

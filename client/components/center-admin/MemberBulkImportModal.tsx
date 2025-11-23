@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { X, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 
 interface MemberBulkImportModalProps {
   isOpen: boolean;

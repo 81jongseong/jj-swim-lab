@@ -83,7 +83,7 @@
  */
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 
 export default function NotFound() {
   return (

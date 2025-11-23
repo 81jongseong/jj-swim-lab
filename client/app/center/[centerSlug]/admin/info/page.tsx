@@ -37,7 +37,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, LoadingSpinner } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import LevelManagement from '@/components/center-admin/LevelManagement';
 import { 
   Building, 

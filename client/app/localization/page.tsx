@@ -1,9 +1,10 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Button } from '../../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui';
+import { Button } from '../../components/ui';
+// Select는 index.ts에서 export되지 않으므로 직접 import
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
 import withAuth from '../../components/withAuth';
 
 interface LocalizationSettings {

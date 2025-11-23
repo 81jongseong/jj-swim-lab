@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface Course {
   _id: string;

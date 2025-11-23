@@ -32,7 +32,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import withAuth from '../../components/withAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import InstructorProfileCard from '@/components/job-board/InstructorProfileCard';
 import JobPostCard from '@/components/job-board/JobPostCard';
 import MyApplicationCard from '@/components/job-board/MyApplicationCard';

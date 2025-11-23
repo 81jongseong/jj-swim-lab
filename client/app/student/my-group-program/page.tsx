@@ -17,7 +17,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
 import { calculatePersonalAdjustment, getStrokeName } from '@/lib/swimlab/utils/personalAdjustmentCalculator';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import {
   Dialog,
   DialogContent,
@@ -26,16 +26,17 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import Slider from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+// Slider, Label, Textarea는 index.ts에서 export되지 않으므로 직접 import
+import Slider from '@/components/ui/Slider';
+import { Label } from '@/components/ui/Label';
+import Textarea from '@/components/ui/Textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '@/components/ui/Select';
 
 interface Program {
   _id: string;

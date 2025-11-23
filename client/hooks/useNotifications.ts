@@ -133,7 +133,11 @@ export function useNotifications(userId?: string) {
     
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        // 토큰이 없으면 알림을 빈 배열로 설정하고 종료
+        setNotifications([]);
+        return;
+      }
       
       const response = await fetch('http://localhost:5000/api/notifications?limit=20', {
         headers: {
@@ -141,6 +145,19 @@ export function useNotifications(userId?: string) {
           'Content-Type': 'application/json'
         }
       });
+      
+      // 401 오류 발생 시 토큰 제거 및 로그인 페이지로 리다이렉트
+      if (response.status === 401) {
+        console.warn('인증 토큰이 만료되었거나 유효하지 않습니다. 로그인 페이지로 이동합니다.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // 현재 페이지가 로그인 페이지가 아닌 경우에만 리다이렉트
+        if (window.location.pathname !== '/auth/login') {
+          window.location.href = '/auth/login';
+        }
+        setNotifications([]);
+        return;
+      }
       
       if (response.ok) {
         const result = await response.json();
@@ -156,9 +173,13 @@ export function useNotifications(userId?: string) {
             data: n.data
           })));
         }
+      } else {
+        console.error('알림 조회 실패:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('알림 조회 실패:', error);
+      // 네트워크 오류 등으로 인한 실패 시에도 빈 배열로 설정
+      setNotifications([]);
     }
   };
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import RegionNavigation from '@/components/RegionNavigation';
 
 interface Notice {

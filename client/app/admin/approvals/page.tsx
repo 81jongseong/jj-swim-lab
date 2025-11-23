@@ -17,7 +17,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import StatCard from '@/components/StatCard';
 
 interface CenterRegistration {

@@ -7,7 +7,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '../Button';
+import { Button } from '@/components/ui';
 import { X, MapPin, Calendar, Clock } from 'lucide-react';
 
 interface SimpleLaneRentalModalProps {

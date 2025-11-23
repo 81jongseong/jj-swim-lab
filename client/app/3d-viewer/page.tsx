@@ -33,7 +33,7 @@ import DrillGrid from '../../components/3d-viewer/DrillGrid';
 import ThreeDPlayer from '../../components/3d-viewer/ThreeDPlayer';
 import { useThreeStore } from '../../stores/threeStore';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 export default function ThreeDViewerPage() {
   const { user } = useAuth();

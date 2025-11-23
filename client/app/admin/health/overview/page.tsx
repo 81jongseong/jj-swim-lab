@@ -21,7 +21,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import RegionNavigation from '@/components/RegionNavigation';
 import AnimatedComparisonChart from '@/components/AnimatedComparisonChart';
 import TrendLineChart, { TrendLineData, TrendMetric } from '@/components/TrendLineChart';

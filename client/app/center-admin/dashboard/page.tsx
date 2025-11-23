@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
 import { StatCard } from '../../../components/StatCard';
-import { Button } from '../../../components/Button';
+import { Button } from '@/components/ui';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
 
 const DEBUG = false;

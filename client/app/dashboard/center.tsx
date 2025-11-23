@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from '@/utils/api';
 import withAuth from '@/components/withAuth';
-import Card from "@/components/ui/card";
-import Button from "@/components/Button";
+import { Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
 
 interface CenterStats {

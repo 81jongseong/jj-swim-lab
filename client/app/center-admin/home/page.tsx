@@ -24,7 +24,7 @@ import {
   MapPin, Phone, Mail, Clock, Edit, 
   Users, ArrowRight, Calendar, Save, X, Upload
 } from 'lucide-react';
-import { Button } from '../../../components/Button';
+import { Button } from '@/components/ui';
 
 interface CenterInfo {
   _id: string;

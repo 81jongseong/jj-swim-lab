@@ -8,9 +8,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Input } from './ui/input';
+import { Button, Input, Card } from './ui';
 import { Badge } from '@/components/ui';
 
 interface YouTubeVideo {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface ReportItem {
   _id: string;

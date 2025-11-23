@@ -12,7 +12,7 @@
 'use client';
 
 import React from 'react';
-import LoadingSpinner from '@/components/ui/loadingspinner';
+import { LoadingSpinner } from '@/components/ui';
 
 interface LoadingStateProps {
   message?: string;

@@ -16,7 +16,7 @@ import {
   RefreshCw,
   Info,
 } from "lucide-react";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui";
 
 interface EnrolledCourse {
   _id: string;

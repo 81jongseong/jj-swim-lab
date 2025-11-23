@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
 import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';

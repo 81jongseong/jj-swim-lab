@@ -83,7 +83,7 @@ import apiClient from '../../../utils/api';
 import UnifiedRegionSelector from '@/components/common/UnifiedRegionSelector';
 import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface Center {
   _id: string;

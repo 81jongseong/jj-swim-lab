@@ -3,7 +3,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import TeachingMethodCard from '@/components/TeachingMethodCard';
 
 // 지연 로딩 컴포넌트

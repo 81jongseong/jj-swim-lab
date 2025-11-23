@@ -25,7 +25,7 @@ import {
   Loader2,
   TrendingUp
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import {
   Dialog,
   DialogDescription,
@@ -36,7 +36,7 @@ import {
   HealthDialogBody,
   HealthDialogFooter
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import apiClient from '@/utils/api';
 import { getChecklistItems } from '@/data/swimming-checklist';
 

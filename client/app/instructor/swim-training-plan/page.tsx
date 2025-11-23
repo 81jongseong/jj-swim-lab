@@ -9,8 +9,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
 import apiClient from '@/utils/api';
 import {

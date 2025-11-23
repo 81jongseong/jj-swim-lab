@@ -26,7 +26,7 @@ import { GLOSSARY, parseWorkoutLine, explainToken } from '../../../lib';
 import CSSConverter from '../../../components/CSSConverter';
 import { allJointConditions } from '../../../swim-training-engine/src/data/jj-swim-lab-joint-guidance';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 // SwimLab Data Pack v4 통합
 import { CONDITIONS as SWIMLAB_CONDITIONS } from '../../../src/swimlab/data/conditions_full';
 import { STROKE_SAFETY as SWIMLAB_STROKE_SAFETY } from '../../../src/swimlab/data/strokeSafety';

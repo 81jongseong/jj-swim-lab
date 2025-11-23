@@ -7,7 +7,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '../Button';
+import { Button } from '@/components/ui';
 import { X, User, Calendar, Clock } from 'lucide-react';
 
 interface SimplePersonalLessonModalProps {

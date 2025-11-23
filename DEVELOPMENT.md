@@ -288,3 +288,97 @@
 - **상태**: ✅ 해결됨 (2025-01-19)
 
 ---
+
+#### 9. **대소문자 불일치 문제 (반복 발생)**
+- **오류 메시지**: `There are multiple modules with names that only differ in casing. This can lead to unexpected behavior when compiling on a filesystem with other case-semantic.`
+- **발생 위치**: 
+  - `client/components/ui/index.ts` - import 경로와 실제 파일명 불일치
+  - 모든 UI 컴포넌트를 사용하는 파일들
+- **원인**: 
+  - Windows는 대소문자를 구분하지 않지만, Next.js/Linux는 구분함
+  - `index.ts`에서 소문자로 import (`'./button'`)하지만 실제 파일은 대문자 (`Button.tsx`)
+  - 파일명과 import 경로가 일치하지 않음
+  - 여러 파일에서 소문자로 import하는 경로 사용
+- **해결 방법**:
+  1. `client/components/ui/index.ts`에서 모든 import 경로를 실제 파일명과 정확히 일치시키기:
+     - `'./button'` → `'./Button'`
+     - `'./barchart'` → `'./BarChart'`
+     - `'./loadingspinner'` → `'./LoadingSpinner'`
+     - `'./themeprovider'` → `'./ThemeProvider'`
+     - `'./input'` → `'./Input'`
+     - `'./badge'` → `'./Badge'`
+     - `'./modal'` → `'./Modal'`
+     - `'./progress'` → `'./Progress'`
+  2. 모든 파일에서 `'@/components/ui/button'` → `'@/components/ui'`로 변경 (index.ts를 통해 import)
+  3. 모든 파일에서 `'@/components/ui/modal'` → `'@/components/ui/Modal'` 또는 `'@/components/ui'`로 변경
+  4. 모든 파일에서 `'@/components/ui/input'` → `'@/components/ui'`로 변경
+  5. 모든 파일에서 `'@/components/ui/badge'` → `'@/components/ui'`로 변경
+  6. 모든 파일에서 `'@/components/ui/progress'` → `'@/components/ui'`로 변경
+  7. 모든 파일에서 `'@/components/ui/textarea'` → `'@/components/ui/Textarea'`로 변경
+  8. 모든 파일에서 `'@/components/ui/label'` → `'@/components/ui/Label'`로 변경
+  9. 모든 파일에서 `'@/components/ui/select'` → `'@/components/ui/Select'`로 변경
+  10. 모든 파일에서 `'@/components/ui/tabs'` → `'@/components/ui/Tabs'`로 변경
+  11. 모든 파일에서 `'@/components/ui/slider'` → `'@/components/ui/Slider'`로 변경
+  12. 모든 파일에서 `'@/components/ui/switch'` → `'@/components/ui/Switch'`로 변경
+  13. 모든 파일에서 `'@/components/ui/loadingspinner'` → `'@/components/ui'`로 변경
+- **예방 방법**:
+  - **중요**: import 경로는 항상 실제 파일명과 정확히 일치시킬 것
+  - 파일명과 import 경로의 대소문자를 일치시키기
+  - 가능하면 `index.ts`를 통해 import하여 대소문자 문제 방지
+  - TypeScript/ESLint 설정으로 대소문자 불일치 경고 활성화
+  - 코드 리뷰 시 import 경로 검증
+- **상태**: ✅ 해결됨 (2025-01-22)
+  - `client/components/ui/index.ts`의 모든 import 경로를 실제 파일명과 일치시킴
+  - 총 50개 이상의 파일에서 import 경로 수정 완료
+  - 모든 대소문자 불일치 문제 해결
+
+---
+
+#### 10. **Dashboard API 404 오류**
+- **오류 메시지**: `Failed to load resource: the server responded with a status of 404 (Not Found)`, `대시보드 통계를 가져올 수 없습니다: 404`
+- **발생 위치**: `client/lib/api/dashboard.ts:42`, `client/app/admin/dashboard/page.tsx:57`
+- **원인**: 
+  - 클라이언트가 `http://localhost:3000/api/dashboard/stats`를 호출 (잘못된 URL)
+  - 환경 변수 `NEXT_PUBLIC_API_URL`이 설정되지 않아 기본값이 적용되지 않음
+  - 서버는 `http://localhost:5000`에서 실행 중이지만 클라이언트가 다른 포트로 호출
+  - 서버 라우트는 `/api/dashboard/stats`로 등록되어 있고, `authMiddleware`와 `requireRole(['superAdmin', 'centerAdmin'])`이 필요
+- **해결 방법**:
+  1. `dashboard.ts`에서 환경 변수 처리 개선 (클라이언트 사이드 체크 추가)
+  2. 401 오류 발생 시 토큰 제거 및 로그인 페이지로 리다이렉트 처리 추가
+  3. 토큰이 없을 때 기본값 반환하여 에러 방지
+  4. API 호출 시 에러 핸들링 개선 (기본값 반환)
+- **예방 방법**:
+  - 환경 변수 `.env.local` 파일에 `NEXT_PUBLIC_API_URL=http://localhost:5000` 설정
+  - API 호출 전 서버 상태 확인
+  - 인증 토큰 유효성 검사
+  - 권한 부족 시 사용자에게 명확한 메시지 표시
+- **상태**: ✅ 해결됨 (2025-01-22)
+  - `dashboard.ts`에 환경 변수 처리 및 401 오류 처리 로직 추가
+  - 클라이언트 사이드에서 명시적으로 서버 URL 설정
+
+---
+
+#### 11. **API 인증 401 오류 (quiz-question-generator, notifications)**
+- **오류 메시지**: `Failed to load resource: the server responded with a status of 401 (Unauthorized)`
+- **발생 위치**: 
+  - `/api/quiz-question-generator/generate`
+  - `/api/notifications?limit=20` (`client/hooks/useNotifications.ts:138`)
+- **원인**: 
+  - 두 API 모두 `authMiddleware`가 필요
+  - 인증 토큰이 없거나 만료되었을 수 있음
+  - 토큰이 localStorage에 저장되어 있지 않거나, 서버로 전송되지 않음
+- **해결 방법**:
+  1. `useNotifications.ts`에서 401 오류 발생 시 토큰 제거 및 로그인 페이지로 리다이렉트 처리 추가
+  2. 클라이언트에서 인증 토큰이 localStorage에 있는지 확인
+  3. API 호출 시 Authorization 헤더에 토큰이 포함되는지 확인
+  4. 토큰 만료 시 자동 로그아웃 및 로그인 페이지로 리다이렉트
+  5. 401 오류 발생 시 사용자에게 명확한 메시지 표시
+- **예방 방법**:
+  - API 호출 전 토큰 유효성 검사
+  - 토큰 만료 전 자동 갱신 로직 구현
+  - 인증 실패 시 사용자 친화적인 에러 메시지 표시
+- **상태**: ✅ 해결됨 (2025-01-22)
+  - `useNotifications.ts`에 401 오류 처리 로직 추가
+  - 토큰 만료 시 자동 로그아웃 및 로그인 페이지로 리다이렉트
+
+---

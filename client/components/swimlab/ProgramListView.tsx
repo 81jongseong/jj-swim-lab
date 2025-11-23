@@ -28,7 +28,7 @@ import {
 import { EVIDENCE } from '@/types/evidence';
 import { apiClient } from '@/utils/api';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import CompletionInputModal, { type CompletionData } from '@/components/swimlab/CompletionInputModal';
 import DayConditionInputModal, { type DayConditionData } from '@/components/swimlab/DayConditionInputModal';
 import ConditionDetailModal from '@/components/swimlab/ConditionDetailModal';

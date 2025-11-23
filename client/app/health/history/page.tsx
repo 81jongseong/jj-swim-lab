@@ -16,11 +16,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle   } from '../../../components/ui/Card';
-import { Button   } from '../../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle   } from '../../../components/ui';
+import { Button } from '../../../components/ui';
 import { Badge } from '@/components/ui';
 import { Alert, AlertDescription   } from '../../../components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger   } from '../../../components/ui/tabs';
+// Tabs는 index.ts에서 export되지 않으므로 직접 import
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/Tabs';
 import { 
   Calendar, 
   Clock, 

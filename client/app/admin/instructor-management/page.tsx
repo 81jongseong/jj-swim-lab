@@ -10,7 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import InstructorScheduleCard from '@/components/InstructorScheduleCard';
 
 interface Instructor {

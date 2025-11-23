@@ -13,7 +13,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
 import ThemedStatCard from '../../../components/ThemedStatCard';
-import { Button } from '../../../components/Button';
+import { Button } from '@/components/ui';
 import { 
   Calendar, 
   Clock, 

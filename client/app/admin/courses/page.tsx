@@ -58,7 +58,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface Course {
   id: number;

@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface Notice {
   _id: string;

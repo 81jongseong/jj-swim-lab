@@ -22,10 +22,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/utils/api';
 import { useTenantSettings } from '@/contexts/TenantSettingsContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui';
+import { Input } from '@/components/ui';
+// Label과 Select는 index.ts에서 export되지 않으므로 직접 import
+import { Label } from '@/components/ui/Label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Upload, Save, X, Eye, Palette, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 

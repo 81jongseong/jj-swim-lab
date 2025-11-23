@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import { canAccessCommunity, MEMBERSHIP_CONFIGS, type MembershipTier } from '@/types/membership';
 // UI 컴포넌트를 HTML 요소로 교체하여 Element type is invalid 오류 방지
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
