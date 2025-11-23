@@ -359,6 +359,30 @@
 ---
 
 #### 11. **API 인증 401 오류 (quiz-question-generator, notifications)**
+- **상태**: ✅ 해결됨 (2025-11-23)
+
+---
+
+#### 12. **미뤄둔 작업 정리**
+- **작업 내용**: 프로젝트 내 미뤄둔 작업 정리 및 문서화
+- **완료 사항**:
+  1. TODO 주석 목록 작성 (`docs/TODO-목록.md`)
+  2. 주석 부족 파일 목록 작성 (`docs/주석-부족-파일-목록.md`)
+  3. 테스트 파일 정리 계획 수립 (`docs/테스트-파일-정리-계획.md`)
+  4. 미뤄둔 작업 완료 보고서 작성 (`docs/미뤄둔-작업-완료-보고서.md`)
+- **현황**:
+  - TODO 주석: 57개 파일 (Client 38개, Server 19개)
+  - console.log: 3,365개 (284개 파일) - logger 교체 필요
+  - 보안 취약점: Client 6개, Server 2개
+  - 테스트 파일: 110개
+- **상태**: 🔄 진행 중 (2025-11-23)
+  - 문서화 계획 수립 완료
+  - 보안 점검 진행 중
+  - console.log 교체 계획 수립 필요
+
+---
+
+#### 13. **보안 취약점**
 - **오류 메시지**: `Failed to load resource: the server responded with a status of 401 (Unauthorized)`
 - **발생 위치**: 
   - `/api/quiz-question-generator/generate`
