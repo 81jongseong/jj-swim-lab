@@ -33,6 +33,7 @@
 
 'use client';
 import React, { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { 
   listAthletes, 
   upsertAthlete, 
@@ -86,7 +87,7 @@ export default function AthleteProfileBar({
   
   const refresh = () => {
     const allAthletes = listAthletes();
-    console.log('🔄 Refresh: 총', allAthletes.length, '개 항목 조회됨');
+    logger.debug(`Refresh: 총 ${allAthletes.length}개 항목 조회됨`);
     
     setItems(allAthletes);
     
@@ -96,7 +97,7 @@ export default function AthleteProfileBar({
     allAthletes.forEach(athlete => {
       if ((athlete as any).groupClassId) {
         // 단체반
-        console.log(`  📚 단체반: ${athlete.name}`);
+        logger.debug(`단체반: ${athlete.name}`);
         grouped.push({
           type: 'group',
           name: athlete.name,
@@ -104,7 +105,7 @@ export default function AthleteProfileBar({
         });
       } else {
         // 개인 PT
-        console.log(`  🏊 개인 PT: ${athlete.name}`);
+        logger.debug(`개인 PT: ${athlete.name}`);
         grouped.push({
           type: 'individual',
           name: athlete.name,
@@ -113,7 +114,9 @@ export default function AthleteProfileBar({
       }
     });
     
-    console.log(`✅ 그룹화 완료: 개인 PT ${grouped.filter(g => g.type === 'individual').length}명, 단체반 ${grouped.filter(g => g.type === 'group').length}개`);
+    const individualCount = grouped.filter(g => g.type === 'individual').length;
+    const groupCount = grouped.filter(g => g.type === 'group').length;
+    logger.success(`그룹화 완료: 개인 PT ${individualCount}명, 단체반 ${groupCount}개`);
     setGroupedMembers(grouped);
   };
 
