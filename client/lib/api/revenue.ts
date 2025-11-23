@@ -7,7 +7,12 @@
  * - 과정별 매출 현황
  * - 최근 거래 내역
  * - 매출 트렌드 분석
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/revenue/page.tsx
  */
+
+import { logger } from '@/lib/logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -46,7 +51,7 @@ export const getRevenueStats = async () => {
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('총매출 통계 조회 실패:', error);
+    logger.error('총매출 통계 조회 실패:', error);
     throw error;
   }
 };
@@ -64,7 +69,7 @@ export const getInstructorRevenue = async (instructorId: string, startDate?: str
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('강사별 매출 현황 조회 실패:', error);
+    logger.error('강사별 매출 현황 조회 실패:', error);
     throw error;
   }
 };
@@ -82,7 +87,7 @@ export const getCourseRevenue = async (courseId: string, startDate?: string, end
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('과정별 매출 현황 조회 실패:', error);
+    logger.error('과정별 매출 현황 조회 실패:', error);
     throw error;
   }
 };

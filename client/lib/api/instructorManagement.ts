@@ -80,6 +80,8 @@ const getAuthToken = (): string | null => {
   return null;
 };
 
+import { logger } from '@/lib/logger';
+
 // 기본 API 설정
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -123,7 +125,7 @@ async function apiCall<T>(
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error(`API 호출 실패 (${endpoint}):`, error);
+    logger.error(`API 호출 실패 (${endpoint}):`, error);
     throw error;
   }
 }

@@ -100,6 +100,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { offlineDB } from '../lib/offlineDB';
+import { logger } from '@/lib/logger';
 
 interface OfflineData {
   id: string;
@@ -133,7 +134,7 @@ const useEnhancedOffline = () => {
       try {
         await offlineDB.init();
         setIsDBReady(true);
-        console.log('✅ 오프라인 데이터베이스 초기화 완료');
+        logger.success('오프라인 데이터베이스 초기화 완료');
         
         // 기존 오프라인 액션 로드
         await loadOfflineActions();
@@ -141,7 +142,7 @@ const useEnhancedOffline = () => {
         // 통계 정보 로드
         await loadStats();
       } catch (error) {
-        console.error('❌ 오프라인 데이터베이스 초기화 실패:', error);
+        logger.error('오프라인 데이터베이스 초기화 실패:', error);
       }
     };
 
@@ -155,7 +156,7 @@ const useEnhancedOffline = () => {
 
     const handleOnline = () => {
       setIsOnline(true);
-      console.log('🟢 온라인 상태로 전환');
+      logger.info('온라인 상태로 전환');
       
       // 온라인 복구 시 자동 동기화
       if (isDBReady) {
@@ -165,7 +166,7 @@ const useEnhancedOffline = () => {
 
     const handleOffline = () => {
       setIsOnline(false);
-      console.log('🔴 오프라인 상태로 전환');
+      logger.info('오프라인 상태로 전환');
     };
 
     // 초기 상태 설정
@@ -186,9 +187,9 @@ const useEnhancedOffline = () => {
     try {
       const actions = await offlineDB.getOfflineActions();
       setOfflineData(actions);
-      console.log('📱 오프라인 액션 로드:', actions.length, '개');
+      logger.info('오프라인 액션 로드', { count: actions.length });
     } catch (error) {
-      console.error('오프라인 액션 로드 실패:', error);
+      logger.error('오프라인 액션 로드 실패:', error);
     }
   };
 
@@ -198,7 +199,7 @@ const useEnhancedOffline = () => {
       const dbStats = await offlineDB.getStats();
       setStats(dbStats);
     } catch (error) {
-      console.error('통계 정보 로드 실패:', error);
+      logger.error('통계 정보 로드 실패:', error);
     }
   };
 
@@ -207,7 +208,7 @@ const useEnhancedOffline = () => {
     if (!isOnline || !isDBReady || isPreloading || hasPreloaded) return;
 
     setIsPreloading(true);
-    console.log('🔄 데이터 프리로딩 시작...');
+    logger.info('데이터 프리로딩 시작');
 
     try {
       // API 기본 URL 설정 (서버 포트 5000)
@@ -224,36 +225,36 @@ const useEnhancedOffline = () => {
         // 데이터 검증: 배열인지 확인
         if (Array.isArray(teachingMethods)) {
           await offlineDB.saveTeachingMethods(teachingMethods);
-          console.log('📚 강습법 데이터 프리로딩 완료:', teachingMethods.length, '개');
+          logger.success('강습법 데이터 프리로딩 완료', { count: teachingMethods.length });
         } else {
-          console.warn('⚠️ 강습법 데이터가 배열이 아닙니다:', typeof teachingMethods, teachingMethods);
+          logger.warn('강습법 데이터가 배열이 아닙니다:', { type: typeof teachingMethods, data: teachingMethods });
         }
       } else {
-        console.warn('⚠️ 강습법 데이터 프리로딩 실패:', teachingMethodsResponse.status);
+        logger.warn('강습법 데이터 프리로딩 실패', { status: teachingMethodsResponse.status });
       }
 
       // 사용자 프로필과 학생 정보는 로그인 후에만 프리로딩
       // 현재는 인증이 필요하므로 건너뜀
-      console.log('ℹ️ 사용자 프로필과 학생 정보는 로그인 후 프리로딩됩니다');
+      logger.info('사용자 프로필과 학생 정보는 로그인 후 프리로딩됩니다');
 
       // 통계 정보 업데이트
       await loadStats();
       
-      console.log('✅ 기본 데이터 프리로딩 완료');
+      logger.success('기본 데이터 프리로딩 완료');
     } catch (error) {
-      console.error('❌ 데이터 프리로딩 실패:', error);
+      logger.error('데이터 프리로딩 실패:', error);
     } finally {
       // 에러가 발생해도 프리로딩 완료로 표시하여 무한 루프 방지
       setHasPreloaded(true);
       setIsPreloading(false);
-      console.log('🔄 프리로딩 완료 (에러 발생 시에도 중단)');
+      logger.info('프리로딩 완료 (에러 발생 시에도 중단)');
     }
   }, [isOnline, isDBReady, isPreloading, hasPreloaded]);
 
   // 오프라인 데이터 저장
   const saveOfflineData = useCallback(async (type: OfflineData['type'], data: any) => {
     if (!isDBReady) {
-      console.warn('데이터베이스가 준비되지 않았습니다');
+      logger.warn('데이터베이스가 준비되지 않았습니다');
       return;
     }
 
@@ -271,9 +272,9 @@ const useEnhancedOffline = () => {
       // 로컬 상태 업데이트
       setOfflineData(prev => [...prev, offlineItem]);
       
-      console.log('📱 오프라인 데이터 저장:', offlineItem);
+      logger.info('오프라인 데이터 저장', offlineItem);
     } catch (error) {
-      console.error('오프라인 데이터 저장 실패:', error);
+      logger.error('오프라인 데이터 저장 실패:', error);
     }
   }, [isDBReady]);
 
@@ -281,7 +282,7 @@ const useEnhancedOffline = () => {
   const syncOfflineData = useCallback(async () => {
     if (!isOnline || !isDBReady || offlineData.length === 0) return;
 
-    console.log('🔄 오프라인 데이터 동기화 시작:', offlineData.length, '개');
+    logger.info('오프라인 데이터 동기화 시작', { count: offlineData.length });
 
     const successItems: string[] = [];
     const failedItems: OfflineData[] = [];
@@ -294,7 +295,7 @@ const useEnhancedOffline = () => {
         // 성공한 항목을 IndexedDB에서 삭제
         await offlineDB.deleteOfflineAction(parseInt(item.id.split('-')[1]));
       } catch (error) {
-        console.error('동기화 실패:', item, error);
+        logger.error('동기화 실패:', { item, error });
         failedItems.push(item);
       }
     }
@@ -304,12 +305,12 @@ const useEnhancedOffline = () => {
       const remainingData = offlineData.filter(item => !successItems.includes(item.id));
       setOfflineData(remainingData);
       
-      console.log(`✅ ${successItems.length}개 항목 동기화 완료`);
+      logger.success(`${successItems.length}개 항목 동기화 완료`);
     }
 
     // 실패한 항목들 유지
     if (failedItems.length > 0) {
-      console.log(`❌ ${failedItems.length}개 항목 동기화 실패`);
+      logger.warn(`${failedItems.length}개 항목 동기화 실패`);
     }
 
     // 통계 정보 업데이트
@@ -356,9 +357,9 @@ const useEnhancedOffline = () => {
       setOfflineData([]);
       setHasPreloaded(false);
       await loadStats();
-      console.log('🗑️ 오프라인 데이터 삭제 완료');
+      logger.info('오프라인 데이터 삭제 완료');
     } catch (error) {
-      console.error('오프라인 데이터 삭제 실패:', error);
+      logger.error('오프라인 데이터 삭제 실패:', error);
     }
   }, [isDBReady]);
 
@@ -373,7 +374,7 @@ const useEnhancedOffline = () => {
         return await offlineDB.getTeachingMethods();
       }
     } catch (error) {
-      console.error('강습법 데이터 조회 실패:', error);
+      logger.error('강습법 데이터 조회 실패:', error);
       return [];
     }
   }, [isDBReady]);
@@ -389,7 +390,7 @@ const useEnhancedOffline = () => {
         return await offlineDB.getStudents();
       }
     } catch (error) {
-      console.error('학생 정보 조회 실패:', error);
+      logger.error('학생 정보 조회 실패:', error);
       return [];
     }
   }, [isDBReady]);
@@ -401,7 +402,7 @@ const useEnhancedOffline = () => {
     try {
       return await offlineDB.getUserProfile(userId);
     } catch (error) {
-      console.error('사용자 프로필 조회 실패:', error);
+      logger.error('사용자 프로필 조회 실패:', error);
       return null;
     }
   }, [isDBReady]);

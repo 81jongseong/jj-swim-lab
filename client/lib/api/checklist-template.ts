@@ -9,7 +9,12 @@
  * - 템플릿 목록 조회
  * - 템플릿 생성/수정/삭제
  * - 템플릿 상세 조회
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/checklist-template/page.tsx
  */
+
+import { logger } from '@/lib/logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -70,7 +75,7 @@ export const checklistTemplateApi = {
       const result = await response.json();
       return result.templates || [];
     } catch (error) {
-      console.error('템플릿 목록 조회 실패:', error);
+      logger.error('템플릿 목록 조회 실패:', error);
       throw error;
     }
   },
@@ -90,7 +95,7 @@ export const checklistTemplateApi = {
       const result = await response.json();
       return result.template;
     } catch (error) {
-      console.error('템플릿 조회 실패:', error);
+      logger.error('템플릿 조회 실패:', error);
       throw error;
     }
   },
@@ -112,7 +117,7 @@ export const checklistTemplateApi = {
       const result = await response.json();
       return result.template;
     } catch (error) {
-      console.error('템플릿 생성 실패:', error);
+      logger.error('템플릿 생성 실패:', error);
       throw error;
     }
   },
@@ -134,7 +139,7 @@ export const checklistTemplateApi = {
       const result = await response.json();
       return result.template;
     } catch (error) {
-      console.error('템플릿 수정 실패:', error);
+      logger.error('템플릿 수정 실패:', error);
       throw error;
     }
   },
@@ -152,7 +157,7 @@ export const checklistTemplateApi = {
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('템플릿 삭제 실패:', error);
+      logger.error('템플릿 삭제 실패:', error);
       throw error;
     }
   },

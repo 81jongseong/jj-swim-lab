@@ -91,6 +91,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 interface OfflineData {
   id: string;
@@ -106,12 +107,12 @@ export function useOffline() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      console.log('🟢 온라인 상태로 전환');
+      logger.info('온라인 상태로 전환');
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      console.log('🔴 오프라인 상태로 전환');
+      logger.info('오프라인 상태로 전환');
     };
 
     // 초기 상태 설정
@@ -145,7 +146,7 @@ export function useOffline() {
     // localStorage에 저장
     localStorage.setItem('offlineData', JSON.stringify(newOfflineData));
     
-    console.log('📱 오프라인 데이터 저장:', offlineItem);
+    logger.info('오프라인 데이터 저장', offlineItem);
   };
 
   // 오프라인 데이터 로드
@@ -155,10 +156,10 @@ export function useOffline() {
       if (saved) {
         const data = JSON.parse(saved);
         setOfflineData(data);
-        console.log('📱 오프라인 데이터 로드:', data.length, '개');
+        logger.info('오프라인 데이터 로드', { count: data.length });
       }
     } catch (error) {
-      console.error('오프라인 데이터 로드 실패:', error);
+      logger.error('오프라인 데이터 로드 실패:', error);
     }
   };
 
@@ -166,7 +167,7 @@ export function useOffline() {
   const syncOfflineData = async () => {
     if (!isOnline || offlineData.length === 0) return;
 
-    console.log('🔄 오프라인 데이터 동기화 시작:', offlineData.length, '개');
+    logger.info('오프라인 데이터 동기화 시작', { count: offlineData.length });
 
     const successItems: string[] = [];
     const failedItems: OfflineData[] = [];
@@ -176,7 +177,7 @@ export function useOffline() {
         await syncItem(item);
         successItems.push(item.id);
       } catch (error) {
-        console.error('동기화 실패:', item, error);
+        logger.error('동기화 실패:', { item, error });
         failedItems.push(item);
       }
     }
@@ -187,12 +188,12 @@ export function useOffline() {
       setOfflineData(remainingData);
       localStorage.setItem('offlineData', JSON.stringify(remainingData));
       
-      console.log(`✅ ${successItems.length}개 항목 동기화 완료`);
+      logger.success(`${successItems.length}개 항목 동기화 완료`);
     }
 
     // 실패한 항목들 유지
     if (failedItems.length > 0) {
-      console.log(`❌ ${failedItems.length}개 항목 동기화 실패`);
+      logger.warn(`${failedItems.length}개 항목 동기화 실패`);
     }
   };
 
@@ -229,7 +230,7 @@ export function useOffline() {
   const clearOfflineData = () => {
     setOfflineData([]);
     localStorage.removeItem('offlineData');
-    console.log('🗑️ 오프라인 데이터 삭제 완료');
+    logger.info('오프라인 데이터 삭제 완료');
   };
 
   return {

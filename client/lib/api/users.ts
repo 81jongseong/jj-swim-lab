@@ -9,7 +9,13 @@
  * - 센터 사용자 목록 조회
  * - 사용자 상태 관리
  * - 사용자 정보 수정
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/user-management/page.tsx
+ * - client/app/center-admin/members/page.tsx
  */
+
+import { logger } from '@/lib/logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -94,7 +100,7 @@ export const getCenterUsers = async (params: {
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('센터 사용자 조회 실패:', error);
+    logger.error('센터 사용자 조회 실패:', error);
     throw error;
   }
 };
@@ -112,7 +118,7 @@ export const updateUserStatus = async (userId: string, isActive: boolean): Promi
       throw new Error(`HTTP error! status: ${response.status}`);
     }
   } catch (error) {
-    console.error('사용자 상태 변경 실패:', error);
+    logger.error('사용자 상태 변경 실패:', error);
     throw error;
   }
 };
@@ -133,7 +139,7 @@ export const updateUser = async (userId: string, userData: Partial<User>): Promi
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('사용자 정보 수정 실패:', error);
+    logger.error('사용자 정보 수정 실패:', error);
     throw error;
   }
 };

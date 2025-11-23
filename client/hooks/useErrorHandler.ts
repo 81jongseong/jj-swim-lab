@@ -73,6 +73,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface ErrorContext {
   context?: string;
@@ -162,8 +163,8 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
       timestamp: new Date(),
     };
 
-    // 콘솔에 에러 로깅
-    console.error('ErrorHandler caught an error:', errorInfo);
+    // 에러 로깅
+    logger.error('ErrorHandler caught an error:', errorInfo);
 
     // 프로덕션 환경에서 에러 로깅 서비스에 전송
     if (process.env.NODE_ENV === 'production') {
