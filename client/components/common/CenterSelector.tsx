@@ -24,6 +24,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface Center {
   _id: string;
@@ -103,7 +104,7 @@ export default function CenterSelector({
             }
           }
         } catch (error) {
-          console.error(`센터 ${centerId} 정보 조회 실패:`, error);
+          logger.error(`센터 ${centerId} 정보 조회 실패:`, error);
         }
         // 실패 시 기본값 반환
         return {
@@ -116,7 +117,7 @@ export default function CenterSelector({
       const centerData = await Promise.all(centerPromises);
       setCenters(centerData.filter(Boolean));
     } catch (error) {
-      console.error('센터 목록 로드 실패:', error);
+      logger.error('센터 목록 로드 실패:', error);
     } finally {
       setLoading(false);
     }

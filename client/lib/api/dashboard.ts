@@ -5,7 +5,14 @@
  * - 실시간 시스템 통계 데이터 가져오기
  * - 하드코딩된 더미 데이터 대체
  * - 데이터베이스 기반 실시간 통계
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/dashboard/page.tsx
+ * - client/app/api/dashboard/stats/route.ts
+ * - server/src/routes/dashboard.ts
  */
+
+import { logger } from '@/lib/logger';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -35,7 +42,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     if (!token) {
-      console.warn('인증 토큰이 없습니다. 대시보드 통계를 가져올 수 없습니다.');
+      logger.warn('인증 토큰이 없습니다. 대시보드 통계를 가져올 수 없습니다.');
       // 토큰이 없어도 기본값 반환 (에러 방지)
       return {
         totalUsers: 0,
@@ -54,10 +61,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     };
     
     // 개발 환경에서 디버깅 정보 출력
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('🔍 Dashboard API 호출:', API_ENDPOINT);
-      console.log('🔍 토큰:', token ? '있음' : '없음');
-    }
+    logger.api('Dashboard API 호출', { endpoint: API_ENDPOINT, hasToken: !!token });
     
     const response = await fetch(API_ENDPOINT, {
       method: 'GET',
@@ -66,7 +70,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 
     // 401 오류 발생 시 토큰 제거 및 로그인 페이지로 리다이렉트
     if (response.status === 401) {
-      console.warn('인증 토큰이 만료되었거나 유효하지 않습니다.');
+      logger.warn('인증 토큰이 만료되었거나 유효하지 않습니다.');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -84,7 +88,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('대시보드 통계 가져오기 실패:', error);
+    logger.error('대시보드 통계 가져오기 실패:', error);
     
     // 에러 시 기본값 반환 (빈 통계)
     return {
