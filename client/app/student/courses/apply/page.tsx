@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui';
 import withAuth from '@/components/withAuth';
 import apiClient from '@/utils/api';
+import { LoadingState, ErrorState } from '@/components/common';
 
 interface PublicCourseDetail {
   _id: string;
@@ -214,30 +215,19 @@ function StudentCourseApplyPage() {
   };
 
   if (pageState === 'loading') {
-    return (
-      <div className="min-h-screen bg-slate-50 pt-20 pb-12">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="flex flex-col items-center justify-center py-24 text-slate-600">
-            <Loader2 className="h-10 w-10 animate-spin mb-4" />
-            <p className="text-lg font-medium">강습 정보를 불러오는 중입니다...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="강습 정보를 불러오는 중입니다..." size="lg" fullScreen />;
   }
 
   if (pageState === 'error' || !course) {
     return (
       <div className="min-h-screen bg-slate-50 pt-20 pb-12">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-white border border-red-100 rounded-2xl shadow-sm p-8 text-center">
-            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">강습 정보를 불러오지 못했습니다</h1>
-            <p className="text-slate-600 mb-6">{pageError || '잠시 후 다시 시도해주세요.'}</p>
-            <Button onClick={handleBackToCenter} className="bg-blue-600 hover:bg-blue-700 text-white">
-              센터 강습 목록으로 돌아가기
-            </Button>
-          </div>
+          <ErrorState
+            message={pageError || '강습 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'}
+            onRetry={handleBackToCenter}
+            retryText="강습 목록으로 돌아가기"
+            className="py-24"
+          />
         </div>
       </div>
     );

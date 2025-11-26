@@ -28,6 +28,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -43,7 +44,7 @@ import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
 import CourseMemberAssignmentModal from '@/components/center-admin/CourseMemberAssignmentModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
-import { CardGrid } from '@/components/common';
+import { CardGrid, LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 import BookingManagementContent from './booking-management-content';
 
 // Course 타입 정의 (서버 모델과 일치)
@@ -127,6 +128,7 @@ function CoursesManagement() {
   // === 강의 관리 상태 ===
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [showMemberAssignmentModal, setShowMemberAssignmentModal] = useState(false);
@@ -164,6 +166,19 @@ function CoursesManagement() {
 
   // ⭐ 센터 정보 상태 추가
   const [centerInfo, setCenterInfo] = useState<any>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -187,27 +202,29 @@ function CoursesManagement() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🏢 센터 정보:', {
+        logger.info('🏢 센터 정보:', {
           personalLesson: data.data?.availabilitySettings?.personalLesson,
           freeSwim: data.data?.availabilitySettings?.freeSwim
         });
         setCenterInfo(data.data);
       }
     } catch (error) {
-      console.error('💥 센터 정보 로드 실패:', error);
+      logger.error('💥 센터 정보 로드 실패:', error);
     }
   };
 
   const loadCourses = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       // ✅ 센터 관리자용 API 호출
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
-        throw new Error('토큰이 없습니다. 로그인이 필요합니다.');
+        logger.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
+        setError('토큰이 없습니다. 로그인이 필요합니다.');
+        return;
       }
       
       // 토큰 디코딩해서 내용 확인
@@ -217,7 +234,7 @@ function CoursesManagement() {
           const payload = JSON.parse(atob(tokenParts[1]));
         }
       } catch (e) {
-        console.error('❌ 토큰 디코딩 실패:', e);
+        logger.error('❌ 토큰 디코딩 실패:', e);
       }
       
       const response = await fetch('http://localhost:5000/api/center-admin/courses', {
@@ -227,11 +244,11 @@ function CoursesManagement() {
         }
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch courses');
+        throw new Error('강습 과정을 불러오는데 실패했습니다.');
       }
       
       const data = await response.json();
-      console.log('📡 강습 과정 목록 API 응답:', data);
+      logger.info('📡 강습 과정 목록 API 응답:', data);
       
       // 영어 요일 → 한글 요일 변환
       const dayMap: { [key: string]: string } = {
@@ -246,7 +263,7 @@ function CoursesManagement() {
       
       // API 응답 데이터를 Course 타입에 맞게 변환
       const coursesData: Course[] = (data.data || []).map((course: any) => {
-        console.log('🔄 강습 과정 변환 전:', {
+        logger.info('🔄 강습 과정 변환 전:', {
           _id: course._id,
           name: course.name,
           instructorId: course.instructorId,
@@ -306,7 +323,7 @@ function CoursesManagement() {
           courseType: course.courseType || (isPersonalLesson ? 'personal' : 'group')
         };
         
-        console.log('✅ 강습 과정 변환 후:', {
+        logger.info('✅ 강습 과정 변환 후:', {
           _id: transformedCourse._id,
           name: transformedCourse.name,
           instructorId: transformedCourse.instructorId,
@@ -322,14 +339,15 @@ function CoursesManagement() {
       setCourses(coursesData);
       
       // 📊 통계 정보 출력
-      console.log('✅ 강습 과정 로드 완료:', coursesData.length, '개');
+      logger.info('✅ 강습 과정 로드 완료:', coursesData.length, '개');
       
       // DB에 데이터가 없을 경우 빈 배열 유지 (임시 데이터 제거)
       if (coursesData.length === 0) {
-        console.log('⚠️ DB에 강습 과정이 없습니다.');
+        logger.info('⚠️ DB에 강습 과정이 없습니다.');
       }
-    } catch (error) {
-      console.error('💥 강습 과정 로드 실패:', error);
+    } catch (err: any) {
+      logger.error('💥 강습 과정 로드 실패:', err);
+      setError(err.message || '강습 과정을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -365,11 +383,11 @@ function CoursesManagement() {
   // 강사 목록 로드
   const loadInstructors = async () => {
     try {
-      console.log('👨‍🏫 강사 목록 로드 시작');
+      logger.info('👨‍🏫 강사 목록 로드 시작');
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
+        logger.error('❌ 토큰이 없습니다. 로그인이 필요합니다.');
         return;
       }
       
@@ -380,20 +398,20 @@ function CoursesManagement() {
       });
       
       if (!response.ok) {
-        console.error('❌ 강사 목록 로드 실패:', response.status, response.statusText);
+        logger.error('❌ 강사 목록 로드 실패:', response.status, response.statusText);
         return;
       }
       
       const data = await response.json();
-      console.log('👨‍🏫 강사 목록 API 응답:', data);
+      logger.info('👨‍🏫 강사 목록 API 응답:', data);
       
       // 강사 데이터 변환 (_id, name, instructorType 포함)
       const rawInstructors = data.data?.instructors || data.instructors || data.data || data || [];
-      console.log('👨‍🏫 원본 강사 데이터:', rawInstructors);
+      logger.info('👨‍🏫 원본 강사 데이터:', rawInstructors);
       
       // rawInstructors가 배열인지 확인
       if (!Array.isArray(rawInstructors)) {
-        console.error('❌ 강사 데이터가 배열이 아닙니다:', rawInstructors);
+        logger.error('❌ 강사 데이터가 배열이 아닙니다:', rawInstructors);
         setInstructors([]);
         return;
       }
@@ -407,11 +425,11 @@ function CoursesManagement() {
         }))
         .sort((a, b) => a.name.localeCompare(b.name, 'ko-KR')); // ⭐ 가나다순 정렬
       
-      console.log('👨‍🏫 변환된 강사 목록:', instructorList);
+      logger.info('👨‍🏫 변환된 강사 목록:', instructorList);
       setInstructors(instructorList);
       
     } catch (error) {
-      console.error('💥 강사 목록 로드 오류:', error);
+      logger.error('💥 강사 목록 로드 오류:', error);
     }
   };
 
@@ -426,7 +444,7 @@ function CoursesManagement() {
       });
       
       if (!response.ok) {
-        console.error('❌ 스케줄 로드 실패');
+        logger.error('❌ 스케줄 로드 실패');
         return;
       }
       
@@ -437,7 +455,7 @@ function CoursesManagement() {
         setSchedules(confirmedSchedules);
       }
     } catch (error) {
-      console.error('💥 스케줄 로드 오류:', error);
+      logger.error('💥 스케줄 로드 오류:', error);
     }
   };
 
@@ -578,41 +596,45 @@ function CoursesManagement() {
 
   // 과정 삭제 핸들러
   const handleDeleteCourse = async (courseId: string) => {
-    if (!confirm('정말 이 과정을 삭제하시겠습니까?')) {
-      return;
-    }
-    
-    try {
-      console.log('🗑️ 강습 과정 삭제:', courseId);
-      
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 이 과정을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          logger.info('🗑️ 강습 과정 삭제:', courseId);
+          
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to delete course');
+          }
+          
+          // 로컬 상태 업데이트
+          setCourses(prev => prev.filter(c => c._id !== courseId));
+          alert('✅ 강습 과정이 삭제되었습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error) {
+          logger.error('💥 강습 과정 삭제 실패:', error);
+          alert('❌ 강습 과정 삭제에 실패했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete course');
       }
-      
-      // 로컬 상태 업데이트
-      setCourses(prev => prev.filter(c => c._id !== courseId));
-      alert('✅ 강습 과정이 삭제되었습니다.');
-      
-    } catch (error) {
-      console.error('💥 강습 과정 삭제 실패:', error);
-      alert('❌ 강습 과정 삭제에 실패했습니다.');
-    }
+    });
   };
 
   // 회원 배정 모달 열기
   const handleOpenMemberAssignment = (course: Course) => {
-    console.log('🎯 handleOpenMemberAssignment 호출됨:', course);
+    logger.info('🎯 handleOpenMemberAssignment 호출됨:', course);
     setAssignmentCourse(course);
     setShowMemberAssignmentModal(true);
-    console.log('🎯 회원 배정 모달 상태 업데이트:', {
+    logger.info('🎯 회원 배정 모달 상태 업데이트:', {
       assignmentCourse: course,
       showMemberAssignmentModal: true
     });
@@ -625,7 +647,7 @@ function CoursesManagement() {
     try {
       const token = localStorage.getItem('token');
       
-      console.log('📝 회원 배정 시작:', {
+      logger.info('📝 회원 배정 시작:', {
         memberIds: memberIds,
         courseId: assignmentCourse._id,
         courseName: assignmentCourse.name
@@ -633,7 +655,7 @@ function CoursesManagement() {
       
       // 각 회원을 순차적으로 배정
       for (const memberId of memberIds) {
-        console.log(`📝 회원 ${memberId} 배정 중...`);
+        logger.info(`📝 회원 ${memberId} 배정 중...`);
         
         const response = await fetch(`http://localhost:5000/api/center-admin/members/${memberId}/course`, {
           method: 'PUT',
@@ -644,7 +666,7 @@ function CoursesManagement() {
           body: JSON.stringify({ courseId: assignmentCourse._id })
         });
 
-        console.log(`📝 회원 ${memberId} 배정 응답:`, {
+        logger.info(`📝 회원 ${memberId} 배정 응답:`, {
           status: response.status,
           statusText: response.statusText,
           ok: response.ok
@@ -652,17 +674,17 @@ function CoursesManagement() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error(`❌ 회원 ${memberId} 배정 실패:`, errorData);
+          logger.error(`❌ 회원 ${memberId} 배정 실패:`, errorData);
           throw new Error(errorData.message || '회원 배정에 실패했습니다.');
         }
         
-        console.log(`✅ 회원 ${memberId} 배정 성공`);
+        logger.info(`✅ 회원 ${memberId} 배정 성공`);
       }
 
       alert(`${memberIds.length}명의 회원이 성공적으로 배정되었습니다.`);
       loadCourses(); // 강습 과정 목록 새로고침
     } catch (error) {
-      console.error('회원 배정 오류:', error);
+      logger.error('회원 배정 오류:', error);
       alert(`회원 배정 중 오류가 발생했습니다: ${error.message}`);
     }
   };
@@ -687,22 +709,22 @@ function CoursesManagement() {
       // "월,수,금" → 3개의 별도 schedule 항목으로 분리
       const scheduleForDB: any[] = [];
       
-      console.log('🔍 courseData.schedule:', courseData.schedule);
+      logger.info('🔍 courseData.schedule:', courseData.schedule);
       
       if (!courseData.schedule || courseData.schedule.length === 0) {
-        console.error('❌ schedule이 비어있습니다!');
+        logger.error('❌ schedule이 비어있습니다!');
         throw new Error('요일과 시간을 선택해주세요.');
       }
       
       (courseData.schedule || []).forEach(sch => {
-        console.log('🔍 schedule 변환:', sch);
+        logger.info('🔍 schedule 변환:', sch);
         // 쉼표로 구분된 요일 처리 (예: "월,수,금" → ["월", "수", "금"])
         const days = ((sch as any).dayOfWeek || (sch as any).day || '').split(',').map((d: string) => d.trim()).filter((d: string) => d);
         
-        console.log('📅 변환된 days:', days);
+        logger.info('📅 변환된 days:', days);
         
         if (days.length === 0) {
-          console.error('❌ 요일이 비어있습니다!');
+          logger.error('❌ 요일이 비어있습니다!');
           return;
         }
         
@@ -718,10 +740,10 @@ function CoursesManagement() {
         });
       });
       
-      console.log('📋 최종 scheduleForDB:', scheduleForDB);
+      logger.info('📋 최종 scheduleForDB:', scheduleForDB);
       
       if (scheduleForDB.length === 0) {
-        console.error('❌ scheduleForDB가 비어있습니다!');
+        logger.error('❌ scheduleForDB가 비어있습니다!');
         throw new Error('요일과 시간을 올바르게 선택해주세요.');
       }
       
@@ -742,12 +764,12 @@ function CoursesManagement() {
           laneInfo: courseData.laneInfo // ⭐ 레인 정보 추가
         };
         
-        console.log('🎯 강습 과정 수정 요청 시작');
-        console.log('📋 courseData:', courseData);
-        console.log('🏊 courseData.lanes:', courseData.lanes);
-        console.log('🏊 courseData.poolType:', courseData.poolType);
-        console.log('🏊 courseData.laneInfo:', courseData.laneInfo);
-        console.log('🚀 전송할 updateData:', updateData);
+        logger.info('🎯 강습 과정 수정 요청 시작');
+        logger.info('📋 courseData:', courseData);
+        logger.info('🏊 courseData.lanes:', courseData.lanes);
+        logger.info('🏊 courseData.poolType:', courseData.poolType);
+        logger.info('🏊 courseData.laneInfo:', courseData.laneInfo);
+        logger.info('🚀 전송할 updateData:', updateData);
         
         const response = await fetch(`http://localhost:5000/api/courses/${editingCourse._id}`, {
           method: 'PUT',
@@ -760,13 +782,13 @@ function CoursesManagement() {
         
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('❌ 서버 응답 에러:', errorData);
+          logger.error('❌ 서버 응답 에러:', errorData);
           throw new Error(errorData.error || errorData.details || 'Failed to update course');
         }
         
         const data = await response.json();
-        console.log('✅ 수정 완료 응답:', data);
-        console.log('🏊 응답의 laneInfo:', data.data?.laneInfo || data.course?.laneInfo);
+        logger.info('✅ 수정 완료 응답:', data);
+        logger.info('🏊 응답의 laneInfo:', data.data?.laneInfo || data.course?.laneInfo);
         
         // 전체 목록 새로고침
         await loadCourses();
@@ -794,7 +816,7 @@ function CoursesManagement() {
           endDate: (courseData as any).endDate // ⭐ 종료일 추가
         };
         
-        console.log('📡 강습 과정 생성 요청:', requestBody);
+        logger.info('📡 강습 과정 생성 요청:', requestBody);
         
         const response = await fetch('http://localhost:5000/api/courses', {
           method: 'POST',
@@ -805,16 +827,16 @@ function CoursesManagement() {
           body: JSON.stringify(requestBody)
         });
         
-        console.log('📡 응답 상태:', response.status);
+        logger.info('📡 응답 상태:', response.status);
         
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('❌ 서버 응답 에러:', errorData);
+          logger.error('❌ 서버 응답 에러:', errorData);
           throw new Error(errorData.error || errorData.details || 'Failed to create course');
         }
         
         const data = await response.json();
-        console.log('✅ 추가 완료:', data);
+        logger.info('✅ 추가 완료:', data);
         
         // 전체 목록 새로고침
         await loadCourses();
@@ -822,7 +844,7 @@ function CoursesManagement() {
       }
       
     } catch (error) {
-      console.error('💥 강습 과정 저장 실패:', error);
+      logger.error('💥 강습 과정 저장 실패:', error);
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       alert(`❌ 강습 과정 저장에 실패했습니다.\n\n${errorMessage}`);
     }
@@ -831,19 +853,32 @@ function CoursesManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadCourses();
+          }}
+          retryText="다시 시도"
+        />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          📚 센터 강의 관리
-        </h1>
-        <p className="text-gray-600">센터의 강의와 예약·결제를 한 곳에서 관리하세요</p>
-      </div>
+      <PageHeader
+        title="📚 센터 강의 관리"
+        description="센터의 강의와 예약·결제를 한 곳에서 관리하세요"
+      />
 
       {/* 탭 네비게이션 */}
       <div className="mb-6">
@@ -966,7 +1001,7 @@ function CoursesManagement() {
           schedules={schedules} // 확정된 스케줄 데이터 전달
           onCourseClick={handleEditCourse}
           onEmptySlotClick={(day, time) => {
-            console.log('빈 슬롯 클릭:', day, time);
+            logger.info('빈 슬롯 클릭:', day, time);
             handleAddCourse(day, time); // 선택한 요일/시간 전달 ✅
           }}
           personalLessonAvailability={centerInfo?.availabilitySettings?.personalLesson} // ⭐ 개인레슨 운영시간 전달
@@ -993,7 +1028,7 @@ function CoursesManagement() {
 
           {/* 과정 카드 그리드 - 반응형 */}
           {(() => {
-            console.log('🔍 filteredCourses 확인:', {
+            logger.info('🔍 filteredCourses 확인:', {
               filteredCoursesLength: filteredCourses.length,
               filteredCourses: filteredCourses,
               coursesLength: courses.length,
@@ -1074,6 +1109,18 @@ function CoursesManagement() {
       )}
         </>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

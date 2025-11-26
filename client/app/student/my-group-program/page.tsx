@@ -18,6 +18,8 @@ import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
 import { calculatePersonalAdjustment, getStrokeName } from '@/lib/swimlab/utils/personalAdjustmentCalculator';
 import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader } from '@/components/common';
 import {
   Dialog,
   DialogContent,
@@ -93,16 +95,17 @@ export default function MyGroupProgramPage() {
   const loadMyPrograms = async () => {
     setLoading(true);
     try {
-      console.log('🔍 내 프로그램 조회 시작...');
+      logger.info('내 프로그램 조회 시작');
       
       // 통합 API 호출
       const response = await apiClient.get('/api/my-programs') as any;
       
       if (response.success && response.data?.programs) {
         const progs = response.data.programs;
-        console.log(`✅ 총 ${progs.length}개 프로그램 조회 완료`);
-        console.log(`  - 개인 PT: ${response.data.individual || 0}개`);
-        console.log(`  - 단체반: ${response.data.group || 0}개`);
+        logger.success(`총 ${progs.length}개 프로그램 조회 완료`, {
+          individual: response.data.individual || 0,
+          group: response.data.group || 0
+        });
         
         setPrograms(progs);
 
@@ -112,7 +115,7 @@ export default function MyGroupProgramPage() {
         }
       }
     } catch (error) {
-      console.error('프로그램 불러오기 실패:', error);
+      logger.error('프로그램 불러오기 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -128,7 +131,7 @@ export default function MyGroupProgramPage() {
       
       const personalAdj = calculatePersonalAdjustment(healthProfile, swimmingProfile);
       
-      console.log(`🎯 ${user.name}님 조정사항:`, personalAdj);
+      logger.debug(`${user.name}님 조정사항`, personalAdj);
       setAdjustment(personalAdj);
     }
   };
@@ -213,7 +216,7 @@ export default function MyGroupProgramPage() {
 
       setRpeDialog(null);
     } catch (error) {
-      console.error('RPE 기록 저장 실패:', error);
+      logger.error('RPE 기록 저장 실패:', error);
     } finally {
       setRpeSubmitting(false);
     }
@@ -236,11 +239,7 @@ export default function MyGroupProgramPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">프로그램 불러오는 중...</div>
-      </div>
-    );
+    return <LoadingState message="프로그램 불러오는 중..." size="lg" fullScreen />;
   }
 
   if (programs.length === 0) {
@@ -260,10 +259,10 @@ export default function MyGroupProgramPage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🏊 내 프로그램</h1>
-          <p className="text-gray-600">
-            {user?.name}님의 모든 프로그램 (개인 PT + 단체반)과 맞춤 안내를 확인하세요.
-          </p>
+          <PageHeader
+            title="🏊 내 프로그램"
+            description={`${user?.name}님의 모든 프로그램 (개인 PT + 단체반)과 맞춤 안내를 확인하세요.`}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -586,4 +585,6 @@ export default function MyGroupProgramPage() {
     </div>
   );
 }
+
+
 

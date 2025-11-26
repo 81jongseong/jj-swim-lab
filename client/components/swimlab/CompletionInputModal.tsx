@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui';
@@ -109,7 +110,7 @@ export default function CompletionInputModal({
       sum + (set.actual.completed ? (set.actual.distance * set.actual.reps) : 0), 0
     );
     const rate = totalPlannedDistance > 0 ? Math.round((totalActualDistance / totalPlannedDistance) * 100) : 0;
-    console.log('📊 완료율 계산:', {
+    logger.info('📊 완료율 계산:', {
       totalPlannedDistance,
       totalActualDistance,
       rate,
@@ -157,14 +158,14 @@ export default function CompletionInputModal({
         } : undefined
       };
 
-      console.log('💾 완료율 제출 데이터:', {
+      logger.info('💾 완료율 제출 데이터:', {
         mode,
         completionRate: mode === 'simple' ? completionRate : calculateDetailedCompletionRate(),
         data,
         detailedSets: mode === 'detailed' ? detailedSets : null
       });
       
-      console.log('🔍 제출 직전 detailedSets 상태:', 
+      logger.info('🔍 제출 직전 detailedSets 상태:', 
         detailedSets.map(s => ({
           setIndex: s.setIndex,
           completed: s.actual.completed,
@@ -176,7 +177,7 @@ export default function CompletionInputModal({
       await onSubmit(data);
       onClose();
     } catch (error) {
-      console.error('완료율 입력 오류:', error);
+      logger.error('완료율 입력 오류:', error);
       alert('완료율 입력 중 오류가 발생했습니다.');
     } finally {
       setSubmitting(false);
@@ -413,7 +414,7 @@ export default function CompletionInputModal({
                               newSets[idx].actual.reps = 0;
                               newSets[idx].actual.time = 0;
                             }
-                            console.log(`✅ 세트 ${idx} 체크 변경:`, {
+                            logger.info(`✅ 세트 ${idx} 체크 변경:`, {
                               checked: e.target.checked,
                               actual: newSets[idx].actual
                             });

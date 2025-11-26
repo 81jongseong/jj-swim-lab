@@ -13,11 +13,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid, LoadingState, PageHeader, ConfirmModal } from '@/components/common';
 import { Search, Plus, MessageSquare, Link2, Filter } from 'lucide-react';
 
 // 최고관리자 강습법
@@ -60,6 +62,19 @@ function CenterTeachingMethodsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [editingComment, setEditingComment] = useState<{ levelId: string; methodId: string; comment: string } | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -140,7 +155,7 @@ function CenterTeachingMethodsPage() {
       setCenterLevels(sampleCenterLevels);
       setMappings(sampleMappings);
     } catch (error) {
-      console.error('데이터 로드 실패:', error);
+      logger.error('데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -183,11 +198,17 @@ function CenterTeachingMethodsPage() {
 
   // 매핑 삭제
   const handleRemoveMapping = (methodId: string, levelId: string) => {
-    if (confirm('이 강습법을 급수에서 제거하시겠습니까?')) {
-      setMappings(mappings.filter(m => 
-        !(m.adminMethodId === methodId && m.centerLevelId === levelId)
-      ));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '이 강습법을 급수에서 제거하시겠습니까?',
+      variant: 'warning',
+      onConfirm: () => {
+        setMappings(mappings.filter(m => 
+          !(m.adminMethodId === methodId && m.centerLevelId === levelId)
+        ));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   // 코멘트 추가/수정
@@ -209,7 +230,7 @@ function CenterTeachingMethodsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
@@ -217,17 +238,13 @@ function CenterTeachingMethodsPage() {
   return (
     <div className="container mx-auto p-6">
       {/* 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          강습법 관리 📚
-        </h1>
-        <p className="text-gray-600">
-          최고관리자의 강습법을 우리 센터 급수에 맞게 배치하고 코멘트를 추가하세요
-        </p>
-      </div>
+      <PageHeader
+        title="강습법 관리 📚"
+        description="최고관리자의 강습법을 우리 센터 급수에 맞게 배치하고 코멘트를 추가하세요"
+      />
 
       {/* 통계 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           icon="📚"
           title="전체 강습법"
@@ -252,7 +269,7 @@ function CenterTeachingMethodsPage() {
           value={`${mappings.filter(m => m.centerComment).length}개`}
           color="orange"
         />
-      </div>
+      </CardGrid>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 왼쪽: 센터 급수 목록 */}
@@ -482,6 +499,18 @@ function CenterTeachingMethodsPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Check, Trash2, Filter } from 'lucide-react';
@@ -55,7 +56,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
         setNotifications(data.data.notifications || []);
       }
     } catch (error) {
-      console.error('❌ 알림 조회 오류:', error);
+      logger.error('❌ 알림 조회 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
         setUnreadCount(data.data.count || 0);
       }
     } catch (error) {
-      console.error('❌ 읽지 않은 알림 개수 조회 오류:', error);
+      logger.error('❌ 읽지 않은 알림 개수 조회 오류:', error);
     }
   };
 
@@ -108,7 +109,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('❌ 알림 읽음 처리 오류:', error);
+      logger.error('❌ 알림 읽음 처리 오류:', error);
     }
   };
 
@@ -133,7 +134,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
         setUnreadCount(0);
       }
     } catch (error) {
-      console.error('❌ 모든 알림 읽음 처리 오류:', error);
+      logger.error('❌ 모든 알림 읽음 처리 오류:', error);
     }
   };
 
@@ -156,7 +157,7 @@ export default function NotificationCenter({ userId, onNotificationClick }: Noti
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('❌ 알림 삭제 오류:', error);
+      logger.error('❌ 알림 삭제 오류:', error);
     }
   };
 

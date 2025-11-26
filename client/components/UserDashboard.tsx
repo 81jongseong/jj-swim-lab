@@ -70,6 +70,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Button, Progress } from './ui';
@@ -256,10 +257,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
       });
 
       if (!response.ok) {
-        console.error('기능 시퀀스 업데이트 실패');
+        logger.error('기능 시퀀스 업데이트 실패');
       }
     } catch (error) {
-      console.error('기능 시퀀스 업데이트 오류:', error);
+      logger.error('기능 시퀀스 업데이트 오류:', error);
     }
   };
 
@@ -416,7 +417,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
-                console.log('사용자 관리 카드 클릭됨');
+                logger.info('사용자 관리 카드 클릭됨');
                 window.location.href = '/admin/users';
               }}
             >
@@ -437,7 +438,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
-                console.log('강습법 관리 카드 클릭됨');
+                logger.info('강습법 관리 카드 클릭됨');
                 window.location.href = '/admin/teaching-methods';
               }}
             >
@@ -458,7 +459,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
             <Card
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 border-transparent hover:border-blue-300"
               onClick={() => {
-                console.log('시스템 관리 카드 클릭됨');
+                logger.info('시스템 관리 카드 클릭됨');
                 window.location.href = '/admin/system';
               }}
             >

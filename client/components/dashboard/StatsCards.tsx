@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 interface MemberStats {
   totalBookings: number;
@@ -53,7 +54,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <div 
         className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-green-300"
         onClick={() => {
-          console.log('등록된 강습 카드 클릭됨');
+          logger.info('등록된 강습 카드 클릭됨');
           window.location.href = '/courses';
         }}
       >
@@ -75,7 +76,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <div 
         className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-purple-300"
         onClick={() => {
-          console.log('총 결제 카드 클릭됨');
+          logger.info('총 결제 카드 클릭됨');
           window.location.href = '/payments';
         }}
       >
@@ -96,7 +97,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <div 
         className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-xl transition-all duration-200 hover:scale-105 border-2 border-transparent hover:border-yellow-300"
         onClick={() => {
-          console.log('다음 강습 카드 클릭됨');
+          logger.info('다음 강습 카드 클릭됨');
           window.location.href = '/dashboard/checklist';
         }}
       >

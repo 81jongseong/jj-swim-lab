@@ -210,17 +210,17 @@ export default function AthleteProfileBar({
       multiSelect={true}
       showVariablesModal={(users) => {
         // 다중 선택 시 변수 설정 모달 표시
-        console.log('📤 AthleteProfileBar showVariablesModal 받은 users:', users);
-        console.log('첫 번째 user:', users[0]);
-        console.log('첫 번째 user의 keys:', Object.keys(users[0]));
+        logger.info('📤 AthleteProfileBar showVariablesModal 받은 users:', users);
+        logger.info('첫 번째 user:', users[0]);
+        logger.info('첫 번째 user의 keys:', Object.keys(users[0]));
         
         if (onBulkVariablesNeeded) {
-          console.log('📤 onBulkVariablesNeeded로 전달 직전');
+          logger.info('📤 onBulkVariablesNeeded로 전달 직전');
           onBulkVariablesNeeded(users);
         }
       }}
       onMultiSelect={(items) => {
-        console.log('🔍 선택된 항목들:', items.length);
+        logger.info('🔍 선택된 항목들:', items.length);
         
         let individualCount = 0;
         let groupCount = 0;
@@ -228,13 +228,13 @@ export default function AthleteProfileBar({
         items.forEach(item => {
           // 단체반인지 확인 (groupClassId가 있으면 단체반)
           if ((item as any).groupClassId) {
-            console.log(`📚 단체반 추가: ${item.name}`);
+            logger.info(`📚 단체반 추가: ${item.name}`);
             
             // 단체반을 그대로 저장
             upsertAthlete(item as any);
             groupCount++;
           } else {
-            console.log(`🏊 개인 PT 추가: ${item.name}`);
+            logger.info(`🏊 개인 PT 추가: ${item.name}`);
             
             // 개인 PT 회원 처리
             const healthProfile = {

@@ -73,6 +73,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
@@ -126,11 +127,11 @@ const AdvancedMoveNetAnalysis: React.FC<AdvancedMoveNetAnalysisProps> = ({
         for (const backendName of backends) {
           try {
             await tf.setBackend(backendName);
-            console.log(`TensorFlow.js ${backendName} 백엔드 초기화 완료`);
+            logger.info(`TensorFlow.js ${backendName} 백엔드 초기화 완료`);
             setBackend(backendName);
             break;
           } catch (error) {
-            console.warn(`${backendName} 백엔드 초기화 실패:`, error);
+            logger.warn(`${backendName} 백엔드 초기화 실패:`, error);
             continue;
           }
         }
@@ -149,10 +150,10 @@ const AdvancedMoveNetAnalysis: React.FC<AdvancedMoveNetAnalysisProps> = ({
         
         setModel(detector);
         setIsInitialized(true);
-        console.log('MoveNet 모델 로드 완료');
+        logger.info('MoveNet 모델 로드 완료');
         
       } catch (error) {
-        console.error('TensorFlow.js 초기화 실패:', error);
+        logger.error('TensorFlow.js 초기화 실패:', error);
         setIsInitialized(false);
       }
     };
@@ -177,7 +178,7 @@ const AdvancedMoveNetAnalysis: React.FC<AdvancedMoveNetAnalysisProps> = ({
         videoRef.current.play();
       }
     } catch (error) {
-      console.error('카메라 접근 실패:', error);
+      logger.error('카메라 접근 실패:', error);
     }
   }, []);
 
@@ -209,7 +210,7 @@ const AdvancedMoveNetAnalysis: React.FC<AdvancedMoveNetAnalysisProps> = ({
         drawPoseOnCanvas(pose);
       }
     } catch (error) {
-      console.error('자세 분석 실패:', error);
+      logger.error('자세 분석 실패:', error);
     }
   }, [model, swimmingStyle, onAnalysisComplete]);
 
@@ -517,7 +518,7 @@ const AdvancedMoveNetAnalysis: React.FC<AdvancedMoveNetAnalysisProps> = ({
           await analyzePose();
           animationId = requestAnimationFrame(analyzeLoop);
         } catch (error) {
-          console.error('분석 루프 오류:', error);
+          logger.error('분석 루프 오류:', error);
         }
       }
     };

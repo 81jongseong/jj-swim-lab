@@ -24,7 +24,7 @@ import withAuth from '../../../components/withAuth';
 import { Users, Heart, AlertTriangle, CheckCircle, XCircle, Info, Eye } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { CenterSelector } from '@/components/common';
+import { CenterSelector, LoadingState, PageHeader } from '@/components/common';
 
 interface MemberHealthInfo {
   id: string;
@@ -553,10 +553,7 @@ const InstructorStudentsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">회원 정보를 불러오는 중...</p>
-        </div>
+        <LoadingState message="회원 정보를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -572,19 +569,16 @@ const InstructorStudentsPage: React.FC = () => {
           />
         </div>
         {/* 헤더 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Users className="h-8 w-8 text-blue-600 mr-3" />
-                담당 회원 관리
-              </h1>
-              <p className="text-gray-600 mt-2">
-                회원들의 건강정보를 확인하고 안전한 수영 지도를 제공하세요.
-              </p>
+        <PageHeader
+          title={
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600 mr-3" />
+              담당 회원 관리
             </div>
-          </div>
-        </div>
+          }
+          description="회원들의 건강정보를 확인하고 안전한 수영 지도를 제공하세요."
+          className="mb-8"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 회원 목록 */}

@@ -14,11 +14,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle   } from '../../../components/ui';
 import { Button } from '../../../components/ui';
 import { Badge } from '@/components/ui';
+import { ConfirmModal, LoadingState, PageHeader } from '@/components/common';
 import { Alert, AlertDescription   } from '../../../components/ui/alert';
 // Tabs는 index.ts에서 export되지 않으므로 직접 import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/Tabs';
@@ -63,6 +65,19 @@ export default function ProgramHistoryPage() {
   const [programs, setPrograms] = useState<ProgramHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 샘플 데이터
   useEffect(() => {
@@ -163,7 +178,7 @@ export default function ProgramHistoryPage() {
     // 운동프로그램 페이지가 삭제되어 프로그램 이력 페이지에서 상세 정보 표시
     // 필요시 모달이나 다른 방식으로 상세 정보 표시 가능
     if (process.env.NODE_ENV === 'development') {
-      console.log('프로그램 상세:', program);
+      logger.info('프로그램 상세:', program);
     }
   };
 
@@ -174,23 +189,26 @@ export default function ProgramHistoryPage() {
   const handleDuplicateProgram = (program: ProgramHistory) => {
     // 프로그램 복제 로직
     if (process.env.NODE_ENV === 'development') {
-      console.log('프로그램 복제:', program.id);
+      logger.info('프로그램 복제:', program.id);
     }
   };
 
   const handleDeleteProgram = (program: ProgramHistory) => {
-    if (confirm('정말로 이 프로그램을 삭제하시겠습니까?')) {
-      setPrograms(prev => prev.filter(p => p.id !== program.id));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말로 이 프로그램을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: () => {
+        setPrograms(prev => prev.filter(p => p.id !== program.id));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">프로그램 이력을 불러오는 중...</p>
-        </div>
+        <LoadingState message="프로그램 이력을 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -198,23 +216,18 @@ export default function ProgramHistoryPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-blue-500" />
-              운동 프로그램 이력
-            </h1>
-            <p className="text-gray-600">
-              생성된 운동 프로그램들을 관리하고 성과를 분석합니다
-            </p>
+      <PageHeader
+        title="운동 프로그램 이력"
+        description="생성된 운동 프로그램들을 관리하고 성과를 분석합니다"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button onClick={handleCreateNew} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              새 프로그램 생성
+            </Button>
           </div>
-          <Button onClick={handleCreateNew} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            새 프로그램 생성
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 통계 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -393,6 +406,18 @@ export default function ProgramHistoryPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

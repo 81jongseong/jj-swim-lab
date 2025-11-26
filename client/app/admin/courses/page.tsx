@@ -56,8 +56,10 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
+import { LoadingState, PageHeader, ConfirmModal } from '@/components/common';
 import { Button } from '@/components/ui';
 
 interface Course {
@@ -134,6 +136,19 @@ export default function AdminCoursesPage() {
   const [operatingHours, setOperatingHours] = useState({
     start: '09:00',
     end: '22:00'
+  });
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
   });
 
   // 강습 일정 데이터
@@ -225,7 +240,7 @@ export default function AdminCoursesPage() {
           setLoading(true);
           const token = localStorage.getItem('token');
           if (!token) {
-            console.error('인증 토큰이 없습니다.');
+            logger.error('인증 토큰이 없습니다.');
             return;
           }
 
@@ -256,10 +271,10 @@ export default function AdminCoursesPage() {
             
             setCourses(formattedCourses);
           } else {
-            console.error('강습 과정 로드 실패:', response.status);
+            logger.error('강습 과정 로드 실패:', response.status);
           }
       } catch (error) {
-        console.error('강습 과정 로드 실패:', error);
+        logger.error('강습 과정 로드 실패:', error);
       } finally {
         setLoading(false);
       }
@@ -314,9 +329,15 @@ export default function AdminCoursesPage() {
   };
 
   const handleDeleteCourse = (id: number) => {
-    if (confirm('정말로 이 강습 과정을 삭제하시겠습니까?')) {
-      setCourses(courses.filter(course => course.id !== id));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말로 이 강습 과정을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: () => {
+        setCourses(courses.filter(course => course.id !== id));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   const handleSaveLaneSettings = () => {
@@ -362,12 +383,7 @@ export default function AdminCoursesPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -377,12 +393,10 @@ export default function AdminCoursesPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">강습 과정 관리</h1>
-          <p className="mt-2 text-gray-600">
-            수영 강습 과정을 관리하고 일정을 조정합니다.
-          </p>
-        </div>
+        <PageHeader 
+          title="강습 과정 관리" 
+          description="수영 강습 과정을 관리하고 일정을 조정합니다."
+        />
 
         {/* 상단 액션 버튼들 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -1189,6 +1203,18 @@ export default function AdminCoursesPage() {
             </div>
           </div>
         )}
+
+        {/* ConfirmModal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+          variant={confirmModal.variant || 'info'}
+          title="확인"
+          confirmText="확인"
+          cancelText="취소"
+        />
       </div>
     </div>
   );

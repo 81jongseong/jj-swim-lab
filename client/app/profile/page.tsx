@@ -35,6 +35,7 @@ import ConditionQuickPick from '@/components/swimlab/ConditionQuickPick';
 import { useAuth, type User as AuthUser } from 'hooks/useAuth';
 import apiClient from '@/utils/api';
 import UserProfile from '@/components/common/UserProfile';
+import { logger } from '@/lib/logger';
 import {
   Card,
   CardContent,
@@ -231,14 +232,12 @@ export default function ProfilePage() {
       const cloned = deepClone(authUser) as ProfileUser;
       // authUser에 phone/address가 없을 수 있으므로 임시로만 설정
       // API에서 받은 데이터로 덮어쓰기 위해 seededRef는 API 로드 후에 설정
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 authUser에서 초기 프로필 설정:', {
-          phone: cloned.phone,
-          address: cloned.address,
-          hasPhone: !!cloned.phone,
-          hasAddress: !!cloned.address
-        });
-      }
+      logger.debug('authUser에서 초기 프로필 설정', {
+        phone: cloned.phone,
+        address: cloned.address,
+        hasPhone: !!cloned.phone,
+        hasAddress: !!cloned.address
+      });
       setProfile(cloned);
       setInitialProfile(cloned);
       const initialCertificates = ensureCertificateList(
@@ -256,24 +255,18 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (fetchedRef.current) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ [프로필 페이지] 이미 로드됨, 스킵');
-      }
+      logger.warn('[프로필 페이지] 이미 로드됨, 스킵');
       return;
     }
     fetchedRef.current = true;
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 [프로필 페이지] 프로필 로드 시작');
-    }
+    logger.info('[프로필 페이지] 프로필 로드 시작');
 
     let isMounted = true;
     let hasLoaded = false; // 중복 로드 방지
 
     const loadProfile = async () => {
       if (hasLoaded) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('⚠️ [프로필 페이지] 이미 로드 중, 스킵');
-        }
+        logger.warn('[프로필 페이지] 이미 로드 중, 스킵');
         return;
       }
       hasLoaded = true;
@@ -282,33 +275,25 @@ export default function ProfilePage() {
         setLoading(true);
       }
       try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📡 [프로필 페이지] API 요청 시작');
-        }
+        logger.api('[프로필 페이지] API 요청 시작');
         const response = await apiClient.get<any>('/api/auth/profile');
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📥 [프로필 페이지] API 응답 받음, isMounted:', isMounted);
-        }
+        logger.api('[프로필 페이지] API 응답 받음', { isMounted });
         
         // isMounted 체크를 제거하고 항상 처리 (React Strict Mode 대응)
         // if (!isMounted) {
-        //   console.log('⚠️ [프로필 페이지] 컴포넌트 언마운트됨, 스킵');
+        //   logger.warn('[프로필 페이지] 컴포넌트 언마운트됨, 스킵');
         //   return;
         // }
 
         // API 응답 구조 확인 (즉시 로그)
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 [프로필 페이지] API 응답 받음:', {
-            response,
-            responseType: typeof response,
-            responseKeys: response ? Object.keys(response) : [],
-            hasUser: !!(response as any)?.user,
-            hasData: !!(response as any)?.data,
-            userPhone: (response as any)?.user?.phone,
-            userAddress: (response as any)?.user?.address,
-            fullResponse: response
-          });
-        }
+        logger.debug('[프로필 페이지] API 응답 받음', {
+          responseType: typeof response,
+          responseKeys: response ? Object.keys(response) : [],
+          hasUser: !!(response as any)?.user,
+          hasData: !!(response as any)?.data,
+          userPhone: (response as any)?.user?.phone,
+          userAddress: (response as any)?.user?.address
+        });
 
         if ((response as any)?.error) {
           setStatus({
@@ -329,46 +314,37 @@ export default function ProfilePage() {
             (response as any)?.data ??
             null;
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔍 [프로필 페이지] apiUser 추출:', {
-              apiUser,
-              hasApiUser: !!apiUser,
-              apiUserType: typeof apiUser,
-              apiUserKeys: apiUser ? Object.keys(apiUser) : [],
-              phone: apiUser?.phone,
-              address: apiUser?.address,
-              birthDate: apiUser?.birthDate,
-              gender: apiUser?.gender,
-              hasStudentInfo: !!apiUser?.studentInfo,
-              studentInfoHeight: (apiUser?.studentInfo as any)?.height,
-              studentInfoWeight: (apiUser?.studentInfo as any)?.weight,
-              studentInfo: apiUser?.studentInfo,
-              fullApiUser: apiUser
-            });
-          }
+          logger.debug('[프로필 페이지] apiUser 추출', {
+            hasApiUser: !!apiUser,
+            apiUserType: typeof apiUser,
+            apiUserKeys: apiUser ? Object.keys(apiUser) : [],
+            phone: apiUser?.phone,
+            address: apiUser?.address,
+            birthDate: apiUser?.birthDate,
+            gender: apiUser?.gender,
+            hasStudentInfo: !!apiUser?.studentInfo,
+            studentInfoHeight: (apiUser?.studentInfo as any)?.height,
+            studentInfoWeight: (apiUser?.studentInfo as any)?.weight
+          });
 
           if (apiUser) {
             const cloned = deepClone(apiUser);
             // phone, address, healthProfile 데이터 확인
-            if (process.env.NODE_ENV === 'development') {
-              console.log('📋 프로필 데이터 로드 (API):', {
-                userId: cloned.userId || cloned._id,
-                hasPhone: !!cloned.phone,
-                hasAddress: !!cloned.address,
-                phone: cloned.phone,
-                address: cloned.address,
-                birthDate: cloned.birthDate,
-                gender: cloned.gender,
-                hasStudentInfo: !!cloned.studentInfo,
-                studentInfoHeight: cloned.studentInfo?.height,
-                studentInfoWeight: cloned.studentInfo?.weight,
-                hasHealthProfile: !!cloned.studentInfo?.healthProfile,
-                healthProfileHeight: (cloned.studentInfo?.healthProfile as any)?.height,
-                healthProfileWeight: (cloned.studentInfo?.healthProfile as any)?.weight,
-                healthProfile: cloned.studentInfo?.healthProfile,
-                studentInfo: cloned.studentInfo
-              });
-            }
+            logger.debug('프로필 데이터 로드 (API)', {
+              userId: cloned.userId || cloned._id,
+              hasPhone: !!cloned.phone,
+              hasAddress: !!cloned.address,
+              phone: cloned.phone,
+              address: cloned.address,
+              birthDate: cloned.birthDate,
+              gender: cloned.gender,
+              hasStudentInfo: !!cloned.studentInfo,
+              studentInfoHeight: cloned.studentInfo?.height,
+              studentInfoWeight: cloned.studentInfo?.weight,
+              hasHealthProfile: !!cloned.studentInfo?.healthProfile,
+              healthProfileHeight: (cloned.studentInfo?.healthProfile as any)?.height,
+              healthProfileWeight: (cloned.studentInfo?.healthProfile as any)?.weight
+            });
             
             // API에서 받은 데이터로 profile 업데이트 (phone, address 포함)
             // 이 데이터가 최신이므로 항상 덮어쓰기
@@ -391,18 +367,14 @@ export default function ProfilePage() {
             
             // 업데이트 후 확인
             setTimeout(() => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('✅ 프로필 상태 업데이트 완료 - API 데이터 반영됨');
-              }
+              logger.success('프로필 상태 업데이트 완료 - API 데이터 반영됨');
             }, 100);
           } else if (!profile && authUserRef.current) {
             const clonedFallback = deepClone(authUserRef.current) as ProfileUser;
-            if (process.env.NODE_ENV === 'development') {
-              console.log('⚠️ API 데이터 없음, authUser 사용:', {
-                phone: clonedFallback.phone,
-                address: clonedFallback.address
-              });
-            }
+            logger.warn('API 데이터 없음, authUser 사용', {
+              phone: clonedFallback.phone,
+              address: clonedFallback.address
+            });
             setProfile(clonedFallback);
             setInitialProfile(clonedFallback);
             const initialCertificates = ensureCertificateList(
@@ -416,7 +388,7 @@ export default function ProfilePage() {
           }
         }
       } catch (error) {
-        console.error('프로필 로드 실패:', error);
+        logger.error('프로필 로드 실패:', error);
         const fallbackUser = authUserRef.current;
         if (fallbackUser) {
           const clonedFallback = deepClone(fallbackUser) as ProfileUser;
@@ -541,18 +513,15 @@ export default function ProfilePage() {
   // 디버깅: profile 상태 확인 (모든 hooks는 early return 전에 위치해야 함)
   useEffect(() => {
     if (profile) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 프로필 상태 확인 (렌더링 시점):', {
-          phone: profile.phone,
-          address: profile.address,
-          hasPhone: !!profile.phone,
-          hasAddress: !!profile.address,
-          studentInfo: profile.studentInfo,
-          healthProfile: profile.studentInfo?.healthProfile,
-          profileKeys: Object.keys(profile),
-          fullProfile: profile
-        });
-      }
+      logger.debug('프로필 상태 확인 (렌더링 시점)', {
+        phone: profile.phone,
+        address: profile.address,
+        hasPhone: !!profile.phone,
+        hasAddress: !!profile.address,
+        studentInfo: profile.studentInfo,
+        healthProfile: profile.studentInfo?.healthProfile,
+        profileKeys: Object.keys(profile)
+      });
     }
   }, [profile]);
 
@@ -1114,7 +1083,7 @@ export default function ProfilePage() {
         message: '프로필 정보를 저장했습니다.',
       });
     } catch (error) {
-      console.error('프로필 저장 실패:', error);
+      logger.error('프로필 저장 실패:', error);
       setStatus({
         type: 'error',
         message: error instanceof Error ? error.message : '프로필 저장에 실패했습니다.',
@@ -1189,20 +1158,17 @@ export default function ProfilePage() {
   const bmi = (healthProfile as any)?.bmi ?? (height && weight ? (weight / ((height / 100) ** 2)).toFixed(1) : undefined);
   
   // 데이터 표시 확인 로그
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 [프로필 페이지] 렌더링 시점 데이터 확인:', {
-      birthDate: profile.birthDate,
-      gender: profile.gender,
-      studentInfoHeight: profile.studentInfo?.height,
-      studentInfoWeight: profile.studentInfo?.weight,
-      healthProfileHeight: (healthProfile as any)?.height,
-      healthProfileWeight: (healthProfile as any)?.weight,
-      finalHeight: height,
-      finalWeight: weight,
-      hasStudentInfo: !!profile.studentInfo,
-      studentInfo: profile.studentInfo
-    });
-  }
+  logger.debug('[프로필 페이지] 렌더링 시점 데이터 확인', {
+    birthDate: profile.birthDate,
+    gender: profile.gender,
+    studentInfoHeight: profile.studentInfo?.height,
+    studentInfoWeight: profile.studentInfo?.weight,
+    healthProfileHeight: (healthProfile as any)?.height,
+    healthProfileWeight: (healthProfile as any)?.weight,
+    finalHeight: height,
+    finalWeight: weight,
+    hasStudentInfo: !!profile.studentInfo
+  });
   
   // 건강 정보 배지 생성 (더 많은 필드 포함)
   const healthBadges: Array<{ label: string; value?: string | number; icon?: ReactNode }> = [

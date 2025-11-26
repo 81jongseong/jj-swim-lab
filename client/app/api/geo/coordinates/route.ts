@@ -1,12 +1,4 @@
-/**
- * 주소를 좌표로 변환하는 API Route
- * 
- * VWorld 지오코딩 API를 서버 사이드에서 호출하여 CORS 문제 해결
- * 
- * 연동되는 파일:
- * - client/app/auth/signup/page.tsx (회원가입 페이지)
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -63,7 +55,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 좌표 변환 API 오류:', error);
+    logger.error('❌ 좌표 변환 API 오류:', error);
     
     return NextResponse.json({
       success: false,

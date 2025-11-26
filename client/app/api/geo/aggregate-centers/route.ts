@@ -1,36 +1,4 @@
-/**
- * 🗺️ JJ Swim Lab - 센터별 회원 분포 집계 API
- * 
- * 📋 **API 목적**
- * - 센터별 회원 분포를 H3 헥사곤으로 집계
- * - 지배 센터(Dominant Center) 계산
- * - 프라이버시 보호 (k-익명성, 라플라스 노이즈, 반올림)
- * 
- * 🔄 **주요 기능**
- * - H3 셀별 센터 집계
- * - k-익명성 적용 (k≥5)
- * - 작은 센터는 "기타"로 묶음
- * - 라플라스 노이즈 + 5단위 반올림
- * - 지배 센터 계산 (가장 회원이 많은 센터)
- * 
- * 🗄️ **데이터 연동**
- * - VWorld Geocoder 2.0 API
- * - H3 헥사곤 그리드 시스템
- * - 회원 데이터베이스
- * - 센터 정보
- * 
- * 🛠️ **필요한 설치 파일**
- * - h3-js: H3 헥사곤 그리드 처리
- * - Next.js API Routes
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. k-익명성 임계값은 5 이상 유지
- * 2. 원본 주소/좌표는 절대 클라이언트에 전송 금지
- * 3. 센터별 작은 값은 "기타"로 묶음
- * 4. 지배 센터는 가장 많은 회원을 가진 센터
- * 5. 모든 집계 결과는 5단위 반올림
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import * as h3 from 'h3-js';
 import { 
@@ -216,7 +184,7 @@ function getDeclinePolicy(): DeclinePolicy {
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🗺️ 센터별 집계 API 호출 시작');
+    logger.info('🗺️ 센터별 집계 API 호출 시작');
 
     // JWT 세션 파싱 (목업)
     // TODO: 실제 JWT 토큰에서 추출
@@ -255,7 +223,7 @@ export async function GET(request: NextRequest) {
       rows = rows.filter(row => row.centerId === centerId);
     }
 
-    console.log(`📊 원본 데이터: ${rows.length}개 행`);
+    logger.info(`📊 원본 데이터: ${rows.length}개 행`);
 
     // 2) H3 셀별로 그룹화
     const byH3 = new Map<string, MemberRow[]>();
@@ -266,7 +234,7 @@ export async function GET(request: NextRequest) {
       byH3.get(row.h3)!.push(row);
     }
 
-    console.log(`🔢 H3 셀 수: ${byH3.size}`);
+    logger.info(`🔢 H3 셀 수: ${byH3.size}`);
 
     // 3) k-익명성 & 노이즈/반올림 적용
     const cells: AggregatedCell[] = [];
@@ -277,7 +245,7 @@ export async function GET(request: NextRequest) {
 
       // k-익명성: 전체 회원이 k명 미만이면 셀 자체를 숨김
       if (totalCount < K_ANONYMITY_THRESHOLD) {
-        console.log(`🔒 셀 ${h3Cell} 숨김 (총 ${totalCount}명 < ${K_ANONYMITY_THRESHOLD})`);
+        logger.info(`🔒 셀 ${h3Cell} 숨김 (총 ${totalCount}명 < ${K_ANONYMITY_THRESHOLD})`);
         continue;
       }
 
@@ -340,19 +308,19 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`✅ 프라이버시 보호 완료: ${cells.length}개 셀`);
-    console.log(`🔒 k-익명성(k=${K_ANONYMITY_THRESHOLD}), 노이즈(ε=${LAPLACE_EPSILON}), 반올림(${ROUND_UNIT}단위)`);
+    logger.info(`✅ 프라이버시 보호 완료: ${cells.length}개 셀`);
+    logger.info(`🔒 k-익명성(k=${K_ANONYMITY_THRESHOLD}), 노이즈(ε=${LAPLACE_EPSILON}), 반올림(${ROUND_UNIT}단위)`);
 
     // 4) 하락 판단 정책 적용
-    console.log('📉 하락 판단 정책 적용 시작');
+    logger.info('📉 하락 판단 정책 적용 시작');
     
     // 센터별 성과 지표 계산
     const centerMetrics = calculateAllCenterMetrics(monthlyRevenueData, declinePolicy);
-    console.log('📊 센터별 성과 지표 계산 완료:', centerMetrics.size, '개 센터');
+    logger.info('📊 센터별 성과 지표 계산 완료:', centerMetrics.size, '개 센터');
     
     // 하락 판단 정책 적용
     const policyAppliedCells = applyDeclineVisibilityPolicy(cells, centerMetrics, declinePolicy, mockSession);
-    console.log(`✅ 하락 판단 정책 적용 완료: ${policyAppliedCells.length}개 셀`);
+    logger.info(`✅ 하락 판단 정책 적용 완료: ${policyAppliedCells.length}개 셀`);
 
     // 감사 로그 생성
     const auditLog = createAuditLog('geo_aggregate_view', mockSession, {
@@ -367,7 +335,7 @@ export async function GET(request: NextRequest) {
       declinePolicy,
       filters: { centerId, from, to }
     });
-    console.log('📋 감사 로그:', auditLog);
+    logger.info('📋 감사 로그:', auditLog);
 
     // 응답 데이터
     const response = {
@@ -410,7 +378,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 센터별 집계 API 오류:', error);
+    logger.error('❌ 센터별 집계 API 오류:', error);
 
     return NextResponse.json({
       success: false,
@@ -440,7 +408,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 센터 목록 API 오류:', error);
+    logger.error('❌ 센터 목록 API 오류:', error);
 
     return NextResponse.json({
       success: false,

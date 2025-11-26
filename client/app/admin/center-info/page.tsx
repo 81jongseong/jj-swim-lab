@@ -7,6 +7,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -14,6 +15,7 @@ import { Save, Edit, Eye, Building, Info, FileText, Plus, Trash2, List, Settings
 import withAuth from '../../../components/withAuth';
 import CenterManagementTab from './center-management-tab';
 import { apiClient } from '../../../utils/api';
+import { LoadingState } from '@/components/common';
 
 interface CenterInfo {
   centerId: string;
@@ -78,7 +80,7 @@ function CenterInfoManagement() {
   // 디버깅: 센터 관리자 확인
   useEffect(() => {
     if (user) {
-      console.log('🔍 [CenterInfo] 사용자 정보:', {
+      logger.info('🔍 [CenterInfo] 사용자 정보:', {
         userType: user.userType,
         isCenterAdmin,
         hasManagedCenters: !!user.centerAdminInfo?.managedCenters,
@@ -125,7 +127,7 @@ function CenterInfoManagement() {
                   }
                 }
               } catch (error) {
-                console.error(`센터 ${centerId} 정보 조회 실패:`, error);
+                logger.error(`센터 ${centerId} 정보 조회 실패:`, error);
               }
               // API 호출 실패 시 ID만 사용
               return {
@@ -139,7 +141,7 @@ function CenterInfoManagement() {
             setSelectedCenterId(centersList[0]._id);
           }
         } catch (error) {
-          console.error('관리 센터 목록 로드 실패:', error);
+          logger.error('관리 센터 목록 로드 실패:', error);
           // 실패 시 기본값 사용
           const centersList = centers.map((c: any) => ({
             _id: c.toString ? c.toString() : c._id?.toString() || c,
@@ -220,7 +222,7 @@ function CenterInfoManagement() {
       };
       setCenterInfo(tempInfo);
     } catch (error) {
-      console.error('센터 정보 로드 실패:', error);
+      logger.error('센터 정보 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -229,7 +231,7 @@ function CenterInfoManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
@@ -288,7 +290,7 @@ function CenterInfoManagement() {
             <h2 className="text-xl font-semibold text-gray-900">센터 정보</h2>
             <button
               onClick={() => {
-                console.log('🔍 [CenterInfo] 센터 추가 버튼 클릭');
+                logger.info('🔍 [CenterInfo] 센터 추가 버튼 클릭');
                 setShowAddCenterModal(true);
               }}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md"
@@ -480,7 +482,7 @@ function CenterInfoManagement() {
                         alert(response.message || '센터 추가에 실패했습니다.');
                       }
                     } catch (error: any) {
-                      console.error('센터 추가 오류:', error);
+                      logger.error('센터 추가 오류:', error);
                       alert(error.response?.data?.message || '센터 추가 중 오류가 발생했습니다.');
                     }
                   }}

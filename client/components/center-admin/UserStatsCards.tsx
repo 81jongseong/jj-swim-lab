@@ -8,21 +8,7 @@
 
 import React from 'react';
 import StatCard from '@/components/StatCard';
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'student' | 'instructor' | 'centerAdmin';
-  status: 'active' | 'inactive' | 'pending';
-  joinedAt: Date;
-  lastLogin?: Date;
-  membershipType?: string;
-  membershipExpiry?: Date;
-  totalClasses?: number;
-  totalPayments?: number;
-}
+import type { User } from '@/types/user';
 
 interface UserStatsCardsProps {
   users: User[];

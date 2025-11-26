@@ -11,6 +11,7 @@ import PerformanceDashboard from '../../../components/performance/PerformanceDas
 import { Card     } from '../../../components/ui';
 import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Activity, Zap, Database, TrendingUp, AlertTriangle } from 'lucide-react';
+import { LoadingState, PageHeader } from '@/components/common';
 
 const PerformancePage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -19,10 +20,7 @@ const PerformancePage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -78,28 +76,20 @@ const PerformancePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">성능 최적화</h1>
-              <p className="text-gray-600 mt-1">
-                성능 분석, 캐시 관리, 쿼리 최적화를 담당합니다.
-              </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <PageHeader
+          title="성능 최적화"
+          description="성능 분석, 캐시 관리, 쿼리 최적화를 담당합니다."
+          actions={
+            <div className="text-right">
+              <div className="text-sm text-gray-600">현재 사용자</div>
+              <div className="font-semibold text-gray-900">{user.name}</div>
+              <div className="text-xs text-gray-500">{user.userType}</div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-600">현재 사용자</div>
-                <div className="font-semibold text-gray-900">{user.name}</div>
-                <div className="text-xs text-gray-500">{user.userType}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          }
+        />
 
-      {/* 알림 배너 */}
+        {/* 알림 배너 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <Alert className="mb-6">
           <Zap className="h-4 w-4" />
@@ -149,6 +139,7 @@ const PerformancePage: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

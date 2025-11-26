@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import apiClient from '../../utils/api';
@@ -81,26 +82,26 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
               }
             }
           } catch (error) {
-            console.warn(`회원 CSS 조회 실패:`, error);
+            logger.warn(`회원 CSS 조회 실패:`, error);
           }
         }
 
         // 평균 CSS 계산
         if (cssValues.length > 0) {
           const avgCSS = Math.round(cssValues.reduce((a, b) => a + b, 0) / cssValues.length);
-          console.log(`📊 ${selectedClass.className} 평균 CSS: ${avgCSS}초 (${cssValues.length}명)`);
+          logger.info(`📊 ${selectedClass.className} 평균 CSS: ${avgCSS}초 (${cssValues.length}명)`);
           setProgramConfig(prev => ({ ...prev, avgCSS }));
         } else {
           // CSS가 없으면 레벨별 기본값
           const defaultCSS = selectedClass.level === 'advanced' ? 70 :
                             selectedClass.level === 'intermediate' ? 85 :
                             95;
-          console.log(`⚠️ CSS 데이터 없음. 레벨별 기본값 사용: ${defaultCSS}초`);
+          logger.info(`⚠️ CSS 데이터 없음. 레벨별 기본값 사용: ${defaultCSS}초`);
           setProgramConfig(prev => ({ ...prev, avgCSS: defaultCSS }));
         }
       }
     } catch (error) {
-      console.error('평균 CSS 계산 실패:', error);
+      logger.error('평균 CSS 계산 실패:', error);
     }
   };
 
@@ -112,10 +113,10 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
         setGroupClasses((response.data as any).groupClasses);
       } else if (response.success && Array.isArray((response as any).students)) {
         // students 배열이 직접 응답에 있는 경우
-        console.log('✅ students 배열 직접 접근');
+        logger.info('✅ students 배열 직접 접근');
       }
     } catch (error) {
-      console.error('단체반 목록 불러오기 실패:', error);
+      logger.error('단체반 목록 불러오기 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
 
     setGenerating(true);
     try {
-      console.log('🚀 단체반 프로그램 생성 시작:', selectedClass.className);
+      logger.info('🚀 단체반 프로그램 생성 시작:', selectedClass.className);
 
       // 1. 프로그램 데이터 준비
       const engineInput = {
@@ -159,7 +160,7 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
         throw new Error('프로그램 생성 실패');
       }
 
-      console.log('✅ 프로그램 생성 완료:', engineResponse.data);
+      logger.info('✅ 프로그램 생성 완료:', engineResponse.data);
 
       // 3. 단체반 프로그램으로 저장
       const programData = {
@@ -203,7 +204,7 @@ export default function GroupProgramGenerator({ onClose }: { onClose: () => void
       }
 
     } catch (error: any) {
-      console.error('❌ 프로그램 생성 실패:', error);
+      logger.error('❌ 프로그램 생성 실패:', error);
       alert(`프로그램 생성 실패: ${error.message || '알 수 없는 오류'}`);
     } finally {
       setGenerating(false);

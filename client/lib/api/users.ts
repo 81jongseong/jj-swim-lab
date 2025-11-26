@@ -16,43 +16,12 @@
  */
 
 import { logger } from '@/lib/logger';
+import type { User } from '@/types/user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-// 타입 정의
-export interface User {
-  _id: string;
-  userId: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  
-  // 학생 정보
-  studentInfo?: {
-    swimmingLevel: string;
-    enrolledCenters: string[];
-    emergencyContact?: string;
-    healthConditions?: string[];
-  };
-  
-  // 강사 정보
-  instructorInfo?: {
-    instructorLevel: string;
-    assignedCenters: string[];
-    specialties: string[];
-    experience: number;
-  };
-  
-  // 센터 관리자 정보
-  centerAdminInfo?: {
-    managedCenters: string[];
-    centerName?: string;
-  };
-}
+// 통합 타입 사용 - 더 이상 여기서 User 인터페이스를 정의하지 않음
+export type { User };
 
 // 헬퍼 함수
 const getAuthHeaders = () => {

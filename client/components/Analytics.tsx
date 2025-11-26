@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect } from 'react';
 
@@ -18,7 +19,7 @@ export default function Analytics({ trackingId }: AnalyticsProps) {
     // Google Analytics 또는 다른 분석 도구 초기화
     if (typeof window !== 'undefined' && trackingId) {
       // 실제 분석 도구 연동 코드는 여기에 구현
-      console.log('Analytics initialized with tracking ID:', trackingId);
+      logger.info('Analytics initialized with tracking ID:', trackingId);
     }
   }, [trackingId]);
 

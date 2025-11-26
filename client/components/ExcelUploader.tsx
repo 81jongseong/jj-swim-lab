@@ -69,6 +69,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
@@ -173,7 +174,7 @@ export default function ExcelUploader({
 
       if (response.ok) {
         const result = await response.json();
-        console.log('📥 ExcelUploader 서버 응답:', result);
+        logger.info('📥 ExcelUploader 서버 응답:', result);
 
         setUploadStatus('success');
         setUploadMessage('파일 업로드가 성공적으로 완료되었습니다!');
@@ -181,16 +182,16 @@ export default function ExcelUploader({
         // 파싱된 데이터를 uploadedFile 객체에 저장
         if (uploadedFile) {
           (uploadedFile as any).parsedData = result.data;
-          console.log('📊 ExcelUploader에 저장된 파싱 데이터:', result.data);
+          logger.info('📊 ExcelUploader에 저장된 파싱 데이터:', result.data);
         }
 
-        console.log('📤 ExcelUploader에서 onUploadSuccess 호출:', result.data);
-        console.log('🔍 onUploadSuccess 함수 존재 여부:', !!onUploadSuccess);
+        logger.info('📤 ExcelUploader에서 onUploadSuccess 호출:', result.data);
+        logger.info('🔍 onUploadSuccess 함수 존재 여부:', !!onUploadSuccess);
 
         if (onUploadSuccess) {
           onUploadSuccess(result.data);
         } else {
-          console.error('❌ onUploadSuccess 함수가 정의되지 않음!');
+          logger.error('❌ onUploadSuccess 함수가 정의되지 않음!');
         }
       } else {
         const error = await response.json();

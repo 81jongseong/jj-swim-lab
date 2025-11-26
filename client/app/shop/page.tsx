@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid } from '@/components/common';
 import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Grid, List } from 'lucide-react';
 import SearchBar from '@/components/common/SearchBar';
 import SortOptions from '@/components/common/SortOptions';
+import { LoadingState, PageHeader } from '@/components/common';
 
 /**
  * 🛒 수영 용품 샵 페이지
@@ -156,7 +159,7 @@ export default function ShopPage() {
       
       setProducts(mockProducts);
     } catch (error) {
-      console.error('상품 조회 실패:', error);
+      logger.error('상품 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -169,7 +172,7 @@ export default function ShopPage() {
         setCart(JSON.parse(savedCart));
       }
     } catch (error) {
-      console.error('장바구니 로드 실패:', error);
+      logger.error('장바구니 로드 실패:', error);
     }
   };
 
@@ -177,7 +180,7 @@ export default function ShopPage() {
     try {
       localStorage.setItem('shop_cart', JSON.stringify(cartItems));
     } catch (error) {
-      console.error('장바구니 저장 실패:', error);
+      logger.error('장바구니 저장 실패:', error);
     }
   };
 
@@ -287,12 +290,7 @@ export default function ShopPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -301,35 +299,31 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">🛒 수영 용품샵</h1>
-              <p className="mt-2 text-gray-600">
-                최고의 수영 용품들을 만나보세요.
-              </p>
-            </div>
-            <Button
-              onClick={() => setShowCart(true)}
-              variant="primary"
-              size="md"
-              className="relative"
-            >
-              🛒 장바구니
-              {getTotalItems() > 0 && (
+        <PageHeader
+            title="🛒 수영 용품샵"
+            description="최고의 수영 용품들을 만나보세요."
+            actions={
+              <Button
+                onClick={() => setShowCart(true)}
+                variant="primary"
+                size="md"
+                className="relative"
+              >
+                🛒 장바구니
+                {getTotalItems() > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {getTotalItems()}
                 </span>
               )}
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* 최고 관리자 전용 통계 카드 */}
         {user?.userType === 'superAdmin' && (
           <>
           {/* 상점 통계 카드 */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <CardGrid gap={6} className="mb-6">
             <StatCard
               title="오늘의 매출"
               value="₩2,450,000"
@@ -362,10 +356,10 @@ export default function ShopPage() {
               subtitle="품절 위험 상품"
               change={{ value: -15.7, type: 'decrease' }}
             />
-          </div>
+          </CardGrid>
 
           {/* 관리자 전용 상세 통계 */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <CardGrid gap={6} className="mb-6">
             <StatCard
               title="브랜드별 매출"
               value="스피도 35%"
@@ -398,7 +392,7 @@ export default function ShopPage() {
               subtitle="장바구니 이탈률"
               change={{ value: -3.2, type: 'decrease' }}
             />
-          </div>
+          </CardGrid>
           </>
         )}
 

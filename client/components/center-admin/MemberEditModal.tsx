@@ -1,9 +1,4 @@
-/**
- * 회원 정보수정 모달 컴포넌트
- * 연동되는 데이터: 회원 정보, 수강 과정, 메모 이력
- * 연동되는 파일: center-admin/users/page.tsx
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui';
 import { Button } from '@/components/ui';
@@ -85,7 +80,7 @@ export default function MemberEditModal({ isOpen, onClose, member, onSave }: Mem
       await onSave(member._id, formData);
       onClose();
     } catch (error) {
-      console.error('회원 정보 저장 실패:', error);
+      logger.error('회원 정보 저장 실패:', error);
     } finally {
       setIsLoading(false);
     }

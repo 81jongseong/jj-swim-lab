@@ -63,10 +63,29 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     // 개발 환경에서 디버깅 정보 출력
     logger.api('Dashboard API 호출', { endpoint: API_ENDPOINT, hasToken: !!token });
     
-    const response = await fetch(API_ENDPOINT, {
-      method: 'GET',
-      headers,
-    });
+    logger.debug('Dashboard API fetch 시작', { endpoint: API_ENDPOINT });
+    
+    // 타임아웃 처리
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+    
+    let response: Response;
+    try {
+      response = await fetch(API_ENDPOINT, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      logger.debug('Dashboard API 응답 수신', { status: response.status, statusText: response.statusText, ok: response.ok });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      logger.error('Dashboard API fetch 실패', { error: fetchError, message: fetchError?.message, name: fetchError?.name });
+      if (fetchError?.name === 'AbortError') {
+        throw new Error('대시보드 통계 요청이 시간 초과되었습니다. 서버가 응답하지 않습니다.');
+      }
+      throw fetchError;
+    }
 
     // 401 오류 발생 시 토큰 제거 및 로그인 페이지로 리다이렉트
     if (response.status === 401) {
@@ -82,10 +101,34 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     }
 
     if (!response.ok) {
-      throw new Error(`대시보드 통계를 가져올 수 없습니다: ${response.status}`);
+      let errorMessage = `대시보드 통계를 가져올 수 없습니다: ${response.status}`;
+      let errorDetails: any = null;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.details || errorMessage;
+        errorDetails = errorData;
+      } catch (jsonError) {
+        // JSON 파싱 실패 시 텍스트로 읽기 시도
+        try {
+          const errorText = await response.text();
+          logger.error('Dashboard API 오류 응답 (텍스트)', { status: response.status, errorText });
+        } catch {
+          logger.error('Dashboard API 오류 응답 읽기 실패', { status: response.status });
+        }
+      }
+      logger.error('Dashboard API 오류', { status: response.status, errorMessage, errorDetails });
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+      logger.api('Dashboard API 응답 성공', { dataKeys: Object.keys(data || {}), totalUsers: data?.totalUsers, activeCourses: data?.activeCourses });
+    } catch (jsonError) {
+      logger.error('Dashboard API JSON 파싱 실패', { error: jsonError });
+      throw new Error('대시보드 통계 응답을 파싱할 수 없습니다.');
+    }
+    
     return data;
   } catch (error) {
     logger.error('대시보드 통계 가져오기 실패:', error);

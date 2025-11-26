@@ -27,6 +27,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui';
@@ -555,7 +556,7 @@ export default function LaneManager({
                   variant="primary"
                   onClick={() => {
                     setShowSettings(false);
-                    console.log('레인 설정 저장:', config);
+                    logger.info('레인 설정 저장:', config);
                   }}
                 >
                   설정 저장

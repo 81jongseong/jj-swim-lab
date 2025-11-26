@@ -10,6 +10,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
 
 interface RefreshButtonProps {
   onRefresh?: () => Promise<void> | void;
@@ -44,7 +45,7 @@ const RefreshButton = ({
         await handler();
       }
     } catch (error) {
-      console.error('새로고침 실패:', error);
+      logger.error('새로고침 실패:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -88,3 +89,4 @@ const RefreshButton = ({
 }
 
 export default RefreshButton;
+

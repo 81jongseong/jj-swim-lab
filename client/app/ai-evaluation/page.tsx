@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui';
 import { Card } from '../../components/ui';
+import { LoadingState, PageHeader } from '@/components/common';
 
 /**
  * 🤖 AI 평가 페이지
@@ -82,7 +84,7 @@ export default function AIEvaluationPage() {
         setStudents(data.data || []);
       }
     } catch (error) {
-      console.error('학생 목록 조회 실패:', error);
+      logger.error('학생 목록 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ export default function AIEvaluationPage() {
       
       setEvaluationResults(mockResults);
     } catch (error) {
-      console.error('평가 결과 조회 실패:', error);
+      logger.error('평가 결과 조회 실패:', error);
     }
   };
 
@@ -146,7 +148,7 @@ export default function AIEvaluationPage() {
       setEvaluationResults(prev => [newResult, ...prev]);
       alert('AI 평가가 완료되었습니다!');
     } catch (error) {
-      console.error('AI 평가 실패:', error);
+      logger.error('AI 평가 실패:', error);
       alert('AI 평가 중 오류가 발생했습니다.');
     } finally {
       setEvaluating(false);
@@ -191,12 +193,7 @@ export default function AIEvaluationPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -205,12 +202,11 @@ export default function AIEvaluationPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">🤖 AI 수영 기술 평가</h1>
-          <p className="mt-2 text-gray-600">
-            AI 기술을 활용하여 학생들의 수영 기술을 정확하고 객관적으로 평가합니다.
-          </p>
-        </div>
+        <PageHeader
+          title="🤖 AI 수영 기술 평가"
+          description="AI 기술을 활용하여 학생들의 수영 기술을 정확하고 객관적으로 평가합니다."
+          className="mb-8"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 평가 설정 */}
@@ -268,10 +264,7 @@ export default function AIEvaluationPage() {
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400"
                 >
                   {evaluating ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      AI 평가 중...
-                    </div>
+                    <LoadingState message="AI 평가 중..." size="sm" className="flex-row text-white" />
                   ) : (
                     '🤖 AI 평가 시작'
                   )}

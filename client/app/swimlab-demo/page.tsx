@@ -7,6 +7,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { LoadingState } from '@/components/common';
 
 export default function SwimLabDemoPage() {
   // 리다이렉트: 데모 페이지를 수영엔진으로 이동
@@ -16,13 +17,7 @@ export default function SwimLabDemoPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">수영엔진으로 이동 중...</p>
-        <p className="text-sm text-gray-500 mt-2">
-          컨디션 설정 탭으로 이동합니다.
-        </p>
-      </div>
+      <LoadingState message="수영엔진으로 이동 중..." size="lg" />
     </div>
   );
 }

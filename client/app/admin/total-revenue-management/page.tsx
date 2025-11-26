@@ -14,6 +14,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui';
 import SimpleBarChart from '@/components/SimpleBarChart';
 import RegionNavigation from '@/components/RegionNavigation';
 import apiClient from '../../../utils/api';
+import { LoadingState, PageHeader } from '@/components/common';
 
 export default function TotalRevenueManagementPage() {
   const { user, hasUserType } = useAuth();
@@ -147,7 +149,7 @@ export default function TotalRevenueManagementPage() {
       }
       setPayments(paymentsData);
     } catch (error) {
-      console.error('결제 데이터 로드 오류:', error);
+      logger.error('결제 데이터 로드 오류:', error);
       setPayments([]);
     }
     setLoading(false);
@@ -187,10 +189,7 @@ export default function TotalRevenueManagementPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">데이터를 불러오는 중...</p>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -198,11 +197,10 @@ export default function TotalRevenueManagementPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">💎 총 매출 관리</h1>
-          <p className="text-gray-600">최고 관리자의 전체 수익 현황 (플랫폼 수익 + 기타 수익원)</p>
-        </div>
+        <PageHeader
+          title="💎 총 매출 관리"
+          description="최고 관리자의 전체 수익 현황 (플랫폼 수익 + 기타 수익원)"
+        />
 
         {/* 전체 수익 개요 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

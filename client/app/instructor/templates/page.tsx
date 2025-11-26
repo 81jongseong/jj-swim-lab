@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { FileText, Plus, Edit, Trash2, Eye, Search, Filter } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface Template {
   _id: string;
@@ -98,7 +100,7 @@ function ChecklistTemplates() {
       ];
       setTemplates(tempTemplates);
     } catch (error) {
-      console.error('템플릿 목록 로드 실패:', error);
+      logger.error('템플릿 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -136,18 +138,17 @@ function ChecklistTemplates() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">템플릿 목록을 불러오는 중...</span>
+        <LoadingState message="템플릿 목록을 불러오는 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">체크리스트 템플릿 관리</h1>
-        <p className="text-gray-600">수업에 사용할 체크리스트 템플릿을 관리하세요</p>
-      </div>
+      <PageHeader
+        title="체크리스트 템플릿 관리"
+        description="수업에 사용할 체크리스트 템플릿을 관리하세요"
+      />
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

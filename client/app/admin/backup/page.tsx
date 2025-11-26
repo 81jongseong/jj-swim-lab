@@ -11,6 +11,7 @@ import BackupManager from '../../../components/backup/BackupManager';
 import { Card } from '../../../components/ui';
 import { Alert, AlertDescription     } from '../../../components/ui/alert';
 import { Shield, Database, Download, Upload, AlertTriangle } from 'lucide-react';
+import { LoadingState, PageHeader } from '@/components/common';
 
 const BackupPage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -19,10 +20,7 @@ const BackupPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -82,12 +80,10 @@ const BackupPage: React.FC = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">백업 관리</h1>
-              <p className="text-gray-600 mt-1">
-                데이터베이스 백업, 복구, 버전 관리를 담당합니다.
-              </p>
-            </div>
+            <PageHeader
+              title="백업 관리"
+              description="데이터베이스 백업, 복구, 버전 관리를 담당합니다."
+            />
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="text-sm text-gray-600">현재 사용자</div>

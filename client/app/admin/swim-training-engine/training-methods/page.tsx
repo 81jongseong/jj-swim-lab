@@ -18,6 +18,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
+import { ConfirmModal } from '@/components/common';
 import { 
   Plus, 
   Edit, 
@@ -545,15 +546,34 @@ export default function TrainingMethodsPage() {
     setShowForm(true);
   };
 
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
+
   // 항목 삭제
   const handleDelete = (id: string) => {
-    if (confirm('정말 삭제하시겠습니까?')) {
-      if (activeTab === 'methods') {
-        setTrainingMethods(prev => prev.filter(item => item.id !== id));
-      } else {
-        setDrills(prev => prev.filter(item => item.id !== id));
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: () => {
+        if (activeTab === 'methods') {
+          setTrainingMethods(prev => prev.filter(item => item.id !== id));
+        } else {
+          setDrills(prev => prev.filter(item => item.id !== id));
+        }
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
       }
-    }
+    });
   };
 
   // 폼 저장
@@ -911,6 +931,18 @@ export default function TrainingMethodsPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

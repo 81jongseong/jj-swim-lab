@@ -13,10 +13,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
 import apiClient from '../../../utils/api';
+import type { User } from '@/types/user';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -31,16 +34,6 @@ import {
   FileText,
   Zap
 } from 'lucide-react';
-
-interface User {
-  _id: string;
-  email: string;
-  name: string;
-  userType: string;
-  healthProfile?: any;
-  createdAt: string;
-  lastLoginAt?: string;
-}
 
 interface UserActivity {
   _id: string;
@@ -60,7 +53,7 @@ export default function SystemAnalyticsPage() {
   useEffect(() => {
     if (authLoading) return;
     
-    console.log('🔍 시스템 통계 - 사용자 확인:', { user, userType: user?.userType });
+    logger.info('🔍 시스템 통계 - 사용자 확인:', { user, userType: user?.userType });
     
     if (!user) {
       alert('로그인이 필요합니다');
@@ -76,38 +69,38 @@ export default function SystemAnalyticsPage() {
       return;
     }
     
-    console.log('✅ 권한 체크 통과 - loadData 호출');
+    logger.info('✅ 권한 체크 통과 - loadData 호출');
     loadData();
   }, [user, authLoading]);
 
   const loadData = async () => {
-    console.log('📡 loadData 함수 실행 시작');
+    logger.info('📡 loadData 함수 실행 시작');
     try {
       setLoading(true);
       
       // 회원 데이터 로드
-      console.log('🔗 API 호출: /api/users');
+      logger.info('🔗 API 호출: /api/users');
       const usersResponse = await apiClient.get('/api/users');
-      console.log('📊 Users API 응답:', usersResponse);
+      logger.info('📊 Users API 응답:', usersResponse);
       
       // apiClient.get()은 이미 response.data를 반환함
       // 따라서 usersResponse 자체가 { users: [...] } 형태
-      console.log('🔍 usersResponse:', usersResponse);
+      logger.info('🔍 usersResponse:', usersResponse);
       
       if (usersResponse) {
         // usersResponse.users가 배열이면 직접 사용
         const users = (usersResponse as any).users || usersResponse;
-        console.log('🔍 추출된 users:', users);
+        logger.info('🔍 추출된 users:', users);
         
         if (Array.isArray(users)) {
           setUsers(users);
-          console.log(`✅ ${users.length}명의 회원 데이터 로드 완료`);
+          logger.info(`✅ ${users.length}명의 회원 데이터 로드 완료`);
         } else {
-          console.warn('❌ 회원 데이터 배열이 아님:', typeof users, users);
+          logger.warn('❌ 회원 데이터 배열이 아님:', typeof users, users);
           setUsers([]);
         }
       } else {
-        console.warn('❌ 회원 데이터 응답 없음');
+        logger.warn('❌ 회원 데이터 응답 없음');
         setUsers([]);
       }
       
@@ -118,12 +111,12 @@ export default function SystemAnalyticsPage() {
           setActivities((activitiesResponse as any).data.activities || []);
         }
       } catch (err) {
-        console.log('사용자 활동 데이터 없음 (선택사항)');
+        logger.info('사용자 활동 데이터 없음 (선택사항)');
         setActivities([]);
       }
       
     } catch (error: any) {
-      console.error('데이터 로드 오류:', error);
+      logger.error('데이터 로드 오류:', error);
       
       // 토큰 만료 시 재로그인
       if (error?.response?.status === 401 || error?.code === 'TOKEN_EXPIRED') {
@@ -168,14 +161,14 @@ export default function SystemAnalyticsPage() {
     const totalUsers = users.length;
     
     // 기간 내 신규 가입자
-    const newUsers = users.filter(u => new Date(u.createdAt) >= cutoffDate).length;
+    const newUsers = users.filter(u => u.createdAt && new Date(u.createdAt) >= cutoffDate).length;
     
     // 건강정보 입력 회원
     const usersWithHealth = users.filter(u => u.healthProfile).length;
     
     // 기간 내 건강정보 입력
     const newHealthProfiles = users.filter(u => 
-      u.healthProfile && new Date(u.createdAt) >= cutoffDate
+      u.healthProfile && u.createdAt && new Date(u.createdAt) >= cutoffDate
     ).length;
     
     // 계정 타입별 분포
@@ -225,9 +218,7 @@ export default function SystemAnalyticsPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <RefreshCw className="h-12 w-12 text-blue-600 animate-spin" />
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -237,17 +228,15 @@ export default function SystemAnalyticsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <BarChart3 className="h-8 w-8 text-blue-500" />
-                시스템 사용 통계
-              </h1>
-              <p className="text-gray-600">
-                전체 시스템의 사용 현황과 회원 활동을 실시간으로 분석합니다
-              </p>
+        <PageHeader
+          title={
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-8 w-8 text-blue-500" />
+              시스템 사용 통계
             </div>
+          }
+          description="전체 시스템의 사용 현황과 회원 활동을 실시간으로 분석합니다"
+          actions={
             <button
               onClick={loadData}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -255,8 +244,8 @@ export default function SystemAnalyticsPage() {
               <RefreshCw className="h-4 w-4" />
               새로고침
             </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* 필터 */}
         <div className="mb-6 flex items-center gap-4">
@@ -274,7 +263,7 @@ export default function SystemAnalyticsPage() {
         </div>
 
         {/* 주요 지표 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <CardGrid gap={6} className="mb-8">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-gray-600">총 회원 수</div>
@@ -320,7 +309,7 @@ export default function SystemAnalyticsPage() {
               선택 기간 내
             </div>
           </div>
-        </div>
+        </CardGrid>
 
         {/* 계정 타입별 분포 */}
         <div className="bg-white p-6 rounded-lg border border-gray-200 mb-8">

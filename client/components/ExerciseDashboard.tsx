@@ -73,6 +73,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from 'hooks/useAuth';
@@ -167,7 +168,7 @@ export default function ExerciseDashboard() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('인증 토큰이 없습니다.');
+        logger.error('인증 토큰이 없습니다.');
         return;
       }
 
@@ -241,7 +242,7 @@ export default function ExerciseDashboard() {
         }
       }
     } catch (error) {
-      console.error('스마트워치 데이터 로드 실패:', error);
+      logger.error('스마트워치 데이터 로드 실패:', error);
     }
   };
 
@@ -371,7 +372,7 @@ export default function ExerciseDashboard() {
             successCount++;
           }
         } catch (error) {
-          console.error(`${device.model} 데이터 생성 실패:`, error);
+          logger.error(`${device.model} 데이터 생성 실패:`, error);
         }
       }
 
@@ -384,7 +385,7 @@ export default function ExerciseDashboard() {
       }
 
     } catch (error) {
-      console.error('샘플 데이터 생성 오류:', error);
+      logger.error('샘플 데이터 생성 오류:', error);
       alert('❌ 샘플 데이터 생성 중 오류가 발생했습니다.');
     }
   };
@@ -398,7 +399,7 @@ export default function ExerciseDashboard() {
         return;
       }
 
-      console.log('📈 대시보드 샘플 데이터 생성 시작...');
+      logger.info('📈 대시보드 샘플 데이터 생성 시작...');
 
       const response = await fetch('http://localhost:5000/api/sample-data/generate-dashboard-data', {
         method: 'POST',
@@ -417,7 +418,7 @@ export default function ExerciseDashboard() {
       }
 
     } catch (error) {
-      console.error('대시보드 데이터 생성 오류:', error);
+      logger.error('대시보드 데이터 생성 오류:', error);
       alert('❌ 대시보드 데이터 생성 중 오류가 발생했습니다.');
     }
   };

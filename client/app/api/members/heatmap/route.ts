@@ -1,29 +1,4 @@
-/**
- * 🗺️ JJ Swim Lab - 개별 회원 위치 분포 API
- * 
- * 📋 **API 목적**
- * - 개별 회원의 실제 위치를 점(Point)으로 표시
- * - 프라이버시 보호를 위한 위치 노이즈 추가
- * - 회원 유형별 색상 구분
- * 
- * 🔄 **주요 기능**
- * - 개별 회원 위치 데이터 제공
- * - 위치 노이즈 (100-200m 랜덤 오프셋)
- * - 회원 유형별 색상 매핑
- * - 프라이버시 보호 (정확한 주소 노출 방지)
- * 
- * 🗄️ **데이터 연동**
- * - 회원 데이터베이스
- * - 주소 → 좌표 변환 (VWorld Geocoder)
- * - 프라이버시 보호 알고리즘
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 정확한 주소는 절대 클라이언트에 전송 금지
- * 2. 위치 노이즈는 100-200m 범위로 제한
- * 3. 회원 유형별 색상은 일관성 유지
- * 4. 대량 데이터는 페이지네이션 고려
- */
-
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server';
 
 // 타입 정의
@@ -101,13 +76,13 @@ function generateMemberPoints(): MemberPoint[] {
  */
 export async function GET() {
   try {
-    console.log('🗺️ 개별 회원 위치 API 호출 시작');
+    logger.info('🗺️ 개별 회원 위치 API 호출 시작');
 
     // 1) DB에서 데이터 가져오기 (현재는 목업 사용)
     // TODO: 실제 DB 쿼리로 교체
     const memberPoints = generateMemberPoints();
 
-    console.log(`📊 개별 회원 위치: ${memberPoints.length}개`);
+    logger.info(`📊 개별 회원 위치: ${memberPoints.length}개`);
 
     // 2) 프라이버시 보호 적용
     // - 위치 노이즈는 이미 generateMemberPoints에서 적용됨
@@ -147,7 +122,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('❌ 개별 회원 위치 API 오류:', error);
+    logger.error('❌ 개별 회원 위치 API 오류:', error);
 
     return NextResponse.json({
       success: false,

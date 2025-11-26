@@ -12,6 +12,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import apiClient from '../../utils/api';
@@ -89,7 +90,7 @@ export default function StudentChecklistModal({
       }
 
     } catch (error) {
-      console.error('데이터 로딩 실패:', error);
+      logger.error('데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -158,7 +159,7 @@ export default function StudentChecklistModal({
         loadData(); // 새로고침
       }
     } catch (error: any) {
-      console.error('저장 실패:', error);
+      logger.error('저장 실패:', error);
       alert(`저장 실패: ${error.message || '알 수 없는 오류'}`);
     } finally {
       setSaving(false);

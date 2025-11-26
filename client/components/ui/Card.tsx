@@ -1,12 +1,21 @@
 /**
- * Card 컴포넌트
+ * 📦 JJ Swim Lab - Card UI 컴포넌트
  * 
- * 연동되는 데이터: 없음
- * 연동되는 파일: 모든 페이지의 카드 요소
+ * 📋 **파일 목적**
+ * - shadcn/ui 스타일의 Card 컴포넌트
+ * - 정보 카드 컨테이너 및 레이아웃 제공
+ * - CardHeader, CardTitle, CardDescription, CardContent, CardFooter 포함
+ * 
+ * 🔄 **연동되는 파일**
+ * - components/ui/index.ts (export)
+ * - 모든 페이지의 카드 UI 요소
+ * 
+ * 🗄️ **데이터 연동**
+ * - children: 카드 내용
+ * - className: 추가 스타일 클래스
  */
 
 import * as React from "react"
-
 import { cn } from "../../lib/utils"
 
 const Card = React.forwardRef<
@@ -16,7 +25,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border bg-card/50 backdrop-blur-xl text-card-foreground shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-card/60",
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
       className
     )}
     {...props}
@@ -42,7 +51,10 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("font-semibold leading-none tracking-tight", className)}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
     {...props}
   />
 ))
@@ -81,4 +93,4 @@ const CardFooter = React.forwardRef<
 CardFooter.displayName = "CardFooter"
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
-export default Card
+

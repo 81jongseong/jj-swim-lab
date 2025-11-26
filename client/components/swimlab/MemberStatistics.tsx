@@ -17,6 +17,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiClient } from '@/utils/api';
@@ -81,7 +82,7 @@ export default function MemberStatistics({
       
       setLoading(false);
     } catch (error) {
-      console.error('통계 로드 오류:', error);
+      logger.error('통계 로드 오류:', error);
       setLoading(false);
     }
   };

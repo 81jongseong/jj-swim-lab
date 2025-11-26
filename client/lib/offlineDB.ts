@@ -92,6 +92,8 @@
  */
 
 // IndexedDB 기반 오프라인 데이터베이스 구현
+import { logger } from '@/lib/logger';
+
 export class OfflineDB {
   private db: IDBDatabase | null = null;
   private readonly DB_NAME = 'JJSwimLabOffline';
@@ -153,7 +155,7 @@ export class OfflineDB {
 
     // 데이터 검증: 배열인지 확인
     if (!Array.isArray(methods)) {
-      console.warn('⚠️ 강습법 데이터가 배열이 아닙니다:', typeof methods, methods);
+      logger.warn('강습법 데이터가 배열이 아닙니다', { type: typeof methods, data: methods });
       return;
     }
 
@@ -174,11 +176,11 @@ export class OfflineDB {
         
         await store.add(processedMethod);
       } catch (error) {
-        console.warn('⚠️ 강습법 저장 실패:', method, error);
+        logger.warn('강습법 저장 실패', { method, error });
       }
     }
 
-    console.log(`📚 ${methods.length}개의 강습법을 오프라인에 저장했습니다`);
+    logger.info(`${methods.length}개의 강습법을 오프라인에 저장했습니다`);
   }
 
   // 강습법 데이터 조회
@@ -216,7 +218,7 @@ export class OfflineDB {
 
     // 데이터 검증: 배열인지 확인
     if (!Array.isArray(students)) {
-      console.warn('⚠️ 학생 데이터가 배열이 아닙니다:', typeof students, students);
+      logger.warn('학생 데이터가 배열이 아닙니다', { type: typeof students, data: students });
       return;
     }
 
@@ -236,11 +238,11 @@ export class OfflineDB {
         
         await store.add(processedStudent);
       } catch (error) {
-        console.warn('⚠️ 학생 정보 저장 실패:', student, error);
+        logger.warn('학생 정보 저장 실패', { student, error });
       }
     }
 
-    console.log(`👨‍🎓 ${students.length}명의 학생 정보를 오프라인에 저장했습니다`);
+    logger.info(`${students.length}명의 학생 정보를 오프라인에 저장했습니다`);
   }
 
   // 학생 정보 조회
@@ -278,7 +280,7 @@ export class OfflineDB {
 
     // 데이터 검증: 객체인지 확인
     if (!profile || typeof profile !== 'object') {
-      console.warn('⚠️ 사용자 프로필 데이터가 유효하지 않습니다:', typeof profile, profile);
+      logger.warn('사용자 프로필 데이터가 유효하지 않습니다', { type: typeof profile, data: profile });
       return;
     }
 
@@ -293,9 +295,9 @@ export class OfflineDB {
       };
       
       await store.put(processedProfile);
-      console.log('👤 사용자 프로필을 오프라인에 저장했습니다');
+      logger.info('사용자 프로필을 오프라인에 저장했습니다');
     } catch (error) {
-      console.warn('⚠️ 사용자 프로필 저장 실패:', profile, error);
+      logger.warn('사용자 프로필 저장 실패', { profile, error });
     }
   }
 
@@ -325,7 +327,7 @@ export class OfflineDB {
     const store = transaction.objectStore('offlineActions');
     await store.add(action);
 
-    console.log('📱 오프라인 액션을 저장했습니다:', action.type);
+    logger.info('오프라인 액션을 저장했습니다', { type: action.type });
   }
 
   // 오프라인 액션 조회
@@ -395,7 +397,7 @@ export class OfflineDB {
       transaction.objectStore('cachedPages').clear()
     ]);
 
-    console.log('🗑️ 오프라인 데이터베이스를 정리했습니다');
+    logger.info('오프라인 데이터베이스를 정리했습니다');
   }
 
   // 데이터베이스 상태 확인

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -6,8 +7,8 @@ export async function POST(request: NextRequest) {
     
     // 서버 API로 요청 전달
     const serverUrl = 'http://localhost:5000';
-    console.log('Attempting to connect to server at:', serverUrl);
-    console.log('Request body:', body);
+    logger.info('Attempting to connect to server at:', serverUrl);
+    logger.info('Request body:', body);
     
     const response = await fetch(`${serverUrl}/api/auth/signup`, {
       method: 'POST',
@@ -17,10 +18,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    console.log('Server response status:', response.status);
+    logger.info('Server response status:', response.status);
     
     const data = await response.json();
-    console.log('Server response data:', data);
+    logger.info('Server response data:', data);
 
     if (!response.ok) {
       return NextResponse.json(
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     return responseWithCookie;
   } catch (error) {
-    console.error('Signup API error:', error);
+    logger.error('Signup API error:', error);
     return NextResponse.json(
       { error: `서버 연결 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}` },
       { status: 500 }

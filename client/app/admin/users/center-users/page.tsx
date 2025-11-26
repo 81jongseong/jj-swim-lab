@@ -1,57 +1,23 @@
-"use client";
+'use client';
 
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import apiClient from '../../../../utils/api';
 import withAuth from '../../../../components/withAuth';
 import { useAuth } from '../../../../hooks/useAuth';
 import { Button, Input, Card, Badge } from '../../../../components/ui';
+import { LoadingState, PageHeader } from '@/components/common';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  isActive: boolean;
-  level?: string;
-  centerId?: string;
-  centerInfo?: {
-    _id: string;
-    name: string;
-    address?: {
-      city: string;
-      province: string;
-      address1: string;
-    };
-    grade?: string;
-  };
-  studentInfo?: {
-    swimmingLevel?: string;
-    age?: number;
-    parentName?: string;
-    parentPhone?: string;
-  };
-  instructorInfo?: {
-    instructorLevel?: string;
-    experience?: string;
-    specialties?: string[];
-  };
-  centerAdminInfo?: {
-    adminLevel?: string;
-    permissions?: string[];
-  };
-  superAdminInfo?: {
-    systemPermissions?: string[];
-  };
-  createdAt: string;
-}
+import type { User } from '@/types/user';
+
+// 통합 타입 사용 - 로컬 User 인터페이스 제거
 
 function CenterUsersPage() {
   const { user: currentUser } = useAuth(); // 현재 로그인한 사용자 정보
-  console.log('🧪 TEST: CenterUsersPage 컴포넌트 렌더링 시작');
-  console.log('🔍 현재 시간:', new Date().toISOString());
-  console.log('🔍 컴포넌트가 실행되고 있습니다!');
-  console.log('🧪 이 로그가 보인다면 컴포넌트가 정상적으로 렌더링되고 있습니다!');
+  logger.info('🧪 TEST: CenterUsersPage 컴포넌트 렌더링 시작');
+  logger.info('🔍 현재 시간:', new Date().toISOString());
+  logger.info('🔍 컴포넌트가 실행되고 있습니다!');
+  logger.info('🧪 이 로그가 보인다면 컴포넌트가 정상적으로 렌더링되고 있습니다!');
   
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,31 +49,31 @@ function CenterUsersPage() {
   });
 
   const loadUsers = async (page = 1) => {
-    console.log('🧪 TEST: loadUsers 함수 호출됨, 페이지:', page);
-    console.log('🔍 loadUsers 함수가 실행되고 있습니다!');
-    console.log('🔍 현재 시간:', new Date().toISOString());
-    console.log('🧪 이 로그가 보인다면 loadUsers 함수가 정상적으로 실행되고 있습니다!');
+    logger.info('🧪 TEST: loadUsers 함수 호출됨, 페이지:', page);
+    logger.info('🔍 loadUsers 함수가 실행되고 있습니다!');
+    logger.info('🔍 현재 시간:', new Date().toISOString());
+    logger.info('🧪 이 로그가 보인다면 loadUsers 함수가 정상적으로 실행되고 있습니다!');
     setLoading(true);
     try {
       // 센터 계정만 해당 센터의 사용자들을 조회
-      console.log('🌐 API 호출 시작:', `/api/users?page=${page}&limit=${pagination.limit}`);
+      logger.info('🌐 API 호출 시작:', `/api/users?page=${page}&limit=${pagination.limit}`);
       const res = await apiClient.get<{
         success: boolean;
         users?: any[];
         pagination?: { total: number };
         error?: string;
       }>(`/api/users?page=${page}&limit=${pagination.limit}`);
-      console.log('🔍 API 응답:', res);
+      logger.info('🔍 API 응답:', res);
       if ((res as any).users && Array.isArray((res as any).users)) {
-        console.log('✅ 사용자 목록 로드 성공:', (res as any).users.length, '명');
-        console.log('🔍 첫 번째 사용자 데이터 구조:', (res as any).users[0]);
-        console.log('🔍 모든 사용자 데이터:', (res as any).users);
+        logger.info('✅ 사용자 목록 로드 성공:', (res as any).users.length, '명');
+        logger.info('🔍 첫 번째 사용자 데이터 구조:', (res as any).users[0]);
+        logger.info('🔍 모든 사용자 데이터:', (res as any).users);
         
         // 🔐 현재 로그인한 사용자를 목록에서 제외
         const filteredUsers = (res as any).users.filter((user: User) => 
           currentUser && user._id !== currentUser._id
         );
-        console.log(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${filteredUsers.length}명`);
+        logger.info(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${filteredUsers.length}명`);
         
         setUsers(filteredUsers);
         setPagination(prev => ({
@@ -117,18 +83,18 @@ function CenterUsersPage() {
           pages: (res as any).pagination?.pages || 0,
         }));
       } else {
-        console.error('❌ 응답에 users 필드가 없음:', res);
+        logger.error('❌ 응답에 users 필드가 없음:', res);
       }
     } catch (error) {
-      console.error('사용자 목록 로드 실패:', error);
+      logger.error('사용자 목록 로드 실패:', error);
     } finally {
       setLoading(false);
-      console.log('🏁 loadUsers 함수 완료');
+      logger.info('🏁 loadUsers 함수 완료');
     }
   };
 
   useEffect(() => {
-    console.log('⚡ useEffect 실행됨 - loadUsers 호출');
+    logger.info('⚡ useEffect 실행됨 - loadUsers 호출');
     loadUsers();
   }, []);
 
@@ -224,7 +190,7 @@ function CenterUsersPage() {
     return true;
   });
 
-  console.log('🔍 필터링 결과:', {
+  logger.info('🔍 필터링 결과:', {
     전체사용자: users.length,
     필터링된사용자: filteredUsers.length,
     필터: filters
@@ -242,25 +208,23 @@ function CenterUsersPage() {
     createdAt: user.createdAt
   }));
 
-  console.log('🔍 테이블 렌더링 정보:', {
+  logger.info('🔍 테이블 렌더링 정보:', {
     filteredUsersLength: filteredUsers.length,
     filteredUsersData: tableBody,
     tableBody: tableBody
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">로딩 중...</div>
-      </div>
-    );
+    return <LoadingState message="사용자 정보를 불러오는 중..." size="lg" fullScreen />;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">사용자 관리</h1>
-        <p className="text-gray-600">센터에 등록된 강사와 회원을 관리합니다.</p>
+        <PageHeader
+          title="사용자 관리"
+          description="센터에 등록된 강사와 회원을 관리합니다."
+        />
       </div>
 
       {/* 필터 및 검색 */}

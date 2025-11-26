@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import StatCard from '@/components/StatCard';
 import { Button } from '@/components/ui';
 import RegionNavigation from '@/components/RegionNavigation';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader, CardGrid } from '@/components/common';
 
 interface Notice {
   _id: string;
@@ -84,10 +86,10 @@ export default function NewsPage() {
             district
           };
         });
-        console.log('로드된 센터 목록:', processedCenters);
+        logger.debug('로드된 센터 목록', processedCenters);
         setCenters(processedCenters);
       } else {
-        console.error('센터 목록 로드 실패, 샘플 데이터 사용:', response.statusText);
+        logger.error('센터 목록 로드 실패, 샘플 데이터 사용', { statusText: response.statusText });
         // 임시 샘플 데이터 (서버 준비 전까지)
         setCenters([
           { _id: '1', name: '강남 수영센터', region: '서울특별시', district: '강남구', address: '강남구 테헤란로 123' },
@@ -99,7 +101,7 @@ export default function NewsPage() {
         ]);
       }
     } catch (error) {
-      console.error('센터 목록 로드 실패, 샘플 데이터 사용:', error);
+      logger.error('센터 목록 로드 실패, 샘플 데이터 사용:', error);
       // 임시 샘플 데이터 (서버 준비 전까지)
       setCenters([
         { _id: '1', name: '강남 수영센터', region: '서울특별시', district: '강남구', address: '강남구 테헤란로 123' },
@@ -187,7 +189,7 @@ export default function NewsPage() {
         }
       ]);
     } catch (error) {
-      console.error('공지사항 로드 실패:', error);
+      logger.error('공지사항 로드 실패:', error);
     }
   };
 
@@ -331,12 +333,7 @@ export default function NewsPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -346,13 +343,13 @@ export default function NewsPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">📢 공지사항</h1>
-          <p className="text-gray-600">우리 지역 수영장의 최신 소식을 확인하세요</p>
-        </div>
+        <PageHeader
+          title="📢 공지사항"
+          description="우리 지역 수영장의 최신 소식을 확인하세요"
+        />
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <CardGrid cols={2} lgCols={3} gap={4} className="mb-8">
           <StatCard
             icon="📌"
             title="중요 공지"
@@ -374,7 +371,7 @@ export default function NewsPage() {
             description="누적 조회"
             color="green"
           />
-        </div>
+        </CardGrid>
 
         {/* 지역 필터 */}
         <RegionNavigation

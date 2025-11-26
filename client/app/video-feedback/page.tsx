@@ -24,6 +24,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import { Plus, Youtube, Eye, MessageSquare, Star, Users, Lock, Globe, Building2, UserCheck, HelpCircle, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
+import { Input, Textarea } from '@/components/ui';
 
 interface Video {
   _id: string;
@@ -73,6 +76,7 @@ function VideoFeedbackPage() {
   const { user } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -102,6 +106,19 @@ function VideoFeedbackPage() {
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackRating, setFeedbackRating] = useState<number>(0);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -135,7 +152,7 @@ function VideoFeedbackPage() {
         setAvailableInstructors(result.data.instructors || []);
       }
     } catch (error) {
-      console.error('강사 목록 조회 실패:', error);
+      logger.error('강사 목록 조회 실패:', error);
     } finally {
       setLoadingInstructors(false);
     }
@@ -160,9 +177,10 @@ function VideoFeedbackPage() {
   const loadVideos = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('토큰이 없습니다.');
+        setError('로그인이 필요합니다.');
         return;
       }
 
@@ -175,15 +193,20 @@ function VideoFeedbackPage() {
       });
 
       if (!response.ok) {
-        throw new Error('동영상 목록 조회 실패');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '동영상 목록 조회 실패');
       }
 
       const result = await response.json();
       if (result.success && result.data) {
         setVideos(result.data.items || []);
+      } else {
+        setVideos([]);
       }
-    } catch (error) {
-      console.error('동영상 목록 조회 실패:', error);
+    } catch (err: any) {
+      logger.error('동영상 목록 조회 실패:', err);
+      setError(err.message || '동영상 목록을 불러오는데 실패했습니다.');
+      setVideos([]);
     } finally {
       setLoading(false);
     }
@@ -247,10 +270,16 @@ function VideoFeedbackPage() {
 
       if (result.data?.requiresPayment) {
         const confirmMessage = `동영상이 등록되었습니다!\n\n분석 요청 비용: ${result.data.analysisFee?.toLocaleString()}원\n결제를 진행하시겠습니까?`;
-        if (confirm(confirmMessage)) {
-          // 결제 페이지로 이동 또는 결제 모달 표시
-          window.location.href = `/payments?paymentId=${result.data.paymentId}`;
-        }
+        setConfirmModal({
+          isOpen: true,
+          message: confirmMessage,
+          variant: 'info',
+          onConfirm: () => {
+            // 결제 페이지로 이동 또는 결제 모달 표시
+            window.location.href = `/payments?paymentId=${result.data.paymentId}`;
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          }
+        });
       } else {
         alert('동영상이 등록되었습니다!');
       }
@@ -270,7 +299,7 @@ function VideoFeedbackPage() {
       setAnalysisFee(0);
       loadVideos();
     } catch (error: any) {
-      console.error('동영상 등록 실패:', error);
+      logger.error('동영상 등록 실패:', error);
       alert(error.message || '동영상 등록에 실패했습니다.');
     } finally {
       setUploading(false);
@@ -299,7 +328,7 @@ function VideoFeedbackPage() {
         setShowDetailModal(true);
       }
     } catch (error) {
-      console.error('동영상 상세 조회 실패:', error);
+      logger.error('동영상 상세 조회 실패:', error);
       alert('동영상 정보를 불러올 수 없습니다.');
     }
   };
@@ -355,7 +384,7 @@ function VideoFeedbackPage() {
       }
       loadVideos();
     } catch (error: any) {
-      console.error('피드백 등록 실패:', error);
+      logger.error('피드백 등록 실패:', error);
       alert(error.message || '피드백 등록에 실패했습니다.');
     } finally {
       setSubmittingFeedback(false);
@@ -382,8 +411,28 @@ function VideoFeedbackPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">동영상 목록을 불러오는 중...</span>
+        <LoadingState message="동영상 목록을 불러오는 중..." size="md" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <PageHeader
+            title="🎥 동영상 피드백"
+            description="유튜브 링크를 등록하고 강사 및 회원들의 기술 피드백을 받아보세요"
+          />
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              loadVideos();
+            }}
+            retryText="다시 시도"
+          />
+        </div>
       </div>
     );
   }
@@ -392,13 +441,10 @@ function VideoFeedbackPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto p-6">
         {/* 헤더 */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎥 동영상 분석 요청</h1>
-          <p className="text-gray-600">
-            유튜브 동영상을 공유하고 강사에게 분석을 요청하세요. 
-            <span className="text-blue-600 font-medium"> 모두 공개(무료), 본인 센터(무료), 특정 강사(유료)</span> 중 선택할 수 있습니다.
-          </p>
-        </div>
+        <PageHeader
+          title="🎥 동영상 분석 요청"
+          description="유튜브 동영상을 공유하고 강사에게 분석을 요청하세요. 모두 공개(무료), 본인 센터(무료), 특정 강사(유료) 중 선택할 수 있습니다."
+        />
 
         {/* 필터 및 업로드 버튼 */}
         <div className="flex items-center justify-between mb-6">
@@ -549,12 +595,11 @@ function VideoFeedbackPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   유튜브 링크 <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
                 <p className="mt-1 text-sm text-gray-500">
@@ -564,23 +609,21 @@ function VideoFeedbackPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">제목 (선택)</label>
-                <input
+                <Input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="동영상 제목"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">설명 (선택)</label>
-                <textarea
+                <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="동영상에 대한 설명을 입력해주세요"
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -1001,6 +1044,18 @@ function VideoFeedbackPage() {
             </div>
           </div>
         )}
+
+        {/* ConfirmModal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+          variant={confirmModal.variant || 'info'}
+          title="확인"
+          confirmText="확인"
+          cancelText="취소"
+        />
       </div>
     </div>
   );

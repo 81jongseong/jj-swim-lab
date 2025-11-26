@@ -36,6 +36,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
@@ -44,6 +45,7 @@ import apiClient from '@/utils/api';
 import { Button } from '@/components/ui';
 import { Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { CardGrid, LoadingState, PageHeader, ErrorState } from '@/components/common';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -499,7 +501,7 @@ export default function InstructorHealthOverview() {
         setSelectedStudentId((prev) => prev ?? studentsWithHealth[0]._id);
       }
     } catch (error) {
-      console.error('학생 건강정보 로딩 실패:', error);
+      logger.error('학생 건강정보 로딩 실패:', error);
       setError('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -558,10 +560,7 @@ export default function InstructorHealthOverview() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">학생 건강정보를 불러오는 중...</p>
-          </div>
+          <LoadingState message="학생 건강정보를 불러오는 중..." size="lg" />
         </div>
       </div>
     );
@@ -571,17 +570,10 @@ export default function InstructorHealthOverview() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">오류가 발생했습니다</h1>
-            <p className="text-gray-600">{error}</p>
-            <button
-              onClick={loadStudentHealthData}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
+          <ErrorState 
+            message={`오류가 발생했습니다: ${error}`}
+            onRetry={loadStudentHealthData}
+          />
         </div>
       </div>
     );
@@ -591,14 +583,14 @@ export default function InstructorHealthOverview() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* 헤더 */}
-        <div className="mb-2">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🏥 학생 건강정보 개요</h1>
-          <p className="text-gray-600">담당 학생들의 건강 상태를 카드로 확인하고, 상세 정보를 팝업에서 확인하세요.</p>
-        </div>
+        <PageHeader
+          title="🏥 학생 건강정보 개요"
+          description="담당 학생들의 건강 상태를 카드로 확인하고, 상세 정보를 팝업에서 확인하세요."
+        />
 
         {/* 통계 카드 */}
         {statistics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardGrid gap={4}>
             <Card className="border border-gray-200 shadow-sm">
               <CardContent className="flex items-center gap-4 py-6">
                 <div className="rounded-full bg-blue-50 p-3">
@@ -646,7 +638,7 @@ export default function InstructorHealthOverview() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </CardGrid>
         )}
 
         {/* 전체 추이 */}

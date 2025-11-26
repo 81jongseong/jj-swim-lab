@@ -60,10 +60,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { LoadingState } from '@/components/common';
 
 interface MemberHealthInfo {
   id: string;
@@ -130,7 +132,7 @@ export default function CenterAdminHealthPage() {
     );
     
     if (!isCenterAdmin) {
-      console.error('🚫 센터관리자 권한이 필요합니다.');
+      logger.error('🚫 센터관리자 권한이 필요합니다.');
       return;
     }
     
@@ -299,12 +301,7 @@ export default function CenterAdminHealthPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">권한을 확인하는 중...</p>
-            </div>
-          </div>
+          <LoadingState message="권한을 확인하는 중..." size="lg" />
         </div>
       </div>
     );

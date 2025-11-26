@@ -4,6 +4,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui';
@@ -116,7 +117,7 @@ const PerformanceDashboard: React.FC = () => {
         setSlowQueries(queriesData.data.slowQueries);
       }
     } catch (error) {
-      console.error('성능 데이터 로드 실패:', error);
+      logger.error('성능 데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ const PerformanceDashboard: React.FC = () => {
         alert('캐시 정리에 실패했습니다.');
       }
     } catch (error) {
-      console.error('캐시 정리 실패:', error);
+      logger.error('캐시 정리 실패:', error);
       alert('캐시 정리 중 오류가 발생했습니다.');
     }
   };
@@ -169,7 +170,7 @@ const PerformanceDashboard: React.FC = () => {
         alert('캐시 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('캐시 삭제 실패:', error);
+      logger.error('캐시 삭제 실패:', error);
       alert('캐시 삭제 중 오류가 발생했습니다.');
     }
   };
@@ -197,7 +198,7 @@ const PerformanceDashboard: React.FC = () => {
         alert('메모리 추적 설정에 실패했습니다.');
       }
     } catch (error) {
-      console.error('메모리 추적 설정 실패:', error);
+      logger.error('메모리 추적 설정 실패:', error);
       alert('메모리 추적 설정 중 오류가 발생했습니다.');
     }
   };

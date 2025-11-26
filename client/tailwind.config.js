@@ -82,6 +82,21 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // CardGrid 컴포넌트에서 사용하는 동적 클래스
+    'grid-cols-1',
+    'grid-cols-2',
+    'lg:grid-cols-2',
+    'lg:grid-cols-3',
+    'lg:grid-cols-4',
+    'lg:grid-cols-5',
+    'lg:grid-cols-6',
+    'gap-2',
+    'gap-3',
+    'gap-4',
+    'gap-6',
+    'gap-8',
+  ],
   theme: {
     container: {
       center: true,

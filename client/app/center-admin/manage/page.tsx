@@ -29,6 +29,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -37,6 +38,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
 import ThemedStatCard from '../../../components/ThemedStatCard';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
 import { Button } from '@/components/ui';
 import { 
   Calendar, 
@@ -277,7 +279,7 @@ function IntegratedManagement() {
         setBookings(data.data?.bookings || []);
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('예약 데이터 로딩 실패:', error);
     }
   };
 
@@ -318,13 +320,13 @@ function IntegratedManagement() {
           };
         });
         // (debug) 결제 데이터 로드 로그
-        if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
+        if (DEBUG) logger.info('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);
       } else {
-        if (DEBUG) console.error('결제 데이터 로딩 실패:', response.status);
+        if (DEBUG) logger.error('결제 데이터 로딩 실패:', response.status);
       }
     } catch (error) {
-      if (DEBUG) console.error('결제 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('결제 데이터 로딩 실패:', error);
     }
   };
 
@@ -369,13 +371,13 @@ function IntegratedManagement() {
           };
         });
         // (debug) 승인 데이터 로드 로그
-        if (DEBUG) console.log('✅ 승인 데이터 로드:', formattedApprovals.length, '건');
+        if (DEBUG) logger.info('✅ 승인 데이터 로드:', formattedApprovals.length, '건');
         setApprovals(formattedApprovals);
       } else {
-        if (DEBUG) console.error('승인 데이터 로딩 실패:', response.status);
+        if (DEBUG) logger.error('승인 데이터 로딩 실패:', response.status);
       }
     } catch (error) {
-      if (DEBUG) console.error('승인 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('승인 데이터 로딩 실패:', error);
     }
   };
 
@@ -397,7 +399,7 @@ function IntegratedManagement() {
         });
       });
     } catch (error) {
-      if (DEBUG) console.error('데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('데이터 로딩 실패:', error);
       setLoading(false);
     }
   };
@@ -435,12 +437,7 @@ function IntegratedManagement() {
   if (authLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">인증 확인 중...</p>
-          </div>
-        </div>
+        <LoadingState message="인증 확인 중..." size="lg" />
       </div>
     );
   }
@@ -457,12 +454,7 @@ function IntegratedManagement() {
   if (!authLoading && !user) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">사용자 정보를 확인하는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="사용자 정보를 확인하는 중..." size="lg" />
       </div>
     );
   }
@@ -470,12 +462,7 @@ function IntegratedManagement() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -511,7 +498,7 @@ ${list}`);
           }
           finalInstructorId = instructors[idx]._id;
         } catch (e) {
-          if (DEBUG) console.error('강사 목록 조회 실패:', e);
+          if (DEBUG) logger.error('강사 목록 조회 실패:', e);
           alert('강사 목록을 불러올 수 없습니다. 잠시 후 다시 시도하세요.');
           return;
         }
@@ -533,10 +520,10 @@ ${list}`);
       if (response.ok) {
         await loadAllData();
       } else {
-        if (DEBUG) console.warn('예약 상태 변경 API 실패:', response.status, await response.text());
+        if (DEBUG) logger.warn('예약 상태 변경 API 실패:', response.status, await response.text());
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 처리 실패:', error);
+      if (DEBUG) logger.error('예약 처리 실패:', error);
     }
   };
 
@@ -557,7 +544,7 @@ ${list}`);
       // if (res.success) await loadAllData();
       alert(action === 'refund' ? '결제가 환불되었습니다.' : '결제가 취소되었습니다.');
     } catch (error) {
-      if (DEBUG) console.error('결제 처리 실패:', error);
+      if (DEBUG) logger.error('결제 처리 실패:', error);
     }
   };
 
@@ -628,11 +615,11 @@ ${list}`);
         alert('개인레슨 신청이 완료되었습니다.');
       } else {
         const text = await response.text();
-        if (DEBUG) console.warn('개인레슨 신청 실패:', response.status, text);
+        if (DEBUG) logger.warn('개인레슨 신청 실패:', response.status, text);
         alert('개인레슨 신청에 실패했습니다. 입력 값을 확인해 주세요.');
       }
     } catch (error) {
-      if (DEBUG) console.error('개인레슨 신청 실패:', error);
+      if (DEBUG) logger.error('개인레슨 신청 실패:', error);
       alert('개인레슨 신청에 실패했습니다.');
     }
   };
@@ -654,7 +641,7 @@ ${list}`);
         alert('레인대여 신청이 완료되었습니다.');
       }
     } catch (error) {
-      if (DEBUG) console.error('레인대여 신청 실패:', error);
+      if (DEBUG) logger.error('레인대여 신청 실패:', error);
       alert('레인대여 신청에 실패했습니다.');
     }
   };
@@ -729,12 +716,7 @@ ${list}`);
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -742,14 +724,10 @@ ${list}`);
   return (
     <div className="container mx-auto p-6">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              📋 예약·결제 관리
-            </h1>
-            <p className="text-gray-600">예약, 결제, 승인을 한 곳에서 관리하세요</p>
-          </div>
+      <PageHeader
+        title="📋 예약·결제 관리"
+        description="예약, 결제, 승인을 한 곳에서 관리하세요"
+        actions={
           <div className="flex space-x-3">
             <Button
               onClick={() => setShowPersonalLessonModal(true)}
@@ -767,8 +745,9 @@ ${list}`);
               레인대여 신청
             </Button>
           </div>
-        </div>
-      </div>
+        }
+        className="mb-8"
+      />
 
       {/* 탭 네비게이션 */}
       <div className="mb-6">
@@ -804,7 +783,7 @@ ${list}`);
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
           {/* 통합 통계 카드 (1행 핵심 KPI) */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <ThemedStatCard
               title="오늘 예약"
               value={dashboardStats.todayBookings}
@@ -833,10 +812,10 @@ ${list}`);
               color="teal"
               description="완료/전체 결제 비율"
             />
-          </div>
+          </CardGrid>
 
           {/* 2행 보조 KPI */}
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <ThemedStatCard
               title="환불 건수"
               value={`${dashboardStats.refundCount}건`}
@@ -865,7 +844,7 @@ ${list}`);
               color="blue"
               description="처리 완료된 결제"
             />
-          </div>
+          </CardGrid>
 
           {/* 최근 활동 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -912,7 +891,7 @@ ${list}`);
               <CardDescription>자주 사용하는 기능들에 빠르게 접근하세요.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <CardGrid gap={4}>
                 <Button 
                   variant="outline"
                   className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
@@ -954,7 +933,7 @@ ${list}`);
                   </div>
                   <span className="text-sm font-medium">레인대여 신청</span>
                 </Button>
-              </div>
+              </CardGrid>
             </CardContent>
           </Card>
         </div>

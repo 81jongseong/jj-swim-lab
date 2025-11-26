@@ -17,6 +17,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -26,6 +27,7 @@ import { GLOSSARY, parseWorkoutLine, explainToken } from '../../../lib';
 import CSSConverter from '../../../components/CSSConverter';
 import { allJointConditions } from '../../../swim-training-engine/src/data/jj-swim-lab-joint-guidance';
 import StatCard from '@/components/StatCard';
+import { CardGrid, ConfirmModal, PageHeader } from '@/components/common';
 import { Button } from '@/components/ui';
 // SwimLab Data Pack v4 통합
 import { CONDITIONS as SWIMLAB_CONDITIONS } from '../../../src/swimlab/data/conditions_full';
@@ -195,6 +197,21 @@ export default function SwimTrainingEnginePage() {
   const [programSuggestion, setProgramSuggestion] = useState<any>(null); // 프로그램 변경 제안
   const [showBulkVariablesModal, setShowBulkVariablesModal] = useState(false); // 다중 회원 변수 설정 모달
   const [showGroupProgramGenerator, setShowGroupProgramGenerator] = useState(false); // 단체반 프로그램 생성
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+    data?: any;
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info',
+    data: null
+  });
   const [showStudentChecklist, setShowStudentChecklist] = useState(false); // 학생 체크리스트
   const [checklistStudent, setChecklistStudent] = useState<{ id: string; name: string; level: string } | null>(null);
   const [bulkSelectedMembers, setBulkSelectedMembers] = useState<any[]>([]); // 다중 선택된 회원들
@@ -527,17 +544,15 @@ export default function SwimTrainingEnginePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 h-screen flex flex-col">
       {/* 헤더 */}
-      <div className="mb-8 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Zap className="h-8 w-8 text-blue-500" />
-              수영 트레이닝 규칙 엔진
-            </h1>
-            <p className="text-gray-600">
-              건강정보 기반 맞춤형 수영 프로그램 자동 생성 시스템
-            </p>
+      <PageHeader
+        title={
+          <div className="flex items-center gap-3">
+            <Zap className="h-8 w-8 text-blue-500" />
+            수영 트레이닝 규칙 엔진
           </div>
+        }
+        description="건강정보 기반 맞춤형 수영 프로그램 자동 생성 시스템"
+        actions={
           <div className="flex items-center gap-4">
             {/* 빠른 통계 */}
             <div className="flex gap-3 text-sm">
@@ -552,8 +567,9 @@ export default function SwimTrainingEnginePage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        }
+        className="flex-shrink-0"
+      />
 
       {/* 상태 표시 */}
       <div className="mb-6">
@@ -926,7 +942,7 @@ export default function SwimTrainingEnginePage() {
         {activeTab === 'overview' && (
           <div className="space-y-6 h-full overflow-y-auto">
             {/* 엔진 통계 카드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardGrid gap={6}>
               <StatCard
                 title="생성된 프로그램"
                 value={`${engineStats.totalPrograms}개`}
@@ -955,7 +971,7 @@ export default function SwimTrainingEnginePage() {
                 color="orange"
                 subtitle="AAA 등급"
               />
-            </div>
+            </CardGrid>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -1034,7 +1050,7 @@ export default function SwimTrainingEnginePage() {
                 condIds={conditionIds}
                 onBulkVariablesNeeded={(members) => {
                   // 다중 회원 선택 시 변수 설정 모달 표시
-                  console.log('🎯 onBulkVariablesNeeded 받은 데이터:', members.map(m => ({
+                  logger.info('🎯 onBulkVariablesNeeded 받은 데이터:', members.map(m => ({
                     name: m.name,
                     'studentInfo': m.studentInfo,
                     'studentInfo?.currentLevel': m.studentInfo?.currentLevel,
@@ -1045,7 +1061,7 @@ export default function SwimTrainingEnginePage() {
                 }}
                 onLoad={async (athlete: AthleteProfile) => {
                   // 선수 선택 시 저장된 모든 변수 자동 로드
-                  console.log('선수 선택됨:', athlete.name, '컨디션:', athlete.conditionIds);
+                  logger.info('선수 선택됨:', athlete.name, '컨디션:', athlete.conditionIds);
                   
                   // athlete.id가 "athlete_X" 형식이면 실제 User _id 추출
                   const actualUserId = athlete.id.startsWith('athlete_') 
@@ -1058,7 +1074,7 @@ export default function SwimTrainingEnginePage() {
                   // 1. 컨디션 설정
                   if (athlete.conditionIds && athlete.conditionIds.length > 0) {
                     setConditionIds(athlete.conditionIds);
-                    console.log('컨디션 설정됨:', athlete.conditionIds);
+                    logger.info('컨디션 설정됨:', athlete.conditionIds);
                   }
                   
                   // 2. 회원의 모든 저장된 변수 불러오기
@@ -1074,7 +1090,7 @@ export default function SwimTrainingEnginePage() {
                     goal: athleteData.goal || prev.goal
                   }));
                   
-                  console.log('회원 변수 로드 완료:', {
+                  logger.info('회원 변수 로드 완료:', {
                     mainStrokes: athleteData.mainStrokes,
                     excludedStrokes: athleteData.excludedStrokes,
                     sessionsPerWeek: athleteData.sessionsPerWeek,
@@ -1099,16 +1115,16 @@ export default function SwimTrainingEnginePage() {
                         
                         if ((analysis as any).shouldChange) {
                           setProgramSuggestion(analysis);
-                          console.log('프로그램 변경 제안:', analysis);
+                          logger.info('프로그램 변경 제안:', analysis);
                         } else {
                           setProgramSuggestion(null);
                         }
                       }
                     } catch (error) {
-                      console.error('프로그램 분석 실패:', error);
+                      logger.error('프로그램 분석 실패:', error);
                     }
                   } else {
-                    console.log('📚 단체반 선택됨: 이력 분석 스킵');
+                    logger.info('📚 단체반 선택됨: 이력 분석 스킵');
                     setProgramSuggestion(null);
                   }
                 }}
@@ -1126,11 +1142,13 @@ export default function SwimTrainingEnginePage() {
                         const athletes = listAthletes().filter(a => teamSelectedIds.includes(a.id));
                         if (!athletes.length) return alert('프로그램을 생성할 선수를 선택하세요.');
                         
-                        if (!confirm(`${athletes.length}명의 프로그램을 일괄 생성하시겠습니까?\n\n각 선수의 개별 변수(CSS, 선호 영법, 운동 요일, 목표)가 적용됩니다.`)) {
-                          return;
-                        }
-                        
-                        let successCount = 0;
+                        setConfirmModal({
+                          isOpen: true,
+                          message: `${athletes.length}명의 프로그램을 일괄 생성하시겠습니까?\n\n각 선수의 개별 변수(CSS, 선호 영법, 운동 요일, 목표)가 적용됩니다.`,
+                          variant: 'warning',
+                          data: { athletes },
+                          onConfirm: async () => {
+                            let successCount = 0;
                         
                         for (const athlete of athletes) {
                           try {
@@ -1141,7 +1159,7 @@ export default function SwimTrainingEnginePage() {
                             
                             // 프로그램 생성 로직 (간소화)
                             // 실제로는 ProgramGeneratorPanel의 handleGenerate 로직 사용
-                            console.log(`${athlete.name} 프로그램 생성:`, {
+                            logger.info(`${athlete.name} 프로그램 생성:`, {
                               css: customCSS,
                               days: trainingDays.length,
                               goal
@@ -1149,11 +1167,14 @@ export default function SwimTrainingEnginePage() {
                             
                             successCount++;
                           } catch (error) {
-                            console.error(`${athlete.name} 프로그램 생성 실패:`, error);
+                            logger.error(`${athlete.name} 프로그램 생성 실패:`, error);
                           }
                         }
-                        
-                        alert(`${successCount}/${athletes.length}명의 프로그램이 생성되었습니다!`);
+                            
+                            alert(`${successCount}/${athletes.length}명의 프로그램이 생성되었습니다!`);
+                            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                          }
+                        });
                       }}
                     >
                       🚀 일괄 프로그램 생성 ({teamSelectedIds.length}명)
@@ -1282,7 +1303,7 @@ export default function SwimTrainingEnginePage() {
                             });
                             alert(`✅ ${selectedAthlete.name}의 질환/특수상황 ${conditionIds.length}개가 저장되었습니다!`);
                           } catch (error) {
-                            console.error('회원 정보 업데이트 실패:', error);
+                            logger.error('회원 정보 업데이트 실패:', error);
                             alert('❌ 저장에 실패했습니다. 콘솔을 확인하세요.');
                           }
                         }}
@@ -2035,7 +2056,7 @@ export default function SwimTrainingEnginePage() {
                           });
                           alert(`✅ ${selectedAthlete.name}의 질환/특수상황 ${conditionIds.length}개가 저장되었습니다!`);
                         } catch (error) {
-                          console.error('회원 정보 업데이트 실패:', error);
+                          logger.error('회원 정보 업데이트 실패:', error);
                           alert('❌ 저장에 실패했습니다. 콘솔을 확인하세요.');
                         }
                       }}
@@ -2261,12 +2282,19 @@ export default function SwimTrainingEnginePage() {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    if (confirm(`"${condition.name}"을(를) 삭제하시겠습니까?`)) {
-                                      deleteCustomCondition(condition.id);
-                                      setAllConditions(getMergedConditions(jointConditionsBase));
-                                      setSelectedCondition(null);
-                                      alert('✅ 질환이 삭제되었습니다!');
-                                    }
+                                    setConfirmModal({
+                                      isOpen: true,
+                                      message: `"${condition.name}"을(를) 삭제하시겠습니까?`,
+                                      variant: 'danger',
+                                      data: { conditionId: condition.id, conditionName: condition.name },
+                                      onConfirm: () => {
+                                        deleteCustomCondition(condition.id);
+                                        setAllConditions(getMergedConditions(jointConditionsBase));
+                                        setSelectedCondition(null);
+                                        alert('✅ 질환이 삭제되었습니다!');
+                                        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                                      }
+                                    });
                                   }}
                                   className="px-3 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded"
                                 >
@@ -2545,7 +2573,7 @@ export default function SwimTrainingEnginePage() {
                 <BarChart3 className="h-5 w-5 text-blue-500" />
                 엔진 성능 분석
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <CardGrid gap={4}>
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-blue-800 mb-2">총 생성 프로그램</h4>
                   <p className="text-2xl font-bold text-blue-600">{engineStats.totalPrograms}</p>
@@ -2562,7 +2590,7 @@ export default function SwimTrainingEnginePage() {
                   <h4 className="font-semibold text-red-800 mb-2">안전성 점수</h4>
                   <p className="text-2xl font-bold text-red-600">{engineStats.safetyScore}</p>
                 </div>
-              </div>
+              </CardGrid>
             </div>
           </div>
         )}
@@ -2586,7 +2614,7 @@ export default function SwimTrainingEnginePage() {
             setBulkSelectedMembers([]);
           }}
           onConfirm={async (variables, generateWeeklyPlan) => {
-            console.log('일괄 생성 시작:', variables);
+            logger.info('일괄 생성 시작:', variables);
             
             // 각 회원의 선수 프로필 추가 및 프로그램 생성
             let successCount = 0;
@@ -2634,7 +2662,7 @@ export default function SwimTrainingEnginePage() {
 
                 upsertAthlete(newProfile as any);
               } catch (error: any) {
-                console.error(`${memberVar.memberName} 프로필 추가 실패:`, error);
+                logger.error(`${memberVar.memberName} 프로필 추가 실패:`, error);
               }
 
               // 프로그램 자동 생성 (프로필 추가와 별개로 처리)
@@ -2656,7 +2684,7 @@ export default function SwimTrainingEnginePage() {
                   const isGroupClass = !!(member as any).groupClassId;
                   
                   // 🏁 레이스 플랜 vs 주간 플랜 분기
-                  console.log(`🔍 ${memberVar.memberName} 프로그램 타입:`, memberVar.programType, {
+                  logger.info(`🔍 ${memberVar.memberName} 프로그램 타입:`, memberVar.programType, {
                     typeCheck: typeof memberVar.programType,
                     isRace: memberVar.programType === 'race',
                     rawValue: JSON.stringify(memberVar.programType),
@@ -2666,23 +2694,23 @@ export default function SwimTrainingEnginePage() {
                   });
                   
                   if (memberVar.programType === 'race') {
-                    console.log('🏁 레이스 플랜 생성 시작:', memberVar.memberName);
+                    logger.info('🏁 레이스 플랜 생성 시작:', memberVar.memberName);
                     
                     // 레이스 플랜 검증
                     if (!memberVar.raceDate) {
-                      console.warn(`⚠️ ${memberVar.memberName}: 대회일 미입력`);
+                      logger.warn(`⚠️ ${memberVar.memberName}: 대회일 미입력`);
                       throw new Error(`${memberVar.memberName}: 대회일을 입력하세요.`);
                     }
                     if (!memberVar.currentTime || memberVar.currentTime <= 0) {
-                      console.warn(`⚠️ ${memberVar.memberName}: 현재 기록 미입력`);
+                      logger.warn(`⚠️ ${memberVar.memberName}: 현재 기록 미입력`);
                       throw new Error(`${memberVar.memberName}: 현재 기록을 입력하세요.`);
                     }
                     if (!memberVar.targetTime || memberVar.targetTime <= 0) {
-                      console.warn(`⚠️ ${memberVar.memberName}: 목표 기록 미입력`);
+                      logger.warn(`⚠️ ${memberVar.memberName}: 목표 기록 미입력`);
                       throw new Error(`${memberVar.memberName}: 목표 기록을 입력하세요.`);
                     }
                     
-                    console.log(`✅ ${memberVar.memberName} 레이스 플랜 검증 통과:`, {
+                    logger.info(`✅ ${memberVar.memberName} 레이스 플랜 검증 통과:`, {
                       raceDate: memberVar.raceDate,
                       currentTime: memberVar.currentTime,
                       targetTime: memberVar.targetTime
@@ -2719,7 +2747,7 @@ export default function SwimTrainingEnginePage() {
                       }
                     });
                     
-                    console.log('✅ 레이스 프로그램 생성 완료:', raceProgram);
+                    logger.info('✅ 레이스 프로그램 생성 완료:', raceProgram);
                     
                     // 통합 프로그램으로 저장 (페이즈 정보 포함)
                     const programData = {
@@ -2763,7 +2791,7 @@ export default function SwimTrainingEnginePage() {
                       }
                     };
                     
-                    console.log('레이스 프로그램 저장 데이터:', programData);
+                    logger.info('레이스 프로그램 저장 데이터:', programData);
                     
                     const apiUrl = isGroupClass ? '/api/group-programs' : '/api/swim-programs';
                     const apiPayload = isGroupClass 
@@ -2771,23 +2799,23 @@ export default function SwimTrainingEnginePage() {
                       : programData;
                     
                     const response = await apiClient.post(apiUrl, apiPayload);
-                    console.log(`✅ ${memberVar.memberName} 레이스 프로그램 API 응답:`, response);
+                    logger.info(`✅ ${memberVar.memberName} 레이스 프로그램 API 응답:`, response);
                     
                     const programId = (response as any).programId || (response as any).data?.programId;
                     const isSuccess = !!(response as any).programId || ((response as any).success && (response as any).data?.programId);
                     
                     if (isSuccess) {
-                      console.log(`✅ ${memberVar.memberName} 레이스 프로그램 저장 성공 (ID: ${programId})`);
+                      logger.info(`✅ ${memberVar.memberName} 레이스 프로그램 저장 성공 (ID: ${programId})`);
                       successCount++;
                     } else {
-                      console.error(`❌ ${memberVar.memberName} 레이스 프로그램 저장 실패:`, response);
+                      logger.error(`❌ ${memberVar.memberName} 레이스 프로그램 저장 실패:`, response);
                       failedMembers.push(memberVar.memberName);
                     }
                     
                   } else {
                     // 🔥 주간 플랜 생성 (기존 로직)
-                    console.log('🏊 주간 플랜 생성 시작:', memberVar.memberName);
-                    console.log('🔍 프로그램 타입 확인:', {
+                    logger.info('🏊 주간 플랜 생성 시작:', memberVar.memberName);
+                    logger.info('🔍 프로그램 타입 확인:', {
                       programType: memberVar.programType,
                       isRace: (memberVar as any).programType === 'race',
                       typeCheck: typeof memberVar.programType
@@ -2804,7 +2832,7 @@ export default function SwimTrainingEnginePage() {
                     const hasCSS = memberVar.css && Object.keys(memberVar.css).length > 0;
                     
                     if (isAdvancedLevel && !hasCSS) {
-                      console.warn(`⚠️ ${memberVar.memberName}: 상급/마스터 레벨이지만 CSS 미입력`);
+                      logger.warn(`⚠️ ${memberVar.memberName}: 상급/마스터 레벨이지만 CSS 미입력`);
                       throw new Error(`${memberVar.memberName}은(는) 상급/마스터 레벨입니다.\nCSS를 입력해야 프로그램을 생성할 수 있습니다.\n\n회원 불러오기 → CSS 입력 → 저장 후 다시 시도하세요.`);
                     }
                     
@@ -2833,12 +2861,12 @@ export default function SwimTrainingEnginePage() {
                               (sum: number, session: any) => sum + session.completion.completionRate, 0
                             );
                             previousWeekCompletionRate = Math.round(totalCompletion / completedSessions.length);
-                            console.log(`🎯 ${memberVar.memberName} 이전 주 완료율: ${previousWeekCompletionRate}%`);
+                            logger.info(`🎯 ${memberVar.memberName} 이전 주 완료율: ${previousWeekCompletionRate}%`);
                           }
                         }
                       }
                     } catch (error) {
-                      console.warn(`⚠️ ${memberVar.memberName} 이전 주 완료율 조회 실패:`, error);
+                      logger.warn(`⚠️ ${memberVar.memberName} 이전 주 완료율 조회 실패:`, error);
                     }
 
                     const engineInput = {
@@ -2865,19 +2893,19 @@ export default function SwimTrainingEnginePage() {
                     restingHeartRate: memberVar.restingHeartRate
                   };
                   
-                  console.log('🔥 엔진 v3.1 입력:', engineInput);
+                  logger.info('🔥 엔진 v3.1 입력:', engineInput);
                   
                   // 엔진 호출
                   let weeklyPlan;
                   try {
                     weeklyPlan = engineGenerateWeeklyPlan(engineInput);
-                    console.log('✅ 엔진 v3.1 출력:', weeklyPlan);
-                    console.log('✅ 엔진 출력 타입:', typeof weeklyPlan);
-                    console.log('✅ 엔진 출력 days:', weeklyPlan?.days);
-                    console.log('✅ 엔진 출력 days 길이:', weeklyPlan?.days?.length);
+                    logger.info('✅ 엔진 v3.1 출력:', weeklyPlan);
+                    logger.info('✅ 엔진 출력 타입:', typeof weeklyPlan);
+                    logger.info('✅ 엔진 출력 days:', weeklyPlan?.days);
+                    logger.info('✅ 엔진 출력 days 길이:', weeklyPlan?.days?.length);
                   } catch (engineError: any) {
-                    console.error('❌ 엔진 v3.1 호출 실패:', engineError);
-                    console.error('엔진 에러 상세:', {
+                    logger.error('❌ 엔진 v3.1 호출 실패:', engineError);
+                    logger.error('엔진 에러 상세:', {
                       message: engineError.message,
                       stack: engineError.stack
                     });
@@ -2886,27 +2914,27 @@ export default function SwimTrainingEnginePage() {
                   
                   // 엔진 결과 유효성 검사
                   if (!weeklyPlan || !weeklyPlan.days || !Array.isArray(weeklyPlan.days)) {
-                    console.error('❌ 엔진 출력이 유효하지 않음:', weeklyPlan);
+                    logger.error('❌ 엔진 출력이 유효하지 않음:', weeklyPlan);
                     throw new Error('엔진이 유효한 프로그램을 생성하지 못했습니다.');
                   }
                   
                   if (weeklyPlan.days.length === 0) {
-                    console.error('❌ 엔진이 빈 days 배열을 반환함');
+                    logger.error('❌ 엔진이 빈 days 배열을 반환함');
                     throw new Error('엔진이 훈련 세션을 생성하지 못했습니다.');
                   }
                   
-                  console.log(`✅ 엔진이 ${weeklyPlan.days.length}일 프로그램 생성 완료`);
+                  logger.info(`✅ 엔진이 ${weeklyPlan.days.length}일 프로그램 생성 완료`);
                   
                   // 엔진 결과를 DB 형식으로 변환
                   const sessions = weeklyPlan.days.map((dayPlan: any, idx: number) => {
-                    console.log(`📅 Day ${idx + 1} 변환 중:`, {
+                    logger.info(`📅 Day ${idx + 1} 변환 중:`, {
                       theme: dayPlan.theme,
                       sets: dayPlan.sets?.length,
                       totalMeters: dayPlan.totalMeters
                     });
                     
                     if (!dayPlan.sets || !Array.isArray(dayPlan.sets)) {
-                      console.error(`❌ Day ${idx + 1}의 sets가 유효하지 않음:`, dayPlan);
+                      logger.error(`❌ Day ${idx + 1}의 sets가 유효하지 않음:`, dayPlan);
                       return null;
                     }
                     
@@ -2965,17 +2993,17 @@ export default function SwimTrainingEnginePage() {
                     };
                   }).filter((s: any) => s !== null); // null 제거
                   
-                  console.log(`✅ ${sessions.length}개 세션 변환 완료`);
+                  logger.info(`✅ ${sessions.length}개 세션 변환 완료`);
                   
                   if (sessions.length === 0) {
-                    console.error('❌ 변환된 세션이 없음');
+                    logger.error('❌ 변환된 세션이 없음');
                     throw new Error('프로그램 변환에 실패했습니다.');
                   }
                   
                   const totalDistance = sessions.reduce((sum: number, s: any) => sum + s.distance, 0);
                   const totalDuration = sessions.reduce((sum: number, s: any) => sum + s.duration, 0);
                   
-                    console.log(`✅ 총 거리: ${totalDistance}m, 총 시간: ${totalDuration}분`);
+                    logger.info(`✅ 총 거리: ${totalDistance}m, 총 시간: ${totalDuration}분`);
                     
                     const programData = {
                     athleteId: isGroupClass ? undefined : member._id,
@@ -3012,7 +3040,7 @@ export default function SwimTrainingEnginePage() {
                     usedMethodIds: [] // TODO: 사용된 훈련법 ID 추출
                   };
 
-                  console.log('프로그램 생성 데이터:', programData);
+                  logger.info('프로그램 생성 데이터:', programData);
                   
                   // 단체반은 group-programs API 사용
                   const apiUrl = isGroupClass ? '/api/group-programs' : '/api/swim-programs';
@@ -3020,10 +3048,10 @@ export default function SwimTrainingEnginePage() {
                     ? { groupClassId: (member as any).groupClassId, programData }
                     : programData;
                   
-                  console.log(`API 호출: ${apiUrl}`);
+                  logger.info(`API 호출: ${apiUrl}`);
                   const response = await apiClient.post(apiUrl, apiPayload);
                   
-                  console.log(`API 응답:`, response);
+                  logger.info(`API 응답:`, response);
                   
                   // apiClient는 이미 data를 직접 반환함
                   // 개인 PT: response.programId
@@ -3032,16 +3060,16 @@ export default function SwimTrainingEnginePage() {
                   const isSuccess = !!(response as any).programId || ((response as any).success && (response as any).data?.programId);
                   
                     if (isSuccess) {
-                      console.log(`✅ ${memberVar.memberName} 프로그램 생성 완료 (ID: ${programId})`);
+                      logger.info(`✅ ${memberVar.memberName} 프로그램 생성 완료 (ID: ${programId})`);
                       successCount++;
-                      console.log(`현재 성공 카운트: ${successCount}`);
+                      logger.info(`현재 성공 카운트: ${successCount}`);
                     } else {
-                      console.warn(`⚠️ ${memberVar.memberName} 프로그램 생성 실패:`, response);
+                      logger.warn(`⚠️ ${memberVar.memberName} 프로그램 생성 실패:`, response);
                     }
                   } // end of weekly plan else block
                 } catch (error: any) {
-                  console.error(`❌ ${memberVar.memberName} 프로그램 생성 실패:`, error);
-                  console.error('에러 상세:', {
+                  logger.error(`❌ ${memberVar.memberName} 프로그램 생성 실패:`, error);
+                  logger.error('에러 상세:', {
                     message: error.message,
                     stack: error.stack,
                     response: error.response,
@@ -3052,11 +3080,11 @@ export default function SwimTrainingEnginePage() {
               }
             }
             
-            console.log('=== 최종 결과 ===');
-            console.log('generateWeeklyPlan:', generateWeeklyPlan);
-            console.log('successCount:', successCount);
-            console.log('failedMembers:', failedMembers);
-            console.log('총 회원 수:', variables.length);
+            logger.info('=== 최종 결과 ===');
+            logger.info('generateWeeklyPlan:', generateWeeklyPlan);
+            logger.info('successCount:', successCount);
+            logger.info('failedMembers:', failedMembers);
+            logger.info('총 회원 수:', variables.length);
             
             setShowBulkVariablesModal(false);
             setBulkSelectedMembers([]);
@@ -3098,6 +3126,18 @@ export default function SwimTrainingEnginePage() {
           }}
         />
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

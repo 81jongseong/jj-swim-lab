@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid, LoadingState, PageHeader, ErrorState, ConfirmModal } from '@/components/common';
 import { Button } from '@/components/ui';
 
 interface ReportItem {
@@ -32,6 +33,19 @@ function AdminReportsPage() {
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   const load = async () => {
     setLoading(true);
@@ -117,13 +131,7 @@ function AdminReportsPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-600 mx-auto"></div>
-              <p className="mt-6 text-xl text-gray-700 font-medium">로딩 중입니다...</p>
-              <p className="mt-2 text-lg text-gray-500">잠시만 기다려주세요</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중입니다... 잠시만 기다려주세요" size="lg" />
         </div>
       </div>
     );
@@ -132,13 +140,13 @@ function AdminReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎧 고객지원 관리</h1>
-          <p className="text-gray-600">고객의 버그 신고, 기능 요청, 불만사항, 제안사항을 체계적으로 관리하세요</p>
-        </div>
+        <PageHeader
+          title="🎧 고객지원 관리"
+          description="고객의 버그 신고, 기능 요청, 불만사항, 제안사항을 체계적으로 관리하세요"
+        />
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <CardGrid gap={6} className="mb-8">
           <StatCard
             title="전체 요청"
             value={list.length}
@@ -174,7 +182,7 @@ function AdminReportsPage() {
             subtitle="처리 완료"
             onClick={() => setFilterStatus(filterStatus === 'resolved' ? 'all' : 'resolved')}
           />
-        </div>
+        </CardGrid>
 
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -211,10 +219,11 @@ function AdminReportsPage() {
           </div>
 
           {error && (
-            <div className="px-8 py-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-              <p className="font-medium">오류가 발생했습니다:</p>
-              <p>{error}</p>
-            </div>
+            <ErrorState 
+              message={`오류가 발생했습니다: ${error}`}
+              onRetry={() => load()}
+              className="mb-6"
+            />
           )}
 
           <div className="p-8">
@@ -322,10 +331,17 @@ function AdminReportsPage() {
                       
                       <Button
                         onClick={async () => {
-                          if (!confirm('정말로 이 리포트를 삭제하시겠습니까?')) return;
-                          const res = await apiClient.deleteReport(report._id);
-                          if (res.error) alert(res.error);
-                          else load();
+                          setConfirmModal({
+                            isOpen: true,
+                            message: '정말로 이 리포트를 삭제하시겠습니까?',
+                            variant: 'danger',
+                            onConfirm: async () => {
+                              const res = await apiClient.deleteReport(report._id);
+                              if (res.error) alert(res.error);
+                              else load();
+                              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                            }
+                          });
                         }}
                         variant="danger"
                         size="sm"
@@ -395,6 +411,18 @@ function AdminReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

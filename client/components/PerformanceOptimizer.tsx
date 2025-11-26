@@ -70,6 +70,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
@@ -207,7 +208,7 @@ function PerformanceOptimizer({ onOptimizationComplete }: PerformanceOptimizerPr
         renderTime
       });
     } catch (error) {
-      console.error('메트릭 수집 중 오류:', error);
+      logger.error('메트릭 수집 중 오류:', error);
     }
   }, []);
 

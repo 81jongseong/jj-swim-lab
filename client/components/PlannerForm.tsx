@@ -4,6 +4,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import { buildWeek, getSafetyCaps, TRAINING_METHODS, DRILLS } from '../swim-training-engine/src';
@@ -78,7 +79,7 @@ export default function PlannerForm({ onPlanGenerated }: { onPlanGenerated?: (pl
         onPlanGenerated(weekPlan);
       }
     } catch (error) {
-      console.error('Plan generation failed:', error);
+      logger.error('Plan generation failed:', error);
     } finally {
       setLoading(false);
     }

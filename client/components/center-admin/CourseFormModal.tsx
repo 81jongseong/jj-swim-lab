@@ -1,10 +1,4 @@
-/**
- * 센터 과정 관리 - 과정 추가/수정 모달
- * 
- * 연동 파일:
- * - client/app/center-admin/courses/page.tsx
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
@@ -118,9 +112,9 @@ export default function CourseFormModal({
     courseType: 'group', // ⭐ 기본값: 단체
     isPersonalLesson: false, // ⭐ 기본값: 개인레슨 아님
     personalLessonSettings: { // ⭐ 개인레슨 설정 초기값
-      timeSlots: [],
-      lessonTypes: [],
-      frequencyOptions: []
+      timeSlots: [] as any[],
+      lessonTypes: [] as any[],
+      frequencyOptions: [] as any[]
     },
     startDate: new Date(), // 수업 시작일 (오늘 날짜)
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)) // 수업 종료일 (한 달 후)
@@ -162,7 +156,7 @@ export default function CourseFormModal({
           }
         }
       } catch (error) {
-        console.error('강사 목록 로드 오류:', error);
+        logger.error('강사 목록 로드 오류:', error);
         // API 호출 실패 시 props로 받은 강사 목록 사용
         if (Array.isArray(propInstructors) && propInstructors.length > 0) {
           setInstructors(propInstructors);
@@ -208,10 +202,10 @@ export default function CourseFormModal({
           setPoolConfig(fullConfig);
           
           // ⭐ 개인레슨 가능 시간대 정보도 저장 (필요시 사용)
-          console.log('🏊 센터 운영시간:', data.data?.operatingHours);
-          console.log('🏊 개인레슨 설정:', data.data?.availabilitySettings?.personalLesson);
+          logger.info('🏊 센터 운영시간:', data.data?.operatingHours);
+          logger.info('🏊 개인레슨 설정:', data.data?.availabilitySettings?.personalLesson);
         } else {
-          console.error('❌ API 응답 에러:', response.status);
+          logger.error('❌ API 응답 에러:', response.status);
           // 기본값 설정
           const defaultConfig = {
             mainPool: { name: '메인 풀', lanes: 6 },
@@ -221,7 +215,7 @@ export default function CourseFormModal({
           setPoolConfig(defaultConfig);
         }
       } catch (error) {
-        console.error('💥 센터 정보 로드 실패:', error);
+        logger.error('💥 센터 정보 로드 실패:', error);
         // 기본값 설정
         const defaultConfig = {
           mainPool: { name: '메인 풀', lanes: 6 },
@@ -287,7 +281,7 @@ export default function CourseFormModal({
         // 개인레슨, 단체 수업 모두 schedule에서 요일 가져옴
         days = firstSchedule.dayOfWeek.split(',').map(d => d.trim());
       }
-      console.log('📅 요일 초기화:', days);
+      logger.info('📅 요일 초기화:', days);
       setSelectedDays(days);
       // 레인 및 풀 타입 초기화
       const lanes = course.laneInfo?.assignedLanes || course.lanes || [];
@@ -408,7 +402,7 @@ export default function CourseFormModal({
     const endTime = calculateEndTime(startTime, formData.duration || 60);
     
     const dayOfWeek = selectedDays.join(',');
-    console.log('🕐 handleStartTimeChange:', { startTime, dayOfWeek, selectedDays });
+    logger.info('🕐 handleStartTimeChange:', { startTime, dayOfWeek, selectedDays });
     
     setFormData({
       ...formData,
@@ -438,12 +432,12 @@ export default function CourseFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🎯 CourseFormModal handleSubmit 시작');
-    console.log('📋 formData:', formData);
-    console.log('🏊 selectedLanes:', selectedLanes);
-    console.log('🏊 selectedPoolType:', selectedPoolType);
-    console.log('🏊 formData.laneInfo:', formData.laneInfo);
-    console.log('🏊 formData.personalLessonSettings:', formData.personalLessonSettings);
+    logger.info('🎯 CourseFormModal handleSubmit 시작');
+    logger.info('📋 formData:', formData);
+    logger.info('🏊 selectedLanes:', selectedLanes);
+    logger.info('🏊 selectedPoolType:', selectedPoolType);
+    logger.info('🏊 formData.laneInfo:', formData.laneInfo);
+    logger.info('🏊 formData.personalLessonSettings:', formData.personalLessonSettings);
     
     // 강사 정보 설정
     const selectedInstructor = Array.isArray(instructors) ? instructors.find(i => i._id === formData.instructorId) : null;
@@ -466,7 +460,7 @@ export default function CourseFormModal({
       const dayArray = dayOfWeek.split(',').map((d: string) => d.trim()).filter((d: string) => d);
       const englishDays = dayArray.map((d: string) => dayNameMap[d] || d).join(',');
       
-      console.log('🔄 schedule 변환:', { dayOfWeek, dayArray, englishDays });
+      logger.info('🔄 schedule 변환:', { dayOfWeek, dayArray, englishDays });
       
       return {
         day: englishDays, // 영문 요일
@@ -483,7 +477,7 @@ export default function CourseFormModal({
     
     // ⭐ schedule이 비어있거나 dayOfWeek가 없는 경우 selectedDays로 생성
     if (convertedSchedule.length === 0 || convertedSchedule.some((s: any) => !s.day || s.day === '')) {
-      console.log('⚠️ schedule이 비어있음, selectedDays로 생성:', selectedDays);
+      logger.info('⚠️ schedule이 비어있음, selectedDays로 생성:', selectedDays);
       const englishDays = selectedDays.join(',').split(',').map((d: string) => dayNameMap[d.trim()] || d.trim()).join(',');
       convertedSchedule = [{
         day: englishDays,
@@ -519,11 +513,11 @@ export default function CourseFormModal({
       isPersonalLesson: formData.isPersonalLesson || false
     };
     
-    console.log('✅ finalFormData:', finalFormData);
-    console.log('🏊 finalFormData.lanes:', finalFormData.lanes);
-    console.log('🏊 finalFormData.poolType:', finalFormData.poolType);
-    console.log('🏊 finalFormData.laneInfo:', finalFormData.laneInfo);
-    console.log('🏊 finalFormData.personalLessonSettings:', finalFormData.personalLessonSettings);
+    logger.info('✅ finalFormData:', finalFormData);
+    logger.info('🏊 finalFormData.lanes:', finalFormData.lanes);
+    logger.info('🏊 finalFormData.poolType:', finalFormData.poolType);
+    logger.info('🏊 finalFormData.laneInfo:', finalFormData.laneInfo);
+    logger.info('🏊 finalFormData.personalLessonSettings:', finalFormData.personalLessonSettings);
     
     onSave(finalFormData as Course);
     onClose();
@@ -874,19 +868,20 @@ export default function CourseFormModal({
                       <h4 className="text-sm font-medium text-gray-700">레슨 타입별 가격</h4>
                       <button
                         type="button"
-                        onClick={() => {
+                          onClick={() => {
                           const newLessonTypes = formData.personalLessonSettings?.lessonTypes || [];
                           const newLessonType = {
                             id: `lesson_${Date.now()}`,
-                            type: '1:1' as '1:1' | '1:2' | '1:3' | '1:4' | '1:5',
+                            type: '1:1' as const,
                             maxStudents: 1,
                             pricePerSession: 80000
                           };
                           setFormData({
                             ...formData,
                             personalLessonSettings: {
-                              ...formData.personalLessonSettings,
-                              lessonTypes: [...newLessonTypes, newLessonType]
+                              timeSlots: formData.personalLessonSettings?.timeSlots || [],
+                              frequencyOptions: formData.personalLessonSettings?.frequencyOptions || [],
+                              lessonTypes: [...newLessonTypes, newLessonType] as any[]
                             }
                           });
                         }}
@@ -1624,11 +1619,11 @@ export default function CourseFormModal({
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('🎯 CourseFormModal 회원 배정 버튼 클릭:', course);
+                      logger.info('🎯 CourseFormModal 회원 배정 버튼 클릭:', course);
                       if (onAssignMembers && course) {
                         onAssignMembers(course);
                       } else {
-                        console.error('❌ onAssignMembers 함수가 전달되지 않았습니다.');
+                        logger.error('❌ onAssignMembers 함수가 전달되지 않았습니다.');
                         alert('회원 배정 기능을 사용할 수 없습니다. 페이지를 새로고침해주세요.');
                       }
                     }}

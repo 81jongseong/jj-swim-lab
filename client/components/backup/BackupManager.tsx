@@ -4,6 +4,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui';
@@ -96,7 +97,7 @@ const BackupManager: React.FC = () => {
         setRestores(restoresData.data.restores);
       }
     } catch (error) {
-      console.error('백업 데이터 로드 실패:', error);
+      logger.error('백업 데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -130,7 +131,7 @@ const BackupManager: React.FC = () => {
         alert('백업 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('백업 생성 실패:', error);
+      logger.error('백업 생성 실패:', error);
       alert('백업 생성 중 오류가 발생했습니다.');
     }
   };
@@ -158,7 +159,7 @@ const BackupManager: React.FC = () => {
         alert('스키마 백업 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('스키마 백업 생성 실패:', error);
+      logger.error('스키마 백업 생성 실패:', error);
       alert('스키마 백업 생성 중 오류가 발생했습니다.');
     }
   };
@@ -190,7 +191,7 @@ const BackupManager: React.FC = () => {
         alert('복구에 실패했습니다.');
       }
     } catch (error) {
-      console.error('복구 실패:', error);
+      logger.error('복구 실패:', error);
       alert('복구 중 오류가 발생했습니다.');
     }
   };
@@ -217,7 +218,7 @@ const BackupManager: React.FC = () => {
         alert('백업 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('백업 삭제 실패:', error);
+      logger.error('백업 삭제 실패:', error);
       alert('백업 삭제 중 오류가 발생했습니다.');
     }
   };

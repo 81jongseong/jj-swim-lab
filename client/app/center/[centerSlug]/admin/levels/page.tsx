@@ -11,11 +11,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid, ConfirmModal, LoadingState, PageHeader } from '@/components/common';
 import { Plus, Edit, Trash2, MoveUp, MoveDown, BookOpen } from 'lucide-react';
 
 interface Level {
@@ -48,6 +50,19 @@ function LevelsManagement() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', color: '#3b82f6' });
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -68,7 +83,7 @@ function LevelsManagement() {
       ];
       setLevels(tempLevels);
     } catch (error) {
-      console.error('급수 목록 로드 실패:', error);
+      logger.error('급수 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -119,12 +134,18 @@ function LevelsManagement() {
   };
 
   const handleDeleteLevel = (id: string) => {
-    if (confirm('정말 이 급수를 삭제하시겠습니까?\n이 급수를 사용하는 과정이 있을 수 있습니다.')) {
-      const remainingLevels = levels
-        .filter(l => l.id !== id)
-        .map((l, index) => ({ ...l, order: index + 1 }));
-      setLevels(remainingLevels);
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 이 급수를 삭제하시겠습니까?\n이 급수를 사용하는 과정이 있을 수 있습니다.',
+      variant: 'danger',
+      onConfirm: () => {
+        const remainingLevels = levels
+          .filter(l => l.id !== id)
+          .map((l, index) => ({ ...l, order: index + 1 }));
+        setLevels(remainingLevels);
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   const handleMoveLevel = (id: string, direction: 'up' | 'down') => {
@@ -145,10 +166,10 @@ function LevelsManagement() {
   const handleSave = async () => {
     try {
       // TODO: API 호출로 급수 저장
-      console.log('급수 저장:', levels);
+      logger.info('급수 저장:', levels);
       alert('급수가 저장되었습니다.');
     } catch (error) {
-      console.error('급수 저장 실패:', error);
+      logger.error('급수 저장 실패:', error);
       alert('급수 저장에 실패했습니다.');
     }
   };
@@ -156,7 +177,7 @@ function LevelsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
@@ -164,17 +185,13 @@ function LevelsManagement() {
   return (
     <div className="container mx-auto p-6">
       {/* 페이지 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          급수(레벨) 관리 🎖️
-        </h1>
-        <p className="text-gray-600">
-          센터만의 급수 체계를 설정하고 관리하세요
-        </p>
-      </div>
+      <PageHeader
+        title="급수(레벨) 관리 🎖️"
+        description="센터만의 급수 체계를 설정하고 관리하세요"
+      />
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           icon="🎖️"
           title="총 급수"
@@ -199,7 +216,7 @@ function LevelsManagement() {
           value="12개"
           color="orange"
         />
-      </div>
+      </CardGrid>
 
       {/* 급수 관리 */}
       <div className="bg-white rounded-lg shadow p-6">
@@ -399,6 +416,18 @@ function LevelsManagement() {
           💾 변경사항 저장
         </button>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

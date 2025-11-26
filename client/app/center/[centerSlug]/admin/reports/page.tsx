@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 
 import React, { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { BarChart3, TrendingUp, Users, Calendar, Download } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import ThemedStatCard from '@/components/ThemedStatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface ReportData {
   period: string;
@@ -82,7 +84,7 @@ function ReportsManagement() {
       };
       setReportData(tempData);
     } catch (error) {
-      console.error('리포트 데이터 로드 실패:', error);
+      logger.error('리포트 데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -97,25 +99,23 @@ function ReportsManagement() {
 
   const exportReport = () => {
     // 실제로는 PDF나 Excel 파일을 생성
-    console.log('리포트 내보내기');
+    logger.info('리포트 내보내기');
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          센터 리포트
-        </h1>
-        <p className="text-gray-600">센터의 운영 현황과 성과를 분석하세요</p>
-      </div>
+      <PageHeader
+        title="센터 리포트"
+        description="센터의 운영 현황과 성과를 분석하세요"
+      />
 
       {/* 기간 선택 및 내보내기 */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">

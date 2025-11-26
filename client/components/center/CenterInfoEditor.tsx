@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import apiClient from '@/utils/api';
@@ -128,7 +129,7 @@ export default function CenterInfoEditor({ centerInfo, onSave, onCancel }: Cente
         alert(`센터 정보 업데이트에 실패했습니다: ${response.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('센터 정보 업데이트 실패:', error);
+      logger.error('센터 정보 업데이트 실패:', error);
       alert(`센터 정보 업데이트 중 오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`);
     } finally {
       setLoading(false);

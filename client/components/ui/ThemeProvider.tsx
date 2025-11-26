@@ -79,6 +79,7 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { theme } from '../../styles/theme';
 import { changeTheme } from '../../utils/themeUtils';
+import { logger } from '@/lib/logger';
 
 interface ThemeContextType {
   theme: typeof theme;
@@ -108,7 +109,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         setCurrentTheme({ ...theme, ...parsedTheme });
         changeTheme(parsedTheme);
       } catch (error) {
-        console.error('Failed to parse saved theme:', error);
+        logger.error('Failed to parse saved theme:', error);
       }
     }
     

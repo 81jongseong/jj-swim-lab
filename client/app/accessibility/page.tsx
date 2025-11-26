@@ -6,13 +6,15 @@ import { Button } from '../../components/ui';
 import { Input } from '../../components/ui';
 // Switch, Select, Slider, Label, Textarea, Tabs는 index.ts에서 export되지 않으므로 직접 import
 import Switch from '../../components/ui/Switch';
-import { Select } from '../../components/ui/Select';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../../components/ui/Select';
 import Slider from '../../components/ui/Slider';
 import { Label } from '../../components/ui/Label';
 import Textarea from '../../components/ui/Textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/Tabs';
 import { Badge } from '@/components/ui';
 import withAuth from '../../components/withAuth';
 import Link from 'next/link';
+import { PageHeader } from '@/components/common';
 
 interface AccessibilitySettings {
   // 시각적 설정
@@ -201,13 +203,11 @@ function AccessibilityPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4">접근성 및 사용자 편의성 설정</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          모든 사용자가 편리하게 이용할 수 있도록 다양한 접근성 옵션을 제공합니다.
-          시각, 청각, 운동성, 인지적 요구에 맞춰 개인화된 경험을 만들어보세요.
-        </p>
-      </div>
+      <PageHeader
+        title="접근성 및 사용자 편의성 설정"
+        description="모든 사용자가 편리하게 이용할 수 있도록 다양한 접근성 옵션을 제공합니다. 시각, 청각, 운동성, 인지적 요구에 맞춰 개인화된 경험을 만들어보세요."
+        className="mb-8"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -254,12 +254,16 @@ function AccessibilityPage() {
                 <Select
                   value={settings.colorBlindMode}
                   onValueChange={(value) => handleSettingChange('colorBlindMode', value)}
-                  className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 >
-                  <option value="none">없음</option>
-                  <option value="protanopia">적색맹</option>
-                  <option value="deuteranopia">녹색맹</option>
-                  <option value="tritanopia">청색맹</option>
+                  <SelectTrigger className="w-full focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                    <SelectValue placeholder="선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">없음</SelectItem>
+                    <SelectItem value="protanopia">적색맹</SelectItem>
+                    <SelectItem value="deuteranopia">녹색맹</SelectItem>
+                    <SelectItem value="tritanopia">청색맹</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -544,6 +548,7 @@ function AccessibilityPage() {
 }
 
 export default withAuth(AccessibilityPage);
+
 
 
 

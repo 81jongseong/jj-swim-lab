@@ -1,11 +1,13 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui';
+import { CardGrid, LoadingState, PageHeader, ConfirmModal } from '@/components/common';
+import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui';
 
 interface Notice {
   _id: string;
@@ -46,6 +48,19 @@ function SuperAdminNoticesManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -111,20 +126,20 @@ function SuperAdminNoticesManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 공지사항 데이터:', data);
+        logger.info('📊 공지사항 데이터:', data);
         const noticesList = (data.notices || data || []).map((notice: any) => ({
           ...notice,
           createdAt: new Date(notice.createdAt),
           publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : undefined
         }));
-        console.log('📋 변환된 공지사항:', noticesList.length, '개');
+        logger.info('📋 변환된 공지사항:', noticesList.length, '개');
         setNotices(noticesList);
       } else {
-        console.error('공지사항 로드 실패:', response.status);
+        logger.error('공지사항 로드 실패:', response.status);
         setNotices([]);
       }
     } catch (error) {
-      console.error('공지사항 로드 실패:', error);
+      logger.error('공지사항 로드 실패:', error);
       setNotices([]);
     } finally {
       setIsLoading(false);
@@ -155,7 +170,7 @@ function SuperAdminNoticesManagement() {
         setFilteredCenters(tempCenters);
       }
     } catch (error) {
-      console.error('센터 로드 실패:', error);
+      logger.error('센터 로드 실패:', error);
       const tempCenters = [
         { _id: 'center001', name: '강남 수영장', region: '서울', city: '서울특별시', district: '강남구', address: '서울특별시 강남구 테헤란로 123' },
         { _id: 'center002', name: '판교 수영장', region: '경기', city: '경기도', district: '성남시 분당구', address: '경기도 성남시 분당구 판교역로 456' },
@@ -362,31 +377,38 @@ function SuperAdminNoticesManagement() {
         }
       }
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('이 공지사항을 삭제하시겠습니까?')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '이 공지사항을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/notices/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
 
-    try {
-      const response = await fetch(`http://localhost:5000/api/notices/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+              if (response.ok) {
+              alert('공지사항이 삭제되었습니다!');
+              loadNotices();
+              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+            }
+          } catch (error) {
+            logger.error('삭제 오류:', error);
+            alert('삭제 중 오류가 발생했습니다.');
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          }
         }
       });
-
-      if (response.ok) {
-        alert('공지사항이 삭제되었습니다!');
-        loadNotices();
-      }
-    } catch (error) {
-      console.error('삭제 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
-    }
-  };
+    };
 
   const handlePublish = async (notice: Notice) => {
     try {
@@ -403,7 +425,7 @@ function SuperAdminNoticesManagement() {
     loadNotices();
       }
     } catch (error) {
-      console.error('발행 오류:', error);
+      logger.error('발행 오류:', error);
       alert('발행 중 오류가 발생했습니다.');
     }
   };
@@ -431,19 +453,17 @@ function SuperAdminNoticesManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-        <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          최고 관리자 공지사항 관리
-        </h1>
-        <p className="text-gray-600">전체 시스템의 공지사항을 센터별, 지역별, 계정별로 발송하세요</p>
-      </div>
+        <PageHeader
+          title="최고 관리자 공지사항 관리"
+          description="전체 시스템의 공지사항을 센터별, 지역별, 계정별로 발송하세요"
+        />
 
       {/* 월별 선택 */}
       <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
@@ -467,7 +487,7 @@ function SuperAdminNoticesManagement() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           title="총 공지사항"
           value={`${notices.length}개`}
@@ -506,7 +526,7 @@ function SuperAdminNoticesManagement() {
           subtitle={statusFilter === 'draft' ? '필터 적용 중' : '클릭하여 필터링'}
           onClick={() => setStatusFilter(statusFilter === 'draft' ? 'all' : 'draft')}
         />
-        </div>
+      </CardGrid>
 
       {/* 공지사항 목록 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -857,16 +877,20 @@ function SuperAdminNoticesManagement() {
                             <label className="block text-xs font-medium text-gray-600 mb-2">
                               📍 시/도
                             </label>
-                            <select
+                            <Select
                               value={selectedProvince}
-                              onChange={(e) => handleProvinceChange(e.target.value)}
-                              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                              onValueChange={(value) => handleProvinceChange(value)}
                             >
-                              <option value="">선택하세요</option>
-                              {Object.keys(regions).map((province) => (
-                                <option key={province} value={province}>{province}</option>
-                              ))}
-                            </select>
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="선택하세요" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">선택하세요</SelectItem>
+                                {Object.keys(regions).map((province) => (
+                                  <SelectItem key={province} value={province}>{province}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* 시/군/구 선택 */}
@@ -874,17 +898,21 @@ function SuperAdminNoticesManagement() {
                             <label className="block text-xs font-medium text-gray-600 mb-2">
                               🏘️ 시/군/구
                             </label>
-                            <select
+                            <Select
                               value={selectedCity}
-                              onChange={(e) => setSelectedCity(e.target.value)}
-                              className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                              onValueChange={(value) => setSelectedCity(value)}
                               disabled={!selectedProvince}
                             >
-                              <option value="">선택하세요</option>
-                              {selectedProvince && regions[selectedProvince as keyof typeof regions]?.map((city) => (
-                                <option key={city} value={city}>{city}</option>
-                              ))}
-                            </select>
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="선택하세요" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">선택하세요</SelectItem>
+                                {selectedProvince && regions[selectedProvince as keyof typeof regions]?.map((city) => (
+                                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* 추가 버튼 */}
@@ -1170,6 +1198,18 @@ function SuperAdminNoticesManagement() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

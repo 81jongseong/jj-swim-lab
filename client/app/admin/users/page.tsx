@@ -1,99 +1,6 @@
-/**
- * 👥 JJ Swim Lab - 관리자 사용자 관리 페이지
- * 
- * 📋 **페이지 목적**
- * - 수영 강습 시스템의 모든 사용자를 관리하는 관리자 전용 페이지
- * - 사용자 목록 조회, 검색, 필터링 기능 제공
- * - 사용자 정보 수정, 권한 관리, 상태 변경 기능
- * - 사용자 통계 및 분석 데이터 표시
- * - 사용자 승인 및 관리 기능
- * 
- * 🔄 **주요 기능**
- * - 사용자 목록 조회 및 표시
- * - 사용자 검색 및 필터링 (이름, 이메일, 타입별)
- * - 사용자 정보 수정 및 업데이트
- * - 사용자 권한 및 역할 관리
- * - 사용자 상태 변경 (활성화/비활성화)
- * - 사용자 통계 및 분석
- * - 사용자 승인 및 관리
- * 
- * 🗄️ **데이터 연동**
- * - 사용자 관리 API와 연동 (사용자 목록)
- * - 사용자 검색 및 필터링 API
- * - 사용자 정보 수정 API
- * - 사용자 권한 관리 API
- * - 사용자 통계 및 분석 API
- * - 사용자 인증 시스템
- * - 실시간 사용자 상태 업데이트
- * 
- * 🛠️ **필요한 설치 파일**
- * - Next.js 14.2.5 (App Router)
- * - React 18.3.1
- * - TypeScript 5.x
- * - Tailwind CSS 3.3.0
- * - API 클라이언트 (../utils/api)
- * - 인증 컴포넌트 (../components/withAuth)
- * - 사용자 관리 API 엔드포인트
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 관리자 권한 확인 및 보안
- * 2. 사용자 데이터 보안 및 개인정보 보호
- * 3. 사용자 권한 변경 시 보안 검증
- * 4. 사용자 검색 및 필터링 성능 최적화
- * 5. 반응형 디자인 적용 (모바일/데스크톱)
- * 6. 접근성 지원 (키보드 네비게이션, ARIA 라벨)
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] 관리자 권한 확인 확인
- * - [ ] 사용자 데이터 보안 확인
- * - [ ] 사용자 권한 변경 로직 확인
- * - [ ] 사용자 검색 성능 최적화 확인
- * - [ ] 반응형 디자인 테스트
- * - [ ] 접근성 지원 확인
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 관리자 사용자 관리 페이지 구현
- * - 2024-12-19: 사용자 목록 및 검색 기능 구현
- * - 2024-12-19: 사용자 정보 수정 기능 구현
- * - 2024-12-19: 사용자 권한 관리 시스템 구현
- * - 2024-12-19: 반응형 디자인 및 사용자 경험 개선
- * 
- * 👨‍💻 **개발자 정보**
- * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (관리자 사용자 관리 페이지 완료)
- * 
- * 🚀 **다음 단계**
- * - 실시간 사용자 상태 업데이트
- * - 사용자 추천 시스템
- * - 사용자 대기열 관리
- * - 사용자 통계 대시보드
- * - 사용자 보안 강화
- * 
- * 💡 **사용 예시**
- * ```tsx
- * // 사용자 목록 조회
- * const users = await apiClient.getUsers({ userType: "student" });
- * 
- * // 사용자 정보 수정
- * const updatedUser = await apiClient.updateUser(userId, userData);
- * 
- * // 사용자 권한 변경
- * const updatedPermissions = await apiClient.updateUserPermissions(userId, permissions);
- * ```
- * 
- * 🔍 **사용자 관리 처리 흐름**
- * 1. 관리자 권한 확인 및 검증
- * 2. 사용자 목록 데이터 로드
- * 3. 사용자 검색 및 필터링 조건 적용
- * 4. 사용자 정보 수정 처리
- * 5. 사용자 권한 변경 처리
- * 6. 사용자 통계 및 분석 업데이트
- * 7. 실시간 사용자 상태 동기화
- */
+'use client';
 
-"use client";
-
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
@@ -101,57 +8,12 @@ import { useAuth } from '../../../hooks/useAuth';
 import RegionNavigation from '@/components/RegionNavigation';
 import StatCard from '@/components/StatCard';
 import { Button } from '@/components/ui';
+import { LoadingState, PageHeader, ConfirmModal } from '@/components/common';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  isActive: boolean;
-  level?: string;
-  centerId?: string;
-  centerInfo?: {
-    _id: string;
-    name: string;
-    address?: {
-      city: string;
-      province: string;
-      address1: string;
-    };
-    grade?: string;
-  };
-  studentInfo?: {
-    swimmingLevel?: string;
-    age?: number;
-  };
-  instructorInfo?: {
-    instructorLevel?: string;
-    experience?: string;
-  };
-  centerAdminInfo?: {
-    adminLevel?: string;
-    permissions?: {
-      canManageUsers?: boolean;
-      canManageCourses?: boolean;
-      canManageBookings?: boolean;
-      canManagePayments?: boolean;
-      canManageNotices?: boolean;
-      canViewReports?: boolean;
-    };
-  };
-  superAdminInfo?: {
-    adminLevel?: string;
-    systemPermissions?: {
-      canManageAllUsers?: boolean;
-      canManageAllCenters?: boolean;
-      canManageSystemSettings?: boolean;
-      canViewAllReports?: boolean;
-      canManageSkillTemplates?: boolean;
-    };
-  };
-  createdAt: string;
-}
+import type { User } from '@/types/user';
+
+// 통합 타입 사용 - 로컬 User 인터페이스 제거
+// 필요시 통합 타입이 이미 모든 필드를 포함하고 있음
 
 function AdminUsersPage() {
   const { user: currentUser } = useAuth(); // 현재 로그인한 사용자 정보
@@ -181,6 +43,19 @@ function AdminUsersPage() {
     level: '',
     search: '',
     status: 'all'
+  });
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
   });
 
   // 지역 데이터 (다른 페이지들과 동일)
@@ -257,7 +132,7 @@ function AdminUsersPage() {
           return user;
         });
         
-        console.log(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${usersWithCenter.length}명`);
+        logger.info(`👥 전체 사용자: ${(res as any).users.length}명, 필터링 후: ${usersWithCenter.length}명`);
         
         setUsers(usersWithCenter);
         setPagination(prev => ({
@@ -268,7 +143,7 @@ function AdminUsersPage() {
         }));
       }
     } catch (error) {
-      console.error('사용자 목록 로드 실패:', error);
+      logger.error('사용자 목록 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -292,19 +167,29 @@ function AdminUsersPage() {
 
   const handleDeleteUser = async (userId: string) => {
     const user = users.find(u => u._id === userId);
-    if (!user || !confirm(`정말로 ${user.name} 사용자를 삭제하시겠습니까?`)) return;
+    if (!user) return;
     
-    try {
-      const res = await apiClient.deleteUser(userId);
-      if (!res.error) {
-        await loadUsers(pagination.page);
-        alert('사용자가 삭제되었습니다.');
-      } else {
-        alert(res.error);
+    setConfirmModal({
+      isOpen: true,
+      message: `정말로 ${user.name} 사용자를 삭제하시겠습니까?`,
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await apiClient.deleteUser(userId);
+          if (!res.error) {
+            await loadUsers(pagination.page);
+            alert('사용자가 삭제되었습니다.');
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          } else {
+            alert(res.error);
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          }
+        } catch (error) {
+          alert('사용자 삭제 중 오류가 발생했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
       }
-    } catch (error) {
-      alert('사용자 삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const handleSaveUser = async () => {
@@ -344,13 +229,13 @@ function AdminUsersPage() {
     try {
       // 🔒 관리적 기능만 전송 (개인정보 제외)
       const managementData = {
-        userType: editingUser.userType,  // 사용자 유형 변경
+        userType: editingUser.userType as any,  // 사용자 유형 변경 (타입 호환성 위해 as any 사용)
         level: editingUser.level,        // 레벨 변경
         isActive: editingUser.isActive,  // 계정 활성/비활성
         // 개인정보(name, phone, email)는 전송하지 않음
       };
       
-      console.log('🔒 관리적 데이터만 전송:', managementData);
+      logger.info('🔒 관리적 데이터만 전송:', managementData);
       
       const res = await apiClient.updateUser(editingUser._id, managementData);
       
@@ -519,19 +404,19 @@ function AdminUsersPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">사용자 관리</h1>
-            <p className="text-xl text-gray-600">전체 사용자 목록 및 권한 관리</p>
-          </div>
-          <Button
-            onClick={handleAddUser}
-            variant="primary"
-            size="lg"
-          >
-            + 새 사용자 추가
-          </Button>
-        </div>
+        <PageHeader
+          title="사용자 관리"
+          description="전체 사용자 목록 및 권한 관리"
+          actions={
+            <Button
+              onClick={handleAddUser}
+              variant="primary"
+              size="lg"
+            >
+              + 새 사용자 추가
+            </Button>
+          }
+        />
 
         {/* Page Title */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -614,8 +499,7 @@ function AdminUsersPage() {
         {/* Users Table */}
         {loading ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">사용자 목록을 불러오는 중...</p>
+            <LoadingState message="사용자 목록을 불러오는 중..." size="lg" />
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow p-6">
@@ -704,7 +588,7 @@ function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.createdAt).toLocaleDateString('ko-KR')}
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -1055,6 +939,18 @@ function AdminUsersPage() {
             </div>
           </div>
         )}
+
+        {/* ConfirmModal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+          variant={confirmModal.variant || 'info'}
+          title="확인"
+          confirmText="확인"
+          cancelText="취소"
+        />
       </div>
     </div>
   );

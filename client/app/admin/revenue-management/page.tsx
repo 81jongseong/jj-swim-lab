@@ -11,6 +11,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -18,6 +19,7 @@ import RegionNavigation from '@/components/RegionNavigation';
 import ComparisonChart from '@/components/ComparisonChart';
 import TrendLineChart from '@/components/TrendLineChart';
 import type { TrendLineData, TrendMetric } from '@/components/TrendLineChart';
+import { CardGrid, PageHeader } from '@/components/common';
 
 export default function RevenueManagementPage() {
   const { user, hasUserType } = useAuth();
@@ -156,9 +158,9 @@ export default function RevenueManagementPage() {
     setLoading(true);
     try {
       setLastUpdated(new Date());
-      console.log('매출 데이터 새로고침 완료');
+      logger.info('매출 데이터 새로고침 완료');
     } catch (error) {
-      console.error('데이터 새로고침 실패:', error);
+      logger.error('데이터 새로고침 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -295,12 +297,10 @@ export default function RevenueManagementPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">센터별 매출 관리</h1>
-            <p className="text-gray-600 mt-2">JJ Swim Lab 센터별 수익 및 비용 분석 대시보드</p>
-          </div>
+      <PageHeader
+        title="센터별 매출 관리"
+        description="JJ Swim Lab 센터별 수익 및 비용 분석 대시보드"
+        actions={
           <div className="flex items-center space-x-4">
             <button
               onClick={refreshData}
@@ -313,8 +313,8 @@ export default function RevenueManagementPage() {
               마지막 업데이트: {lastUpdated.toLocaleString()}
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
@@ -398,7 +398,7 @@ export default function RevenueManagementPage() {
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">비용 구조 분석</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardGrid gap={4}>
           {Object.entries(revenueData.costAnalysis).map(([key, value]) => (
             <div key={key} className="text-center">
               <div className="text-2xl font-bold text-red-600">{formatKoreanCurrency(value.amount)}</div>
@@ -413,8 +413,8 @@ export default function RevenueManagementPage() {
               <div className="text-xs text-gray-500">{value.percentage}%</div>
             </div>
           ))}
-            </div>
-          </div>
+        </CardGrid>
+      </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="mb-6">

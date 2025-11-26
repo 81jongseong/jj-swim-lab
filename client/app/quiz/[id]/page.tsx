@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
+import { LoadingState, ErrorState } from '@/components/common';
 
 export default function QuizDetailPage({ params }: { params: { id: string } }) {
   const [quiz, setQuiz] = useState<any>(null);
@@ -24,8 +25,20 @@ export default function QuizDetailPage({ params }: { params: { id: string } }) {
     if (!res.error) setResult(res.data);
   };
 
-  if (loading) return <div className="pt-16 p-6">로딩 중...</div>;
-  if (!quiz) return <div className="pt-16 p-6">퀴즈를 불러오지 못했습니다.</div>;
+  if (loading) {
+    return (
+      <div className="pt-16 p-6">
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
+  }
+  if (!quiz) {
+    return (
+      <div className="pt-16 p-6">
+        <ErrorState message="퀴즈를 불러오지 못했습니다." onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
 
   if (result) {
     return (

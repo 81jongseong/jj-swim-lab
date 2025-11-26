@@ -14,6 +14,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -27,6 +28,7 @@ import {
   Users, ArrowRight, Calendar, Save, X, Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { LoadingState } from '@/components/common';
 
 interface CenterInfo {
   _id: string;
@@ -121,19 +123,19 @@ const CenterHomePage: React.FC = () => {
 
       if (viewOnly) {
         if (!centerSlug) {
-          console.error('센터 slug가 없습니다.');
+          logger.error('센터 slug가 없습니다.');
           return;
         }
 
         const resolveRes = await fetch(`http://localhost:5000/api/centers/resolve-slug/${centerSlug}`);
         if (!resolveRes.ok) {
-          console.error('센터 정보를 불러올 수 없습니다.');
+          logger.error('센터 정보를 불러올 수 없습니다.');
           return;
         }
 
         const resolveJson = await resolveRes.json();
         if (!resolveJson.success) {
-          console.error(resolveJson.message || '센터 정보를 불러올 수 없습니다.');
+          logger.error(resolveJson.message || '센터 정보를 불러올 수 없습니다.');
           return;
         }
 
@@ -179,7 +181,7 @@ const CenterHomePage: React.FC = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.error('인증 토큰이 없습니다.');
+        logger.error('인증 토큰이 없습니다.');
         return;
       }
 
@@ -226,7 +228,7 @@ const CenterHomePage: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('센터 정보 로드 오류:', error);
+      logger.error('센터 정보 로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -321,15 +323,15 @@ const CenterHomePage: React.FC = () => {
             setEditingSection(null);
             loadCenterInfo();
           } else {
-            console.error('저장 실패:', result.message);
+            logger.error('저장 실패:', result.message);
           }
         } else {
           const errorText = await response.text();
-          console.error('저장 오류:', errorText);
+          logger.error('저장 오류:', errorText);
         }
       }
     } catch (error) {
-      console.error('편집 저장 오류:', error);
+      logger.error('편집 저장 오류:', error);
     }
   };
 
@@ -354,10 +356,7 @@ const CenterHomePage: React.FC = () => {
   if (!hasMounted || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">센터 정보를 불러오는 중...</p>
-        </div>
+        <LoadingState message="센터 정보를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -525,7 +524,7 @@ const CenterHomePage: React.FC = () => {
                         alert(error.message || '로고 업로드에 실패했습니다.');
                       }
                     } catch (error) {
-                      console.error('로고 업로드 오류:', error);
+                      logger.error('로고 업로드 오류:', error);
                       alert('로고 업로드 중 오류가 발생했습니다.');
                     } finally {
                       setUploadingLogo(false);
@@ -604,7 +603,7 @@ const CenterHomePage: React.FC = () => {
                         alert(error.message || '메인 이미지 업로드에 실패했습니다.');
                       }
                     } catch (error) {
-                      console.error('메인 이미지 업로드 오류:', error);
+                      logger.error('메인 이미지 업로드 오류:', error);
                       alert('메인 이미지 업로드 중 오류가 발생했습니다.');
                     } finally {
                       setUploadingMainImage(false);

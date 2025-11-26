@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import StatCard from '@/components/StatCard';
+import { CardGrid, PageHeader } from '@/components/common';
 import { Button } from '@/components/ui';
 
 export default function HealthPage() {
@@ -58,10 +59,10 @@ export default function HealthPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">건강관리</h1>
-        <p className="text-gray-600">나의 건강 상태와 맞춤형 수영 프로그램을 확인하고 관리합니다.</p>
-      </div>
+      <PageHeader
+        title="건강관리"
+        description="나의 건강 상태와 맞춤형 수영 프로그램을 확인하고 관리합니다."
+      />
 
       {/* 빠른 액션 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -101,7 +102,7 @@ export default function HealthPage() {
       </div>
 
       {/* 건강 상태 요약 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           title="건강 위험도"
           value={getRiskText(healthSummary.riskLevel)}
@@ -137,7 +138,7 @@ export default function HealthPage() {
           subtitle="다음 운동 예정일"
           change={{ value: 0, type: 'increase' }}
         />
-      </div>
+      </CardGrid>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 최근 운동 기록 */}

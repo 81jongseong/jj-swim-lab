@@ -42,6 +42,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CardGrid, PageHeader } from '@/components/common';
 
 export default function SwimProgramsPage() {
   const router = useRouter();
@@ -112,14 +113,11 @@ export default function SwimProgramsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🏊‍♂️ 수영 프로그램 관리
-        </h1>
-        <p className="text-gray-600">
-          센터 전체 수영 프로그램 현황 및 성과 분석
-        </p>
-      </div>
+      <PageHeader
+        title="🏊‍♂️ 수영 프로그램 관리"
+        description="센터 전체 수영 프로그램 현황 및 성과 분석"
+        className="mb-8"
+      />
 
       {/* 메인 탭 */}
       <div className="space-y-6">
@@ -170,7 +168,7 @@ export default function SwimProgramsPage() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* 주요 지표 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardGrid gap={6}>
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">전체 회원</h3>
@@ -214,7 +212,7 @@ export default function SwimProgramsPage() {
                 <div className="text-2xl font-bold text-gray-900">{centerStats.avgAdherence}%</div>
                 <p className="text-xs text-gray-500">프로그램 참여율</p>
               </div>
-            </div>
+            </CardGrid>
 
             {/* 건강 개선 현황 */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">

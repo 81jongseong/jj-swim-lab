@@ -36,9 +36,11 @@ import {
   HealthDialogBody,
   HealthDialogFooter
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui';
+import { Button, Input, Textarea } from '@/components/ui';
 import apiClient from '@/utils/api';
 import { getChecklistItems } from '@/data/swimming-checklist';
+import { logger } from '@/lib/logger';
+import { LoadingState, ErrorState, PageHeader } from '@/components/common';
 
 type AttendanceStatus = 'present' | 'late' | 'absent';
 
@@ -523,7 +525,7 @@ const generateSessionsFromCourses = async (baseStudents: StudentProfile[]): Prom
 
     return { students, attendanceSeed };
   } catch (error) {
-    console.warn('강의 일정 기반 세션 생성 실패:', error);
+    logger.warn('강의 일정 기반 세션 생성 실패:', error);
     return { students: baseStudents, attendanceSeed };
   }
 };
@@ -595,7 +597,7 @@ function InstructorProgress() {
           setSelectedStudentId(mapped[0].id);
         }
       } catch (error) {
-        console.error('담당 학생 로드 실패:', error);
+        logger.error('담당 학생 로드 실패:', error);
         setStudentsError('담당 학생 목록을 불러오는 중 오류가 발생했습니다.');
       } finally {
         setIsStudentsLoading(false);
@@ -703,7 +705,7 @@ function InstructorProgress() {
 
         setStatusBanner(null);
       } catch (error) {
-        console.error('진행 관리 데이터 로드 실패:', error);
+        logger.error('진행 관리 데이터 로드 실패:', error);
         setStatusBanner({ type: 'error', message: '기존 진행 관리 데이터를 불러오지 못했습니다.' });
       } finally {
         setIsLoadingProgress(false);
@@ -1147,7 +1149,7 @@ function InstructorProgress() {
         return nextTemplates;
       });
     } catch (error) {
-      console.error('레벨 승급 제안 실패:', error);
+      logger.error('레벨 승급 제안 실패:', error);
       setStatusBanner({
         type: 'error',
         message: '레벨 승급 요청 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
@@ -1257,7 +1259,7 @@ function InstructorProgress() {
       await apiClient.post(`/api/instructor/progress/student/${selectedStudent.id}`, payload);
       setStatusBanner({ type: 'success', message: '진행 관리 정보를 저장했습니다.' });
     } catch (error) {
-      console.error('진행 관리 저장 실패:', error);
+      logger.error('진행 관리 저장 실패:', error);
       setStatusBanner({ type: 'error', message: '저장 중 오류가 발생했습니다. 다시 시도해 주세요.' });
     } finally {
       setIsSavingProgress(false);
@@ -1267,9 +1269,7 @@ function InstructorProgress() {
   if (isStudentsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-2 text-slate-500">
-          <Loader2 className="w-5 h-5 animate-spin" /> 담당 학생 정보를 불러오는 중입니다...
-        </div>
+        <LoadingState message="담당 학생 정보를 불러오는 중입니다..." size="lg" />
       </div>
     );
   }
@@ -1277,10 +1277,10 @@ function InstructorProgress() {
   if (studentsError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <AlertTriangle className="w-8 h-8 text-rose-500 mx-auto" />
-          <p className="text-sm text-rose-600">{studentsError}</p>
-        </div>
+        <ErrorState 
+          message={studentsError}
+          onRetry={() => window.location.reload()}
+        />
       </div>
     );
   }
@@ -1374,12 +1374,10 @@ function InstructorProgress() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">레슨 진행 · 출석 관리</h1>
-          <p className="text-gray-600">
-            출석, 코멘트, 과제를 한 번에 관리하고 주간 진행 상황을 추적하세요. 정산 자료도 출석 데이터를 기반으로 자동 집계할 수 있습니다.
-          </p>
-        </header>
+        <PageHeader
+          title="레슨 진행 · 출석 관리"
+          description="출석, 코멘트, 과제를 한 번에 관리하고 주간 진행 상황을 추적하세요. 정산 자료도 출석 데이터를 기반으로 자동 집계할 수 있습니다."
+        />
 
         <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
           {summaryCards.map((card) => (
@@ -1959,33 +1957,34 @@ function InstructorProgress() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <input
+                        <Input
                           value={homeworkDraft.title}
                           onChange={(event) => setHomeworkDraft((prev) => ({ ...prev, title: event.target.value }))}
                           placeholder="과제 제목"
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="text-sm"
                         />
-                        <input
+                        <Input
                           type="date"
                           value={homeworkDraft.dueDate}
                           onChange={(event) => setHomeworkDraft((prev) => ({ ...prev, dueDate: event.target.value }))}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="text-sm"
                         />
                       </div>
-                      <textarea
+                      <Textarea
                         value={homeworkDraft.description}
                         onChange={(event) => setHomeworkDraft((prev) => ({ ...prev, description: event.target.value }))}
                         rows={3}
                         placeholder="과제 세부 내용 또는 학부모 전달 사항"
-                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        className="text-sm"
                       />
                       <div className="flex justify-end">
-                        <button
+                        <Button
                           onClick={handleAddHomework}
-                          className="px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600"
+                          variant="primary"
+                          className="text-sm"
                         >
                           과제 추가
-                        </button>
+                        </Button>
                       </div>
                       <div className="space-y-3 max-h-56 overflow-y-auto">
                         {homeworkForStudent.length === 0 && (

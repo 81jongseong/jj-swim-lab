@@ -32,6 +32,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Users, DollarSign, FileText } from 'lucide-react';
+import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectItem, SelectValue, Button } from '@/components/ui';
+import { Modal } from '@/components/common';
 
 interface TimeSlotModalProps {
   isOpen: boolean;
@@ -104,22 +106,13 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
     }));
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            {editingSlot ? '시간 슬롯 수정' : '시간 슬롯 추가'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingSlot ? '시간 슬롯 수정' : '시간 슬롯 추가'}
+      maxWidth="md"
+    >
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 시간 설정 */}
@@ -131,21 +124,21 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-xs text-gray-500">시작 시간</label>
-                <input
+                <Input
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => handleInputChange('startTime', e.target.value)}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  className="text-sm"
                   required
                 />
               </div>
               <div>
                 <label className="text-xs text-gray-500">종료 시간</label>
-                <input
+                <Input
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  className="text-sm"
                   required
                 />
               </div>
@@ -158,15 +151,19 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
               <MapPin className="w-4 h-4 inline mr-1" />
               풀 타입
             </label>
-            <select
+            <Select
               value={formData.poolType}
-              onChange={(e) => handleInputChange('poolType', e.target.value)}
-              className="w-full border rounded px-2 py-1 text-sm"
+              onValueChange={(value) => handleInputChange('poolType', value)}
             >
-              <option value="mainPool">메인 풀</option>
-              <option value="kidsPool">유아 풀</option>
-              <option value="auxiliaryPool">보조 풀</option>
-            </select>
+              <SelectTrigger className="text-sm">
+                <SelectValue placeholder="풀 타입 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mainPool">메인 풀</SelectItem>
+                <SelectItem value="kidsPool">유아 풀</SelectItem>
+                <SelectItem value="auxiliaryPool">보조 풀</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 활성화 상태 */}
@@ -188,13 +185,13 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
                   <Users className="w-4 h-4 inline mr-1" />
                   최대 레슨 수
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max="10"
                   value={formData.maxLessons}
-                  onChange={(e) => handleInputChange('maxLessons', parseInt(e.target.value))}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  onChange={(e) => handleInputChange('maxLessons', parseInt(e.target.value) || 1)}
+                  className="text-sm"
                 />
               </div>
 
@@ -202,13 +199,13 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   강사당 최대 인원
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max="5"
                   value={formData.instructorCapacity}
-                  onChange={(e) => handleInputChange('instructorCapacity', parseInt(e.target.value))}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  onChange={(e) => handleInputChange('instructorCapacity', parseInt(e.target.value) || 1)}
+                  className="text-sm"
                 />
               </div>
 
@@ -217,12 +214,12 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
                   <DollarSign className="w-4 h-4 inline mr-1" />
                   레슨 가격 (원)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={formData.price}
-                  onChange={(e) => handleInputChange('price', parseInt(e.target.value))}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  onChange={(e) => handleInputChange('price', parseInt(e.target.value) || 0)}
+                  className="text-sm"
                   placeholder="0"
                 />
               </div>
@@ -237,13 +234,13 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
                   <Users className="w-4 h-4 inline mr-1" />
                   최대 대여 수
                 </label>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max="10"
                   value={formData.maxRentals}
-                  onChange={(e) => handleInputChange('maxRentals', parseInt(e.target.value))}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  onChange={(e) => handleInputChange('maxRentals', parseInt(e.target.value) || 1)}
+                  className="text-sm"
                 />
               </div>
 
@@ -252,12 +249,12 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
                   <DollarSign className="w-4 h-4 inline mr-1" />
                   시간당 요금 (원)
                 </label>
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={formData.hourlyRate}
-                  onChange={(e) => handleInputChange('hourlyRate', parseInt(e.target.value))}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  onChange={(e) => handleInputChange('hourlyRate', parseInt(e.target.value) || 0)}
+                  className="text-sm"
                   placeholder="0"
                 />
               </div>
@@ -270,10 +267,10 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
               <FileText className="w-4 h-4 inline mr-1" />
               메모
             </label>
-            <textarea
+            <Textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              className="w-full border rounded px-2 py-1 text-sm"
+              className="text-sm"
               rows={3}
               placeholder="시간대별 특이사항이나 메모를 입력하세요..."
             />
@@ -281,28 +278,23 @@ export default function TimeSlotModal({ isOpen, onClose, onSubmit, type, editing
 
           {/* 버튼 */}
           <div className="flex justify-end space-x-2 pt-4">
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              variant="outline"
             >
               취소
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className={`px-4 py-2 text-white rounded-lg transition-colors ${
-                type === 'personal-lesson' 
-                  ? 'bg-blue-600 hover:bg-blue-700' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
+              variant={type === 'personal-lesson' ? 'primary' : 'default'}
             >
               {editingSlot ? '수정' : '추가'}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
-  );
+      </Modal>
+    );
 }
 
 

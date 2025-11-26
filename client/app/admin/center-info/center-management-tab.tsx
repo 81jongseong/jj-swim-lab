@@ -4,12 +4,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
 import RegionNavigation from '@/components/RegionNavigation';
 import StatCard from '@/components/StatCard';
+import { CardGrid, LoadingState } from '@/components/common';
 import { Button } from '@/components/ui';
 
 interface Center {
@@ -153,7 +155,7 @@ export default function CenterManagementTab() {
         };
         message?: string;
       }>(`/api/center-management?${params}`).catch(error => {
-        console.warn('센터 목록 API 호출 실패:', error);
+        logger.warn('센터 목록 API 호출 실패:', error);
         return { success: false, data: { centers: [], pagination: { total: 0 } } };
       });
       
@@ -183,7 +185,7 @@ export default function CenterManagementTab() {
         setError((response as any).message || '센터 목록을 불러오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('센터 목록 로딩 오류:', error);
+      logger.error('센터 목록 로딩 오류:', error);
       setError('센터 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -200,7 +202,7 @@ export default function CenterManagementTab() {
         setStats((response as any).data);
       }
     } catch (error) {
-      console.error('센터 통계 로딩 오류:', error);
+      logger.error('센터 통계 로딩 오류:', error);
     }
   };
 
@@ -214,7 +216,7 @@ export default function CenterManagementTab() {
         }
       }
     } catch (error) {
-      console.error('센터 관리자 목록 로드 실패:', error);
+      logger.error('센터 관리자 목록 로드 실패:', error);
     }
   };
 
@@ -232,7 +234,7 @@ export default function CenterManagementTab() {
         alert(response.message || '상태 변경에 실패했습니다.');
       }
     } catch (error) {
-      console.error('상태 변경 오류:', error);
+      logger.error('상태 변경 오류:', error);
       alert('상태 변경 중 오류가 발생했습니다.');
     }
   };
@@ -258,7 +260,7 @@ export default function CenterManagementTab() {
         alert(response.message || '관리자 할당에 실패했습니다.');
       }
     } catch (error: any) {
-      console.error('관리자 할당 실패:', error);
+      logger.error('관리자 할당 실패:', error);
       alert(error.message || '관리자 할당 중 오류가 발생했습니다.');
     }
   };
@@ -334,7 +336,7 @@ export default function CenterManagementTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -343,7 +345,7 @@ export default function CenterManagementTab() {
     <div className="space-y-6">
       {/* 통계 카드 */}
       {stats && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <CardGrid gap={6}>
           <StatCard
             title="전체 센터"
             value={stats.centers.total}
@@ -376,7 +378,7 @@ export default function CenterManagementTab() {
             subtitle="신규 등록"
             href="/admin/approvals"
           />
-        </div>
+        </CardGrid>
       )}
 
       {/* 지역 필터 */}
@@ -646,7 +648,7 @@ export default function CenterManagementTab() {
                           if (e.target.value) {
                             const reason = prompt(`센터 등급을 ${getCenterGradeKorean(e.target.value)}로 변경하는 이유를 입력하세요:`);
                             if (reason) {
-                              console.log(`센터 등급 변경: ${center._id} → ${e.target.value}, 사유: ${reason}`);
+                              logger.info(`센터 등급 변경: ${center._id} → ${e.target.value}, 사유: ${reason}`);
                               alert(`센터 등급이 ${getCenterGradeKorean(e.target.value)}로 변경되었습니다.`);
                             }
                             e.target.value = '';
@@ -895,4 +897,5 @@ export default function CenterManagementTab() {
     </div>
   );
 }
+
 

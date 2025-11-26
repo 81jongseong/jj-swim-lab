@@ -26,6 +26,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getAddressFromGeohash } from '../../lib/utils/address-utils';
@@ -128,9 +129,9 @@ export default function GeoDistributionMap({
         }
 
         setLibrariesLoaded(true);
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        logger.info('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
       } catch (error) {
-        console.error('❌ 라이브러리 로딩 오류:', error);
+        logger.error('❌ 라이브러리 로딩 오류:', error);
       }
     };
 
@@ -190,7 +191,7 @@ export default function GeoDistributionMap({
     overlayRef.current = overlay;
 
     map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
+      logger.info('🗺️ VWorld 지도 로딩 완료');
       setMapLoaded(true);
       // ✅ 부모 컴포넌트에 지도 로딩 완료 알림
       if (onMapLoad) {
@@ -251,7 +252,7 @@ export default function GeoDistributionMap({
   // 스팟 레이어 생성
   const buildSpotsLayer = useCallback(() => {
     if (!ScatterplotLayer || !TextLayer) {
-      console.warn('⚠️ Deck.gl 라이브러리가 아직 로딩되지 않았습니다.');
+      logger.warn('⚠️ Deck.gl 라이브러리가 아직 로딩되지 않았습니다.');
       return [];
     }
 
@@ -550,7 +551,7 @@ export default function GeoDistributionMap({
     const layers = buildSpotsLayer();
     overlayRef.current.setProps({ layers });
 
-    console.log(`✅ 스팟 레이어 업데이트: ${layers.length}개 레이어, ${spots.length}개 스팟`);
+    logger.info(`✅ 스팟 레이어 업데이트: ${layers.length}개 레이어, ${spots.length}개 스팟`);
   }, [mapLoaded, librariesLoaded, spots, activeCenters, currentZoom, buildSpotsLayer]);
 
   // CSS 클래스를 기본값과 병합

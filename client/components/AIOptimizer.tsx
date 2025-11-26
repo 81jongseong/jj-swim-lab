@@ -72,6 +72,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import * as tf from '@tensorflow/tfjs';
@@ -155,7 +156,7 @@ const AIOptimizer: React.FC<AIOptimizerProps> = ({
       setCurrentStep('최적화 완료!');
 
     } catch (error) {
-      console.error('AI 최적화 실패:', error);
+      logger.error('AI 최적화 실패:', error);
       setCurrentStep('최적화 실패');
     } finally {
       setIsOptimizing(false);

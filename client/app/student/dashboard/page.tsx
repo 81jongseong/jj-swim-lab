@@ -11,6 +11,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { BookOpen, Calendar, TrendingUp, Award, Clock, Star, Target, Activity } from 'lucide-react';
+import { CardGrid, PageHeader } from '@/components/common';
+import { logger } from '@/lib/logger';
 
 interface StudentStats {
   enrolledCourses: number;
@@ -146,7 +148,7 @@ const StudentDashboard: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('학생 데이터 로드 실패:', error);
+        logger.error('학생 데이터 로드 실패:', error);
       }
     };
 
@@ -170,21 +172,22 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">학생 대시보드</h1>
-          <p className="text-gray-600 mt-2">안녕하세요, {user?.name || '학생'}님! 오늘도 수영 연습을 시작해보세요.</p>
-        </div>
-        <button
-          onClick={() => router.push('/student/statistics')}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
-        >
-          📊 내 훈련 통계
-        </button>
-      </div>
+      <PageHeader
+        title="학생 대시보드"
+        description={`안녕하세요, ${user?.name || '학생'}님! 오늘도 수영 연습을 시작해보세요.`}
+        actions={
+          <button
+            onClick={() => router.push('/student/statistics')}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
+          >
+            📊 내 훈련 통계
+          </button>
+        }
+        className="mb-8"
+      />
 
       {/* 주요 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-gray-600">수강 중인 강의</h3>
@@ -220,7 +223,7 @@ const StudentDashboard: React.FC = () => {
           <div className="text-2xl font-bold text-gray-900">{stats.averageRating}</div>
           <p className="text-xs text-gray-500 mt-1">강사 평가 기준</p>
         </div>
-      </div>
+      </CardGrid>
 
       {/* 진행률 및 목표 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
@@ -351,7 +354,7 @@ const StudentDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900">빠른 액션</h3>
           <p className="text-sm text-gray-600">자주 사용하는 기능들에 빠르게 접근하세요.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardGrid gap={4}>
           <button 
             className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             onClick={() => window.location.href = '/student/bookings'}
@@ -380,7 +383,7 @@ const StudentDashboard: React.FC = () => {
             <Award className="h-6 w-6 mb-2 text-gray-600" />
             <span className="text-sm font-medium text-gray-700">업적 보기</span>
           </button>
-        </div>
+        </CardGrid>
       </div>
     </div>
   );

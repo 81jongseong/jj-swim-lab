@@ -1,12 +1,4 @@
-/**
- * 좌표를 한글 주소로 변환하는 API Route
- * 
- * VWorld 역지오코딩 API를 서버 사이드에서 호출하여 CORS 문제 해결
- * 
- * 연동되는 파일:
- * - client/lib/utils/address-utils.ts (주소 변환 유틸리티)
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -50,7 +42,7 @@ export async function GET(request: NextRequest) {
       throw new Error(`VWorld API 오류: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     if (data?.response?.status === 'OK' && data?.response?.result) {
       const result = data.response.result[0];
@@ -66,7 +58,7 @@ export async function GET(request: NextRequest) {
         // 도로명 주소가 없으면 지번 주소 사용 (구주소)
         if (!address && result.parsed) {
           const parsed = result.parsed;
-          const parts = [];
+          const parts: string[] = [];
           if (parsed.sido) parts.push(parsed.sido);
           if (parsed.sigungu) parts.push(parsed.sigungu);
           if (parsed.dong) parts.push(parsed.dong);
@@ -94,7 +86,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 주소 변환 API 오류:', error);
+    logger.error('❌ 주소 변환 API 오류:', error);
     
     // 오류 시에도 기본 주소 반환
     const { searchParams } = new URL(request.url);

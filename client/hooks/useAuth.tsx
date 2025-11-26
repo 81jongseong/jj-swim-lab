@@ -94,91 +94,11 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { logger } from '@/lib/logger';
+import type { User } from '@/types/user';
 
-export interface User {
-  _id: string;
-  id?: string; // userId와 동일 (일부 컴포넌트에서 사용)
-  userId: string;
-  name: string;
-  email: string;
-  phone?: string; // 연락처
-  address?: string; // 주소
-  birthDate?: string; // 생년월일
-  gender?: string; // 성별
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'center-admin' | 'superAdmin';
-  level: string;
-  centerId?: string;
-  membershipTier?: string; // 멤버십 등급
-  role?: string; // 역할 정보
-  groupClassName?: string; // 그룹 클래스 이름
-  studentInfo?: {
-    age?: number;
-    emergencyContact?: string;
-    medicalConditions?: string;
-    swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    enrolledCourses?: string[];
-    completedCourses?: string[];
-    currentLevel?: string; // 현재 레벨
-    healthProfile?: any; // 건강 프로필
-    swimmingProfile?: any; // 수영 프로필
-  };
-  instructorInfo?: {
-    experience?: string;
-    certifications?: string[];
-    specialties?: string[];
-    instructorLevel?: 'junior' | 'senior' | 'master' | 'expert';
-    assignedCenters?: string[];
-    maxStudents?: number;
-    currentStudents?: number;
-  };
-  centerAdminInfo?: {
-    managedCenters?: string[];
-    adminLevel?: 'assistant' | 'manager' | 'director';
-    permissions?: {
-      canManageUsers?: boolean;
-      canManageCourses?: boolean;
-      canManageBookings?: boolean;
-      canManagePayments?: boolean;
-      canManageNotices?: boolean;
-      canViewReports?: boolean;
-    };
-  };
-  superAdminInfo?: {
-    systemPermissions?: {
-      canManageAllUsers?: boolean;
-      canManageAllCenters?: boolean;
-      canManageSystemSettings?: boolean;
-      canViewAllReports?: boolean;
-      canManageSkillTemplates?: boolean;
-    };
-    adminLevel?: 'admin' | 'superAdmin' | 'systemAdmin';
-  };
-  isActive: boolean;
-  lastLoginAt?: Date;
-  accessPermissions: {
-    dashboard: boolean;
-    courses: boolean;
-    bookings: boolean;
-    payments: boolean;
-    notices: boolean;
-    progress: boolean;
-    evaluations: boolean;
-    reports: boolean;
-    userManagement: boolean;
-    systemSettings: boolean;
-  };
-  featureSequence: {
-    currentStep: string;
-    completedSteps: string[];
-    availableSteps: string[];
-  };
-  userLevelInfo: {
-    type: string;
-    level: string;
-    nextLevel?: string;
-    progress: number;
-  };
-}
+// 통합 타입 사용 - 더 이상 여기서 User 인터페이스를 정의하지 않음
+// 필요시 User 타입을 확장하려면 '@/types/user'에서 수정
+export type { User };
 
 interface AuthContextType {
   user: User | null;
@@ -187,7 +107,7 @@ interface AuthContextType {
   logout: () => void;
   register: (userData: any) => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
-  hasPermission: (permission: keyof User['accessPermissions']) => boolean;
+  hasPermission: (permission: keyof NonNullable<User['accessPermissions']>) => boolean;
   hasUserType: (userType: User['userType']) => boolean;
   hasLevel: (userType: User['userType'], requiredLevel: string) => boolean;
   hasFeature: (feature: string) => boolean;
@@ -226,23 +146,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   // 디버깅 로그
-  logger.debug('AuthProvider 렌더링', { 
-    user: user ? { _id: user._id, name: user.name, userType: user.userType } : null, 
-    loading 
+  logger.debug('AuthProvider 렌더링', {
+    user: user ? { _id: user._id, name: user.name, userType: user.userType } : null,
+    loading
   });
 
   useEffect(() => {
     // 로컬 스토리지에서 사용자 정보 복원
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
+
     logger.debug('useAuth useEffect', { token: !!token, savedUser: !!savedUser });
-    
+
     if (token && savedUser) {
       // 토큰 검증을 한 번만 실행하도록 수정
       const userData = JSON.parse(savedUser);
       logger.debug('사용자 데이터 복원', { userType: userData.userType, name: userData.name });
-      
+
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...userData,
@@ -261,7 +181,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           aiConfigManagement: userData.userType === 'superAdmin'
         }
       };
-      
+
       logger.debug('사용자 설정 완료', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
       setUser(userWithDefaults);
       setLoading(false);
@@ -292,7 +212,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const validateToken = async (token: string, savedUser: string) => {
     try {
       logger.debug('validateToken 시작');
-      
+
       const response = await fetch('http://localhost:5000/api/auth/verify', {
         method: 'GET',
         headers: {
@@ -307,7 +227,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // 토큰이 유효한 경우 사용자 정보 복원
         const userData = JSON.parse(savedUser);
         logger.debug('사용자 데이터 복원', { userType: userData.userType, name: userData.name });
-        
+
         // accessPermissions가 없으면 기본값 설정
         const userWithDefaults = {
           ...userData,
@@ -326,7 +246,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             aiConfigManagement: userData.userType === 'superAdmin'
           }
         };
-        
+
         logger.debug('사용자 설정 완료', { userType: userWithDefaults.userType, accessPermissions: userWithDefaults.accessPermissions });
         setUser(userWithDefaults);
         return true;
@@ -336,7 +256,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-        
+
         // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
         logger.debug('인증 상태만 업데이트 (리다이렉트 없음)');
         return false;
@@ -346,7 +266,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
-      
+
       // 로그인 페이지로 리다이렉트하지 않고 상태만 업데이트
       logger.debug('토큰 검증 실패 - 인증 상태만 업데이트 (리다이렉트 없음)');
       return false;
@@ -356,9 +276,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      
+
       logger.debug('로그인 시도', { email });
-      
+
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -367,9 +287,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // email로 로그인 (서버에서 userId와 email 모두 지원)
         body: JSON.stringify({ email: email, password }),
       });
-      
+
       logger.api('서버 응답 상태', { status: response.status, statusText: response.statusText });
-      
+
       // 서버 연결 상태 확인
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -379,13 +299,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const data = await response.json();
       logger.api('서버 응답 데이터', data);
-      
+
       // 서버 응답 구조 확인 및 처리
       if (!data.user || !data.token) {
         logger.error('서버 응답에 user 또는 token이 없음:', data);
         throw new Error('서버 응답 형식이 올바르지 않습니다.');
       }
-      
+
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...data.user,
@@ -404,11 +324,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           aiConfigManagement: data.user.userType === 'superAdmin'
         }
       };
-      
+
       // 토큰을 localStorage에 저장 (쿠키는 이미 Next Auth API에서 설정됨)
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userWithDefaults));
-      
+
       setUser(userWithDefaults);
       // 로그인 성공 - 자동 리다이렉트 제거 (페이지에서 처리)
     } catch (error) {
@@ -423,14 +343,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // 로컬 스토리지 정리
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
+
     // 세션 스토리지도 정리 (있다면)
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
-    
+
     // 사용자 상태 초기화
     setUser(null);
-    
+
     // 게스트 홈 페이지(랜딩 페이지)로 리다이렉트
     if (typeof window !== 'undefined') {
       window.location.href = '/';
@@ -440,7 +360,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (userData: any) => {
     try {
       setLoading(true);
-      
+
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -455,7 +375,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const data = await response.json();
-      
+
       // accessPermissions가 없으면 기본값 설정
       const userWithDefaults = {
         ...data.user,
@@ -474,11 +394,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           aiConfigManagement: data.user.userType === 'superAdmin'
         }
       };
-      
+
       // 토큰을 localStorage에 저장 (쿠키는 이미 Next Auth API에서 설정됨)
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userWithDefaults));
-      
+
       setUser(userWithDefaults);
     } catch (error) {
       logger.error('회원가입 오류:', error);
@@ -498,7 +418,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasPermission = (permission: keyof User['accessPermissions']): boolean => {
     if (!user) return false;
-    return user.accessPermissions[permission] || false;
+    return user.accessPermissions?.[permission] || false;
   };
 
   const hasUserType = (userType: User['userType']): boolean => {
@@ -508,29 +428,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasLevel = (userType: User['userType'], requiredLevel: string): boolean => {
     if (!user || user.userType !== userType) return false;
-    
+
     const levelMaps = {
       student: ['beginner', 'intermediate', 'advanced', 'expert'],
       instructor: ['junior', 'senior', 'master', 'expert'],
       centerAdmin: ['assistant', 'manager', 'director'],
       superAdmin: ['admin', 'superAdmin', 'systemAdmin']
     };
-    
+
     const levels = levelMaps[userType] || [];
     const userLevel = getUserLevel(user, userType);
     const requiredLevelIndex = levels.indexOf(requiredLevel);
     const userLevelIndex = levels.indexOf(userLevel);
-    
+
     return userLevelIndex >= requiredLevelIndex;
   };
 
   const hasFeature = (feature: string): boolean => {
     if (!user || !user.featureSequence) return false;
-    return user.featureSequence.availableSteps.includes(feature);
+    return user.featureSequence?.availableSteps?.includes(feature) || false;
   };
 
   const getUserLevel = (user: User, userType: string): string => {
-    switch(userType) {
+    switch (userType) {
       case 'student':
         return user.studentInfo?.swimmingLevel || 'beginner';
       case 'instructor':

@@ -11,8 +11,10 @@ import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { Button } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
 import apiClient from '@/utils/api';
+import { logger } from '@/lib/logger';
 import {
   Loader2,
   RefreshCcw,
@@ -1262,7 +1264,7 @@ function SwimTrainingPlanPage() {
             });
           }
         } catch (groupClassError) {
-          console.warn('단체반(GroupClass) 목록 조회 실패:', groupClassError);
+          logger.warn('단체반(GroupClass) 목록 조회 실패:', groupClassError);
         }
 
         try {
@@ -1432,7 +1434,7 @@ function SwimTrainingPlanPage() {
             groupSummaryMap.set(summaryKey, summary);
           });
         } catch (groupError) {
-          console.warn('단체반(강의) 정보 조회 실패:', groupError);
+          logger.warn('단체반(강의) 정보 조회 실패:', groupError);
         }
 
         const groupSummaries = Array.from(groupSummaryMap.values());
@@ -1457,7 +1459,7 @@ function SwimTrainingPlanPage() {
           return next;
         });
       } catch (error) {
-        console.error('학생 목록 조회 실패:', error);
+        logger.error('학생 목록 조회 실패:', error);
         setStudentsError('담당 학생 목록을 불러오는 중 오류가 발생했습니다.');
         setStudents([]);
         setGroupClasses([]);
@@ -1693,7 +1695,7 @@ useEffect(() => {
           }
         }
       } catch (error) {
-        console.error('프로그램 불러오기 실패:', error);
+        logger.error('프로그램 불러오기 실패:', error);
         setProgramHistory([]);
         setHistoryError('프로그램 이력을 불러오지 못했습니다.');
 
@@ -1953,7 +1955,7 @@ useEffect(() => {
 
       return convertEnginePlanToSession(sanitizedDay, plan.goal, engineOutput, index);
     } catch (error) {
-      console.error('세션 재생성 실패:', error);
+      logger.error('세션 재생성 실패:', error);
       return null;
     }
   };
@@ -2142,7 +2144,7 @@ useEffect(() => {
       setStatusMessage({ type: 'success', message: '프로그램이 저장되었습니다.' });
       setHistoryRefreshKey((value) => value + 1);
     } catch (error: any) {
-      console.error('프로그램 저장 실패:', error);
+      logger.error('프로그램 저장 실패:', error);
       setStatusMessage({ type: 'error', message: error?.message || '프로그램 저장 중 오류가 발생했습니다.' });
     } finally {
       setIsSaving(false);
@@ -2163,12 +2165,10 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">맞춤형 수영 계획</h1>
-          <p className="text-gray-600">
-            수영 엔진 결과를 바탕으로 세션별 세트를 수정하고 바로 저장할 수 있습니다.
-                          </p>
-                        </div>
+        <PageHeader
+          title="맞춤형 수영 계획"
+          description="수영 엔진 결과를 바탕으로 세션별 세트를 수정하고 바로 저장할 수 있습니다."
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="border border-gray-200 shadow-sm">
@@ -3018,6 +3018,7 @@ useEffect(() => {
 }
 
 export default withAuth(SwimTrainingPlanPage, { requireTypes: ['instructor', 'superAdmin'] });
+
 
 
 

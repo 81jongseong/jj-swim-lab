@@ -12,11 +12,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
 import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
+import { CardGrid, LoadingState, PageHeader, ErrorState, Modal } from '@/components/common';
 import StatCard from '@/components/StatCard';
 
 interface CenterData {
@@ -298,7 +300,7 @@ export default function CenterStatisticsPage() {
       setStatistics(mockStatistics);
     } catch (err) {
       setError('통계 데이터를 불러오는 중 오류가 발생했습니다.');
-      console.error('Statistics loading error:', err);
+      logger.error('Statistics loading error:', err);
     } finally {
       setLoading(false);
     }
@@ -351,7 +353,7 @@ export default function CenterStatisticsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -359,27 +361,20 @@ export default function CenterStatisticsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <span className="text-red-400">⚠️</span>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">오류 발생</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
-            </div>
-          </div>
-        </div>
+        <ErrorState 
+          message={error}
+          onRetry={() => loadStatistics()}
+        />
       </div>
     );
   }
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">📊 센터 통계</h1>
-        <p className="text-gray-600">전체 센터의 통계 데이터를 분석하고 성과를 모니터링합니다.</p>
-      </div>
+      <PageHeader
+        title="📊 센터 통계"
+        description="전체 센터의 통계 데이터를 분석하고 성과를 모니터링합니다."
+      />
 
       {/* 지역 필터 - RegionSelectorWrapper 사용 (여러 시/도 비교 지원) */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -609,7 +604,7 @@ export default function CenterStatisticsPage() {
           {/* 상위 성과 센터 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">상위 성과 센터</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardGrid gap={4}>
               {filteredStatistics.topPerformers.map((performer, index) => {
                 const getColor = (metric: string) => {
                   if (metric === '수익') return 'blue';
@@ -680,40 +675,20 @@ export default function CenterStatisticsPage() {
                   />
                 );
               })}
-            </div>
+            </CardGrid>
           </div>
         </>
       )}
 
       {/* 상세 정보 모달 */}
-      {showDetailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDetailModal(false)}>
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">{detailModalContent.title}</h3>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div>{detailModalContent.content}</div>
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  닫기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        title={detailModalContent.title}
+        maxWidth="2xl"
+      >
+        <div>{detailModalContent.content}</div>
+      </Modal>
     </div>
   );
 }

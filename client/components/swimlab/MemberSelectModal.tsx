@@ -20,40 +20,10 @@ import { convertHealthToConditions } from '@/lib/swimlab/utils/healthToCondition
 import { CardGrid } from '@/components/common';
 import { logger } from '@/lib/logger';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  groupClassName?: string; // 단체반 이름
-  groupClassId?: string; // 단체반 ID
-  studentInfo?: {
-    age?: number;
-    swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    currentLevel?: string; // 현재 레벨
-    healthProfile?: {
-      height?: number;
-      weight?: number;
-      chronicConditions?: string[];
-      allergies?: string[];
-      activityLevel?: string;
-    };
-    swimmingProfile?: {
-      css?: {
-        freestyle?: number;
-        backstroke?: number;
-        breaststroke?: number;
-        butterfly?: number;
-        lastUpdated?: string;
-        updatedByRole?: 'self' | 'instructor';
-      };
-      preferredStrokes?: string[];
-      trainingDays?: number[];
-      currentGoal?: string;
-      conditionIds?: string[];
-    };
-  };
-}
+import type { User } from '@/types/user';
+
+// User 타입은 통합 타입에서 import합니다
+// 필요한 확장 타입은 통합 타입의 studentInfo에 이미 포함되어 있습니다
 
 interface MemberSelectModalProps {
   isOpen: boolean;
@@ -122,7 +92,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
           if (groupClassesResponse.success && (groupClassesResponse.data as any)?.groupClasses) {
             const groupClassesData = (groupClassesResponse.data as any).groupClasses;
             
-            console.log(`📚 ${groupClassesData.length}개 단체반 정보 조회됨`);
+            logger.info(`${groupClassesData.length}개 단체반 정보 조회됨`);
             
             // 단체반 목록 state에 저장
             setGroupClasses(groupClassesData);

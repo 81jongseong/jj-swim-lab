@@ -32,6 +32,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -382,12 +383,12 @@ function CenterInfoManagementPage() {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       
-      console.log('🔍 센터 정보 로드 시작');
-      console.log('  - 토큰:', token ? '있음' : '없음');
-      console.log('  - 유저:', userStr ? JSON.parse(userStr) : '없음');
+      logger.info('🔍 센터 정보 로드 시작');
+      logger.info('  - 토큰:', token ? '있음' : '없음');
+      logger.info('  - 유저:', userStr ? JSON.parse(userStr) : '없음');
       
       if (!token) {
-        console.error('❌ 인증 토큰이 없습니다.');
+        logger.error('❌ 인증 토큰이 없습니다.');
         return;
       }
 
@@ -403,7 +404,7 @@ function CenterInfoManagementPage() {
         const data = await response.json();
         if (data.success) {
           const centerData = data.data;
-          console.log('✅ 센터 정보 로드 완료:', centerData);
+          logger.info('✅ 센터 정보 로드 완료:', centerData);
           
           // 기본 정보
           setCenterId(centerData._id);
@@ -579,7 +580,7 @@ function CenterInfoManagementPage() {
               }
             }
           } catch (err) {
-            console.error('환불 정책 로드 오류:', err);
+            logger.error('환불 정책 로드 오류:', err);
           }
           
           // 시설 정보 로드
@@ -592,7 +593,7 @@ function CenterInfoManagementPage() {
                 detailedFacilities = JSON.parse(amenities.additionalFacilities);
               }
             } catch (e) {
-              console.log('시설 정보 파싱 오류:', e);
+              logger.info('시설 정보 파싱 오류:', e);
             }
             
             const facilityArray: FacilityDetail[] = JSON.parse(JSON.stringify(FACILITY_TEMPLATES));
@@ -667,12 +668,12 @@ function CenterInfoManagementPage() {
           }
           
           // 자유수영 운영시간 로드
-          console.log('🔍 availabilitySettings 확인:', centerData.availabilitySettings);
-          console.log('🔍 freeSwim 확인:', centerData.availabilitySettings?.freeSwim);
+          logger.info('🔍 availabilitySettings 확인:', centerData.availabilitySettings);
+          logger.info('🔍 freeSwim 확인:', centerData.availabilitySettings?.freeSwim);
           if (centerData.availabilitySettings?.freeSwim) {
             const freeSwimData = centerData.availabilitySettings.freeSwim;
             const dayTimeSlots = freeSwimData.dayTimeSlots || [];
-            console.log('🏊 자유수영 운영시간 로드:', {
+            logger.info('🏊 자유수영 운영시간 로드:', {
               enabled: freeSwimData.enabled,
               dayTimeSlots: dayTimeSlots
             });
@@ -683,8 +684,8 @@ function CenterInfoManagementPage() {
             });
           } else {
             // freeSwim이 없으면 기본값 설정
-            console.log('⚠️ 자유수영 운영시간 데이터 없음, 기본값 설정');
-            console.log('⚠️ availabilitySettings:', JSON.stringify(centerData.availabilitySettings, null, 2));
+            logger.info('⚠️ 자유수영 운영시간 데이터 없음, 기본값 설정');
+            logger.info('⚠️ availabilitySettings:', JSON.stringify(centerData.availabilitySettings, null, 2));
             setFreeSwimSettings({
               enabled: true,
               dayTimeSlots: [],
@@ -698,13 +699,13 @@ function CenterInfoManagementPage() {
             setParkingSpaces(centerData.facilities.amenities.parkingSpaces || 0);
           }
         } else {
-          console.error('센터 정보 로드 실패:', data.message);
+          logger.error('센터 정보 로드 실패:', data.message);
         }
       } else {
-        console.error('센터 정보 로드 실패:', response.status);
+        logger.error('센터 정보 로드 실패:', response.status);
       }
     } catch (error) {
-      console.error('센터 정보 로드 오류:', error);
+      logger.error('센터 정보 로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -886,13 +887,13 @@ function CenterInfoManagementPage() {
           })
         });
         if (!settingsResponse.ok) {
-          console.error('환불 정책 저장 실패');
+          logger.error('환불 정책 저장 실패');
         }
       } catch (err) {
-        console.error('환불 정책 저장 오류:', err);
+        logger.error('환불 정책 저장 오류:', err);
       }
 
-      console.log('📤 저장할 데이터:', JSON.stringify(dataToSave.availabilitySettings, null, 2));
+      logger.info('📤 저장할 데이터:', JSON.stringify(dataToSave.availabilitySettings, null, 2));
       const response = await fetch('http://localhost:5000/api/centers/my-center', {
         method: 'PUT',
         headers: {
@@ -915,7 +916,7 @@ function CenterInfoManagementPage() {
         alert('❌ 저장 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      console.error('센터 정보 저장 오류:', error);
+      logger.error('센터 정보 저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
@@ -4720,7 +4721,7 @@ function CenterInfoManagementPage() {
                         alert(result.message || '센터 추가에 실패했습니다.');
                       }
                     } catch (error: any) {
-                      console.error('센터 추가 오류:', error);
+                      logger.error('센터 추가 오류:', error);
                       alert(error.response?.data?.message || '센터 추가 중 오류가 발생했습니다.');
                     }
                   }}

@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -8,6 +9,7 @@ import { Bell, Plus, Edit, Trash2, Eye, Calendar, User } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import ThemedStatCard from '@/components/ThemedStatCard';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 interface Notice {
   _id: string;
@@ -32,6 +34,7 @@ function NoticesManagement() {
   const { user } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 권한 확인 - 페이지 렌더링 전에 체크
   // center@swim.com 계정도 센터 관리자로 인식
@@ -59,6 +62,19 @@ function NoticesManagement() {
     targetRegions: [] as string[],
     isVisibleToGuest: false
   });
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -69,6 +85,7 @@ function NoticesManagement() {
   const loadNotices = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       // 임시 데이터
       const tempNotices: Notice[] = [
         {
@@ -124,8 +141,9 @@ function NoticesManagement() {
         }
       ];
       setNotices(tempNotices);
-    } catch (error) {
-      console.error('공지사항 로드 실패:', error);
+    } catch (err: any) {
+      logger.error('공지사항 로드 실패:', err);
+      setError(err.message || '공지사항을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -259,30 +277,37 @@ function NoticesManagement() {
         }
       }
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('이 공지사항을 삭제하시겠습니까?')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '이 공지사항을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/notices/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
 
-    try {
-      const response = await fetch(`http://localhost:5000/api/notices/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          if (response.ok) {
+            alert('공지사항이 삭제되었습니다!');
+            loadNotices();
+          }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error) {
+          logger.error('삭제 오류:', error);
+          alert('삭제 중 오류가 발생했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
         }
-      });
-
-      if (response.ok) {
-        alert('공지사항이 삭제되었습니다!');
-        loadNotices();
       }
-    } catch (error) {
-      console.error('삭제 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const handlePublish = async (notice: Notice) => {
@@ -300,7 +325,7 @@ function NoticesManagement() {
         loadNotices();
       }
     } catch (error) {
-      console.error('발행 오류:', error);
+      logger.error('발행 오류:', error);
       alert('발행 중 오류가 발생했습니다.');
     }
   };
@@ -323,22 +348,35 @@ function NoticesManagement() {
     }));
   };
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadNotices();
+          }}
+          retryText="다시 시도"
+        />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          공지사항 관리
-        </h1>
-        <p className="text-gray-600">센터의 공지사항을 작성하고 관리하세요</p>
-      </div>
+      <PageHeader
+        title="공지사항 관리"
+        description="센터의 공지사항을 작성하고 관리하세요"
+      />
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
@@ -691,6 +729,18 @@ function NoticesManagement() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

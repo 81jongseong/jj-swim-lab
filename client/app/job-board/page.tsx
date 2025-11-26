@@ -31,6 +31,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import withAuth from '../../components/withAuth';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui';
 import { Button } from '@/components/ui';
 import InstructorProfileCard from '@/components/job-board/InstructorProfileCard';
@@ -55,7 +56,7 @@ import {
   Clock
 } from 'lucide-react';
 import SearchBar from '@/components/common/SearchBar';
-import { CardGrid } from '@/components/common';
+import { CardGrid, ConfirmModal, ErrorState, LoadingState, PageHeader } from '@/components/common';
 
 interface JobPost {
   _id: string;
@@ -124,6 +125,7 @@ function JobBoardPage() {
   const { user } = useAuth();
   const [jobPosts, setJobPosts] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJobType, setSelectedJobType] = useState<string>('all');
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
@@ -137,6 +139,21 @@ function JobBoardPage() {
   const [showApplicationDetailModal, setShowApplicationDetailModal] = useState(false);
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [hasApplied, setHasApplied] = useState(false);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+    data?: any;
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info',
+    data: null
+  });
   
   // 구인등록 폼 상태
   const [newJobPost, setNewJobPost] = useState({
@@ -217,13 +234,14 @@ function JobBoardPage() {
         }
       }
     } catch (error) {
-      console.error('센터 정보 로드 실패:', error);
+      logger.error('센터 정보 로드 실패:', error);
     }
   };
 
   const fetchJobPosts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
       
       const response = await fetch('http://localhost:5000/api/community/posts?roomType=job_board', {
@@ -287,8 +305,9 @@ function JobBoardPage() {
       } else {
         setJobPosts([]);
       }
-    } catch (error) {
-      console.error('채용 공고 조회 실패:', error);
+    } catch (err: any) {
+      logger.error('채용 공고 조회 실패:', err);
+      setError(err.message || '채용 공고를 불러오는데 실패했습니다.');
       setJobPosts([]);
     } finally {
       setLoading(false);
@@ -313,7 +332,7 @@ function JobBoardPage() {
         }
       }
     } catch (error) {
-      console.error('지원 목록 조회 실패:', error);
+      logger.error('지원 목록 조회 실패:', error);
     }
   };
 
@@ -335,7 +354,7 @@ function JobBoardPage() {
         }
       }
     } catch (error) {
-      console.error('내 지원 목록 조회 실패:', error);
+      logger.error('내 지원 목록 조회 실패:', error);
     }
   };
 
@@ -369,7 +388,7 @@ function JobBoardPage() {
         await fetchMyApplications();
       }
     } catch (error: any) {
-      console.error('지원 실패:', error);
+      logger.error('지원 실패:', error);
       alert(error.message || '지원에 실패했습니다.');
     }
   };
@@ -519,7 +538,7 @@ function JobBoardPage() {
         if (isEditMode) {
           setSelectedPost(null);
         }
-      
+        
         // 폼 초기화
         setNewJobPost({
           title: '',
@@ -546,17 +565,33 @@ function JobBoardPage() {
         setShowCreateModal(false);
       }
     } catch (error) {
-      console.error('채용 공고 등록 실패:', error);
+      logger.error('채용 공고 등록 실패:', error);
       alert('채용 공고 등록에 실패했습니다.');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">채용 정보를 불러오는 중...</p>
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LoadingState message="로딩 중..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              fetchJobPosts();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -566,17 +601,15 @@ function JobBoardPage() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Briefcase className="w-8 h-8 mr-3 text-blue-600" />
-                구인구직 커뮤니티
-              </h1>
-              <p className="text-gray-600 mt-2">
-                수영 산업 전용 채용 정보를 확인하고 공유하세요
-              </p>
+        <PageHeader
+          title={
+            <div className="flex items-center">
+              <Briefcase className="w-8 h-8 mr-3 text-blue-600" />
+              구인구직 커뮤니티
             </div>
+          }
+          description="수영 산업 전용 채용 정보를 확인하고 공유하세요"
+          actions={
             <div className="flex gap-2">
               {user?.userType === 'instructor' && (
                 <Button
@@ -614,9 +647,10 @@ function JobBoardPage() {
                 </Button>
               )}
             </div>
-          </div>
+          }
+        />
 
-          {/* 필터 및 검색 */}
+        {/* 필터 및 검색 */}
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
@@ -653,7 +687,6 @@ function JobBoardPage() {
               </select>
             </div>
           </div>
-        </div>
 
         {/* 채용 공고 목록 */}
         {filteredPosts.length > 0 ? (
@@ -862,29 +895,36 @@ function JobBoardPage() {
                   <Button
                     variant="secondary"
                     onClick={async () => {
-                      if (confirm('정말 이 게시글을 삭제하시겠습니까?')) {
-                        try {
-                          const token = localStorage.getItem('token');
-                          const response = await fetch(`http://localhost:5000/api/community/posts/${selectedPost._id}`, {
-                            method: 'DELETE',
-                            headers: {
-                              'Authorization': `Bearer ${token}`,
-                              'Content-Type': 'application/json'
+                      setConfirmModal({
+                        isOpen: true,
+                        message: '정말 이 게시글을 삭제하시겠습니까?',
+                        variant: 'danger',
+                        data: null,
+                        onConfirm: async () => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            const response = await fetch(`http://localhost:5000/api/community/posts/${selectedPost._id}`, {
+                              method: 'DELETE',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              }
+                            });
+
+                            if (!response.ok) {
+                              throw new Error('게시글 삭제에 실패했습니다.');
                             }
-                          });
 
-                          if (!response.ok) {
-                            throw new Error('게시글 삭제에 실패했습니다.');
+                            alert('게시글이 삭제되었습니다.');
+                            setShowDetailModal(false);
+                            await fetchJobPosts();
+                            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                          } catch (error) {
+                            logger.error('게시글 삭제 실패:', error);
+                            alert('게시글 삭제에 실패했습니다.');
                           }
-
-                          alert('게시글이 삭제되었습니다.');
-                          setShowDetailModal(false);
-                          await fetchJobPosts();
-                        } catch (error) {
-                          console.error('게시글 삭제 실패:', error);
-                          alert('게시글 삭제에 실패했습니다.');
                         }
-                      }
+                      });
                     }}
                     className="flex items-center gap-2"
                   >
@@ -1122,7 +1162,7 @@ function JobBoardPage() {
                             await fetchMyApplications();
                           }
                         } catch (error: any) {
-                          console.error('면접 수락 실패:', error);
+                          logger.error('면접 수락 실패:', error);
                           alert(error.message || '면접 수락에 실패했습니다.');
                         }
                       }}
@@ -1148,7 +1188,7 @@ function JobBoardPage() {
                             await fetchMyApplications();
                           }
                         } catch (error: any) {
-                          console.error('면접 거부 실패:', error);
+                          logger.error('면접 거부 실패:', error);
                           alert(error.message || '면접 거부에 실패했습니다.');
                         }
                       }}
@@ -1370,7 +1410,7 @@ function JobBoardPage() {
                           setSelectedApplication(null);
                         }
                       } catch (error: any) {
-                        console.error('서류 통과 처리 실패:', error);
+                        logger.error('서류 통과 처리 실패:', error);
                         alert(error.message || '서류 통과 처리에 실패했습니다.');
                       }
                     }}
@@ -1417,7 +1457,7 @@ function JobBoardPage() {
                           setSelectedApplication(null);
                         }
                       } catch (error: any) {
-                        console.error('면접 일정 설정 실패:', error);
+                        logger.error('면접 일정 설정 실패:', error);
                         alert(error.message || '면접 일정 설정에 실패했습니다.');
                       }
                     }}
@@ -1431,39 +1471,44 @@ function JobBoardPage() {
                   <Button
                     variant="primary"
                     onClick={async () => {
-                      if (!confirm('정말 이 강사를 채용하시겠습니까? 채용하면 센터에 소속되어 반배정 및 강의 시스템을 이용할 수 있습니다.')) {
-                        return;
-                      }
+                      setConfirmModal({
+                        isOpen: true,
+                        message: '정말 이 강사를 채용하시겠습니까? 채용하면 센터에 소속되어 반배정 및 강의 시스템을 이용할 수 있습니다.',
+                        variant: 'warning',
+                        onConfirm: async () => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}/hire`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                contractType: 'full-time' // 기본값, 필요시 선택 가능하도록 수정 가능
+                              })
+                            });
 
-                      try {
-                        const token = localStorage.getItem('token');
-                        const response = await fetch(`http://localhost:5000/api/job-board/applications/${selectedApplication._id}/hire`, {
-                          method: 'POST',
-                          headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            contractType: 'full-time' // 기본값, 필요시 선택 가능하도록 수정 가능
-                          })
-                        });
+                            if (!response.ok) {
+                              const errorData = await response.json();
+                              throw new Error(errorData.message || '채용 처리에 실패했습니다.');
+                            }
 
-                        if (!response.ok) {
-                          const errorData = await response.json();
-                          throw new Error(errorData.message || '채용 처리에 실패했습니다.');
+                            const result = await response.json();
+                            if (result.success) {
+                              alert('강사가 채용되었습니다. 강사에게 알림이 전송되었습니다.');
+                              await fetchApplications();
+                              setShowApplicationDetailModal(false);
+                              setSelectedApplication(null);
+                              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                            }
+                          } catch (error: any) {
+                            logger.error('채용 처리 실패:', error);
+                            alert(error.message || '채용 처리에 실패했습니다.');
+                            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                          }
                         }
-
-                        const result = await response.json();
-                        if (result.success) {
-                          alert('강사가 채용되었습니다. 강사에게 알림이 전송되었습니다.');
-                          await fetchApplications();
-                          setShowApplicationDetailModal(false);
-                          setSelectedApplication(null);
-                        }
-                      } catch (error: any) {
-                        console.error('채용 처리 실패:', error);
-                        alert(error.message || '채용 처리에 실패했습니다.');
-                      }
+                      });
                     }}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
                   >
@@ -1751,6 +1796,18 @@ function JobBoardPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

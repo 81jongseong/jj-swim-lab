@@ -1,3 +1,19 @@
+/**
+ * 📦 JJ Swim Lab - Table UI 컴포넌트
+ * 
+ * 📋 **파일 목적**
+ * - shadcn/ui 스타일의 Table 컴포넌트
+ * - 테이블 구조 제공
+ * 
+ * 🔄 **연동되는 파일**
+ * - components/ui/index.ts (export)
+ * - 모든 페이지의 테이블 UI 요소
+ * 
+ * 🗄️ **데이터 연동**
+ * - children: 테이블 내용
+ * - className: 추가 스타일 클래스
+ */
+
 import * as React from "react"
 
 import { cn } from "../../lib/utils"
@@ -73,7 +89,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -87,10 +103,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-      className
-    )}
+    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
     {...props}
   />
 ))

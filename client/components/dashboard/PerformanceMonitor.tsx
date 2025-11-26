@@ -69,6 +69,7 @@
  * ```
  */
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
@@ -117,7 +118,7 @@ export default function PerformanceMonitor({ refreshInterval = 30000 }: Performa
       setLastUpdate(new Date());
     } catch (err) {
       setError('성능 메트릭 수집에 실패했습니다.');
-      console.error('Performance monitoring error:', err);
+      logger.error('Performance monitoring error:', err);
     } finally {
       setIsLoading(false);
     }

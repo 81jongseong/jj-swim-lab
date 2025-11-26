@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import apiClient from '../../utils/api';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 interface ApiPayment {
   _id: string;
@@ -18,27 +20,45 @@ interface ApiPayment {
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<ApiPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("all");
   const currentUser = apiClient.getCurrentUser();
   const isSuperAdmin = currentUser?.userType === "superAdmin";
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   const loadPayments = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await apiClient.getPayments();
-      console.log('📊 결제 내역 응답:', res);
-      console.log('📊 결제 내역 데이터:', res.data);
-      console.log('📊 결제 내역 배열:', res.data?.payments);
-      if (res.data?.payments) {
+      logger.api('결제 내역 응답', res);
+      logger.debug('결제 내역 데이터', { data: res.data, payments: res.data?.payments });
+      if (res.error) {
+        setError(res.error);
+        setPayments([]);
+      } else if (res.data?.payments) {
         setPayments(res.data.payments);
-        console.log('✅ 결제 내역 설정 완료:', res.data.payments.length, '건');
+        logger.success(`결제 내역 설정 완료: ${res.data.payments.length}건`);
       } else {
-        console.warn('⚠️ 결제 내역 데이터가 없습니다:', res);
+        logger.warn('결제 내역 데이터가 없습니다', res);
         setPayments([]);
       }
-    } catch (error) {
-      console.error('❌ 결제 내역 로딩 오류:', error);
+    } catch (err: any) {
+      logger.error('결제 내역 로딩 오류:', err);
+      setError(err.message || '결제 내역을 불러오는데 실패했습니다.');
       setPayments([]);
     } finally {
       setLoading(false);
@@ -103,14 +123,22 @@ export default function PaymentsPage() {
   };
 
   const handleRefund = async (paymentId: string) => {
-    if (!confirm("정말로 이 결제를 환불 신청하시겠습니까?")) return;
-    const res = await apiClient.post(`/payments/${paymentId}/refund`, { reason: "사용자 요청" });
-    if (!res.error) {
-      await loadPayments();
-      alert("환불 신청이 완료되었습니다.");
-    } else {
-      alert(res.error);
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: "정말로 이 결제를 환불 신청하시겠습니까?",
+      variant: 'warning',
+      onConfirm: async () => {
+        const res = await apiClient.post(`/payments/${paymentId}/refund`, { reason: "사용자 요청" });
+        if (!res.error) {
+          await loadPayments();
+          alert("환불 신청이 완료되었습니다.");
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } else {
+          alert(res.error);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
+      }
+    });
   };
 
   const handleComplete = async (paymentId: string) => {
@@ -128,12 +156,24 @@ export default function PaymentsPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              loadPayments();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -142,7 +182,7 @@ export default function PaymentsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">결제 내역</h1>
+        <PageHeader title="결제 내역" />
 
         <div className="flex flex-wrap justify-between gap-4 mb-4">
           <div className="bg-white rounded-lg shadow p-4 flex-1 min-w-[180px]">
@@ -311,6 +351,18 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

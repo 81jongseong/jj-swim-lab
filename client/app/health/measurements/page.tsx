@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useRef, useEffect } from 'react';
 import { 
@@ -16,6 +17,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 // OCR 관련 함수는 동적 import로 로드 (서버 사이드 렌더링 방지)
+import { LoadingState, PageHeader } from '@/components/common';
 
 export default function MeasurementsPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -147,7 +149,7 @@ export default function MeasurementsPage() {
         alert('측정 데이터 추가에 실패했습니다: ' + data.message);
       }
     } catch (error) {
-      console.error('측정 데이터 추가 실패:', error);
+      logger.error('측정 데이터 추가 실패:', error);
       alert('측정 데이터 추가 중 오류가 발생했습니다.');
     }
   };
@@ -169,7 +171,7 @@ export default function MeasurementsPage() {
         alert('공개 설정 저장에 실패했습니다: ' + data.message);
       }
     } catch (error) {
-      console.error('공개 설정 저장 실패:', error);
+      logger.error('공개 설정 저장 실패:', error);
       alert('공개 설정 저장 중 오류가 발생했습니다.');
     }
   };
@@ -201,11 +203,11 @@ export default function MeasurementsPage() {
       ]);
       
       const text = await extractTextFromFile(file);
-      console.log('추출된 텍스트:', text);
+      logger.info('추출된 텍스트:', text);
 
       // 건강 정보 추출
       const healthData = extractHealthDataFromText(text);
-      console.log('추출된 건강 정보:', healthData);
+      logger.info('추출된 건강 정보:', healthData);
       
       setExtractedData(healthData);
 
@@ -232,7 +234,7 @@ export default function MeasurementsPage() {
         });
       }
     } catch (error: any) {
-      console.error('OCR 처리 실패:', error);
+      logger.error('OCR 처리 실패:', error);
       setOcrError(error.message || '파일 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
@@ -420,7 +422,7 @@ export default function MeasurementsPage() {
       // 파일 초기화
       handleRemoveFile();
     } catch (error) {
-      console.error('측정값 추가 실패:', error);
+      logger.error('측정값 추가 실패:', error);
       alert('측정값 추가 중 오류가 발생했습니다.');
     }
   };
@@ -430,10 +432,7 @@ export default function MeasurementsPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">로딩 중...</p>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );

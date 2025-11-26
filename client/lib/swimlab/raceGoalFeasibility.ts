@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * 🎯 대회 목표 기록 실현 가능성 검증 엔진 (CSS/CS 기반)
  * 
@@ -453,7 +455,7 @@ export function calculateRaceGoalFeasibility(input: RaceGoalInput): FeasibilityR
   }
   
   // 디버그 로그
-  console.log('🎯 권장 목표 계산:', {
+  logger.debug('권장 목표 계산', {
     grade,
     totalRangeMin,
     totalRangeMid,
@@ -577,5 +579,7 @@ export function getExampleFeasibility(): FeasibilityResult {
     }
   });
 }
+
+
 
 

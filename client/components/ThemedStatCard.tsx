@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
-type ColorVariant = 'blue' | 'yellow' | 'orange' | 'green' | 'purple' | 'red';
+export type ColorVariant = 'blue' | 'yellow' | 'orange' | 'green' | 'purple' | 'red' | 'teal' | 'indigo';
 
 interface ThemedStatCardProps {
   title: string;
@@ -23,6 +23,8 @@ const VARIANT_STYLES: Record<ColorVariant, { bg: string; border: string; hoverBg
   green:  { bg: 'bg-green-50',  border: 'border-green-200',  hoverBg: 'hover:bg-green-100',  hoverBorder: 'hover:border-green-300',  title: 'text-green-700',  value: 'text-green-600',  icon: 'text-green-600' },
   purple: { bg: 'bg-purple-50', border: 'border-purple-200', hoverBg: 'hover:bg-purple-100', hoverBorder: 'hover:border-purple-300', title: 'text-purple-700', value: 'text-purple-600', icon: 'text-purple-600' },
   red:    { bg: 'bg-red-50',    border: 'border-red-200',    hoverBg: 'hover:bg-red-100',    hoverBorder: 'hover:border-red-300',    title: 'text-red-700',    value: 'text-red-600',    icon: 'text-red-600' },
+  teal:   { bg: 'bg-teal-50',   border: 'border-teal-200',   hoverBg: 'hover:bg-teal-100',   hoverBorder: 'hover:border-teal-300',   title: 'text-teal-700',   value: 'text-teal-600',   icon: 'text-teal-600' },
+  indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', hoverBg: 'hover:bg-indigo-100', hoverBorder: 'hover:border-indigo-300', title: 'text-indigo-700', value: 'text-indigo-600', icon: 'text-indigo-600' },
 };
 
 export default function ThemedStatCard({ title, value, icon, color = 'blue', description, className, onClick, href }: ThemedStatCardProps) {

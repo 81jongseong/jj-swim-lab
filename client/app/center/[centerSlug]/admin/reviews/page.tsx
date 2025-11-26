@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Star, MessageSquare, User, Calendar, ThumbsUp, ThumbsDown, Filter, Search } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface Review {
   _id: string;
@@ -122,7 +124,7 @@ function ReviewsManagement() {
       ];
       setReviews(tempReviews);
     } catch (error) {
-      console.error('리뷰 목록 로드 실패:', error);
+      logger.error('리뷰 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -187,19 +189,17 @@ function ReviewsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          리뷰 관리
-        </h1>
-        <p className="text-gray-600">학생들의 리뷰를 관리하고 답변하세요</p>
-      </div>
+      <PageHeader
+        title="리뷰 관리"
+        description="학생들의 리뷰를 관리하고 답변하세요"
+      />
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

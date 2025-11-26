@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Users, Clock, Star, Search, Plus } from 'lucide-react';
 import withAuth from '@/components/withAuth';
-import { CenterSelector } from '@/components/common';
+import { CenterSelector, LoadingState, PageHeader, ConfirmModal } from '@/components/common';
+import { logger } from '@/lib/logger';
 
 interface Course {
   _id: string;
@@ -35,6 +36,19 @@ function StudentCourses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -69,7 +83,7 @@ function StudentCourses() {
         setCourses(coursesData);
       }
     } catch (error) {
-      console.error('강의 목록 로드 실패:', error);
+      logger.error('강의 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -121,51 +135,57 @@ function StudentCourses() {
   };
 
   const enrollCourse = (courseId: string) => {
-    if (confirm('이 강의에 등록하시겠습니까?')) {
-      setCourses(prev => prev.map(course => 
-        course._id === courseId 
-          ? { ...course, enrolled: true, enrolledStudents: course.enrolledStudents + 1 }
-          : course
-      ));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '이 강의에 등록하시겠습니까?',
+      variant: 'info',
+      onConfirm: () => {
+        setCourses(prev => prev.map(course => 
+          course._id === courseId 
+            ? { ...course, enrolled: true, enrolledStudents: course.enrolledStudents + 1 }
+            : course
+        ));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   const unenrollCourse = (courseId: string) => {
-    if (confirm('이 강의에서 탈퇴하시겠습니까?')) {
-      setCourses(prev => prev.map(course => 
-        course._id === courseId 
-          ? { ...course, enrolled: false, enrolledStudents: course.enrolledStudents - 1 }
-          : course
-      ));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '이 강의에서 탈퇴하시겠습니까?',
+      variant: 'warning',
+      onConfirm: () => {
+        setCourses(prev => prev.map(course => 
+          course._id === courseId 
+            ? { ...course, enrolled: false, enrolledStudents: course.enrolledStudents - 1 }
+            : course
+        ));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">강의 목록을 불러오는 중...</span>
+        <LoadingState message="강의 목록을 불러오는 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              강의 관리
-            </h1>
-            <p className="text-gray-600">수영 강의를 찾고 등록하세요</p>
-          </div>
-          {/* 센터 선택 드롭다운 */}
+      <PageHeader
+        title="강의 관리"
+        description="수영 강의를 찾고 등록하세요"
+        actions={
           <CenterSelector
             selectedCenterId={selectedCenterId}
             onCenterChange={setSelectedCenterId}
           />
-        </div>
-      </div>
+        }
+      />
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -343,6 +363,18 @@ function StudentCourses() {
           <p className="text-gray-500">검색 결과가 없습니다.</p>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

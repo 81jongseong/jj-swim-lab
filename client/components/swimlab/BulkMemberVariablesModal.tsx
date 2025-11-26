@@ -23,6 +23,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -133,7 +134,7 @@ export default function BulkMemberVariablesModal({
       const existingCSS = swimmingProfile.css || {};
       const healthProfile = m.studentInfo?.healthProfile || {};
       
-      console.log(`🔍 ${m.name} 프로필 로드:`, {
+      logger.info(`🔍 ${m.name} 프로필 로드:`, {
         vo2max: swimmingProfile.vo2max,
         maxHeartRate: swimmingProfile.maxHeartRate,
         restingHeartRate: swimmingProfile.restingHeartRate,
@@ -223,7 +224,7 @@ export default function BulkMemberVariablesModal({
           setAvailablePoolLengths(poolLengths);
         }
       } catch (error) {
-        console.error('센터 풀 길이 조회 실패:', error);
+        logger.error('센터 풀 길이 조회 실패:', error);
       }
     };
     
@@ -235,7 +236,7 @@ export default function BulkMemberVariablesModal({
         const { CONDITIONS } = await import('@/src/swimlab/data/conditions_full');
         setConditionsData(CONDITIONS);
       } catch (error) {
-        console.error('컨디션 데이터 로드 실패:', error);
+        logger.error('컨디션 데이터 로드 실패:', error);
       }
     };
     
@@ -376,9 +377,9 @@ export default function BulkMemberVariablesModal({
               </button>
               <button
                 onClick={() => {
-                  console.log(`🏆 레이스 플랜 버튼 클릭: ${currentMember.memberName}`);
+                  logger.info(`🏆 레이스 플랜 버튼 클릭: ${currentMember.memberName}`);
                   updateCurrentMember({ programType: 'race' });
-                  console.log(`✅ ${currentMember.memberName} programType → 'race'로 변경`);
+                  logger.info(`✅ ${currentMember.memberName} programType → 'race'로 변경`);
                 }}
                 className={`px-4 py-3 border-2 rounded-lg transition-all ${
                   currentMember.programType === 'race'
@@ -766,21 +767,21 @@ export default function BulkMemberVariablesModal({
                       // 🔥 각 회원의 설정을 그대로 사용 (독립적으로 유지)
                       const finalMemberVariables = memberVariables.map(mv => ({ ...mv }));
                       
-                      console.log('🎯 최종 회원 변수 (✓ 설정 완료 및 저장 버튼):', finalMemberVariables.map(mv => ({
+                      logger.info('🎯 최종 회원 변수 (✓ 설정 완료 및 저장 버튼):', finalMemberVariables.map(mv => ({
                         name: mv.memberName,
                         programType: mv.programType,
                         raceDate: mv.raceDate,
                         currentTime: mv.currentTime,
                         targetTime: mv.targetTime
                       })));
-                      console.log('⚠️ 이 버튼은 프로필만 저장합니다. 프로그램을 생성하려면 "📅 저장 후 주간 계획 생성" 버튼을 클릭하세요.');
+                      logger.info('⚠️ 이 버튼은 프로필만 저장합니다. 프로그램을 생성하려면 "📅 저장 후 주간 계획 생성" 버튼을 클릭하세요.');
                       
                       // 각 회원의 수영 프로필을 API에 저장
                       let savedCount = 0;
                       
                       for (const memberVar of finalMemberVariables) {
                         try {
-                          console.log(`💾 ${memberVar.memberName} CSS 저장 시작:`, memberVar.css);
+                          logger.info(`💾 ${memberVar.memberName} CSS 저장 시작:`, memberVar.css);
                           
                           // CSS 저장 (강사가 즉시 적용)
                           const cssResponse = await apiClient.put(`/api/users/${memberVar.memberId}/swimming-profile/css`, {
@@ -789,9 +790,9 @@ export default function BulkMemberVariablesModal({
                             reason: '강사가 CSS를 측정/수정했습니다.'
                           });
                           
-                          console.log(`✅ ${memberVar.memberName} CSS 저장 완료:`, cssResponse.data);
+                          logger.info(`✅ ${memberVar.memberName} CSS 저장 완료:`, cssResponse.data);
                           
-                        console.log(`💾 ${memberVar.memberName} 프로필 저장 시작:`, {
+                        logger.info(`💾 ${memberVar.memberName} 프로필 저장 시작:`, {
                           vo2max: memberVar.vo2max,
                           maxHeartRate: memberVar.maxHeartRate,
                           restingHeartRate: memberVar.restingHeartRate,
@@ -828,18 +829,18 @@ export default function BulkMemberVariablesModal({
                           reason: '강사가 회원 프로필을 설정/수정했습니다.'
                         });
                         
-                        console.log(`✅ ${memberVar.memberName} 프로필 저장 완료:`, profileResponse.data);
+                        logger.info(`✅ ${memberVar.memberName} 프로필 저장 완료:`, profileResponse.data);
                         
                         savedCount++;
-                        console.log(`✅ ${memberVar.memberName} 총 ${savedCount}명 저장 완료`);
+                        logger.info(`✅ ${memberVar.memberName} 총 ${savedCount}명 저장 완료`);
                         
                       } catch (error: any) {
-                        console.error(`${memberVar.memberName} 프로필 저장 실패:`, error);
+                        logger.error(`${memberVar.memberName} 프로필 저장 실패:`, error);
                         // 403, 404 오류는 무시하고 계속 진행
                         if (error.response?.status === 403) {
-                          console.warn(`${memberVar.memberName}: 권한 부족 (승인 대기 상태로 저장될 수 있음)`);
+                          logger.warn(`${memberVar.memberName}: 권한 부족 (승인 대기 상태로 저장될 수 있음)`);
                         } else if (error.response?.status === 404) {
-                          console.warn(`${memberVar.memberName}: 사용자를 찾을 수 없음 (로컬 프로필만 생성됨)`);
+                          logger.warn(`${memberVar.memberName}: 사용자를 찾을 수 없음 (로컬 프로필만 생성됨)`);
                         }
                       }
                     }
@@ -876,18 +877,18 @@ export default function BulkMemberVariablesModal({
                       return; // 생성 중단
                     }
                     
-                    console.log('='.repeat(80));
-                    console.log('🎯 최종 회원 변수 (📅 저장 후 주간 계획 생성 버튼):');
+                    logger.info('='.repeat(80));
+                    logger.info('🎯 최종 회원 변수 (📅 저장 후 주간 계획 생성 버튼):');
                     finalMemberVariables.forEach(mv => {
-                      console.log(`  - ${mv.memberName}:`, {
+                      logger.info(`  - ${mv.memberName}:`, {
                         programType: mv.programType,
                         raceDate: mv.raceDate,
                         currentTime: mv.currentTime,
                         targetTime: mv.targetTime
                       });
                     });
-                    console.log('✅ 각 회원이 자신의 programType대로 프로그램 생성됩니다.');
-                    console.log('='.repeat(80));
+                    logger.info('✅ 각 회원이 자신의 programType대로 프로그램 생성됩니다.');
+                    logger.info('='.repeat(80));
                     
                     // 각 회원의 수영 프로필을 API에 저장 + 주간 계획 생성
                     let savedCount = 0;
@@ -918,16 +919,16 @@ export default function BulkMemberVariablesModal({
                         
                         savedCount++;
                       } catch (error: any) {
-                        console.error(`❌ ${memberVar.memberName} 프로필 저장 실패:`, error);
+                        logger.error(`❌ ${memberVar.memberName} 프로필 저장 실패:`, error);
                         // 404 오류는 무시하고 계속 진행
                         if (error.response?.status === 404) {
-                          console.warn(`⚠️ ${memberVar.memberName}: 사용자를 찾을 수 없음 (로컬 프로필만 생성됨)`);
-                          console.warn(`📋 사용자 ID: ${memberVar.memberId}`);
-                          console.warn(`💡 이 ID는 데이터베이스에 존재하지 않습니다. 회원이 아직 가입하지 않았거나 삭제되었을 수 있습니다.`);
+                          logger.warn(`⚠️ ${memberVar.memberName}: 사용자를 찾을 수 없음 (로컬 프로필만 생성됨)`);
+                          logger.warn(`📋 사용자 ID: ${memberVar.memberId}`);
+                          logger.warn(`💡 이 ID는 데이터베이스에 존재하지 않습니다. 회원이 아직 가입하지 않았거나 삭제되었을 수 있습니다.`);
                         } else if (error.response?.status === 403) {
-                          console.warn(`⚠️ ${memberVar.memberName}: 권한 부족 (승인 대기 상태로 저장될 수 있음)`);
+                          logger.warn(`⚠️ ${memberVar.memberName}: 권한 부족 (승인 대기 상태로 저장될 수 있음)`);
                         } else {
-                          console.error(`💥 ${memberVar.memberName}: 예상치 못한 오류 (${error.response?.status})`, error.response?.data);
+                          logger.error(`💥 ${memberVar.memberName}: 예상치 못한 오류 (${error.response?.status})`, error.response?.data);
                         }
                       }
                     }

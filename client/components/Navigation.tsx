@@ -91,6 +91,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -411,13 +412,13 @@ export default function Navigation() {
                 try {
                   localStorage.setItem('center-logo', logo);
                 } catch (e) {
-                  console.warn('로고 URL localStorage 저장 실패:', e);
+                  logger.warn('로고 URL localStorage 저장 실패:', e);
                 }
               }
             }
           }
         } catch (error) {
-          console.error('Navigation: 로고 URL 로드 실패:', error);
+          logger.error('Navigation: 로고 URL 로드 실패:', error);
         }
       };
 
@@ -494,7 +495,7 @@ export default function Navigation() {
         // 정확한 경로 매칭으로 첫 번째 활성 메뉴 항목만 찾기
         const activeMenuItems = document.querySelectorAll('[data-active="true"]');
 
-        let targetMenuItem = null;
+        let targetMenuItem: HTMLElement | null = null;
 
         // href 속성으로 정확한 경로 매칭 우선
         for (let i = 0; i < activeMenuItems.length; i++) {
@@ -511,7 +512,7 @@ export default function Navigation() {
           targetMenuItem = activeMenuItems[0] as HTMLElement;
         }
 
-        if (targetMenuItem && typeof targetMenuItem.scrollIntoView === 'function') {
+        if (targetMenuItem) {
           targetMenuItem.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
@@ -718,9 +719,9 @@ export default function Navigation() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      // stopImmediatePropagation은 존재할 때만 호출
-                      if (e.stopImmediatePropagation && typeof e.stopImmediatePropagation === 'function') {
-                        e.stopImmediatePropagation();
+                      // stopImmediatePropagation은 nativeEvent에서 호출
+                      if (e.nativeEvent && typeof e.nativeEvent.stopImmediatePropagation === 'function') {
+                        e.nativeEvent.stopImmediatePropagation();
                       }
                       // Link의 기본 동작을 막고 명시적으로 라우터로 이동
                       if (href) {
@@ -811,7 +812,7 @@ export default function Navigation() {
                             e.stopImmediatePropagation();
                           }
 
-                          console.log('🔗 Navigation 링크 클릭:', {
+                          logger.info('🔗 Navigation 링크 클릭:', {
                             label: item.label,
                             href,
                             resolvedHref: href,
@@ -824,10 +825,10 @@ export default function Navigation() {
                           // href 검증 및 수정
                           let targetHref = href;
                           if (item.href === '/admin/center-management' && href !== '/admin/center-management') {
-                            console.error('❌ 센터 관리 링크 오류 감지, 수정:', { originalHref: item.href, resolvedHref: href });
+                            logger.error('❌ 센터 관리 링크 오류 감지, 수정:', { originalHref: item.href, resolvedHref: href });
                             targetHref = '/admin/center-management';
                           } else if (item.href !== href) {
-                            console.warn('⚠️ href 불일치:', { itemHref: item.href, resolvedHref: href, label: item.label });
+                            logger.warn('⚠️ href 불일치:', { itemHref: item.href, resolvedHref: href, label: item.label });
                             targetHref = item.href; // 원본 href 사용
                           }
 
@@ -884,7 +885,7 @@ export default function Navigation() {
                     alt="센터 로고"
                     className="w-full h-full object-contain rounded-lg"
                     onError={(e) => {
-                      console.error('Navigation: 로고 이미지 로드 실패:', logoUrl);
+                      logger.error('Navigation: 로고 이미지 로드 실패:', logoUrl);
                       setLogoUrl(null); // 로드 실패 시 null로 설정하여 기본 로고 표시
                     }}
                     onLoad={() => {

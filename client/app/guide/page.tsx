@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CardGrid } from '@/components/common';
 
 export default function GuidePage() {
   const [activeTab, setActiveTab] = useState('student');
@@ -123,7 +124,7 @@ export default function GuidePage() {
               <p className="text-gray-600 text-lg">JJ Swim Lab만의 혁신적인 수영 교육 솔루션</p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardGrid gap={6}>
               {[
                 {
                   icon: "🤖",
@@ -174,7 +175,7 @@ export default function GuidePage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </CardGrid>
           </div>
 
           {/* 수영 준비사항 */}

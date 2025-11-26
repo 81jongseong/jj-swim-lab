@@ -10,8 +10,10 @@ import { Input } from '../../components/ui';
 // Select와 Tabs는 index.ts에서 export되지 않으므로 직접 import
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
+import { CardGrid, ErrorState, LoadingState, PageHeader } from '@/components/common';
 import apiClient from '../../utils/api';
 import withAuth from '../../components/withAuth';
+import { logger } from '@/lib/logger';
 
 interface MembershipPlan {
   _id: string;
@@ -56,6 +58,7 @@ function MembershipPage() {
   const [userMemberships, setUserMemberships] = useState<UserMembership[]>([]);
   const [payments, setPayments] = useState<MembershipPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreatePlan, setShowCreatePlan] = useState(false);
   const [showCreateMembership, setShowCreateMembership] = useState(false);
 
@@ -88,6 +91,7 @@ function MembershipPage() {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       // 멤버십 플랜 조회
       const plansRes = await apiClient.get<{
@@ -95,6 +99,10 @@ function MembershipPage() {
         data?: { plans?: MembershipPlan[] };
         error?: string;
       }>('/membership/plans');
+      if ((plansRes as any).error) {
+        setError((plansRes as any).error);
+        return;
+      }
       if ((plansRes as any).data?.plans) setPlans((plansRes as any).data.plans);
 
       // 사용자 멤버십 조회
@@ -103,6 +111,10 @@ function MembershipPage() {
         data?: { memberships?: UserMembership[] };
         error?: string;
       }>('/membership');
+      if ((membershipsRes as any).error) {
+        setError((membershipsRes as any).error);
+        return;
+      }
       if ((membershipsRes as any).data?.memberships) setUserMemberships((membershipsRes as any).data.memberships);
 
       // 결제 내역 조회
@@ -111,11 +123,17 @@ function MembershipPage() {
         data?: { payments?: MembershipPayment[] };
         error?: string;
       }>('/membership/payments');
+      if ((paymentsRes as any).error) {
+        setError((paymentsRes as any).error);
+        return;
+      }
       if ((paymentsRes as any).data?.payments) setPayments((paymentsRes as any).data.payments);
-    } catch (error) {
-      console.error('데이터 로딩 중 오류:', error);
+    } catch (err: any) {
+      logger.error('데이터 로딩 중 오류:', err);
+      setError(err.message || '데이터를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleCreatePlan = async (e: FormEvent) => {
@@ -176,32 +194,33 @@ function MembershipPage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-6 w-96" />
-        </div>
-        <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadData();
+          }}
+          retryText="다시 시도"
+        />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">멤버십 관리</h1>
-        <p className="text-gray-600 mt-2">멤버십 플랜과 사용자의 멤버십을 관리합니다.</p>
-      </div>
+      <PageHeader
+        title="멤버십 관리"
+        description="멤버십 플랜과 사용자의 멤버십을 관리합니다."
+        className="mb-8"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
@@ -220,7 +239,7 @@ function MembershipPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CardGrid>
             {plans.map((plan) => (
               <Card key={plan._id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -267,7 +286,7 @@ function MembershipPage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </CardGrid>
         </TabsContent>
 
         <TabsContent value="memberships" className="space-y-6">
@@ -474,6 +493,8 @@ function MembershipPage() {
 }
 
 export default withAuth(MembershipPage, { requireTypes: ['superAdmin', 'centerAdmin'] });
+
+
 
 
 

@@ -1,82 +1,4 @@
-/**
- * 🔽 JJ Swim Lab - 건강 측정 데이터 API
- * 
- * 📋 **API 목적**
- * - 건강 측정 데이터의 CRUD 작업을 처리하는 API 엔드포인트
- * - 심박수, 혈압, 체중, 체지방률 등 다양한 건강 지표 데이터 관리
- * - 측정 데이터의 시계열 조회 및 통계 계산
- * - 건강 목표 설정 및 진행 상황 추적
- * - 측정 데이터 기반 운동 프로그램 추천
- * 
- * 🔄 **주요 기능**
- * - GET: 측정 데이터 조회 (전체, 특정 기간, 특정 타입)
- * - POST: 새로운 측정 데이터 추가
- * - PUT: 측정 데이터 수정
- * - DELETE: 측정 데이터 삭제
- * - 통계 계산 및 추세 분석
- * 
- * 🗄️ **데이터 연동**
- * - MongoDB 건강 측정 데이터 컬렉션
- * - 사용자 인증 및 권한 확인
- * - 측정 데이터 유효성 검증
- * - 건강 목표 설정 데이터
- * - 운동 프로그램 추천 데이터
- * 
- * 🛠️ **필요한 설치 파일**
- * - Next.js API Routes
- * - MongoDB 연결 및 스키마
- * - 사용자 인증 미들웨어
- * - 데이터 유효성 검증 라이브러리
- * - 날짜 처리 라이브러리
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 측정 데이터의 정확성 및 유효성 검증
- * 2. 사용자 권한 및 데이터 보안
- * 3. 측정 데이터의 시계열 정렬 및 인덱싱
- * 4. 통계 계산의 성능 최적화
- * 5. 개인정보 보호 및 데이터 암호화
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] 측정 데이터 CRUD 작업 검증
- * - [ ] 사용자 권한 확인 로직 테스트
- * - [ ] 측정 데이터 유효성 검증 확인
- * - [ ] 통계 계산 로직 검증
- * - [ ] API 응답 형식 및 에러 처리 확인
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 구현 (건강 측정 데이터 API)
- * - 2024-12-19: CRUD 작업 및 유효성 검증 구현
- * - 2024-12-19: 통계 계산 및 추세 분석 구현
- * - 2024-12-19: 건강 목표 설정 API 구현
- * 
- * 👨‍💻 **개발자 정보**
- * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (건강 측정 데이터 API 완료)
- * 
- * 🚀 **다음 단계**
- * - 고급 통계 분석 알고리즘
- * - 실시간 데이터 동기화
- * - 웨어러블 기기 연동
- * - AI 기반 건강 예측
- * 
- * 💡 **API 사용 예시**
- * ```typescript
- * // 측정 데이터 조회
- * GET /api/health/measurements?type=heart_rate&startDate=2024-01-01&endDate=2024-12-31
- * 
- * // 새로운 측정 데이터 추가
- * POST /api/health/measurements
- * {
- *   "type": "heart_rate",
- *   "value": 75,
- *   "unit": "bpm",
- *   "measuredAt": "2024-12-19T10:00:00Z",
- *   "notes": "운동 후 측정"
- * }
- * ```
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 // 건강 측정 데이터 타입
@@ -209,7 +131,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('측정 데이터 조회 오류:', error);
+    logger.error('측정 데이터 조회 오류:', error);
     return NextResponse.json(
       { success: false, error: '측정 데이터 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -252,7 +174,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('측정 데이터 추가 오류:', error);
+    logger.error('측정 데이터 추가 오류:', error);
     return NextResponse.json(
       { success: false, error: '측정 데이터 추가 중 오류가 발생했습니다' },
       { status: 500 }
@@ -303,7 +225,7 @@ export async function PUT(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('측정 데이터 수정 오류:', error);
+    logger.error('측정 데이터 수정 오류:', error);
     return NextResponse.json(
       { success: false, error: '측정 데이터 수정 중 오류가 발생했습니다' },
       { status: 500 }
@@ -333,7 +255,7 @@ export async function DELETE(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('측정 데이터 삭제 오류:', error);
+    logger.error('측정 데이터 삭제 오류:', error);
     return NextResponse.json(
       { success: false, error: '측정 데이터 삭제 중 오류가 발생했습니다' },
       { status: 500 }

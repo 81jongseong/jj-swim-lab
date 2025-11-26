@@ -7,6 +7,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import dynamic from 'next/dynamic';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
@@ -36,14 +37,14 @@ function TenantAdminLayoutComponent({ children }: { children: React.ReactNode })
       try {
         localStorage.setItem('centerSlug', centerSlug);
       } catch (storageError) {
-        console.warn('centerSlug 저장 실패:', storageError);
+        logger.warn('centerSlug 저장 실패:', storageError);
       }
     }
     async function resolveSlug() {
       try {
         setLoading(true);
         setError(undefined);
-        console.log(`🔍 센터 슬러그 해석 시작: ${centerSlug}`);
+        logger.info(`🔍 센터 슬러그 해석 시작: ${centerSlug}`);
         
         // 슬러그 → 센터 조회 API (임시: slug가 id인 경우도 지원)
         const token = localStorage.getItem('token');
@@ -54,7 +55,7 @@ function TenantAdminLayoutComponent({ children }: { children: React.ReactNode })
         if (res.ok) {
           const data = await res.json();
           const id = data?.data?.centerId || data?.centerId || data?.id || (centerSlug || undefined);
-          console.log(`✅ 센터 ID 조회 성공: ${centerSlug} → ${id}`);
+          logger.info(`✅ 센터 ID 조회 성공: ${centerSlug} → ${id}`);
           
           if (isMounted) {
             setCenterId(id);
@@ -62,13 +63,13 @@ function TenantAdminLayoutComponent({ children }: { children: React.ReactNode })
               // 로컬/쿠키에 저장하여 API 헤더에 첨부될 수 있게 함
               localStorage.setItem('centerId', String(id || ''));
               document.cookie = `centerId=${encodeURIComponent(String(id || ''))}; path=/; max-age=${60 * 60 * 24 * 7}`;
-              console.log(`💾 센터 ID 저장 완료: ${id}`);
+              logger.info(`💾 센터 ID 저장 완료: ${id}`);
             } catch (e) {
-              console.error('센터 ID 저장 실패:', e);
+              logger.error('센터 ID 저장 실패:', e);
             }
           }
         } else if (res.status === 401) {
-          console.warn(`⚠️ 인증 실패 (401), slug를 ID로 사용: ${centerSlug}`);
+          logger.warn(`⚠️ 인증 실패 (401), slug를 ID로 사용: ${centerSlug}`);
           // 인증 실패 시에도 slug를 id로 사용하여 계속 진행
           if (isMounted) {
             setCenterId(centerSlug || undefined);
@@ -76,12 +77,12 @@ function TenantAdminLayoutComponent({ children }: { children: React.ReactNode })
               localStorage.setItem('centerId', centerSlug || '');
               document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
             } catch (persistError) {
-              console.warn('centerId 저장 실패:', persistError);
+              logger.warn('centerId 저장 실패:', persistError);
             }
             setError('auth_required'); // 에러는 설정하되 계속 진행
           }
         } else {
-          console.warn(`⚠️ 센터 ID 조회 실패 (${res.status}), slug를 ID로 사용: ${centerSlug}`);
+          logger.warn(`⚠️ 센터 ID 조회 실패 (${res.status}), slug를 ID로 사용: ${centerSlug}`);
           if (isMounted) {
             // 실패 시 slug 자체를 id로 취급하여 최소한 컨텍스트는 채움
             setCenterId(centerSlug || undefined);
@@ -89,13 +90,13 @@ function TenantAdminLayoutComponent({ children }: { children: React.ReactNode })
               localStorage.setItem('centerId', centerSlug || '');
               document.cookie = `centerId=${encodeURIComponent(centerSlug || '')}; path=/; max-age=${60 * 60 * 24 * 7}`;
             } catch (fallbackError) {
-              console.warn('centerId 저장 실패 (fallback):', fallbackError);
+              logger.warn('centerId 저장 실패 (fallback):', fallbackError);
             }
             setError('failed_to_resolve_center_slug');
           }
         }
       } catch (e) {
-        console.error('센터 슬러그 해석 오류:', e);
+        logger.error('센터 슬러그 해석 오류:', e);
         if (isMounted) {
           setCenterId(centerSlug || undefined);
           setError('resolve_center_slug_error');

@@ -22,11 +22,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
 import CompletionInputModal, { CompletionData } from '@/components/swimlab/CompletionInputModal';
+import { LoadingState } from '@/components/common';
 
 interface IncompleteSession {
   programId: string;
@@ -70,7 +72,7 @@ export default function InstructorCompletionManagementPage() {
       const response = await apiClient.get(`/api/swim-programs/instructors/${user?._id}/incomplete-sessions`);
       setIncompleteSessions((response as any).data?.data?.incompleteSessions || []);
     } catch (error) {
-      console.error('미입력 세션 조회 실패:', error);
+      logger.error('미입력 세션 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ export default function InstructorCompletionManagementPage() {
       const response = await apiClient.get(`/api/group-classes?instructorId=${user?._id}&status=active`);
       setGroupClasses((response as any).data?.data?.groupClasses || []);
     } catch (error) {
-      console.error('단체반 조회 실패:', error);
+      logger.error('단체반 조회 실패:', error);
     }
   };
 
@@ -99,7 +101,7 @@ export default function InstructorCompletionManagementPage() {
       setSelectedSession(null);
       fetchIncompleteSessions();
     } catch (error) {
-      console.error('완료율 입력 실패:', error);
+      logger.error('완료율 입력 실패:', error);
       alert('완료율 입력에 실패했습니다.');
     }
   };
@@ -179,7 +181,7 @@ export default function InstructorCompletionManagementPage() {
         {/* 미입력 세션 목록 */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <LoadingState message="로딩 중..." size="lg" />
           </div>
         ) : filteredSessions.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">

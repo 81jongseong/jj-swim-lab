@@ -6,9 +6,11 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { ConfirmModal, PageHeader } from '@/components/common';
 
 export default function SystemSettingsPage() {
   const { user, hasUserType } = useAuth();
@@ -18,6 +20,19 @@ export default function SystemSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 시스템 설정 데이터
   const [settings, setSettings] = useState({
@@ -64,10 +79,10 @@ export default function SystemSettingsPage() {
     try {
       // 실제 API 호출 대신 목 데이터 업데이트
       setLastUpdated(new Date());
-      console.log('시스템 설정 저장 완료');
+      logger.info('시스템 설정 저장 완료');
       alert('설정이 저장되었습니다.');
     } catch (error) {
-      console.error('설정 저장 실패:', error);
+      logger.error('설정 저장 실패:', error);
       alert('설정 저장에 실패했습니다.');
     } finally {
       setSaving(false);
@@ -76,11 +91,17 @@ export default function SystemSettingsPage() {
 
   // 설정 초기화
   const resetSettings = () => {
-    if (confirm('설정을 초기화하시겠습니까?')) {
-      // 기본값으로 초기화
-      setLastUpdated(new Date());
-      alert('설정이 초기화되었습니다.');
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '설정을 초기화하시겠습니까?',
+      variant: 'warning',
+      onConfirm: () => {
+        // 기본값으로 초기화
+        setLastUpdated(new Date());
+        alert('설정이 초기화되었습니다.');
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   useEffect(() => {
@@ -103,12 +124,10 @@ export default function SystemSettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">시스템 설정</h1>
-            <p className="text-gray-600 mt-2">JJ Swim Lab 시스템 설정 및 관리</p>
-          </div>
+      <PageHeader
+        title="시스템 설정"
+        description="JJ Swim Lab 시스템 설정 및 관리"
+        actions={
           <div className="flex items-center space-x-4">
             <button
               onClick={resetSettings}
@@ -127,8 +146,8 @@ export default function SystemSettingsPage() {
               마지막 업데이트: {lastUpdated.toLocaleString()}
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* 탭 네비게이션 */}
       <div className="mb-8">
@@ -536,6 +555,18 @@ export default function SystemSettingsPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

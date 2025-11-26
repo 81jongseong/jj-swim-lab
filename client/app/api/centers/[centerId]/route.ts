@@ -1,13 +1,4 @@
-/**
- * 센터 정보 조회 API (Next.js API Route)
- * 
- * 연동되는 데이터:
- * - Center 모델의 센터 정보
- * 
- * 연동되는 파일:
- * - server/src/routes/center-management.ts
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -42,7 +33,7 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('센터 정보 조회 오류:', error);
+    logger.error('센터 정보 조회 오류:', error);
     return NextResponse.json(
       { success: false, error: '센터 정보 조회 중 오류가 발생했습니다.' },
       { status: 500 }

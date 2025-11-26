@@ -1,20 +1,12 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, Search, Filter, UserCheck, UserX, Mail, Phone } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'student' | 'instructor' | 'centerAdmin';
-  status: 'active' | 'inactive' | 'pending';
-  createdAt: Date;
-  lastLoginAt?: Date;
-}
+import { LoadingState, PageHeader } from '@/components/common';
+import type { User } from '@/types/user';
 
 function CenterUsersManagement() {
   const { user } = useAuth();
@@ -36,30 +28,36 @@ function CenterUsersManagement() {
       const tempUsers: User[] = [
         {
           _id: '1',
+          userId: '1',
           name: '김학생',
           email: 'student@example.com',
           phone: '010-1234-5678',
           userType: 'student',
+          level: 'beginner',
           status: 'active',
           createdAt: new Date('2024-01-15'),
           lastLoginAt: new Date('2024-01-20')
         },
         {
           _id: '2',
+          userId: '2',
           name: '이강사',
           email: 'instructor@example.com',
           phone: '010-2345-6789',
           userType: 'instructor',
+          level: 'senior',
           status: 'active',
           createdAt: new Date('2024-01-10'),
           lastLoginAt: new Date('2024-01-19')
         },
         {
           _id: '3',
+          userId: '3',
           name: '박관리자',
           email: 'admin@example.com',
           phone: '010-3456-7890',
           userType: 'centerAdmin',
+          level: 'manager',
           status: 'active',
           createdAt: new Date('2024-01-05'),
           lastLoginAt: new Date('2024-01-20')
@@ -67,7 +65,7 @@ function CenterUsersManagement() {
       ];
       setUsers(tempUsers);
     } catch (error) {
-      console.error('사용자 목록 로드 실패:', error);
+      logger.error('사용자 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +78,8 @@ function CenterUsersManagement() {
     return matchesSearch && matchesFilter;
   });
 
-  const getUserTypeLabel = (userType: string) => {
+  const getUserTypeLabel = (userType?: string) => {
+    if (!userType) return '-';
     const types: { [key: string]: string } = {
       'student': '학생',
       'instructor': '강사',
@@ -89,7 +88,8 @@ function CenterUsersManagement() {
     return types[userType] || userType;
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status?: string) => {
+    if (!status) return '-';
     const statuses: { [key: string]: string } = {
       'active': '활성',
       'inactive': '비활성',
@@ -98,7 +98,8 @@ function CenterUsersManagement() {
     return statuses[status] || status;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
     const colors: { [key: string]: string } = {
       'active': 'bg-green-100 text-green-800',
       'inactive': 'bg-red-100 text-red-800',
@@ -110,21 +111,17 @@ function CenterUsersManagement() {
   if (isLoading && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          👥 센터 사용자 관리
-        </h1>
-        <p className="text-sm text-gray-600">
-          센터에 등록된 사용자들을 관리하고 권한을 설정하세요
-        </p>
-      </div>
+      <PageHeader
+        title="👥 센터 사용자 관리"
+        description="센터에 등록된 사용자들을 관리하고 권한을 설정하세요"
+      />
 
       {/* 검색 및 필터 */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -212,19 +209,19 @@ function CenterUsersManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                      {getUserTypeLabel(user.userType)}
+                      {getUserTypeLabel(user.userType || undefined)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(user.status)}`}>
-                      {getStatusLabel(user.status)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor((user as any).status || undefined)}`}>
+                      {getStatusLabel((user as any).status || undefined)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.createdAt.toLocaleDateString()}
+                    {user.createdAt ? (typeof user.createdAt === 'string' ? new Date(user.createdAt).toLocaleDateString() : user.createdAt.toLocaleDateString()) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.lastLoginAt ? user.lastLoginAt.toLocaleDateString() : '로그인 기록 없음'}
+                    {user.lastLoginAt ? (typeof user.lastLoginAt === 'string' ? new Date(user.lastLoginAt).toLocaleDateString() : user.lastLoginAt.toLocaleDateString()) : '로그인 기록 없음'}
                   </td>
                 </tr>
               ))}

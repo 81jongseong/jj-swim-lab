@@ -89,6 +89,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -116,7 +117,7 @@ export default function LoginPage() {
       await login(form.email, form.password);
       
       // 로그인 성공 후 사용자 타입에 따라 적절한 페이지로 이동
-      console.log('로그인 성공');
+      logger.info('로그인 성공');
       
       // 사용자 정보를 가져와서 리다이렉트
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -141,7 +142,7 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       alert(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);

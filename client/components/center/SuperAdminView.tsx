@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -78,7 +79,7 @@ export default function SuperAdminView({ centerInfo, user }: SuperAdminViewProps
         ]
       });
     } catch (error) {
-      console.error('최고 관리자 데이터 로딩 실패:', error);
+      logger.error('최고 관리자 데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }

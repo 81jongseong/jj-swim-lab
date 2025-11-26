@@ -82,7 +82,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Button from './../components/ui/button';
+import Button from './../components/ui/Button';
 
 // 실제 Button 컴포넌트를 사용
 

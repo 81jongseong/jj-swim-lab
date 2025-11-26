@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Play, Pause, RotateCcw, Settings, Users, Clock, Target, TrendingUp } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState } from '@/components/common';
 
 interface ExerciseSession {
   _id: string;
@@ -98,7 +100,7 @@ function ExercisePrescriptionTool() {
       setCurrentSession(tempSession);
       setRemainingTime(tempSession.exercises[0].duration);
     } catch (error) {
-      console.error('운동 세션 로드 실패:', error);
+      logger.error('운동 세션 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -184,8 +186,7 @@ function ExercisePrescriptionTool() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">운동 프로그램을 불러오는 중...</span>
+        <LoadingState message="운동 프로그램을 불러오는 중..." size="lg" />
       </div>
     );
   }

@@ -1,7 +1,9 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 // 테이블 제거 - 카드만 사용
 
 interface Booking {
@@ -41,11 +43,11 @@ export default function BookingsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('🔍 예약 API 응답:', result);
+        logger.info('🔍 예약 API 응답:', result);
         setBookings(result.data || []);
       }
     } catch (error) {
-      console.error('예약 목록을 가져오는데 실패했습니다:', error);
+      logger.error('예약 목록을 가져오는데 실패했습니다:', error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +75,7 @@ export default function BookingsPage() {
         fetchBookings();
       }
     } catch (error) {
-      console.error('예약 취소에 실패했습니다:', error);
+      logger.error('예약 취소에 실패했습니다:', error);
     }
   };
 
@@ -108,19 +110,18 @@ export default function BookingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-lg">로딩 중...</div>
-      </div>
-    );
+    return <LoadingState message="예약 정보를 불러오는 중..." size="lg" fullScreen />;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">예약 관리</h1>
-        
-        <div className="flex gap-4 mb-6">
+      <PageHeader
+        title="예약 관리"
+        description="예약 내역을 확인하고 관리할 수 있습니다"
+        className="mb-6"
+      />
+      
+      <div className="flex gap-4 mb-6">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -227,7 +228,6 @@ export default function BookingsPage() {
             <p className="text-gray-500">해당 상태의 예약이 없습니다.</p>
           </div>
         )}
-      </div>
     </div>
   );
 }

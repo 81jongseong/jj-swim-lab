@@ -5,6 +5,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui';
@@ -52,7 +53,7 @@ export default function SimpleLaneRentalModal({
         setAvailability(data.data);
       }
     } catch (error) {
-      console.error('센터 가능시간 로딩 실패:', error);
+      logger.error('센터 가능시간 로딩 실패:', error);
     }
   };
 

@@ -19,6 +19,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -26,6 +27,7 @@ import { checklistApi, Class, ClassChecklist, StudentProgress } from '../../../l
 import StatCard from '@/components/StatCard';
 import { Button } from '@/components/ui';
 import { Card, Badge, Progress } from '../../../components/ui';
+import { LoadingState, ErrorState, PageHeader } from '@/components/common';
 import { 
   CheckCircle, 
   Clock, 
@@ -50,6 +52,7 @@ export default function ClassChecklistPage() {
   const [classChecklist, setClassChecklist] = useState<ClassChecklist | null>(null);
   const [studentProgress, setStudentProgress] = useState<StudentProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [checklistLoading, setChecklistLoading] = useState(false);
   const [progressLoading, setProgressLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -75,6 +78,7 @@ export default function ClassChecklistPage() {
   const loadClasses = async () => {
     try {
       setLoading(true);
+      setError(null);
       const classList = await checklistApi.getClasses();
       setClasses(classList);
       
@@ -83,9 +87,9 @@ export default function ClassChecklistPage() {
         setSelectedClassId(classList[0]._id);
         setSelectedClass(classList[0]);
       }
-    } catch (error) {
-      console.error('반 목록 로드 실패:', error);
-      alert('반 목록을 불러오는데 실패했습니다.');
+    } catch (err: any) {
+      logger.error('반 목록 로드 실패:', err);
+      setError(err.message || '반 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -99,7 +103,7 @@ export default function ClassChecklistPage() {
       const checklist = await checklistApi.getClassChecklist(selectedClassId);
       setClassChecklist(checklist);
     } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
+      logger.error('체크리스트 로드 실패:', error);
       // 체크리스트가 없으면 null로 설정 (생성 가능 상태)
       setClassChecklist(null);
     } finally {
@@ -115,7 +119,7 @@ export default function ClassChecklistPage() {
       const progress = await checklistApi.getStudentProgress(selectedClassId);
       setStudentProgress(progress);
     } catch (error) {
-      console.error('학생 진행도 로드 실패:', error);
+      logger.error('학생 진행도 로드 실패:', error);
       setStudentProgress([]);
     } finally {
       setProgressLoading(false);
@@ -151,7 +155,7 @@ export default function ClassChecklistPage() {
       setShowCreateModal(false);
       alert('체크리스트가 생성되었습니다.');
     } catch (error: any) {
-      console.error('체크리스트 생성 실패:', error);
+      logger.error('체크리스트 생성 실패:', error);
       alert(error.message || '체크리스트 생성에 실패했습니다.');
     } finally {
       setChecklistLoading(false);
@@ -159,10 +163,21 @@ export default function ClassChecklistPage() {
   };
 
   if (loading) {
+    return <LoadingState message="체크리스트를 불러오는 중..." size="lg" fullScreen />;
+  }
+
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">로딩 중...</div>
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              loadClasses();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -171,17 +186,21 @@ export default function ClassChecklistPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">반 체크리스트 관리</h1>
-          <Button
-            onClick={() => window.location.href = '/instructor/checklist'}
-            variant="outline"
-            className="bg-white hover:bg-gray-50"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            개별 체크리스트
-          </Button>
-        </div>
+        <PageHeader
+          title="반 체크리스트 관리"
+          description="반별 체크리스트를 생성하고 관리할 수 있습니다"
+          actions={
+            <Button
+              onClick={() => window.location.href = '/instructor/checklist'}
+              variant="outline"
+              className="bg-white hover:bg-gray-50"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              개별 체크리스트
+            </Button>
+          }
+          className="mb-8"
+        />
 
         {/* 반 선택 섹션 */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">

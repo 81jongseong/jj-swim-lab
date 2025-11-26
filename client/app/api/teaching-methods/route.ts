@@ -1,17 +1,11 @@
-/**
- * @file 강습법 API 라우트 (Next.js API Routes)
- * @description 강습법 데이터를 백엔드 서버에서 가져와서 프론트엔드에 제공
- * @date 2025-01-13
- * @author JJ Swim Lab
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 강습법 API 라우트 호출됨');
+    logger.info('🔍 강습법 API 라우트 호출됨');
     
     // Authorization 헤더 가져오기
     const authHeader = request.headers.get('authorization');
@@ -32,11 +26,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log('📡 백엔드 응답 상태:', backendResponse.status);
+    logger.info('📡 백엔드 응답 상태:', backendResponse.status);
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.text();
-      console.error('❌ 백엔드 오류:', errorData);
+      logger.error('❌ 백엔드 오류:', errorData);
       return NextResponse.json(
         { error: '백엔드 서버 오류' },
         { status: backendResponse.status }
@@ -44,11 +38,11 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await backendResponse.json();
-    console.log('✅ 강습법 데이터 전달 성공:', data.data?.length || 0, '개');
+    logger.info('✅ 강습법 데이터 전달 성공:', data.data?.length || 0, '개');
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ 강습법 API 라우트 오류:', error);
+    logger.error('❌ 강습법 API 라우트 오류:', error);
     return NextResponse.json(
       { error: '서버 내부 오류' },
       { status: 500 }
@@ -58,7 +52,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 강습법 생성 API 라우트 호출됨');
+    logger.info('🔍 강습법 생성 API 라우트 호출됨');
     
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
@@ -81,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.text();
-      console.error('❌ 백엔드 오류:', errorData);
+      logger.error('❌ 백엔드 오류:', errorData);
       return NextResponse.json(
         { error: '백엔드 서버 오류' },
         { status: backendResponse.status }
@@ -91,7 +85,7 @@ export async function POST(request: NextRequest) {
     const data = await backendResponse.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ 강습법 생성 API 라우트 오류:', error);
+    logger.error('❌ 강습법 생성 API 라우트 오류:', error);
     return NextResponse.json(
       { error: '서버 내부 오류' },
       { status: 500 }

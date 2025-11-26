@@ -25,6 +25,7 @@
 
 import { calculateRaceGoalFeasibility, type RaceGoalInput, type FeasibilityResult } from './raceGoalFeasibility';
 import { generateWeeklyPlan, type Input as EngineInput, type WeeklyPlan } from './engine-v31';
+import { logger } from '@/lib/logger';
 
 export type TrainingPhase = 'base' | 'build' | 'peak' | 'taper' | 'race';
 
@@ -228,7 +229,7 @@ export function generateRaceProgram(input: RaceProgramInput): RaceProgramOutput 
       currentWeek++;
     }
     
-    console.log(`📊 ${phaseType} 페이즈 생성 완료:`, {
+    logger.debug(`${phaseType} 페이즈 생성 완료`, {
       weekStart: currentWeek - weeks,
       weekEnd: currentWeek - 1,
       totalWeeks: weeks,
@@ -483,5 +484,6 @@ function formatTime(seconds: number): string {
   }
   return `${secs}.${ms.toString().padStart(2, '0')}`;
 }
+
 
 

@@ -1,8 +1,10 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { DollarSign, TrendingUp, Users, Calendar, BarChart3 } from 'lucide-react';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
 import withAuth from '../../../components/withAuth';
 
 interface RevenueData {
@@ -48,7 +50,7 @@ function RevenueManagement() {
       };
       setRevenueData(tempData);
     } catch (error) {
-      console.error('매출 데이터 로드 실패:', error);
+      logger.error('매출 데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -64,24 +66,22 @@ function RevenueManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">💰 총 매출 관리</h1>
-          <p className="text-gray-600 mt-2">센터의 매출 현황과 통계를 확인하세요</p>
-        </div>
-      </div>
+      <PageHeader
+        title="💰 총 매출 관리"
+        description="센터의 매출 현황과 통계를 확인하세요"
+      />
 
       {revenueData && (
         <>
           {/* 주요 지표 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <CardGrid gap={6} className="mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <DollarSign className="w-8 h-8 text-green-600" />
@@ -125,7 +125,7 @@ function RevenueManagement() {
                 </div>
               </div>
             </div>
-          </div>
+          </CardGrid>
 
           {/* 월별 매출 차트 */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">

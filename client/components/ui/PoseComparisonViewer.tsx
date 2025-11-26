@@ -20,6 +20,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { SwimmingPoseModel } from './SwimmingPoseModel';
 import { ErrorBoundary } from './errorboundary';
+import { logger } from '@/lib/logger';
 
 interface PoseData {
   joints: Array<{
@@ -257,7 +258,7 @@ export function PoseComparisonViewer({
   const [hasError, setHasError] = useState(false);
 
   const handleError = (error: Error) => {
-    console.error('자세 비교 뷰어 오류:', error);
+    logger.error('자세 비교 뷰어 오류:', error);
     setHasError(true);
     onError?.(error);
   };
@@ -322,4 +323,5 @@ export function PoseComparisonViewer({
 }
 
 export default PoseComparisonViewer;
+
 

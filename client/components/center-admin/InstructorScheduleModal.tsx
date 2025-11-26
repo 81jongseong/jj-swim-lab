@@ -29,6 +29,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Users, DollarSign, Plus, Trash2, Edit } from 'lucide-react';
@@ -147,7 +148,7 @@ export default function InstructorScheduleModal({
         setGroupClassSchedule(groupClasses);
       }
     } catch (error) {
-      console.error('단체 수업 시간표 조회 실패:', error);
+      logger.error('단체 수업 시간표 조회 실패:', error);
     }
   };
 

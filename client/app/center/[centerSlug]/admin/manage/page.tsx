@@ -29,6 +29,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -38,6 +39,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { Modal } from '@/components/ui';
 import ThemedStatCard from '@/components/ThemedStatCard';
+import { CardGrid, LoadingState } from '@/components/common';
 import { Button } from '@/components/ui';
 import { 
   Calendar, 
@@ -248,7 +250,7 @@ function IntegratedManagement() {
         setBookings(response.data?.bookings || []);
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('예약 데이터 로딩 실패:', error);
     }
   };
 
@@ -283,13 +285,13 @@ function IntegratedManagement() {
         // 취소/환불된 카드는 결제 관리에서 노출하지 않음
         .filter((p: any) => !['cancelled', 'refunded'].includes(p.status));
         // (debug) 결제 데이터 로드 로그
-        if (DEBUG) console.log('💳 결제 데이터 로드:', formattedPayments.length, '건');
+        if (DEBUG) logger.info('💳 결제 데이터 로드:', formattedPayments.length, '건');
         setPayments(formattedPayments);
       } else {
-        if (DEBUG) console.error('결제 데이터 로딩 실패:', response.message);
+        if (DEBUG) logger.error('결제 데이터 로딩 실패:', response.message);
       }
     } catch (error) {
-      if (DEBUG) console.error('결제 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('결제 데이터 로딩 실패:', error);
     }
   };
 
@@ -327,13 +329,13 @@ function IntegratedManagement() {
           };
         });
         // (debug) 승인 데이터 로드 로그
-        if (DEBUG) console.log('✅ 승인 데이터 로드:', formattedApprovals.length, '건');
+        if (DEBUG) logger.info('✅ 승인 데이터 로드:', formattedApprovals.length, '건');
         setApprovals(formattedApprovals);
       } else {
-        if (DEBUG) console.error('승인 데이터 로딩 실패:', response.message);
+        if (DEBUG) logger.error('승인 데이터 로딩 실패:', response.message);
       }
     } catch (error) {
-      if (DEBUG) console.error('승인 데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('승인 데이터 로딩 실패:', error);
     }
   };
 
@@ -355,7 +357,7 @@ function IntegratedManagement() {
         });
       });
     } catch (error) {
-      if (DEBUG) console.error('데이터 로딩 실패:', error);
+      if (DEBUG) logger.error('데이터 로딩 실패:', error);
       setLoading(false);
     }
   };
@@ -393,12 +395,7 @@ function IntegratedManagement() {
   if (authLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">인증 확인 중...</p>
-          </div>
-        </div>
+        <LoadingState message="인증 확인 중..." size="lg" />
       </div>
     );
   }
@@ -415,12 +412,7 @@ function IntegratedManagement() {
   if (!authLoading && !user) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">사용자 정보를 확인하는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="사용자 정보를 확인하는 중..." size="lg" />
       </div>
     );
   }
@@ -428,12 +420,7 @@ function IntegratedManagement() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -465,7 +452,7 @@ ${list}`);
           }
           finalInstructorId = instructors[idx]._id;
         } catch (e) {
-          if (DEBUG) console.error('강사 목록 조회 실패:', e);
+          if (DEBUG) logger.error('강사 목록 조회 실패:', e);
           alert('강사 목록을 불러올 수 없습니다. 잠시 후 다시 시도하세요.');
           return;
         }
@@ -483,10 +470,10 @@ ${list}`);
       if (response.success) {
         await loadAllData();
       } else {
-        if (DEBUG) console.warn('예약 상태 변경 API 실패:', response.message);
+        if (DEBUG) logger.warn('예약 상태 변경 API 실패:', response.message);
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 처리 실패:', error);
+      if (DEBUG) logger.error('예약 처리 실패:', error);
     }
   };
 
@@ -613,7 +600,7 @@ ${list}`);
       setChangeCourseForBookingId(bookingId);
       return;
     } catch (e) {
-      if (DEBUG) console.error('반 변경 실패:', e);
+      if (DEBUG) logger.error('반 변경 실패:', e);
       alert('반 변경에 실패했습니다.');
     }
   };
@@ -628,7 +615,7 @@ ${list}`);
         alert(avail?.message || '가용 레인을 불러오지 못했습니다.');
       }
     } catch (e) {
-      if (DEBUG) console.error('레인 가용 조회 실패:', e);
+      if (DEBUG) logger.error('레인 가용 조회 실패:', e);
       alert('가용 레인 조회에 실패했습니다.');
     }
   };
@@ -656,7 +643,7 @@ ${list}`);
         alert(res.message || '처리 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      if (DEBUG) console.error('결제 처리 실패:', error);
+      if (DEBUG) logger.error('결제 처리 실패:', error);
     }
   };
 
@@ -671,7 +658,7 @@ ${list}`);
         alert(res.message || '결제 완료 처리 중 오류가 발생했습니다.');
       }
     } catch (e) {
-      if (DEBUG) console.error('결제 완료 실패:', e);
+      if (DEBUG) logger.error('결제 완료 실패:', e);
       alert('결제 완료 처리에 실패했습니다.');
     }
   };
@@ -687,7 +674,7 @@ ${list}`);
         alert(res?.message || '강사 목록을 불러오지 못했습니다.');
       }
     } catch (e) {
-      if (DEBUG) console.error('강사 목록 조회 실패:', e);
+      if (DEBUG) logger.error('강사 목록 조회 실패:', e);
       alert('강사 목록 조회에 실패했습니다.');
     }
   };
@@ -705,7 +692,7 @@ ${list}`);
         await loadAllData();
       }
     } catch (e) {
-      if (DEBUG) console.error('강사 배정 실패:', e);
+      if (DEBUG) logger.error('강사 배정 실패:', e);
       await loadAllData();
       alert('강사 배정에 실패했습니다.');
     } finally {
@@ -772,11 +759,11 @@ ${list}`);
         setShowPersonalLessonModal(false);
         alert('개인레슨 신청이 완료되었습니다.');
       } else {
-        if (DEBUG) console.warn('개인레슨 신청 실패:', response.message);
+        if (DEBUG) logger.warn('개인레슨 신청 실패:', response.message);
         alert('개인레슨 신청에 실패했습니다. 입력 값을 확인해 주세요.');
       }
     } catch (error) {
-      if (DEBUG) console.error('개인레슨 신청 실패:', error);
+      if (DEBUG) logger.error('개인레슨 신청 실패:', error);
       alert('개인레슨 신청에 실패했습니다.');
     }
   };
@@ -790,11 +777,11 @@ ${list}`);
         setShowLaneRentalModal(false);
         alert('레인대여 신청이 완료되었습니다.');
       } else {
-        if (DEBUG) console.error('레인대여 신청 실패:', response.message);
+        if (DEBUG) logger.error('레인대여 신청 실패:', response.message);
         alert('레인대여 신청에 실패했습니다.');
       }
     } catch (error) {
-      if (DEBUG) console.error('레인대여 신청 실패:', error);
+      if (DEBUG) logger.error('레인대여 신청 실패:', error);
       alert('레인대여 신청에 실패했습니다.');
     }
   };
@@ -869,12 +856,7 @@ ${list}`);
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">데이터를 불러오는 중...</p>
-          </div>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -1054,7 +1036,7 @@ ${list}`);
               <CardDescription>자주 사용하는 기능들에 빠르게 접근하세요.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <CardGrid gap={4}>
                 <Button 
                   variant="outline"
                   className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
@@ -1096,7 +1078,7 @@ ${list}`);
                   </div>
                   <span className="text-sm font-medium">레인대여 신청</span>
                 </Button>
-              </div>
+              </CardGrid>
             </CardContent>
           </Card>
         </div>
@@ -1306,7 +1288,7 @@ ${list}`);
                       }
                     } catch (e) {
                       // Fallback failed, will use original memberId
-                      if (DEBUG) console.error('학생 ID 조회 실패:', e);
+                      if (DEBUG) logger.error('학생 ID 조회 실패:', e);
                     }
                   }
                   if (!/^[a-f\d]{24}$/i.test(memberId)) { alert('회원 정보를 찾을 수 없습니다. (ID 확인 실패)'); return; }
@@ -1413,7 +1395,7 @@ ${list}`);
                             alert(res.message || '레인 변경 중 오류가 발생했습니다.');
                           }
                         } catch (err) {
-                          if (DEBUG) console.error('레인 변경 실패:', err);
+                          if (DEBUG) logger.error('레인 변경 실패:', err);
                           await loadAllData();
                           alert('레인 변경에 실패했습니다.');
                         }

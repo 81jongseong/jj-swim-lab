@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React from 'react';
 import { Mail, Phone, Users, Calendar, Eye, UserPlus, Edit, Heart } from 'lucide-react';
@@ -55,29 +56,29 @@ export default function MemberCard({ member, onView, onAssign, onMemo, onHealth,
   const courses = member.assignedCourses || [];
   
   const handleViewClick = () => {
-    console.log('🔍 [MemberCard] 상세 버튼 클릭:', member.name, member._id);
+    logger.info('🔍 [MemberCard] 상세 버튼 클릭:', member.name, member._id);
     onView?.(member);
   };
   
   const handleHealthClick = () => {
-    console.log('❤️ [MemberCard] 건강정보 버튼 클릭:', member.name, member._id);
-    console.log('❤️ [MemberCard] onHealth 함수 존재 여부:', typeof onHealth);
+    logger.info('❤️ [MemberCard] 건강정보 버튼 클릭:', member.name, member._id);
+    logger.info('❤️ [MemberCard] onHealth 함수 존재 여부:', typeof onHealth);
     if (onHealth) {
-      console.log('❤️ [MemberCard] onHealth 함수 호출 중...');
+      logger.info('❤️ [MemberCard] onHealth 함수 호출 중...');
       onHealth(member);
-      console.log('❤️ [MemberCard] onHealth 함수 호출 완료');
+      logger.info('❤️ [MemberCard] onHealth 함수 호출 완료');
     } else {
-      console.error('❌ [MemberCard] onHealth 함수가 전달되지 않았습니다!');
+      logger.error('❌ [MemberCard] onHealth 함수가 전달되지 않았습니다!');
     }
   };
   
   const handleAssignClick = () => {
-    console.log('👤 [MemberCard] 배정 버튼 클릭:', member.name, member._id);
+    logger.info('👤 [MemberCard] 배정 버튼 클릭:', member.name, member._id);
     onAssign?.(member);
   };
   
   const handleMemoClick = () => {
-    console.log('📝 [MemberCard] 메모 버튼 클릭:', member.name, member._id);
+    logger.info('📝 [MemberCard] 메모 버튼 클릭:', member.name, member._id);
     onMemo?.(member);
   };
   

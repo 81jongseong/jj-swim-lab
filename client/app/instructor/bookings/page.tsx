@@ -1,28 +1,13 @@
-/**
- * 📅 JJ Swim Lab - 강사 예약 관리 페이지
- * 
- * 📋 **페이지 목적**
- * - 강사가 회원이 신청한 개인레슨 및 레인대여 예약을 관리
- * - 예약 상태 변경 (대기 → 확정 → 완료 → 취소)
- * - 일간/주간/월간 뷰로 예약 현황 확인
- * 
- * 🗄️ **데이터 연동**
- * - GET /api/bookings - 예약 목록 조회 (개인레슨 + 레인대여 통합)
- * - PUT /api/bookings/:id - 예약 상태 변경
- * 
- * 🔄 **연동 파일**
- * - server/src/routes/bookings.ts (예약 관리 API)
- * - client/utils/api.ts (API 클라이언트)
- */
+'use client';
 
-"use client";
-
+import { logger } from '@/lib/logger';
 import { useEffect, useMemo, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
 import BookingCard from '../../../components/instructor/BookingCard';
 import BookingMiniCard from '../../../components/instructor/BookingMiniCard';
 import { StatCard } from '../../../components/StatCard';
+import { CardGrid, LoadingState, PageHeader, ErrorState } from '@/components/common';
 
 type BookingStatus = 'pending' | 'approved' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
 type BookingType = 'personal-lesson' | 'lane-rental';
@@ -54,6 +39,7 @@ interface ScheduleStats {
 function InstructorBookingsPage() {
   const [rows, setRows] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [stats, setStats] = useState<ScheduleStats>({
@@ -68,16 +54,22 @@ function InstructorBookingsPage() {
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       // 현재 로그인한 강사 정보 가져오기
       const currentUser = apiClient.getCurrentUser();
       if (!currentUser?.userId) {
-        console.error('사용자 정보를 찾을 수 없습니다.');
+        setError('사용자 정보를 찾을 수 없습니다.');
         return;
       }
 
       // 선택된 날짜의 예약 목록 로드
       const res = await apiClient.getBookings();
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      
       const bookings = (res.data as any)?.bookings || [];
       
       setRows(bookings.map((b: any) => {
@@ -116,8 +108,9 @@ function InstructorBookingsPage() {
         }).length,
         thisWeekBookings: bookings.length, // 임시
       });
-    } catch (error) {
-      console.error('예약 목록 로드 실패:', error);
+    } catch (err: any) {
+      logger.error('예약 목록 로드 실패:', err);
+      setError(err.message || '예약 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -200,7 +193,7 @@ function InstructorBookingsPage() {
         alert(res.error);
       }
     } catch (error) {
-      console.error('상태 변경 오류:', error);
+      logger.error('상태 변경 오류:', error);
       alert('상태 변경 중 오류가 발생했습니다.');
     }
   };
@@ -246,17 +239,44 @@ function InstructorBookingsPage() {
     return time.slice(0, 5);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <LoadingState message="예약 정보를 불러오는 중..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              load();
+            }}
+            retryText="다시 시도"
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">예약 관리</h1>
-          <p className="text-xl text-gray-600">회원이 신청한 개인레슨 및 레인대여 예약을 관리하세요</p>
-        </div>
+        <PageHeader
+          title="예약 관리"
+          description="회원이 신청한 개인레슨 및 레인대여 예약을 관리하세요"
+        />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <CardGrid gap={6} className="mb-8">
           <StatCard
             title="전체 예약"
             value={stats.totalBookings}
@@ -281,7 +301,7 @@ function InstructorBookingsPage() {
             icon="🎯"
             color="purple"
           />
-        </div>
+        </CardGrid>
 
         {/* Controls */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -342,8 +362,7 @@ function InstructorBookingsPage() {
         {/* 예약 목록 - 카드 형태 */}
         {loading ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">예약을 불러오는 중...</p>
+            <LoadingState message="예약을 불러오는 중..." size="lg" />
           </div>
         ) : (
           <div className="space-y-6">

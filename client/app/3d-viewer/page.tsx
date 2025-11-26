@@ -26,6 +26,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
@@ -33,7 +34,8 @@ import DrillGrid from '../../components/3d-viewer/DrillGrid';
 import ThreeDPlayer from '../../components/3d-viewer/ThreeDPlayer';
 import { useThreeStore } from '../../stores/threeStore';
 import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui';
+import { CardGrid, PageHeader, ConfirmModal, Modal } from '@/components/common';
+import { Button, Input, Textarea, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui';
 
 export default function ThreeDViewerPage() {
   const { user } = useAuth();
@@ -85,6 +87,19 @@ export default function ThreeDViewerPage() {
   // 파일 업로드 상태
   const [uploadingModel, setUploadingModel] = useState(false);
   const [uploadingPoster, setUploadingPoster] = useState(false);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 파일 업로드 핸들러
   const handleFileUpload = async (file: File, type: 'model' | 'poster') => {
@@ -123,23 +138,12 @@ export default function ThreeDViewerPage() {
         alert('업로드 실패');
       }
     } catch (error) {
-      console.error('업로드 오류:', error);
+      logger.error('업로드 오류:', error);
       alert('업로드 중 오류 발생');
     } finally {
       type === 'model' ? setUploadingModel(false) : setUploadingPoster(false);
     }
   };
-
-  // 데이터 로드
-  useEffect(() => {
-    if (isAdminMode) {
-      if (dataType === 'strokes') {
-        loadSwimmingStyles();
-      } else {
-        loadDrills();
-      }
-    }
-  }, [isAdminMode, dataType]);
 
   const loadSwimmingStyles = async () => {
     try {
@@ -162,7 +166,7 @@ export default function ThreeDViewerPage() {
         setIsLoading(false);
       }, 100);
     } catch (error) {
-      console.error('영법 로드 오류:', error);
+      logger.error('영법 로드 오류:', error);
       setIsLoading(false);
     }
   };
@@ -188,7 +192,7 @@ export default function ThreeDViewerPage() {
         setIsLoading(false);
       }, 100);
     } catch (error) {
-      console.error('드릴 로드 오류:', error);
+      logger.error('드릴 로드 오류:', error);
       setIsLoading(false);
     }
   };
@@ -228,7 +232,7 @@ export default function ThreeDViewerPage() {
         alert('저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
   };
@@ -268,34 +272,41 @@ export default function ThreeDViewerPage() {
         alert('저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
   };
 
   // 삭제
   const handleDelete = async (id: string, type: 'strokes' | 'drills') => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const url = type === 'strokes'
+            ? `http://localhost:5000/api/swimming-styles/${id}`
+            : `http://localhost:5000/api/swim-drills/${id}`;
 
-    try {
-      const url = type === 'strokes'
-        ? `http://localhost:5000/api/swimming-styles/${id}`
-        : `http://localhost:5000/api/swim-drills/${id}`;
+          const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
 
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          if (response.ok) {
+            alert(type === 'strokes' ? '영법이 삭제되었습니다!' : '드릴이 삭제되었습니다!');
+            type === 'strokes' ? loadSwimmingStyles() : loadDrills();
+          }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error) {
+          logger.error('삭제 오류:', error);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
         }
-      });
-
-      if (response.ok) {
-        alert(type === 'strokes' ? '영법이 삭제되었습니다!' : '드릴이 삭제되었습니다!');
-        type === 'strokes' ? loadSwimmingStyles() : loadDrills();
       }
-    } catch (error) {
-      console.error('삭제 오류:', error);
-    }
+    });
   };
 
   // 폼 초기화
@@ -399,30 +410,24 @@ export default function ThreeDViewerPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto p-4">
         {/* 헤더 */}
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              🏊‍♂️ 3D 드릴 · 영법 갤러리
-            </h1>
-            <p className="text-gray-600 text-sm md:text-base">
-              3D 애니메이션으로 정확한 수영 동작을 학습하세요
-        </p>
-      </div>
-
-          {/* 관리자 모드 토글 */}
-          {user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin') && (
-            <Button
-              onClick={() => setIsAdminMode(!isAdminMode)}
-              variant={isAdminMode ? 'primary' : 'outline'}
-              size="md"
-            >
-              {isAdminMode ? '✏️ 관리 모드' : '👁️ 보기 모드'}
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="🏊‍♂️ 3D 드릴 · 영법 갤러리"
+          description="3D 애니메이션으로 정확한 수영 동작을 학습하세요"
+          actions={
+            user && (user.userType === 'superAdmin' || user.userType === 'centerAdmin') ? (
+              <Button
+                onClick={() => setIsAdminMode(!isAdminMode)}
+                variant={isAdminMode ? 'primary' : 'outline'}
+                size="md"
+              >
+                {isAdminMode ? '✏️ 관리 모드' : '👁️ 보기 모드'}
+              </Button>
+            ) : undefined
+          }
+        />
 
         {/* 통계 카드 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <CardGrid gap={6} className="mb-6">
           <StatCard
             title="인기 영법"
             value="자유형"
@@ -459,7 +464,7 @@ export default function ThreeDViewerPage() {
             change={{ value: 8.5, type: 'increase' }}
             onClick={() => applyFilter('satisfaction')}
           />
-        </div>
+        </CardGrid>
 
         {/* 필터링 결과 표시 */}
         {activeFilter && filteredContent.length > 0 && (
@@ -496,20 +501,20 @@ export default function ThreeDViewerPage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">
-                        {item.displayName || item.title}
+                        {(item.displayName as string) || (item.title as string) || '제목 없음'}
                       </h4>
                       <p className="text-sm text-gray-600 truncate">
-                        {item.description}
+                        {(item.description as string) || ''}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        {item.isPublicDemo && (
+                        {typeof item.isPublicDemo === 'boolean' && item.isPublicDemo && (
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
                             🌍 공개
                           </span>
                         )}
                         {activeFilter === 'satisfaction' && (
                           <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                            ⭐ {item.rating ? item.rating.toFixed(1) : '4.8'}★
+                            ⭐ {item.rating && typeof item.rating === 'number' ? item.rating.toFixed(1) : '4.8'}★
                           </span>
                         )}
                         {activeFilter === 'popularDrill' && (
@@ -597,31 +602,31 @@ export default function ThreeDViewerPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-gray-900">{style.displayName}</span>
-                          <span className="text-xs text-gray-500">({style.name})</span>
-                          {style.isPublicDemo && (
+                          <span className="text-xs text-gray-500">({(style.name as string) || ''})</span>
+                          {typeof style.isPublicDemo === 'boolean' && style.isPublicDemo && (
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
                               🌍 공개
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">{style.description}</p>
+                        <p className="text-xs text-gray-600 mt-1">{(style.description as string) || ''}</p>
                       </div>
                       <div className="flex gap-2 ml-4">
                         <Button
                           onClick={() => {
                             setEditingItem(style);
                             setStyleForm({
-                              name: style.name,
+                              name: (style.name as string) || '',
                               displayName: style.displayName,
-                              description: style.description,
-                              difficulty: style.difficulty,
-                              isActive: style.isActive,
-                              isPublicDemo: style.isPublicDemo,
-                              tags: (style.tags || []).join(', '),
-                              cues: (style.cues || []).join(', '),
-                              cautions: (style.cautions || []).join(', '),
-                              modelUrl: style.modelUrl || '',
-                              poster: style.poster || ''
+                              description: (style.description as string) || '',
+                              difficulty: (style.difficulty as string) || 'beginner',
+                              isActive: typeof style.isActive === 'boolean' ? style.isActive : true,
+                              isPublicDemo: typeof style.isPublicDemo === 'boolean' ? style.isPublicDemo : true,
+                              tags: Array.isArray(style.tags) ? (style.tags as string[]).join(', ') : (typeof style.tags === 'string' ? style.tags : ''),
+                              cues: Array.isArray(style.cues) ? (style.cues as string[]).join(', ') : (typeof style.cues === 'string' ? style.cues : ''),
+                              cautions: Array.isArray(style.cautions) ? (style.cautions as string[]).join(', ') : (typeof style.cautions === 'string' ? style.cautions : ''),
+                              modelUrl: (style.modelUrl as string) || '',
+                              poster: (style.poster as string) || ''
                             });
                             setShowModal(true);
                           }}
@@ -660,30 +665,30 @@ export default function ThreeDViewerPage() {
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-gray-900">{drill.title}</span>
                           <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">
-                            {drill.stroke}
+                            {(drill.stroke as string) || ''}
                           </span>
-                          {drill.isPublicDemo && (
+                          {typeof drill.isPublicDemo === 'boolean' && drill.isPublicDemo && (
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
                               🌍 공개
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">{drill.description}</p>
+                        <p className="text-xs text-gray-600 mt-1">{(drill.description as string) || ''}</p>
                       </div>
                       <div className="flex gap-2 ml-4">
                         <button
                           onClick={() => {
                             setEditingItem(drill);
                             setDrillForm({
-                              title: drill.title,
-                              stroke: drill.stroke,
-                              description: drill.description,
-                              tags: (drill.tags || []).join(', '),
-                              cues: (drill.cues || []).join(', '),
-                              cautions: (drill.cautions || []).join(', '),
-                              isPublicDemo: drill.isPublicDemo,
-                              modelUrl: drill.modelUrl || '',
-                              poster: drill.poster || ''
+                              title: (drill.title as string) || '',
+                              stroke: (drill.stroke as string) || 'FR',
+                              description: (drill.description as string) || '',
+                              tags: Array.isArray(drill.tags) ? (drill.tags as string[]).join(', ') : (typeof drill.tags === 'string' ? drill.tags : ''),
+                              cues: Array.isArray(drill.cues) ? (drill.cues as string[]).join(', ') : (typeof drill.cues === 'string' ? drill.cues : ''),
+                              cautions: Array.isArray(drill.cautions) ? (drill.cautions as string[]).join(', ') : (typeof drill.cautions === 'string' ? drill.cautions : ''),
+                              isPublicDemo: typeof drill.isPublicDemo === 'boolean' ? drill.isPublicDemo : true,
+                              modelUrl: (drill.modelUrl as string) || '',
+                              poster: (drill.poster as string) || ''
                             });
                             setShowModal(true);
                           }}
@@ -796,50 +801,40 @@ export default function ThreeDViewerPage() {
       </div>
 
       {/* 통합 추가/수정 모달 */}
-      {showModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4"
-          onClick={() => {
-            setShowModal(false);
-            setEditingItem(null);
-            dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
-          }}
-        >
-          <div 
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 border-b">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {dataType === 'strokes' 
-                  ? (editingItem ? '영법 수정' : '영법 추가')
-                  : (editingItem ? '드릴 수정' : '드릴 추가')
-                }
-              </h2>
-            </div>
-
-            <div className="p-6 space-y-4">
+      <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingItem(null);
+          dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
+        }}
+        title={
+          dataType === 'strokes' 
+            ? (editingItem ? '영법 수정' : '영법 추가')
+            : (editingItem ? '드릴 수정' : '드릴 추가')
+        }
+        maxWidth="2xl"
+      >
+        <div className="p-6 space-y-4">
               {dataType === 'strokes' ? (
                 // 영법 폼
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">영어명 *</label>
-                      <input
+                      <Input
                         type="text"
                         value={styleForm.name}
                         onChange={(e) => setStyleForm({ ...styleForm, name: e.target.value.toLowerCase() })}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="예: freestyle"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">한글명 *</label>
-                      <input
+                      <Input
                         type="text"
                         value={styleForm.displayName}
                         onChange={(e) => setStyleForm({ ...styleForm, displayName: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="예: 자유형"
                       />
                     </div>
@@ -847,10 +842,9 @@ export default function ThreeDViewerPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">설명 *</label>
-                <textarea
+                <Textarea
                   value={styleForm.description}
                   onChange={(e) => setStyleForm({ ...styleForm, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="영법 설명을 입력하세요"
                 />
@@ -858,46 +852,47 @@ export default function ThreeDViewerPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">난이도 *</label>
-                <select
+                <Select
                   value={styleForm.difficulty}
-                  onChange={(e) => setStyleForm({ ...styleForm, difficulty: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onValueChange={(value) => setStyleForm({ ...styleForm, difficulty: value })}
                 >
-                  <option value="beginner">초급</option>
-                  <option value="intermediate">중급</option>
-                  <option value="advanced">고급</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="난이도 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">초급</SelectItem>
+                    <SelectItem value="intermediate">중급</SelectItem>
+                    <SelectItem value="advanced">고급</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">태그 (쉼표로 구분)</label>
-                <input
+                <Input
                   type="text"
                   value={styleForm.tags}
                   onChange={(e) => setStyleForm({ ...styleForm, tags: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="예: 빠름, 초보자 추천"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">코칭 큐 (쉼표로 구분)</label>
-                <input
+                <Input
                   type="text"
                   value={styleForm.cues}
                   onChange={(e) => setStyleForm({ ...styleForm, cues: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="예: 팔꿈치를 높게, 발차기는 무릎 펴기"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">주의사항 (쉼표로 구분)</label>
-                <input
+                <Input
                   type="text"
                   value={styleForm.cautions}
                   onChange={(e) => setStyleForm({ ...styleForm, cautions: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="예: 어깨 부상 주의"
                 />
               </div>
@@ -976,36 +971,38 @@ export default function ThreeDViewerPage() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">드릴명 *</label>
-                    <input
+                    <Input
                       type="text"
                       value={drillForm.title}
                       onChange={(e) => setDrillForm({ ...drillForm, title: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                       placeholder="예: 하이엘보 캐치 드릴"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">영법 *</label>
-                    <select
+                    <Select
                       value={drillForm.stroke}
-                      onChange={(e) => setDrillForm({ ...drillForm, stroke: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      onValueChange={(value) => setDrillForm({ ...drillForm, stroke: value })}
                     >
-                      <option value="FR">자유형</option>
-                      <option value="BK">배영</option>
-                      <option value="BR">평영</option>
-                      <option value="FL">접영</option>
-                      <option value="IM">IM</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="영법 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FR">자유형</SelectItem>
+                        <SelectItem value="BK">배영</SelectItem>
+                        <SelectItem value="BR">평영</SelectItem>
+                        <SelectItem value="FL">접영</SelectItem>
+                        <SelectItem value="IM">IM</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">설명 *</label>
-                    <textarea
+                    <Textarea
                       value={drillForm.description}
                       onChange={(e) => setDrillForm({ ...drillForm, description: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                       rows={3}
                       placeholder="드릴 설명을 입력하세요"
                     />
@@ -1096,29 +1093,39 @@ export default function ThreeDViewerPage() {
                   </label>
                 </>
               )}
-            </div>
-
-            <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingItem(null);
-                  dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
-                }}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-              >
-                취소
-              </button>
-              <button
-                onClick={dataType === 'strokes' ? handleSaveStyle : handleSaveDrill}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                {editingItem ? '수정하기' : '추가하기'}
-              </button>
-            </div>
+          
+          <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+            <Button
+              onClick={() => {
+                setShowModal(false);
+                setEditingItem(null);
+                dataType === 'strokes' ? resetStyleForm() : resetDrillForm();
+              }}
+              variant="secondary"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={dataType === 'strokes' ? handleSaveStyle : handleSaveDrill}
+              variant="primary"
+            >
+              {editingItem ? '수정하기' : '추가하기'}
+            </Button>
           </div>
-        </div>
-      )}
+            </div>
+      </Modal>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

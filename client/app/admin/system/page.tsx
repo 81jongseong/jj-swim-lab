@@ -6,10 +6,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
 import { Button } from '@/components/ui';
 
 export default function SystemPage() {
@@ -106,9 +108,9 @@ export default function SystemPage() {
     try {
       // 실제 API 호출 대신 목 데이터 업데이트
       setLastUpdated(new Date());
-      console.log('시스템 통계 데이터 새로고침 완료');
+      logger.info('시스템 통계 데이터 새로고침 완료');
     } catch (error) {
-      console.error('데이터 새로고침 실패:', error);
+      logger.error('데이터 새로고침 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -132,13 +134,10 @@ export default function SystemPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">시스템 사용 통계</h1>
-            <p className="text-gray-600 mt-2">JJ Swim Lab 시스템 현황 및 사용자 활동 모니터링</p>
-          </div>
+      <PageHeader
+        title="시스템 사용 통계"
+        description="JJ Swim Lab 시스템 현황 및 사용자 활동 모니터링"
+        actions={
           <div className="flex items-center space-x-4">
             <Button
               onClick={refreshData}
@@ -152,8 +151,8 @@ export default function SystemPage() {
               마지막 업데이트: {lastUpdated.toLocaleString()}
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* 탭 네비게이션 */}
       <div className="mb-8">
@@ -187,7 +186,7 @@ export default function SystemPage() {
       {activeTab === 'overview' && (
         <div className="space-y-8">
           {/* 주요 지표 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <StatCard
               title="전체 사용자"
               value={systemStats.totalUsers.toLocaleString()}
@@ -223,12 +222,12 @@ export default function SystemPage() {
               subtitle="평균 응답시간 120ms"
               change={{ value: 0.2, type: 'increase' }}
             />
-          </div>
+          </CardGrid>
 
           {/* 사용자 유형별 분포 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4">사용자 유형별 분포</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardGrid gap={4}>
               {userActivity.userTypes.map((type, index) => (
                 <div key={index} className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{type.count}</div>
@@ -236,7 +235,7 @@ export default function SystemPage() {
                   <div className="text-xs text-gray-500">{type.percentage}%</div>
                 </div>
               ))}
-            </div>
+            </CardGrid>
           </div>
 
           {/* 최근 활동 */}
@@ -321,7 +320,7 @@ export default function SystemPage() {
       {activeTab === 'performance' && (
         <div className="space-y-8">
           {/* 시스템 리소스 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <StatCard
               title="CPU 사용률"
               value={`${performanceData.cpuUsage}%`}
@@ -357,7 +356,7 @@ export default function SystemPage() {
               subtitle="평균 응답 시간"
               change={{ value: -5.2, type: 'decrease' }}
             />
-          </div>
+          </CardGrid>
 
           {/* API 응답 시간 */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -411,7 +410,7 @@ export default function SystemPage() {
       {activeTab === 'security' && (
         <div className="space-y-8">
           {/* 보안 상태 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <StatCard
               title="실패한 로그인"
               value={securityData.failedLogins.toString()}
@@ -447,7 +446,7 @@ export default function SystemPage() {
               subtitle="인증서 만료일"
               change={{ value: 0, type: 'increase' }}
             />
-          </div>
+          </CardGrid>
 
           {/* 보안 활동 로그 */}
           <div className="bg-white rounded-lg shadow p-6">

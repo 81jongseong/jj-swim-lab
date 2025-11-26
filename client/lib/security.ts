@@ -76,6 +76,7 @@
 // import DOMPurify from 'isomorphic-dompurify';
 import validator from 'validator';
 import CryptoJS from 'crypto-js';
+import { logger } from '@/lib/logger';
 
 // 보안 설정
 const SECURITY_CONFIG = {
@@ -318,7 +319,7 @@ export const encryptData = (data: string, key: string): string => {
     const encrypted = CryptoJS.AES.encrypt(data, key).toString();
     return encrypted;
   } catch (error) {
-    console.error('데이터 암호화 오류:', error);
+    logger.error('데이터 암호화 오류:', error);
     return '';
   }
 };
@@ -329,7 +330,7 @@ export const decryptData = (encryptedData: string, key: string): string => {
     const decrypted = CryptoJS.AES.decrypt(encryptedData, key).toString(CryptoJS.enc.Utf8);
     return decrypted;
   } catch (error) {
-    console.error('데이터 복호화 오류:', error);
+    logger.error('데이터 복호화 오류:', error);
     return '';
   }
 };
@@ -341,7 +342,7 @@ export const secureSetItem = (key: string, value: any): boolean => {
     localStorage.setItem(key, encryptedValue);
     return true;
   } catch (error) {
-    console.error('보안 저장 오류:', error);
+    logger.error('보안 저장 오류:', error);
     return false;
   }
 };
@@ -357,7 +358,7 @@ export const secureGetItem = (key: string): any => {
     const decryptedValue = decryptData(encryptedValue, key);
     return JSON.parse(decryptedValue);
   } catch (error) {
-    console.error('보안 조회 오류:', error);
+    logger.error('보안 조회 오류:', error);
     return null;
   }
 };
@@ -368,7 +369,7 @@ export const secureRemoveItem = (key: string): boolean => {
     localStorage.removeItem(key);
     return true;
   } catch (error) {
-    console.error('보안 삭제 오류:', error);
+    logger.error('보안 삭제 오류:', error);
     return false;
   }
 };
@@ -431,7 +432,7 @@ export const sessionManager = {
       
       return secureSetItem('session', sessionData);
     } catch (error) {
-      console.error('세션 생성 오류:', error);
+      logger.error('세션 생성 오류:', error);
       return false;
     }
   },
@@ -450,7 +451,7 @@ export const sessionManager = {
       
       return session;
     } catch (error) {
-      console.error('세션 조회 오류:', error);
+      logger.error('세션 조회 오류:', error);
       return null;
     }
   },
@@ -466,7 +467,7 @@ export const sessionManager = {
       session.lastAccessedAt = new Date().toISOString();
       return secureSetItem('session', session);
     } catch (error) {
-      console.error('세션 갱신 오류:', error);
+      logger.error('세션 갱신 오류:', error);
       return false;
     }
   },
@@ -476,7 +477,7 @@ export const sessionManager = {
     try {
       return secureRemoveItem('session');
     } catch (error) {
-      console.error('세션 삭제 오류:', error);
+      logger.error('세션 삭제 오류:', error);
       return false;
     }
   },
@@ -495,7 +496,7 @@ export const sessionManager = {
       
       return age > maxAge;
     } catch (error) {
-      console.error('세션 만료 검사 오류:', error);
+      logger.error('세션 만료 검사 오류:', error);
       return true;
     }
   },
@@ -513,12 +514,12 @@ export const securityLogger = {
         url: window.location.href,
       };
       
-      console.warn('보안 이벤트:', logData);
+      logger.warn('보안 이벤트', logData);
       
       // 실제 구현에서는 보안 로깅 서비스에 전송
       // 예: Sentry.captureMessage(event, { extra: details });
     } catch (error) {
-      console.error('보안 로깅 오류:', error);
+      logger.error('보안 로깅 오류:', error);
     }
   },
   
@@ -594,3 +595,4 @@ export default {
   securityLogger,
   initializeSecurity,
 };
+

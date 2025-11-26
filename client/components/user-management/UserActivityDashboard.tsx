@@ -4,6 +4,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui';
@@ -121,7 +122,7 @@ const UserActivityDashboard: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('사용자 활동 데이터 로드 실패:', error);
+      logger.error('사용자 활동 데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -146,7 +147,7 @@ const UserActivityDashboard: React.FC = () => {
         setActivities(data.data.activities);
       }
     } catch (error) {
-      console.error('검색 실패:', error);
+      logger.error('검색 실패:', error);
     } finally {
       setLoading(false);
     }

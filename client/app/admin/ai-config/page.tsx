@@ -149,9 +149,11 @@
  * ```
  */
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { CardGrid, LoadingState, PageHeader, ErrorState } from '@/components/common';
 import { 
   Brain, 
   Activity, 
@@ -359,7 +361,7 @@ export default function AIConfigPage() {
       setExerciseAlgorithms(mockExerciseAlgorithms);
       setHealthStatistics(mockHealthStatistics);
     } catch (error) {
-      console.error('데이터 로드 실패:', error);
+      logger.error('데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -395,12 +397,7 @@ export default function AIConfigPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">데이터를 불러오는 중...</p>
-            </div>
-          </div>
+          <LoadingState message="데이터를 불러오는 중..." size="lg" />
         </div>
       </div>
     );
@@ -410,10 +407,10 @@ export default function AIConfigPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🤖 AI 설정 및 건강정보 관리</h1>
-          <p className="text-gray-600">AI 기반 맞춤형 강습 시스템 설정 및 전체 회원 건강정보 관리</p>
-        </div>
+        <PageHeader
+          title="🤖 AI 설정 및 건강정보 관리"
+          description="AI 기반 맞춤형 강습 시스템 설정 및 전체 회원 건강정보 관리"
+        />
 
         {/* 탭 네비게이션 */}
         <div className="mb-8">
@@ -445,7 +442,7 @@ export default function AIConfigPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 AI 시스템 전체 현황</h2>
               
               {/* 시스템 상태 카드들 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <CardGrid gap={6} className="mb-8">
                 <div className="bg-blue-50 p-6 rounded-lg">
                   <div className="flex items-center">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -495,7 +492,7 @@ export default function AIConfigPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardGrid>
 
               {/* 최근 활동 */}
               <div className="bg-gray-50 p-6 rounded-lg">

@@ -13,12 +13,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import apiClient from '../../../utils/api';
 import { Button } from '@/components/ui';
 import StatCard from '@/components/StatCard';
+import { LoadingState } from '@/components/common';
 
 interface CenterRegistration {
   _id: string;
@@ -156,7 +158,7 @@ export default function ApprovalsPage() {
           instructorName: approval.instructorName
         }));
         
-        console.log(`✅ 어드민 승인 데이터 필터링 완료: 전체 ${approvalsResponse.data.approvals.length}개 중 ${realApprovals.length}개 표시 (강사/센터 등록만)`);
+        logger.info(`✅ 어드민 승인 데이터 필터링 완료: 전체 ${approvalsResponse.data.approvals.length}개 중 ${realApprovals.length}개 표시 (강사/센터 등록만)`);
       }
       
       // 센터 등록 신청 데이터도 함께 가져오기
@@ -188,7 +190,7 @@ export default function ApprovalsPage() {
       
       // 데이터가 없으면 샘플 데이터 생성
       if (allApprovals.length === 0) {
-        console.log('📝 승인 데이터가 없어 샘플 데이터를 생성합니다.');
+        logger.info('📝 승인 데이터가 없어 샘플 데이터를 생성합니다.');
         const sampleData: ApprovalItem[] = [
           {
             id: 'sample-1',
@@ -312,7 +314,7 @@ export default function ApprovalsPage() {
       
       setIsLoading(false);
     } catch (error) {
-      console.error('승인 데이터 가져오기 실패:', error);
+      logger.error('승인 데이터 가져오기 실패:', error);
       setIsLoading(false);
       
       // API 실패 시 샘플 데이터 사용 (fallback)
@@ -369,7 +371,11 @@ export default function ApprovalsPage() {
 
   // 권한 확인
   if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">로딩 중...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
   }
 
   if (!user || !['superAdmin', 'centerAdmin'].includes(user.userType)) {
@@ -386,10 +392,7 @@ export default function ApprovalsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">승인 데이터를 불러오는 중...</p>
-        </div>
+        <LoadingState message="승인 데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -445,7 +448,7 @@ export default function ApprovalsPage() {
             alert(response.message || '처리 중 오류가 발생했습니다.');
           }
         } catch (apiError) {
-          console.log('센터 등록 API 오류, 로컬 상태 업데이트로 대체:', apiError);
+          logger.info('센터 등록 API 오류, 로컬 상태 업데이트로 대체:', apiError);
           
           // API 실패 시 로컬 상태 업데이트 (fallback)
           setApprovals(prev => 
@@ -480,7 +483,7 @@ export default function ApprovalsPage() {
             alert(response.message || '처리 중 오류가 발생했습니다.');
           }
         } catch (apiError) {
-          console.log('API 오류, 로컬 상태 업데이트로 대체:', apiError);
+          logger.info('API 오류, 로컬 상태 업데이트로 대체:', apiError);
           
           // API 실패 시 로컬 상태 업데이트 (fallback)
           setApprovals(prev => 
@@ -503,7 +506,7 @@ export default function ApprovalsPage() {
         }
       }
     } catch (error) {
-      console.error('승인 처리 실패:', error);
+      logger.error('승인 처리 실패:', error);
       alert('승인 처리 중 오류가 발생했습니다.');
     }
   };

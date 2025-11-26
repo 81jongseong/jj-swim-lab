@@ -1,10 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui';
-import { CardGrid } from '@/components/common';
+import { Button, Input, Textarea } from '@/components/ui';
+import { CardGrid, LoadingState, ConfirmModal, PageHeader, ErrorState } from '@/components/common';
 
 const QUIZ_CATEGORIES = [
   '운동생리학',
@@ -40,6 +41,7 @@ export default function QuizManagementPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'demo'>('all');
   
@@ -62,6 +64,21 @@ export default function QuizManagementPage() {
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number>(-1);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+    data?: any;
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info',
+    data: null
+  });
   const [questionForm, setQuestionForm] = useState<{
     type: string;
     question: string;
@@ -122,6 +139,7 @@ export default function QuizManagementPage() {
   const loadQuizzes = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch(`http://localhost:5000/api/quiz?page=1&limit=100`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -129,28 +147,38 @@ export default function QuizManagementPage() {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const apiQuizzes = (data.data || data.quizzes || []).map((quiz: any) => ({
-            id: quiz._id,
-            title: quiz.title,
-            description: quiz.description,
-            category: quiz.category,
-            level: quiz.difficulty,
-            questions: quiz.questions || [], // ✅ 실제 문제 배열 저장
-            questionsCount: quiz.questions?.length || 0, // ✅ 개수는 별도 필드
-            timeLimit: quiz.timeLimit || 0,
-            isActive: quiz.isActive,
-            isPublicDemo: quiz.isPublicDemo,
-            createdAt: quiz.createdAt,
-            updatedAt: quiz.updatedAt
-          }));
-          setQuizzes(apiQuizzes);
-        }
+      if (!response.ok) {
+        throw new Error('퀴즈 목록을 불러오는데 실패했습니다.');
       }
-    } catch (error) {
-      console.error('퀴즈 로드 오류:', error);
+
+      const data = await response.json();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      if (data.success) {
+        const apiQuizzes = (data.data || data.quizzes || []).map((quiz: any) => ({
+          id: quiz._id,
+          title: quiz.title,
+          description: quiz.description,
+          category: quiz.category,
+          level: quiz.difficulty,
+          questions: quiz.questions || [], // ✅ 실제 문제 배열 저장
+          questionsCount: quiz.questions?.length || 0, // ✅ 개수는 별도 필드
+          timeLimit: quiz.timeLimit || 0,
+          isActive: quiz.isActive,
+          isPublicDemo: quiz.isPublicDemo,
+          createdAt: quiz.createdAt,
+          updatedAt: quiz.updatedAt
+        }));
+        setQuizzes(apiQuizzes);
+      } else {
+        setError(data.message || '퀴즈 목록을 불러오는데 실패했습니다.');
+      }
+    } catch (err: any) {
+      logger.error('퀴즈 로드 오류:', err);
+      setError(err.message || '퀴즈 목록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +205,7 @@ export default function QuizManagementPage() {
         alert('퀴즈 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('퀴즈 생성 오류:', error);
+      logger.error('퀴즈 생성 오류:', error);
       alert('퀴즈 생성 중 오류가 발생했습니다.');
     }
   };
@@ -206,34 +234,43 @@ export default function QuizManagementPage() {
         alert('퀴즈 수정에 실패했습니다.');
       }
     } catch (error) {
-      console.error('퀴즈 수정 오류:', error);
+      logger.error('퀴즈 수정 오류:', error);
       alert('퀴즈 수정 중 오류가 발생했습니다.');
     }
   };
 
   // 퀴즈 삭제
   const handleDelete = async (quizId: string) => {
-    if (!confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '정말로 이 퀴즈를 삭제하시겠습니까?',
+      variant: 'danger',
+      data: { quizId },
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/quiz/${quizId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
 
-    try {
-      const response = await fetch(`http://localhost:5000/api/quiz/${quizId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+            if (response.ok) {
+              alert('퀴즈가 삭제되었습니다!');
+              loadQuizzes();
+              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+            } else {
+              alert('퀴즈 삭제에 실패했습니다.');
+              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+            }
+          } catch (error) {
+            logger.error('퀴즈 삭제 오류:', error);
+            alert('퀴즈 삭제 중 오류가 발생했습니다.');
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+          }
         }
       });
-
-      if (response.ok) {
-        alert('퀴즈가 삭제되었습니다!');
-        loadQuizzes();
-      } else {
-        alert('퀴즈 삭제에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('퀴즈 삭제 오류:', error);
-      alert('퀴즈 삭제 중 오류가 발생했습니다.');
-    }
-  };
+    };
 
   // 수정 시작 (DB에서 전체 데이터 다시 불러오기)
   const startEdit = async (quiz: Quiz) => {
@@ -270,7 +307,7 @@ export default function QuizManagementPage() {
         alert('퀴즈 정보를 불러오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('퀴즈 정보 불러오기 오류:', error);
+      logger.error('퀴즈 정보 불러오기 오류:', error);
       alert('퀴즈 정보를 불러오는 중 오류가 발생했습니다.');
     }
   };
@@ -375,9 +412,17 @@ export default function QuizManagementPage() {
 
   // 문제 삭제
   const handleDeleteQuestion = (index: number) => {
-    if (!confirm('이 문제를 삭제하시겠습니까?')) return;
-    const newQuestions = formData.questions.filter((_, i) => i !== index);
-    setFormData({ ...formData, questions: newQuestions });
+    setConfirmModal({
+      isOpen: true,
+      message: '이 문제를 삭제하시겠습니까?',
+      variant: 'danger',
+      data: { index },
+      onConfirm: () => {
+        const newQuestions = formData.questions.filter((_, i) => i !== index);
+        setFormData({ ...formData, questions: newQuestions });
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+      }
+    });
   };
 
   // 문제 편집 시작
@@ -407,7 +452,22 @@ export default function QuizManagementPage() {
   if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadQuizzes();
+          }}
+          retryText="다시 시도"
+        />
       </div>
     );
   }
@@ -425,22 +485,23 @@ export default function QuizManagementPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 관리</h1>
-          <p className="text-gray-600">퀴즈를 생성하고 관리합니다</p>
-        </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowCreateModal(true);
-          }}
-          variant="primary"
-          size="lg"
-        >
-          ➕ 새 퀴즈 생성
-        </Button>
-      </div>
+      <PageHeader
+        title="퀴즈 관리"
+        description="퀴즈를 생성, 수정, 삭제하고 관리할 수 있습니다."
+        actions={
+          <Button
+            onClick={() => {
+              resetForm();
+              setShowCreateModal(true);
+            }}
+            variant="primary"
+            size="lg"
+          >
+            ➕ 새 퀴즈 생성
+          </Button>
+        }
+        className="mb-8"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
@@ -670,10 +731,36 @@ export default function QuizManagementPage() {
             <div className="p-6 border-t bg-gray-50 flex justify-between gap-2">
               <Button
                 onClick={() => {
-                  if (confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) {
-                    setSelectedQuiz(null);
-                    handleDelete(selectedQuiz.id);
-                  }
+                  setConfirmModal({
+                    isOpen: true,
+                    message: '정말로 이 퀴즈를 삭제하시겠습니까?',
+                    variant: 'danger',
+                    data: { quizId: selectedQuiz.id },
+                    onConfirm: async () => {
+                      try {
+                        const response = await fetch(`http://localhost:5000/api/quiz/${selectedQuiz.id}`, {
+                          method: 'DELETE',
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          }
+                        });
+
+                        if (response.ok) {
+                          alert('퀴즈가 삭제되었습니다!');
+                          loadQuizzes();
+                          setSelectedQuiz(null);
+                          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                        } else {
+                          alert('퀴즈 삭제에 실패했습니다.');
+                          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                        }
+                      } catch (error) {
+                        logger.error('퀴즈 삭제 오류:', error);
+                        alert('퀴즈 삭제 중 오류가 발생했습니다.');
+                        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null });
+                      }
+                    }
+                  });
                 }}
                 variant="danger"
                 size="md"
@@ -942,10 +1029,9 @@ export default function QuizManagementPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">문제 *</label>
-                <textarea
+                <Textarea
                   value={questionForm.question}
                   onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="문제를 입력하세요"
                 />
@@ -958,7 +1044,7 @@ export default function QuizManagementPage() {
                     {questionForm.options.map((option, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
                         <span className="text-sm font-medium text-gray-600 w-6">{index + 1}.</span>
-                        <input
+                        <Input
                           type="text"
                           value={option}
                           onChange={(e) => {
@@ -966,7 +1052,7 @@ export default function QuizManagementPage() {
                             newOptions[index] = e.target.value;
                             setQuestionForm({ ...questionForm, options: newOptions });
                           }}
-                          className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          className="flex-1"
                           placeholder={`선택지 ${index + 1}`}
                         />
                         <input
@@ -1308,6 +1394,18 @@ export default function QuizManagementPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {}, data: null })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -13,6 +14,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui';
 import ThemedStatCard from '../../../components/ThemedStatCard';
+import { CardGrid, LoadingState } from '@/components/common';
 import { Button } from '@/components/ui';
 import { 
   Calendar, 
@@ -222,7 +224,7 @@ export default function BookingManagementContent() {
         setBookings(data.data?.bookings || []);
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 로드 실패:', error);
+      if (DEBUG) logger.error('예약 로드 실패:', error);
     }
   };
 
@@ -241,7 +243,7 @@ export default function BookingManagementContent() {
         setPayments(data.data?.payments || []);
       }
     } catch (error) {
-      if (DEBUG) console.error('결제 로드 실패:', error);
+      if (DEBUG) logger.error('결제 로드 실패:', error);
     }
   };
 
@@ -253,7 +255,7 @@ export default function BookingManagementContent() {
       }
     } catch (error) {
       // 404 오류는 조용히 처리 (엔드포인트가 없을 수 있음)
-      if (DEBUG) console.error('승인 로드 실패:', error);
+      if (DEBUG) logger.error('승인 로드 실패:', error);
       setApprovals([]);
     }
   };
@@ -305,7 +307,7 @@ export default function BookingManagementContent() {
           }
           finalInstructorId = instructors[idx]._id;
         } catch (e) {
-          if (DEBUG) console.error('강사 목록 조회 실패:', e);
+          if (DEBUG) logger.error('강사 목록 조회 실패:', e);
           alert('강사 목록을 불러올 수 없습니다. 잠시 후 다시 시도하세요.');
           return;
         }
@@ -327,7 +329,7 @@ export default function BookingManagementContent() {
         await loadAllData();
       }
     } catch (error) {
-      if (DEBUG) console.error('예약 처리 실패:', error);
+      if (DEBUG) logger.error('예약 처리 실패:', error);
     }
   };
 
@@ -341,7 +343,7 @@ export default function BookingManagementContent() {
       updateDashboardStats();
       alert(action === 'refund' ? '결제가 환불되었습니다.' : '결제가 취소되었습니다.');
     } catch (error) {
-      if (DEBUG) console.error('결제 처리 실패:', error);
+      if (DEBUG) logger.error('결제 처리 실패:', error);
     }
   };
 
@@ -387,7 +389,7 @@ export default function BookingManagementContent() {
         alert('개인레슨 신청에 실패했습니다.');
       }
     } catch (error) {
-      if (DEBUG) console.error('개인레슨 신청 실패:', error);
+      if (DEBUG) logger.error('개인레슨 신청 실패:', error);
       alert('개인레슨 신청에 실패했습니다.');
     }
   };
@@ -409,7 +411,7 @@ export default function BookingManagementContent() {
         alert('레인대여 신청이 완료되었습니다.');
       }
     } catch (error) {
-      if (DEBUG) console.error('레인대여 신청 실패:', error);
+      if (DEBUG) logger.error('레인대여 신청 실패:', error);
       alert('레인대여 신청에 실패했습니다.');
     }
   };
@@ -450,10 +452,7 @@ export default function BookingManagementContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">데이터를 불러오는 중...</p>
-        </div>
+        <LoadingState message="데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -512,7 +511,7 @@ export default function BookingManagementContent() {
       {/* 대시보드 탭 */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <ThemedStatCard
               title="오늘 예약"
               value={dashboardStats.todayBookings}
@@ -541,9 +540,9 @@ export default function BookingManagementContent() {
               color="teal"
               description="완료/전체 결제 비율"
             />
-          </div>
+          </CardGrid>
 
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardGrid gap={6}>
             <ThemedStatCard
               title="환불 건수"
               value={`${dashboardStats.refundCount}건`}
@@ -572,7 +571,7 @@ export default function BookingManagementContent() {
               color="blue"
               description="처리 완료된 결제"
             />
-          </div>
+          </CardGrid>
         </div>
       )}
 

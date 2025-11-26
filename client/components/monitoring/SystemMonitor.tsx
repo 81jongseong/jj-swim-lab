@@ -4,6 +4,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui';
@@ -105,7 +106,7 @@ const SystemMonitor: React.FC = () => {
         setUserActivities(activitiesData.data.activities);
       }
     } catch (error) {
-      console.error('모니터링 데이터 로드 실패:', error);
+      logger.error('모니터링 데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }

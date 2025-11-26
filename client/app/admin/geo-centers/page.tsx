@@ -30,6 +30,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -42,6 +43,7 @@ import {
   cssToHex
 } from '../../../lib/utils/centerColors';
 import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
+import { LoadingState, PageHeader, ConfirmModal } from '@/components/common';
 
 // 동적 import로 SSR 문제 방지
 let maplibregl: any;
@@ -91,6 +93,19 @@ export default function GeoCentersPage() {
 
   // 색상 업데이트 트리거
   const [colorVersion, setColorVersion] = useState(0);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 인증 확인
   useEffect(() => {
@@ -105,9 +120,13 @@ export default function GeoCentersPage() {
     const loadLibraries = async () => {
       try {
         maplibregl = (await import('maplibre-gl')).default;
+        // @ts-ignore
         const deckGl = await import('@deck.gl/mapbox');
+        // @ts-ignore
         const deckGlCore = await import('@deck.gl/core');
+        // @ts-ignore
         const geoLayers = await import('@deck.gl/geo-layers');
+        // @ts-ignore
         const coreLayers = await import('@deck.gl/layers');
         const h3 = await import('h3-js');
 
@@ -119,10 +138,10 @@ export default function GeoCentersPage() {
 
         await import('maplibre-gl/dist/maplibre-gl.css' as any);
 
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        logger.info('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
         setLibrariesLoaded(true); // 로딩 완료 상태 업데이트
       } catch (error) {
-        console.error('❌ 라이브러리 로딩 오류:', error);
+        logger.error('❌ 라이브러리 로딩 오류:', error);
         setLibrariesLoaded(false);
       }
     };
@@ -156,12 +175,12 @@ export default function GeoCentersPage() {
         setCenters(centerList);
         setActiveCenters(new Set(centerList));
 
-        console.log('✅ 센터별 분포 데이터 로딩:', cellsData.length, '셀');
+        logger.info('✅ 센터별 분포 데이터 로딩:', cellsData.length, '셀');
       } else {
-        console.error('❌ 데이터 로딩 실패:', result.error);
+        logger.error('❌ 데이터 로딩 실패:', result.error);
       }
     } catch (error) {
-      console.error('❌ API 호출 오류:', error);
+      logger.error('❌ API 호출 오류:', error);
     } finally {
       setLoadingData(false);
     }
@@ -236,7 +255,7 @@ export default function GeoCentersPage() {
           });
         });
       } catch (error) {
-        console.warn('H3 좌표 변환 오류:', cell.h3, error);
+        logger.warn('H3 좌표 변환 오류:', cell.h3, error);
       }
     }
 
@@ -322,7 +341,7 @@ export default function GeoCentersPage() {
     };
 
     map.on('load', () => {
-      console.log('🗺️ OpenStreetMap 지도 로딩 완료');
+      logger.info('🗺️ OpenStreetMap 지도 로딩 완료');
     });
 
     // 정리 함수
@@ -335,7 +354,7 @@ export default function GeoCentersPage() {
 
   // H3 헥사곤 레이어 렌더링 및 Deck.gl 연동
   useEffect(() => {
-    console.log('🔍 H3 레이어 useEffect 실행:', { 
+    logger.info('🔍 H3 레이어 useEffect 실행:', { 
       hasMap: !!mapRef.current, 
       hasDeckGL: !!DeckGL, 
       hasH3HexagonLayer: !!H3HexagonLayer, 
@@ -345,7 +364,7 @@ export default function GeoCentersPage() {
     });
 
     if (!mapRef.current || !DeckGL || !H3HexagonLayer || !ColumnLayer || !librariesLoaded || cells.length === 0) {
-      console.log('⏳ H3 레이어 대기 중 - 라이브러리 로딩 또는 데이터 대기');
+      logger.info('⏳ H3 레이어 대기 중 - 라이브러리 로딩 또는 데이터 대기');
       return;
     }
 
@@ -386,7 +405,7 @@ export default function GeoCentersPage() {
       });
 
     // Deck.gl 인스턴스 생성
-    console.log('🔧 Deck.gl 인스턴스 생성 시작...');
+    logger.info('🔧 Deck.gl 인스턴스 생성 시작...');
     
     const deckInstance = new DeckGL({
       canvas: 'deck-canvas',
@@ -405,14 +424,14 @@ export default function GeoCentersPage() {
         depthTest: false
       },
       onError: (error: any) => {
-        console.error('🚨 Deck.gl 오류:', error);
+        logger.error('🚨 Deck.gl 오류:', error);
       },
       onAfterRender: () => {
-        console.log('🎨 Deck.gl 렌더링 완료');
+        logger.info('🎨 Deck.gl 렌더링 완료');
       }
     });
     
-    console.log('✅ Deck.gl 인스턴스 생성 완료:', deckInstance);
+    logger.info('✅ Deck.gl 인스턴스 생성 완료:', deckInstance);
 
     // MapLibre와 Deck.gl 연동
     if (mapInstanceRef.current) {
@@ -435,13 +454,13 @@ export default function GeoCentersPage() {
 
     // 렌더링 강제 실행
     setTimeout(() => {
-      console.log('🔄 Deck.gl 강제 렌더링 실행');
+      logger.info('🔄 Deck.gl 강제 렌더링 실행');
       deckInstance.setProps({
         layers: [currentLayer]
       });
     }, 1000);
 
-    console.log(`✅ ${mode === 'dominant' ? '지배' : '스택'} 모드 H3 레이어 업데이트 완료`);
+    logger.info(`✅ ${mode === 'dominant' ? '지배' : '스택'} 모드 H3 레이어 업데이트 완료`);
   }, [mode, filteredCells, stackData, topN, colorVersion, librariesLoaded]);
 
   // 센터 필터 토글
@@ -459,16 +478,22 @@ export default function GeoCentersPage() {
   const handleColorChange = (centerId: string, hexColor: string) => {
     setCenterColor(centerId, hexColor);
     setColorVersion(v => v + 1); // 색상 업데이트 트리거
-    console.log(`🎨 센터 색상 변경: ${centerId} → ${hexColor}`);
+    logger.info(`🎨 센터 색상 변경: ${centerId} → ${hexColor}`);
   };
 
   // 색상 초기화
   const handleResetColors = () => {
-    if (confirm('모든 센터 색상을 초기화하시겠습니까?')) {
-      resetCenterColors();
-      setColorVersion(v => v + 1);
-      alert('✅ 센터 색상이 초기화되었습니다.');
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '모든 센터 색상을 초기화하시겠습니까?',
+      variant: 'warning',
+      onConfirm: () => {
+        resetCenterColors();
+        setColorVersion(v => v + 1);
+        alert('✅ 센터 색상이 초기화되었습니다.');
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   // CSV 내보내기
@@ -515,9 +540,9 @@ export default function GeoCentersPage() {
       link.click();
       document.body.removeChild(link);
 
-      console.log('📊 CSV 내보내기 완료');
+      logger.info('📊 CSV 내보내기 완료');
     } catch (error) {
-      console.error('❌ CSV 내보내기 오류:', error);
+      logger.error('❌ CSV 내보내기 오류:', error);
       alert('CSV 내보내기 중 오류가 발생했습니다.');
     }
   };
@@ -526,10 +551,7 @@ export default function GeoCentersPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -550,10 +572,7 @@ export default function GeoCentersPage() {
   if (!librariesLoaded || !maplibregl || !MapboxLayer || !H3HexagonLayer || !ColumnLayer || !h3Module) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">지도 라이브러리 로딩 중...</p>
-        </div>
+        <LoadingState message="지도 라이브러리 로딩 중..." size="lg" />
       </div>
     );
   }
@@ -563,18 +582,11 @@ export default function GeoCentersPage() {
       {/* VWorld 키 만료 배너 */}
       <VWorldExpiryBanner />
 
-      {/* 헤더 */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-gray-900">
-            🗺️ 센터별 회원 분포 지도 (최종판)
-          </h1>
-          <VWorldKeyBadge />
-        </div>
-        <p className="text-gray-600">
-          지배/스택 모드 토글 + 센터 브랜드 컬러 프리셋 관리
-        </p>
-      </div>
+      <PageHeader
+        title="🗺️ 센터별 회원 분포 지도 (최종판)"
+        description="지배/스택 모드 토글 + 센터 브랜드 컬러 프리셋 관리"
+        actions={<VWorldKeyBadge />}
+      />
 
       {/* 모드 선택 패널 */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
@@ -780,6 +792,18 @@ export default function GeoCentersPage() {
           <div>🔢 <strong>집계:</strong> H3 헥사곤 그리드 시스템</div>
         </div>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Card } from './ui';
@@ -84,7 +85,7 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('❌ JWT 토큰이 없습니다.');
+        logger.error('❌ JWT 토큰이 없습니다.');
         return;
       }
 
@@ -102,15 +103,15 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
         if (Array.isArray(apiVideos)) {
           setVideos(apiVideos);
         } else {
-          console.error('❌ 비디오 데이터 형식 오류:', apiVideos);
+          logger.error('❌ 비디오 데이터 형식 오류:', apiVideos);
           setVideos([]);
         }
       } else {
-        console.error('❌ 비디오 조회 실패:', response.status);
+        logger.error('❌ 비디오 조회 실패:', response.status);
         setVideos([]);
       }
     } catch (error) {
-      console.error('❌ 비디오 조회 중 오류:', error);
+      logger.error('❌ 비디오 조회 중 오류:', error);
       setVideos([]);
     } finally {
       setLoading(false);
@@ -204,7 +205,7 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
         alert(`오류: ${errorData.message || '비디오 저장에 실패했습니다.'}`);
       }
     } catch (error) {
-      console.error('❌ 비디오 저장 중 오류:', error);
+      logger.error('❌ 비디오 저장 중 오류:', error);
       alert('비디오 저장 중 오류가 발생했습니다.');
     }
   };
@@ -235,7 +236,7 @@ const YouTubeVideoManager: React.FC<YouTubeVideoManagerProps> = ({
         alert(`오류: ${errorData.message || '비디오 삭제에 실패했습니다.'}`);
       }
     } catch (error) {
-      console.error('❌ 비디오 삭제 중 오류:', error);
+      logger.error('❌ 비디오 삭제 중 오류:', error);
       alert('비디오 삭제 중 오류가 발생했습니다.');
     }
   };

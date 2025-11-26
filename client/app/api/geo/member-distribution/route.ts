@@ -1,20 +1,4 @@
-/**
- * 🗺️ 회원/강사/게스트별 분포도 API
- * 
- * 📋 **목적**
- * - 회원, 강사, 게스트별 지역 분포도 제공
- * - 센터별, 지역별 필터링 지원
- * - 최고관리자는 모든 센터 접근 가능
- * - 일반 사용자는 공개된 센터만 접근 가능
- * 
- * 🗄️ **데이터 연동**
- * - 회원 테이블 (members)
- * - 강사 테이블 (instructors) 
- * - 게스트 테이블 (guests)
- * - 센터 테이블 (centers)
- * - H3 지리적 집계
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import * as h3 from 'h3-js';
 
@@ -97,7 +81,7 @@ function getRegionName(h3CellId: string): string {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🗺️ 회원 분포도 API 호출 시작');
+    logger.info('🗺️ 회원 분포도 API 호출 시작');
 
     const { searchParams } = new URL(request.url);
     const centerId = searchParams.get('centerId');
@@ -171,7 +155,7 @@ export async function GET(request: NextRequest) {
 
     const result = Array.from(aggregated.values());
 
-    console.log(`✅ 회원 분포도 데이터 생성 완료: ${result.length}개 지역`);
+    logger.info(`✅ 회원 분포도 데이터 생성 완료: ${result.length}개 지역`);
 
     return NextResponse.json({
       success: true,
@@ -198,7 +182,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 회원 분포도 API 오류:', error);
+    logger.error('❌ 회원 분포도 API 오류:', error);
 
     return NextResponse.json({
       success: false,

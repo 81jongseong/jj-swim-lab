@@ -17,6 +17,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -64,7 +65,7 @@ export default function DayConditionInputModal({
       todayConditionIds
     };
 
-    console.log('🌤️ 당일 컨디션 제출:', data);
+    logger.info('🌤️ 당일 컨디션 제출:', data);
     onSubmit(data);
     onClose();
   };

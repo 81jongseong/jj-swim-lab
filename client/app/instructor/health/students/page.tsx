@@ -36,10 +36,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
 import { Users, Heart, Activity, Target, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { LoadingState, ErrorState, PageHeader } from '@/components/common';
 
 interface StudentHealthDetail {
   _id: string;
@@ -192,7 +194,7 @@ export default function InstructorHealthStudents() {
                 };
               }
             } catch (error) {
-              console.error(`학생 ${student.name} 건강정보 조회 실패:`, error);
+              logger.error(`학생 ${student.name} 건강정보 조회 실패:`, error);
               return {
                 _id: student._id,
                 name: student.name,
@@ -232,7 +234,7 @@ export default function InstructorHealthStudents() {
         setError('학생 목록을 불러오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('학생 건강정보 로딩 실패:', error);
+      logger.error('학생 건강정보 로딩 실패:', error);
       setError('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -281,10 +283,7 @@ export default function InstructorHealthStudents() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">학생 건강정보를 불러오는 중...</p>
-          </div>
+          <LoadingState message="학생 건강정보를 불러오는 중..." size="lg" />
         </div>
       </div>
     );
@@ -294,17 +293,11 @@ export default function InstructorHealthStudents() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">오류가 발생했습니다</h1>
-            <p className="text-gray-600">{error}</p>
-            <button
-              onClick={loadStudentHealthDetails}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
+          <ErrorState 
+            message={error}
+            onRetry={loadStudentHealthDetails}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -314,10 +307,11 @@ export default function InstructorHealthStudents() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">👥 학생 건강 상세정보</h1>
-          <p className="text-gray-600">담당 학생들의 개별 건강 상태를 상세하게 확인하세요</p>
-        </div>
+        <PageHeader
+          title="👥 학생 건강 상세정보"
+          description="담당 학생들의 개별 건강 상태를 상세하게 확인하세요"
+          className="mb-8"
+        />
 
         {/* 검색 */}
         <div className="mb-6">

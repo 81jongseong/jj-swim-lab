@@ -1,7 +1,9 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
+import { LoadingState, ConfirmModal } from '@/components/common';
 
 /**
  * 3D 뷰어 - 수영 스타일 관리 페이지
@@ -30,6 +32,19 @@ export default function SwimmingStylesPage() {
   const { user, loading } = useAuth();
   const [styles, setStyles] = useState<SwimmingStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 기본 수영 스타일 데이터 (하드코딩)
   const defaultStyles: SwimmingStyle[] = [
@@ -101,7 +116,7 @@ export default function SwimmingStylesPage() {
         setStyles(defaultStyles);
       }
     } catch (error) {
-      console.error('영법 로드 오류:', error);
+      logger.error('영법 로드 오류:', error);
       setStyles(defaultStyles);
     } finally {
       setIsLoading(false);
@@ -111,10 +126,7 @@ export default function SwimmingStylesPage() {
   if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -125,10 +137,22 @@ export default function SwimmingStylesPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">접근 권한 없음</h1>
           <p className="text-gray-600">이 페이지에 접근할 권한이 없습니다.</p>
-        </div>
       </div>
-    );
-  }
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
+    </div>
+  );
+}
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -158,25 +182,31 @@ export default function SwimmingStylesPage() {
         {styles.length === 0 && (
           <button
             onClick={async () => {
-              if (!confirm('기본 영법 데이터를 생성하시겠습니까?')) return;
-              
-              for (const style of defaultStyles) {
-                try {
-                  await fetch('http://localhost:5000/api/swimming-styles', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(style)
-                  });
-                } catch (err) {
-                  console.error('영법 생성 오류:', err);
+              setConfirmModal({
+                isOpen: true,
+                message: '기본 영법 데이터를 생성하시겠습니까?',
+                variant: 'info',
+                onConfirm: async () => {
+                  for (const style of defaultStyles) {
+                    try {
+                      await fetch('http://localhost:5000/api/swimming-styles', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(style)
+                      });
+                    } catch (err) {
+                      logger.error('영법 생성 오류:', err);
+                    }
+                  }
+                  
+                  alert('기본 영법 데이터가 생성되었습니다!');
+                  loadStyles();
+                  setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
                 }
-              }
-              
-              alert('기본 영법 데이터가 생성되었습니다!');
-              loadStyles();
+              });
             }}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
           >

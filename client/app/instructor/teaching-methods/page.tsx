@@ -20,6 +20,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Search, Filter, Plus, Edit, Trash2, Eye, X, Save, AlertCircle } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import Modal from '@/components/common/Modal';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
+import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
 
 interface TeachingMethod {
   _id: string;
@@ -86,6 +89,19 @@ function InstructorTeachingMethods() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [isCurriculumModalOpen, setIsCurriculumModalOpen] = useState(false);
   const [selectedMethodsForCurriculum, setSelectedMethodsForCurriculum] = useState<string[]>([]);
 
@@ -121,7 +137,7 @@ function InstructorTeachingMethods() {
         setAvailableCategories(allCategories.sort());
       }
     } catch (error: any) {
-      console.error('강습법 목록 로드 실패:', error);
+      logger.error('강습법 목록 로드 실패:', error);
       setError(error.message || '강습법 목록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -148,15 +164,15 @@ function InstructorTeachingMethods() {
           const superAdmin = result.data.filter((m: TeachingMethod) => 
             m.createdByRole === 'superAdmin' && !m.overridesSuperAdminMethod
           );
-          console.log('최고 관리자 강습법:', superAdmin.length, '개', superAdmin);
+          logger.debug('최고 관리자 강습법', { count: superAdmin.length, data: superAdmin });
           setSuperAdminMethods(superAdmin);
           
           // 최고 관리자 강습법이 없으면 경고 표시
           if (superAdmin.length === 0) {
-            console.warn('최고 관리자 강습법이 없습니다. 최고 관리자가 먼저 강습법을 생성해야 합니다.');
+            logger.warn('최고 관리자 강습법이 없습니다. 최고 관리자가 먼저 강습법을 생성해야 합니다.');
             // 디버깅: 전체 강습법 확인
-            console.log('전체 강습법:', result.data.length, '개');
-            console.log('강습법 역할 분포:', {
+            logger.info('전체 강습법', { count: result.data.length });
+            logger.debug('강습법 역할 분포', {
               superAdmin: result.data.filter((m: TeachingMethod) => m.createdByRole === 'superAdmin').length,
               instructor: result.data.filter((m: TeachingMethod) => m.createdByRole === 'instructor').length,
               centerAdmin: result.data.filter((m: TeachingMethod) => m.createdByRole === 'centerAdmin').length,
@@ -166,10 +182,10 @@ function InstructorTeachingMethods() {
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('최고 관리자 강습법 로드 실패:', response.status, response.statusText, errorData);
+        logger.error('최고 관리자 강습법 로드 실패', { status: response.status, statusText: response.statusText, errorData });
       }
     } catch (error) {
-      console.error('최고 관리자 강습법 로드 실패:', error);
+      logger.error('최고 관리자 강습법 로드 실패:', error);
     }
   };
 
@@ -246,37 +262,42 @@ function InstructorTeachingMethods() {
       await loadTeachingMethods();
       await loadSuperAdminMethods();
     } catch (error: any) {
-      console.error('강습법 저장 실패:', error);
+      logger.error('강습법 저장 실패:', error);
       setError(error.message || '강습법 저장에 실패했습니다.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('정말로 이 강습법을 삭제하시겠습니까?')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말로 이 강습법을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setError(null);
+          const token = localStorage.getItem('token');
+          const response = await fetch(`/api/teaching-methods/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-    try {
-      setError(null);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/teaching-methods/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+          if (!response.ok) {
+            throw new Error('강습법 삭제에 실패했습니다.');
+          }
 
-      if (!response.ok) {
-        throw new Error('강습법 삭제에 실패했습니다.');
+          setSuccess('강습법이 삭제되었습니다.');
+          await loadTeachingMethods();
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error: any) {
+          logger.error('강습법 삭제 실패:', error);
+          setError(error.message || '강습법 삭제에 실패했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
       }
-
-      setSuccess('강습법이 삭제되었습니다.');
-      await loadTeachingMethods();
-    } catch (error: any) {
-      console.error('강습법 삭제 실패:', error);
-      setError(error.message || '강습법 삭제에 실패했습니다.');
-    }
+    });
   };
 
   const handleEdit = (method: TeachingMethod) => {
@@ -351,8 +372,7 @@ function InstructorTeachingMethods() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">강습법을 불러오는 중...</span>
+        <LoadingState message="강습법을 불러오는 중..." size="md" />
       </div>
     );
   }
@@ -360,28 +380,28 @@ function InstructorTeachingMethods() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">강습법 관리</h1>
-            <p className="text-gray-600">효과적인 수영 강습법을 만들고 관리하세요. 최고 관리자 강습법과 내 강습법을 선택하여 커리큘럼을 만들 수 있습니다.</p>
-          </div>
-          <button
-            onClick={() => setIsCurriculumModalOpen(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            커리큘럼 만들기
-          </button>
-        </div>
+        <PageHeader
+          title="강습법 관리"
+          description="효과적인 수영 강습법을 만들고 관리하세요. 최고 관리자 강습법과 내 강습법을 선택하여 커리큘럼을 만들 수 있습니다."
+          actions={
+            <Button
+              onClick={() => setIsCurriculumModalOpen(true)}
+              variant="primary"
+              className="flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              커리큘럼 만들기
+            </Button>
+          }
+        />
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-            <span className="text-red-800">{error}</span>
-            <button onClick={() => setError(null)} className="ml-auto">
-              <X className="w-4 h-4 text-red-600" />
-            </button>
-          </div>
+          <ErrorState 
+            message={error}
+            onRetry={() => setError(null)}
+            retryText="닫기"
+            className="mb-4"
+          />
         )}
 
         {success && (
@@ -969,6 +989,18 @@ function InstructorTeachingMethods() {
             </div>
           </Modal>
         )}
+
+        {/* ConfirmModal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+          variant={confirmModal.variant || 'info'}
+          title="확인"
+          confirmText="확인"
+          cancelText="취소"
+        />
       </div>
     </div>
   );
@@ -977,3 +1009,4 @@ function InstructorTeachingMethods() {
 export default withAuth(InstructorTeachingMethods, { 
   requireTypes: ['instructor'] 
 });
+

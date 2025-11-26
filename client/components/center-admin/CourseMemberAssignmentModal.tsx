@@ -71,8 +71,8 @@ export default function CourseMemberAssignmentModal({
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 회원 목록 API 응답:', data);
-        console.log('📊 API 응답 구조:', {
+        logger.info('📊 회원 목록 API 응답:', data);
+        logger.info('📊 API 응답 구조:', {
           success: data.success,
           message: data.message,
           dataKeys: Object.keys(data.data || {}),
@@ -194,8 +194,7 @@ export default function CourseMemberAssignmentModal({
 
   // 체크박스 토글
   const toggleMemberSelection = (memberId: string) => {
-    console.log('🔄 회원 선택 토글:', memberId);
-    console.log('🔄 현재 선택된 회원들:', selectedMembers);
+    logger.debug('회원 선택 토글', { memberId, selectedMembers });
     
     setSelectedMembers(prev => {
       // 이미 선택된 경우 해제
@@ -398,7 +397,7 @@ export default function CourseMemberAssignmentModal({
                   {filteredMembers.map((member) => {
                     const isSelected = selectedMembers.includes(member._id);
                     const isAlreadyEnrolled = member.isEnrolledInSpecificCourse;
-                    console.log(`📋 회원 ${member.name} 렌더링 - 선택됨: ${isSelected}, 이미 배정됨: ${isAlreadyEnrolled}`);
+                    logger.debug(`회원 ${member.name} 렌더링`, { isSelected, isAlreadyEnrolled });
                     
                     return (
                     <div

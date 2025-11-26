@@ -1,82 +1,4 @@
-/**
- * 🔽 JJ Swim Lab - 건강 목표 설정 API
- * 
- * 📋 **API 목적**
- * - 건강 목표 설정 및 관리 API 엔드포인트
- * - 건강 목표의 CRUD 작업 처리
- * - 목표 진행 상황 추적 및 업데이트
- * - 목표 달성률 계산 및 통계
- * - 목표 기반 운동 프로그램 추천
- * 
- * 🔄 **주요 기능**
- * - GET: 건강 목표 조회 (전체, 활성, 완료)
- * - POST: 새로운 건강 목표 추가
- * - PUT: 건강 목표 수정 및 진행 상황 업데이트
- * - DELETE: 건강 목표 삭제
- * - 목표 달성률 계산 및 통계
- * 
- * 🗄️ **데이터 연동**
- * - MongoDB 건강 목표 컬렉션
- * - 사용자 인증 및 권한 확인
- * - 건강 측정 데이터와 연동
- * - 목표 진행 상황 추적 데이터
- * - 운동 프로그램 추천 데이터
- * 
- * 🛠️ **필요한 설치 파일**
- * - Next.js API Routes
- * - MongoDB 연결 및 스키마
- * - 사용자 인증 미들웨어
- * - 데이터 유효성 검증 라이브러리
- * - 날짜 처리 라이브러리
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 목표 설정의 현실성 및 달성 가능성 검증
- * 2. 목표 진행 상황의 정확한 계산
- * 3. 목표 마감일 및 상태 관리
- * 4. 목표 달성률 통계의 정확성
- * 5. 개인정보 보호 및 데이터 보안
- * 
- * 🔧 **수정 시 체크리스트**
- * - [ ] 건강 목표 CRUD 작업 검증
- * - [ ] 목표 진행 상황 업데이트 로직 테스트
- * - [ ] 목표 달성률 계산 검증
- * - [ ] 목표 상태 관리 로직 확인
- * - [ ] API 응답 형식 및 에러 처리 확인
- * 
- * 📅 **개발 히스토리**
- * - 2024-12-19: 초기 구현 (건강 목표 설정 API)
- * - 2024-12-19: CRUD 작업 및 유효성 검증 구현
- * - 2024-12-19: 목표 진행 상황 추적 구현
- * - 2024-12-19: 목표 달성률 계산 구현
- * 
- * 👨‍💻 **개발자 정보**
- * - 작성자: AI Assistant
- * - 최종 수정: 2024-12-19
- * - 상태: ✅ 완성 (건강 목표 설정 API 완료)
- * 
- * 🚀 **다음 단계**
- * - 고급 목표 분석 알고리즘
- * - 목표 달성 예측 모델
- * - 목표 기반 개인화 추천
- * - 목표 달성 인센티브 시스템
- * 
- * 💡 **API 사용 예시**
- * ```typescript
- * // 건강 목표 조회
- * GET /api/health/goals?status=active
- * 
- * // 새로운 건강 목표 추가
- * POST /api/health/goals
- * {
- *   "type": "weight",
- *   "targetValue": 65,
- *   "currentValue": 70,
- *   "unit": "kg",
- *   "deadline": "2025-03-31T00:00:00Z"
- * }
- * ```
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 // 건강 목표 타입
@@ -255,7 +177,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('건강 목표 조회 오류:', error);
+    logger.error('건강 목표 조회 오류:', error);
     return NextResponse.json(
       { success: false, error: '건강 목표 조회 중 오류가 발생했습니다' },
       { status: 500 }
@@ -302,7 +224,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('건강 목표 추가 오류:', error);
+    logger.error('건강 목표 추가 오류:', error);
     return NextResponse.json(
       { success: false, error: '건강 목표 추가 중 오류가 발생했습니다' },
       { status: 500 }
@@ -357,7 +279,7 @@ export async function PUT(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('건강 목표 수정 오류:', error);
+    logger.error('건강 목표 수정 오류:', error);
     return NextResponse.json(
       { success: false, error: '건강 목표 수정 중 오류가 발생했습니다' },
       { status: 500 }
@@ -387,7 +309,7 @@ export async function DELETE(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('건강 목표 삭제 오류:', error);
+    logger.error('건강 목표 삭제 오류:', error);
     return NextResponse.json(
       { success: false, error: '건강 목표 삭제 중 오류가 발생했습니다' },
       { status: 500 }
