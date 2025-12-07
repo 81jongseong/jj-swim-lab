@@ -1502,8 +1502,8 @@ export default function GeoDistributionPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
+        {/* 헤더 - 상단 고정 */}
+        <div className="mb-6 sticky top-[80px] z-[9998] bg-gray-50 pb-4 pt-2 -mx-6 px-6 border-b border-gray-200">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">회원 분포도 (지오해시 블록 스팟)</h1>
           <p className="text-gray-600">지오해시 블록 기반 스팟으로 프라이버시 보호된 회원 분포 시각화</p>
         </div>
@@ -1629,8 +1629,7 @@ export default function GeoDistributionPage() {
         {/* 센터 필터 - 지역이 선택되었거나 센터 목록이 있는 경우 표시 */}
         {(selectedRegions.size > 0 || currentSelectedSido || centerList.length > 0) && (
           <div 
-            className="mb-4 relative" 
-            style={{ zIndex: 10000, position: 'relative' }} // Navigation 드롭다운(z-9999)보다 높게 설정
+            className="mb-4 relative bg-white rounded-lg shadow-md p-4 border border-gray-200 z-[9990]" 
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -1693,13 +1692,8 @@ export default function GeoDistributionPage() {
                       `}
                       style={isActive ? { 
                         backgroundColor: centerColor,
-                        borderColor: centerColor,
-                        zIndex: 10001, // Navigation 드롭다운보다 높게
-                        position: 'relative'
-                      } : {
-                        zIndex: 10001, // Navigation 드롭다운보다 높게
-                        position: 'relative'
-                      }}
+                        borderColor: centerColor
+                      } : {}}
                     >
                       <div 
                         className={`w-3 h-3 rounded-full ${isActive ? 'bg-white' : 'bg-gray-400'}`}
