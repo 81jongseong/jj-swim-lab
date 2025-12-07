@@ -320,6 +320,7 @@ export default function GeoDistributionPage() {
   const [metadata, setMetadata] = useState<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false); // 지도 로딩 상태
   const [loadingData, setLoadingData] = useState(false); // 초기 로딩 비활성화
+  const [mapError, setMapError] = useState<string | null>(null); // 지도 에러 상태
   const [hoveredSpot, setHoveredSpot] = useState<any>(null);
   const [hoveredAddress, setHoveredAddress] = useState<string | null>(null);
   const [librariesLoaded, setLibrariesLoaded] = useState(false);
@@ -826,6 +827,9 @@ export default function GeoDistributionPage() {
       vworldKey: process.env.NEXT_PUBLIC_VWORLD_KEY ? '설정됨' : '❌ 미설정'
     });
 
+    // 에러 상태 초기화
+    setMapError(null);
+
     if (!librariesLoaded || !mapRef.current || !maplibregl || !MapboxOverlay) {
       logger.info('⏳ 지도 초기화 대기 중 - 라이브러리 또는 DOM 요소 대기');
       return;
@@ -837,8 +841,18 @@ export default function GeoDistributionPage() {
       logger.error('🚨 VWorld API 키가 설정되지 않았습니다!');
       logger.error('📋 해결 방법: .env.local 파일에 NEXT_PUBLIC_VWORLD_KEY를 설정하세요.');
       setMapLoaded(false);
+      setMapError('VWorld API 키가 설정되지 않았습니다. client/.env.local 파일을 확인하세요.');
       return;
     }
+
+    // 타임아웃 설정 (30초 후 에러 표시)
+    const timeoutId = setTimeout(() => {
+      if (!mapLoaded) {
+        logger.error('🚨 지도 초기화 타임아웃 (30초)');
+        setMapError('지도 초기화가 시간 초과되었습니다. 네트워크 연결과 VWorld API 키를 확인하세요.');
+        setMapLoaded(false);
+      }
+    }, 30000);
 
     // VWorld 지도 사용
     const style: any = {
@@ -899,32 +913,53 @@ export default function GeoDistributionPage() {
     // 지도 에러 처리
     map.on('error', (e: any) => {
       logger.error('🚨 지도 에러 발생:', e);
+      clearTimeout(timeoutId);
+      let errorMessage = '지도 초기화 중 오류가 발생했습니다.';
+      
       if (e.error && e.error.message) {
         logger.error('에러 메시지:', e.error.message);
+        errorMessage = `지도 오류: ${e.error.message}`;
       }
+      
+      // VWorld API 키 관련 에러인지 확인
+      if (e.error && (e.error.message?.includes('401') || e.error.message?.includes('403') || e.error.message?.includes('key'))) {
+        errorMessage = 'VWorld API 키가 유효하지 않거나 만료되었습니다. API 키를 확인하세요.';
+      }
+      
+      setMapError(errorMessage);
       setMapLoaded(false);
     });
 
     // 타일 로딩 에러 처리
     map.on('data', (e: any) => {
-      if (e.dataType === 'source' && e.isSourceLoaded === false) {
+      if (e.dataType === 'source' && e.isSourceLoaded === false && e.sourceId === 'vworld') {
         logger.error('🚨 지도 타일 소스 로딩 실패:', e.sourceId);
-        if (e.sourceId === 'vworld') {
-          logger.error('📋 VWorld API 키를 확인하세요. .env.local 파일에 NEXT_PUBLIC_VWORLD_KEY가 올바르게 설정되어 있는지 확인하세요.');
-        }
+        clearTimeout(timeoutId);
+        setMapError('VWorld 지도 타일을 로드할 수 없습니다. API 키와 네트워크 연결을 확인하세요.');
+        setMapLoaded(false);
       }
     });
 
     // 지도 로딩 완료
     map.on('load', () => {
       logger.info('🗺️ VWorld 지도 로딩 완료');
+      clearTimeout(timeoutId);
       setMapLoaded(true);
+      setMapError(null);
       
       // 지역이 선택된 경우에만 데이터 로딩
       if (selectedRegions.size > 0) {
         fetchSpotsData();
       }
     });
+
+    // 정리 함수
+    return () => {
+      clearTimeout(timeoutId);
+      if (map) {
+        map.remove();
+      }
+    };
 
     // 스팟 데이터 로딩 함수
     const fetchSpotsData = async () => {
@@ -1783,12 +1818,40 @@ export default function GeoDistributionPage() {
                 <p className="text-gray-600">지도 라이브러리 로딩 중...</p>
               </div>
             </div>
+          ) : mapError ? (
+            <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-red-300">
+              <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h3 className="text-xl font-bold text-red-600 mb-2">지도 로딩 실패</h3>
+                <p className="text-gray-700 mb-4">{mapError}</p>
+                <div className="text-left bg-gray-50 p-4 rounded border border-gray-200 text-sm">
+                  <p className="font-semibold mb-2">확인 사항:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                    <li>브라우저 콘솔(F12)에서 에러 메시지 확인</li>
+                    <li>네트워크 연결 상태 확인</li>
+                    <li>VWorld API 키가 올바르게 설정되었는지 확인</li>
+                    <li>개발 서버 재시작: <code className="bg-gray-200 px-1 rounded">npm run dev</code></li>
+                  </ol>
+                </div>
+                <button
+                  onClick={() => {
+                    setMapError(null);
+                    setMapLoaded(false);
+                    window.location.reload();
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  🔄 페이지 새로고침
+                </button>
+              </div>
+            </div>
           ) : !mapLoaded ? (
             <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">지도 초기화 중...</p>
                 <p className="text-xs text-gray-500 mt-2">VWorld API 키를 확인하는 중...</p>
+                <p className="text-xs text-gray-400 mt-2">30초 이상 걸리면 네트워크나 API 키를 확인하세요.</p>
               </div>
             </div>
           ) : (
